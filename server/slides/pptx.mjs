@@ -1,5 +1,9 @@
 // The same boxes as native PowerPoint: real text, shapes, tables and charts you can edit.
-import PptxGenJS from "pptxgenjs";
+import { createRequire } from "node:module";
+
+// Loaded on the first presentation, not at start-up.
+let pptxLib = null;
+const PptxGenJS = () => (pptxLib ??= createRequire(import.meta.url)("pptxgenjs"));
 import { FONTS } from "./layout.mjs";
 import { SERIES } from "./html.mjs";
 
@@ -46,7 +50,7 @@ function addTable(slide, e, theme) {
 
 /** The .pptx bytes of a laid-out deck. */
 export async function deckPptx(deck, laid, theme) {
-  const pres = new PptxGenJS();
+  const pres = new (PptxGenJS())();
   pres.layout = "LAYOUT_WIDE"; // 13.33 × 7.5 in = 1280 × 720 px
   pres.title = deck.title;
   pres.company = "Colmena";

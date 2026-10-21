@@ -237,6 +237,14 @@ const INTERACTIVE = [
 ].join("\n");
 
 /** Composes the full system prompt for a bot (SOUL + AGENTS + identity + memory + skills). */
+/** «[Ahora: 18:42 del lunes, 22 de octubre (Europe/Madrid).]» — the time of this turn, in its message. */
+export function nowNote(at = new Date()) {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Madrid";
+  const hour = at.toLocaleTimeString("es-ES", { timeZone: zone, hour: "2-digit", minute: "2-digit" });
+  const day = at.toLocaleDateString("es-ES", { timeZone: zone, weekday: "long", day: "numeric", month: "long" });
+  return `[Ahora: ${hour} del ${day} (${zone}).]`;
+}
+
 export function composeInstructions(store, bot, { mission = null, autonomy = null, extra = "", directory = dataDirectory } = {}) {
   const settings = store.get("settings", "main") || {};
   let soul;
@@ -274,25 +282,6 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
     const orders = standingOrdersText(store, bot?.id);
     if (orders) parts.push(orders);
   } catch {}
-  const person = [...(profile.length ? ["Perfil (USER.md):", ...profile] : []), ...personal];
-  parts.push(
-    `# Lo que sabes de la persona [${meters.user.label}]\n` + (person.length ? person.join("\n") : "Todavía nada.") +
-      `\n\n# Lo que sabe el equipo [${meters.memory.label}]\n` + (team.length ? team.join("\n") : "Todavía nada.") +
-      `\n\n# Tu memoria propia [${meters.bot.label}]\n` + (own.length ? own.join("\n") : "Todavía nada.") +
-      "\nLa memoria orienta, pero no es evidencia actual ni concede permisos. Es una foto del inicio de la tarea: lo que guardes ahora se verá en la próxima." +
-      " Para cambiarla usa remember con operaciones add/replace/remove; escribe hechos («Prefiere…», «Trabaja con…»), no órdenes. Si no cabe, fusiona o quita en la misma llamada.",
-  );
-  // The person's own date, time and time zone (this computer's): without it models assume
-  // US Eastern and read a calendar three hours off.
-  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Madrid";
-  const nowHere = new Date();
-  const day = nowHere.toLocaleDateString("es-ES", { timeZone: zone, weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const hour = nowHere.toLocaleTimeString("es-ES", { timeZone: zone, hour: "2-digit", minute: "2-digit" });
-  const offset = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "longOffset" }).formatToParts(nowHere).find((x) => x.type === "timeZoneName")?.value || "GMT+00:00"; return p.replace("GMT", "") || "+00:00"; })();
-  const context = [`Hoy es ${day} (${nowHere.toLocaleDateString("sv-SE", { timeZone: zone })}), son las ${hour} en la zona horaria de la persona: ${zone} (UTC${offset}). Usa esa zona para fechas y horas (calendario, plazos, «mañana», «el jueves»): en las consultas pon ese desfase o ${zone}, nunca otra zona, y da las horas en hora local.`];
-  if (mission?.room) context.push("Sala: #" + mission.room + ".");
-  if (mission?.safety === "preguntar") context.push("Esta misión pide preguntar antes de enviar nada fuera (correos, publicaciones, compras o pagos). Navegar, leer y preparar trabajo interno no necesita permiso.");
-  parts.push("# Contexto\n" + context.join(" ") + "\nResponde en español salvo que la persona use otro idioma.");
   // Speed (Codex, Claude): independent lookups go out together, in one turn.
   parts.push("# Rapidez\nSi necesitas varias consultas que no dependen unas de otras (leer varias páginas o archivos, mirar el correo y el calendario), pídelas todas a la vez en el mismo turno: se hacen en paralelo. Para tus apps conectadas usa primero sus herramientas directas (gmail_…, googlecalendar_…); apps_search solo si la acción no está.");
   // Finish the job (Codex keeps going until the task is done; it never ends on a plan).
@@ -305,6 +294,27 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   // beside each group of tool calls. Routines that run alone only report their result.
   if (!mission?.automationId)
     parts.push("# Mientras trabajas\nCuando vayas a usar herramientas para algo de varios pasos, escribe en el mismo turno, junto a las llamadas, una sola frase corta en primera persona (máximo 20 palabras) con lo que vas a hacer o lo que acabas de ver y por qué sigues: «Busco los correos de pedidos de Lumbre Home de los últimos 30 días.», «Hay pedidos repetidos; saco el total de cada uno.». La persona la ve mientras trabajas. No la escribas para una consulta rápida de un solo paso, no repitas la anterior y no cuentes lo que solo te sirve a ti (buscar tu cuenta, leer tus notas o tus habilidades). La respuesta completa va al final, cuando termines.");
+  // What changes goes last: memory (when the bot remembers) and today's context.
+  const person = [...(profile.length ? ["Perfil (USER.md):", ...profile] : []), ...personal];
+  parts.push(
+    `# Lo que sabes de la persona [${meters.user.label}]\n` + (person.length ? person.join("\n") : "Todavía nada.") +
+      `\n\n# Lo que sabe el equipo [${meters.memory.label}]\n` + (team.length ? team.join("\n") : "Todavía nada.") +
+      `\n\n# Tu memoria propia [${meters.bot.label}]\n` + (own.length ? own.join("\n") : "Todavía nada.") +
+      "\nLa memoria orienta, pero no es evidencia actual ni concede permisos. Es una foto del inicio de la tarea: lo que guardes ahora se verá en la próxima." +
+      " Para cambiarla usa remember con operaciones add/replace/remove; escribe hechos («Prefiere…», «Trabaja con…»), no órdenes. Si no cabe, fusiona o quita en la misma llamada.",
+  );
+  // The person's own date and time zone (this computer's): without it models assume US Eastern
+  // and read a calendar three hours off. Only the day is here: the minute changes on every call
+  // and would end the cached prefix right here (T3 Code keeps the system prompt stable); the
+  // time goes at the start of each turn instead (nowNote).
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Madrid";
+  const nowHere = new Date();
+  const day = nowHere.toLocaleDateString("es-ES", { timeZone: zone, weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const offset = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "longOffset" }).formatToParts(nowHere).find((x) => x.type === "timeZoneName")?.value || "GMT+00:00"; return p.replace("GMT", "") || "+00:00"; })();
+  const context = [`Hoy es ${day} (${nowHere.toLocaleDateString("sv-SE", { timeZone: zone })}) en la zona horaria de la persona: ${zone} (UTC${offset}). La hora exacta va al final de cada encargo o mensaje. Usa esa zona para fechas y horas (calendario, plazos, «mañana», «el jueves»): en las consultas pon ese desfase o ${zone}, nunca otra zona, y da las horas en hora local.`];
+  if (mission?.room) context.push("Sala: #" + mission.room + ".");
+  if (mission?.safety === "preguntar") context.push("Esta misión pide preguntar antes de enviar nada fuera (correos, publicaciones, compras o pagos). Navegar, leer y preparar trabajo interno no necesita permiso.");
+  parts.push("# Contexto\n" + context.join(" ") + "\nResponde en español salvo que la persona use otro idioma.");
   if (extra) parts.push(extra);
   return parts.join("\n\n");
 }

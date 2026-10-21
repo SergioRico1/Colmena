@@ -96,7 +96,7 @@ export class Scheduler {
       }
       if (time - this.lastPurge > PURGE_MS) {
         this.lastPurge = time;
-        this.store.purgeEvents();
+        this.store.maintain(time);
       }
     } finally {
       this.ticking = false;

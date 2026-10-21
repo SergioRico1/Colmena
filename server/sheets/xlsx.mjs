@@ -1,7 +1,11 @@
 // The workbook as a native .xlsx: typed cells with their number formats, real formulas (with
 // the value computed here as their cached result; Excel recalculates on open), totals, filters,
 // frozen header, conditional formatting and the charts as pictures beside the table.
-import ExcelJS from "exceljs";
+import { createRequire } from "node:module";
+
+// Loaded on the first workbook, not at start-up (~360 ms).
+let excel = null;
+const ExcelLib = () => (excel ??= createRequire(import.meta.url)("exceljs"));
 import { colLetter, excelDate, isErr, UNKNOWN } from "./formula.mjs";
 import { columnOf, numFmtOf } from "./index.mjs";
 import { RULE_STYLES, SCALE_TO } from "./preview.mjs";
@@ -36,7 +40,7 @@ function valueOf(cell, col) {
 /** The .xlsx bytes. `charts`: [{sheet, index, bytes, width, height}] from workbookCharts(). */
 export async function workbookXlsx(built, charts = []) {
   const { theme } = built;
-  const wb = new ExcelJS.Workbook();
+  const wb = new (ExcelLib().Workbook)();
   wb.creator = "Colmena";
   wb.lastModifiedBy = "Colmena";
   wb.title = built.book.title;

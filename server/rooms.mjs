@@ -84,7 +84,7 @@ export function forkRoom(store, missionId, messageId = null, { slug }) {
   const src = store.get("missions", missionId);
   if (!src) throw Object.assign(Error("Sala no encontrada."), { status: 404 });
   if (src.mode === "debate") throw Error("Los debates no se pueden duplicar; empieza uno nuevo.");
-  const all = store.list("messages").filter((m) => m.missionId === missionId && !m.replyTo);
+  const all = store.where("messages", "missionId", missionId).filter((m) => !m.replyTo);
   let cut = all.length;
   if (messageId) {
     const i = all.findIndex((m) => m.id === messageId);

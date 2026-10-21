@@ -346,7 +346,7 @@ export class Notifier {
     if (!parts.length) return null;
     const keys = [...f.approvals.map((a) => "a:" + a.id), ...f.missions.map((m) => "m:" + m.id + ":" + m.status), ...f.automations.map((r) => "r:" + r.id + ":" + (r.state || "") + ":" + (r.lastStatus || "")), ...f.skills.map((s) => "s:" + s.id), ...f.goals.map((g) => "g:" + g.goalId + ":" + (g.overdue ? "o" : "") + (g.stale ? "s" : ""))].sort();
     const signature = createHash("sha256").update(keys.join("|")).digest("hex").slice(0, 32);
-    const last = this.store.list("notifications").filter((n) => n.kind === "digest" && !n.weekly).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+    const last = this.store.list("notifications").reverse().filter((n) => n.kind === "digest" && !n.weekly).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
     if (last?.signature === signature) return null; // nothing new since the last round
     const url = f.approvals.length ? "/bandeja" : f.missions.length ? "/sala/" + f.missions[0].id : f.automations.length ? "/automatizaciones?id=" + f.automations[0].id : "/biblioteca";
     return this.notify({

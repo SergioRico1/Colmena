@@ -831,7 +831,7 @@ export function buildMissionBrief(store, missionId, { forBotId = null, exceptSte
 
   // What the person said: answers to questions, messages in the room, hints in the thread.
   const personLines = [];
-  const answered = store.list("approvals").filter((a) => a.missionId === missionId && a.kind === "question" && a.status === "answered");
+  const answered = store.where("approvals", "missionId", missionId).filter((a) => a.kind === "question" && a.status === "answered");
   for (const a of answered) {
     const reply = a.answer?.text || a.answer?.label || a.resolution || "";
     const text = `${name(a.botId)} preguntó «${oneLine(a.summary || a.title, 300)}» → la persona respondió «${oneLine(reply, 400)}»`;

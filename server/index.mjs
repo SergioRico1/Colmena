@@ -25,6 +25,7 @@ import { AppTools } from "./apptools.mjs";
 import { Projects } from "./projects/tools.mjs";
 import { CodeService } from "./code/service.mjs";
 import { pendingCount } from "./notifications.mjs";
+import { watchStalls } from "./stalls.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 // The installed app runs this server on Electron's Node (desktop/main.cjs); the programs it
@@ -159,8 +160,13 @@ origin = "http://127.0.0.1:" + server.address().port;
 runtime.code.excludePorts = [server.address().port];
 instance.ready(origin);
 scheduler.start();
+// Long pauses of the server are written down (and shown in /api/health).
+app.locals.stalls = watchStalls();
 app.locals.watcher?.start();
 console.log("COLMENA_READY " + origin);
+// Windows ends this process without a clean exit: write the compiled-code cache now that
+// every module is loaded (T3 Code flushes it once the server is ready).
+try { (await import("node:module")).flushCompileCache?.(); } catch {}
 // Prewarm (OpenClaw gateway prewarm): the access token and the model list are fresh before
 // the first message, so the first answer does not wait for them.
 setTimeout(() => {

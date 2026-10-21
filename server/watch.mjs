@@ -182,7 +182,7 @@ export class Watcher {
     if (change?.type !== "record" || change.kind !== "messages" || change.op !== "insert" || change.data?.role !== "user") return;
     const missionId = change.data.missionId;
     setImmediate(() => {
-      for (const n of this.store.list("watchNotes").filter((x) => x.missionId === missionId && x.status === "open"))
+      for (const n of this.store.where("watchNotes", "missionId", missionId).filter((x) => x.status === "open"))
         this.store.patch("watchNotes", n.id, { status: "answered", answeredAt: now() });
     });
   }

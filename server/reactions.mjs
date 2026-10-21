@@ -65,7 +65,7 @@ export function togglePersonReaction(store, messageId, emoji) {
 
 /** «La persona reaccionó con 👍 a tu mensaje «…»» lines not yet seen by `botId`; marks them seen. */
 export function reactionNotices(store, missionId, botId, nameOf = (b) => b) {
-  const pending = store.list("reactionNotices").filter((n) => n.missionId === missionId && !(n.seenBy || []).includes(botId));
+  const pending = store.where("reactionNotices", "missionId", missionId).filter((n) => !(n.seenBy || []).includes(botId));
   const lines = [];
   for (const n of pending.slice(-20)) {
     const m = store.get("messages", n.messageId);

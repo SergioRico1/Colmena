@@ -57,7 +57,7 @@ export function record(store, { missionId = null, botId = null, stepId = null, t
 
 /** What one bot turn cost: tokens and how much of the input came from the prompt cache. */
 export function stepUsage(store, stepId) {
-  const rows = store.list("usage").filter((u) => u.stepId === stepId);
+  const rows = store.where("usage", "stepId", stepId);
   const input = rows.reduce((n, u) => n + (u.input || 0), 0);
   const cached = rows.reduce((n, u) => n + (u.cached || 0), 0);
   return { tokens: rows.reduce((n, u) => n + (u.tokens || 0), 0), calls: rows.length, cachedPercent: input ? Math.round((cached / input) * 100) : null };

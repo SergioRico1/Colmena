@@ -1,6 +1,10 @@
 // What Word documents and Excel workbooks share: the palette, the mission's pictures and the
 // charts, drawn once as SVG (the same drawing as the slides) and turned into a PNG.
-import { createCanvas, Image } from "@napi-rs/canvas";
+import { createRequire } from "node:module";
+
+// Loaded on the first chart picture, not at start-up (~180 ms).
+let canvasLib = null;
+const canvasModule = () => (canvasLib ??= createRequire(import.meta.url)("@napi-rs/canvas"));
 import { readMissionBytes } from "../files.mjs";
 import { chartSvg } from "../slides/html.mjs";
 import { themeOf } from "../slides/layout.mjs";
@@ -26,7 +30,7 @@ export async function missionImage(root, relative) {
   const type = imageMime(bytes);
   if (!type) throw Error("no es PNG ni JPG");
   if (bytes.length > MAX_IMAGE) throw Error("pesa más de 8 MB");
-  const img = new Image();
+  const img = new (canvasModule().Image)();
   img.src = bytes;
   if (!img.width || !img.height) throw Error("no se puede leer");
   return { bytes, type, width: img.width, height: img.height, dataUri: `data:image/${type === "jpg" ? "jpeg" : "png"};base64,${Buffer.from(bytes).toString("base64")}` };
@@ -40,9 +44,9 @@ export function chartSvgDocument(chart, theme, { w = 860, h = 420 } = {}) {
 /** The same chart as PNG bytes (Word and Excel), drawn at `scale` for a sharp picture. */
 export function chartPng(chart, theme, { w = 860, h = 420, scale = 2, title = "" } = {}) {
   const top = title ? 56 : 0;
-  const img = new Image();
+  const img = new (canvasModule().Image)();
   img.src = Buffer.from(chartSvgDocument(chart, theme, { w, h }));
-  const canvas = createCanvas(w * scale, (h + top) * scale);
+  const canvas = canvasModule().createCanvas(w * scale, (h + top) * scale);
   const ctx = canvas.getContext("2d");
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, canvas.width, canvas.height);

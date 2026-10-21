@@ -282,7 +282,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.use(attachmentBodyParser);
   app.use(codeUploadParser); // «Código» attachments (up to 20 MB)
   app.use(express.json({ limit: "1400kb" }));
-  app.get("/api/health", (_req, res) => res.json({ application: "Colmena", version: VERSION, pid: process.pid }));
+  app.get("/api/health", (_req, res) => res.json({ application: "Colmena", version: VERSION, pid: process.pid, ...(app.locals.stalls ? { stalls: app.locals.stalls.state } : {}) }));
   app.get("/api/bootstrap", (_req, res) => res.json({ csrf }));
 
   // ------------------------------------------------ connections (09b/09c)
@@ -353,19 +353,29 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     return [...seen.values()];
   };
   // Provider model lists may need the network (API key): cached per provider kind.
-  let modelCache = { key: null, at: 0, list: [] };
+  let modelCache = { key: null, at: 0, list: [] }, modelFailure = { key: null, n: 0, until: 0 };
   const providerModels = async () => {
     const p = runtime?.provider;
     if (typeof p?.models !== "function") return [];
     const key = JSON.stringify([providerStatus()?.kind ?? null, safe(() => p.engines?.().filter((e) => e.connected).map((e) => e.id)) || []]);
     if (modelCache.key === key && Date.now() - modelCache.at < 300000) return modelCache.list;
+    // After a failure the last good list answers at once until the backoff ends: a slow or
+    // failing catalog no longer makes every /api/state wait 4 s (failures are never cached).
+    const stale = modelCache.key === key ? modelCache.list : [];
+    if (modelFailure.key === key && Date.now() < modelFailure.until) return stale;
+    const failed = () => {
+      const n = modelFailure.key === key ? modelFailure.n + 1 : 1;
+      modelFailure = { key, n, until: Date.now() + Math.min(300000, 5000 * 3 ** (n - 1)) };
+      return stale;
+    };
     try {
       const list = await Promise.race([Promise.resolve(p.models()), new Promise((r) => setTimeout(() => r(null), 4000).unref?.())]);
-      if (!Array.isArray(list)) return modelCache.key === key ? modelCache.list : [];
+      if (!Array.isArray(list)) return failed();
       modelCache = { key, at: Date.now(), list };
+      modelFailure = { key: null, n: 0, until: 0 };
       return list;
     } catch {
-      return modelCache.key === key ? modelCache.list : [];
+      return failed();
     }
   };
   const usageOf = async () => {
@@ -1442,7 +1452,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   });
   // ------------------------------------------------------ notifications
   app.get("/api/notifications", (_req, res) => {
-    res.json(store.list("notifications").sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100).map(notificationView));
+    res.json(store.list("notifications").reverse().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100).map(notificationView));
   });
   app.post("/api/notifications/read", (req, res) => {
     const data = check(

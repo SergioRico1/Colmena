@@ -189,8 +189,7 @@ export function skillsUsedByAutomations(store) {
   }
   const automated = new Set(store.list("missions").filter((m) => m.automationId).map((m) => m.id));
   if (automated.size)
-    for (const step of store.list("steps")) {
-      if (!automated.has(step.missionId)) continue;
+    for (const step of [...automated].flatMap((id) => store.where("steps", "missionId", id))) {
       for (const item of step.history || []) {
         if (item.type !== "function_call" || !["read_skill", "skill_view"].includes(item.name)) continue;
         try { ids.add(JSON.parse(item.arguments).id); } catch {}

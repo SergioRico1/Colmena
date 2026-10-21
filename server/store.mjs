@@ -97,14 +97,22 @@ export function withBotDefaults(bot) {
 }
 
 const EVENT_RETENTION_DAYS = 30;
+// Tool bodies older than this keep a preview only (pruneReceipts).
+const SLIM_AFTER_DAYS = 7, SLIM_MAX = 32 * 1024, PREVIEW_CHARS = 4000;
 
 export class Store {
   constructor(directory) {
     mkdirSync(directory, { recursive: true });
     this.directory = directory;
     this.db = new DatabaseSync(path.join(directory, "colmena.sqlite"));
+    // T3 Code's set: WAL with synchronous=NORMAL (FULL waits for the disk on every commit and
+    // stalls the event loop; in WAL a crash can lose the last commit, never corrupt the file),
+    // the WAL file kept under 32 MB, and space handed back in steps (incremental auto_vacuum,
+    // which only a new database takes: see maintain).
+    const fresh = !this.db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' LIMIT 1").get();
+    if (fresh) this.db.exec("PRAGMA auto_vacuum=INCREMENTAL;");
     this.db.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;" +
+      "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=5000; PRAGMA journal_size_limit=33554432;" +
         "CREATE TABLE IF NOT EXISTS records (kind TEXT NOT NULL,id TEXT NOT NULL,data TEXT NOT NULL, PRIMARY KEY(kind,id));" +
         "CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT,mission TEXT,data TEXT NOT NULL);" +
         "CREATE INDEX IF NOT EXISTS events_mission ON events(mission, seq);" +
@@ -262,6 +270,49 @@ export class Store {
   purgeEvents(days = EVENT_RETENTION_DAYS, time = Date.now()) {
     const cutoff = new Date(time - days * 86400000).toISOString();
     return Number(this.sql("DELETE FROM events WHERE json_extract(data,'$.at') < ?").run(cutoff).changes);
+  }
+  /**
+   * What a tool returned stays whole while it can matter (a step resumes from its receipts, the
+   * person opens a recent card); after `days` a big one keeps a short preview (T3 Code caps
+   * stored tool bodies at 32 KB and drops image bytes). Finished steps lose their old tool
+   * outputs the same way; messages, deliverables and the receipts' own fields stay.
+   */
+  pruneReceipts(days = SLIM_AFTER_DAYS, time = Date.now(), { max = SLIM_MAX } = {}) {
+    const cutoff = new Date(time - days * 86400000).toISOString();
+    const slim = (value) => {
+      const text = typeof value === "string" ? value : JSON.stringify(value ?? null);
+      return text.length <= max ? value : { recortado: true, nota: "Guardado en resumen al cabo de unos días.", vista: text.slice(0, PREVIEW_CHARS) };
+    };
+    let changed = 0;
+    this.tx(() => {
+      for (const row of this.sql("SELECT kind, id, data FROM records WHERE kind IN ('receipts','approvals','steps') AND length(data) > ?").all(max)) {
+        const r = JSON.parse(row.data);
+        const at = r.at || r.updatedAt || r.completedAt || r.createdAt || "";
+        if (!at || at >= cutoff) continue;
+        let next = null;
+        if (row.kind === "receipts" && JSON.stringify(r.result ?? null).length > max) next = { ...r, result: slim(r.result) };
+        if (row.kind === "approvals" && r.status !== "pending" && JSON.stringify(r.result ?? null).length > max) next = { ...r, result: slim(r.result) };
+        if (row.kind === "steps" && ["completed", "failed", "cancelled"].includes(r.status) && Array.isArray(r.history)) {
+          const history = r.history.map((x) => x?.type === "function_call_output" && String(x.output ?? "").length > max ? { ...x, output: JSON.stringify(slim(String(x.output))) } : x);
+          if (history.some((x, i) => x !== r.history[i])) next = { ...r, history };
+        }
+        if (!next) continue;
+        this.sql("UPDATE records SET data=? WHERE kind=? AND id=?").run(JSON.stringify(next), row.kind, row.id);
+        changed++;
+      }
+    });
+    return changed;
+  }
+  /**
+   * Periodic upkeep (scheduler, every PURGE_MS): old events and receipts go, freed pages are
+   * handed back a few at a time and the WAL is folded into the database without blocking.
+   */
+  maintain(time = Date.now()) {
+    const removed = { events: this.purgeEvents(undefined, time), receipts: this.pruneReceipts(undefined, time) };
+    // Never VACUUM: it may renumber the rowids of `records`, and the store keeps insertion
+    // order with ORDER BY rowid. A database made before auto_vacuum just reuses its free pages.
+    try { this.db.exec("PRAGMA incremental_vacuum(1024); PRAGMA wal_checkpoint(PASSIVE);"); } catch {}
+    return removed;
   }
   close() {
     this.statements.clear();

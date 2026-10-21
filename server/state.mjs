@@ -20,7 +20,7 @@ export const MISSION_LABELS = {
 const BOT_LABELS = { trabaja: "Trabaja", espera: "Te espera", libre: "Libre", pausado: "En pausa", bloqueado: "Bloqueado", limitado: "Limitado" };
 const OPEN = new Set(["queued", "planning", "awaiting_plan", "running", "waiting", "paused", "blocked", "awaiting_choice"]);
 const WORKING = new Set(["queued", "planning", "running"]);
-const WEEK = 7 * 86400000;
+const WEEK = 7 * 86400000, DAY = 86400000;
 
 const slug = (s) =>
   String(s || "sala").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "sala";
@@ -314,14 +314,21 @@ export class ConnectorCache {
       new Promise((_, reject) => setTimeout(() => reject(Error("timeout")), 8000).unref?.()),
     ])
       .then((r) => (Array.isArray(r?.items) ? r.items : []))
-      .catch(() => [])
       .then((items) => {
         const changed = JSON.stringify(items.map((i) => [i.id, i.toolkit, i.status])) !== JSON.stringify(this.items.map((i) => [i.id, i.toolkit, i.status]));
         this.items = items;
         this.at = Date.now();
+        this.failures = 0;
         this.loading = null;
         if (changed) this.onChange();
         return items;
+      }, () => {
+        // A failure is never cached (T3 Code's exit-aware TTL): the accounts you had stay, and
+        // the next try comes sooner than the TTL and backs off (5 s, 15 s, 45 s… up to the TTL).
+        this.failures = (this.failures || 0) + 1;
+        this.at = Date.now() - this.ttl + Math.min(this.ttl, 5000 * 3 ** (this.failures - 1));
+        this.loading = null;
+        return this.items;
       });
     return this.loading;
   }
@@ -356,7 +363,11 @@ export function buildState(store, runtime, extras = {}) {
     (account ? { kind: "chatgpt", label: "ChatGPT" } : { kind: null, label: "Sin conectar" });
   const bots = [...ctx.bots.values()];
   const folders = store.list("folders").map((f) => pick(f, ["id", "path", "label", "botIds", "access", "createdAt"]));
-  const recent = (a) => a.status === "pending" || reference - Date.parse(a.decidedAt || a.createdAt || 0) < WEEK;
+  // What a screen can show (T3 Code sends the slice a view needs): waiting, expired, yours of
+  // this week; what ran on its own (every app read is one) only for a day. They were ~60 % of
+  // /api/state. The detail of a mission still lists all of its own.
+  const own = (a) => !["automático", "regla", "revisor"].includes(a.decidedBy);
+  const recent = (a) => a.status === "pending" || a.status === "expired" || reference - Date.parse(a.decidedAt || a.createdAt || 0) < (own(a) ? WEEK : DAY);
   // Your name: the one you set, else the name of your ChatGPT account (or its email),
   // never the placeholder «Tu cuenta» when we know better.
   const fromEmail = (e) => String(e || "").split("@")[0].split(/[._-]+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
@@ -417,7 +428,8 @@ export function notificationView(n) {
 }
 /** `unread` count and the 10 newest notifications for /api/state. */
 export function notificationsState(store) {
-  const all = store.list("notifications").sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  // Newest first; reversed first so two in the same millisecond keep that order too.
+  const all = store.list("notifications").reverse().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   return { unread: all.filter((n) => !n.read).length, notifications: all.slice(0, 10).map(notificationView) };
 }
 
