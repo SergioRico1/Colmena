@@ -45,6 +45,12 @@ const MAX_OUTPUT = 12000;
 const DENIED = "La persona ha dicho que no. No lo intentes de otra manera: sigue sin ello o explícale qué necesitas.";
 
 const clip = (s, n) => { s = String(s ?? ""); return s.length > n ? s.slice(0, n) + "…" : s; };
+/** Commits and merge commits need a name and email: the person's own Git identity, or
+ * «Colmena» on a computer where Git was never set up (merging would fail otherwise). */
+async function identity(cwd) {
+  const who = (await git(["config", "user.email"], { cwd, ok: [0, 1] })).stdout.trim();
+  return who ? [] : ["-c", "user.name=Colmena", "-c", "user.email=colmena@localhost"];
+}
 const base = (p) => path.basename(String(p || "")) || String(p || "");
 const textOfContent = (c) => (typeof c === "string" ? c : (Array.isArray(c) ? c : []).map((b) => (b?.type === "text" ? b.text : b?.type === "image" ? "[imagen]" : "")).filter(Boolean).join("\n"));
 
@@ -772,8 +778,7 @@ export class CodeService {
     if (!info.dirty) return { committed: false, message: null };
     const text = clip(String(message || "").trim() || (await this.commitMessage(task).catch(() => null)) || task.title, 400);
     await git(["add", "-A"], { cwd: task.cwd });
-    const who = (await git(["config", "user.email"], { cwd: task.cwd, ok: [0, 1] })).stdout.trim();
-    await git([...(who ? [] : ["-c", "user.name=Colmena", "-c", "user.email=colmena@localhost"]), "commit", "-q", "-m", text], { cwd: task.cwd });
+    await git([...(await identity(task.cwd)), "commit", "-q", "-m", text], { cwd: task.cwd });
     this.addItem(taskId, { kind: "notice", text: "Guardado en la rama " + (task.branch || info.branch) + ": «" + text.split("\n")[0] + "»" });
     return { committed: true, message: text };
   }
@@ -788,7 +793,7 @@ export class CodeService {
     if (root.branch !== task.base) throw Object.assign(Error(`Tu carpeta está en la rama ${root.branch || "(ninguna)"}, no en ${task.base}. Cámbiala a ${task.base} y vuelve a intentarlo.`), { status: 409 });
     if (root.dirty) throw Object.assign(Error(`Tu carpeta tiene cambios sin guardar en ${task.base}. Guárdalos o descártalos y vuelve a intentarlo.`), { status: 409 });
     try {
-      await git(["merge", "--no-ff", "--no-edit", "-m", `Merge ${task.branch}: ${task.title}`, task.branch], { cwd: root.top });
+      await git([...(await identity(root.top)), "merge", "--no-ff", "--no-edit", "-m", `Merge ${task.branch}: ${task.title}`, task.branch], { cwd: root.top });
     } catch (error) {
       await git(["merge", "--abort"], { cwd: root.top, ok: [0, 128] }).catch(() => {});
       throw Object.assign(Error("No se pudo juntar con " + task.base + ": hay cambios que chocan. Pídele a Bruno que traiga lo último de " + task.base + " y lo resuelva."), { status: 409 });
