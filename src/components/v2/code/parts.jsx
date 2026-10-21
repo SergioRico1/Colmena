@@ -55,7 +55,7 @@ export function MenuChip({ label, icon = null, title, children, up = true, width
     <div ref={ref} style={{ position: "relative" }}>
       <button type="button" title={title} aria-expanded={open} onClick={() => setOpen(!open)}
         style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 10px", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: C.text, whiteSpace: "nowrap" }}>
-        {icon}{label}<ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" />
+        {icon}<span className={icon ? "code-chip-label code-chip-label--icon" : "code-chip-label"}>{label}</span><ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" />
       </button>
       {open ? (
         <div role="menu" style={{ position: "absolute", zIndex: 40, [up ? "bottom" : "top"]: "42px", [align]: 0, width: width + "px", maxHeight: "min(70vh, 560px)", overflowY: "auto", overscrollBehavior: "contain", padding: "8px", borderRadius: "22px", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>
@@ -112,7 +112,9 @@ export const CODE_CSS = `
 .code-task:hover .code-x,.code-task:focus-within .code-x{opacity:1}
 .code-task:hover .code-stat,.code-task:focus-within .code-stat{opacity:0}
 @media (max-width: 1180px){[data-codepanel]{display:none!important}}
-@media (max-width: 1560px){.code-ring-text{display:none}}
+.code-composer{container-type:inline-size}
+@container (max-width: 760px){.code-ring-text{display:none}}
+@container (max-width: 640px){.code-chip-label--icon{display:none}}
 @media (max-width: 860px){[data-projects]{display:none!important}}
 `;
 

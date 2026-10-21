@@ -153,7 +153,7 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
     return true;
   });
   return (
-    <section ref={sectionRef} aria-label={"Tarea: " + task.title} style={{ flex: narrow ? "0 0 520px" : 1, minWidth: 0, height: "100%", display: "flex", flexDirection: "column" }}>
+    <section ref={sectionRef} aria-label={"Tarea: " + task.title} style={{ flex: narrow ? "0 0 520px" : 1, minWidth: narrow ? 0 : "440px", height: "100%", display: "flex", flexDirection: "column" }}>
       <header style={{ flex: "none", background: C.paper }}>
         <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "20px clamp(18px, 3vw, 32px) 14px" }}>
           <BrunoMark size={38} state={s.state} />
@@ -216,7 +216,8 @@ function SidePanel({ taskId, turn, onTurn, tab, setTab, wide, onWide }) {
   // Drag its left edge to widen it (double click: back to normal), or open it wide.
   const { width, handle } = usePanelWidth("codigo", { min: 380, maxShare: 0.78 });
   if (!task) return null;
-  const size = wide ? { flex: "1 1 auto", width: "auto", minWidth: 0 } : width ? { flex: `0 0 ${width}px`, width: width + "px", maxWidth: "78vw" } : { flex: "none", width: "min(520px, 40vw)" };
+  // A dragged width gives way before the conversation gets narrower than its minimum.
+  const size = wide ? { flex: "1 1 auto", width: "auto", minWidth: 0 } : width ? { flex: `0 1 ${width}px`, width: width + "px", minWidth: "380px", maxWidth: "78vw" } : { flex: "none", width: "min(520px, 40vw)" };
   const ask = (text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {});
   const openFolder = () => { window.open?.("file:///" + String(task.cwd).replace(/\\/g, "/"), "_blank", "noopener"); };
   return (

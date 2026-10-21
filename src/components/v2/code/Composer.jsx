@@ -36,7 +36,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
   };
   const queue = task?.queue || [];
   return (
-    <form onSubmit={submit} style={{ flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "4px clamp(18px, 3vw, 32px) 20px" }}>
+    <form onSubmit={submit} className="code-composer" style={{ flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "4px clamp(18px, 3vw, 32px) 20px" }}>
       {queue.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "4px", margin: "0 8px 8px" }}>
           {queue.map((q) => (
@@ -66,7 +66,9 @@ export default function Composer({ task = null, models = [], busy = false, runni
             onKeyDown={(e) => { if (extras.onKeyDown(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e); }}
             style={{ flex: 1, minWidth: 0, border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "15px", lineHeight: 1.55, maxHeight: "260px" }} />
         </label>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", minWidth: 0 }}>
+        {/* When the box gets narrow (a wide side panel) the chips drop their words first, then the
+            send cluster moves to its own line: nothing breaks or spills out of the box. */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 4px", minWidth: 0 }}>
           {onMode ? <Seg label="Modo" value={mode} onChange={onMode} options={[["build", "Construir"], ["plan", "Plan"]]} /> : null}
           {task ? (
             <>
@@ -86,17 +88,18 @@ export default function Composer({ task = null, models = [], busy = false, runni
               </MenuChip>
             </>
           ) : footer}
-          <span style={{ flex: 1, minWidth: 0 }} />
-          {extras.clip}
-          {task?.usage?.used ? <ContextRing used={task.usage.used} max={task.usage.window || 200000} disabled={running} onCompact={onCommand ? () => onCommand("compactar") : null} /> : null}
-          {running ? (
-            <button type="button" onClick={onStop} aria-label="Parar" title="Parar a Bruno" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.08)", cursor: "pointer" }}>
-              <span aria-hidden="true" style={{ width: "11px", height: "11px", borderRadius: "3px", background: C.ink }} />
+          <div style={{ flex: "none", marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
+            {extras.clip}
+            {task?.usage?.used ? <ContextRing used={task.usage.used} max={task.usage.window || 200000} disabled={running} onCompact={onCommand ? () => onCommand("compactar") : null} /> : null}
+            {running ? (
+              <button type="button" onClick={onStop} aria-label="Parar" title="Parar a Bruno" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.08)", cursor: "pointer" }}>
+                <span aria-hidden="true" style={{ width: "11px", height: "11px", borderRadius: "3px", background: C.ink }} />
+              </button>
+            ) : null}
+            <button type="submit" aria-label="Enviar" disabled={(!text.trim() && !extras.files.length) || busy} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: (text.trim() || extras.files.length) && !busy ? C.ink : "rgba(18,19,26,.14)", color: C.white, cursor: (text.trim() || extras.files.length) && !busy ? "pointer" : "default", transition: "background .15s ease" }}>
+              <ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" />
             </button>
-          ) : null}
-          <button type="submit" aria-label="Enviar" disabled={(!text.trim() && !extras.files.length) || busy} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: (text.trim() || extras.files.length) && !busy ? C.ink : "rgba(18,19,26,.14)", color: C.white, cursor: (text.trim() || extras.files.length) && !busy ? "pointer" : "default", transition: "background .15s ease" }}>
-            <ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" />
-          </button>
+          </div>
         </div>
       </div>
     </form>
@@ -128,7 +131,7 @@ function ContextRing({ used, max = 200000, onCompact = null, disabled = false })
   return (
     <span style={{ position: "relative", display: "flex" }}>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} title={`Contexto usado: ${Math.round(pct * 100)} % (${Math.round(used / 1000)} k de ${Math.round(max / 1000)} k)`}
-        style={{ display: "flex", alignItems: "center", gap: "4px", height: "36px", padding: "0 6px", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", font: "500 11px/1 'Geist Mono', monospace", color: "#8A8D96" }}>
+        style={{ display: "flex", alignItems: "center", gap: "4px", height: "36px", padding: "0 6px", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", whiteSpace: "nowrap", font: "500 11px/1 'Geist Mono', monospace", color: "#8A8D96" }}>
         <span className="code-ring-text">{Math.round(pct * 100)} %</span>
         <svg width="22" height="22" viewBox="0 0 36 36" aria-hidden="true" style={{ transform: "rotate(-90deg)" }}>
           <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(18,19,26,.08)" strokeWidth="4" />
