@@ -40,7 +40,7 @@ export function Seg({ options, value, onChange, small = false, label }) {
 }
 
 /** A quiet chip that opens a menu above it (composer) or below it. */
-export function MenuChip({ label, icon = null, title, children, up = true, width = 320, align = "left" }) {
+export function MenuChip({ label, icon = null, title, children, up = true, width = 320, align = "left", chevron = true, className = "" }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -52,10 +52,10 @@ export function MenuChip({ label, icon = null, title, children, up = true, width
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", key); };
   }, [open]);
   return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button type="button" title={title} aria-expanded={open} onClick={() => setOpen(!open)}
-        style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 10px", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: C.text, whiteSpace: "nowrap" }}>
-        {icon}<span className={icon ? "code-chip-label code-chip-label--icon" : "code-chip-label"}>{label}</span><ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" />
+    <div ref={ref} className={className} style={{ position: "relative", minWidth: 0 }}>
+      <button type="button" title={title} aria-label={label ? undefined : title} aria-expanded={open} onClick={() => setOpen(!open)}
+        style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "34px", padding: label ? "0 10px" : "0", width: label ? undefined : "34px", justifyContent: "center", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: C.text, whiteSpace: "nowrap" }}>
+        {icon}{label ? <span className={icon ? "code-chip-label code-chip-label--icon" : "code-chip-label"}>{label}</span> : null}{chevron ? <ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} /> : null}
       </button>
       {open ? (
         <div role="menu" style={{ position: "absolute", zIndex: 40, [up ? "bottom" : "top"]: "42px", [align]: 0, width: width + "px", maxHeight: "min(70vh, 560px)", overflowY: "auto", overscrollBehavior: "contain", padding: "8px", borderRadius: "22px", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>
@@ -113,8 +113,11 @@ export const CODE_CSS = `
 .code-task:hover .code-stat,.code-task:focus-within .code-stat{opacity:0}
 @media (max-width: 1180px){[data-codepanel]{display:none!important}}
 .code-composer{container-type:inline-size}
-@container (max-width: 760px){.code-ring-text{display:none}}
-@container (max-width: 640px){.code-chip-label--icon{display:none}}
+.code-more,.code-more-mode{display:none}
+.code-model-label{display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+@container (max-width: 760px){.code-ring-text{display:none}.code-chip-label--icon{display:none}}
+@container (max-width: 600px){.code-inline-extra{display:none}.code-more{display:block}}
+@container (max-width: 480px){.code-inline-mode{display:none}.code-more-mode{display:block}.code-model-label{max-width:110px}}
 @media (max-width: 860px){[data-projects]{display:none!important}}
 `;
 

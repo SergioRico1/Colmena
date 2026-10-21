@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowUp, Gauge, ShieldCheck, X } from "lucide-react";
+import { ArrowUp, Ellipsis, Gauge, ShieldCheck, X } from "lucide-react";
 import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
 
@@ -66,29 +66,44 @@ export default function Composer({ task = null, models = [], busy = false, runni
             onKeyDown={(e) => { if (extras.onKeyDown(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e); }}
             style={{ flex: 1, minWidth: 0, border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "15px", lineHeight: 1.55, maxHeight: "260px" }} />
         </label>
-        {/* When the box gets narrow (a wide side panel) the chips drop their words first, then the
-            send cluster moves to its own line: nothing breaks or spills out of the box. */}
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 4px", minWidth: 0 }}>
-          {onMode ? <Seg label="Modo" value={mode} onChange={onMode} options={[["build", "Construir"], ["plan", "Plan"]]} /> : null}
-          {task ? (
-            <>
-              <MenuChip title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + modelLabel(models, task.model)} label={modelLabel(models, task.model)}>
-                {(close) => models.map((m) => <MenuItem key={m.id} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
-              </MenuChip>
-              <MenuChip title="Esfuerzo" icon={<Gauge size={14} strokeWidth={2} aria-hidden="true" />} label={EFFORT_LABEL[task.effort] || task.effort} width={220}>
-                {(close) => Object.entries(EFFORT_LABEL).map(([id, label]) => <MenuItem key={id} title={label} on={task.effort === id} onClick={() => { onChange({ effort: id }); close(); }} />)}
-              </MenuChip>
-              <MenuChip title="Qué puede hacer Bruno" icon={<ShieldCheck size={14} strokeWidth={2} aria-hidden="true" />} label={ACCESS_INFO[task.access]?.label || "Su copia"} width={360}>
-                {(close) => (
-                  <>
-                    {Object.entries(ACCESS_INFO).map(([id, a]) => <MenuItem key={id} title={a.title} text={a.text} on={task.access === id} onClick={() => { onChange({ access: id }); close(); }} />)}
-                    <p style={{ margin: "6px 12px 6px", fontSize: "12px", lineHeight: 1.5, color: C.faint }}>Siempre te pregunta antes de publicar, subir a GitHub, borrar fuera del proyecto o instalar programas en Windows.</p>
-                  </>
-                )}
-              </MenuChip>
-            </>
-          ) : footer}
-          <div style={{ flex: "none", marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
+        {/* One row at any width, as in OpenClaw and T3 Code: density follows the box (a wide side
+            panel narrows it too). First the chips keep only their icon, then effort and access move
+            into «…», then «Construir / Plan» as well; attach, context and send never move. */}
+        <div style={{ display: "flex", flexWrap: "nowrap", alignItems: "center", gap: "4px", minWidth: 0 }}>
+          <div style={{ flex: "1 1 auto", minWidth: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+            {onMode ? <span className={task ? "code-inline-mode" : undefined} style={{ flex: "none" }}><Seg label="Modo" value={mode} onChange={onMode} options={[["build", "Construir"], ["plan", "Plan"]]} /></span> : null}
+            {task ? (
+              <>
+                <MenuChip title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + modelLabel(models, task.model)} label={<span className="code-model-label">{modelLabel(models, task.model)}</span>}>
+                  {(close) => models.map((m) => <MenuItem key={m.id} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
+                </MenuChip>
+                <MenuChip className="code-inline-extra" title="Esfuerzo" icon={<Gauge size={14} strokeWidth={2} aria-hidden="true" />} label={EFFORT_LABEL[task.effort] || task.effort} width={220}>
+                  {(close) => <EffortItems task={task} onChange={onChange} close={close} />}
+                </MenuChip>
+                <MenuChip className="code-inline-extra" title="Qué puede hacer Bruno" icon={<ShieldCheck size={14} strokeWidth={2} aria-hidden="true" />} label={ACCESS_INFO[task.access]?.label || "Su copia"} width={360}>
+                  {(close) => <AccessItems task={task} onChange={onChange} close={close} />}
+                </MenuChip>
+                <MenuChip className="code-more" title="Más opciones" icon={<Ellipsis size={17} strokeWidth={2.2} aria-hidden="true" />} label="" chevron={false} width={340}>
+                  {(close) => (
+                    <>
+                      {onMode ? (
+                        <div className="code-more-mode">
+                          <MenuHeading>Modo</MenuHeading>
+                          <MenuItem title="Construir" text="Bruno hace los cambios." on={mode === "build"} onClick={() => { onMode("build"); close(); }} />
+                          <MenuItem title="Plan" text="Primero un plan; nada cambia hasta «Implementar»." on={mode === "plan"} onClick={() => { onMode("plan"); close(); }} />
+                        </div>
+                      ) : null}
+                      <MenuHeading>{"Esfuerzo · " + (EFFORT_LABEL[task.effort] || task.effort)}</MenuHeading>
+                      <EffortItems task={task} onChange={onChange} close={close} />
+                      <MenuHeading>{"Qué puede hacer Bruno · " + (ACCESS_INFO[task.access]?.label || "Su copia")}</MenuHeading>
+                      <AccessItems task={task} onChange={onChange} close={close} />
+                    </>
+                  )}
+                </MenuChip>
+              </>
+            ) : footer}
+          </div>
+          <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px" }}>
             {extras.clip}
             {task?.usage?.used ? <ContextRing used={task.usage.used} max={task.usage.window || 200000} disabled={running} onCompact={onCommand ? () => onCommand("compactar") : null} /> : null}
             {running ? (
@@ -105,6 +120,20 @@ export default function Composer({ task = null, models = [], busy = false, runni
     </form>
   );
 }
+
+// The same choices inline and inside «…».
+function EffortItems({ task, onChange, close }) {
+  return Object.entries(EFFORT_LABEL).map(([id, label]) => <MenuItem key={id} title={label} on={task.effort === id} onClick={() => { onChange({ effort: id }); close(); }} />);
+}
+function AccessItems({ task, onChange, close }) {
+  return (
+    <>
+      {Object.entries(ACCESS_INFO).map(([id, a]) => <MenuItem key={id} title={a.title} text={a.text} on={task.access === id} onClick={() => { onChange({ access: id }); close(); }} />)}
+      <p style={{ margin: "6px 12px 6px", fontSize: "12px", lineHeight: 1.5, color: C.faint }}>Siempre te pregunta antes de publicar, subir a GitHub, borrar fuera del proyecto o instalar programas en Windows.</p>
+    </>
+  );
+}
+const MenuHeading = ({ children }) => <span style={{ display: "block", padding: "10px 12px 4px", font: "500 11px/1.3 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{children}</span>;
 
 export const modelLabel = (models, id) => models.find((m) => m.id === id)?.label || MODEL_LABEL[id] || id;
 export function modelNote(m) {
