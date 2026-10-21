@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Bienvenida</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#FFFFFF;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+</style>
+</helmet>
+<div style="min-height: 1000px; display: flex; flex-wrap: wrap; background: #FFFFFF">
+
+<section style="flex: 1 1 420px; background: #12131A; color: #FFFFFF; padding: clamp(28px, 5vw, 64px); display: flex; flex-direction: column; gap: 40px; position: relative; overflow: hidden">
+<svg aria-hidden="true" width="420" height="420" viewBox="0 0 32 32" style="position: absolute; right: -140px; bottom: -120px; opacity: 0.12"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<span style="font: 800 24px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.01em">Colmena</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 18px; position: relative">
+<h1 style="margin: 0; font: 800 clamp(40px, 5vw, 64px)/0.98 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; text-wrap: balance">Tu primer equipo, en un minuto.</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.5; color: #C9CCD6; max-width: 440px">Bots que trabajan contigo y entre ellos. Les hablas como a un compañero; ellos se reparten el trabajo y te preguntan lo importante.</p>
+</div>
+<ol aria-label="Pasos" style="margin: auto 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; position: relative">
+<li aria-current="step" style="display: flex; align-items: center; gap: 14px; font-size: 16px; font-weight: 600"><span style="width: 32px; height: 32px; border-radius: 50%; background: #FFC93C; color: #12131A; display: grid; place-items: center; font: 700 14px/1 'Geist Mono', monospace">1</span>¿A qué te dedicas?</li>
+<li style="display: flex; align-items: center; gap: 14px; font-size: 16px; color: #C9CCD6"><span style="width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #4A4F5C; display: grid; place-items: center; font: 700 14px/1 'Geist Mono', monospace">2</span>Conecta lo que ya usas</li>
+<li style="display: flex; align-items: center; gap: 14px; font-size: 16px; color: #C9CCD6"><span style="width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #4A4F5C; display: grid; place-items: center; font: 700 14px/1 'Geist Mono', monospace">3</span>Pide tu primer encargo</li>
+</ol>
+</section>
+
+<section style="flex: 1.4 1 560px; min-width: 0; padding: clamp(28px, 5vw, 64px); display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font: 500 13px/1 'Geist Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #555A68">Paso 1 de 3</span>
+<h2 style="margin: 0; font: 800 36px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">¿A qué te dedicas?</h2>
+<p style="margin: 0; font-size: 16px; color: #4A4F5C">Te proponemos un equipo para empezar. Puedes cambiarlo cuando quieras.</p>
+</div>
+
+<div role="radiogroup" aria-label="Tu área de trabajo" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{roles}}" as="r" hint-placeholder-count="8">
+<button type="button" role="radio" aria-checked="{{r.checked}}" onClick="{{r.pick}}" style="min-height: 48px; padding: 0 18px; border-radius: 24px; cursor: pointer; font-size: 15px; font-weight: 600; background: {{r.bg}}; color: {{r.fg}}; border: {{r.border}}">{{r.label}}</button>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap">
+<h3 style="margin: 0; font: 700 22px/1.1 'Bricolage Grotesque', sans-serif">Tu equipo inicial</h3>
+<span style="font-size: 14px; color: #4A4F5C">4 bots · coordina Atlas</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px">
+<sc-for list="{{team}}" as="b" hint-placeholder-count="4">
+<div style="display: flex; gap: 14px; padding: 16px; background: #F7F8FA; border: 1px solid #E6E8EE; border-radius: 16px">
+<span aria-hidden="true" style="width: 44px; height: 44px; flex: none; display: grid; place-items: center; font: 800 19px/1 'Bricolage Grotesque', sans-serif; background: {{b.bg}}; color: {{b.fg}}; border-radius: {{b.radius}}; clip-path: {{b.clip}}">{{b.letter}}</span>
+<div style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px">{{b.name}} <span style="font-weight: 500; color: #4A4F5C">· {{b.role}}</span></strong><span style="font-size: 14px; line-height: 1.45; color: #2B2D36">{{b.help}}</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 20px; border-top: 1px solid #E6E8EE">
+<a href="Main.dc.html" style="font-size: 15px; color: #4A4F5C; text-decoration: underline">Saltar, lo configuro luego</a>
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 24px; background: #FFC93C; border: 2px solid #12131A; border-radius: 14px; box-shadow: 5px 5px 0 #12131A; font-weight: 700; font-size: 16px">Seguir con este equipo<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { role: 'finanzas' };
+  }
+  renderVals() {
+    const B = {
+      atlas: { name: 'Atlas', role: 'Coordinador', letter: 'A', bg: '#FFC93C', fg: '#12131A', radius: '0', clip: 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)' },
+      nora: { name: 'Nora', role: 'Investigación', letter: 'N', bg: '#2F6BFF', fg: '#FFFFFF', radius: '50%', clip: 'none' },
+      tomas: { name: 'Tomás', role: 'Datos y finanzas', letter: 'T', bg: '#0B8A5F', fg: '#FFFFFF', radius: '10px', clip: 'none' },
+      iris: { name: 'Iris', role: 'Diseño', letter: 'I', bg: '#FF5CA8', fg: '#12131A', radius: '0', clip: 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)' },
+      bruno: { name: 'Bruno', role: 'Código', letter: 'B', bg: '#FF7A1A', fg: '#12131A', radius: '50% 50% 8px 8px', clip: 'none' },
+      vera: { name: 'Vera', role: 'Redacción', letter: 'V', bg: '#7B4DFF', fg: '#FFFFFF', radius: '50% 7px 50% 7px', clip: 'none' },
+      leo: { name: 'Leo', role: 'Asistente legal', letter: 'L', bg: '#0E7C86', fg: '#FFFFFF', radius: '50%', clip: 'none' }
+    };
+    const roles = [
+      { id: 'diseno', label: 'Diseño', team: [['atlas', 'Reparte el trabajo y te trae un único resultado.'], ['iris', 'Maquetas, presentaciones y piezas visuales.'], ['vera', 'Titulares y textos que acompañan al diseño.'], ['nora', 'Referencias y lo que hace la competencia.']] },
+      { id: 'programacion', label: 'Programación', team: [['atlas', 'Reparte el trabajo y vigila los plazos.'], ['bruno', 'Scripts, revisiones de código y pruebas.'], ['nora', 'Lee documentación y busca soluciones.'], ['vera', 'Documenta y explica los cambios.']] },
+      { id: 'finanzas', label: 'Finanzas y economía', team: [['atlas', 'Reparte el trabajo y te trae un único resultado.'], ['tomas', 'Hojas de cálculo, cierres y previsiones.'], ['nora', 'Informes, datos públicos y mercado.'], ['vera', 'Resúmenes claros para dirección.']] },
+      { id: 'marketing', label: 'Marketing', team: [['atlas', 'Coordina campañas de principio a fin.'], ['vera', 'Textos, correos y redes.'], ['iris', 'Piezas visuales y variantes.'], ['nora', 'Competencia y tendencias.']] },
+      { id: 'operaciones', label: 'Operaciones', team: [['atlas', 'Reparte el trabajo y vigila los plazos.'], ['tomas', 'Costes, proveedores y cuadros de mando.'], ['bruno', 'Automatiza las tareas repetidas.'], ['vera', 'Comunicaciones internas.']] },
+      { id: 'legal', label: 'Legal', team: [['atlas', 'Reparte el trabajo y vigila los plazos.'], ['leo', 'Contratos, cláusulas y renovaciones.'], ['nora', 'Normativa y documentación.'], ['vera', 'Redacta y revisa escritos.']] },
+      { id: 'personas', label: 'Personas y RR. HH.', team: [['atlas', 'Coordina procesos de principio a fin.'], ['vera', 'Ofertas de empleo y comunicaciones.'], ['nora', 'Prepara entrevistas y estudios.'], ['tomas', 'Calendarios, vacaciones y datos.']] },
+      { id: 'otra', label: 'Otra cosa', team: [['atlas', 'Reparte el trabajo entre el equipo.'], ['nora', 'Busca, lee y resume.'], ['vera', 'Escribe y corrige.'], ['tomas', 'Números y hojas de cálculo.']] }
+    ];
+    const cur = roles.find((r) => r.id === this.state.role) || roles[2];
+    return {
+      roles: roles.map((r) => {
+        const on = r.id === this.state.role;
+        return {
+          label: r.label,
+          checked: on ? 'true' : 'false',
+          bg: on ? '#12131A' : '#FFFFFF',
+          fg: on ? '#FFFFFF' : '#12131A',
+          border: on ? '2px solid #12131A' : '1.5px solid #C9CED8',
+          pick: () => this.setState({ role: r.id })
+        };
+      }),
+      team: cur.team.map(([id, help]) => Object.assign({}, B[id], { help }))
+    };
+  }
+}
+</script>
+</body>
+</html>

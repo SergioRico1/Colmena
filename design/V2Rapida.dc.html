@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Pregunta rápida</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#E9E3DA;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+.msg .msg-tools{opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.msg:hover .msg-tools,.msg:focus-within .msg-tools{opacity:1;transform:none;pointer-events:auto}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; min-height: 1000px; background: #E9E3DA; padding-bottom: 0px">
+<div style="position: relative; min-height: 1000px; overflow: hidden; background: radial-gradient(80% 70% at 20% 10%, #F6D9C2 0%, rgba(246,217,194,0) 60%), radial-gradient(70% 70% at 90% 90%, #C9D6F0 0%, rgba(201,214,240,0) 60%), #E9E3DA">
+
+<div aria-hidden="true" style="position: absolute; left: 6%; top: 90px; width: 64%; height: 640px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 30px 80px -30px rgba(18,19,26,.45); overflow: hidden; filter: saturate(.85)">
+<div style="height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: #F2F2EE; border-bottom: 1px solid rgba(18,19,26,.08)"><span style="width: 10px; height: 10px; border-radius: 50%; background: rgba(18,19,26,.15)"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: rgba(18,19,26,.15)"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: rgba(18,19,26,.15)"></span><span style="margin-left: 12px; font: 500 12px/1 'Geist', sans-serif; color: #5C606C">ventas_octubre.xlsx</span></div>
+<div style="height: 100%; background: linear-gradient(#E1F4EC, #E1F4EC) 0 0 / 100% 28px no-repeat, repeating-linear-gradient(90deg, transparent 0 119px, rgba(18,19,26,.08) 119px 120px), repeating-linear-gradient(180deg, #FFFFFF 0 27px, rgba(18,19,26,.06) 27px 28px)"></div>
+</div>
+
+<div style="position: absolute; left: 50%; top: 38px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(18,19,26,.72); color: #FFFFFF; font-size: 13px; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px)">Desde cualquier app<kbd style="padding: 3px 7px; border-radius: 6px; background: rgba(255,255,255,.16); font: 500 12px/1 'Geist Mono', monospace">Ctrl</kbd>+<kbd style="padding: 3px 7px; border-radius: 6px; background: rgba(255,255,255,.16); font: 500 12px/1 'Geist Mono', monospace">Espacio</kbd></div>
+
+<section role="dialog" aria-labelledby="qa-t" style="position: absolute; left: 50%; top: 150px; transform: translateX(-50%); width: min(660px, calc(100% - 32px)); border-radius: 28px; background: rgba(255,255,255,.93); -webkit-backdrop-filter: blur(30px) saturate(1.6); backdrop-filter: blur(30px) saturate(1.6); box-shadow: 0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06); overflow: hidden; animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+
+<div style="display: flex; align-items: center; gap: 10px; padding: 16px 18px 0">
+<img src="colmena-icon-128.png" alt="" width="24" height="24" style="display: block; width: 24px; height: 24px">
+<h2 id="qa-t" style="flex: 1; margin: 0; font-size: 14px; font-weight: 600">Pregunta rápida</h2>
+<span style="font-size: 12px; color: #6B6F7A">Esc para cerrar</span>
+</div>
+
+<sc-if value="{{writing}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 12px 18px 16px">
+<label style="display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pídele algo a tu equipo</span><textarea rows="2" value="{{text}}" onChange="{{textChange}}" placeholder="Pídele algo a tu equipo…" style="flex: 1; resize: none; padding: 6px 2px; border: 0; outline: none; background: transparent; font-size: 21px; line-height: 1.4; letter-spacing: -0.01em"></textarea></label>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{ctx}}" as="c" hint-placeholder-count="1"><span style="display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 6px 0 8px; border-radius: 12px; background: #F2F2EE; font-size: 13px; animation: pop .3s ease-out"><span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(#E1F4EC, #E1F4EC) 0 0 / 100% 6px no-repeat, repeating-linear-gradient(90deg, #FFFFFF 0 6px, rgba(11,138,95,.25) 6px 7px)"></span><strong style="font-weight: 600">{{c.label}}</strong><button type="button" onClick="{{c.remove}}" aria-label="Quitar" style="width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #6B6F7A"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span></sc-for>
+<button type="button" aria-expanded="{{addExp}}" onClick="{{toggleAdd}}" style="display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border: 0; border-radius: 12px; background: transparent; box-shadow: inset 0 0 0 1px rgba(18,19,26,.12); cursor: pointer; font-size: 13px; font-weight: 500"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Añadir contexto</button>
+</div>
+<sc-if value="{{addOpen}}" hint-placeholder-val="{{ false }}">
+<div role="menu" aria-label="Añadir contexto" style="display: flex; flex-direction: column; gap: 2px; padding: 6px; border-radius: 18px; background: #FFFFFF; box-shadow: 0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06); animation: rise .2s ease-out">
+<sc-for list="{{addOpts}}" as="o" hint-placeholder-count="3"><button type="button" role="menuitem" onClick="{{o.pick}}" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 12px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-align: left"><span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: #F2F2EE; font-size: 14px">{{o.glyph}}</span><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px; font-weight: 600">{{o.label}}</strong><span style="font-size: 12px; color: #6B6F7A">{{o.desc}}</span></span></button></sc-for>
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid rgba(18,19,26,.06)">
+<span style="font-size: 13px; color: #6B6F7A">Para</span>
+<div role="radiogroup" aria-label="Para quién" style="display: flex; flex-wrap: wrap; gap: 4px">
+<sc-for list="{{to}}" as="t" hint-placeholder-count="4"><button type="button" role="radio" aria-checked="{{t.on}}" onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px 0 9px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{t.bg}}; color: {{t.fg}}"><span aria-hidden="true" style="width: 14px; height: 14px; background: {{t.fill}}; clip-path: {{t.clip}}; border-radius: {{t.radius}}"></span>{{t.label}}</button></sc-for>
+</div>
+<button type="button" onClick="{{send}}" aria-label="Enviar" style="margin-left: auto; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; transition: background .2s ease; background: {{sendBg}}; color: #FFFFFF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+</div>
+<span style="font-size: 12px; color: #8A8D96">Intro envía · Ctrl+Intro envía y abre Colmena</span>
+</div>
+<div style="padding: 10px 10px 12px; background: rgba(18,19,26,.03); border-top: 1px solid rgba(18,19,26,.05)">
+<span style="display: block; padding: 4px 10px 6px; font-size: 12px; font-weight: 500; color: #6B6F7A">Seguir una conversación reciente</span>
+<sc-for list="{{recent}}" as="r" hint-placeholder-count="3"><a href="{{r.href}}" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 10px; border-radius: 12px"><span aria-hidden="true" style="width: 18px; height: 18px; display: grid; place-items: center; font: 600 12px/1 'Geist', sans-serif; color: #5C606C; background: {{r.fill}}; clip-path: {{r.clip}}; border-radius: {{r.radius}}">{{r.glyph}}</span><span style="flex: 1; font-size: 14px">{{r.label}}</span><span style="font-size: 12px; color: #8A8D96">{{r.when}}</span></a></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{sent}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 18px 22px 22px; animation: fade .3s ease-out">
+<div style="display: flex; align-items: center; gap: 14px"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 3px 8px #FFC93C88); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 34px; height: 34px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span><span style="display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 16px; font-weight: 600">Atlas está repartiendo el trabajo…</strong><span style="font-size: 14px; color: #5C606C">Sigue trabajando; puedes cerrar esto, te avisará.</span></span></div>
+<p style="margin: 0; padding: 14px 16px; border-radius: 16px; background: #F2F2EE; font-size: 15px; line-height: 1.5">{{sentText}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><a href="V2Sala.dc.html" style="display: flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14px; font-weight: 600">Abrir en Colmena</a><button type="button" onClick="{{again}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">Nueva pregunta</button></div>
+</div>
+</sc-if>
+</section>
+
+<sc-if value="{{toast}}" hint-placeholder-val="{{ true }}">
+<div role="status" style="position: absolute; right: 28px; bottom: 28px; width: min(380px, calc(100% - 56px)); display: flex; gap: 14px; padding: 16px; border-radius: 20px; background: rgba(250,250,248,.94); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); box-shadow: 0 30px 60px -24px rgba(18,19,26,.45), 0 0 0 1px rgba(18,19,26,.06); animation: rise .5s cubic-bezier(.2,.8,.2,1)">
+<img src="colmena-icon-128.png" alt="" width="36" height="36" style="display: block; flex: none; width: 36px; height: 36px">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="display: flex; justify-content: space-between; font-size: 12px; color: #6B6F7A"><span>Colmena</span><span>ahora</span></span>
+<strong style="font-size: 14px; font-weight: 600">Vera te necesita</strong>
+<span style="font-size: 13px; line-height: 1.45; color: #3D404A">El resumen para el comité está listo. ¿Se lo paso a Marta?</span>
+<div style="display: flex; gap: 6px; padding-top: 6px"><a href="V2Revisar.dc.html" style="display: flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; background: rgba(18,19,26,.07); font-size: 13px; font-weight: 600">Ver</a><button type="button" onClick="{{okToast}}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFC93C; cursor: pointer; font-size: 13px; font-weight: 600">Sí, pásaselo</button></div>
+</div>
+<button type="button" onClick="{{closeToast}}" aria-label="Cerrar aviso" style="width: 26px; height: 26px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #6B6F7A"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</div>
+</sc-if>
+<sc-if value="{{toastDone}}" hint-placeholder-val="{{ false }}"><div role="status" style="position: absolute; right: 28px; bottom: 28px; padding: 14px 18px; border-radius: 16px; background: rgba(250,250,248,.94); box-shadow: 0 20px 40px -20px rgba(18,19,26,.4); font-size: 14px; color: #0B6B4A; animation: fade .3s ease-out">Hecho. Vera se lo ha pasado a Marta.</div></sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["escribir","enviado"],"default":"escribir"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: props.paso === 'enviado' ? 'sent' : 'write', text: 'Compara estas ventas con octubre del año pasado y dime qué ha cambiado', ctx: ['Captura de Excel · ventas_octubre.xlsx'], add: false, to: 'equipo', toast: 'show' };
+  }
+  componentDidUpdate(prev) { if (prev.paso !== this.props.paso) this.setState({ step: this.props.paso === 'enviado' ? 'sent' : 'write' }); }
+  renderVals() {
+    const s = this.state;
+    const F = c => `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${c}`;
+    const TO = [
+      ['equipo', 'Equipo · coordina Atlas', '#FFC93C', 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)', '0'],
+      ['tomas', 'Tomás', '#0B8A5F', 'none', '24%'],
+      ['vera', 'Vera', '#7B4DFF', 'none', '50% 12% 50% 12%'],
+      ['nora', 'Nora', '#2F6BFF', 'none', '50%']
+    ];
+    const cur = TO.find(t => t[0] === s.to);
+    return {
+      writing: s.step === 'write', sent: s.step === 'sent',
+      text: s.text, textChange: e => this.setState({ text: e.target.value }),
+      ctx: s.ctx.map((label, i) => ({ label, remove: () => this.setState({ ctx: s.ctx.filter((_, j) => j !== i) }) })),
+      addOpen: s.add, addExp: String(s.add), toggleAdd: () => this.setState({ add: !s.add }),
+      addOpts: [['▢', 'Captura de una zona de la pantalla', 'Arrastra para elegirla'], ['▤', 'La ventana en la que estabas', 'ventas_octubre.xlsx'], ['＋', 'Adjuntar archivo…', 'PDF, Word, Excel, imágenes']].map(([glyph, label, desc]) => ({ glyph, label, desc, pick: () => this.setState({ add: false, ctx: label.startsWith('Adjuntar') ? [...s.ctx, 'presupuesto_2027.pdf'] : (label.startsWith('Captura') ? [...s.ctx, 'Zona de la pantalla'] : s.ctx) }) })),
+      to: TO.map(([id, label, c, clip, r]) => { const on = s.to === id; return { label, on: String(on), bg: on ? '#12131A' : 'rgba(18,19,26,.05)', fg: on ? '#FFFFFF' : '#12131A', fill: F(c), clip, radius: r, pick: () => this.setState({ to: id }) }; }),
+      sendBg: s.text.trim() ? '#12131A' : '#C9CBD1',
+      send: () => { if (s.text.trim()) this.setState({ step: 'sent', add: false }); },
+      sentText: `«${s.text}» · para ${cur[1]}${s.ctx.length ? ` · con ${s.ctx.length} ${s.ctx.length === 1 ? 'adjunto' : 'adjuntos'}` : ''}`,
+      again: () => this.setState({ step: 'write', text: '', ctx: [] }),
+      recent: [
+        ['#', 'informe-q3', '09:02', 'V2Sala.dc.html', 'transparent', 'none', '0'],
+        ['', 'Vera · Resumen para el comité', 'ahora', 'V2Conversacion.dc.html', F('#7B4DFF'), 'none', '50% 12% 50% 12%'],
+        ['', 'Tomás · Hoja de devoluciones', 'ayer', 'V2Conversacion.dc.html', F('#0B8A5F'), 'none', '24%']
+      ].map(([glyph, label, when, href, fill, clip, radius]) => ({ glyph, label, when, href, fill, clip, radius })),
+      toast: s.toast === 'show', toastDone: s.toast === 'done',
+      okToast: () => this.setState({ toast: 'done' }),
+      closeToast: () => this.setState({ toast: 'hidden' })
+    };
+  }
+}
+</script>
+</body>
+</html>

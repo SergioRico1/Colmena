@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Conversación</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+.msg .msg-tools{opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.msg:hover .msg-tools,.msg:focus-within .msg-tools{opacity:1;transform:none;pointer-events:auto}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; height: 100vh; min-height: 560px; overflow: hidden; background: #F5F5F2">
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100vh; min-height: 560px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<a href="V2Hoy.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Hoy</span><span aria-label="2 cosas te esperan" style="position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #FFC93C; color: #12131A; font: 600 10px/18px 'Geist', sans-serif; text-align: center; box-shadow: 0 0 0 2px #EBEBE6">2</span></a>
+<a href="V2Conversacion.dc.html" aria-current="page" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 600; text-align: center; letter-spacing: 0.01em">Conversa-<br>ciones</span><span aria-label="Te han mencionado" style="position: absolute; top: 6px; right: 16px; width: 9px; height: 9px; border-radius: 50%; background: #12131A; box-shadow: 0 0 0 2px #EBEBE6"></span></a>
+<a href="V2Codigo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Código</span></a>
+<a href="V2Colmena.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Colmena</span></a>
+<a href="V2Rutinas.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"></path><path d="M19.8 4.5v3.6h-3.6"></path><path d="M12 8.2V12l2.6 1.6"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Rutinas</span></a>
+<a href="V2Archivo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M3 4h18v3.5H3z"></path><path d="M9.5 11.5h5"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Archivo</span></a>
+<span style="flex: 1"></span>
+<a href="V2Hoy.dc.html#pedir" title="Pedir algo (⌘K)" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; color: #4A4D57"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="font-size: 11px; font-weight: 500">Pedir</span><kbd style="font: 500 10px/1 'Geist Mono', monospace; color: #6B6F7A">⌘K</kbd></a>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 11px/1 'Geist', sans-serif">TÚ</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+<div style="flex: 1; min-width: 0; height: 100%">
+<div style="display: flex; height: 100%; align-items: stretch">
+<aside data-convlist aria-label="Conversaciones" style="flex: none; width: 320px; height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 28px 14px 28px 20px; display: flex; flex-direction: column; gap: 14px; border-right: 1px solid rgba(18,19,26,.07)">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 8px"><h2 style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Conversaciones</h2><button type="button" onClick="{{openNew}}" title="Nueva conversación o sala (⌘N)" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 11px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nueva</button></div>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; margin: 0 4px; padding: 0 12px; background: rgba(18,19,26,.045); border-radius: 12px; color: #5C606C"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4-4"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar conversaciones</span><input type="search" placeholder="Buscar" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"></label>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<a href="V2Sala.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: transparent"><span aria-hidden="true" style="width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 12px; background: #E9E9E4; font: 600 16px/1 'Geist', sans-serif; color: #3D404A">#</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px"><strong style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">informe-q3</strong><span style="font-size: 12px; color: #6B6F7A">09:02</span></span><span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Marta: ¿puedes revisar la diapositiva 4?</span><span aria-label="Te mencionan" style="width: 8px; height: 8px; border-radius: 50%; background: #FFC93C; box-shadow: 0 0 0 3px rgba(255,201,60,.25)"></span></span></span></a>
+<a href="V2Conversacion.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)"><span style="width: 38px; height: 38px; flex: none; display: grid; place-items: center"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 3px 7px #7B4DFF88); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 28px; height: 28px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #7B4DFF; clip-path: none; border-radius: 50% 12% 50% 12%"></span></span></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px"><strong style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Vera</strong><span style="font-size: 12px; color: #6B6F7A">ahora</span></span><span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Escribiendo el resumen para el comité…</span></span></span></a>
+<a href="V2Sala.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: transparent"><span aria-hidden="true" style="width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 12px; background: #E9E9E4; font: 600 16px/1 'Geist', sans-serif; color: #3D404A">#</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px"><strong style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">campaña-primavera</strong><span style="font-size: 12px; color: #6B6F7A">08:15</span></span><span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Iris: tres propuestas de portada</span></span></span></a>
+<a href="V2Conversacion.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: transparent"><span style="width: 38px; height: 38px; flex: none; display: grid; place-items: center"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 28px; height: 28px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #0B8A5F; clip-path: none; border-radius: 24%"></span></span></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px"><strong style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Tomás</strong><span style="font-size: 12px; color: #6B6F7A">ayer</span></span><span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Hoja de devoluciones actualizada</span></span></span></a>
+<a href="V2Sala.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: transparent"><span aria-hidden="true" style="width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; color: #12131A; font: 600 13px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px"><strong style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Marta Ruiz</strong><span style="font-size: 12px; color: #6B6F7A">ayer</span></span><span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Perfecto, lo vemos el miércoles</span></span></span></a>
+<a href="V2Conversacion.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: transparent"><span style="width: 38px; height: 38px; flex: none; display: grid; place-items: center"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 28px; height: 28px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px"><strong style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Atlas</strong><span style="font-size: 12px; color: #6B6F7A">lun</span></span><span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Plan de la semana</span></span></span></a>
+<a href="V2Sala.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 16px; background: transparent"><span aria-hidden="true" style="width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 12px; background: #E9E9E4; font: 600 16px/1 'Geist', sans-serif; color: #3D404A">#</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px"><strong style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">facturación</strong><span style="font-size: 12px; color: #6B6F7A">lun</span></span><span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Bruno: 12 facturas registradas</span></span></span></a>
+</div></aside>
+
+<section aria-label="Conversación con Vera" style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column">
+
+<header style="flex: none; background: #F5F5F2">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 22px clamp(20px, 4vw, 44px) 18px">
+<span aria-hidden="true" style="display: inline-grid; transition: filter .4s ease; animation: {{aura.anim}}; filter: {{aura.filter}}"><span style="display: block; width: 44px; height: 44px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #7B4DFF; border-radius: 50% 12% 50% 12%"></span></span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font: 600 24px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.025em">Vera</h1>
+<span role="status" style="font-size: 14px; color: {{aura.text}}; transition: color .3s ease">{{label}}</span>
+</div>
+<a href="V2Colmena.dc.html" style="display: flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: rgba(18,19,26,.06); font-size: 14px; font-weight: 500">Sobre Vera</a>
+<a href="V2Sala.dc.html" style="display: flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: rgba(18,19,26,.06); font-size: 14px; font-weight: 500">Llevar a una sala</a>
+</div>
+<div aria-hidden="true" style="position: relative; height: 2px; overflow: hidden; background: rgba(18,19,26,.06)"><span style="position: absolute; inset: 0; transition: background .4s ease; background: {{aura.line}}"></span><sc-if value="{{working}}" hint-placeholder-val="{{ true }}"><span style="position: absolute; top: 0; bottom: 0; width: 35%; background: linear-gradient(90deg, transparent, #7B4DFF, transparent); animation: sweep 1.8s ease-in-out infinite"></span></sc-if></div>
+</header>
+
+<div style="flex: none; display: flex; justify-content: flex-end; padding: 12px clamp(20px, 4vw, 44px) 0">
+<div role="group" aria-label="Demostración de estados" style="display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 4px; background: #FFFFFF; border-radius: 999px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 8px 20px -12px rgba(18,19,26,.2)">
+<span style="padding: 0 10px 0 12px; font: 500 11px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Demo</span>
+<sc-for list="{{demo}}" as="d" hint-placeholder-count="7"><button type="button" aria-pressed="{{d.on}}" onClick="{{d.pick}}" style="height: 30px; padding: 0 11px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 500; background: {{d.bg}}; color: {{d.fg}}">{{d.label}}</button></sc-for>
+<button type="button" aria-pressed="{{autoOn}}" onClick="{{toggleAuto}}" style="height: 30px; padding: 0 12px; margin-left: 4px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; background: rgba(18,19,26,.06)">{{autoLabel}}</button>
+</div>
+</div>
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column-reverse">
+<div style="width: 100%; max-width: 820px; margin: 0 auto; padding: 22px clamp(20px, 4vw, 44px) 28px; display: flex; flex-direction: column; gap: 26px">
+
+<span style="align-self: center; font-size: 13px; color: #6B6F7A">Hoy · 09:24</span>
+
+<div style="align-self: flex-end; max-width: 78%; padding: 16px 20px; background: #E8E8E2; border-radius: 24px 24px 8px 24px; font-size: 16px; line-height: 1.55">Vera, prepara un resumen del informe Q3 para el comité. Corto, con las tres cifras clave, y una imagen para la portada.</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-size: 17px; line-height: 1.65; color: #1E2029">Claro. Leo el informe y la hoja de Tomás, calculo las cifras, te escribo un borrador y preparo la imagen. Antes de enviar nada, te pregunto.</p>
+<button type="button" aria-pressed="{{listen.on}}" onClick="{{listen.toggle}}" style="align-self: flex-start; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background .2s ease; background: {{listen.bg}}; color: {{listen.fg}}"><span aria-hidden="true" style="display: flex; align-items: center; gap: 2px; height: 14px"><sc-for list="{{listen.bars}}" as="v" hint-placeholder-count="4"><span style="width: 3px; border-radius: 2px; background: currentColor; transition: height .12s linear; height: {{v.h}}"></span></sc-for></span>{{listen.label}}</button>
+</div>
+
+<sc-if value="{{hasDone}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: #5C606C">
+<sc-for list="{{doneSteps}}" as="d" hint-placeholder-count="2"><span style="display: flex; align-items: center; gap: 6px; animation: fade .4s ease-out"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B8A5F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>{{d.label}}</span></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{is.pensando}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 14px; animation: fade .4s ease-out">
+<span style="align-self: flex-start; font-size: 17px; font-weight: 500; background: linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 2.2s linear infinite">Pensando cómo ordenarlo…</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{thoughts}}" as="th" hint-placeholder-count="2"><span style="padding: 9px 14px; border-radius: 999px; background: #FFFFFF; font-size: 14px; color: #3D404A; animation: rise .5s ease-out">{{th.label}}</span></sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.leyendo}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; padding: 8px 20px; background: #FFFFFF; border-radius: 24px; animation: fade .4s ease-out">
+<sc-for list="{{docs}}" as="doc" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 14px; min-height: 58px; border-bottom: 1px solid rgba(18,19,26,.06); opacity: {{doc.opacity}}; transition: opacity .4s ease">
+<span aria-hidden="true" style="width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; font: 600 9px/1 'Geist Mono', monospace; background: {{doc.bg}}; color: {{doc.fg}}">{{doc.ext}}</span>
+<span style="flex: 1; font-size: 15px">{{doc.name}}</span>
+<sc-if value="{{doc.reading}}" hint-placeholder-val="{{ false }}"><span aria-label="Leyendo" style="width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(123,77,255,.25); border-top-color: #7B4DFF; animation: spin .8s linear infinite"></span></sc-if>
+<sc-if value="{{doc.read}}" hint-placeholder-val="{{ true }}"><span style="font-size: 13px; color: #0B6B4A; animation: fade .3s ease-out">{{doc.note}}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{is.programando}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px; animation: fade .4s ease-out">
+<span style="font-size: 14px; color: #5C606C">Calculando con la hoja de Tomás</span>
+<div style="padding: 20px 22px; background: #12131A; border-radius: 22px; display: flex; flex-direction: column; gap: 6px; font: 400 14px/1.6 'Geist Mono', monospace; color: #E6E7EC; min-height: 230px">
+<sc-for list="{{code}}" as="c" hint-placeholder-count="5"><span style="white-space: pre-wrap; animation: fade .3s ease-out; color: {{c.color}}">{{c.text}}</span></sc-for>
+<span aria-hidden="true" style="width: 8px; height: 17px; background: #FFC93C; animation: caret 1s steps(1) infinite"></span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.escribiendo}}" hint-placeholder-val="{{ false }}">
+<article style="padding: 28px 30px; background: #FFFFFF; border-radius: 26px; display: flex; flex-direction: column; gap: 14px; animation: fade .4s ease-out">
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Borrador</span>
+<p style="margin: 0; font-size: 17px; line-height: 1.7; white-space: pre-wrap; color: #1E2029">{{typed}}<span aria-hidden="true" style="display: inline-block; width: 2px; height: 1.1em; margin-left: 1px; vertical-align: text-bottom; background: #7B4DFF; animation: caret 1s steps(1) infinite"></span></p>
+</article>
+</sc-if>
+
+<sc-if value="{{is.imagen}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px; animation: fade .4s ease-out">
+<div style="position: relative; height: 300px; border-radius: 26px; overflow: hidden; background: #EDE8FF">
+<div aria-hidden="true" style="position: absolute; inset: 0; animation: develop 4s ease-out both; background: radial-gradient(circle at 72% 30%, #FFC93C 0 13%, rgba(255,201,60,0) 13.5%), radial-gradient(120% 70% at 20% 110%, #7B4DFF 0 48%, rgba(123,77,255,0) 48.5%), radial-gradient(120% 80% at 90% 120%, #2F6BFF 0 45%, rgba(47,107,255,0) 45.5%), linear-gradient(180deg, #FFF4D1, #F5E9FF)"></div>
+<span style="position: absolute; left: 20px; bottom: 18px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.8); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: 13px; font-weight: 500">Revelando · {{imgPct}} %</span>
+</div>
+<span style="font-size: 14px; color: #5C606C">Portada sobria, con la paleta de la empresa. Sin texto en la imagen.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{is.espera}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 26px; background: #FFFFFF; border-radius: 28px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6); animation: rise .4s ease-out">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #8A5A00"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #FFC93C; animation: halo 1.8s ease-out infinite"></span>Te necesita</span>
+<p style="margin: 0; font: 600 22px/1.25 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">El resumen y la portada están listos. ¿Se los paso a Marta para que los revise?</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px"><button type="button" onClick="{{yes}}" style="height: 50px; padding: 0 24px; border: 0; border-radius: 999px; background: #FFC93C; cursor: pointer; font-size: 15px; font-weight: 600">Sí, pásaselo</button><button type="button" onClick="{{yes}}" style="height: 50px; padding: 0 22px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 15px; font-weight: 600">Antes quiero verlo</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.hecho}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px; animation: rise .5s ease-out">
+<article style="display: grid; grid-template-columns: minmax(0, 1fr) 180px; background: #FFFFFF; border-radius: 28px; overflow: hidden; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)">
+<div style="padding: 26px 28px; display: flex; flex-direction: column; gap: 14px">
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Documento · 1 página</span>
+<strong style="font: 600 24px/1.15 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Resumen Q3 para el comité</strong>
+<div style="display: flex; flex-wrap: wrap; gap: 22px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font: 600 28px/1 'Bricolage Grotesque', sans-serif">−2,4 %</span><span style="font-size: 13px; color: #6B6F7A">devoluciones</span></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font: 600 28px/1 'Bricolage Grotesque', sans-serif">31 %</span><span style="font-size: 13px; color: #6B6F7A">margen</span></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font: 600 28px/1 'Bricolage Grotesque', sans-serif">+6 %</span><span style="font-size: 13px; color: #6B6F7A">ventas</span></span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px"><a href="V2Archivo.dc.html" style="display: flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14px; font-weight: 600">Abrir</a><a href="V2Sala.dc.html" style="display: flex; align-items: center; height: 42px; padding: 0 18px; border-radius: 999px; background: rgba(18,19,26,.06); font-size: 14px; font-weight: 600">Compartir en #informe-q3</a></div>
+</div>
+<div aria-hidden="true" style="background: radial-gradient(circle at 72% 30%, #FFC93C 0 13%, rgba(255,201,60,0) 13.5%), radial-gradient(120% 70% at 20% 110%, #7B4DFF 0 48%, rgba(123,77,255,0) 48.5%), radial-gradient(120% 80% at 90% 120%, #2F6BFF 0 45%, rgba(47,107,255,0) 45.5%), linear-gradient(180deg, #FFF4D1, #F5E9FF)"></div>
+</article>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #0B6B4A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Marta lo tiene. Terminado en 2 min 14 s.</span>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<form style="flex: none; width: 100%; max-width: 860px; margin: 0 auto; padding: 6px clamp(20px, 4vw, 44px) 22px">
+<sc-if value="{{voice.err}}" hint-placeholder-val="{{ false }}"><p role="alert" style="margin: 0 0 10px 18px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #8E2A1F; animation: rise .25s ease-out">No puedo usar el micrófono. Revisa el permiso del micrófono en Windows.<button type="button" onClick="{{voice.dismiss}}" style="height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 12px; font-weight: 600; color: #12131A">Entendido</button></p></sc-if>
+<div style="display: flex; align-items: center; gap: 8px; min-height: 62px; padding: 8px 8px 8px 18px; border-radius: 999px; transition: background .3s ease, box-shadow .3s ease; background: {{voice.capBg}}; box-shadow: {{voice.capSh}}">
+<sc-if value="{{voice.idle}}" hint-placeholder-val="{{ true }}">
+<div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px">
+<label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Responder a Vera</span><input type="text" value="{{voice.text}}" onChange="{{voice.textChange}}" placeholder="Responde a Vera…" style="flex: 1; min-width: 0; height: 46px; padding: 0 6px; border: 0; outline: none; background: transparent; font-size: 16px"></label>
+<sc-if value="{{working}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{stop}}" aria-label="Detener" style="width: 46px; height: 46px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.08); cursor: pointer"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; background: #12131A"></span></button></sc-if>
+<button type="button" onClick="{{voice.start}}" aria-label="Dictar con el micrófono" title="Dictar (hasta 2 minutos)" style="width: 46px; height: 46px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.05); cursor: pointer; color: #3D404A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"></path></svg></button>
+<button type="submit" aria-label="Enviar" style="width: 46px; height: 46px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+</div>
+</sc-if>
+<sc-if value="{{voice.rec}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; animation: fade .2s ease-out">
+<span aria-hidden="true" style="width: 10px; height: 10px; flex: none; border-radius: 50%; background: #FF5A4E; animation: halo 1.4s ease-out infinite"></span>
+<span aria-hidden="true" style="flex: 1; min-width: 0; height: 32px; display: flex; align-items: center; gap: 3px; overflow: hidden"><sc-for list="{{voice.bars}}" as="v" hint-placeholder-count="40"><span style="width: 3px; flex: none; border-radius: 2px; background: #FFFFFF; transition: height .1s linear; height: {{v.h}}; opacity: {{v.o}}"></span></sc-for></span>
+<span style="font: 500 14px/1 'Geist Mono', monospace; color: #FFFFFF">{{voice.time}}</span>
+<span style="font-size: 13px; color: #C9CBD3">Escuchando… pulsa para terminar</span>
+<button type="button" onClick="{{voice.finish}}" aria-label="Dejar de dictar" style="width: 46px; height: 46px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: #FFFFFF; cursor: pointer"><span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 4px; background: #12131A"></span></button>
+</div>
+</sc-if>
+<sc-if value="{{voice.trans}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="flex: 1; min-width: 0; height: 46px; display: flex; align-items: center; gap: 12px; animation: fade .2s ease-out"><span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(18,19,26,.15); border-top-color: #12131A; animation: spin .8s linear infinite"></span><span style="font-size: 16px; font-weight: 500; background: linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 2s linear infinite">Pasando tu voz a texto…</span></div>
+</sc-if>
+</div>
+</form>
+
+</section>
+</div>
+<sc-if value="{{nc.open}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; z-index: 70; display: flex; justify-content: center; align-items: flex-start; padding: 64px 20px 24px; background: rgba(18,19,26,.28); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: fade .2s ease-out">
+<div role="dialog" aria-modal="true" aria-labelledby="nc-t" style="width: min(620px, 100%); max-height: 100%; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 32px; box-shadow: 0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06); animation: sheet .4s cubic-bezier(.2,.8,.2,1)">
+
+<div style="flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 24px 6px 28px">
+<h2 id="nc-t" style="margin: 0; font: 600 30px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.035em">{{nc.title}}</h2>
+<button type="button" onClick="{{nc.close}}" aria-label="Cerrar" style="width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.06); cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</div>
+
+<div style="flex: none; padding: 14px 24px 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 56px; padding: 7px 8px 7px 16px; border-radius: 22px; background: #F4F4F0">
+<label for="nc-q" style="font-size: 15px; color: #6B6F7A; margin-right: 4px">Con</label>
+<sc-for list="{{nc.chips}}" as="c" hint-placeholder-count="1">
+<span style="display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 4px 0 5px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.08); font-size: 14px; font-weight: 600; animation: pop .3s ease-out">
+<span aria-hidden="true" style="width: 28px; height: 28px; display: grid; place-items: center; font: 600 9px/1 'Geist', sans-serif; background: {{c.bg}}; color: {{c.fg}}; clip-path: {{c.clip}}; border-radius: {{c.radius}}; border: {{c.border}}">{{c.ini}}</span>{{c.name}}
+<button type="button" onClick="{{c.remove}}" aria-label="{{c.removeLabel}}" style="width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #6B6F7A"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</span>
+</sc-for>
+<input id="nc-q" type="text" value="{{nc.q}}" onChange="{{nc.qChange}}" placeholder="{{nc.ph}}" autocomplete="off" style="flex: 1 1 160px; min-width: 120px; height: 40px; border: 0; outline: none; background: transparent; font-size: 16px">
+</div>
+<p role="status" style="margin: 0 6px; font-size: 14px; line-height: 1.5; color: #5C606C">{{nc.hint}}</p>
+
+<sc-if value="{{nc.isRoom}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 4px 0 6px; animation: rise .3s ease-out">
+<label style="flex: 1 1 260px; display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 18px; border-radius: 18px; background: #F4F4F0"><span style="font-size: 17px; font-weight: 600; color: #A3A6AE">#</span><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Nombre de la sala</span><input type="text" value="{{nc.name}}" onChange="{{nc.nameChange}}" placeholder="nombre-de-la-sala" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; font-weight: 600"></label>
+<div role="radiogroup" aria-label="Quién puede encontrarla" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(18,19,26,.05)">
+<sc-for list="{{nc.privs}}" as="v" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{v.on}}" onClick="{{v.pick}}" style="height: 40px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{v.bg}}; box-shadow: {{v.sh}}">{{v.label}}</button></sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+
+<div style="flex: 1; min-height: 120px; overflow-y: auto; overscroll-behavior: contain; padding: 8px 14px 10px">
+<sc-for list="{{nc.groups}}" as="g" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column">
+<span style="padding: 14px 14px 6px; font-size: 13px; font-weight: 500; color: #6B6F7A">{{g.label}}</span>
+<sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
+<button type="button" role="option" aria-selected="{{i.on}}" onClick="{{i.toggle}}" style="display: flex; align-items: center; gap: 14px; min-height: 58px; padding: 0 14px; border: 0; border-radius: 18px; cursor: pointer; text-align: left; transition: background .2s ease; background: {{i.rowBg}}">
+<span aria-hidden="true" style="width: 34px; height: 34px; flex: none; display: grid; place-items: center; font: 600 11px/1 'Geist', sans-serif; background: {{i.bg}}; color: {{i.fg}}; clip-path: {{i.clip}}; border-radius: {{i.radius}}; filter: {{i.glow}}">{{i.ini}}</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; font-weight: 600">{{i.name}}</strong><span style="font-size: 13px; color: #6B6F7A">{{i.note}}</span></span>
+<span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; transition: all .2s ease; background: {{i.checkBg}}; box-shadow: {{i.checkRing}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{i.tick}}"><path d="m5 12 5 5 9-10"></path></svg></span>
+</button>
+</sc-for>
+</div>
+</sc-for>
+<sc-if value="{{nc.ext}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{nc.addExt}}" style="width: 100%; display: flex; align-items: center; gap: 14px; min-height: 58px; margin-top: 6px; padding: 0 14px; border: 0; border-radius: 18px; background: #F4F4F0; cursor: pointer; text-align: left">
+<span aria-hidden="true" style="width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1.5px dashed #8C8F99; font: 600 14px/1 'Geist', sans-serif">@</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; font-weight: 600">Invitar a {{nc.q}}</strong><span style="font-size: 13px; color: #6B6F7A">De fuera de la empresa · entrará como invitado</span></span>
+</button>
+</sc-if>
+<sc-if value="{{nc.empty}}" hint-placeholder-val="{{ false }}"><p style="margin: 0; padding: 24px 14px; font-size: 15px; color: #6B6F7A; text-align: center">No hay nadie con ese nombre. Si es de fuera, escribe su correo.</p></sc-if>
+</div>
+
+<div style="flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 14px 18px 18px; border-top: 1px solid rgba(18,19,26,.06)">
+<button type="button" onClick="{{nc.close}}" style="height: 50px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 15px; font-weight: 600">Cancelar</button>
+<sc-if value="{{nc.none}}" hint-placeholder-val="{{ true }}"><button type="button" aria-disabled="true" style="height: 50px; padding: 0 26px; border: 0; border-radius: 999px; background: rgba(18,19,26,.08); color: #8A8D96; font-size: 15px; font-weight: 600; cursor: not-allowed">Empezar</button></sc-if>
+<sc-if value="{{nc.goChat}}" hint-placeholder-val="{{ false }}"><a href="V2Conversacion.dc.html" style="display: flex; align-items: center; height: 50px; padding: 0 26px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600; animation: fade .2s ease-out">{{nc.cta}}</a></sc-if>
+<sc-if value="{{nc.goRoom}}" hint-placeholder-val="{{ false }}"><a href="V2Sala.dc.html" style="display: flex; align-items: center; height: 50px; padding: 0 26px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600; animation: fade .2s ease-out">{{nc.cta}}</a></sc-if>
+</div>
+
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"voz":{"editor":"enum","options":["no","escuchando","pasando a texto","sin micrófono"],"default":"no"},"estado":{"editor":"enum","options":["pensando","leyendo","programando","escribiendo","imagen","espera","hecho"],"default":"pensando"},"autoplay":{"editor":"boolean","default":true},"nueva":{"editor":"enum","options":["cerrado","uno","sala"],"default":"cerrado"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.ORDER = ['pensando', 'leyendo', 'programando', 'escribiendo', 'imagen', 'espera', 'hecho'];
+    this.state = { voice: this.vFrom(props.voz), recK: 0, said: '', playing: false, st: props.estado || 'pensando', auto: props.autoplay !== false, k: 0 };
+  }
+  vFrom(v) { return { escuchando: 'rec', 'pasando a texto': 'trans', 'sin micrófono': 'err' }[v] || 'idle'; }
+  componentDidUpdate(prev) {
+    if (prev.voz !== this.props.voz) this.setState({ voice: this.vFrom(this.props.voz), recK: this.state.vk || 0 });
+    if (prev.estado !== this.props.estado) this.setState({ st: this.props.estado || 'pensando', k: 0 });
+    if (prev.autoplay !== this.props.autoplay) this.setState({ auto: this.props.autoplay !== false });
+  }
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      const s = this.state;
+      const k = s.k + 1;
+      const dwell = s.st === 'espera' || s.st === 'hecho' ? 60 : 50;
+      if (s.auto && k > dwell) {
+        const i = this.ORDER.indexOf(s.st);
+        this.setState({ st: this.ORDER[(i + 1) % this.ORDER.length], k: 0, vk: (s.vk || 0) + 1 });
+      } else this.setState({ k, vk: (s.vk || 0) + 1 });
+    }, 100);
+  }
+  componentWillUnmount() { clearInterval(this.timer); clearTimeout(this.vt); }
+  newConvVals() {
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const G = c => `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${c}`;
+    const ALL = [
+      { id: 'atlas', bot: true, name: 'Atlas', note: 'Coordina y reparte', bg: G('#FFC93C'), clip: HEX, radius: '0', c: '#FFC93C' },
+      { id: 'vera', bot: true, name: 'Vera', note: 'Escribe y resume', bg: G('#7B4DFF'), clip: 'none', radius: '50% 12% 50% 12%', c: '#7B4DFF' },
+      { id: 'tomas', bot: true, name: 'Tomás', note: 'Datos y hojas de cálculo', bg: G('#0B8A5F'), clip: 'none', radius: '24%', c: '#0B8A5F' },
+      { id: 'iris', bot: true, name: 'Iris', note: 'Diseño y diapositivas', bg: G('#FF5CA8'), clip: DIA, radius: '0', c: '#FF5CA8' },
+      { id: 'nora', bot: true, name: 'Nora', note: 'Investiga y busca', bg: G('#2F6BFF'), clip: 'none', radius: '50%', c: '#2F6BFF' },
+      { id: 'bruno', bot: true, name: 'Bruno', note: 'Facturas y pagos', bg: G('#FF7A1A'), clip: 'none', radius: '50% 50% 14% 14%', c: '#FF7A1A' },
+      { id: 'marta', name: 'Marta Ruiz', ini: 'MR', note: 'Dirección financiera · en línea', bg: '#EFE2D3' },
+      { id: 'luis', name: 'Luis Gómez', ini: 'LG', note: 'Ventas · en línea', bg: '#DCE5EE' },
+      { id: 'ana', name: 'Ana Pérez', ini: 'AP', note: 'Marketing · vuelve a las 12:00', bg: '#E2E9D7' },
+      { id: 'carmen', name: 'Carmen Vidal', ini: 'CV', note: 'Finanzas', bg: '#E3E2F3' },
+      { id: 'raul', name: 'Raúl Ortega', ini: 'RO', note: 'Finanzas · en línea', bg: '#E8E3D8' }
+    ];
+    const init = v => v === 'uno' ? { open: true, sel: ['vera'], q: '', name: '', priv: 'abierta' }
+      : v === 'sala' ? { open: true, sel: ['marta', 'tomas', 'iris'], q: '', name: 'lanzamiento-otoño', priv: 'invitados' }
+      : { open: false, sel: [], q: '', name: '', priv: 'abierta' };
+    const n = this.state.nc && this.state.ncProp === this.props.nueva ? this.state.nc : init(this.props.nueva);
+    const set = patch => this.setState({ nc: { ...n, ...patch }, ncProp: this.props.nueva });
+    const fold = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const q = n.q.trim();
+    const ext = n.sel.filter(x => x.startsWith('@'));
+    const pick = id => {
+      const on = n.sel.includes(id);
+      const sel = on ? n.sel.filter(x => x !== id) : [...n.sel, id];
+      set({ sel, q: '' });
+    };
+    const ent = id => id.startsWith('@')
+      ? { id, name: id.slice(1).split('@')[0], ini: id.slice(1, 3).toUpperCase(), bg: '#EEEAE3', guest: true }
+      : ALL.find(e => e.id === id);
+    const chips = n.sel.map(id => {
+      const e = ent(id);
+      return { name: e.bot ? e.name : e.name.split(' ')[0], ini: e.bot ? '' : e.ini, bg: e.bg, fg: '#12131A', clip: e.bot ? e.clip : 'none', radius: e.bot ? e.radius : '50%', border: e.guest ? '1.5px dashed #8C8F99' : '0', removeLabel: 'Quitar a ' + e.name, remove: () => pick(id) };
+    });
+    const count = n.sel.length;
+    const isRoom = count >= 2;
+    const first = count ? ent(n.sel[0]) : null;
+    const humans = n.sel.filter(id => !id.startsWith('@') && !(ent(id).bot)).length + ext.length;
+    const bots = count - humans;
+    const match = e => !q || fold(e.name).includes(fold(q));
+    const item = e => {
+      const on = n.sel.includes(e.id);
+      return { name: e.name, note: e.note, ini: e.bot ? '' : e.ini, bg: e.bg, fg: '#12131A', clip: e.bot ? e.clip : 'none', radius: e.bot ? e.radius : '50%', glow: e.bot ? 'drop-shadow(0 3px 6px rgba(18,19,26,.18))' : 'none', on: String(on), rowBg: on ? 'rgba(18,19,26,.045)' : 'transparent', checkBg: on ? '#12131A' : 'transparent', checkRing: on ? 'none' : 'inset 0 0 0 1.5px rgba(18,19,26,.2)', tick: on ? '1' : '0', toggle: () => pick(e.id) };
+    };
+    const groups = [
+      { label: 'Bots', items: ALL.filter(e => e.bot && match(e)).map(item) },
+      { label: 'Personas de tu empresa', items: ALL.filter(e => !e.bot && match(e)).map(item) }
+    ].filter(g => g.items.length);
+    const isMail = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(q);
+    const autoName = () => {
+      const names = n.sel.map(id => fold(ent(id).name.split(' ')[0])).slice(0, 2);
+      return names.join('-y-');
+    };
+    let hint;
+    if (count === 0) hint = 'Elige una persona o un bot. Si añades a alguien más, se convertirá en una sala.';
+    else if (count === 1) hint = first.bot ? `Conversación privada con ${first.name}. Solo la veréis tú y ${first.name}.` : `Conversación privada con ${first.name.split(' ')[0]}. Podréis llamar a cualquier bot con @.`;
+    else hint = `Será una sala: ${humans + 1} ${humans + 1 === 1 ? 'persona' : 'personas'}${bots ? ` y ${bots} ${bots === 1 ? 'bot' : 'bots'}` : ''}. Todos veréis lo mismo.`;
+    return {
+      openNew: () => set({ open: true }),
+      nc: {
+        open: n.open,
+        close: () => set({ open: false, sel: [], q: '', name: '' }),
+        title: isRoom ? 'Nueva sala' : 'Nueva conversación',
+        chips,
+        q: n.q,
+        qChange: e => set({ q: e.target.value }),
+        ph: count ? 'Añadir a alguien más' : 'Escribe un nombre o un correo',
+        hint,
+        isRoom,
+        name: n.name || autoName(),
+        nameChange: e => set({ name: e.target.value.toLowerCase().replace(/\s+/g, '-') }),
+        privs: [['abierta', 'Abierta a la empresa'], ['invitados', 'Solo invitados']].map(([v, label]) => ({ label, on: String(n.priv === v), bg: n.priv === v ? '#FFFFFF' : 'transparent', sh: n.priv === v ? '0 1px 3px rgba(18,19,26,.15)' : 'none', pick: () => set({ priv: v }) })),
+        groups,
+        ext: isMail && !n.sel.includes('@' + q),
+        addExt: () => set({ sel: [...n.sel, '@' + q], q: '' }),
+        empty: groups.length === 0 && !isMail,
+        none: count === 0,
+        goChat: count === 1,
+        goRoom: isRoom,
+        cta: isRoom ? 'Crear sala' : (first ? `Hablar con ${first.bot ? first.name : first.name.split(' ')[0]}` : 'Empezar')
+      }
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const k = s.k;
+    const idx = this.ORDER.indexOf(s.st);
+    const working = idx < 5;
+    const LABELS = { pensando: 'Pensando', leyendo: 'Leyendo 3 documentos', programando: 'Calculando las cifras', escribiendo: 'Escribiendo el borrador', imagen: 'Creando la portada', espera: 'Te necesita', hecho: 'Terminado' };
+    const DONE = ['Pensó el enfoque', 'Leyó 3 documentos', 'Calculó 3 cifras', 'Escribió el borrador', 'Creó la portada', 'Le diste el OK'];
+    const aura = working
+      ? { anim: 'breathe 2.8s ease-in-out infinite', filter: 'drop-shadow(0 6px 14px rgba(123,77,255,.55))', line: 'rgba(123,77,255,.12)', text: '#5C606C' }
+      : s.st === 'espera'
+        ? { anim: 'beckon 1.8s ease-out infinite', filter: 'none', line: '#FFC93C', text: '#8A5A00' }
+        : { anim: 'none', filter: 'drop-shadow(0 3px 6px rgba(18,19,26,.16))', line: '#0B8A5F', text: '#0B6B4A' };
+    const DOCS = [
+      { name: 'informe_q3_borrador.docx', ext: 'DOC', bg: '#DDE7FF', fg: '#1F3F99', note: '12 páginas' },
+      { name: 'devoluciones_septiembre.xlsx', ext: 'XLS', bg: '#E1F4EC', fg: '#0B6B4A', note: '3 hojas' },
+      { name: 'acta_comite_septiembre.pdf', ext: 'PDF', bg: '#FBE7DF', fg: '#8E2A1F', note: '4 páginas' }
+    ];
+    const CODE = [
+      ['hoja = abrir("devoluciones_septiembre.xlsx")', '#E6E7EC'],
+      ['tasa = hoja.devoluciones / hoja.ventas', '#E6E7EC'],
+      ['→ −2,4 %', '#FFC93C'],
+      ['margen = (ingresos − costes) / ingresos', '#E6E7EC'],
+      ['→ 31,0 %', '#FFC93C'],
+      ['crecimiento = ventas_q3 / ventas_q2 − 1', '#E6E7EC'],
+      ['→ +6,1 %', '#FFC93C']
+    ];
+    const TEXT = 'Resumen del tercer trimestre\n\nLas devoluciones bajan al −2,4 %, siete décimas menos que en agosto. El margen se mantiene en el 31 % y las ventas crecen un 6 % frente al trimestre anterior.\n\nPropuesta: mantener la política de devoluciones y revisar precios en otoño.';
+    const is = {};
+    this.ORDER.forEach(o => { is[o] = o === s.st; });
+    const vs = s.voice;
+    const vk = s.vk || 0;
+    const secs = vs === 'rec' ? Math.max(0, Math.floor((vk - s.recK) / 10)) : 0;
+    const wave = n => Array.from({ length: n }, (_, i) => { const v = Math.abs(Math.sin((vk + i * 3) * 0.55) * Math.cos((vk * 0.7 + i) * 0.31)); return { h: Math.round(4 + v * 26) + 'px', o: (0.45 + v * 0.55).toFixed(2) }; });
+    const voice = {
+      idle: vs === 'idle' || vs === 'err', rec: vs === 'rec', trans: vs === 'trans', err: vs === 'err',
+      capBg: vs === 'rec' ? '#12131A' : '#FFFFFF',
+      capSh: vs === 'rec' ? '0 20px 50px -20px rgba(18,19,26,.6)' : '0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)',
+      bars: wave(40),
+      time: `0:${String(secs % 60).padStart(2, '0')} / 2:00`,
+      text: s.said, textChange: e => this.setState({ said: e.target.value }),
+      start: () => this.setState({ voice: 'rec', recK: vk }),
+      finish: () => { this.setState({ voice: 'trans' }); clearTimeout(this.vt); this.vt = setTimeout(() => this.setState({ voice: 'idle', said: 'Vale, pero añade una comparación con el segundo trimestre y quita el último párrafo.' }), 1600); },
+      dismiss: () => this.setState({ voice: 'idle' })
+    };
+    const listen = { on: String(s.playing), label: s.playing ? 'Parar la lectura' : 'Escuchar', bg: s.playing ? '#12131A' : 'rgba(18,19,26,.05)', fg: s.playing ? '#FFFFFF' : '#3D404A', toggle: () => this.setState({ playing: !s.playing }), bars: [0, 1, 2, 3].map(i => ({ h: s.playing ? Math.round(4 + Math.abs(Math.sin((vk + i * 2) * 0.8)) * 10) + 'px' : [6, 10, 8, 5][i] + 'px' })) };
+    return {
+      ...this.newConvVals(),
+      voice, listen,
+      label: LABELS[s.st],
+      aura,
+      working,
+      is,
+      demo: this.ORDER.map(o => ({ label: o === 'programando' ? 'calculando' : o, on: String(o === s.st), bg: o === s.st ? '#12131A' : 'transparent', fg: o === s.st ? '#FFFFFF' : '#3D404A', pick: () => this.setState({ st: o, k: 0 }) })),
+      autoOn: String(s.auto),
+      autoLabel: s.auto ? 'Pausar' : 'Reproducir',
+      toggleAuto: () => this.setState({ auto: !s.auto }),
+      hasDone: idx > 0,
+      doneSteps: DONE.slice(0, idx).map(label => ({ label })),
+      thoughts: ['Qué le importa al comité', 'Tres cifras, no más', 'Tono de Marta: sobrio'].slice(0, Math.min(3, Math.floor(k / 12) + 1)).map(label => ({ label })),
+      docs: DOCS.map((d, i) => {
+        const read = k > (i + 1) * 14;
+        const reading = !read && k > i * 14;
+        return { ...d, read, reading, opacity: read || reading ? '1' : '0.4' };
+      }),
+      code: CODE.slice(0, Math.min(CODE.length, Math.floor(k / 6) + 1)).map(c => ({ text: c[0], color: c[1] })),
+      typed: TEXT.slice(0, Math.min(TEXT.length, k * 7)),
+      imgPct: String(Math.min(100, k * 3)),
+      yes: () => this.setState({ st: 'hecho', k: 0 }),
+      stop: () => this.setState({ st: 'espera', k: 0, auto: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

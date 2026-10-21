@@ -1,0 +1,52 @@
+// Disposable local UI fixture. No credentials, real models or external calls.
+import http from 'node:http';
+import express from 'express';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {mkdtemp} from 'node:fs/promises';
+import os from 'node:os';
+import {Store,now} from '../server/store.mjs';
+import {Runtime} from '../server/runtime.mjs';
+import {createApp} from '../server/app.mjs';
+import {importSkill} from '../server/skills.mjs';
+import {Connections} from '../server/connections.mjs';
+const root=fileURLToPath(new URL('..',import.meta.url));
+const directory=await mkdtemp(path.join(os.tmpdir(),'colmena-ui-fixture-'));
+const store=new Store(directory);store.patch('settings','main',{model:'fixture-local',learning:false});
+const provider={async respond({input,instructions,onDelta=()=>{},signal}){
+  if(instructions.includes('exclusivamente JSON'))return {text:JSON.stringify({name:'Leo QA',role:'Asistente de pruebas',instructions:'Revisa contratos de prueba. Nunca envíes nada sin preguntar al usuario.'}),output:[]};
+  if(input.at(-1).content?.includes('archivo-aprobacion')&&!input.some(x=>x.type==='function_call_output'))return {text:'',output:[{type:'function_call',call_id:'fixture-call',name:'write_file',arguments:JSON.stringify({path:'informe.md',content:'# Informe de prueba\n\nContenido de fixture, sin datos reales.'})}]};
+  const text='## Resultado de prueba local\n\nEste contenido pertenece a un fixture aislado.\n\n- Revisar el objetivo.\n- Contrastar los datos disponibles.\n- Entregar una propuesta verificable.\n\nNo se ha consultado un proveedor real.';
+  if(input.at(-1).content?.includes('flujo-lento')){for(const part of text.split(' ')){signal.throwIfAborted();onDelta(part+' ');await new Promise(r=>setTimeout(r,100));}}
+  return {text,output:[{type:'message',role:'assistant',content:[{type:'output_text',text}]}]};
+}};
+const calls=[], hub={dispatch:async(_profile,op,a={})=>{
+  calls.push({op,a});
+  if(op==='status')return {configured:true};
+  if(op==='accounts')return {items:[{id:'fixture-account',toolkit:'gmail',alias:'Cuenta QA',status:'ACTIVE'}],next_cursor:null};
+  if(op==='catalogue')return {items:[{slug:'googlecalendar',name:'Google Calendar',description:'Calendario QA'}],next_cursor:null};
+  if(op==='prepare')return {proposal:crypto.randomUUID(),tool:a.tool,toolkit:'gmail',account:a.account,account_alias:'Cuenta QA',name:'Correo QA',arguments:JSON.parse(a.arguments_json)};
+  if(op==='commit')return {ok:true};
+  if(op==='link')throw Error('Fixture: no se abre autorización externa.');
+  return {};
+}};
+const connections=new Connections(store,hub),runtime=new Runtime(store,provider,connections);
+let connected=true;
+const session={status:()=>connected?{label:'Proveedor simulado QA',email:'qa@example.invalid',persistent:false}:null,models:[{slug:'fixture-local',name:'Fixture local'}],async logout(){connected=false;return {ok:true};},closePending(){},async start(){throw Error('Fixture: autorización externa bloqueada.');},async listModels(){return this.models;}};
+const team=runtime.create({prompt:'Preparar un informe de prueba',mode:'equipo',botIds:['nora','tomas','vera']});await runtime.launch(team.id);
+const debate=runtime.create({prompt:'Comparar enfoques para una campaña de prueba',mode:'debate',botIds:['iris','vera']});await runtime.launch(debate.id);
+const approval=runtime.create({prompt:'Crear archivo-aprobacion de prueba',mode:'solo',botIds:['bruno']});await runtime.launch(approval.id);
+importSkill(store,{content:'---\nname: revision-datos\ndescription: Revisar cifras antes de entregar un informe\n---\n# Revisar los datos\n\n1. Identificar fuentes y fechas.\n2. Comprobar unidades.\n3. Registrar discrepancias.\n\n## Verificacion\nContrastar los totales con los datos originales.',source:'Fixture QA',missionId:team.id});
+store.put('automations',{id:'fixture-rule',name:'Resumen de prueba',prompt:'Revisar la actividad local',botId:'vera',intervalMinutes:1440,enabled:false,state:'scheduled',nextRun:new Date(Date.now()+86400000).toISOString(),createdAt:now()});
+const sendMission=runtime.create({prompt:'Correo de prueba aislado',botIds:['vera']});
+const sendStep=runtime.steps(sendMission.id)[0];
+await connections.request(sendMission,sendStep,{call_id:'mail'},{tool:'GMAIL_SEND_EMAIL',account:'fixture-account',arguments_json:JSON.stringify({recipient_email:'destino@example.invalid',subject:'Informe QA',body:'Contenido local de prueba. Nada se envía a servicios externos.'})},new AbortController().signal);
+store.patch('missions',sendMission.id,{status:'waiting'});
+store.put('memories',{id:'fixture-memory',text:'Recuerdo de prueba eliminable',active:true,createdAt:now()});
+const fixture={team:team.id,debate:debate.id,approval:approval.id,send:sendStep.id+':mail'};
+let origin;const app=createApp({store,runtime,session,connections,getOrigin:()=>origin});
+app.get('/fixture',(_req,res)=>res.json({...fixture,calls}));
+app.use('/design-reference',express.static(path.join(root,'references','designs')));
+app.use(express.static(path.join(root,'dist')));app.get('/{*path}',(_req,res)=>res.sendFile(path.join(root,'dist','index.html')));
+const server=http.createServer(app);await new Promise(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+server.address().port;
+console.log(JSON.stringify({origin,team:team.id,debate:debate.id,approval:approval.id,directory,pid:process.pid}));

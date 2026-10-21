@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Objetivos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+.msg .msg-tools{opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.msg:hover .msg-tools,.msg:focus-within .msg-tools{opacity:1;transform:none;pointer-events:auto}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; align-items: flex-start; min-height: 1600px; background: #F5F5F2">
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100vh; min-height: 560px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<a href="V2Hoy.dc.html" aria-current="page" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 600; text-align: center; letter-spacing: 0.01em">Hoy</span><span aria-label="2 cosas te esperan" style="position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #FFC93C; color: #12131A; font: 600 10px/18px 'Geist', sans-serif; text-align: center; box-shadow: 0 0 0 2px #EBEBE6">2</span></a>
+<a href="V2Conversacion.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Conversa-<br>ciones</span><span aria-label="Te han mencionado" style="position: absolute; top: 6px; right: 16px; width: 9px; height: 9px; border-radius: 50%; background: #12131A; box-shadow: 0 0 0 2px #EBEBE6"></span></a>
+<a href="V2Codigo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Código</span></a>
+<a href="V2Colmena.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Colmena</span></a>
+<a href="V2Rutinas.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"></path><path d="M19.8 4.5v3.6h-3.6"></path><path d="M12 8.2V12l2.6 1.6"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Rutinas</span></a>
+<a href="V2Archivo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M3 4h18v3.5H3z"></path><path d="M9.5 11.5h5"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Archivo</span></a>
+<span style="flex: 1"></span>
+<a href="V2Hoy.dc.html#pedir" title="Pedir algo (⌘K)" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; color: #4A4D57"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="font-size: 11px; font-weight: 500">Pedir</span><kbd style="font: 500 10px/1 'Geist Mono', monospace; color: #6B6F7A">⌘K</kbd></a>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 11px/1 'Geist', sans-serif">TÚ</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+<div style="position: relative; flex: 1; min-width: 0; min-height: 100vh; padding-bottom: 40px">
+<main style="max-width: 1240px; margin: 0 auto; padding: 56px clamp(20px, 4vw, 48px) 40px; display: flex; flex-direction: column; gap: 34px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<a href="V2Hoy.dc.html" style="align-self: flex-start; display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px 0 10px; border-radius: 999px; background: rgba(18,19,26,.05); font-size: 14px; font-weight: 500"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Hoy</a>
+<h1 style="margin: 0; font: 600 clamp(48px, 7vw, 84px)/0.95 'Bricolage Grotesque', sans-serif; letter-spacing: -0.05em">Objetivos</h1>
+<p style="margin: 0; max-width: 620px; font-size: 17px; line-height: 1.5; color: #5C606C">Lo que quieres conseguir a largo plazo. Atlas lo parte en hitos, conecta los encargos y te avisa si algo se atasca.</p>
+</div>
+<button type="button" style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 24px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nuevo objetivo</button>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<div role="listbox" aria-label="Tus objetivos" style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{goals}}" as="g" hint-placeholder-count="3">
+<button type="button" role="option" aria-selected="{{g.sel}}" onClick="{{g.pick}}" style="display: flex; align-items: center; gap: 18px; padding: 20px; border: 0; border-radius: 26px; cursor: pointer; text-align: left; transition: box-shadow .25s ease; background: #FFFFFF; box-shadow: {{g.ring}}">
+<span aria-hidden="true" style="position: relative; width: 58px; height: 58px; flex: none; border-radius: 50%; background: {{g.donut}}"><span style="position: absolute; inset: 7px; display: grid; place-items: center; border-radius: 50%; background: #FFFFFF; font: 600 14px/1 'Geist', sans-serif">{{g.pct}}</span></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><strong style="font: 600 19px/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -0.015em">{{g.title}}</strong><span style="font-size: 13px; color: {{g.metaFg}}">{{g.meta}}</span></span>
+</button>
+</sc-for>
+</div>
+
+<section aria-labelledby="goal-t" style="flex: 2 1 560px; min-width: 0; background: #FFFFFF; border-radius: 34px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 30px 70px -36px rgba(18,19,26,.35); overflow: hidden; animation: fade .3s ease-out">
+<div style="padding: 32px 34px 26px; display: flex; flex-direction: column; gap: 14px; background: linear-gradient(180deg, rgba(255,201,60,.12), rgba(255,255,255,0))">
+<span style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #5C606C"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 22px; height: 22px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span>Coordina Atlas · {{cur.due}}</span>
+<h2 id="goal-t" style="margin: 0; font: 600 clamp(30px, 3.4vw, 42px)/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">{{cur.title}}</h2>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #3D404A"><span style="color: #6B6F7A">Por qué:</span> {{cur.why}}</p>
+<div style="display: flex; flex-direction: column; gap: 8px; padding-top: 6px">
+<span style="display: flex; justify-content: space-between; font-size: 13px; color: #5C606C"><span>Presupuesto · {{cur.spent}}</span><span>{{cur.pages}}</span></span>
+<span style="height: 6px; border-radius: 3px; background: rgba(18,19,26,.08); overflow: hidden"><span style="display: block; height: 100%; border-radius: 3px; background: #12131A; transform-origin: left; animation: grow .8s cubic-bezier(.2,.8,.2,1); width: {{cur.budgetW}}"></span></span>
+</div>
+</div>
+
+<div style="padding: 6px 34px 30px; display: flex; flex-direction: column; gap: 26px">
+
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 6px"><h3 style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Hitos</h3><span style="font-size: 14px; color: #6B6F7A">{{cur.count}}</span></div>
+<sc-for list="{{milestones}}" as="m" hint-placeholder-count="4">
+<div style="display: grid; grid-template-columns: 28px 1fr auto; gap: 14px; align-items: center; min-height: 60px; border-bottom: 1px solid rgba(18,19,26,.06); animation: fade .3s ease-out">
+<button type="button" role="checkbox" aria-checked="{{m.done}}" aria-label="{{m.aria}}" onClick="{{m.toggle}}" style="width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; transition: all .2s ease; background: {{m.box}}; box-shadow: {{m.ring}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{m.tick}}"><path d="m5 12 5 5 9-10"></path></svg></button>
+<span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; font-weight: 500; text-decoration: {{m.deco}}; color: {{m.fg}}">{{m.title}}</span><span style="font-size: 13px; color: #6B6F7A">{{m.note}}</span></span>
+<span style="font-size: 13px; font-weight: 500; color: {{m.dateFg}}">{{m.date}}</span>
+</div>
+</sc-for>
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 6px 6px 18px; border-radius: 18px; background: #F4F4F0">
+<label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Nuevo hito</span><input type="text" value="{{newMs}}" onChange="{{newMsChange}}" placeholder="Añade un hito, por ejemplo «Elegir la plataforma»" style="flex: 1; min-width: 0; height: 44px; border: 0; outline: none; background: transparent; font-size: 15px"></label>
+<button type="button" onClick="{{addMs}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: {{addBtn.bg}}; color: {{addBtn.fg}}">Añadir</button>
+</div>
+</div>
+
+<sc-if value="{{proposalOpen}}" hint-placeholder-val="{{ true }}">
+<div style="padding: 22px; border-radius: 26px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.14); animation: rise .35s ease-out">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="display: inline-grid; flex: none; animation: beckon 1.8s ease-out infinite"><span style="display: block; width: 28px; height: 28px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span><span style="flex: 1; font-size: 15px; line-height: 1.45"><strong style="font-weight: 600">Atlas ha propuesto unos hitos.</strong> Elige cuáles se quedan.</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{proposals}}" as="p" hint-placeholder-count="3">
+<button type="button" role="checkbox" aria-checked="{{p.on}}" onClick="{{p.toggle}}" style="display: flex; align-items: center; gap: 14px; min-height: 54px; padding: 6px 14px; border: 0; border-radius: 16px; cursor: pointer; text-align: left; background: {{p.bg}}">
+<span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 7px; background: {{p.box}}; box-shadow: {{p.ring}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{p.tick}}"><path d="m5 12 5 5 9-10"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; font-weight: 600">{{p.title}}</strong><span style="font-size: 13px; color: #5C606C">{{p.why}}</span></span>
+<span style="font-size: 13px; color: #6B6F7A">{{p.date}}</span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px"><button type="button" onClick="{{dismissProp}}" style="height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600">Ninguno</button><button type="button" onClick="{{acceptProp}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: {{acceptBtn.bg}}; color: {{acceptBtn.fg}}">{{acceptBtn.text}}</button></div>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h3 style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Encargos que lo empujan</h3>
+<a href="V2Encargo.dc.html" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 18px; background: #F6F6F3"><span style="display: flex; gap: 3px"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 18px; height: 18px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 3px 6px #0B8A5F88); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 18px; height: 18px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #0B8A5F; clip-path: none; border-radius: 24%"></span></span></span><span style="flex: 1; font-size: 15px; font-weight: 500">{{cur.linkA}}</span><span style="font-size: 13px; color: #6B6F7A">en marcha</span></a>
+<a href="V2Encargo.dc.html" style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 18px; background: #F6F6F3"><span style="display: flex; gap: 3px"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 18px; height: 18px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #2F6BFF; clip-path: none; border-radius: 50%"></span></span></span><span style="flex: 1; font-size: 15px; font-weight: 500">{{cur.linkB}}</span><span style="font-size: 13px; color: #6B6F7A">hecho</span></a>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #6B6F7A">Atlas te avisa en su ronda si un hito vence o si no hay avance en 7 días.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding-top: 6px; border-top: 1px solid rgba(18,19,26,.06)">
+<button type="button" style="height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #5C606C">Pausar objetivo</button>
+<button type="button" onClick="{{achieve}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: {{achieveBtn.bg}}; color: {{achieveBtn.fg}}">{{achieveBtn.text}}</button>
+</div>
+
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1600}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.G = [
+      { id: 'tienda', title: 'Lanzar la tienda online en marzo', why: 'El 40 % de los clientes pregunta si pueden comprar desde casa.', due: 'antes del 15 de marzo', spent: '1,2 M de 3 M tokens', pages: 'unas 1.800 páginas', budget: 40, linkA: 'Comparar plataformas de tienda', linkB: 'Estudio de precios de envío',
+        ms: [['Elegir la plataforma', 'Nora compara tres opciones', '30 nov', true], ['Fotos del catálogo', 'Iris prepara 120 fotos', '15 dic', false], ['Condiciones de envío y devoluciones', 'Con Legal', '20 ene', false], ['Prueba con 20 clientes', 'Atlas organiza el grupo', '20 feb', false]],
+        props: [['Elegir pasarela de pago', 'Sin esto no se puede cobrar', '10 dic'], ['Formar al equipo de atención', 'Dos sesiones cortas', '1 mar'], ['Plan de lanzamiento en redes', 'Iris y Vera', '5 mar']] },
+      { id: 'devol', title: 'Reducir las devoluciones al 2 %', why: 'Cada punto menos son unos 18.000 € al año.', due: 'antes de junio', spent: '0,3 M de 1 M tokens', pages: 'unas 450 páginas', budget: 30, linkA: 'Informe Q3', linkB: 'Encuesta a clientes que devolvieron',
+        ms: [['Entender por qué devuelven', 'Encuesta y datos de Tomás', 'hecho', true], ['Mejorar las fichas de talla', 'Vera reescribe 60 fichas', '15 ene', false], ['Medir dos meses', 'Tomás cada lunes', '30 mar', false]], props: [] },
+      { id: 'q4', title: 'Cerrar el Q4 sin horas extra', why: 'El año pasado fueron 46 horas en dos semanas.', due: 'antes del 10 de enero', spent: 'Sin límite de gasto', pages: 'te avisa al 80 %', budget: 8, linkA: 'Conciliación bancaria semanal', linkB: 'Plantilla de cierre',
+        ms: [['Conciliar cada semana', 'Bruno, rutina de los viernes', 'en marcha', false], ['Plantilla de cierre lista', 'Tomás', '1 dic', true]], props: [] }
+    ];
+    const done = {}; this.G.forEach(g => { done[g.id] = g.ms.map(m => m[3]); });
+    this.state = { sel: 'tienda', done, extra: { tienda: [], devol: [], q4: [] }, propSel: [true, true, false], propDone: false, newMs: '', achieved: {} };
+  }
+  renderVals() {
+    const s = this.state;
+    const cur = this.G.find(g => g.id === s.sel);
+    const extra = s.extra[cur.id];
+    const all = cur.ms.concat(extra.map(t => [t, 'Añadido por ti', 'sin fecha', false]));
+    const doneArr = s.done[cur.id].concat(extra.map((_, i) => (s.done[cur.id + '_x'] || [])[i] || false));
+    const nDone = doneArr.filter(Boolean).length;
+    const pct = g => { const d = s.done[g.id].filter(Boolean).length; return Math.round(d / g.ms.length * 100); };
+    const allDone = nDone === all.length;
+    return {
+      goals: this.G.map(g => {
+        const on = g.id === s.sel; const p = s.achieved[g.id] ? 100 : pct(g);
+        return { title: g.title, sel: String(on), pct: p + '%', meta: s.achieved[g.id] ? 'Conseguido' : `${g.ms.length} hitos · ${g.due}`, metaFg: s.achieved[g.id] ? '#0B6B4A' : '#6B6F7A',
+          donut: `conic-gradient(${s.achieved[g.id] ? '#0B8A5F' : '#12131A'} ${p * 3.6}deg, rgba(18,19,26,.08) 0)`,
+          ring: on ? '0 0 0 2px #12131A, 0 20px 40px -24px rgba(18,19,26,.4)' : '0 1px 2px rgba(18,19,26,.05), 0 12px 30px -22px rgba(18,19,26,.25)',
+          pick: () => this.setState({ sel: g.id }) };
+      }),
+      cur: { title: cur.title, why: cur.why, due: cur.due, spent: cur.spent, pages: cur.pages, budgetW: cur.budget + '%', count: `${nDone} de ${all.length} hechos`, linkA: cur.linkA, linkB: cur.linkB },
+      milestones: all.map((m, i) => {
+        const d = doneArr[i];
+        return { title: m[0], note: m[1], date: m[2], done: String(d), aria: (d ? 'Desmarcar: ' : 'Marcar como hecho: ') + m[0],
+          box: d ? '#12131A' : 'transparent', ring: d ? 'none' : 'inset 0 0 0 1.5px rgba(18,19,26,.25)', tick: d ? '1' : '0',
+          deco: d ? 'line-through' : 'none', fg: d ? '#8A8D96' : '#12131A', dateFg: /\d/.test(m[2]) && !d ? '#3D404A' : '#8A8D96',
+          toggle: () => {
+            if (i < cur.ms.length) { const arr = s.done[cur.id].slice(); arr[i] = !arr[i]; this.setState({ done: { ...s.done, [cur.id]: arr } }); }
+            else { const k = cur.id + '_x'; const arr = (s.done[k] || []).slice(); arr[i - cur.ms.length] = !arr[i - cur.ms.length]; this.setState({ done: { ...s.done, [k]: arr } }); }
+          } };
+      }),
+      newMs: s.newMs, newMsChange: e => this.setState({ newMs: e.target.value }),
+      addBtn: s.newMs.trim() ? { bg: '#12131A', fg: '#FFFFFF' } : { bg: 'rgba(18,19,26,.08)', fg: '#8A8D96' },
+      addMs: () => { const t = s.newMs.trim(); if (!t) return; this.setState({ extra: { ...s.extra, [cur.id]: [...extra, t] }, newMs: '' }); },
+      proposalOpen: cur.props.length > 0 && !s.propDone,
+      proposals: cur.props.map((p, i) => { const on = s.propSel[i]; return { title: p[0], why: p[1], date: p[2], on: String(on), bg: on ? '#FFFFFF' : 'transparent', box: on ? '#12131A' : 'transparent', ring: on ? 'none' : 'inset 0 0 0 1.5px rgba(18,19,26,.25)', tick: on ? '1' : '0', toggle: () => { const a = s.propSel.slice(); a[i] = !a[i]; this.setState({ propSel: a }); } }; }),
+      acceptBtn: (n => n ? { text: n === 1 ? 'Añadir 1 hito' : `Añadir ${n} hitos`, bg: '#12131A', fg: '#FFFFFF' } : { text: 'Añadir', bg: 'rgba(18,19,26,.08)', fg: '#8A8D96' })(s.propSel.filter(Boolean).length),
+      acceptProp: () => { const picks = cur.props.filter((_, i) => s.propSel[i]).map(p => p[0]); if (!picks.length) return; this.setState({ extra: { ...s.extra, [cur.id]: [...extra, ...picks] }, propDone: true }); },
+      dismissProp: () => this.setState({ propDone: true }),
+      achieveBtn: s.achieved[cur.id] ? { text: 'Conseguido ✓', bg: '#E1F4EC', fg: '#0B5A3E' } : (allDone ? { text: 'Todos los hitos hechos · ¿Conseguido?', bg: '#FFC93C', fg: '#12131A' } : { text: 'Marcar como conseguido', bg: 'rgba(18,19,26,.06)', fg: '#12131A' }),
+      achieve: () => this.setState({ achieved: { ...s.achieved, [cur.id]: !s.achieved[cur.id] } })
+    };
+  }
+}
+</script>
+</body>
+</html>

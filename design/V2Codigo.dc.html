@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Código</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.row-hover{transition:background .15s ease}
+.row-hover:hover{background:rgba(18,19,26,.035)}
+.tools{opacity:0;transition:opacity .15s ease}
+.turn:hover .tools,.turn:focus-within .tools{opacity:1}
+@media (max-width: 1180px){[data-codepanel]{display:none!important}}
+@media (max-width: 860px){[data-projects]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; align-items: stretch; height: 100vh; min-height: 1000px; background: #F5F5F2; overflow: hidden">
+
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<a href="V2Hoy.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Hoy</span></a>
+<a href="V2Conversacion.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Chats</span></a>
+<a href="V2Codigo.dc.html" aria-current="page" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 600; text-align: center; letter-spacing: 0.01em">Código</span><sc-if value="{{railDot}}" hint-placeholder-val="{{ true }}"><span aria-label="Una tarea te espera" style="position: absolute; top: 6px; right: 16px; width: 9px; height: 9px; border-radius: 50%; background: #FFC93C; box-shadow: 0 0 0 2px #FFFFFF"></span></sc-if></a>
+<a href="V2Colmena.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Colmena</span></a>
+<a href="V2Rutinas.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"></path><path d="M19.8 4.5v3.6h-3.6"></path><path d="M12 8.2V12l2.6 1.6"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Rutinas</span></a>
+<a href="V2Archivo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M3 4h18v3.5H3z"></path><path d="M9.5 11.5h5"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Archivo</span></a>
+<span style="flex: 1"></span>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 11px/1 'Geist', sans-serif">TÚ</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+
+<aside data-projects aria-label="Proyectos y tareas" style="flex: none; width: 272px; height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 28px 12px 24px 16px; display: flex; flex-direction: column; gap: 14px; border-right: 1px solid rgba(18,19,26,.07)">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 8px"><h2 style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Código</h2><button type="button" onClick="{{goHome}}" title="Nueva tarea (Ctrl+N)" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 11px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Nueva</button></div>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; margin: 0 4px; padding: 0 12px; background: rgba(18,19,26,.045); border-radius: 12px; color: #5C606C"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar tareas</span><input type="search" placeholder="Buscar tareas" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"><kbd style="font: 500 11px/1 'Geist Mono', monospace; color: #8A8D96">Ctrl K</kbd></label>
+
+<sc-for list="{{projects}}" as="p" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 2px; padding-top: 6px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 6px 8px">
+<span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 9px; background: #E9E9E4; color: #3D404A"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v5"></path><circle cx="13" cy="12" r="2"></circle><path d="M18 19c-2.8 0-5-2.2-5-5v8"></path><circle cx="20" cy="19" r="2"></circle></svg></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{p.name}}</strong><span style="font: 400 11px/1.3 'Geist Mono', monospace; color: #8A8D96; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{p.sub}}</span></span>
+<button type="button" aria-label="Nueva tarea en este proyecto" title="Nueva tarea en este proyecto" style="width: 28px; height: 28px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #6B6F7A; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+</div>
+<sc-for list="{{p.tasks}}" as="t" hint-placeholder-count="3">
+<a href="#" onClick="{{t.pick}}" aria-current="{{t.current}}" class="row-hover" style="display: flex; align-items: center; gap: 11px; margin-left: 14px; padding: 9px 10px; border-radius: 14px; background: {{t.bg}}; box-shadow: {{t.shadow}}">
+<span aria-hidden="true" style="display: inline-grid; flex: none; animation: {{t.anim}}; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 18px; height: 18px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A; border-radius: 50% 50% 14% 14%"></span></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: {{t.weight}}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{t.title}}</span><span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: {{t.statusFg}}"><span aria-hidden="true" style="width: 6px; height: 6px; flex: none; border-radius: 50%; background: {{t.dot}}"></span>{{t.status}}</span></span>
+<span style="font: 500 11px/1 'Geist Mono', monospace; color: #8A8D96; white-space: nowrap"><span style="color: #0B6B4A">{{t.add}}</span> <span style="color: #A33A2C">{{t.del}}</span></span>
+</a>
+</sc-for>
+</div>
+</sc-for>
+
+<span style="flex: 1"></span>
+<button type="button" onClick="{{goHome}}" style="display: flex; align-items: center; gap: 10px; height: 42px; margin: 0 4px; padding: 0 12px; border: 1px dashed rgba(18,19,26,.18); border-radius: 14px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 500; color: #3D404A"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path></svg>Abrir otro proyecto</button>
+</aside>
+
+<sc-if value="{{home}}" hint-placeholder-val="{{ false }}">
+<section aria-label="Empezar" style="flex: 1; min-width: 0; height: 100%; overflow-y: auto; display: flex; flex-direction: column; animation: fade .35s ease-out">
+<div style="flex: 1; width: 100%; max-width: 860px; margin: 0 auto; padding: 96px clamp(20px, 4vw, 44px) 24px; display: flex; flex-direction: column; gap: 34px">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<span aria-hidden="true" style="display: inline-grid; align-self: flex-start; filter: drop-shadow(0 4px 8px rgba(18,19,26,.16))"><span style="display: block; width: 52px; height: 52px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A; border-radius: 50% 50% 14% 14%"></span></span>
+<h1 style="margin: 0; font: 600 44px/1.02 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">¿Qué construimos?</h1>
+<p style="margin: 0; max-width: 560px; font-size: 17px; line-height: 1.6; color: #3D404A">Bruno trabaja en una copia aparte de tu proyecto. Ves cada cambio, lo pruebas en la vista previa y decides qué se queda.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px">
+<sc-for list="{{starts}}" as="s" hint-placeholder-count="3">
+<button type="button" onClick="{{openTask}}" class="row-hover" style="display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: 22px; border: 0; border-radius: 24px; background: #FFFFFF; cursor: pointer; text-align: left; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 18px 40px -28px rgba(18,19,26,.35)">
+<span aria-hidden="true" style="width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: #F0F0EC; color: #12131A"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{s.d1}}"></path><path d="{{s.d2}}"></path><path d="{{s.d3}}"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 5px"><strong style="font-size: 16px; font-weight: 600">{{s.title}}</strong><span style="font-size: 14px; line-height: 1.5; color: #5C606C">{{s.text}}</span></span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 style="margin: 0 0 6px; font-size: 13px; font-weight: 500; color: #6B6F7A">Recientes</h2>
+<sc-for list="{{recent}}" as="r" hint-placeholder-count="3">
+<button type="button" onClick="{{openTask}}" class="row-hover" style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 0; border-radius: 16px; background: transparent; cursor: pointer; text-align: left">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+<span style="flex: 1; min-width: 0; font-size: 15px; font-weight: 500">{{r.name}}</span>
+<span style="font: 400 12px/1 'Geist Mono', monospace; color: #8A8D96">{{r.path}}</span>
+<span style="font-size: 12px; color: #6B6F7A; min-width: 54px; text-align: right">{{r.when}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+<form style="flex: none; width: 100%; max-width: 860px; margin: 0 auto; padding: 6px clamp(20px, 4vw, 44px) 26px">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px 16px 12px 20px; border-radius: 26px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 22px 50px -30px rgba(18,19,26,.4)">
+<label style="display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Describe lo que quieres construir</span><textarea rows="2" placeholder="Describe lo que quieres construir, o arrastra aquí una carpeta…" style="flex: 1; min-width: 0; border: 0; outline: none; resize: none; background: transparent; font-size: 16px; line-height: 1.55"></textarea></label>
+<div style="display: flex; align-items: center; gap: 8px"><span style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; background: #F4F4F0; font-size: 13px; font-weight: 500"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>Proyecto nuevo</span><span style="flex: 1"></span><button type="button" onClick="{{openTask}}" aria-label="Empezar" style="width: 42px; height: 42px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></button></div>
+</div>
+</form>
+</section>
+</sc-if>
+
+<sc-if value="{{inTask}}" hint-placeholder-val="{{ true }}">
+<section aria-label="Tarea: Bizum en el checkout" style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column">
+
+<header style="flex: none; background: #F5F5F2">
+<div style="display: flex; align-items: center; gap: 14px; padding: 20px clamp(18px, 3vw, 32px) 14px">
+<span aria-hidden="true" style="display: inline-grid; flex: none; animation: {{aura.anim}}; filter: {{aura.filter}}"><span style="display: block; width: 38px; height: 38px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A; border-radius: 50% 50% 14% 14%"></span></span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+<h1 style="margin: 0; font: 600 22px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.025em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Bizum en el checkout</h1>
+<span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13px; color: #5C606C"><span role="status" style="font-weight: 500; color: {{aura.text}}">{{label}}</span><span aria-hidden="true">·</span><span style="display: flex; align-items: center; gap: 5px; font-family: 'Geist Mono', monospace; font-size: 12px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>colmena/bizum</span><span title="Bruno trabaja en una copia aparte (git worktree). main no cambia hasta que lo guardes." style="padding: 3px 9px; border-radius: 999px; background: rgba(18,19,26,.05); font-size: 12px">Copia aparte de main</span></span>
+</div>
+<div style="position: relative; display: flex; align-items: center">
+<button type="button" onClick="{{git.primary}}" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 14px; border: 0; border-radius: 999px 0 0 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><line x1="3" x2="9" y1="12" y2="12"></line><line x1="15" x2="21" y1="12" y2="12"></line></svg>{{git.label}}</button>
+<button type="button" onClick="{{git.toggle}}" aria-label="Más formas de guardar" aria-expanded="{{git.open}}" style="width: 34px; height: 40px; display: grid; place-items: center; border: 0; border-left: 1px solid rgba(255,255,255,.18); border-radius: 0 999px 999px 0; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<sc-if value="{{git.open}}" hint-placeholder-val="{{ false }}">
+<div role="menu" style="position: absolute; z-index: 30; top: 48px; right: 0; width: 340px; padding: 8px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45); animation: rise .2s ease-out">
+<sc-for list="{{git.items}}" as="g" hint-placeholder-count="3">
+<button type="button" role="menuitem" onClick="{{git.toggle}}" class="row-hover" style="width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 11px 12px; border: 0; border-radius: 14px; background: transparent; cursor: pointer; text-align: left"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px; flex: none"><path d="{{g.d1}}"></path><path d="{{g.d2}}"></path><circle cx="{{g.cx}}" cy="{{g.cy}}" r="3"></circle></svg><span style="display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 14px; font-weight: 600">{{g.title}}</strong><span style="font-size: 12px; line-height: 1.45; color: #5C606C">{{g.text}}</span></span></button>
+</sc-for>
+<div style="margin: 6px 4px 4px; padding: 12px 14px; border-radius: 14px; background: #F4F4F0; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; color: #6B6F7A">Mensaje que propone Bruno</span><span style="font: 400 13px/1.5 'Geist Mono', monospace; color: #12131A">feat(checkout): add Bizum as a payment method</span></div>
+</div>
+</sc-if>
+</div>
+</div>
+<div aria-hidden="true" style="position: relative; height: 2px; overflow: hidden; background: rgba(18,19,26,.06)"><span style="position: absolute; inset: 0; transition: background .4s ease; background: {{aura.line}}"></span><sc-if value="{{working}}" hint-placeholder-val="{{ true }}"><span style="position: absolute; top: 0; bottom: 0; width: 35%; background: linear-gradient(90deg, transparent, #FF7A1A, transparent); animation: sweep 1.8s ease-in-out infinite"></span></sc-if></div>
+</header>
+
+<div style="flex: none; display: flex; justify-content: flex-end; padding: 12px clamp(18px, 3vw, 32px) 0">
+<div role="group" aria-label="Demostración de estados" style="display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 4px; background: #FFFFFF; border-radius: 999px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 8px 20px -12px rgba(18,19,26,.2)">
+<span style="padding: 0 10px 0 12px; font: 500 11px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Demo</span>
+<sc-for list="{{demo}}" as="d" hint-placeholder-count="5"><button type="button" aria-pressed="{{d.on}}" onClick="{{d.pick}}" style="height: 30px; padding: 0 11px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 500; background: {{d.bg}}; color: {{d.fg}}">{{d.label}}</button></sc-for>
+</div>
+</div>
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column-reverse">
+<div style="width: 100%; max-width: 760px; margin: 0 auto; padding: 18px clamp(18px, 3vw, 32px) 24px; display: flex; flex-direction: column; gap: 22px">
+
+<span style="align-self: center; font-size: 13px; color: #6B6F7A">Hoy · 10:12</span>
+
+<div class="turn" style="align-self: flex-end; max-width: 86%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+<div style="padding: 14px 18px; background: #E8E8E2; border-radius: 22px 22px 8px 22px; font-size: 15px; line-height: 1.55">Añade Bizum como forma de pago en el checkout, con el mismo estilo que el botón de tarjeta. Que pasen los tests.</div>
+<span class="tools" style="display: flex; gap: 4px"><button type="button" style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: rgba(18,19,26,.05); cursor: pointer; font-size: 12px; font-weight: 500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path><path d="m15 5 4 4"></path></svg>Editar desde aquí</button></span>
+</div>
+
+<p style="margin: 0; font-size: 16px; line-height: 1.65; color: #1E2029">Lo hago en una copia aparte de tu proyecto, en la rama <code style="font: 400 14px 'Geist Mono', monospace; padding: 2px 6px; border-radius: 6px; background: rgba(18,19,26,.05)">colmena/bizum</code>. Tu <code style="font: 400 14px 'Geist Mono', monospace; padding: 2px 6px; border-radius: 6px; background: rgba(18,19,26,.05)">main</code> no cambia hasta que lo guardes.</p>
+
+<div style="display: flex; flex-direction: column; padding: 6px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.04)">
+<sc-for list="{{log}}" as="l" hint-placeholder-count="4">
+<button type="button" onClick="{{l.toggle}}" aria-expanded="{{l.open}}" class="row-hover" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent; cursor: pointer; text-align: left">
+<span aria-hidden="true" style="width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 8px; background: #F4F4F0; color: #3D404A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{l.d1}}"></path><path d="{{l.d2}}"></path></svg></span>
+<span style="flex: 1; min-width: 0; font-size: 14px; color: #12131A">{{l.text}}</span>
+<span style="font: 400 12px/1 'Geist Mono', monospace; color: {{l.metaFg}}">{{l.meta}}</span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A8D96" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition: transform .2s ease; transform: {{l.rot}}"><path d="m9 18 6-6-6-6"></path></svg>
+</button>
+<sc-if value="{{l.open}}" hint-placeholder-val="{{ false }}">
+<div style="margin: 2px 8px 8px 50px; padding: 14px 16px; border-radius: 14px; background: #12131A; display: flex; flex-direction: column; gap: 3px; font: 400 12.5px/1.6 'Geist Mono', monospace; color: #C9CBD1; animation: rise .25s ease-out">
+<sc-for list="{{l.out}}" as="o" hint-placeholder-count="4"><span style="white-space: pre-wrap; color: {{o.c}}">{{o.t}}</span></sc-for>
+</div>
+</sc-if>
+</sc-for>
+</div>
+
+<div class="turn" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 16px 14px 18px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.04)">
+<span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #F4F4F0; color: #12131A"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M9 10h6"></path><path d="M12 13V7"></path><path d="M9 17h6"></path></svg></span>
+<span style="flex: 1 1 180px; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 14px; font-weight: 600">3 archivos cambiados</strong><span style="font: 500 12px/1 'Geist Mono', monospace"><span style="color: #0B6B4A">+128</span> <span style="color: #A33A2C">−14</span> <span style="color: #8A8D96">· punto 2 de 2</span></span></span>
+<button type="button" onClick="{{showDiff}}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 13px; font-weight: 600">Ver cambios</button>
+<button type="button" title="Deja el proyecto como estaba justo después de este turno" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 500; color: #3D404A"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>Volver aquí</button>
+</div>
+
+<sc-if value="{{is.trabajando}}" hint-placeholder-val="{{ true }}">
+<span style="align-self: flex-start; font-size: 16px; font-weight: 500; background: linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 2.2s linear infinite">Probando el pago en la vista previa…</span>
+</sc-if>
+
+<sc-if value="{{is.plan}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 22px 22px 18px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C; animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #8A5A00"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #FFC93C; animation: halo 1.8s ease-out infinite"></span>Plan · aún no ha tocado nada</span>
+<h2 style="margin: 0; font: 600 21px/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Modo oscuro para toda la tienda</h2>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{planSteps}}" as="ps" hint-placeholder-count="4"><li style="display: grid; grid-template-columns: 24px 1fr; gap: 10px; font-size: 15px; line-height: 1.5"><span style="width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #F4F4F0; font: 600 11px/1 'Geist Mono', monospace">{{ps.n}}</span><span>{{ps.text}}</span></li></sc-for>
+</ol>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px">
+<button type="button" style="height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Implementar</button>
+<button type="button" style="height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">En una tarea nueva</button>
+<button type="button" style="height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600">Refinar</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.pide}}" hint-placeholder-val="{{ false }}">
+<div role="dialog" aria-labelledby="ask-t" style="display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -28px rgba(18,19,26,.4); animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #8A5A00"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #FFC93C; animation: halo 1.8s ease-out infinite"></span>Línea roja · necesita tu OK</span>
+<h2 id="ask-t" style="margin: 0; font: 600 21px/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Bruno quiere publicar la rama en GitHub</h2>
+<code style="padding: 10px 14px; border-radius: 12px; background: #F4F4F0; font: 400 13px/1.4 'Geist Mono', monospace">git push -u origin colmena/bizum</code>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3D404A">La verán quienes tengan acceso a tu repositorio. Lo demás (editar, probar, instalar dentro del proyecto) lo hace sin preguntarte.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 46px; padding: 0 18px; border: 0; border-radius: 999px; background: #FFC93C; cursor: pointer; font-size: 14px; font-weight: 600">Publicar</button>
+<button type="button" style="height: 46px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">Siempre en este proyecto</button>
+<button type="button" style="height: 46px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600">Ahora no</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.listo}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px; animation: fade .4s ease-out">
+<p style="margin: 0; font-size: 16px; line-height: 1.65; color: #1E2029">Listo. Bizum aparece junto a la tarjeta, con el mismo estilo, y los 24 tests pasan. Lo he probado en la vista previa con un pago de prueba.</p>
+<span style="align-self: flex-start; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #E1F4EC; color: #0B5A3E; font-size: 13px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Listo para revisar · 24 tests pasan</span>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<form style="flex: none; width: 100%; max-width: 800px; margin: 0 auto; padding: 4px clamp(18px, 3vw, 32px) 20px">
+<sc-if value="{{working}}" hint-placeholder-val="{{ true }}"><div style="display: flex; align-items: center; gap: 10px; margin: 0 0 8px 14px; font-size: 12px; color: #6B6F7A"><span>Si escribes mientras trabaja:</span><div role="radiogroup" aria-label="Si escribes mientras trabaja" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(18,19,26,.05)"><sc-for list="{{when}}" as="w" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{w.on}}" onClick="{{w.pick}}" style="height: 24px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 500; background: {{w.bg}}; color: {{w.fg}}; box-shadow: {{w.sh}}">{{w.label}}</button></sc-for></div></div></sc-if>
+<div style="position: relative; display: flex; flex-direction: column; gap: 8px; padding: 14px 12px 10px 18px; border-radius: 26px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 22px 50px -30px rgba(18,19,26,.4)">
+<label style="display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pide un cambio a Bruno</span><textarea rows="2" placeholder="Pide un cambio a Bruno…  (/ comandos, @ archivos)" style="flex: 1; min-width: 0; border: 0; outline: none; resize: none; background: transparent; font-size: 15px; line-height: 1.55"></textarea></label>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<div role="radiogroup" aria-label="Modo" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: #F4F4F0"><sc-for list="{{modes}}" as="m" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{m.on}}" onClick="{{m.pick}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{m.bg}}; color: {{m.fg}}; box-shadow: {{m.sh}}">{{m.label}}</button></sc-for></div>
+<button type="button" onClick="{{toggleModel}}" aria-expanded="{{modelOpen}}" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px 0 12px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 500; color: #3D404A">Claude Code · Opus 5.5<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<button type="button" title="Esfuerzo" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 500; color: #3D404A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 14 4-4"></path><path d="M3.34 19a10 10 0 1 1 17.32 0"></path></svg>Alto</button>
+<button type="button" onClick="{{toggleAccess}}" aria-expanded="{{accessOpen}}" title="Qué puede hacer Bruno" style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 500; color: #3D404A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>Su copia</button>
+<span style="flex: 1"></span>
+<button type="button" aria-label="Adjuntar" style="width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #5C606C"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.234 20.252 21 12.3"></path><path d="m16 6-8.414 8.586a2 2 0 0 0 0 2.828 2 2 0 0 0 2.828 0l8.414-8.586a4 4 0 0 0 0-5.656 4 4 0 0 0-5.656 0l-8.415 8.585a6 6 0 1 0 8.486 8.486"></path></svg></button>
+<span title="Contexto usado: 38 % · Compactar" style="position: relative; width: 36px; height: 36px; display: grid; place-items: center"><svg width="26" height="26" viewBox="0 0 36 36" aria-hidden="true" style="transform: rotate(-90deg)"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(18,19,26,.08)" stroke-width="4"></circle><circle cx="18" cy="18" r="15" fill="none" stroke="#12131A" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 95"></circle></svg></span>
+<sc-if value="{{working}}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="Detener" style="width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.08); cursor: pointer"><span aria-hidden="true" style="width: 11px; height: 11px; border-radius: 3px; background: #12131A"></span></button></sc-if>
+<button type="submit" aria-label="Enviar" style="width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></button>
+</div>
+
+<sc-if value="{{modelOpen}}" hint-placeholder-val="{{ false }}">
+<div role="menu" style="position: absolute; z-index: 30; left: 120px; bottom: 62px; width: 330px; padding: 8px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45); animation: rise .2s ease-out">
+<sc-for list="{{engines}}" as="e" hint-placeholder-count="4">
+<button type="button" role="menuitemradio" aria-checked="{{e.on}}" onClick="{{toggleModel}}" class="row-hover" style="width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 0; border-radius: 14px; background: {{e.bg}}; cursor: pointer; text-align: left"><span style="flex: 1; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 14px; font-weight: 600">{{e.name}}</strong><span style="font-size: 12px; line-height: 1.4; color: #5C606C">{{e.text}}</span></span><span style="font-size: 12px; color: {{e.stateFg}}">{{e.state}}</span></button>
+</sc-for>
+<label style="display: flex; align-items: center; gap: 10px; margin: 4px 4px 2px; padding: 10px 10px 6px; border-top: 1px solid rgba(18,19,26,.07); font-size: 13px; color: #3D404A"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #12131A">Probar con varios a la vez (una tarea por motor)</label>
+</div>
+</sc-if>
+
+<sc-if value="{{accessOpen}}" hint-placeholder-val="{{ false }}">
+<div role="dialog" aria-label="Qué puede hacer Bruno" style="position: absolute; z-index: 30; left: 300px; bottom: 62px; width: 360px; padding: 8px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45); animation: rise .2s ease-out">
+<sc-for list="{{access}}" as="a" hint-placeholder-count="3">
+<button type="button" role="menuitemradio" aria-checked="{{a.on}}" onClick="{{toggleAccess}}" class="row-hover" style="width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 11px 12px; border: 0; border-radius: 14px; background: {{a.bg}}; cursor: pointer; text-align: left"><span aria-hidden="true" style="width: 16px; height: 16px; margin-top: 2px; flex: none; border-radius: 50%; box-shadow: {{a.ring}}"></span><span style="display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 14px; font-weight: 600">{{a.title}}</strong><span style="font-size: 12px; line-height: 1.45; color: #5C606C">{{a.text}}</span></span></button>
+</sc-for>
+<p style="margin: 6px 12px 6px; font-size: 12px; line-height: 1.5; color: #6B6F7A">Siempre te pregunta antes de publicar, subir a GitHub, borrar fuera del proyecto o instalar programas en Windows.</p>
+</div>
+</sc-if>
+</div>
+</form>
+</section>
+
+<aside data-codepanel aria-label="Cambios, vista previa y terminal" style="flex: none; width: 520px; height: 100%; padding: 14px 14px 14px 0; display: flex; flex-direction: column">
+<div style="flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 22px; background: #FFFFFF; overflow: hidden; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 30px 70px -40px rgba(18,19,26,.35)">
+<div role="tablist" aria-label="Panel" style="flex: none; display: flex; align-items: center; gap: 4px; height: 54px; padding: 0 10px; border-bottom: 1px solid rgba(18,19,26,.06)">
+<sc-for list="{{tabs}}" as="tb" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{tb.on}}" onClick="{{tb.pick}}" style="display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{tb.bg}}; color: {{tb.fg}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{tb.d1}}"></path><path d="{{tb.d2}}"></path><path d="{{tb.d3}}"></path></svg>{{tb.label}}<span style="font: 500 11px/1 'Geist Mono', monospace; color: {{tb.countFg}}">{{tb.count}}</span></button></sc-for>
+<span style="flex: 1"></span>
+<button type="button" aria-label="Abrir la carpeta" title="Abrir la carpeta en el Explorador" style="width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #5C606C"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></button>
+</div>
+
+<sc-if value="{{tab.cambios}}" hint-placeholder-val="{{ true }}">
+<div style="flex: 1; min-height: 0; display: flex; flex-direction: column; animation: fade .25s ease-out">
+<div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px">
+<div role="radiogroup" aria-label="Qué cambios" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: #F4F4F0"><sc-for list="{{scopes}}" as="sc" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{sc.on}}" onClick="{{sc.pick}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; background: {{sc.bg}}; color: {{sc.fg}}; box-shadow: {{sc.sh}}">{{sc.label}}</button></sc-for></div>
+<label style="flex: 1; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(18,19,26,.045); color: #5C606C"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar en los cambios</span><input type="search" value="bizum" placeholder="Buscar en los cambios" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px"><span style="font: 500 11px/1 'Geist Mono', monospace; color: #8A8D96">4/9</span></label>
+</div>
+<div style="flex: none; display: flex; flex-direction: column; padding: 0 8px 8px; border-bottom: 1px solid rgba(18,19,26,.06)">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="3"><div class="row-hover" style="display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 8px; border-radius: 10px; background: {{f.bg}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="m5 12-3 3 3 3"></path><path d="m9 18 3-3-3-3"></path></svg><span style="flex: 1; min-width: 0; font: 400 12.5px/1 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"><span style="color: #8A8D96">{{f.dir}}</span>{{f.name}}</span><span style="font: 500 11.5px/1 'Geist Mono', monospace; color: #0B6B4A">{{f.add}}</span><span style="font: 500 11.5px/1 'Geist Mono', monospace; color: #A33A2C">{{f.del}}</span></div></sc-for>
+</div>
+<div style="flex: 1; min-height: 0; overflow: auto; padding: 10px 0 14px">
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 16px 8px; font: 500 12px/1 'Geist Mono', monospace; color: #3D404A"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>src/checkout/PaymentMethods.jsx<span style="color: #8A8D96">· líneas 42–58</span></div>
+<sc-for list="{{diff}}" as="dl" hint-placeholder-count="12"><div style="display: grid; grid-template-columns: 38px 38px 14px 1fr; align-items: baseline; min-height: 21px; padding-right: 14px; background: {{dl.bg}}; font: 400 12.5px/21px 'Geist Mono', monospace"><span style="padding-right: 8px; text-align: right; color: #A9ACB6">{{dl.a}}</span><span style="padding-right: 8px; text-align: right; color: #A9ACB6">{{dl.b}}</span><span style="color: {{dl.signFg}}">{{dl.sign}}</span><span style="white-space: pre; overflow: hidden; text-overflow: ellipsis; color: {{dl.fg}}">{{dl.pre}}<mark style="background: rgba(31,79,209,.16); color: inherit; border-radius: 3px">{{dl.hit}}</mark>{{dl.post}}</span></div></sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{tab.vista}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; min-height: 0; display: flex; flex-direction: column; animation: fade .25s ease-out">
+<div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #F7F7F4; border-bottom: 1px solid rgba(18,19,26,.06)">
+<button type="button" aria-label="Recargar" style="width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #5C606C"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg></button>
+<span style="flex: 1; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 10px; background: #FFFFFF; font: 400 12.5px/1 'Geist Mono', monospace; color: #3D404A"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #0B8A5F"></span>127.0.0.1:5201/checkout</span>
+<button type="button" title="Servidores encontrados en este proyecto" style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: rgba(18,19,26,.05); cursor: pointer; font: 500 12px/1 'Geist Mono', monospace">5201 · 5202<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<button type="button" aria-label="Tamaño móvil" title="Ver como en el móvil" style="width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #5C606C"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h8"></path><path d="M10 19v-3.96 3.15"></path><path d="M7 19h5"></path><rect width="6" height="10" x="16" y="12" rx="2"></rect></svg></button>
+</div>
+<div style="position: relative; flex: 1; min-height: 0; background: #FAFAF8; display: grid; place-items: center; padding: 26px">
+<div style="width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; padding: 26px; border-radius: 18px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.06), 0 20px 40px -26px rgba(18,19,26,.35); animation: develop .6s ease-out">
+<span style="font: 600 18px/1 'Geist', sans-serif">Pagar pedido</span>
+<span style="display: flex; justify-content: space-between; font-size: 14px; color: #5C606C"><span>Total</span><strong style="color: #12131A">48,90 €</strong></span>
+<span style="height: 46px; display: grid; place-items: center; border-radius: 10px; background: #12131A; color: #FFFFFF; font: 600 14px/1 'Geist', sans-serif">Pagar con tarjeta</span>
+<span style="position: relative; height: 46px; display: grid; place-items: center; border-radius: 10px; background: #05C3C9; color: #FFFFFF; font: 600 14px/1 'Geist', sans-serif">Pagar con Bizum<sc-if value="{{is.trabajando}}" hint-placeholder-val="{{ true }}"><span style="position: absolute; inset: -7px; border-radius: 14px; box-shadow: 0 0 0 2px #FF7A1A; opacity: .8"></span></sc-if></span>
+<span style="font-size: 12px; color: #8A8D96; text-align: center">Pago seguro · tienda-web</span>
+</div>
+<sc-if value="{{is.trabajando}}" hint-placeholder-val="{{ true }}"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" style="position: absolute; right: 138px; bottom: 232px; filter: drop-shadow(0 2px 3px rgba(18,19,26,.35)); animation: drift 2.6s ease-in-out infinite"><path d="M4 2l14 9-6.5 1.5L9 19z" fill="#FF7A1A" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"></path></svg></sc-if>
+</div>
+<div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid rgba(18,19,26,.06); font-size: 12px; color: #0B6B4A"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Consola sin errores · Bruno la revisa después de cada cambio</div>
+</div>
+</sc-if>
+
+<sc-if value="{{tab.terminal}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; min-height: 0; display: flex; flex-direction: column; background: #12131A; animation: fade .25s ease-out">
+<div style="flex: none; display: flex; align-items: center; gap: 4px; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.07)">
+<sc-for list="{{terms}}" as="tm" hint-placeholder-count="3"><button type="button" style="display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer; font: 500 12px/1 'Geist Mono', monospace; background: {{tm.bg}}; color: {{tm.fg}}"><span aria-hidden="true" style="width: 6px; height: 6px; border-radius: 50%; background: {{tm.dot}}"></span>{{tm.label}}</button></sc-for>
+<button type="button" aria-label="Nueva terminal" style="width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #8A8D96"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+</div>
+<div style="flex: 1; min-height: 0; overflow: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; font: 400 12.5px/1.65 'Geist Mono', monospace; color: #C9CBD1">
+<sc-for list="{{termLines}}" as="tl" hint-placeholder-count="10"><span style="white-space: pre-wrap; color: {{tl.c}}">{{tl.t}}</span></sc-for>
+<span style="display: flex; align-items: center; gap: 8px; color: #E6E7EC">PS E:\Proyectos\tienda-web&gt;<span aria-hidden="true" style="width: 7px; height: 15px; background: #FF7A1A; animation: caret 1s steps(1) infinite"></span></span>
+</div>
+<div style="flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 12px; border-top: 1px solid rgba(255,255,255,.07)">
+<span style="font-size: 12px; color: #8A8D96; margin-right: 4px">Scripts</span>
+<sc-for list="{{scripts}}" as="sp" hint-placeholder-count="4"><button type="button" style="display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 0; border-radius: 999px; background: rgba(255,255,255,.07); color: #E6E7EC; cursor: pointer; font: 500 12px/1 'Geist Mono', monospace"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>{{sp}}</button></sc-for>
+</div>
+</div>
+</sc-if>
+</div>
+</aside>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["trabajando","plan","pide OK","listo","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: this.mode(props.estado), tab: this.tab(props.panel), scope: 'turno', open: 2, git: false, model: false, access: false, when: 'cola', build: 'construir' };
+  }
+  mode(v) { return v === 'pide OK' ? 'pide' : (v || 'trabajando'); }
+  tab(v) { return v === 'vista previa' ? 'vista' : (v || 'cambios'); }
+  componentDidUpdate(prev) {
+    if (prev.estado !== this.props.estado) this.setState({ mode: this.mode(this.props.estado) });
+    if (prev.panel !== this.props.panel) this.setState({ tab: this.tab(this.props.panel) });
+  }
+  renderVals() {
+    const s = this.state;
+    const working = s.mode === 'trabajando';
+    const seg = (on) => on ? { bg: '#FFFFFF', fg: '#12131A', sh: '0 1px 2px rgba(18,19,26,.1)' } : { bg: 'transparent', fg: '#5C606C', sh: 'none' };
+    const SHORT = { trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
+    const LABEL = { trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
+    const aura = working ? { anim: 'breathe 1.4s ease-in-out infinite', filter: 'drop-shadow(0 3px 7px #FF7A1A88)', text: '#12131A', line: 'rgba(255,122,26,.25)' }
+      : (s.mode === 'plan' || s.mode === 'pide') ? { anim: 'beckon 1.8s ease-out infinite', filter: 'none', text: '#8A5A00', line: 'rgba(255,201,60,.6)' }
+      : { anim: 'none', filter: 'drop-shadow(0 2px 4px rgba(18,19,26,.16))', text: '#0B6B4A', line: 'rgba(11,138,95,.35)' };
+    const task = (title, status, kind, add, del, current) => ({
+      title, status, add, del,
+      current: current ? 'page' : undefined,
+      bg: current ? '#FFFFFF' : 'transparent',
+      shadow: current ? '0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)' : 'none',
+      weight: current ? '600' : '500',
+      anim: kind === 'work' ? 'breathe 1.4s ease-in-out infinite' : (kind === 'wait' ? 'beckon 1.8s ease-out infinite' : 'none'),
+      dot: kind === 'work' ? '#FF7A1A' : (kind === 'wait' ? '#FFC93C' : (kind === 'done' ? '#0B8A5F' : '#C9CBD1')),
+      statusFg: kind === 'wait' ? '#8A5A00' : '#6B6F7A',
+      pick: (e) => { if (e) e.preventDefault(); this.setState({ mode: 'trabajando' }); }
+    });
+    const cur = s.mode !== 'inicio';
+    const firstKind = (working || s.mode === 'inicio') ? 'work' : (s.mode === 'listo' ? 'done' : 'wait');
+    const projects = [
+      { name: 'tienda-web', sub: 'main · E:\\Proyectos\\tienda-web', tasks: [
+        task('Bizum en el checkout', SHORT[s.mode] || 'Trabajando', firstKind, '+128', '−14', cur),
+        task('Modo oscuro', 'Te espera · plan', 'wait', '', '', false),
+        task('Menú en el móvil', 'Guardado · ayer', 'done', '+12', '−3', false)
+      ] },
+      { name: 'presupuestos', sub: 'sin git · historial de Colmena', tasks: [
+        task('Exportar a PDF', 'Listo · lun', 'done', '+64', '−8', false)
+      ] }
+    ];
+    const P = {
+      read: ['M19 11a8 8 0 1 1-16 0 8 8 0 1 1 16 0', 'm21 21-4.3-4.3'],
+      edit: ['M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z', 'm15 5 4 4'],
+      term: ['m7 11 2-2-2-2', 'M11 13h4'],
+      web: ['M22 12a10 10 0 1 1-20 0 10 10 0 1 1 20 0', 'M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20']
+    };
+    const LOG = [
+      ['read', 'Leyó 7 archivos del checkout', '10:12', [['src/checkout/PaymentMethods.jsx', '#C9CBD1'], ['src/lib/payments.js', '#C9CBD1'], ['tests/payments.test.js', '#C9CBD1'], ['…y 4 más', '#8A8D96']]],
+      ['edit', 'Editó PaymentMethods.jsx, payments.js y 1 más', '+128 −14', [['PaymentMethods.jsx  +86 −9', '#C9CBD1'], ['payments.js        +38 −5', '#C9CBD1'], ['payments.test.js   +4', '#C9CBD1']]],
+      ['term', working ? 'Ejecutando npm test' : 'Ejecutó npm test · 24 pasan', working ? 'en marcha' : '6,2 s', [['> vitest run', '#8A8D96'], [' ✓ tests/cart.test.js (9)', '#7FD6B0'], [' ✓ tests/payments.test.js (11)', '#7FD6B0'], [' ✓ tests/checkout.test.js (4)', '#7FD6B0'], [working ? ' … Bizum › redirects to the bank page' : ' Test Files  3 passed · Tests  24 passed', working ? '#E6E7EC' : '#7FD6B0']]],
+      ['web', 'Abrió la vista previa en 127.0.0.1:5201', '0 errores', [['GET /checkout 200', '#C9CBD1'], ['Consola: sin errores', '#7FD6B0']]]
+    ];
+    const log = LOG.map(([k, text, meta, out], i) => ({
+      text, meta, d1: P[k][0], d2: P[k][1],
+      metaFg: meta === 'en marcha' ? '#FF7A1A' : '#8A8D96',
+      open: s.open === i, rot: s.open === i ? 'rotate(90deg)' : 'none',
+      out: out.map(([t, c]) => ({ t, c })),
+      toggle: () => this.setState({ open: s.open === i ? -1 : i })
+    }));
+    const DIFF = [
+      ['42', '42', ' ', '  return (', ''],
+      ['43', '43', ' ', '    <div className="methods">', ''],
+      ['44', '44', ' ', '      <MethodButton kind="card" onPay={payCard} />', ''],
+      ['', '45', '+', '      <MethodButton', ''],
+      ['', '46', '+', '        kind="', 'bizum', '"'],
+      ['', '47', '+', '        label="Pagar con ', 'Bizum', '"'],
+      ['', '48', '+', '        onPay={() => start', 'Bizum', '(order.total)}'],
+      ['', '49', '+', '      />', ''],
+      ['45', '50', ' ', '    </div>', ''],
+      ['46', '', '−', '  // TODO: more methods', ''],
+      ['47', '51', ' ', '  );', ''],
+      ['48', '52', ' ', '}', ''],
+      ['', '53', '+', 'export const ', 'BIZUM', '_LIMIT = 1000;']
+    ];
+    const diff = DIFF.map(([a, b, sign, pre, hit, post]) => ({
+      a, b, sign, pre, hit: hit || '', post: post || '',
+      bg: sign === '+' ? '#EEF8F2' : (sign === '−' ? '#FCEEEB' : 'transparent'),
+      fg: sign === '+' ? '#0B4A33' : (sign === '−' ? '#7A2A1F' : '#3D404A'),
+      signFg: sign === '+' ? '#0B8A5F' : (sign === '−' ? '#C2412D' : '#A9ACB6')
+    }));
+    const tabDef = [
+      ['cambios', 'Cambios', '3', 'M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z', 'M9 10h6M12 13V7', 'M9 17h6'],
+      ['vista', 'Vista previa', '', 'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20', 'M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20', 'M2 12h20'],
+      ['terminal', 'Terminal', '', 'm7 11 2-2-2-2', 'M11 13h4', 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z']
+    ];
+    const tabs = tabDef.map(([id, label, count, d1, d2, d3]) => ({
+      label, count, d1, d2, d3, on: s.tab === id,
+      bg: s.tab === id ? '#12131A' : 'transparent', fg: s.tab === id ? '#FFFFFF' : '#3D404A',
+      countFg: s.tab === id ? 'rgba(255,255,255,.6)' : '#8A8D96',
+      pick: () => this.setState({ tab: id })
+    }));
+    const engines = [
+      ['Claude Code', 'Tu cuenta de Claude · Opus 5.5, Sonnet 5.5', 'Conectado', true],
+      ['Codex', 'Tu cuenta de ChatGPT · GPT-5.6', 'Conectado', false],
+      ['OpenCode', 'OpenCode Go · DeepSeek V4.1 Flash', 'Conectado', false],
+      ['Colmena', 'Las herramientas de Colmena con cualquier modelo', '', false]
+    ].map(([name, text, state, on]) => ({ name, text, state, on, bg: on ? '#F4F4F0' : 'transparent', stateFg: '#0B6B4A' }));
+    const access = [
+      ['Su copia del proyecto', 'Lee, edita, ejecuta e instala paquetes dentro del proyecto sin preguntarte.', true],
+      ['Pregunta antes de cada cambio', 'Te enseña cada edición y cada comando antes de hacerlo.', false],
+      ['Todo el ordenador', 'Sin límites de carpeta. Solo para quien sabe lo que hace.', false]
+    ].map(([title, text, on]) => ({ title, text, on, bg: on ? '#F4F4F0' : 'transparent', ring: on ? 'inset 0 0 0 5px #12131A' : 'inset 0 0 0 1.5px #A9ACB6' }));
+    const GIT = [
+      ['Guardar en la rama', 'Commit en colmena/bizum con el mensaje de Bruno.', 'M3 12h6', 'M15 12h6', 12, 12],
+      ['Guardar y subir', 'Commit y push a GitHub.', 'm8 17 4-4 4 4', 'M12 13v8', 12, 6],
+      ['Guardar, subir y abrir PR', 'Bruno escribe el título y la descripción del PR.', 'M5 9v12', 'M12 6h5a2 2 0 0 1 2 2v7', 5, 6]
+    ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
+    const DEMO = [['trabajando', 'Trabajando'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['inicio', 'Inicio']];
+    return {
+      home: s.mode === 'inicio', inTask: s.mode !== 'inicio', working,
+      railDot: s.mode === 'plan' || s.mode === 'pide',
+      is: { trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: s.mode === 'listo' },
+      label: LABEL[s.mode], aura, projects, log, diff, tabs,
+      tab: { cambios: s.tab === 'cambios', vista: s.tab === 'vista', terminal: s.tab === 'terminal' },
+      goHome: () => this.setState({ mode: 'inicio' }),
+      openTask: () => this.setState({ mode: 'trabajando' }),
+      showDiff: () => this.setState({ tab: 'cambios', scope: 'turno' }),
+      starts: [
+        { title: 'Abrir una carpeta', text: 'Un proyecto que ya tienes en el ordenador.', d1: 'm6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2', d2: '', d3: '' },
+        { title: 'Clonar de GitHub', text: 'Pega el enlace del repositorio.', d1: 'M6 3v12', d2: 'M18 9a9 9 0 0 1-9 9', d3: 'M6 21a3 3 0 1 0 0-6 3 3 0 1 0 0 6M18 9a3 3 0 1 0 0-6 3 3 0 1 0 0 6' },
+        { title: 'Empezar de cero', text: 'Web con React, web sencilla o script de Node.', d1: 'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z', d2: 'M20 3v4M22 5h-4', d3: 'M4 17v2M5 18H3' }
+      ],
+      recent: [
+        { name: 'tienda-web', path: 'E:\\Proyectos\\tienda-web', when: 'ahora' },
+        { name: 'presupuestos', path: 'E:\\Proyectos\\presupuestos', when: 'lun' },
+        { name: 'landing-verano', path: 'Colmena · proyectos', when: '12 oct' }
+      ],
+      planSteps: [
+        { n: '1', text: 'Pasar los colores de la tienda a variables (claro y oscuro).' },
+        { n: '2', text: 'Respetar el modo del sistema y guardar la elección del cliente.' },
+        { n: '3', text: 'Revisar contraste en checkout, carrito y fichas de producto.' },
+        { n: '4', text: 'Capturas de las 3 páginas en claro y oscuro para que las compares.' }
+      ],
+      git: { label: s.mode === 'listo' ? 'Guardar en main' : 'Guardar cambios', open: s.git, items: GIT, toggle: () => this.setState({ git: !s.git, model: false, access: false }), primary: () => this.setState({ git: !s.git }) },
+      modelOpen: s.model, accessOpen: s.access, engines, access,
+      toggleModel: () => this.setState({ model: !s.model, access: false, git: false }),
+      toggleAccess: () => this.setState({ access: !s.access, model: false, git: false }),
+      modes: [['construir', 'Construir'], ['plan', 'Plan']].map(([id, label]) => Object.assign({ label, on: s.build === id, pick: () => this.setState({ build: id }) }, seg(s.build === id))),
+      when: [['cola', 'Cuando acabe'], ['guiar', 'Pasárselo ya']].map(([id, label]) => Object.assign({ label, on: s.when === id, pick: () => this.setState({ when: id }) }, seg(s.when === id))),
+      scopes: [['turno', 'Este turno'], ['tarea', 'Toda la tarea']].map(([id, label]) => Object.assign({ label, on: s.scope === id, pick: () => this.setState({ scope: id }) }, seg(s.scope === id))),
+      files: [
+        { dir: 'src/checkout/', name: 'PaymentMethods.jsx', add: '+86', del: '−9', bg: 'rgba(18,19,26,.045)' },
+        { dir: 'src/lib/', name: 'payments.js', add: '+38', del: '−5', bg: 'transparent' },
+        { dir: 'tests/', name: 'payments.test.js', add: '+4', del: '', bg: 'transparent' }
+      ],
+      terms: [
+        { label: 'dev · npm run dev', bg: 'rgba(255,255,255,.1)', fg: '#FFFFFF', dot: '#3DDC97' },
+        { label: 'api', bg: 'transparent', fg: '#8A8D96', dot: '#3DDC97' },
+        { label: 'Terminal 1', bg: 'transparent', fg: '#8A8D96', dot: 'rgba(255,255,255,.25)' }
+      ],
+      termLines: [
+        { t: '> tienda-web@0.4.0 dev', c: '#8A8D96' },
+        { t: '> vite --port 5201 --host 127.0.0.1', c: '#8A8D96' },
+        { t: '', c: '#8A8D96' },
+        { t: '  VITE v6.1.0  ready in 412 ms', c: '#7FD6B0' },
+        { t: '  ➜  Local:   http://127.0.0.1:5201/', c: '#E6E7EC' },
+        { t: '10:14:02 [vite] hmr update /src/checkout/PaymentMethods.jsx', c: '#C9CBD1' },
+        { t: '10:14:05 [vite] hmr update /src/lib/payments.js', c: '#C9CBD1' },
+        { t: '10:15:31 [vite] page reload src/checkout/index.jsx', c: '#C9CBD1' }
+      ],
+      scripts: ['dev', 'test', 'build', 'lint'],
+      demo: DEMO.map(([id, label]) => ({ label, on: s.mode === id, bg: s.mode === id ? '#12131A' : 'transparent', fg: s.mode === id ? '#FFFFFF' : '#3D404A', pick: () => this.setState({ mode: id, git: false, model: false, access: false }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

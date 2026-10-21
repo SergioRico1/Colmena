@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Revisar envío</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#E9E9E4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; align-items: flex-start; min-height: 1350px; background: #E9E9E4">
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100vh; min-height: 560px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<a href="V2Hoy.dc.html" aria-current="page" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 600; text-align: center; letter-spacing: 0.01em">Hoy</span><span aria-label="2 cosas te esperan" style="position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #FFC93C; color: #12131A; font: 600 10px/18px 'Geist', sans-serif; text-align: center; box-shadow: 0 0 0 2px #EBEBE6">2</span></a>
+<a href="V2Conversacion.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Conversa-<br>ciones</span><span aria-label="Te han mencionado" style="position: absolute; top: 6px; right: 16px; width: 9px; height: 9px; border-radius: 50%; background: #12131A; box-shadow: 0 0 0 2px #EBEBE6"></span></a>
+<a href="V2Codigo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Código</span></a>
+<a href="V2Colmena.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Colmena</span></a>
+<a href="V2Rutinas.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"></path><path d="M19.8 4.5v3.6h-3.6"></path><path d="M12 8.2V12l2.6 1.6"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Rutinas</span></a>
+<a href="V2Archivo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M3 4h18v3.5H3z"></path><path d="M9.5 11.5h5"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Archivo</span></a>
+<span style="flex: 1"></span>
+<a href="V2Hoy.dc.html#pedir" title="Pedir algo (⌘K)" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; color: #4A4D57"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="font-size: 11px; font-weight: 500">Pedir</span><kbd style="font: 500 10px/1 'Geist Mono', monospace; color: #6B6F7A">⌘K</kbd></a>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 11px/1 'Geist', sans-serif">TÚ</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+<div style="position: relative; flex: 1; min-width: 0; min-height: 100vh; padding-bottom: 40px">
+<div aria-hidden="true" style="position: absolute; inset: 0; overflow: hidden; pointer-events: none">
+<div style="max-width: 1060px; margin: 0 auto; padding: 76px 48px; filter: blur(7px); opacity: .45">
+<span style="font-size: 15px; color: #6B6F7A">Jueves, 15 de octubre</span>
+<p style="margin: 14px 0 0; font: 600 76px/0.98 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">Buenos días.<br><span style="color: #9A9DA6">Dos cosas te esperan.</span></p>
+<div style="margin-top: 60px; height: 92px; border-radius: 30px; background: #FFFFFF"></div>
+</div>
+</div>
+
+<section role="dialog" aria-modal="true" aria-labelledby="rev-t" style="position: relative; z-index: 2; max-width: 880px; margin: 44px auto 0; background: #FFFFFF; border-radius: 34px; box-shadow: 0 60px 120px -40px rgba(18,19,26,.5), 0 2px 6px rgba(18,19,26,.06); animation: sheet .5s cubic-bezier(.2,.8,.2,1)">
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 22px 26px 0">
+<span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 28px; height: 28px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #0B8A5F; clip-path: none; border-radius: 24%"></span></span>
+<span style="flex: 1; font-size: 14px; color: #5C606C"><strong style="color: #12131A; font-weight: 600">Tomás</strong> lo preparó para Marta y para ti · 09:10</span>
+<a href="V2Hoy.dc.html" aria-label="Cerrar" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(18,19,26,.06)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></a>
+</div>
+
+<div style="padding: 18px 40px 6px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h1 id="rev-t" style="margin: 0; font: 600 34px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.035em">{{title}}</h1>
+<sc-if value="{{saved}}" hint-placeholder-val="{{ false }}"><span role="status" style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 13px; font-weight: 500; animation: rise .35s ease-out"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFC93C" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Cambios guardados. Aún no se ha enviado.</span></sc-if>
+</div>
+
+<div style="padding: 10px 40px 0">
+
+<div style="display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; min-height: 58px; padding: 8px 0; border-bottom: 1px solid rgba(18,19,26,.07)">
+<span style="font-size: 14px; color: #6B6F7A">Para</span>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<sc-for list="{{to}}" as="c" hint-placeholder-count="1"><span style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 6px 0 14px; border-radius: 999px; background: #F2F2EE; font-size: 14px"><strong style="font-weight: 600">{{c.n}}</strong><span style="color: #6B6F7A">{{c.e}}</span><sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{c.remove}}" aria-label="{{c.label}}" style="width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #5C606C"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></sc-if><sc-if value="{{viewing}}" hint-placeholder-val="{{ true }}"><span style="width: 8px"></span></sc-if></span></sc-for>
+<sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><label style="flex: 1 1 200px; display: flex; align-items: center; gap: 6px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Añadir destinatario</span><input type="text" value="{{toIn}}" onChange="{{toInChange}}" placeholder="Añadir persona o correo" style="flex: 1; min-width: 0; height: 36px; border: 0; outline: none; background: transparent; font-size: 14px"><sc-if value="{{toCanAdd}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{toAdd}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600">Añadir</button></sc-if></label></sc-if>
+<sc-if value="{{showCcToggle}}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; display: flex; gap: 4px"><button type="button" onClick="{{showBcc}}" style="height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #1F4FD1">Añadir CCO</button></span></sc-if>
+</div>
+</div>
+
+<sc-if value="{{ccRow}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; min-height: 58px; padding: 8px 0; border-bottom: 1px solid rgba(18,19,26,.07); animation: fade .3s ease-out">
+<span style="font-size: 14px; color: #6B6F7A">CC</span>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<sc-for list="{{cc}}" as="c" hint-placeholder-count="1"><span style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 6px 0 14px; border-radius: 999px; background: #F2F2EE; font-size: 14px"><strong style="font-weight: 600">{{c.n}}</strong><span style="color: #6B6F7A">{{c.e}}</span><sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{c.remove}}" aria-label="{{c.label}}" style="width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #5C606C"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></sc-if><sc-if value="{{viewing}}" hint-placeholder-val="{{ true }}"><span style="width: 8px"></span></sc-if></span></sc-for>
+<sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><label style="flex: 1 1 200px; display: flex; align-items: center; gap: 6px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Añadir en copia</span><input type="text" value="{{ccIn}}" onChange="{{ccInChange}}" placeholder="Añadir en copia" style="flex: 1; min-width: 0; height: 36px; border: 0; outline: none; background: transparent; font-size: 14px"><sc-if value="{{ccCanAdd}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ccAdd}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600">Añadir</button></sc-if></label></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{bccRow}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; min-height: 58px; padding: 8px 0; border-bottom: 1px solid rgba(18,19,26,.07); animation: fade .3s ease-out">
+<span style="font-size: 14px; color: #6B6F7A">CCO</span>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<sc-for list="{{bcc}}" as="c" hint-placeholder-count="0"><span style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 6px 0 14px; border-radius: 999px; background: #F2F2EE; font-size: 14px"><strong style="font-weight: 600">{{c.n}}</strong><sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{c.remove}}" aria-label="{{c.label}}" style="width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #5C606C"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></sc-if></span></sc-for>
+<sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><label style="flex: 1 1 200px; display: flex; align-items: center; gap: 6px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Añadir en copia oculta</span><input type="text" value="{{bccIn}}" onChange="{{bccInChange}}" placeholder="Nadie más verá a quién pones aquí" style="flex: 1; min-width: 0; height: 36px; border: 0; outline: none; background: transparent; font-size: 14px"><sc-if value="{{bccCanAdd}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{bccAdd}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600">Añadir</button></sc-if></label></sc-if>
+</div>
+</div>
+</sc-if>
+
+<div style="display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; min-height: 62px; padding: 8px 0; border-bottom: 1px solid rgba(18,19,26,.07)">
+<label for="rev-subj" style="font-size: 14px; color: #6B6F7A">Asunto</label>
+<sc-if value="{{viewing}}" hint-placeholder-val="{{ true }}"><strong id="rev-subj" style="font-size: 17px; font-weight: 600">{{subject}}</strong></sc-if>
+<sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><input id="rev-subj" type="text" value="{{subject}}" onChange="{{subjectChange}}" style="width: 100%; height: 44px; padding: 0 14px; margin-left: -14px; border: 0; border-radius: 12px; outline: none; background: #F6F6F3; font-size: 17px; font-weight: 600"></sc-if>
+</div>
+
+<div style="padding: 22px 0 8px">
+<sc-if value="{{viewing}}" hint-placeholder-val="{{ true }}"><p style="margin: 0; font-size: 17px; line-height: 1.65; white-space: pre-wrap; color: #1E2029">{{body}}</p></sc-if>
+<sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><label style="display: block"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Cuerpo del mensaje</span><textarea rows="13" value="{{body}}" onChange="{{bodyChange}}" style="width: 100%; padding: 16px 18px; margin-left: -18px; margin-right: -18px; border: 0; border-radius: 18px; outline: none; background: #F6F6F3; font-size: 17px; line-height: 1.65; resize: vertical; color: #1E2029; box-sizing: content-box"></textarea></label></sc-if>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 0 28px">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="2">
+<span style="display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px 0 10px; border-radius: 18px; background: #F6F6F3; animation: fade .3s ease-out">
+<span aria-hidden="true" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; font: 600 10px/1 'Geist Mono', monospace; background: {{f.bg}}; color: {{f.fg}}">{{f.ext}}</span>
+<span style="display: flex; flex-direction: column; gap: 3px; padding-right: 8px"><strong style="font-size: 14px; font-weight: 600">{{f.name}}</strong><span style="font-size: 12px; color: #6B6F7A">{{f.size}}</span></span>
+<sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{f.remove}}" aria-label="{{f.label}}" style="width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #FFFFFF; cursor: pointer"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></sc-if>
+</span>
+</sc-for>
+<sc-if value="{{editing}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{addFile}}" style="display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 18px; border: 1.5px dashed rgba(18,19,26,.2); border-radius: 18px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 500; color: #3D404A"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Adjuntar</button></sc-if>
+</div>
+</div>
+
+<div style="position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 26px 18px 40px; background: rgba(255,255,255,.88); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-top: 1px solid rgba(18,19,26,.07); border-radius: 0 0 34px 34px">
+
+<sc-if value="{{viewIdle}}" hint-placeholder-val="{{ true }}">
+<span style="display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: #5C606C"><span>Tomás comprobó:</span><span style="color: #0B6B4A">cifras ✓</span><span style="color: #0B6B4A">destinatarios ✓</span><span style="color: #0B6B4A">tono ✓</span></span>
+<span style="display: flex; gap: 10px"><button type="button" onClick="{{edit}}" style="height: 50px; padding: 0 22px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 15px; font-weight: 600">Editar</button><button type="button" onClick="{{approve}}" style="height: 50px; padding: 0 26px; border: 0; border-radius: 999px; background: #FFC93C; cursor: pointer; font-size: 15px; font-weight: 600; box-shadow: 0 10px 24px -10px rgba(201,138,0,.8)">Aprobar y enviar</button></span>
+</sc-if>
+
+<sc-if value="{{editing}}" hint-placeholder-val="{{ false }}">
+<span role="status" style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5C606C"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: {{changeDot}}"></span>{{changes}}</span>
+<span style="display: flex; gap: 10px"><button type="button" onClick="{{cancel}}" style="height: 50px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 15px; font-weight: 600">Cancelar</button><button type="button" onClick="{{save}}" style="height: 50px; padding: 0 26px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600">Guardar cambios</button></span>
+</sc-if>
+
+<sc-if value="{{sending}}" hint-placeholder-val="{{ false }}">
+<span style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 10px"><span role="status" style="font-size: 15px; font-weight: 500">Se envía en {{secs}} s</span><span style="height: 4px; border-radius: 2px; background: rgba(18,19,26,.08); overflow: hidden"><span style="display: block; height: 100%; background: #12131A; transition: width 1s linear; width: {{sendW}}"></span></span></span>
+<button type="button" onClick="{{undo}}" style="height: 50px; padding: 0 26px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600">Deshacer</button>
+</sc-if>
+
+<sc-if value="{{sent}}" hint-placeholder-val="{{ false }}">
+<span role="status" style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 500; color: #0B6B4A"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #0B8A5F; animation: pop .4s ease-out"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></span>Enviado. Marta recibe una copia.</span>
+<a href="V2Hoy.dc.html" style="display: flex; align-items: center; height: 50px; padding: 0 26px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600">Volver a Hoy</a>
+</sc-if>
+
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["ver","editar","guardado"],"default":"ver"},"$preview":{"width":1440,"height":1350}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const data = {
+      to: [{ n: 'Comité de dirección', e: 'comite@tuempresa.com' }],
+      cc: [{ n: 'Marta Ruiz', e: 'marta.ruiz@tuempresa.com' }],
+      bcc: [],
+      subject: 'Informe Q3 · resumen para el comité',
+      body: 'Hola a todos:\n\nOs adjunto el resumen del tercer trimestre. Lo más importante:\n\n· Las devoluciones bajan al −2,4 % (en agosto, −3,1 %).\n· El margen se mantiene en el 31 %.\n· Las ventas crecen un 6 % frente al trimestre anterior.\n\nLas diapositivas completas estarán el martes a las 18:00.\n\nUn saludo,\nMarta Ruiz',
+      files: [
+        { name: 'resumen_q3.pdf', size: '240 KB', ext: 'PDF', bg: '#FBE7DF', fg: '#8E2A1F' },
+        { name: 'devoluciones_septiembre.xlsx', size: '88 KB', ext: 'XLS', bg: '#E1F4EC', fg: '#0B6B4A' }
+      ]
+    };
+    this.state = { data, draft: null, saved: false, bccOpen: false, toIn: '', ccIn: '', bccIn: '', send: 'idle', secs: 10 };
+    this.applyMode(props.modo, true);
+  }
+  applyMode(m, init) {
+    const patch = m === 'editar'
+      ? { draft: JSON.parse(JSON.stringify(this.state.data)), saved: false, send: 'idle' }
+      : m === 'guardado' ? { draft: null, saved: true, send: 'idle' } : { draft: null, saved: false, send: 'idle' };
+    if (init) Object.assign(this.state, patch); else this.setState(patch);
+  }
+  componentDidUpdate(prev) { if (prev.modo !== this.props.modo) this.applyMode(this.props.modo); }
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      if (this.state.send !== 'sending') return;
+      const n = this.state.secs - 1;
+      this.setState(n <= 0 ? { send: 'sent', secs: 0 } : { secs: n });
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+  setDraft(fn) { const d = JSON.parse(JSON.stringify(this.state.draft)); fn(d); this.setState({ draft: d }); }
+  person(raw) {
+    const e = raw.trim();
+    const local = e.split('@')[0].replace(/[._]/g, ' ');
+    return { n: local.charAt(0).toUpperCase() + local.slice(1), e };
+  }
+  renderVals() {
+    const s = this.state;
+    const editing = !!s.draft;
+    const d = editing ? s.draft : s.data;
+    const isMail = v => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test((v || '').trim());
+    const chips = key => d[key].map((c, i) => ({ n: c.n, e: c.e, label: 'Quitar a ' + c.n, remove: () => this.setDraft(x => x[key].splice(i, 1)) }));
+    let changes = 0;
+    if (editing) {
+      ['to', 'cc', 'bcc', 'files'].forEach(k => { if (JSON.stringify(s.draft[k]) !== JSON.stringify(s.data[k])) changes++; });
+      if (s.draft.subject !== s.data.subject) changes++;
+      if (s.draft.body !== s.data.body) changes++;
+    }
+    const add = (key, inKey) => () => { const v = s[inKey]; if (!isMail(v)) return; this.setDraft(x => x[key].push(this.person(v))); this.setState({ [inKey]: '' }); };
+    return {
+      title: editing ? 'Editar envío' : 'Enviar el resumen del Q3 al comité',
+      saved: s.saved && !editing && s.send === 'idle',
+      editing, viewing: !editing,
+      to: chips('to'), cc: chips('cc'), bcc: chips('bcc'),
+      ccRow: d.cc.length > 0 || editing,
+      bccRow: d.bcc.length > 0 || (editing && s.bccOpen),
+      showCcToggle: editing && !s.bccOpen,
+      showBcc: () => this.setState({ bccOpen: true }),
+      toIn: s.toIn, toInChange: e => this.setState({ toIn: e.target.value }), toCanAdd: isMail(s.toIn), toAdd: add('to', 'toIn'),
+      ccIn: s.ccIn, ccInChange: e => this.setState({ ccIn: e.target.value }), ccCanAdd: isMail(s.ccIn), ccAdd: add('cc', 'ccIn'),
+      bccIn: s.bccIn, bccInChange: e => this.setState({ bccIn: e.target.value }), bccCanAdd: isMail(s.bccIn), bccAdd: add('bcc', 'bccIn'),
+      subject: d.subject, subjectChange: e => this.setDraft(x => { x.subject = e.target.value; }),
+      body: d.body, bodyChange: e => this.setDraft(x => { x.body = e.target.value; }),
+      files: d.files.map((f, i) => ({ ...f, label: 'Quitar ' + f.name, remove: () => this.setDraft(x => x.files.splice(i, 1)) })),
+      addFile: () => this.setDraft(x => x.files.push({ name: 'diapositivas_q3_v2.pptx', size: '4,1 MB', ext: 'PPT', bg: '#FFE6F1', fg: '#9C1F5C' })),
+      changes: changes === 0 ? 'Sin cambios' : (changes === 1 ? '1 cambio sin guardar' : `${changes} cambios sin guardar`),
+      changeDot: changes ? '#FFC93C' : '#C9CBD1',
+      edit: () => this.setState({ draft: JSON.parse(JSON.stringify(s.data)), saved: false }),
+      cancel: () => this.setState({ draft: null, toIn: '', ccIn: '', bccIn: '' }),
+      save: () => this.setState({ data: s.draft, draft: null, saved: true, toIn: '', ccIn: '', bccIn: '' }),
+      viewIdle: !editing && s.send === 'idle',
+      approve: () => this.setState({ send: 'sending', secs: 10, saved: false }),
+      sending: s.send === 'sending',
+      secs: String(s.secs),
+      sendW: (s.secs * 10) + '%',
+      undo: () => this.setState({ send: 'idle', secs: 10 }),
+      sent: s.send === 'sent'
+    };
+  }
+}
+</script>
+</body>
+</html>

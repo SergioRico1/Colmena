@@ -1,0 +1,38 @@
+async(page)=>{
+  const origin=new URL(page.url()).origin,f=await(await page.request.get(origin+'/fixture')).json(),checks=[],errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  const open=async(name,q='')=>{await page.goto(origin+'/screens/'+name+'.dc.html'+q);await page.waitForFunction(()=>document.documentElement.dataset.colmenaReady==='true');};
+  const state=async()=>await(await page.request.get(origin+'/api/state')).json();
+  const token=(await(await page.request.get(origin+'/api/bootstrap')).json()).csrf;
+  const post=async(path,data)=>(await page.request.post(origin+'/api'+path,{headers:{'X-Colmena-Token':token},data})).json();
+  const waitState=async pred=>{for(let i=0;i<100;i++){const s=await state();if(pred(s))return s;await page.waitForTimeout(100);}throw Error('State timeout');};
+  await open('Main');await page.getByRole('button',{name:'Un bot',exact:true}).click();
+  await page.getByRole('button',{name:'Compara tres programas de contabilidad para nosotros',exact:true}).click();
+  if(!await page.locator('textarea').inputValue())throw Error('Suggestion did not fill composer');
+  await page.locator('textarea').fill('Una conversación de prueba QA sin herramientas.');
+  await page.getByRole('button',{name:'Empezar',exact:true}).click();await page.waitForURL('**/Chat.dc.html?*');
+  const chatId=new URL(page.url()).searchParams.get('id');await waitState(s=>s.missions.find(m=>m.id===chatId)?.status==='completed');await page.locator('article').first().waitFor();
+  await page.locator('[data-field="message"]').fill('Añade una conclusión breve QA.');await page.getByRole('button',{name:'Enviar',exact:true}).click();
+  await page.waitForFunction(()=>document.body.innerText.includes('Añade una conclusión breve QA.'));
+  const remember=page.getByRole('button',{name:'Guardar en la memoria de Nora'}).first();await remember.click();await waitState(s=>s.memories.length>1);
+  const artifact=page.getByRole('complementary',{name:'Entregable abierto'});await artifact.waitFor();
+  const downloadEvent=page.waitForEvent('download');await page.getByRole('button',{name:'Guardar en Biblioteca',exact:true}).click();await downloadEvent;
+  checks.push('Home mode/suggestion/text attachment/start; Chat send/followup/memory/artifact download');
+  await open('Bandeja','?approval='+encodeURIComponent(f.approval+':answer:fixture-call'));
+  if((await state()).approvals.some(a=>a.missionId===f.approval&&a.status==='pending'))await page.getByRole('button',{name:'Aprobar',exact:true}).click();await waitState(s=>s.approvals.some(a=>a.missionId===f.approval&&a.status==='executed'));
+  checks.push('Local approval reviewed and executed');
+  await open('Equipo');await page.getByRole('searchbox',{name:'Buscar plantillas'}).fill('Traductor');
+  if(await page.getByRole('button',{name:'Contratar',exact:true}).count()!==1)throw Error('Template filter did not narrow');
+  await page.getByRole('button',{name:'Contratar',exact:true}).click();await page.waitForURL('**/NuevoBot.dc.html?template=*');await page.waitForFunction(()=>document.documentElement.dataset.colmenaReady==='true');if(!(await page.locator('#descripcion').inputValue()).includes('Traductor'))throw Error('Template not transferred');checks.push('Team template search and handoff');
+  await open('Biblioteca');await page.getByRole('button',{name:'Documentos',exact:true}).click();if(await page.locator('main a strong').count()===0)throw Error('Documents filter empty');
+  await page.getByRole('searchbox',{name:'Buscar en la Biblioteca'}).fill('NEVER_MATCH_QA');if(await page.locator('main a strong').count()!==0)throw Error('Search not filtered');
+  await page.getByRole('searchbox',{name:'Buscar en la Biblioteca'}).fill('');await page.getByRole('button',{name:'Todo',exact:true}).click();
+  const file=page.locator('main a').filter({has:page.locator('strong')}).first();const downloadPromise=page.waitForEvent('download');await file.click();await downloadPromise;checks.push('Library filters/search/download');
+  await open('Mision','?id='+f.team);await page.getByRole('tab',{name:/Entregables/}).click();if(!page.url().endsWith('#entregables'))throw Error('Artifact tab target');
+  const timelineDownload=page.waitForEvent('download');await page.locator('[aria-labelledby="entregables"] [role="link"]').first().click();await timelineDownload;checks.push('Timeline artifact tab/download');
+  const slow=await post('/missions',{prompt:'flujo-lento de QA',mode:'solo',botIds:['vera']});await post('/missions/'+slow.id+'/control',{action:'pause'});await waitState(s=>s.missions.find(m=>m.id===slow.id).status==='paused');
+  await open('Misiones');const card=page.locator('section[aria-labelledby="col1"] a').filter({hasText:'flujo-lento de QA'});await card.dragTo(page.getByRole('button',{name:'Arrastra aquí para reanudar una pausada'}));
+  await open('EnVivo','?id='+slow.id);await page.waitForFunction(()=>[...document.querySelectorAll('article')].some(e=>e.textContent.includes('Resultado')));
+  await page.getByRole('button',{name:'Pausar a todos los bots de la sala'}).click();await waitState(s=>s.missions.find(m=>m.id===slow.id).status==='paused');await page.getByRole('button',{name:'Reanudar misión'}).click();await waitState(s=>s.missions.find(m=>m.id===slow.id).status==='completed');checks.push('Kanban drag resume, live streaming, pause/resume');
+  if(errors.length)throw Error(errors.join('\n'));return {checks,errors};
+}

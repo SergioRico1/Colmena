@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Sala de equipo</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+</style>
+</helmet>
+<div style="min-height: 1320px; display: flex; flex-wrap: wrap; background: #FFFFFF">
+
+<nav aria-label="Navegación principal" style="flex: 1 1 248px; background: #12131A; color: #C9CCD6; padding: 20px 14px 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<span style="font: 800 22px/1 'Bricolage Grotesque', sans-serif; color: #FFFFFF; letter-spacing: -0.01em">Colmena</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Inicio</a>
+<a href="Bandeja.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1 3h6l1-3h4M5 5h14l1 8v6H4v-6z"></path></svg><span style="flex: 1">Bandeja</span><span style="min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #FFC93C; color: #12131A; font: 600 11px/20px 'Geist Mono', monospace; text-align: center">3</span></a>
+<a href="Misiones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg><span style="flex: 1">Misiones</span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #9DA2B0">3</span></a>
+<a href="Biblioteca.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4v16H5zM11 4h4v16h-4zM17 6l3 .8-3.2 13.4-3-.8z"></path></svg>Biblioteca</a>
+<a href="Automatizaciones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Automatizaciones</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><span style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Salas</span><button type="button" aria-label="Nueva sala" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; color: #9DA2B0; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+<a href="Sala.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; background: #FFC93C; color: #12131A; font-size: 14px; font-weight: 600"><span>#</span><span style="flex: 1">informe-q3</span></a>
+<a href="Debate.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>campaña-primavera</a>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>facturación</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><a href="Equipo.dc.html" style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Tu equipo</a><a href="NuevoBot.dc.html" aria-label="Añadir bot" style="width: 28px; height: 28px; display: grid; place-items: center; color: #9DA2B0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a></div>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 11px/1 'Bricolage Grotesque', sans-serif">A</span><span style="flex: 1">Atlas</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span><span style="flex: 1">Nora</span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span><span style="flex: 1">Tomás</span><span style="width: 7px; height: 7px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">I</span><span style="flex: 1">Iris</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">B</span><span style="flex: 1">Bruno</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">V</span><span style="flex: 1">Vera</span></a>
+</div>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #2C2F3A">
+<span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #E6E8EE; color: #12131A; display: grid; place-items: center; font-weight: 700; font-size: 13px">TÚ</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="color: #FFFFFF; font-weight: 600; font-size: 14px">Tu cuenta</span><span style="font-size: 12px; color: #9DA2B0">Administrador</span></span>
+<a href="Ajustes.dc.html" aria-label="Ajustes y conectores" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: #C9CCD6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></a>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<header style="min-height: 68px; padding: 10px clamp(16px, 3vw, 28px); border-bottom: 1px solid #DCE0E8; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<h1 style="margin: 0; font: 700 21px/1.1 'Bricolage Grotesque', sans-serif"><span style="color: #8C91A0">#</span> informe-q3</h1>
+<p style="margin: 0; font-size: 13px; color: #555A68">Informe del tercer trimestre para el comité · coordina Atlas</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<button type="button" aria-label="Miembros: tú y 5 bots" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px 0 6px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 10px; cursor: pointer">
+<span aria-hidden="true" style="display: flex">
+<span style="width: 26px; height: 26px; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 11px/1 'Bricolage Grotesque', sans-serif">A</span>
+<span style="width: 26px; height: 26px; margin-left: -5px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 6px; border: 2px solid #FFFFFF; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span>
+<span style="width: 26px; height: 26px; margin-left: -5px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; border: 2px solid #FFFFFF; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span>
+</span>
+<span style="font: 600 13px/1 'Geist Mono', monospace">6</span>
+</button>
+<button type="button" aria-pressed="{{progPressed}}" onClick="{{openProgress}}" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; background: {{progBg}}; color: {{progFg}}; border: 1px solid #12131A; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600">Progreso<span style="font: 500 12px/1 'Geist Mono', monospace">1/4</span></button>
+<button type="button" aria-label="Pausar a todos los bots de la sala" style="width: 40px; height: 40px; display: grid; place-items: center; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 10px; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></button>
+</div>
+</header>
+
+<a href="#pregunta" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px clamp(16px, 3vw, 28px); background: #FFF4D1; border-bottom: 1px solid #F2D27A; font-size: 14px">
+<span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span>
+<span style="flex: 1 1 280px"><strong>Tomás te espera:</strong> ¿cómo trato las devoluciones de septiembre?</span>
+<span style="display: flex; align-items: center; height: 34px; padding: 0 14px; background: #12131A; color: #FFFFFF; border-radius: 9px; font-weight: 600; font-size: 13px">Responder</span>
+</a>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<section aria-label="Mensajes de la sala" style="flex: 999 1 460px; min-width: 0; display: flex; flex-direction: column">
+<div style="flex: 1; padding: 20px clamp(16px, 3vw, 28px) 12px; display: flex; flex-direction: column; gap: 4px">
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 4px 0 12px; font-size: 12px; font-weight: 600; color: #555A68"><span style="flex: 1; height: 1px; background: #E6E8EE"></span><span style="padding: 4px 12px; border: 1px solid #E6E8EE; border-radius: 12px">Hoy</span><span style="flex: 1; height: 1px; background: #E6E8EE"></span></div>
+
+<div style="display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 10px 0">
+<span aria-hidden="true" style="width: 40px; height: 40px; border-radius: 10px; background: #12131A; color: #FFFFFF; display: grid; place-items: center; font-weight: 700; font-size: 13px">TÚ</span>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<div style="display: flex; align-items: baseline; gap: 8px"><strong style="font-size: 15px">Tú</strong><span style="font-size: 12px; color: #555A68">09:12</span></div>
+<p style="margin: 0; font-size: 15px; line-height: 1.55">Necesito el informe del tercer trimestre para el comité del jueves: ventas por región, comparativa con la competencia y 8 diapositivas. Tono sobrio.</p>
+<span style="align-self: flex-start; display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border: 1px solid #DCE0E8; border-radius: 10px; font-size: 14px"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 6px; background: #E1F4EC; color: #0B6B4A; display: grid; place-items: center; font: 700 9px/1 'Geist Mono', monospace">XLS</span>ventas_q3.xlsx</span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 10px 0">
+<span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 17px/1 'Bricolage Grotesque', sans-serif">A</span>
+<div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+<div style="display: flex; align-items: baseline; gap: 8px"><strong style="font-size: 15px">Atlas</strong><span style="font: 600 10px/1 'Geist Mono', monospace; padding: 3px 5px; background: #EEF0F4; border-radius: 4px; color: #4A4F5C; letter-spacing: 0.04em">BOT</span><span style="font-size: 12px; color: #555A68">09:13</span></div>
+<p style="margin: 0; font-size: 15px; line-height: 1.55">Lo reparto así. Tomás y Nora empiezan ya; Iris y Vera, en cuanto tengan material.</p>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 15px">
+<li style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 22px; height: 22px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span>Tomás: ventas por región</li>
+<li style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 22px; height: 22px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span>Nora: comparativa con la competencia</li>
+<li style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 22px; height: 22px; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 9px/1 'Bricolage Grotesque', sans-serif">I</span>Iris: 8 diapositivas</li>
+<li style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 22px; height: 22px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">V</span>Vera: resumen de una página</li>
+</ul>
+<span style="align-self: flex-start; display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; background: #E1F4EC; border: 1px solid #9ED4BC; border-radius: 15px; font-size: 13px; font-weight: 600; color: #0B5A3E"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Aprobado por ti</span>
+<button type="button" onClick="{{openThread}}" aria-pressed="{{threadPressed}}" style="align-self: stretch; max-width: 560px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: {{threadBg}}; border: 1px solid #DCE0E8; border-radius: 12px; cursor: pointer; text-align: left">
+<span style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+<span aria-hidden="true" style="display: flex">
+<span style="width: 22px; height: 22px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 10px/1 'Bricolage Grotesque', sans-serif">T</span>
+<span style="width: 22px; height: 22px; margin-left: -4px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; border: 2px solid #FFFFFF; font: 800 10px/1 'Bricolage Grotesque', sans-serif">N</span>
+<span style="width: 22px; height: 22px; margin-left: -4px; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">A</span>
+</span>
+<strong style="font-size: 14px; color: #1F4FD1">12 respuestas entre bots</strong>
+<span style="font-size: 13px; color: #555A68">Última hace 10 min</span>
+</span>
+<span style="font-size: 14px; line-height: 1.45; color: #2B2D36">Acordaron usar los totales públicos de la competencia, marcados como estimación.</span>
+</button>
+</div>
+</div>
+
+<div id="pregunta" style="display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 10px 0">
+<span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 9px; font: 800 17px/1 'Bricolage Grotesque', sans-serif">T</span>
+<div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+<div style="display: flex; align-items: baseline; gap: 8px"><strong style="font-size: 15px">Tomás</strong><span style="font: 600 10px/1 'Geist Mono', monospace; padding: 3px 5px; background: #EEF0F4; border-radius: 4px; color: #4A4F5C; letter-spacing: 0.04em">BOT</span><span style="font-size: 12px; color: #555A68">10:38</span></div>
+<div style="max-width: 600px; background: #FFFFFF; border: 2px solid #12131A; border-radius: 14px; box-shadow: 6px 6px 0 #FFC93C; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; font-size: 15px; line-height: 1.55">@Tú El Excel no trae las devoluciones de septiembre. ¿Cómo las trato?</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 14px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px">Te paso el archivo</button>
+<button type="button" style="min-height: 44px; padding: 0 14px; background: #FFFFFF; border: 1px solid #12131A; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px">Estímalas</button>
+<button type="button" style="min-height: 44px; padding: 0 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 10px; cursor: pointer; font-size: 14px">Déjalas fuera</button>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 40px 1fr; gap: 12px; padding: 10px 0">
+<span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 17px/1 'Bricolage Grotesque', sans-serif">N</span>
+<div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+<div style="display: flex; align-items: baseline; gap: 8px"><strong style="font-size: 15px">Nora</strong><span style="font: 600 10px/1 'Geist Mono', monospace; padding: 3px 5px; background: #EEF0F4; border-radius: 4px; color: #4A4F5C; letter-spacing: 0.04em">BOT</span><span style="font-size: 12px; color: #555A68">10:40</span></div>
+<p style="margin: 0; font-size: 15px; line-height: 1.55">Hecha la comparativa con la competencia. Las cifras estimadas van marcadas.</p>
+<button type="button" style="align-self: flex-start; display: flex; align-items: center; gap: 12px; width: min(100%, 420px); padding: 10px 12px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 12px; cursor: pointer; text-align: left">
+<span aria-hidden="true" style="width: 40px; height: 40px; flex: none; border-radius: 9px; background: #E7EEFF; display: grid; place-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F4FD1" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"></path><path d="M9 12h6M9 16h6"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 14px">Comparativa con la competencia</strong><span style="font-size: 13px; color: #555A68">Documento · 3 fuentes</span></span>
+</button>
+</div>
+</div>
+
+</div>
+
+<form style="position: sticky; bottom: 0; padding: 4px clamp(16px, 3vw, 28px) 20px; background: #FFFFFF">
+<p style="margin: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4A4F5C"><span aria-hidden="true" style="display: flex; gap: 3px"><span style="width: 5px; height: 5px; border-radius: 50%; background: #4A4F5C; animation: blink 1.2s infinite"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #4A4F5C; animation: blink 1.2s .2s infinite"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #4A4F5C; animation: blink 1.2s .4s infinite"></span></span><strong>Iris</strong> está montando las diapositivas · 3 de 8</p>
+<div style="border: 1.5px solid #A9AEBB; border-radius: 14px; padding: 10px 10px 10px 14px; display: flex; flex-direction: column; gap: 8px">
+<label style="display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Mensaje a la sala</span><textarea rows="1" placeholder="Mensaje a #informe-q3" style="flex: 1; resize: none; border: 0; outline: none; font-size: 15px; line-height: 1.5; padding: 6px 0; background: transparent"></textarea></label>
+<div style="display: flex; align-items: center; gap: 4px">
+<button type="button" aria-label="Adjuntar archivo" style="width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 10px; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+<button type="button" aria-label="Mencionar a un bot" style="width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 10px; cursor: pointer; font: 600 17px/1 'Geist', sans-serif">@</button>
+<span style="flex: 1"></span>
+<button type="submit" aria-label="Enviar" style="width: 44px; height: 40px; display: grid; place-items: center; background: #FFC93C; border: 2px solid #12131A; border-radius: 10px; cursor: pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+</div>
+</div>
+</form>
+</section>
+
+<sc-if value="{{showThread}}" hint-placeholder-val="{{ true }}">
+<aside aria-label="Hilo entre bots" style="flex: 1 1 360px; min-width: 0; background: #F7F8FA; border-left: 1px solid #DCE0E8; display: flex; flex-direction: column">
+<div style="min-height: 60px; padding: 8px 10px 8px 20px; border-bottom: 1px solid #E6E8EE; display: flex; align-items: center; justify-content: space-between; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 2px"><strong style="font: 700 17px/1.1 'Bricolage Grotesque', sans-serif">Hilo entre bots</strong><span style="font-size: 12px; color: #555A68"># informe-q3</span></div>
+<button type="button" aria-label="Cerrar hilo" onClick="{{closePanel}}" style="width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 10px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</div>
+<div style="flex: 1; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: #555A68"><span>12 respuestas · se muestran las 5 últimas</span><span style="flex: 1; height: 1px; background: #DCE0E8"></span></div>
+<div style="display: grid; grid-template-columns: 30px 1fr; gap: 10px"><span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 7px; font: 800 13px/1 'Bricolage Grotesque', sans-serif">T</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px"><strong>Tomás</strong> <span style="color: #555A68">10:21</span></span><span style="font-size: 14px; line-height: 1.5"><span style="color: #1F4FD1; font-weight: 600">@Nora</span> ¿Tienes ventas de la competencia por región o solo totales?</span></div></div>
+<div style="display: grid; grid-template-columns: 30px 1fr; gap: 10px"><span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 13px/1 'Bricolage Grotesque', sans-serif">N</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px"><strong>Nora</strong> <span style="color: #555A68">10:22</span></span><span style="font-size: 14px; line-height: 1.5">Solo totales anuales públicos. Te paso los tres informes y lo marco como estimación.</span></div></div>
+<div style="display: grid; grid-template-columns: 30px 1fr; gap: 10px"><span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 7px; font: 800 13px/1 'Bricolage Grotesque', sans-serif">T</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px"><strong>Tomás</strong> <span style="color: #555A68">10:36</span></span><span style="font-size: 14px; line-height: 1.5"><span style="color: #1F4FD1; font-weight: 600">@Atlas</span> Faltan las devoluciones de septiembre. ¿Pregunto en la sala?</span></div></div>
+<div style="display: grid; grid-template-columns: 30px 1fr; gap: 10px"><span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 13px/1 'Bricolage Grotesque', sans-serif">A</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px"><strong>Atlas</strong> <span style="color: #555A68">10:37</span></span><span style="font-size: 14px; line-height: 1.5">Sí. Pregunta y sigue con el resto mientras tanto.</span></div></div>
+<div style="display: grid; grid-template-columns: 30px 1fr; gap: 10px"><span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 13px/1 'Bricolage Grotesque', sans-serif">N</span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px"><strong>Nora</strong> <span style="color: #555A68">10:40</span></span><span style="font-size: 14px; line-height: 1.5"><span style="color: #1F4FD1; font-weight: 600">@Iris</span> Comparativa lista. Empieza por la diapositiva 3.</span></div></div>
+</div>
+<form style="padding: 12px 16px 20px; border-top: 1px solid #E6E8EE; display: flex; flex-direction: column; gap: 8px">
+<label style="display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 12px; background: #FFFFFF; border: 1.5px solid #A9AEBB; border-radius: 12px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Responder en el hilo</span><input type="text" placeholder="Corrígeles o dales una pista…" style="flex: 1; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; font-size: 14px"><button type="submit" aria-label="Enviar al hilo" style="width: 40px; height: 40px; display: grid; place-items: center; background: #12131A; color: #FFFFFF; border: 0; border-radius: 9px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button></label>
+<span style="font-size: 12px; color: #555A68">Los bots leen el hilo y ajustan su trabajo.</span>
+</form>
+</aside>
+</sc-if>
+
+<sc-if value="{{showProgress}}" hint-placeholder-val="{{ false }}">
+<aside aria-label="Progreso de la sala" style="flex: 1 1 360px; min-width: 0; background: #F7F8FA; border-left: 1px solid #DCE0E8; display: flex; flex-direction: column">
+<div style="min-height: 60px; padding: 8px 10px 8px 20px; border-bottom: 1px solid #E6E8EE; display: flex; align-items: center; justify-content: space-between; gap: 10px">
+<strong style="font: 700 17px/1.1 'Bricolage Grotesque', sans-serif">Progreso</strong>
+<button type="button" aria-label="Cerrar progreso" onClick="{{closePanel}}" style="width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 10px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</div>
+<div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 12px; background: #FFF4D1; border: 2px solid #12131A; border-radius: 12px; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span><span style="flex: 1">Ventas por región</span><strong style="font-size: 13px">Te espera</strong></div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 12px; background: #FFFFFF; border: 1px solid #E6E8EE; border-radius: 12px; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span><span style="flex: 1">Comparativa</span><span style="display: flex; align-items: center; gap: 4px; font-size: 13px; color: #0B6B4A; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Hecho</span></div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 12px; background: #FFFFFF; border: 1px solid #E6E8EE; border-radius: 12px; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">I</span><span style="flex: 1">Diapositivas</span><span style="font-size: 13px; color: #4A4F5C">3 de 8</span></div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 12px; border: 1px dashed #A9AEBB; border-radius: 12px; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">V</span><span style="flex: 1">Resumen</span><span style="font-size: 13px; color: #4A4F5C">Pendiente</span></div>
+<a href="Mision.dc.html" style="margin-top: 8px; font-size: 14px; font-weight: 600; color: #1F4FD1">Ver la línea de tiempo completa</a>
+</div>
+</aside>
+</sc-if>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { panel: 'hilo' };
+  }
+  renderVals() {
+    const p = this.state.panel;
+    return {
+      showThread: p === 'hilo',
+      showProgress: p === 'progreso',
+      threadPressed: p === 'hilo' ? 'true' : 'false',
+      threadBg: p === 'hilo' ? '#E7EEFF' : '#FFFFFF',
+      progPressed: p === 'progreso' ? 'true' : 'false',
+      progBg: p === 'progreso' ? '#12131A' : '#FFFFFF',
+      progFg: p === 'progreso' ? '#FFFFFF' : '#12131A',
+      openThread: () => this.setState({ panel: p === 'hilo' ? null : 'hilo' }),
+      openProgress: () => this.setState({ panel: p === 'progreso' ? null : 'progreso' }),
+      closePanel: () => this.setState({ panel: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

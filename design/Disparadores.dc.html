@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Disparadores</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+a{color:#12131A}a:hover{color:#2F6BFF}
+</style>
+</helmet>
+<div style="min-height: 3300px; background: #EEF0F4">
+
+<header style="background: #12131A; color: #FFFFFF; padding: 44px 20px 48px">
+<div style="max-width: 1320px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 760px">
+<span style="font: 500 13px/1 'Geist Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #C9CCD6">Automatizaciones · «Cuando»</span>
+<h1 style="margin: 0; font: 800 clamp(34px, 4.6vw, 56px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; text-wrap: balance">Un formulario por disparador</h1>
+<p style="margin: 0; font-size: 17px; line-height: 1.5; color: #C9CCD6">Eliges el tipo en el menú «Cuando» y aparece solo lo que hace falta para ese tipo. Todo lo que rellenas se convierte en una frase que cualquiera entiende.</p>
+</div>
+<a href="Automatizaciones.dc.html" style="display: flex; align-items: center; height: 46px; padding: 0 18px; background: #FFC93C; color: #12131A; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none">Verlo en Automatizaciones</a>
+</div>
+</header>
+
+<div style="max-width: 1320px; margin: 0 auto; padding: 36px 20px 64px; display: flex; flex-direction: column; gap: 36px">
+
+<section aria-label="Reglas del formulario" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 12px">
+<div style="padding: 16px 18px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; display: flex; flex-direction: column; gap: 6px"><strong style="font: 700 17px/1.2 'Bricolage Grotesque', sans-serif">Valores por defecto sensatos</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">Ningún campo empieza vacío salvo los opcionales. Se puede guardar sin tocar nada.</span></div>
+<div style="padding: 16px 18px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; display: flex; flex-direction: column; gap: 6px"><strong style="font: 700 17px/1.2 'Bricolage Grotesque', sans-serif">La frase manda</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">El recuadro oscuro resume la regla y es lo que aparece en el botón «Cuando» y en la lista.</span></div>
+<div style="padding: 16px 18px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; display: flex; flex-direction: column; gap: 6px"><strong style="font: 700 17px/1.2 'Bricolage Grotesque', sans-serif">Comprobar antes de activar</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">Las de hora muestran las 3 próximas veces; las de evento se prueban con lo que ya ha pasado.</span></div>
+</section>
+
+<section aria-labelledby="hora-t" style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; gap: 14px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #555A68">A</span><h2 id="hora-t" style="margin: 0; font: 800 30px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">A una hora</h2></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr)); gap: 20px; align-items: start">
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 600 12px/1 'Geist Mono', monospace; color: #4A4F5C">01 · CADA DÍA</span><dc-import name="Disparador" tipo="dia" hint-size="100%,560px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 600 12px/1 'Geist Mono', monospace; color: #4A4F5C">02 · CADA SEMANA</span><dc-import name="Disparador" tipo="semana" hint-size="100%,460px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 600 12px/1 'Geist Mono', monospace; color: #4A4F5C">03 · UNA SOLA VEZ</span><dc-import name="Disparador" tipo="vez" hint-size="100%,420px"></dc-import></div>
+</div>
+</section>
+
+<section aria-labelledby="evento-t" style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; gap: 14px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #555A68">B</span><h2 id="evento-t" style="margin: 0; font: 800 30px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Cuando pase algo</h2></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr)); gap: 20px; align-items: start">
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 600 12px/1 'Geist Mono', monospace; color: #4A4F5C">04 · LLEGUE UN CORREO · REMITENTE</span><dc-import name="Disparador" tipo="correo" hint-size="100%,720px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 600 12px/1 'Geist Mono', monospace; color: #4A4F5C">05 · SE SUBA UN ARCHIVO · CARPETA</span><dc-import name="Disparador" tipo="archivo" hint-size="100%,620px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 600 12px/1 'Geist Mono', monospace; color: #4A4F5C">06 · SE ACERQUE UN EVENTO</span><dc-import name="Disparador" tipo="evento" hint-size="100%,620px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 600 12px/1 'Geist Mono', monospace; color: #4A4F5C">07 · ALGUIEN ESCRIBA EN UNA SALA</span><dc-import name="Disparador" tipo="sala" hint-size="100%,620px"></dc-import></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 600 12px/1 'Geist Mono', monospace; color: #4A4F5C">08 · CAMBIE UNA HOJA DE CÁLCULO</span><dc-import name="Disparador" tipo="hoja" hint-size="100%,560px"></dc-import></div>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

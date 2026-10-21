@@ -1,0 +1,515 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 1320,
+      "is_interactive": true,
+      "title": "01 · Inicio",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Bandeja.dc.html": {
+      "expand": "fill",
+      "h": 1200,
+      "is_interactive": true,
+      "title": "02 · Bandeja de OKs",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "EditarEnvio.dc.html": {
+      "expand": "fill",
+      "h": 1400,
+      "is_interactive": true,
+      "title": "02b · Editar envío",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "Chat.dc.html": {
+      "expand": "fill",
+      "h": 1240,
+      "is_interactive": true,
+      "title": "03 · Chat con un bot",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "ChatEstados.dc.html": {
+      "expand": "fill",
+      "h": 1420,
+      "is_interactive": true,
+      "title": "03b · Chat con un bot: todos sus estados",
+      "w": 1440,
+      "x": 6080,
+      "y": 0
+    },
+    "Sala.dc.html": {
+      "expand": "fill",
+      "h": 1320,
+      "is_interactive": true,
+      "title": "04 · Sala de equipo",
+      "w": 1440,
+      "x": 7600,
+      "y": 0
+    },
+    "Debate.dc.html": {
+      "expand": "fill",
+      "h": 1400,
+      "is_interactive": true,
+      "title": "05 · Debate: elegir propuesta",
+      "w": 1440,
+      "x": 9120,
+      "y": 0
+    },
+    "EnVivo.dc.html": {
+      "expand": "fill",
+      "h": 1900,
+      "is_interactive": true,
+      "title": "05b · Bots trabajando en directo",
+      "w": 1440,
+      "x": 10640,
+      "y": 0
+    },
+    "Misiones.dc.html": {
+      "expand": "fill",
+      "h": 1100,
+      "is_interactive": true,
+      "title": "06 · Misiones",
+      "w": 1440,
+      "x": 0,
+      "y": 2300
+    },
+    "Mision.dc.html": {
+      "expand": "fill",
+      "h": 1200,
+      "is_interactive": true,
+      "title": "07 · Misión: línea de tiempo",
+      "w": 1440,
+      "x": 1520,
+      "y": 2300
+    },
+    "Automatizaciones.dc.html": {
+      "expand": "fill",
+      "h": 1900,
+      "is_interactive": true,
+      "title": "08 · Automatizaciones",
+      "w": 1440,
+      "x": 3040,
+      "y": 2300
+    },
+    "Disparadores.dc.html": {
+      "expand": "fill",
+      "h": 3300,
+      "is_interactive": true,
+      "title": "08b · Disparadores: los 8 formularios",
+      "w": 1440,
+      "x": 4560,
+      "y": 2300
+    },
+    "Disparador.dc.html": {
+      "h": 820,
+      "is_interactive": true,
+      "title": "Componente · Configurar disparador",
+      "w": 640,
+      "x": 6080,
+      "y": 2300
+    },
+    "Equipo.dc.html": {
+      "expand": "fill",
+      "h": 1500,
+      "is_interactive": true,
+      "title": "09 · Tu equipo",
+      "w": 1440,
+      "x": 0,
+      "y": 6000
+    },
+    "NuevoBot.dc.html": {
+      "expand": "fill",
+      "h": 1100,
+      "is_interactive": true,
+      "title": "10 · Nuevo bot · 1 Describe",
+      "w": 1440,
+      "x": 1520,
+      "y": 6000
+    },
+    "NuevoBotAjusta.dc.html": {
+      "expand": "fill",
+      "h": 1250,
+      "is_interactive": true,
+      "title": "10b · Nuevo bot · 2 Ajusta",
+      "w": 1440,
+      "x": 3040,
+      "y": 6000
+    },
+    "Bot.dc.html": {
+      "expand": "fill",
+      "h": 2100,
+      "is_interactive": true,
+      "title": "11 · Perfil del bot",
+      "w": 1440,
+      "x": 4560,
+      "y": 6000
+    },
+    "Biblioteca.dc.html": {
+      "expand": "fill",
+      "h": 1200,
+      "is_interactive": true,
+      "title": "12 · Biblioteca",
+      "w": 1440,
+      "x": 6080,
+      "y": 6000
+    },
+    "Ajustes.dc.html": {
+      "expand": "fill",
+      "h": 1500,
+      "is_interactive": true,
+      "title": "13 · Ajustes y conectores",
+      "w": 1440,
+      "x": 0,
+      "y": 8500
+    },
+    "AjustesIA.dc.html": {
+      "expand": "fill",
+      "h": 1300,
+      "is_interactive": true,
+      "title": "13b · Ajustes: login con ChatGPT",
+      "w": 1440,
+      "x": 1520,
+      "y": 8500
+    },
+    "Comandos.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "is_interactive": true,
+      "title": "14 · Paleta de comandos",
+      "w": 1440,
+      "x": 3040,
+      "y": 8500
+    },
+    "Bienvenida.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "15 · Bienvenida",
+      "w": 1440,
+      "x": 4560,
+      "y": 8500
+    },
+    "Mapa.dc.html": {
+      "expand": "fill",
+      "h": 2800,
+      "is_interactive": true,
+      "title": "16 · Arquitectura de la información",
+      "w": 1440,
+      "x": 6080,
+      "y": 8500
+    },
+    "SalaMulti.dc.html": {
+      "expand": "fill",
+      "h": 2050,
+      "is_interactive": true,
+      "title": "17 · Sala con varias personas y bots",
+      "w": 1440,
+      "x": 0,
+      "y": 11700
+    },
+    "SalaVolver.dc.html": {
+      "expand": "fill",
+      "h": 1950,
+      "is_interactive": true,
+      "title": "18 · Al volver a la sala: «Mientras no estabas»",
+      "w": 1440,
+      "x": 1520,
+      "y": 11700
+    },
+    "SalaInvitar.dc.html": {
+      "expand": "fill",
+      "h": 1300,
+      "is_interactive": true,
+      "title": "19 · Invitar personas a la sala",
+      "w": 1440,
+      "x": 3040,
+      "y": 11700
+    },
+    "SalaMiembros.dc.html": {
+      "expand": "fill",
+      "h": 3000,
+      "is_interactive": true,
+      "title": "20 · Miembros y reglas de la sala",
+      "w": 1440,
+      "x": 4560,
+      "y": 11700
+    },
+    "V2Principios.dc.html": {
+      "expand": "fill",
+      "h": 4750,
+      "is_interactive": true,
+      "title": "v2 · 00 · Lo esencial: principios y mapa",
+      "w": 1440,
+      "x": 0,
+      "y": 15300
+    },
+    "V2Bienvenida.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "v2 · 21 · Bienvenida: despertar la colmena",
+      "w": 1440,
+      "x": 1520,
+      "y": 15300
+    },
+    "V2Hoy.dc.html": {
+      "expand": "fill",
+      "h": 2800,
+      "is_interactive": true,
+      "title": "v2 · 22 · Hoy",
+      "w": 1440,
+      "x": 3040,
+      "y": 15300
+    },
+    "V2Revisar.dc.html": {
+      "expand": "fill",
+      "h": 1350,
+      "is_interactive": true,
+      "title": "v2 · 26 · Revisar y editar envío",
+      "w": 1440,
+      "x": 4560,
+      "y": 15300
+    },
+    "V2Conversacion.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "v2 · 23 · Conversación con un bot",
+      "w": 1440,
+      "x": 6080,
+      "y": 15300
+    },
+    "V2Sala.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "v2 · 24 · Sala con personas y bots",
+      "w": 1440,
+      "x": 7600,
+      "y": 15300
+    },
+    "V2Encargo.dc.html": {
+      "expand": "fill",
+      "h": 2000,
+      "is_interactive": true,
+      "title": "v2 · 25 · Encargo en marcha",
+      "w": 1440,
+      "x": 0,
+      "y": 20350
+    },
+    "V2Colmena.dc.html": {
+      "expand": "fill",
+      "h": 1800,
+      "is_interactive": true,
+      "title": "v2 · 27 · Tu colmena",
+      "w": 1440,
+      "x": 1520,
+      "y": 20350
+    },
+    "V2Rutinas.dc.html": {
+      "expand": "fill",
+      "h": 1900,
+      "is_interactive": true,
+      "title": "v2 · 28 · Rutinas",
+      "w": 1440,
+      "x": 3040,
+      "y": 20350
+    },
+    "V2Archivo.dc.html": {
+      "expand": "fill",
+      "h": 1450,
+      "is_interactive": true,
+      "title": "v2 · 29 · Archivo",
+      "w": 1440,
+      "x": 4560,
+      "y": 20350
+    },
+    "V2Ajustes.dc.html": {
+      "expand": "fill",
+      "h": 3300,
+      "is_interactive": true,
+      "title": "v2 · 30 · Ajustes",
+      "w": 1440,
+      "x": 6080,
+      "y": 20350
+    },
+    "V2Debate.dc.html": {
+      "expand": "fill",
+      "h": 1300,
+      "is_interactive": true,
+      "title": "v2 · 31 · Elegir entre propuestas",
+      "w": 1440,
+      "x": 7600,
+      "y": 20350
+    },
+    "V2Objetivos.dc.html": {
+      "expand": "fill",
+      "h": 1600,
+      "is_interactive": true,
+      "title": "v2 · 32 · Objetivos",
+      "w": 1440,
+      "x": 9120,
+      "y": 20350
+    },
+    "V2Ordenador.dc.html": {
+      "expand": "fill",
+      "h": 920,
+      "is_interactive": true,
+      "title": "v2 · 33 · Uso del ordenador y permisos",
+      "w": 1440,
+      "x": 10640,
+      "y": 20350
+    },
+    "V2Rapida.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "v2 · 34 · Pregunta rápida y avisos",
+      "w": 1440,
+      "x": 12160,
+      "y": 20350
+    },
+    "V2Estados.dc.html": {
+      "expand": "fill",
+      "h": 1450,
+      "is_interactive": true,
+      "title": "v2 · 35 · Estados de la app: arranque, conexión, vacíos",
+      "w": 1440,
+      "x": 13680,
+      "y": 20350
+    },
+    "V2Codigo.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "v2 · 36 · Código",
+      "w": 1440,
+      "x": 15200,
+      "y": 20350
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-15T09:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "titulo": {
+      "kind": "title1",
+      "maxW": 8000,
+      "text": "Colmena · 1 · Trabajo diario",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "fila2": {
+      "kind": "title1",
+      "maxW": 6720,
+      "text": "2 · Seguimiento y rutinas",
+      "w": 240,
+      "x": 0,
+      "y": 2000
+    },
+    "fila3": {
+      "kind": "title1",
+      "maxW": 7520,
+      "text": "3 · Equipo y conocimiento",
+      "w": 240,
+      "x": 0,
+      "y": 5700
+    },
+    "fila4": {
+      "kind": "title1",
+      "maxW": 7520,
+      "text": "4 · Sistema y primeros pasos",
+      "w": 240,
+      "x": 0,
+      "y": 8200
+    },
+    "fila5": {
+      "kind": "title1",
+      "maxW": 6000,
+      "text": "5 · Salas con varias personas",
+      "w": 240,
+      "x": 0,
+      "y": 11400
+    },
+    "fila6": {
+      "kind": "title1",
+      "maxW": 9040,
+      "text": "6 · Colmena 2.0 — reducida a lo esencial",
+      "w": 240,
+      "x": 0,
+      "y": 15000
+    },
+    "fila7": {
+      "kind": "title1",
+      "maxW": 15200,
+      "text": "7 · Colmena 2.0 — trabajo, equipo y sistema",
+      "w": 240,
+      "x": 0,
+      "y": 20050
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Bandeja.dc.html",
+    "EditarEnvio.dc.html",
+    "Chat.dc.html",
+    "ChatEstados.dc.html",
+    "Sala.dc.html",
+    "Debate.dc.html",
+    "EnVivo.dc.html",
+    "Misiones.dc.html",
+    "Mision.dc.html",
+    "Automatizaciones.dc.html",
+    "Disparadores.dc.html",
+    "Disparador.dc.html",
+    "Equipo.dc.html",
+    "NuevoBot.dc.html",
+    "NuevoBotAjusta.dc.html",
+    "Bot.dc.html",
+    "Biblioteca.dc.html",
+    "Ajustes.dc.html",
+    "AjustesIA.dc.html",
+    "Comandos.dc.html",
+    "Bienvenida.dc.html",
+    "Mapa.dc.html",
+    "SalaMulti.dc.html",
+    "SalaVolver.dc.html",
+    "SalaInvitar.dc.html",
+    "SalaMiembros.dc.html",
+    "V2Principios.dc.html",
+    "V2Bienvenida.dc.html",
+    "V2Hoy.dc.html",
+    "V2Revisar.dc.html",
+    "V2Conversacion.dc.html",
+    "V2Sala.dc.html",
+    "V2Encargo.dc.html",
+    "V2Colmena.dc.html",
+    "V2Rutinas.dc.html",
+    "V2Archivo.dc.html",
+    "V2Ajustes.dc.html",
+    "V2Debate.dc.html",
+    "V2Objetivos.dc.html",
+    "V2Ordenador.dc.html",
+    "V2Rapida.dc.html",
+    "V2Estados.dc.html",
+    "V2Codigo.dc.html"
+  ],
+  "pages": [],
+  "title": "Colmena — harness de bots"
+}

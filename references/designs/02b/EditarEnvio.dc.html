@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Editar envío</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #2F6BFF;outline-offset:2px}
+@keyframes toastin{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div style="min-height: 1400px; display: flex; flex-wrap: wrap; background: #EEF0F4">
+
+<nav aria-label="Navegación principal" style="flex: 1 1 248px; background: #12131A; color: #C9CCD6; padding: 20px 14px 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<span style="font: 800 22px/1 'Bricolage Grotesque', sans-serif; color: #FFFFFF; letter-spacing: -0.01em">Colmena</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Inicio</a>
+<a href="Bandeja.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; background: #FFC93C; color: #12131A; font-weight: 600; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1 3h6l1-3h4M5 5h14l1 8v6H4v-6z"></path></svg><span style="flex: 1">Bandeja</span><span style="font: 600 12px/1 'Geist Mono', monospace">3</span></a>
+<a href="Misiones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg><span style="flex: 1">Misiones</span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #9DA2B0">3</span></a>
+<a href="Biblioteca.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4v16H5zM11 4h4v16h-4zM17 6l3 .8-3.2 13.4-3-.8z"></path></svg>Biblioteca</a>
+<a href="Automatizaciones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Automatizaciones</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><span style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Salas</span><button type="button" aria-label="Nueva sala" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; color: #9DA2B0; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #FFFFFF; font-size: 14px; font-weight: 600"><span style="color: #9DA2B0">#</span><span style="flex: 1">informe-q3</span><span style="width: 8px; height: 8px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Debate.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>campaña-primavera</a>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>facturación</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><a href="Equipo.dc.html" style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Tu equipo</a><a href="NuevoBot.dc.html" aria-label="Añadir bot" style="width: 28px; height: 28px; display: grid; place-items: center; color: #9DA2B0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a></div>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 11px/1 'Bricolage Grotesque', sans-serif">A</span><span style="flex: 1">Atlas</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span><span style="flex: 1">Nora</span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span><span style="flex: 1">Tomás</span><span style="width: 7px; height: 7px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">I</span><span style="flex: 1">Iris</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">B</span><span style="flex: 1">Bruno</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">V</span><span style="flex: 1">Vera</span></a>
+</div>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #2C2F3A">
+<span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #E6E8EE; color: #12131A; display: grid; place-items: center; font-weight: 700; font-size: 13px">TÚ</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="color: #FFFFFF; font-weight: 600; font-size: 14px">Tu cuenta</span><span style="font-size: 12px; color: #9DA2B0">Administrador</span></span>
+<a href="Ajustes.dc.html" aria-label="Ajustes y conectores" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: #C9CCD6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></a>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 24px clamp(16px, 3vw, 40px) 56px; display: flex; flex-direction: column; gap: 20px">
+
+<div style="width: 100%; max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #4A4F5C"><a href="Bandeja.dc.html" style="font-weight: 600; color: #1F4FD1">Bandeja</a><span aria-hidden="true">/</span><span>Envío de Vera</span><sc-if value="{{isEdit}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true">/</span><span style="color: #12131A; font-weight: 600">Editar</span></sc-if></p>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h1 style="margin: 0; font: 800 34px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">{{title}}</h1>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<span style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 15px; font-size: 13px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"></path></svg>Sin enviar</span>
+<sc-if value="{{edited}}" hint-placeholder-val="{{ false }}"><span style="display: flex; align-items: center; height: 30px; padding: 0 12px; background: #EEE8FF; border-radius: 15px; font-size: 13px; font-weight: 600; color: #3E1FA3">Editado por ti</span></sc-if>
+<sc-if value="{{dirtyEdit}}" hint-placeholder-val="{{ false }}"><span style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; background: #FFF4D1; border: 1px solid #F2D27A; border-radius: 15px; font-size: 13px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #C98A00"></span>Cambios sin guardar</span></sc-if>
+</div>
+</div>
+</div>
+
+<sc-if value="{{isEdit}}" hint-placeholder-val="{{ true }}">
+<form aria-label="Editar envío" style="width: 100%; max-width: 880px; margin: 0 auto; background: #FFFFFF; border: 2px solid #12131A; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column">
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #F7F8FA; border-bottom: 1px solid #E6E8EE; font-size: 14px">
+<span aria-hidden="true" style="width: 28px; height: 28px; flex: none; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 5px 50% 5px; font: 800 12px/1 'Bricolage Grotesque', sans-serif">V</span>
+<span style="flex: 1; line-height: 1.4"><strong>De:</strong> [TU NOMBRE] <span style="color: #4A4F5C">· lo envía Vera en tu nombre</span></span>
+</div>
+
+<div style="display: grid; grid-template-columns: 88px 1fr; align-items: start; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #E6E8EE">
+<label for="campo-para" style="padding-top: 11px; font-size: 14px; font-weight: 600">Para</label>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 44px">
+<sc-for list="{{toChips}}" as="c" hint-placeholder-count="3">
+<span style="display: flex; align-items: center; gap: 4px; height: 34px; padding: 0 4px 0 12px; background: #EEF0F4; border-radius: 17px; font-size: 14px">{{c.addr}}<button type="button" aria-label="{{c.aria}}" onClick="{{c.remove}}" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 50%; cursor: pointer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span>
+</sc-for>
+<input id="campo-para" type="email" value="{{to.value}}" onChange="{{to.change}}" onKeyDown="{{to.key}}" placeholder="Añadir y pulsar Intro" style="flex: 1 1 180px; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; font-size: 15px">
+<span style="display: flex; gap: 4px">
+<sc-if value="{{ccHidden}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{openCc}}" style="height: 34px; padding: 0 10px; background: transparent; border: 1px solid #DCE0E8; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600">CC</button></sc-if>
+<sc-if value="{{ccoHidden}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{openCco}}" style="height: 34px; padding: 0 10px; background: transparent; border: 1px solid #DCE0E8; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600">CCO</button></sc-if>
+</span>
+</div>
+<sc-if value="{{noTo}}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size: 13px; color: #B4372A; font-weight: 600">Añade al menos un destinatario para poder guardar.</span></sc-if>
+</div>
+</div>
+
+<sc-if value="{{showCc}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: 88px 1fr; align-items: start; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #E6E8EE">
+<label for="campo-cc" style="padding-top: 11px; font-size: 14px; font-weight: 600">CC</label>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 44px">
+<sc-for list="{{ccChips}}" as="c" hint-placeholder-count="1">
+<span style="display: flex; align-items: center; gap: 4px; height: 34px; padding: 0 4px 0 12px; background: #EEF0F4; border-radius: 17px; font-size: 14px">{{c.addr}}<button type="button" aria-label="{{c.aria}}" onClick="{{c.remove}}" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 50%; cursor: pointer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span>
+</sc-for>
+<input id="campo-cc" type="email" value="{{cc.value}}" onChange="{{cc.change}}" onKeyDown="{{cc.key}}" placeholder="En copia: lo verán todos" style="flex: 1 1 180px; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; font-size: 15px">
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showCco}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: 88px 1fr; align-items: start; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #E6E8EE">
+<label for="campo-cco" style="padding-top: 11px; font-size: 14px; font-weight: 600">CCO</label>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 44px">
+<sc-for list="{{ccoChips}}" as="c" hint-placeholder-count="1">
+<span style="display: flex; align-items: center; gap: 4px; height: 34px; padding: 0 4px 0 12px; background: #EEF0F4; border-radius: 17px; font-size: 14px">{{c.addr}}<button type="button" aria-label="{{c.aria}}" onClick="{{c.remove}}" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 50%; cursor: pointer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span>
+</sc-for>
+<input id="campo-cco" type="email" value="{{cco.value}}" onChange="{{cco.change}}" onKeyDown="{{cco.key}}" placeholder="Copia oculta: nadie más lo verá" style="flex: 1 1 180px; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; font-size: 15px">
+</div>
+</div>
+</sc-if>
+
+<div style="display: grid; grid-template-columns: 88px 1fr; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #E6E8EE">
+<label for="campo-asunto" style="font-size: 14px; font-weight: 600">Asunto</label>
+<input id="campo-asunto" type="text" value="{{subject}}" onChange="{{subjectChange}}" style="width: 100%; height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-size: 16px; font-weight: 600; background: #FFFFFF">
+</div>
+
+<div style="padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #E6E8EE">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+<label for="campo-cuerpo" style="font-size: 14px; font-weight: 600">Mensaje</label>
+<div role="toolbar" aria-label="Formato" style="display: flex; gap: 2px; padding: 3px; background: #F4F5F8; border-radius: 10px">
+<button type="button" aria-label="Negrita" style="width: 36px; height: 34px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-weight: 800">B</button>
+<button type="button" aria-label="Cursiva" style="width: 36px; height: 34px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 7px; cursor: pointer; font-style: italic; font-family: Georgia, serif">I</button>
+<button type="button" aria-label="Lista" style="width: 36px; height: 34px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 7px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"></path></svg></button>
+<button type="button" aria-label="Enlace" style="width: 36px; height: 34px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 7px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></button>
+</div>
+</div>
+<textarea id="campo-cuerpo" rows="12" value="{{body}}" onChange="{{bodyChange}}" style="width: 100%; padding: 14px 16px; border: 1px solid #C9CED8; border-radius: 12px; font-size: 16px; line-height: 1.6; resize: vertical; background: #FFFFFF"></textarea>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px">
+<span style="display: flex; align-items: center; gap: 6px; color: #4A4F5C"><span aria-hidden="true" style="width: 20px; height: 20px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 9px/1 'Bricolage Grotesque', sans-serif">V</span>Pedir a Vera:</span>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 1px dashed #A9AEBB; border-radius: 16px; cursor: pointer; font-size: 13px">Más corto</button>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 1px dashed #A9AEBB; border-radius: 16px; cursor: pointer; font-size: 13px">Más formal</button>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 1px dashed #A9AEBB; border-radius: 16px; cursor: pointer; font-size: 13px">Revisar ortografía</button>
+</div>
+</div>
+
+<div style="padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 14px; font-weight: 600">Adjuntos <span style="font-weight: 500; color: #4A4F5C">· {{fileCount}}</span></span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="2">
+<span style="display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 6px 6px 8px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 12px">
+<span aria-hidden="true" style="width: 36px; height: 40px; border-radius: 6px; display: grid; place-items: center; font: 700 9px/1 'Geist Mono', monospace; background: {{f.bg}}; color: {{f.fg}}">{{f.kind}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px">{{f.name}}</strong><span style="font-size: 12px; color: #4A4F5C">{{f.meta}}</span></span>
+<button type="button" aria-label="{{f.aria}}" onClick="{{f.remove}}" style="width: 36px; height: 36px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 8px; cursor: pointer; color: #4A4F5C"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</span>
+</sc-for>
+<button type="button" style="display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 16px; background: #F7F8FA; border: 1.5px dashed #A9AEBB; border-radius: 12px; cursor: pointer; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M20 11.5 12.5 19a5 5 0 0 1-7-7L13 4.5a3.3 3.3 0 0 1 4.7 4.7L10.4 16.5a1.7 1.7 0 0 1-2.4-2.4L15 7"></path></svg>Añadir archivo o arrastrarlo aquí</button>
+</div>
+</div>
+
+<div style="position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; background: #FFFFFF; border-top: 1px solid #E6E8EE">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #4A4F5C"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"></path></svg>{{footNote}}</span>
+<div style="display: flex; gap: 8px">
+<button type="button" onClick="{{cancel}}" style="height: 48px; padding: 0 18px; background: #FFFFFF; border: 1px solid #C9CED8; border-radius: 12px; cursor: pointer; font-size: 15px">Cancelar</button>
+<button type="button" onClick="{{save}}" disabled="{{noTo}}" style="height: 48px; padding: 0 22px; background: #FFC93C; border: 2px solid #12131A; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 15px; opacity: {{saveOpacity}}">Guardar cambios</button>
+</div>
+</div>
+</form>
+</sc-if>
+
+<sc-if value="{{isConfirm}}" hint-placeholder-val="{{ false }}">
+<div style="width: 100%; max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px">
+
+<sc-if value="{{toast}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 18px; background: #E1F4EC; border: 1.5px solid #0B8A5F; border-radius: 14px; font-size: 15px; animation: toastin .25s ease-out">
+<span aria-hidden="true" style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: #0B8A5F; color: #FFFFFF; display: grid; place-items: center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></span>
+<span style="flex: 1 1 280px"><strong>Cambios guardados.</strong> Todavía no se ha enviado nada: revisa y aprueba cuando quieras.</span>
+<button type="button" onClick="{{reopen}}" style="height: 38px; padding: 0 12px; background: transparent; border: 1px solid #0B8A5F; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600">Seguir editando</button>
+</div>
+</sc-if>
+
+<section aria-label="Vista previa del envío" style="background: #FFFFFF; border: 2px solid #12131A; border-radius: 20px; box-shadow: 8px 8px 0 #FFC93C; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #F7F8FA; border-bottom: 1px solid #E6E8EE">
+<span aria-hidden="true" style="width: 32px; height: 32px; flex: none; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 6px 50% 6px; font: 800 14px/1 'Bricolage Grotesque', sans-serif">V</span>
+<span style="flex: 1; font-size: 14px; line-height: 1.4"><strong>Vera</strong> quiere enviar este correo en tu nombre <span style="color: #4A4F5C">· rutina de los jueves</span></span>
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #555A68">Lo que se enviará</span>
+</div>
+<div style="padding: 6px 20px; display: flex; flex-direction: column; font-size: 15px">
+<div style="display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid #E6E8EE"><span style="color: #4A4F5C">Para</span><span>{{savedTo}}</span></div>
+<sc-if value="{{hasCc}}" hint-placeholder-val="{{ false }}"><div style="display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid #E6E8EE"><span style="color: #4A4F5C">CC</span><span>{{savedCc}}</span></div></sc-if>
+<sc-if value="{{hasCco}}" hint-placeholder-val="{{ false }}"><div style="display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid #E6E8EE"><span style="color: #4A4F5C">CCO</span><span>{{savedCco}}</span></div></sc-if>
+<div style="display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid #E6E8EE"><span style="color: #4A4F5C">Asunto</span><strong>{{savedSubject}}</strong></div>
+</div>
+<div style="padding: 18px 20px 20px; font-size: 16px; line-height: 1.65; white-space: pre-line">{{savedBody}}</div>
+<div style="padding: 0 20px 20px; display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{savedFiles}}" as="f" hint-placeholder-count="2">
+<span style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px 0 8px; border: 1px solid #DCE0E8; border-radius: 12px"><span aria-hidden="true" style="width: 32px; height: 36px; border-radius: 6px; display: grid; place-items: center; font: 700 9px/1 'Geist Mono', monospace; background: {{f.bg}}; color: {{f.fg}}">{{f.kind}}</span><span style="font-size: 14px; font-weight: 600">{{f.name}}</span></span>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; background: #F7F8FA; border-top: 1px solid #E6E8EE">
+<span style="font-size: 13px; color: #4A4F5C; max-width: 340px; line-height: 1.45">Vera tendrá en cuenta tus cambios para el resumen de la semana que viene.</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 48px; padding: 0 14px; background: transparent; border: 0; border-radius: 12px; cursor: pointer; font-size: 15px; color: #4A4F5C">Rechazar</button>
+<button type="button" onClick="{{reopen}}" style="height: 48px; padding: 0 18px; background: #FFFFFF; border: 1px solid #12131A; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 15px">Editar</button>
+<a href="Bandeja.dc.html" style="display: flex; align-items: center; height: 48px; padding: 0 22px; background: #FFC93C; border: 2px solid #12131A; border-radius: 12px; font-weight: 700; font-size: 15px">Aprobar y enviar</a>
+</div>
+</div>
+</section>
+</div>
+</sc-if>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const base = {
+      to: ['[DIRECCIÓN 1]', '[DIRECCIÓN 2]', '[DIRECCIÓN 3]'],
+      cc: [],
+      cco: [],
+      subject: 'Resumen semanal de operaciones · semana 42',
+      body: 'Hola a todos:\n\nLo más importante de esta semana:\n– El informe del tercer trimestre estará listo el jueves para el comité.\n– Hemos recibido una oferta nueva de limpieza; la estamos comparando con el contrato actual.\n– La facturación automática entra en pruebas la semana que viene.\n\nUn saludo,\n[TU NOMBRE]',
+      files: [
+        { name: 'informe-q3-borrador.pdf', meta: 'PDF · 8 páginas', kind: 'PDF' },
+        { name: 'portada-primavera.png', meta: 'Imagen · propuesta elegida', kind: 'IMG' }
+      ]
+    };
+    this.state = {
+      view: 'editar',
+      saved: base,
+      draft: JSON.parse(JSON.stringify(base)),
+      showCc: true,
+      showCco: false,
+      newTo: '', newCc: '', newCco: '',
+      toast: false,
+      edited: false
+    };
+  }
+  patchDraft(patch) {
+    this.setState({ draft: Object.assign({}, this.state.draft, patch) });
+  }
+  renderVals() {
+    const s = this.state;
+    const d = s.draft;
+    const sv = s.saved;
+    const chips = (field) => d[field].map((addr) => ({
+      addr,
+      aria: 'Quitar ' + addr,
+      remove: () => this.patchDraft({ [field]: this.state.draft[field].filter((x) => x !== addr) })
+    }));
+    const adder = (field, key) => ({
+      value: s[key],
+      change: (e) => this.setState({ [key]: e.target.value }),
+      key: (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          const v = (this.state[key] || '').trim();
+          if (v && this.state.draft[field].indexOf(v) === -1) {
+            this.setState({ draft: Object.assign({}, this.state.draft, { [field]: this.state.draft[field].concat([v]) }), [key]: '' });
+          }
+        }
+      }
+    });
+    const fileStyle = (f) => f.kind === 'PDF' ? { bg: '#FDE7E7', fg: '#A3201B' } : { bg: '#FFE6F1', fg: '#8A1550' };
+    const files = d.files.map((f) => Object.assign({}, f, fileStyle(f), {
+      aria: 'Quitar ' + f.name,
+      remove: () => this.patchDraft({ files: this.state.draft.files.filter((x) => x.name !== f.name) })
+    }));
+    const savedFiles = sv.files.map((f) => Object.assign({}, f, fileStyle(f)));
+    const dirty = JSON.stringify(d) !== JSON.stringify(sv);
+    const isEdit = s.view === 'editar';
+    const noTo = d.to.length === 0;
+    return {
+      isEdit,
+      isConfirm: !isEdit,
+      title: isEdit ? 'Editar envío' : 'Enviar el resumen semanal',
+      edited: s.edited,
+      dirtyEdit: isEdit && dirty,
+      toChips: chips('to'),
+      ccChips: chips('cc'),
+      ccoChips: chips('cco'),
+      to: adder('to', 'newTo'),
+      cc: adder('cc', 'newCc'),
+      cco: adder('cco', 'newCco'),
+      showCc: s.showCc,
+      showCco: s.showCco,
+      ccHidden: !s.showCc,
+      ccoHidden: !s.showCco,
+      openCc: () => this.setState({ showCc: true }),
+      openCco: () => this.setState({ showCco: true }),
+      noTo,
+      saveOpacity: noTo ? '0.45' : '1',
+      subject: d.subject,
+      subjectChange: (e) => this.patchDraft({ subject: e.target.value }),
+      body: d.body,
+      bodyChange: (e) => this.patchDraft({ body: e.target.value }),
+      files,
+      fileCount: d.files.length === 1 ? '1 archivo' : d.files.length + ' archivos',
+      footNote: dirty ? 'Al cancelar se descartan los cambios. Nada se envía desde aquí.' : 'Nada se envía desde aquí: volverás a la confirmación.',
+      save: () => {
+        if (this.state.draft.to.length === 0) return;
+        const copy = JSON.parse(JSON.stringify(this.state.draft));
+        this.setState({ saved: copy, view: 'confirmar', toast: true, edited: this.state.edited || JSON.stringify(copy) !== JSON.stringify(this.state.saved) });
+      },
+      cancel: () => this.setState({ draft: JSON.parse(JSON.stringify(this.state.saved)), view: 'confirmar', toast: false, newTo: '', newCc: '', newCco: '' }),
+      reopen: () => this.setState({ draft: JSON.parse(JSON.stringify(this.state.saved)), view: 'editar', toast: false }),
+      toast: s.toast,
+      savedTo: sv.to.join(', '),
+      savedCc: sv.cc.join(', '),
+      savedCco: sv.cco.join(', '),
+      hasCc: sv.cc.length > 0,
+      hasCco: sv.cco.length > 0,
+      savedSubject: sv.subject,
+      savedBody: sv.body,
+      savedFiles
+    };
+  }
+}
+</script>
+</body>
+</html>

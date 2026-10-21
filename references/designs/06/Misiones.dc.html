@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Misiones</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+</style>
+</helmet>
+<div style="min-height: 1100px; display: flex; flex-wrap: wrap; background: #EEF0F4">
+
+<nav aria-label="Navegación principal" style="flex: 1 1 248px; background: #12131A; color: #C9CCD6; padding: 20px 14px 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<span style="font: 800 22px/1 'Bricolage Grotesque', sans-serif; color: #FFFFFF; letter-spacing: -0.01em">Colmena</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Inicio</a>
+<a href="Bandeja.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1 3h6l1-3h4M5 5h14l1 8v6H4v-6z"></path></svg><span style="flex: 1">Bandeja</span><span style="min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #FFC93C; color: #12131A; font: 600 11px/20px 'Geist Mono', monospace; text-align: center">3</span></a>
+<a href="Misiones.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; background: #FFC93C; color: #12131A; font-weight: 600; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg><span style="flex: 1">Misiones</span><span style="font: 500 12px/1 'Geist Mono', monospace">3</span></a>
+<a href="Biblioteca.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4v16H5zM11 4h4v16h-4zM17 6l3 .8-3.2 13.4-3-.8z"></path></svg>Biblioteca</a>
+<a href="Automatizaciones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Automatizaciones</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><span style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Salas</span><button type="button" aria-label="Nueva sala" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; color: #9DA2B0; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #FFFFFF; font-size: 14px; font-weight: 600"><span style="color: #9DA2B0">#</span><span style="flex: 1">informe-q3</span><span style="width: 8px; height: 8px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Debate.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>campaña-primavera</a>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>facturación</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><a href="Equipo.dc.html" style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Tu equipo</a><a href="NuevoBot.dc.html" aria-label="Añadir bot" style="width: 28px; height: 28px; display: grid; place-items: center; color: #9DA2B0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a></div>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 11px/1 'Bricolage Grotesque', sans-serif">A</span><span style="flex: 1">Atlas</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span><span style="flex: 1">Nora</span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span><span style="flex: 1">Tomás</span><span style="width: 7px; height: 7px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">I</span><span style="flex: 1">Iris</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">B</span><span style="flex: 1">Bruno</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">V</span><span style="flex: 1">Vera</span></a>
+</div>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #2C2F3A">
+<span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #E6E8EE; color: #12131A; display: grid; place-items: center; font-weight: 700; font-size: 13px">TÚ</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="color: #FFFFFF; font-weight: 600; font-size: 14px">Tu cuenta</span><span style="font-size: 12px; color: #9DA2B0">Administrador</span></span>
+<a href="Ajustes.dc.html" aria-label="Ajustes y conectores" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: #C9CCD6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></a>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; padding: 28px clamp(16px, 3vw, 36px) 48px; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font: 800 36px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Misiones</h1>
+<p style="margin: 0; font-size: 15px; color: #4A4F5C">Todos los encargos de todas las salas, en un mismo sitio.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<div role="group" aria-label="Vista" style="display: flex; gap: 4px; padding: 4px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 12px">
+<button type="button" aria-pressed="true" style="height: 38px; padding: 0 14px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 9px; cursor: pointer; font-weight: 600; font-size: 14px">Tablero</button>
+<button type="button" aria-pressed="false" style="height: 38px; padding: 0 14px; background: transparent; border: 0; border-radius: 9px; cursor: pointer; font-size: 14px">Lista</button>
+<button type="button" aria-pressed="false" style="height: 38px; padding: 0 14px; background: transparent; border: 0; border-radius: 9px; cursor: pointer; font-size: 14px">Calendario</button>
+</div>
+<button type="button" style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 18px; background: #FFC93C; border: 2px solid #12131A; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nueva misión</button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<button type="button" aria-pressed="true" style="height: 38px; padding: 0 14px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 19px; cursor: pointer; font-weight: 600; font-size: 14px">Todas</button>
+<button type="button" aria-pressed="false" style="height: 38px; padding: 0 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 19px; cursor: pointer; font-size: 14px">Encargadas por mí</button>
+<button type="button" aria-pressed="false" style="height: 38px; padding: 0 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 19px; cursor: pointer; font-size: 14px">Con un bot concreto</button>
+<span style="flex: 1"></span>
+<span style="font-size: 13px; color: #4A4F5C">Ordenadas por fecha de entrega</span>
+</div>
+
+<div style="overflow-x: auto; padding-bottom: 8px">
+<div style="display: grid; grid-template-columns: repeat(4, minmax(260px, 1fr)); gap: 16px; min-width: 1080px; align-items: start">
+
+<section aria-labelledby="col1" style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #FFF4D1; border: 1px solid #F2D27A; border-radius: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px"><h2 id="col1" style="margin: 0; display: flex; align-items: center; gap: 8px; font: 700 16px/1 'Bricolage Grotesque', sans-serif"><span style="width: 10px; height: 10px; border-radius: 3px; background: #C98A00"></span>Te esperan</h2><span style="font: 600 13px/1 'Geist Mono', monospace">2</span></div>
+<a href="Sala.dc.html" style="display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #FFFFFF; border: 2px solid #12131A; border-radius: 14px">
+<span style="font-size: 12px; color: #4A4F5C"># informe-q3 · equipo</span>
+<strong style="font: 700 17px/1.2 'Bricolage Grotesque', sans-serif">Informe Q3 para el comité</strong>
+<span style="font-size: 14px; line-height: 1.4; padding: 8px 10px; background: #FFF4D1; border-radius: 8px">Tomás pregunta por las devoluciones</span>
+<span style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px" aria-label="1 de 4 pasos hecho"><span style="height: 6px; border-radius: 3px; background: #FFC93C; outline: 1.5px solid #12131A; outline-offset: -1.5px"></span><span style="height: 6px; border-radius: 3px; background: #12131A"></span><span style="height: 6px; border-radius: 3px; background: repeating-linear-gradient(135deg, #12131A 0 4px, #8C91A0 4px 8px)"></span><span style="height: 6px; border-radius: 3px; background: #DCE0E8"></span></span>
+<span style="display: flex; align-items: center; justify-content: space-between"><span aria-hidden="true" style="display: flex"><span style="width: 24px; height: 24px; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 11px/1 'Bricolage Grotesque', sans-serif">A</span><span style="width: 24px; height: 24px; margin-left: -4px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 6px; border: 2px solid #FFFFFF; font: 800 10px/1 'Bricolage Grotesque', sans-serif">T</span><span style="width: 24px; height: 24px; margin-left: -4px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; border: 2px solid #FFFFFF; font: 800 10px/1 'Bricolage Grotesque', sans-serif">N</span><span style="width: 24px; height: 24px; margin-left: -4px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; border: 2px solid #FFFFFF; font: 800 10px/1 'Bricolage Grotesque', sans-serif">V</span></span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #4A4F5C">Jue 12:30</span></span>
+</a>
+<a href="Debate.dc.html" style="display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #FFFFFF; border: 2px solid #12131A; border-radius: 14px">
+<span style="font-size: 12px; color: #4A4F5C"># campaña-primavera · debate</span>
+<strong style="font: 700 17px/1.2 'Bricolage Grotesque', sans-serif">Nueva portada de primavera</strong>
+<span style="font-size: 14px; line-height: 1.4; padding: 8px 10px; background: #FFF4D1; border-radius: 8px">Elige entre 3 propuestas</span>
+<span style="display: flex; align-items: center; justify-content: space-between"><span aria-hidden="true" style="display: flex"><span style="width: 24px; height: 24px; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 9px/1 'Bricolage Grotesque', sans-serif">I</span><span style="width: 24px; height: 24px; margin-left: -4px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; border: 2px solid #FFFFFF; font: 800 10px/1 'Bricolage Grotesque', sans-serif">V</span><span style="width: 24px; height: 24px; margin-left: -4px; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; border: 2px solid #FFFFFF; font: 800 10px/1 'Bricolage Grotesque', sans-serif">B</span></span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #4A4F5C">Vie</span></span>
+</a>
+</section>
+
+<section aria-labelledby="col2" style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #E4E7ED; border-radius: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px"><h2 id="col2" style="margin: 0; display: flex; align-items: center; gap: 8px; font: 700 16px/1 'Bricolage Grotesque', sans-serif"><span style="width: 10px; height: 10px; border-radius: 50%; background: #0B8A5F"></span>En marcha</h2><span style="font: 600 13px/1 'Geist Mono', monospace">1</span></div>
+<a href="Sala.dc.html" style="display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px">
+<span style="font-size: 12px; color: #4A4F5C"># facturación · un bot</span>
+<strong style="font: 700 17px/1.2 'Bricolage Grotesque', sans-serif">Pasar las macros de facturación a un script</strong>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #0B8A5F; box-shadow: 0 0 0 4px #D6F0E4"></span>Pruebas: 14 de 22</span>
+<span style="height: 6px; border-radius: 3px; background: #DCE0E8; overflow: hidden"><span style="display: block; width: 64%; height: 100%; background: #12131A"></span></span>
+<span style="display: flex; align-items: center; justify-content: space-between"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; font: 800 10px/1 'Bricolage Grotesque', sans-serif">B</span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #4A4F5C">Hoy 17:00</span></span>
+</a>
+<button type="button" style="min-height: 52px; background: transparent; border: 1.5px dashed #A9AEBB; border-radius: 14px; cursor: pointer; font-size: 14px; color: #4A4F5C">Arrastra aquí para reanudar una pausada</button>
+</section>
+
+<section aria-labelledby="col3" style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #E4E7ED; border-radius: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px"><h2 id="col3" style="margin: 0; display: flex; align-items: center; gap: 8px; font: 700 16px/1 'Bricolage Grotesque', sans-serif"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Programadas</h2><span style="font: 600 13px/1 'Geist Mono', monospace">2</span></div>
+<a href="Automatizaciones.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px">
+<span style="font-size: 12px; color: #4A4F5C">Automatización · cada día</span>
+<strong style="font: 700 16px/1.25 'Bricolage Grotesque', sans-serif">Vigilar precios de la competencia</strong>
+<span style="display: flex; align-items: center; justify-content: space-between"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 10px/1 'Bricolage Grotesque', sans-serif">N</span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #4A4F5C">Hoy 13:00</span></span>
+</a>
+<a href="Automatizaciones.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px">
+<span style="font-size: 12px; color: #4A4F5C">Automatización · cada día</span>
+<strong style="font: 700 16px/1.25 'Bricolage Grotesque', sans-serif">Cierre de caja del día</strong>
+<span style="display: flex; align-items: center; justify-content: space-between"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 10px/1 'Bricolage Grotesque', sans-serif">T</span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #4A4F5C">Hoy 18:30</span></span>
+</a>
+</section>
+
+<section aria-labelledby="col4" style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #E4E7ED; border-radius: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px"><h2 id="col4" style="margin: 0; display: flex; align-items: center; gap: 8px; font: 700 16px/1 'Bricolage Grotesque', sans-serif"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Terminadas</h2><span style="font: 600 13px/1 'Geist Mono', monospace">3</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; opacity: 0.85">
+<strong style="font-size: 15px; line-height: 1.3">Resumen del correo</strong>
+<span style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #4A4F5C"><span>Vera</span><span style="font-family: 'Geist Mono', monospace">Hoy 08:02</span></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; opacity: 0.85">
+<strong style="font-size: 15px; line-height: 1.3">Plantilla de presupuestos</strong>
+<span style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #4A4F5C"><span>Iris y Tomás</span><span style="font-family: 'Geist Mono', monospace">Ayer</span></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; opacity: 0.85">
+<strong style="font-size: 15px; line-height: 1.3">Quitar duplicados de la agenda de clientes</strong>
+<span style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #4A4F5C"><span>Bruno</span><span style="font-family: 'Geist Mono', monospace">Lunes</span></span>
+</div>
+<a href="Biblioteca.dc.html" style="padding: 6px; font-size: 14px; font-weight: 600; color: #1F4FD1">Ver entregables en la Biblioteca</a>
+</section>
+
+</div>
+</div>
+
+<section aria-labelledby="plantillas" style="display: flex; flex-direction: column; gap: 12px; padding-top: 8px">
+<h2 id="plantillas" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Empezar desde una plantilla</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px">
+<button type="button" style="padding: 16px; text-align: left; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px"><strong style="font-size: 15px">Informe para dirección</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Datos, comparativa, diapositivas y resumen. 4 bots.</span></button>
+<button type="button" style="padding: 16px; text-align: left; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px"><strong style="font-size: 15px">Revisar un contrato</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Cláusulas a vigilar y fechas clave. 1 bot.</span></button>
+<button type="button" style="padding: 16px; text-align: left; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px"><strong style="font-size: 15px">Tres ideas de diseño</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">En modo debate: proponen, se critican y eliges.</span></button>
+<button type="button" style="padding: 16px; text-align: left; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px"><strong style="font-size: 15px">Automatizar una tarea repetida</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Un bot de código la convierte en script y la prueba.</span></button>
+</div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

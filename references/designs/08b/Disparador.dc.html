@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Configurar disparador</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif; color: #12131A; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column">
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: #F7F8FA; border-bottom: 1px solid #E6E8EE">
+<span aria-hidden="true" style="width: 34px; height: 34px; flex: none; display: grid; place-items: center; background: #12131A; color: #FFFFFF; border-radius: 9px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{icon}}"></path></svg></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font: 500 11px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #555A68">Configurar disparador</span><strong style="font: 700 17px/1.2 'Bricolage Grotesque', sans-serif">{{tipoLabel}}</strong></div>
+</div>
+
+<div style="padding: 18px; display: flex; flex-direction: column; gap: 18px">
+
+<sc-if value="{{is.dia}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Hora<input type="time" value="{{v.hora}}" onChange="{{on.hora}}" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 16px; color: #12131A; background: #FFFFFF"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Zona horaria<select value="{{v.zona}}" onChange="{{on.zona}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="Madrid">Madrid (UTC+2)</option><option value="Canarias">Canarias (UTC+1)</option><option value="Lisboa">Lisboa (UTC+1)</option><option value="Ciudad de México">Ciudad de México (UTC−6)</option></select></label>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px"><span style="font-size: 13px; font-weight: 600">Qué días</span><span style="display: flex; gap: 4px"><sc-for list="{{presets}}" as="p" hint-placeholder-count="3"><button type="button" onClick="{{p.pick}}" style="height: 30px; padding: 0 10px; background: transparent; border: 1px dashed #A9AEBB; border-radius: 15px; cursor: pointer; font-family: inherit; font-size: 12px; color: #12131A">{{p.label}}</button></sc-for></span></div>
+<div role="group" aria-label="Días de la semana" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{dayBtns}}" as="d" hint-placeholder-count="7">
+<button type="button" aria-pressed="{{d.pressed}}" aria-label="{{d.full}}" onClick="{{d.toggle}}" style="height: 44px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 700; background: {{d.bg}}; color: {{d.fg}}; border: {{d.border}}">{{d.short}}</button>
+</sc-for>
+</div>
+<sc-if value="{{noDays}}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size: 13px; font-weight: 600; color: #B4372A">Elige al menos un día.</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600">Si cae en festivo</span>
+<div role="radiogroup" aria-label="Si cae en festivo" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #EEF0F4; border-radius: 12px">
+<sc-for list="{{festivoOpts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="flex: 1 1 auto; min-height: 38px; padding: 0 12px; border: 0; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; background: {{o.bg}}; color: {{o.fg}}">{{o.label}}</button></sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.semana}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600">Qué día</span>
+<div role="radiogroup" aria-label="Día de la semana" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{weekBtns}}" as="d" hint-placeholder-count="7">
+<button type="button" role="radio" aria-checked="{{d.pressed}}" aria-label="{{d.full}}" onClick="{{d.pick}}" style="height: 44px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 700; background: {{d.bg}}; color: {{d.fg}}; border: {{d.border}}">{{d.short}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Hora<input type="time" value="{{v.semHora}}" onChange="{{on.semHora}}" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 16px; color: #12131A; background: #FFFFFF"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Cada cuántas semanas<select value="{{v.semCada}}" onChange="{{on.semCada}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="1">Cada semana</option><option value="2">Cada 2 semanas</option><option value="3">Cada 3 semanas</option><option value="4">Cada 4 semanas</option></select></label>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.vez}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Fecha<input type="date" value="{{v.vezFecha}}" min="2026-10-15" onChange="{{on.vezFecha}}" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 16px; color: #12131A; background: #FFFFFF"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Hora<input type="time" value="{{v.vezHora}}" onChange="{{on.vezHora}}" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 16px; color: #12131A; background: #FFFFFF"></label>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Avisarme el día antes</span><span style="font-size: 13px; color: #4A4F5C">Por si quieres cambiar algo</span></span><button type="button" role="switch" aria-checked="{{sw.vezAviso.checked}}" aria-label="Avisarme el día antes" onClick="{{sw.vezAviso.toggle}}" style="width: 52px; height: 30px; flex: none; padding: 3px; border: 0; border-radius: 15px; cursor: pointer; display: flex; background: {{sw.vezAviso.track}}; justify-content: {{sw.vezAviso.justify}}"><span style="width: 24px; height: 24px; border-radius: 50%; background: {{sw.vezAviso.knob}}"></span></button></div>
+<span style="font-size: 13px; color: #4A4F5C">Después de ejecutarse, la automatización se pausa sola.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{is.correo}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">En qué buzón<select value="{{v.buzon}}" onChange="{{on.buzon}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="facturas@[tu-dominio]">facturas@[tu-dominio]</option><option value="tu correo">Tu correo</option><option value="info@[tu-dominio]">info@[tu-dominio]</option></select></label>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600">De quién</span>
+<div role="radiogroup" aria-label="Remitente" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #EEF0F4; border-radius: 12px">
+<sc-for list="{{deOpts}}" as="o" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="flex: 1 1 auto; min-height: 38px; padding: 0 12px; border: 0; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; background: {{o.bg}}; color: {{o.fg}}">{{o.label}}</button></sc-for>
+</div>
+<sc-if value="{{deAlgunos}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 48px; padding: 4px 6px; border: 1px solid #C9CED8; border-radius: 10px">
+<sc-for list="{{remChips}}" as="c" hint-placeholder-count="2"><span style="display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 2px 0 12px; background: #EEF0F4; border-radius: 17px; font-size: 14px">{{c.addr}}<button type="button" aria-label="{{c.aria}}" onClick="{{c.remove}}" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 50%; cursor: pointer; color: #12131A"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span></sc-for>
+<input type="text" aria-label="Añadir remitente" value="{{v.nuevoRem}}" onChange="{{on.nuevoRem}}" onKeyDown="{{addRem}}" placeholder="Dirección o @dominio y pulsa Intro" style="flex: 1 1 160px; min-width: 0; height: 36px; border: 0; outline: none; background: transparent; font-family: inherit; font-size: 14px; color: #12131A">
+</div>
+</sc-if>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">El asunto contiene<input type="text" value="{{v.asunto}}" onChange="{{on.asunto}}" placeholder="Opcional" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"></label>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 13px; font-weight: 600">Adjuntos</span><div role="radiogroup" aria-label="Adjuntos" style="display: flex; gap: 4px; padding: 4px; background: #EEF0F4; border-radius: 12px"><sc-for list="{{adjOpts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="flex: 1 1 auto; min-height: 36px; padding: 0 8px; border: 0; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; background: {{o.bg}}; color: {{o.fg}}">{{o.label}}</button></sc-for></div></div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #FFF4D1; border-radius: 12px">
+<span aria-hidden="true" style="width: 26px; height: 26px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 12px/1 'Bricolage Grotesque', sans-serif">A</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Entender el contenido</span><span style="font-size: 13px; line-height: 1.4; color: #2B2D36">Reconoce una factura aunque el asunto no lo diga.</span></span>
+<button type="button" role="switch" aria-checked="{{sw.entiende.checked}}" aria-label="Entender el contenido" onClick="{{sw.entiende.toggle}}" style="width: 52px; height: 30px; flex: none; padding: 3px; border: 0; border-radius: 15px; cursor: pointer; display: flex; background: {{sw.entiende.track}}; justify-content: {{sw.entiende.justify}}"><span style="width: 24px; height: 24px; border-radius: 50%; background: {{sw.entiende.knob}}"></span></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.archivo}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; font-weight: 600">En qué carpeta</span>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 48px; padding: 6px 6px 6px 12px; border: 1px solid #C9CED8; border-radius: 10px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h7l2 2h9v11H3z"></path></svg>
+<sc-for list="{{carpetaParts}}" as="c" hint-placeholder-count="3"><span style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: {{c.weight}}">{{c.label}}<sc-if value="{{c.sep}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="color: #8C91A0">›</span></sc-if></span></sc-for>
+<span style="flex: 1"></span>
+<select aria-label="Cambiar carpeta" value="{{v.carpeta}}" onChange="{{on.carpeta}}" style="height: 36px; padding: 0 8px; border: 1px solid #DCE0E8; border-radius: 8px; font-family: inherit; font-size: 13px; color: #12131A; background: #FFFFFF"><option value="Contabilidad/2026">Contabilidad / 2026</option><option value="Contabilidad/2026/Facturas">Contabilidad / 2026 / Facturas</option><option value="Contratos">Contratos</option><option value="Marketing/Campañas">Marketing / Campañas</option></select>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="font-size: 14px; font-weight: 600">Incluir subcarpetas</span><button type="button" role="switch" aria-checked="{{sw.subcarpetas.checked}}" aria-label="Incluir subcarpetas" onClick="{{sw.subcarpetas.toggle}}" style="width: 52px; height: 30px; flex: none; padding: 3px; border: 0; border-radius: 15px; cursor: pointer; display: flex; background: {{sw.subcarpetas.track}}; justify-content: {{sw.subcarpetas.justify}}"><span style="width: 24px; height: 24px; border-radius: 50%; background: {{sw.subcarpetas.knob}}"></span></button></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600">Tipo de archivo</span>
+<div role="radiogroup" aria-label="Tipo de archivo" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #EEF0F4; border-radius: 12px"><sc-for list="{{tipoOpts}}" as="o" hint-placeholder-count="4"><button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="flex: 1 1 auto; min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; background: {{o.bg}}; color: {{o.fg}}">{{o.label}}</button></sc-for></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">El nombre contiene<input type="text" value="{{v.nombre}}" onChange="{{on.nombre}}" placeholder="Opcional, p. ej. «factura»" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Quién lo sube<select value="{{v.quienSube}}" onChange="{{on.quienSube}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="todos">Cualquiera</option><option value="equipo">Solo gente del equipo</option><option value="fuera">Solo gente de fuera</option></select></label>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.evento}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Calendario<select value="{{v.calendario}}" onChange="{{on.calendario}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="del equipo">Calendario del equipo</option><option value="personal">Tu calendario</option><option value="de salas de reunión">Salas de reunión</option></select></label>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600">Qué eventos</span>
+<div role="radiogroup" aria-label="Qué eventos" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #EEF0F4; border-radius: 12px"><sc-for list="{{eventoOpts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="flex: 1 1 auto; min-height: 38px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; background: {{o.bg}}; color: {{o.fg}}">{{o.label}}</button></sc-for></div>
+<sc-if value="{{eventoPalabraOn}}" hint-placeholder-val="{{ true }}"><label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">El título contiene<input type="text" value="{{v.eventoPalabra}}" onChange="{{on.eventoPalabra}}" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"></label></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; font-weight: 600">Con cuánta antelación</span>
+<div style="display: grid; grid-template-columns: 110px 1fr; gap: 8px">
+<input type="number" min="1" max="99" aria-label="Cantidad" value="{{v.antelacion}}" onChange="{{on.antelacion}}" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 16px; color: #12131A; background: #FFFFFF">
+<select aria-label="Unidad" value="{{v.unidad}}" onChange="{{on.unidad}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="minutos">minutos antes</option><option value="horas">horas antes</option><option value="días">días antes</option></select>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Solo en horario laboral</span><span style="font-size: 13px; color: #4A4F5C">De lunes a viernes, de 8:00 a 19:00</span></span><button type="button" role="switch" aria-checked="{{sw.laboral.checked}}" aria-label="Solo en horario laboral" onClick="{{sw.laboral.toggle}}" style="width: 52px; height: 30px; flex: none; padding: 3px; border: 0; border-radius: 15px; cursor: pointer; display: flex; background: {{sw.laboral.track}}; justify-content: {{sw.laboral.justify}}"><span style="width: 24px; height: 24px; border-radius: 50%; background: {{sw.laboral.knob}}"></span></button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.sala}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">En qué sala<select value="{{v.sala}}" onChange="{{on.sala}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="facturación"># facturación</option><option value="informe-q3"># informe-q3</option><option value="campaña-primavera"># campaña-primavera</option><option value="cualquier sala">Cualquier sala</option></select></label>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600">Cuándo cuenta</span>
+<div role="radiogroup" aria-label="Qué mensajes cuentan" style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{salaOpts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: center; min-height: 46px; padding: 8px 12px; text-align: left; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 14px; color: #12131A; background: {{o.rowBg}}; border: {{o.border}}"><span style="width: 18px; height: 18px; border-radius: 50%; border: 2px solid #12131A; display: grid; place-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{o.dot}}"></span></span>{{o.label}}</button></sc-for>
+</div>
+<sc-if value="{{salaPalabrasOn}}" hint-placeholder-val="{{ false }}"><label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Palabras (separadas por comas)<input type="text" value="{{v.palabras}}" onChange="{{on.palabras}}" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"></label></sc-if>
+</div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">De quién<select value="{{v.deQuien}}" onChange="{{on.deQuien}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="personas">Solo personas</option><option value="todos">Personas y bots</option></select></label>
+<span style="font-size: 13px; line-height: 1.45; color: #4A4F5C">Para evitar bucles, los mensajes del propio bot nunca lo vuelven a poner en marcha.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{is.hoja}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Hoja de cálculo<select value="{{v.hoja}}" onChange="{{on.hoja}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="Gastos 2026">Gastos 2026</option><option value="Ventas Q3">Ventas Q3</option><option value="Plantilla de presupuestos">Plantilla de presupuestos</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Pestaña<select value="{{v.pestana}}" onChange="{{on.pestana}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="Octubre">Octubre</option><option value="Noviembre">Noviembre</option><option value="Resumen">Resumen</option></select></label>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600">Qué cambio</span>
+<div role="radiogroup" aria-label="Qué cambio" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #EEF0F4; border-radius: 12px"><sc-for list="{{cambioOpts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="flex: 1 1 auto; min-height: 38px; padding: 0 10px; border: 0; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; background: {{o.bg}}; color: {{o.fg}}">{{o.label}}</button></sc-for></div>
+</div>
+<sc-if value="{{hojaColumnaOn}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 8px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Columna<select value="{{v.columna}}" onChange="{{on.columna}}" style="height: 44px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"><option value="Importe">Importe</option><option value="Proveedor">Proveedor</option><option value="Estado">Estado</option></select></label>
+<sc-if value="{{hojaValorOn}}" hint-placeholder-val="{{ false }}"><label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Supere<input type="text" value="{{v.valor}}" onChange="{{on.valor}}" style="height: 44px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 10px; font-family: inherit; font-size: 15px; color: #12131A; background: #FFFFFF"></label></sc-if>
+</div>
+</sc-if>
+<span style="font-size: 13px; color: #4A4F5C">Se comprueba cada 5 minutos.</span>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; background: #12131A; color: #FFFFFF; border-radius: 14px">
+<span style="font: 500 11px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #C9CCD6">Se pondrá en marcha cuando</span>
+<span style="font: 600 17px/1.4 'Bricolage Grotesque', sans-serif">{{resumen}}</span>
+<sc-if value="{{hasRuns}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px">
+<span style="font-size: 12px; color: #C9CCD6; align-self: center; margin-right: 2px">Próximas:</span>
+<sc-for list="{{runs}}" as="r" hint-placeholder-count="3"><span style="padding: 5px 9px; background: #2C2F3A; border-radius: 7px; font: 500 12px/1 'Geist Mono', monospace">{{r.label}}</span></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{hasProbe}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 4px">
+<button type="button" onClick="{{probar}}" style="height: 36px; padding: 0 12px; background: #FFC93C; color: #12131A; border: 0; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700">Probar con lo último</button>
+<span style="font-size: 13px; color: #E6E8EE">{{probeText}}</span>
+</div>
+</sc-if>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tipo":{"editor":"enum","options":["dia","semana","vez","correo","archivo","evento","sala","hoja"],"default":"correo"},"onResumen":{"editor":null},"$preview":{"width":640,"height":820}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      hora: '08:00', zona: 'Madrid', dias: [1, 2, 3, 4, 5], festivo: 'saltar',
+      semDia: 1, semHora: '09:00', semCada: '1',
+      vezFecha: '2026-10-30', vezHora: '10:00', vezAviso: true,
+      buzon: 'facturas@[tu-dominio]', deModo: 'algunos', remitentes: ['[PROVEEDOR A]', '@[dominio-proveedor]'], nuevoRem: '', asunto: 'factura', adjuntos: 'pdf', entiende: true,
+      carpeta: 'Contabilidad/2026', subcarpetas: true, tipoArchivo: 'pdf', nombre: '', quienSube: 'todos',
+      calendario: 'del equipo', eventoFiltro: 'palabra', eventoPalabra: 'comité', antelacion: '30', unidad: 'minutos', laboral: true,
+      sala: 'facturación', salaModo: 'mencion', palabras: 'urgente, error', deQuien: 'personas',
+      hoja: 'Gastos 2026', pestana: 'Octubre', cambio: 'supere', columna: 'Importe', valor: '[TU LÍMITE]',
+      probado: false
+    };
+  }
+  componentDidMount() { this.push(); }
+  componentDidUpdate(prev) {
+    if (prev.tipo !== this.props.tipo && this.state.probado) this.setState({ probado: false });
+    this.push();
+  }
+  push() {
+    const t = this.props.tipo ?? 'correo';
+    const r = this.summary(t);
+    if (this.props.onResumen && this.lastSent !== t + '|' + r) {
+      this.lastSent = t + '|' + r;
+      this.props.onResumen(t, r);
+    }
+  }
+  daysText(dias) {
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    const pl = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+    const sel = order.filter((d) => dias.indexOf(d) !== -1);
+    if (sel.length === 7) return 'todos los días';
+    if (sel.length === 0) return 'ningún día';
+    if (sel.join() === '1,2,3,4,5') return 'de lunes a viernes';
+    if (sel.join() === '6,0') return 'los fines de semana';
+    const names = sel.map((d) => pl[d]);
+    return 'los ' + (names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' y ' + names[names.length - 1]);
+  }
+  summary(t) {
+    const s = this.state;
+    const DN = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const ML = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    if (t === 'dia') return 'sean las ' + s.hora + ' ' + this.daysText(s.dias);
+    if (t === 'semana') return 'sea ' + DN[s.semDia] + ' a las ' + s.semHora + (s.semCada !== '1' ? ', cada ' + s.semCada + ' semanas' : '');
+    if (t === 'vez') {
+      const p = (s.vezFecha || '').split('-').map(Number);
+      if (p.length < 3 || !p[0]) return 'llegue la fecha que elijas';
+      const d = new Date(p[0], p[1] - 1, p[2]);
+      return 'llegue el ' + DN[d.getDay()] + ' ' + p[2] + ' de ' + ML[p[1] - 1] + ' a las ' + s.vezHora;
+    }
+    if (t === 'correo') {
+      let r = 'llegue un correo a ' + s.buzon;
+      if (s.deModo === 'algunos' && s.remitentes.length) r += ' de ' + s.remitentes.join(' o ');
+      if (s.asunto.trim()) r += ' con «' + s.asunto.trim() + '» en el asunto';
+      if (s.adjuntos === 'pdf') r += ' y un PDF adjunto';
+      if (s.adjuntos === 'si') r += ' y algún adjunto';
+      return r;
+    }
+    if (t === 'archivo') {
+      const tipos = { pdf: 'un PDF', hoja: 'una hoja de cálculo', imagen: 'una imagen', todo: 'un archivo' };
+      return 'se suba ' + tipos[s.tipoArchivo] + ' a ' + s.carpeta.split('/').join(' / ') + (s.subcarpetas ? ' (o sus subcarpetas)' : '') + (s.nombre.trim() ? ' con «' + s.nombre.trim() + '» en el nombre' : '');
+    }
+    if (t === 'evento') {
+      const f = s.eventoFiltro === 'todos' ? 'cualquier evento' : s.eventoFiltro === 'fuera' ? 'una reunión con gente de fuera' : 'un evento con «' + s.eventoPalabra + '»';
+      return 'falten ' + s.antelacion + ' ' + s.unidad + ' para ' + f + ' del calendario ' + s.calendario;
+    }
+    if (t === 'sala') {
+      const sala = s.sala === 'cualquier sala' ? 'cualquier sala' : '# ' + s.sala;
+      if (s.salaModo === 'todo') return 'alguien escriba en ' + sala;
+      if (s.salaModo === 'mencion') return 'alguien mencione a un bot en ' + sala;
+      return 'alguien escriba «' + s.palabras + '» en ' + sala;
+    }
+    if (s.cambio === 'fila') return 'se añada una fila a ' + s.hoja + ' › ' + s.pestana;
+    if (s.cambio === 'columna') return 'cambie la columna ' + s.columna + ' de ' + s.hoja + ' › ' + s.pestana;
+    return 'el ' + s.columna.toLowerCase() + ' supere ' + s.valor + ' en ' + s.hoja + ' › ' + s.pestana;
+  }
+  renderVals() {
+    const s = this.state;
+    const t = this.props.tipo ?? 'correo';
+    const set = (k) => (e) => this.setState({ [k]: e.target.value });
+    const seg = (key, opts) => opts.map(([id, label]) => {
+      const on = s[key] === id;
+      return { label, checked: on ? 'true' : 'false', bg: on ? '#12131A' : 'transparent', fg: on ? '#FFFFFF' : '#12131A', rowBg: on ? '#FFF4D1' : '#FFFFFF', border: on ? '2px solid #12131A' : '1px solid #DCE0E8', dot: on ? '#12131A' : 'transparent', pick: () => this.setState({ [key]: id }) };
+    });
+    const sw = (key) => {
+      const on = !!s[key];
+      return { checked: on ? 'true' : 'false', track: on ? '#12131A' : '#DCE0E8', knob: on ? '#FFC93C' : '#FFFFFF', justify: on ? 'flex-end' : 'flex-start', toggle: () => this.setState({ [key]: !this.state[key] }) };
+    };
+    const META = {
+      dia: ['Cada día a una hora', 'M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0'],
+      semana: ['Cada semana', 'M4 6h16v14H4zM4 10h16M9 3v4M15 3v4'],
+      vez: ['Una sola vez', 'M5 21V4h12l-2 4 2 4H5'],
+      correo: ['Llegue un correo', 'M3 5h18v14H3zM3 7l9 6 9-6'],
+      archivo: ['Se suba un archivo', 'M3 6h7l2 2h9v11H3z'],
+      evento: ['Se acerque un evento', 'M4 6h16v14H4zM4 10h16M8 14h4'],
+      sala: ['Alguien escriba en una sala', 'M4 5h16v11H9l-5 4z'],
+      hoja: ['Cambie una hoja de cálculo', 'M4 4h16v16H4zM4 10h16M10 4v16']
+    };
+    const meta = META[t] || META.correo;
+    const DAYS = [[1, 'L', 'lunes'], [2, 'M', 'martes'], [3, 'X', 'miércoles'], [4, 'J', 'jueves'], [5, 'V', 'viernes'], [6, 'S', 'sábado'], [0, 'D', 'domingo']];
+    const dayStyle = (on) => ({ pressed: on ? 'true' : 'false', bg: on ? '#12131A' : '#FFFFFF', fg: on ? '#FFFFFF' : '#12131A', border: on ? '2px solid #12131A' : '1px solid #C9CED8' });
+    const NOW = new Date(2026, 9, 15, 11, 0);
+    const DS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+    const MS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const at = (base, hhmm) => { const p = (hhmm || '0:0').split(':').map(Number); return new Date(base.getFullYear(), base.getMonth(), base.getDate(), p[0] || 0, p[1] || 0); };
+    const fmt = (d, hhmm) => DS[d.getDay()] + ' ' + d.getDate() + ' ' + MS[d.getMonth()] + ' · ' + hhmm;
+    let runs = [];
+    if (t === 'dia') {
+      for (let i = 0; i < 21 && runs.length < 3; i++) {
+        const c = at(new Date(2026, 9, 15 + i), s.hora);
+        if (c > NOW && s.dias.indexOf(c.getDay()) !== -1) runs.push(fmt(c, s.hora));
+      }
+    } else if (t === 'semana') {
+      let first = null;
+      for (let i = 0; i < 8 && !first; i++) { const c = at(new Date(2026, 9, 15 + i), s.semHora); if (c > NOW && c.getDay() === s.semDia) first = c; }
+      const n = Number(s.semCada) || 1;
+      for (let k = 0; first && k < 3; k++) { runs.push(fmt(new Date(first.getFullYear(), first.getMonth(), first.getDate() + k * 7 * n), s.semHora)); }
+    } else if (t === 'vez') {
+      const p = (s.vezFecha || '').split('-').map(Number);
+      if (p[0]) runs.push(fmt(new Date(p[0], p[1] - 1, p[2]), s.vezHora) + ' · y se pausa');
+    }
+    const probes = {
+      correo: '12 de los últimos 50 correos habrían coincidido.',
+      archivo: '3 archivos subidos esta semana habrían coincidido.',
+      evento: '2 eventos de la próxima semana coinciden.',
+      sala: '5 mensajes de hoy lo habrían puesto en marcha.',
+      hoja: '1 fila de octubre lo habría puesto en marcha.'
+    };
+    const isTime = t === 'dia' || t === 'semana' || t === 'vez';
+    return {
+      tipoLabel: meta[0],
+      icon: meta[1],
+      is: { dia: t === 'dia', semana: t === 'semana', vez: t === 'vez', correo: t === 'correo', archivo: t === 'archivo', evento: t === 'evento', sala: t === 'sala', hoja: t === 'hoja' },
+      v: s,
+      on: {
+        hora: set('hora'), zona: set('zona'), semHora: set('semHora'), semCada: set('semCada'), vezFecha: set('vezFecha'), vezHora: set('vezHora'),
+        buzon: set('buzon'), nuevoRem: set('nuevoRem'), asunto: set('asunto'), carpeta: set('carpeta'), nombre: set('nombre'), quienSube: set('quienSube'),
+        calendario: set('calendario'), eventoPalabra: set('eventoPalabra'), antelacion: set('antelacion'), unidad: set('unidad'),
+        sala: set('sala'), palabras: set('palabras'), deQuien: set('deQuien'), hoja: set('hoja'), pestana: set('pestana'), columna: set('columna'), valor: set('valor')
+      },
+      dayBtns: DAYS.map(([d, short, full]) => Object.assign({ short, full }, dayStyle(s.dias.indexOf(d) !== -1), {
+        toggle: () => { const cur = this.state.dias; this.setState({ dias: cur.indexOf(d) !== -1 ? cur.filter((x) => x !== d) : cur.concat([d]) }); }
+      })),
+      weekBtns: DAYS.map(([d, short, full]) => Object.assign({ short, full }, dayStyle(s.semDia === d), { pick: () => this.setState({ semDia: d }) })),
+      presets: [['Laborables', [1, 2, 3, 4, 5]], ['Todos', [0, 1, 2, 3, 4, 5, 6]], ['Fin de semana', [6, 0]]].map(([label, dias]) => ({ label, pick: () => this.setState({ dias }) })),
+      noDays: s.dias.length === 0,
+      festivoOpts: seg('festivo', [['saltar', 'Saltarlo'], ['igual', 'Hacerlo igual'], ['siguiente', 'Al siguiente laborable']]),
+      deOpts: seg('deModo', [['todos', 'Cualquiera'], ['algunos', 'Solo de estos remitentes']]),
+      deAlgunos: s.deModo === 'algunos',
+      remChips: s.remitentes.map((addr) => ({ addr, aria: 'Quitar ' + addr, remove: () => this.setState({ remitentes: this.state.remitentes.filter((x) => x !== addr) }) })),
+      addRem: (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          const val = (this.state.nuevoRem || '').trim();
+          if (val && this.state.remitentes.indexOf(val) === -1) this.setState({ remitentes: this.state.remitentes.concat([val]), nuevoRem: '' });
+        }
+      },
+      adjOpts: seg('adjuntos', [['igual', 'Da igual'], ['si', 'Con adjuntos'], ['pdf', 'Solo PDF']]),
+      carpetaParts: s.carpeta.split('/').map((label, i, arr) => ({ label, sep: i < arr.length - 1, weight: i === arr.length - 1 ? '700' : '500' })),
+      tipoOpts: seg('tipoArchivo', [['pdf', 'PDF'], ['hoja', 'Hojas'], ['imagen', 'Imágenes'], ['todo', 'Cualquiera']]),
+      eventoOpts: seg('eventoFiltro', [['todos', 'Todos'], ['palabra', 'Con una palabra'], ['fuera', 'Con gente de fuera']]),
+      eventoPalabraOn: s.eventoFiltro === 'palabra',
+      salaOpts: seg('salaModo', [['todo', 'Cualquier mensaje'], ['mencion', 'Cuando mencionen a un bot con @'], ['palabras', 'Cuando contenga ciertas palabras']]),
+      salaPalabrasOn: s.salaModo === 'palabras',
+      cambioOpts: seg('cambio', [['fila', 'Fila nueva'], ['columna', 'Cambie una columna'], ['supere', 'Un valor supere…']]),
+      hojaColumnaOn: s.cambio !== 'fila',
+      hojaValorOn: s.cambio === 'supere',
+      sw: { vezAviso: sw('vezAviso'), entiende: sw('entiende'), subcarpetas: sw('subcarpetas'), laboral: sw('laboral') },
+      resumen: this.summary(t),
+      hasRuns: isTime && runs.length > 0,
+      runs: runs.map((label) => ({ label })),
+      hasProbe: !isTime,
+      probar: () => this.setState({ probado: true }),
+      probeText: s.probado ? (probes[t] || '') : 'Comprueba qué habría pasado esta semana.'
+    };
+  }
+}
+</script>
+</body>
+</html>

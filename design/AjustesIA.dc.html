@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Ajustes · Cuentas de IA</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+button:focus-visible,a:focus-visible{outline:3px solid #2F6BFF;outline-offset:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div style="min-height: 1300px; display: flex; flex-wrap: wrap; background: #EEF0F4">
+
+<nav aria-label="Navegación principal" style="flex: 1 1 248px; background: #12131A; color: #C9CCD6; padding: 20px 14px 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<span style="font: 800 22px/1 'Bricolage Grotesque', sans-serif; color: #FFFFFF; letter-spacing: -0.01em">Colmena</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Inicio</a>
+<a href="Bandeja.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1 3h6l1-3h4M5 5h14l1 8v6H4v-6z"></path></svg><span style="flex: 1">Bandeja</span><span style="min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #FFC93C; color: #12131A; font: 600 11px/20px 'Geist Mono', monospace; text-align: center">3</span></a>
+<a href="Misiones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg><span style="flex: 1">Misiones</span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #9DA2B0">3</span></a>
+<a href="Biblioteca.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4v16H5zM11 4h4v16h-4zM17 6l3 .8-3.2 13.4-3-.8z"></path></svg>Biblioteca</a>
+<a href="Automatizaciones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Automatizaciones</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><span style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Salas</span><button type="button" aria-label="Nueva sala" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; color: #9DA2B0; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #FFFFFF; font-size: 14px; font-weight: 600"><span style="color: #9DA2B0">#</span><span style="flex: 1">informe-q3</span><span style="width: 8px; height: 8px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Debate.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>campaña-primavera</a>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>facturación</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><a href="Equipo.dc.html" style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Tu equipo</a><a href="NuevoBot.dc.html" aria-label="Añadir bot" style="width: 28px; height: 28px; display: grid; place-items: center; color: #9DA2B0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a></div>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 11px/1 'Bricolage Grotesque', sans-serif">A</span><span style="flex: 1">Atlas</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span><span style="flex: 1">Nora</span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span><span style="flex: 1">Tomás</span><span style="width: 7px; height: 7px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">I</span><span style="flex: 1">Iris</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">B</span><span style="flex: 1">Bruno</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">V</span><span style="flex: 1">Vera</span></a>
+</div>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #2C2F3A">
+<span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #E6E8EE; color: #12131A; display: grid; place-items: center; font-weight: 700; font-size: 13px">TÚ</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="color: #FFFFFF; font-weight: 600; font-size: 14px">Tu cuenta</span><span style="font-size: 12px; color: #9DA2B0">Administrador</span></span>
+<a href="Ajustes.dc.html" aria-current="page" aria-label="Ajustes y conectores" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; background: #FFC93C; color: #12131A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></a>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start">
+
+<nav aria-label="Secciones de ajustes" style="flex: 1 1 200px; max-width: 100%; padding: 28px 12px 28px clamp(16px, 2vw, 28px); display: flex; flex-direction: column; gap: 2px">
+<span style="padding: 0 12px 10px; font: 800 26px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.015em">Ajustes</span>
+<a href="Ajustes.dc.html" style="display: flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: #2B2D36">Conectores</a>
+<a href="AjustesIA.dc.html" aria-current="page" style="display: flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: 10px; background: #FFFFFF; border: 1px solid #DCE0E8; font-weight: 600; font-size: 14px">Cuentas de IA</a>
+<a href="Ajustes.dc.html" style="display: flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: #2B2D36">Este ordenador</a>
+<a href="Ajustes.dc.html" style="display: flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: #2B2D36">Personas</a>
+<a href="Ajustes.dc.html" style="display: flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: #2B2D36">Límites y gasto</a>
+<a href="Ajustes.dc.html" style="display: flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: #2B2D36">Seguridad y registro</a>
+<a href="Ajustes.dc.html" style="display: flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: #2B2D36">Espacio</a>
+</nav>
+
+<div style="flex: 999 1 520px; min-width: 0; padding: 28px clamp(16px, 3vw, 36px) 56px 12px; display: flex; flex-direction: column; gap: 24px">
+
+<div style="display: flex; flex-direction: column; gap: 8px; max-width: 720px">
+<h1 style="margin: 0; font: 800 36px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Cuentas de IA</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #4A4F5C">El «cerebro» con el que piensan tus bots. Entra con una cuenta que ya tengas: Colmena recibe un permiso, nunca tu contraseña.</p>
+</div>
+
+<section aria-labelledby="chatgpt-t" style="max-width: 860px; background: #FFFFFF; border: 2px solid #12131A; border-radius: 20px; box-shadow: 8px 8px 0 #FFC93C; overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 18px 22px; border-bottom: 1px solid #E6E8EE">
+<span aria-hidden="true" style="width: 48px; height: 48px; flex: none; display: grid; place-items: center; background: #12131A; color: #FFFFFF; border-radius: 12px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"></path><path d="M8 10h8M8 13h5"></path></svg></span>
+<div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px">
+<h2 id="chatgpt-t" style="margin: 0; font: 700 22px/1.1 'Bricolage Grotesque', sans-serif">ChatGPT</h2>
+<span style="font-size: 14px; color: #4A4F5C">Usa tu suscripción de ChatGPT para que tus bots piensen con sus modelos.</span>
+</div>
+<span role="status" style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 16px; font-size: 13px; font-weight: 600; background: {{chip.bg}}; color: {{chip.fg}}; border: {{chip.border}}"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{chip.dot}}"></span>{{chip.label}}</span>
+</div>
+
+<sc-if value="{{isNo}}" hint-placeholder-val="{{ true }}">
+<div style="padding: 24px 22px; display: flex; flex-wrap: wrap; gap: 28px; animation: fadein .25s ease-out">
+<div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px">
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.45">
+<li style="display: grid; grid-template-columns: 22px 1fr; gap: 10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B6B4A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><path d="m5 12 5 5 9-10"></path></svg>Tus bots usarán los modelos incluidos en tu plan.</li>
+<li style="display: grid; grid-template-columns: 22px 1fr; gap: 10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B6B4A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><path d="m5 12 5 5 9-10"></path></svg>El uso cuenta en tu suscripción, con sus límites.</li>
+<li style="display: grid; grid-template-columns: 22px 1fr; gap: 10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B6B4A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px"><path d="m5 12 5 5 9-10"></path></svg>Puedes desconectarlo aquí o desde tu cuenta cuando quieras.</li>
+</ul>
+<div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start">
+<button type="button" onClick="{{login}}" style="display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 22px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 16px">Iniciar sesión con ChatGPT<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"></path></svg></button>
+<span style="font-size: 13px; color: #4A4F5C">Se abrirá la página oficial en tu navegador. Allí escribes tu contraseña, no aquí.</span>
+<button type="button" style="padding: 0; min-height: 32px; background: transparent; border: 0; cursor: pointer; font-size: 14px; font-weight: 600; color: #1F4FD1; text-decoration: underline">Usar una clave de API en su lugar</button>
+</div>
+</div>
+<div style="flex: 1 1 240px; padding: 16px 18px; background: #F7F8FA; border-radius: 14px; display: flex; flex-direction: column; gap: 10px; align-self: flex-start">
+<strong style="font-size: 14px">Cómo funciona</strong>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.4">
+<li style="display: grid; grid-template-columns: 24px 1fr; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; border: 1px solid #C9CED8; display: grid; place-items: center; font: 600 11px/1 'Geist Mono', monospace">1</span>Inicias sesión en la página de ChatGPT.</li>
+<li style="display: grid; grid-template-columns: 24px 1fr; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; border: 1px solid #C9CED8; display: grid; place-items: center; font: 600 11px/1 'Geist Mono', monospace">2</span>Das permiso a Colmena.</li>
+<li style="display: grid; grid-template-columns: 24px 1fr; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; border: 1px solid #C9CED8; display: grid; place-items: center; font: 600 11px/1 'Geist Mono', monospace">3</span>Vuelves aquí y eliges qué bots la usan.</li>
+</ol>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isWait}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 28px 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px; animation: fadein .25s ease-out">
+<div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 14px">
+<span aria-hidden="true" style="width: 36px; height: 36px; flex: none; border-radius: 50%; border: 4px solid #EEF0F4; border-top-color: #12131A; animation: spin .9s linear infinite"></span>
+<div style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 17px">Termina de iniciar sesión en tu navegador</strong><span style="font-size: 14px; color: #4A4F5C">Te esperamos aquí. No cierres esta ventana.</span></div>
+</div>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+<li style="display: flex; align-items: center; gap: 10px"><span style="width: 22px; height: 22px; border-radius: 50%; background: #12131A; color: #FFFFFF; display: grid; place-items: center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></span>Página de inicio de sesión abierta</li>
+<li style="display: flex; align-items: center; gap: 10px; font-weight: 700"><span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; border: 3px solid #DCE0E8; border-top-color: #12131A; animation: spin .8s linear infinite"></span>Esperando tu permiso</li>
+<li style="display: flex; align-items: center; gap: 10px; color: #4A4F5C"><span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; border: 2px dashed #A9AEBB"></span>Elegir qué bots la usan</li>
+</ol>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 44px; padding: 0 16px; background: #FFFFFF; border: 1px solid #12131A; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px">Volver a abrir la página</button>
+<button type="button" onClick="{{cancel}}" style="height: 44px; padding: 0 16px; background: transparent; border: 0; border-radius: 12px; cursor: pointer; font-size: 14px; color: #4A4F5C">Cancelar</button>
+</div>
+</div>
+<div style="flex: 1 1 240px; padding: 18px; background: #F7F8FA; border-radius: 14px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 14px">Si la página te pide un código, escribe este:</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; background: #FFFFFF; border: 1.5px dashed #12131A; border-radius: 12px">
+<span style="font: 600 26px/1 'Geist Mono', monospace; letter-spacing: 0.12em">K7QF-29XM</span>
+<button type="button" aria-label="Copiar código" style="width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: 1px solid #DCE0E8; border-radius: 10px; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg></button>
+</div>
+<span style="font-size: 12px; color: #4A4F5C">Caduca en 10 minutos.</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isOk}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 22px; display: flex; flex-direction: column; gap: 18px; animation: fadein .25s ease-out">
+<div role="status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; background: #E1F4EC; border: 1.5px solid #0B8A5F; border-radius: 14px; font-size: 15px">
+<span aria-hidden="true" style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: #0B8A5F; color: #FFFFFF; display: grid; place-items: center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></span>
+<span style="flex: 1 1 280px">Conectado como <strong>[TU CORREO]</strong> · plan <strong>[TU PLAN]</strong></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 8px"><strong style="font-size: 16px">Qué bots piensan con ChatGPT</strong><span style="font-size: 13px; color: #4A4F5C">{{usingCount}} de 6</span></div>
+<sc-for list="{{bots}}" as="b" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 54px; border-top: 1px solid #E6E8EE">
+<span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; font: 800 13px/1 'Bricolage Grotesque', sans-serif; background: {{b.bg}}; color: {{b.fg}}; border-radius: {{b.radius}}; clip-path: {{b.clip}}">{{b.letter}}</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">{{b.name}}</strong><span style="font-size: 12px; color: #4A4F5C">{{b.uses}}</span></span>
+<button type="button" role="switch" aria-checked="{{b.checked}}" aria-label="{{b.aria}}" onClick="{{b.toggle}}" style="width: 52px; height: 30px; flex: none; padding: 3px; border: 0; border-radius: 15px; cursor: pointer; display: flex; background: {{b.track}}; justify-content: {{b.justify}}"><span style="width: 24px; height: 24px; border-radius: 50%; background: {{b.knob}}; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px">
+<button type="button" style="height: 44px; padding: 0 16px; background: #FFFFFF; border: 1px solid #12131A; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px">Probar conexión</button>
+<button type="button" onClick="{{logout}}" style="height: 44px; padding: 0 16px; background: transparent; border: 1px solid #DCE0E8; border-radius: 12px; cursor: pointer; font-size: 14px">Cerrar sesión</button>
+</div>
+</div>
+</sc-if>
+</section>
+
+<section aria-labelledby="otras-t" style="max-width: 860px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="otras-t" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Otras cuentas</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px">
+<div style="padding: 16px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; display: flex; flex-direction: column; gap: 10px"><span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; background: #EEF0F4; border-radius: 10px; font: 800 17px/1 'Bricolage Grotesque', sans-serif">C</span><strong style="font-size: 15px">Claude</strong><span style="font-size: 13px; color: #4A4F5C">Sin conectar</span><button type="button" style="align-self: flex-start; height: 38px; padding: 0 12px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600">Iniciar sesión</button></div>
+<div style="padding: 16px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; display: flex; flex-direction: column; gap: 10px"><span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; background: #EEF0F4; border-radius: 10px; font: 800 17px/1 'Bricolage Grotesque', sans-serif">G</span><strong style="font-size: 15px">Grok</strong><span style="font-size: 13px; color: #4A4F5C">Sin conectar</span><button type="button" style="align-self: flex-start; height: 38px; padding: 0 12px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600">Iniciar sesión</button></div>
+<div style="padding: 16px; background: #FFFFFF; border: 1px dashed #A9AEBB; border-radius: 14px; display: flex; flex-direction: column; gap: 10px"><span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; background: #EEF0F4; border-radius: 10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg></span><strong style="font-size: 15px">Modelo en este ordenador</strong><span style="font-size: 13px; color: #4A4F5C">Sin conexión a internet; más lento</span><button type="button" style="align-self: flex-start; height: 38px; padding: 0 12px; background: transparent; border: 1px solid #12131A; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600">Configurar</button></div>
+<div style="padding: 16px; background: #FFFFFF; border: 1px dashed #A9AEBB; border-radius: 14px; display: flex; flex-direction: column; gap: 10px"><span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; background: #EEF0F4; border-radius: 10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="12" r="4"></circle><path d="M12 12h9M18 12v3M21 12v2"></path></svg></span><strong style="font-size: 15px">Clave de API</strong><span style="font-size: 13px; color: #4A4F5C">Para equipos técnicos</span><button type="button" style="align-self: flex-start; height: 38px; padding: 0 12px; background: transparent; border: 1px solid #12131A; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600">Añadir clave</button></div>
+</div>
+</section>
+
+<section aria-labelledby="privacidad-t" style="max-width: 860px; padding: 18px 20px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="privacidad-t" style="margin: 0; display: flex; align-items: center; gap: 8px; font: 700 18px/1.1 'Bricolage Grotesque', sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"></path></svg>Qué compartes al conectar</h2>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.5; color: #2B2D36">
+<li>Colmena recibe un permiso de uso, nunca tu contraseña.</li>
+<li>Solo se envía lo que cada bot necesita para su tarea.</li>
+<li>Puedes revocar el permiso aquí o desde la configuración de tu cuenta.</li>
+</ul>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid #E6E8EE; font-size: 14px">
+<span>Si una cuenta falla, usar</span>
+<button type="button" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; background: #FFFFFF; border: 1px solid #C9CED8; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600">Modelo en este ordenador<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+</div>
+</section>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { conn: 'no', uses: { atlas: true, nora: true, tomas: false, iris: false, bruno: false, vera: true } };
+  }
+  componentWillUnmount() {
+    clearTimeout(this.timer);
+  }
+  renderVals() {
+    const c = this.state.conn;
+    const chips = {
+      no: { label: 'Sin conectar', bg: '#FFFFFF', fg: '#2B2D36', border: '1px solid #C9CED8', dot: '#A9AEBB' },
+      wait: { label: 'Esperando al navegador…', bg: '#FFF4D1', fg: '#12131A', border: '1px solid #F2D27A', dot: '#C98A00' },
+      ok: { label: 'Conectado', bg: '#E1F4EC', fg: '#0B5A3E', border: '1px solid #9ED4BC', dot: '#0B8A5F' }
+    };
+    const B = [
+      { id: 'atlas', name: 'Atlas', letter: 'A', bg: '#FFC93C', fg: '#12131A', radius: '0', clip: 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)' },
+      { id: 'nora', name: 'Nora', letter: 'N', bg: '#2F6BFF', fg: '#FFFFFF', radius: '50%', clip: 'none' },
+      { id: 'tomas', name: 'Tomás', letter: 'T', bg: '#0B8A5F', fg: '#FFFFFF', radius: '7px', clip: 'none' },
+      { id: 'iris', name: 'Iris', letter: 'I', bg: '#FF5CA8', fg: '#12131A', radius: '0', clip: 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)' },
+      { id: 'bruno', name: 'Bruno', letter: 'B', bg: '#FF7A1A', fg: '#12131A', radius: '50% 50% 6px 6px', clip: 'none' },
+      { id: 'vera', name: 'Vera', letter: 'V', bg: '#7B4DFF', fg: '#FFFFFF', radius: '50% 5px 50% 5px', clip: 'none' }
+    ];
+    const u = this.state.uses;
+    return {
+      chip: chips[c],
+      isNo: c === 'no',
+      isWait: c === 'wait',
+      isOk: c === 'ok',
+      login: () => {
+        this.setState({ conn: 'wait' });
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.setState({ conn: 'ok' }), 3200);
+      },
+      cancel: () => { clearTimeout(this.timer); this.setState({ conn: 'no' }); },
+      logout: () => this.setState({ conn: 'no' }),
+      usingCount: B.filter((b) => u[b.id]).length,
+      bots: B.map((b) => {
+        const on = !!u[b.id];
+        return Object.assign({}, b, {
+          uses: on ? 'Usa ChatGPT' : 'Usa la cuenta por defecto del espacio',
+          checked: on ? 'true' : 'false',
+          aria: b.name + ' usa ChatGPT',
+          track: on ? '#12131A' : '#DCE0E8',
+          knob: on ? '#FFC93C' : '#FFFFFF',
+          justify: on ? 'flex-end' : 'flex-start',
+          toggle: () => this.setState({ uses: Object.assign({}, this.state.uses, { [b.id]: !this.state.uses[b.id] }) })
+        });
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

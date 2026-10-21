@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Lo esencial</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+.msg .msg-tools{opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.msg:hover .msg-tools,.msg:focus-within .msg-tools{opacity:1;transform:none;pointer-events:auto}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; min-height: 4750px; background: #F5F5F2; padding-bottom: 0px">
+<main style="max-width: 1180px; margin: 0 auto; padding: 120px clamp(20px, 5vw, 64px) 100px; display: flex; flex-direction: column; gap: 120px">
+
+<header style="display: flex; flex-direction: column; gap: 34px; animation: rise .8s ease-out">
+<span style="display: flex; align-items: center; gap: 16px"><img src="colmena-icon-128.png" alt="" width="56" height="56" style="display: block; width: 56px; height: 56px; filter: drop-shadow(0 6px 14px rgba(201,120,0,.35))"><span style="font: 500 14px/1 'Geist Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8D96">Colmena 2.0</span></span>
+<h1 style="margin: 0; font: 600 clamp(64px, 10vw, 148px)/0.88 'Bricolage Grotesque', sans-serif; letter-spacing: -0.065em">Menos pantallas.<br><span style="color: #A3A6AE">Más calma.</span></h1>
+<p style="margin: 0; max-width: 720px; font-size: clamp(19px, 2vw, 24px); line-height: 1.45; color: #3D404A">Rehicimos Colmena desde cero con una pregunta: ¿qué sobra? Quedan cinco lugares, una sola forma de pedir las cosas y un único color que significa <strong style="color: #12131A; font-weight: 600; box-shadow: inset 0 -0.42em 0 rgba(255,201,60,.55)">te necesitamos</strong>.</p>
+<div aria-hidden="true" style="display: flex; flex-wrap: wrap; align-items: center; gap: 30px; padding-top: 20px">
+<span style="animation: drift 5s ease-in-out infinite"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 6px 16px #FFC93C88); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 64px; height: 64px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span></span>
+<span style="animation: drift 5s .4s ease-in-out infinite"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 4px 8px rgba(18,19,26,.16))"><span style="display: block; width: 64px; height: 64px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #2F6BFF; clip-path: none; border-radius: 50%"></span></span></span>
+<span style="animation: drift 5s .8s ease-in-out infinite"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 6px 16px #0B8A5F88); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 64px; height: 64px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #0B8A5F; clip-path: none; border-radius: 24%"></span></span></span>
+<span style="animation: drift 5s 1.2s ease-in-out infinite"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 4px 8px rgba(18,19,26,.16))"><span style="display: block; width: 64px; height: 64px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF5CA8; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); border-radius: 0"></span></span></span>
+<span style="animation: drift 5s 1.6s ease-in-out infinite"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 4px 8px rgba(18,19,26,.16))"><span style="display: block; width: 64px; height: 64px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A; clip-path: none; border-radius: 50% 50% 14% 14%"></span></span></span>
+<span style="animation: drift 5s 2s ease-in-out infinite"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 6px 16px #7B4DFF88); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 64px; height: 64px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #7B4DFF; clip-path: none; border-radius: 50% 12% 50% 12%"></span></span></span>
+</div>
+</header>
+
+<section aria-labelledby="pr-t" style="display: flex; flex-direction: column; gap: 0">
+<h2 id="pr-t" style="margin: 0 0 30px; font: 500 15px/1 'Geist', sans-serif; color: #8A8D96">Seis ideas</h2>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding: 48px 0; border-top: 1px solid rgba(18,19,26,.1)">
+<div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 16px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #8A8D96">01</span><h3 style="margin: 0; font: 600 clamp(32px, 4vw, 48px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">Un solo lugar para empezar.</h3><p style="margin: 0; font-size: 18px; line-height: 1.55; color: #3D404A">Hoy reúne el inicio, la bandeja y la paleta de comandos. Escribes lo que necesitas y Atlas decide quién lo hace. No hace falta saber qué bot existe.</p></div>
+<div aria-hidden="true" style="flex: 1 1 380px; padding: 8px 8px 0 24px; border-radius: 28px; background: #FFFFFF; box-shadow: 0 30px 60px -30px rgba(18,19,26,.3)"><div style="display: flex; align-items: center; gap: 10px"><span style="flex: 1; height: 62px; display: flex; align-items: center; font-size: 19px; color: #12131A">Compara las ventas con agosto<span style="width: 2px; height: 22px; margin-left: 2px; background: #12131A; animation: caret 1s steps(1) infinite"></span></span><span style="width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font-size: 18px">↑</span></div><div style="display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid rgba(18,19,26,.06); font-size: 14px; color: #5C606C"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 16px; height: 16px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #0B8A5F; clip-path: none; border-radius: 24%"></span></span>Tomás se encargará</div></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding: 48px 0; border-top: 1px solid rgba(18,19,26,.1)">
+<div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 16px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #8A8D96">02</span><h3 style="margin: 0; font: 600 clamp(32px, 4vw, 48px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">La miel significa: te necesitamos.</h3><p style="margin: 0; font-size: 18px; line-height: 1.55; color: #3D404A">El amarillo de Colmena ya no decora. Solo aparece cuando algo espera tu decisión. Si no ves miel, puedes seguir con lo tuyo.</p></div>
+<div aria-hidden="true" style="flex: 1 1 380px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+<div style="padding: 20px; border-radius: 24px; background: #FFFFFF; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 24px 50px -26px rgba(201,138,0,.6)"><span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #8A5A00"><span style="width: 7px; height: 7px; border-radius: 50%; background: #FFC93C; animation: halo 1.8s ease-out infinite"></span>Aprobar</span><span style="font: 600 18px/1.2 'Bricolage Grotesque', sans-serif">Enviar el resumen al comité</span><span style="height: 36px; border-radius: 999px; background: #FFC93C"></span></div>
+<div style="padding: 20px; border-radius: 24px; background: #FFFFFF; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 16px 40px -24px rgba(18,19,26,.2)"><span style="font-size: 12px; font-weight: 600; color: #8A8D96">En marcha</span><span style="font: 600 18px/1.2 'Bricolage Grotesque', sans-serif">Informe Q3</span><span style="height: 4px; margin-top: 16px; border-radius: 2px; background: linear-gradient(90deg, #12131A 64%, rgba(18,19,26,.08) 64%)"></span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding: 48px 0; border-top: 1px solid rgba(18,19,26,.1)">
+<div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 16px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #8A8D96">03</span><h3 style="margin: 0; font: 600 clamp(32px, 4vw, 48px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">Los bots son presencias, no iconos.</h3><p style="margin: 0; font-size: 18px; line-height: 1.55; color: #3D404A">Cada bot es una forma y un color. Sin letras, sin etiquetas. Respira cuando trabaja, se queda quieto cuando descansa y brilla en miel cuando te espera. Las personas, en cambio, son círculos neutros con sus iniciales.</p></div>
+<div aria-hidden="true" style="flex: 1 1 380px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 30px 20px; border-radius: 28px; background: #FFFFFF">
+<span style="display: flex; flex-direction: column; align-items: center; gap: 14px; font-size: 13px; color: #5C606C"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 5px 13px #7B4DFF88); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 52px; height: 52px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #7B4DFF; clip-path: none; border-radius: 50% 12% 50% 12%"></span></span>Respira</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 14px; font-size: 13px; color: #5C606C"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 3px 6px rgba(18,19,26,.16))"><span style="display: block; width: 52px; height: 52px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #2F6BFF; clip-path: none; border-radius: 50%"></span></span>Descansa</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 14px; font-size: 13px; color: #5C606C"><span aria-hidden="true" style="display: inline-grid; flex: none; animation: beckon 1.8s ease-out infinite"><span style="display: block; width: 52px; height: 52px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span>Te espera</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 14px; font-size: 13px; color: #5C606C"><span style="width: 52px; height: 52px; display: grid; place-items: center"><span aria-hidden="true" style="width: 48px; height: 48px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; color: #12131A; font: 600 16px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR</span></span>Persona</span>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding: 48px 0; border-top: 1px solid rgba(18,19,26,.1)">
+<div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 16px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #8A8D96">04</span><h3 style="margin: 0; font: 600 clamp(32px, 4vw, 48px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">El trabajo se ve mientras ocurre.</h3><p style="margin: 0; font-size: 18px; line-height: 1.55; color: #3D404A">Nada de «procesando». Ves qué lee, qué calcula y qué escribe cada bot, en frases. Una línea de luz bajo su nombre te dice si sigue trabajando.</p></div>
+<div aria-hidden="true" style="flex: 1 1 380px; padding: 24px; border-radius: 28px; background: #FFFFFF; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 3px 8px #0B8A5F88); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 32px; height: 32px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #0B8A5F; clip-path: none; border-radius: 24%"></span></span><strong style="font-size: 16px; font-weight: 600">Tomás</strong><span style="font-size: 14px; color: #5C606C">Calculando las cifras</span></div>
+<span style="position: relative; height: 2px; overflow: hidden; background: rgba(11,138,95,.15)"><span style="position: absolute; top: 0; bottom: 0; width: 35%; background: linear-gradient(90deg, transparent, #0B8A5F, transparent); animation: sweep 1.8s ease-in-out infinite"></span></span>
+<span style="font-size: 15px; color: #8A8D96">Ha apartado 12 filas duplicadas</span>
+<span style="font-size: 15px">Tasa de septiembre: −2,4 %</span>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding: 48px 0; border-top: 1px solid rgba(18,19,26,.1)">
+<div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 16px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #8A8D96">05</span><h3 style="margin: 0; font: 600 clamp(32px, 4vw, 48px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">Todo se puede deshacer.</h3><p style="margin: 0; font-size: 18px; line-height: 1.55; color: #3D404A">Los envíos esperan diez segundos antes de salir. Las reglas y las rutinas se leen como una frase y se cambian tocando la palabra. Sin formularios, sin pantallas de confirmación.</p></div>
+<div aria-hidden="true" style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 14px 14px 22px; border-radius: 999px; background: #FFFFFF"><span style="font-size: 16px; font-weight: 500">Se envía en 8 s</span><span style="height: 40px; padding: 0 18px; display: flex; align-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14px; font-weight: 600">Deshacer</span></div>
+<p style="margin: 0; padding: 22px 24px; border-radius: 24px; background: #FFFFFF; font: 600 22px/1.4 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em"><span style="text-decoration: underline; text-decoration-color: #FFC93C; text-decoration-thickness: 4px; text-underline-offset: 6px">Cada lunes a las 9:00</span>, Atlas prepara el plan de la semana.</p>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding: 48px 0; border-top: 1px solid rgba(18,19,26,.1); border-bottom: 1px solid rgba(18,19,26,.1)">
+<div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 16px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #8A8D96">06</span><h3 style="margin: 0; font: 600 clamp(32px, 4vw, 48px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">Siempre sabes dónde estás.</h3><p style="margin: 0; font-size: 18px; line-height: 1.55; color: #3D404A">Colmena es una app de escritorio, así que la navegación vive donde la buscan Mac, Windows y Linux: un carril estrecho a la izquierda. Cinco lugares, cada uno con su icono y su nombre, y el lugar en el que estás resaltado como una pieza blanca. El carril nunca se mueve con el contenido ni compite con la barra donde escribes.</p></div>
+<div aria-hidden="true" style="flex: 1 1 380px; display: flex; gap: 0; height: 320px; border-radius: 28px; overflow: hidden; background: #F5F5F2; box-shadow: 0 30px 60px -30px rgba(18,19,26,.3), inset 0 0 0 1px rgba(18,19,26,.06)">
+<div style="width: 76px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span style="display: flex; gap: 5px; margin-bottom: 8px"><span style="width: 9px; height: 9px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 9px; height: 9px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 9px; height: 9px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<img src="colmena-icon-128.png" alt="" width="28" height="28" style="display: block; width: 28px; height: 28px; margin-bottom: 6px">
+<span style="width: 62px; padding: 7px 0; border-radius: 14px; text-align: center; font-size: 10px; color: #4A4D57">Hoy</span>
+<span style="width: 62px; padding: 7px 0; border-radius: 14px; text-align: center; font-size: 10px; font-weight: 600; background: #FFFFFF; box-shadow: 0 6px 14px -8px rgba(18,19,26,.3)">Conversa-<br>ciones</span>
+<span style="width: 62px; padding: 7px 0; border-radius: 14px; text-align: center; font-size: 10px; color: #4A4D57">Colmena</span>
+<span style="width: 62px; padding: 7px 0; border-radius: 14px; text-align: center; font-size: 10px; color: #4A4D57">Rutinas</span>
+<span style="width: 62px; padding: 7px 0; border-radius: 14px; text-align: center; font-size: 10px; color: #4A4D57">Archivo</span>
+</div>
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 16px">
+<span style="align-self: flex-end; width: 60%; height: 34px; border-radius: 16px; background: #E8E8E2"></span>
+<span style="width: 80%; height: 10px; border-radius: 5px; background: rgba(18,19,26,.1)"></span>
+<span style="width: 64%; height: 10px; border-radius: 5px; background: rgba(18,19,26,.1)"></span>
+<span style="display: flex; align-items: center; justify-content: space-between; height: 44px; margin-top: 10px; padding: 0 6px 0 16px; border-radius: 999px; background: #FFFFFF; font-size: 13px; color: #8A8D96">Responde a Vera…<span style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF">↑</span></span>
+</div>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="map-t" style="display: flex; flex-direction: column; gap: 34px">
+<div style="display: flex; flex-direction: column; gap: 14px"><h2 id="map-t" style="margin: 0; font: 600 clamp(40px, 5vw, 64px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.05em">De 27 pantallas a 5 lugares.</h2><p style="margin: 0; max-width: 680px; font-size: 18px; line-height: 1.55; color: #3D404A">El carril de la izquierda solo tiene cinco lugares. Lo demás aparece encima, como una hoja, cuando hace falta, y desaparece cuando terminas.</p></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); gap: 18px">
+<a href="V2Hoy.dc.html" style="display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: 30px; background: #12131A; color: #FFFFFF"><span style="display: flex; justify-content: space-between; align-items: baseline"><strong style="font: 600 32px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Hoy</strong><span style="font-size: 13px; color: #A9ACB6">22 · 26 · 25</span></span><span style="font-size: 15px; line-height: 1.6; color: #C9CBD3">Inicio · Bandeja de OKs · Editar envío · Paleta de comandos · Misiones · Misión · Bots en directo · Objetivos</span></a>
+<a href="V2Conversacion.dc.html" style="display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: 30px; background: #FFFFFF"><span style="display: flex; justify-content: space-between; align-items: baseline"><strong style="font: 600 32px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Conversaciones</strong><span style="font-size: 13px; color: #8A8D96">23 · 24</span></span><span style="font-size: 15px; line-height: 1.6; color: #5C606C">Chat con un bot · Estados del bot · Sala de equipo · Debate · Sala con varias personas · Al volver · Invitar · Miembros y reglas · Uso del ordenador · Permisos</span></a>
+<a href="V2Colmena.dc.html" style="display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: 30px; background: #FFFFFF"><span style="display: flex; justify-content: space-between; align-items: baseline"><strong style="font: 600 32px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Colmena</strong><span style="font-size: 13px; color: #8A8D96">27</span></span><span style="font-size: 15px; line-height: 1.6; color: #5C606C">Tu equipo · Perfil del bot · Nuevo bot: Describe · Nuevo bot: Ajusta</span></a>
+<a href="V2Rutinas.dc.html" style="display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: 30px; background: #FFFFFF"><span style="display: flex; justify-content: space-between; align-items: baseline"><strong style="font: 600 32px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Rutinas</strong><span style="font-size: 13px; color: #8A8D96">28</span></span><span style="font-size: 15px; line-height: 1.6; color: #5C606C">Automatizaciones · Los 8 disparadores · Configurar disparador</span></a>
+<a href="V2Archivo.dc.html" style="display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: 30px; background: #FFFFFF"><span style="display: flex; justify-content: space-between; align-items: baseline"><strong style="font: 600 32px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Archivo</strong><span style="font-size: 13px; color: #8A8D96">29</span></span><span style="font-size: 15px; line-height: 1.6; color: #5C606C">Biblioteca · Habilidades · Lo que saben de ti</span></a>
+<a href="V2Ajustes.dc.html" style="display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: 30px; background: transparent; box-shadow: inset 0 0 0 1.5px rgba(18,19,26,.12)"><span style="display: flex; justify-content: space-between; align-items: baseline"><strong style="font: 600 32px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Tras tu avatar</strong><span style="font-size: 13px; color: #8A8D96">30 · 21</span></span><span style="font-size: 15px; line-height: 1.6; color: #5C606C">Ajustes y conectores · Login con ChatGPT · Este ordenador · Límites · Seguridad · Bienvenida (solo la primera vez) · Pregunta rápida (Ctrl+Espacio, fuera de la app)</span></a>
+</div>
+</section>
+
+<section aria-labelledby="mat-t" style="display: flex; flex-direction: column; gap: 34px">
+<h2 id="mat-t" style="margin: 0; font: 600 clamp(40px, 5vw, 64px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.05em">Lo que se queda.</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 12px"><span style="height: 110px; border-radius: 24px; background: #12131A"></span><span style="font-size: 14px"><strong style="font-weight: 600">Tinta</strong><br><span style="color: #6B6F7A">texto y acciones</span></span></div>
+<div style="display: flex; flex-direction: column; gap: 12px"><span style="height: 110px; border-radius: 24px; background: #F5F5F2; box-shadow: inset 0 0 0 1px rgba(18,19,26,.1)"></span><span style="font-size: 14px"><strong style="font-weight: 600">Papel</strong><br><span style="color: #6B6F7A">el fondo</span></span></div>
+<div style="display: flex; flex-direction: column; gap: 12px"><span style="height: 110px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 16px 30px -18px rgba(18,19,26,.3)"></span><span style="font-size: 14px"><strong style="font-weight: 600">Superficie</strong><br><span style="color: #6B6F7A">lo que se toca</span></span></div>
+<div style="display: flex; flex-direction: column; gap: 12px"><span style="height: 110px; border-radius: 24px; background: #FFC93C; animation: halo 2.2s ease-out infinite"></span><span style="font-size: 14px"><strong style="font-weight: 600">Miel</strong><br><span style="color: #6B6F7A">solo «te necesita»</span></span></div>
+<div style="display: flex; flex-direction: column; gap: 12px"><span style="height: 110px; border-radius: 24px; background: #0B8A5F"></span><span style="font-size: 14px"><strong style="font-weight: 600">Verde</strong><br><span style="color: #6B6F7A">hecho, conectado</span></span></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 18px">
+<div style="padding: 28px; border-radius: 30px; background: #FFFFFF; display: flex; flex-direction: column; gap: 14px"><span style="font-size: 13px; color: #8A8D96">Letra</span><span style="font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">Bricolage, 600</span><span style="font-size: 17px; line-height: 1.5; color: #3D404A">Para titulares, muy grandes y apretados. Geist para todo lo demás, a 15–17 px.</span></div>
+<div style="padding: 28px; border-radius: 30px; background: #FFFFFF; display: flex; flex-direction: column; gap: 14px"><span style="font-size: 13px; color: #8A8D96">Movimiento</span><div style="display: flex; gap: 26px; align-items: center"><span style="display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; color: #5C606C"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 3px 9px #FF5CA888); animation: breathe 2.8s ease-in-out infinite"><span style="display: block; width: 36px; height: 36px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF5CA8; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); border-radius: 0"></span></span>respira</span><span style="display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; color: #5C606C"><span aria-hidden="true" style="display: inline-grid; flex: none; animation: beckon 1.8s ease-out infinite"><span style="display: block; width: 36px; height: 36px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span>brilla</span><span style="display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; color: #5C606C"><span style="width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; box-shadow: 0 10px 20px -8px rgba(18,19,26,.35); animation: drift 2.4s ease-in-out infinite"></span>aparece</span></div><span style="font-size: 15px; line-height: 1.5; color: #3D404A">Tres movimientos, nada más. Sin animación si el sistema pide movimiento reducido.</span></div>
+<div style="padding: 28px; border-radius: 30px; background: #FFFFFF; display: flex; flex-direction: column; gap: 14px"><span style="font-size: 13px; color: #8A8D96">Lo que hemos quitado</span><span style="font-size: 16px; line-height: 1.75; color: #3D404A">La barra lateral oscura · la barra flotante · las etiquetas «BOT» · las letras dentro de los bots · las sombras duras · los iconos de la navegación · las pantallas de confirmación · los ocho formularios</span></div>
+</div>
+</section>
+
+<a href="V2Bienvenida.dc.html" style="align-self: center; display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 34px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 18px; font-weight: 600">Empezar el recorrido<span aria-hidden="true" style="color: #FFC93C">→</span></a>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":4750}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

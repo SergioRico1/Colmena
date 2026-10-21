@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Usando el ordenador</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+.msg .msg-tools{opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.msg:hover .msg-tools,.msg:focus-within .msg-tools{opacity:1;transform:none;pointer-events:auto}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; align-items: flex-start; min-height: 920px; background: #F5F5F2">
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100vh; min-height: 560px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<a href="V2Hoy.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Hoy</span><span aria-label="2 cosas te esperan" style="position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #FFC93C; color: #12131A; font: 600 10px/18px 'Geist', sans-serif; text-align: center; box-shadow: 0 0 0 2px #EBEBE6">2</span></a>
+<a href="V2Conversacion.dc.html" aria-current="page" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 600; text-align: center; letter-spacing: 0.01em">Conversa-<br>ciones</span><span aria-label="Te han mencionado" style="position: absolute; top: 6px; right: 16px; width: 9px; height: 9px; border-radius: 50%; background: #12131A; box-shadow: 0 0 0 2px #EBEBE6"></span></a>
+<a href="V2Codigo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Código</span></a>
+<a href="V2Colmena.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Colmena</span></a>
+<a href="V2Rutinas.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"></path><path d="M19.8 4.5v3.6h-3.6"></path><path d="M12 8.2V12l2.6 1.6"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Rutinas</span></a>
+<a href="V2Archivo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M3 4h18v3.5H3z"></path><path d="M9.5 11.5h5"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Archivo</span></a>
+<span style="flex: 1"></span>
+<a href="V2Hoy.dc.html#pedir" title="Pedir algo (⌘K)" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; color: #4A4D57"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="font-size: 11px; font-weight: 500">Pedir</span><kbd style="font: 500 10px/1 'Geist Mono', monospace; color: #6B6F7A">⌘K</kbd></a>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 11px/1 'Geist', sans-serif">TÚ</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+<div style="position: relative; flex: 1; min-width: 0; min-height: 100vh; padding-bottom: 40px">
+<main style="padding: 28px clamp(20px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 22px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<a href="V2Encargo.dc.html" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 10px; border-radius: 999px; background: rgba(18,19,26,.05); font-size: 14px; font-weight: 500"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Campaña de primavera</a>
+<div style="flex: 1 1 360px; display: flex; align-items: center; gap: 14px; min-width: 0">
+<span style="display: inline-grid; animation: {{botAnim}}"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 5px rgba(18,19,26,.16))"><span style="display: block; width: 40px; height: 40px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF5CA8; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); border-radius: 0"></span></span></span>
+<div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><h1 style="margin: 0; font: 600 26px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Iris está usando el navegador</h1><span role="status" style="font-size: 14px; color: {{statusFg}}">{{status}}</span></div>
+</div>
+<button type="button" onClick="{{toggleControl}}" style="height: 46px; padding: 0 20px; border: 0; border-radius: 999px; cursor: pointer; font-size: 15px; font-weight: 600; background: {{ctrlBtn.bg}}; color: {{ctrlBtn.fg}}">{{ctrlBtn.text}}</button>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start">
+
+<section aria-label="Lo que ve Iris" style="flex: 3 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 0; border-radius: 22px; overflow: hidden; background: #FFFFFF; transition: box-shadow .3s ease; box-shadow: {{frameShadow}}">
+<div style="display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 14px; background: #F0F0EC; border-bottom: 1px solid rgba(18,19,26,.06)">
+<span aria-hidden="true" style="display: flex; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<span style="flex: 1; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 10px; background: #FFFFFF; font: 400 13px/1 'Geist Mono', monospace; color: #3D404A"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B8A5F" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>redes.tuempresa.com/publicar</span>
+<span style="display: flex; align-items: center; gap: 6px; padding: 0 10px; height: 26px; border-radius: 999px; font-size: 12px; font-weight: 600; background: {{liveBadge.bg}}; color: {{liveBadge.fg}}"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: {{liveBadge.anim}}"></span>{{liveBadge.text}}</span>
+</div>
+
+<div style="position: relative; height: 560px; background: #FAFAF8; overflow: hidden">
+<div aria-hidden="true" style="position: absolute; inset: 0; display: flex; filter: {{pageFilter}}; transition: filter .3s ease">
+<div style="width: 200px; padding: 22px 16px; border-right: 1px solid rgba(18,19,26,.06); display: flex; flex-direction: column; gap: 12px"><span style="height: 22px; width: 120px; border-radius: 6px; background: #12131A"></span><span style="height: 10px; width: 140px; border-radius: 5px; background: rgba(18,19,26,.1)"></span><span style="height: 10px; width: 110px; border-radius: 5px; background: rgba(18,19,26,.1)"></span><span style="height: 10px; width: 130px; border-radius: 5px; background: rgba(18,19,26,.1)"></span></div>
+<div style="flex: 1; padding: 28px 34px; display: flex; flex-direction: column; gap: 18px">
+<span style="font: 600 22px/1 'Geist', sans-serif; color: #12131A">Nueva publicación</span>
+<div style="display: flex; gap: 20px">
+<span style="width: 220px; height: 220px; border-radius: 16px; background: radial-gradient(circle at 30% 40%, #FF5CA8 0 18%, rgba(255,92,168,0) 18.5%), radial-gradient(circle at 62% 58%, #FFC93C 0 14%, rgba(255,201,60,0) 14.5%), radial-gradient(circle at 80% 30%, #0B8A5F 0 9%, rgba(11,138,95,0) 9.5%), linear-gradient(160deg, #FFF7EC, #FFE6F1)"></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(18,19,26,.08); font: 400 15px/1.55 'Geist', sans-serif; color: #12131A">La primavera llega a la tienda: colores nuevos, envío gratis hasta el domingo.<span style="font-size: 13px; color: #6B6F7A">143 / 280</span></div>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 10px"><span style="height: 42px; width: 110px; border-radius: 10px; background: rgba(18,19,26,.06)"></span><span style="position: relative; height: 42px; width: 120px; display: grid; place-items: center; border-radius: 10px; background: #2F6BFF; color: #FFFFFF; font: 600 14px/1 'Geist', sans-serif">Publicar<span style="position: absolute; inset: -8px; border-radius: 14px; box-shadow: 0 0 0 3px #FFC93C; animation: halo 1.6s ease-out infinite; opacity: {{targetOp}}"></span></span></div>
+</div>
+</div>
+<svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" style="position: absolute; right: 74px; bottom: 214px; filter: drop-shadow(0 2px 3px rgba(18,19,26,.35)); transition: opacity .3s ease; opacity: {{cursorOp}}; animation: drift 2.6s ease-in-out infinite"><path d="M4 2l14 9-6.5 1.5L9 19z" fill="#FF5CA8" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"></path></svg>
+<sc-if value="{{control}}" hint-placeholder-val="{{ false }}"><div role="status" style="position: absolute; left: 50%; top: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14px; font-weight: 500; animation: rise .3s ease-out"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 8px/1 'Geist', sans-serif; letter-spacing: 0.02em">TÚ</span>Tienes el control. Iris espera y mira lo que haces.</div></sc-if>
+
+<sc-if value="{{askOpen}}" hint-placeholder-val="{{ true }}">
+<div role="dialog" aria-labelledby="perm-t" style="position: absolute; left: 24px; right: 24px; bottom: 24px; padding: 22px 24px; border-radius: 26px; background: rgba(255,255,255,.96); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -20px rgba(18,19,26,.45); display: flex; flex-wrap: wrap; align-items: center; gap: 18px 24px; animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<div style="flex: 1 1 360px; display: flex; flex-direction: column; gap: 8px">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #8A5A00"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #FFC93C; animation: halo 1.8s ease-out infinite"></span>Línea roja · necesita tu OK</span>
+<h2 id="perm-t" style="margin: 0; font: 600 22px/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Iris quiere pulsar «Publicar»</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3D404A">Se publicará en la cuenta de la empresa y lo verá el público. No se puede deshacer desde Colmena.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" onClick="{{deny}}" style="height: 50px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 15px; font-weight: 600">Ahora no</button>
+<button type="button" onClick="{{toggleControl}}" style="height: 50px; padding: 0 18px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 15px; font-weight: 600">Lo hago yo</button>
+<button type="button" onClick="{{confirm}}" style="min-width: 210px; height: 50px; padding: 0 22px; border: 0; border-radius: 999px; cursor: pointer; font-size: 15px; font-weight: 600; transition: all .2s ease; background: {{confirmBtn.bg}}; color: {{confirmBtn.fg}}">{{confirmBtn.text}}</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{doneMsg.show}}" hint-placeholder-val="{{ false }}"><div role="status" style="position: absolute; left: 24px; bottom: 24px; display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 999px; font-size: 14px; font-weight: 500; animation: rise .3s ease-out; background: {{doneMsg.bg}}; color: {{doneMsg.fg}}">{{doneMsg.text}}</div></sc-if>
+</div>
+</section>
+
+<aside style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+<section aria-labelledby="steps-t" style="padding: 22px; border-radius: 24px; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px">
+<h2 id="steps-t" style="margin: 0 0 8px; font-size: 13px; font-weight: 500; color: #6B6F7A">Lo que ha hecho</h2>
+<sc-for list="{{steps}}" as="st" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: start; padding: 8px 0">
+<span aria-hidden="true" style="width: 20px; height: 20px; margin-top: 1px; display: grid; place-items: center; border-radius: 50%; background: {{st.dot}}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{st.tick}}"><path d="m5 12 5 5 9-10"></path></svg></span>
+<span style="font-size: 14px; line-height: 1.45; color: {{st.fg}}; font-weight: {{st.w}}">{{st.text}}</span>
+<span style="font: 400 12px/1.6 'Geist Mono', monospace; color: #8A8D96">{{st.time}}</span>
+</div>
+</sc-for>
+</section>
+<section aria-labelledby="can-t" style="padding: 22px; border-radius: 24px; background: #FFFFFF; display: flex; flex-direction: column; gap: 12px">
+<h2 id="can-t" style="margin: 0; font-size: 13px; font-weight: 500; color: #6B6F7A">Lo que puede tocar</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.55">Solo su propio navegador, dentro de Colmena. Nunca escribe contraseñas: si una página la pide, te la pasa a ti.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><span style="padding: 7px 12px; border-radius: 999px; background: #F4F4F0; font-size: 13px">redes.tuempresa.com</span><span style="padding: 7px 12px; border-radius: 999px; background: #F4F4F0; font-size: 13px">tienda.tuempresa.com</span><span style="padding: 7px 12px; border-radius: 999px; background: #F4F4F0; font-size: 13px">Archivos · Diseño</span></div>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5C606C">Siempre te pregunta antes de enviar, comprar, publicar o borrar.</p>
+<a href="V2Ajustes.dc.html" style="font-size: 14px; font-weight: 500; color: #1F4FD1">Cambiar en Ajustes</a>
+</section>
+</aside>
+
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["pide permiso","tienes el control","publicado"],"default":"pide permiso"},"$preview":{"width":1440,"height":920}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.from(props.estado);
+  }
+  from(v) { return { mode: v === 'tienes el control' ? 'control' : (v === 'publicado' ? 'ok' : 'ask'), armed: false }; }
+  componentDidUpdate(prev) { if (prev.estado !== this.props.estado) this.setState(this.from(this.props.estado)); }
+  componentWillUnmount() { clearTimeout(this.t); }
+  renderVals() {
+    const s = this.state;
+    const ask = s.mode === 'ask', control = s.mode === 'control';
+    const STEPS = [
+      ['Abrió redes.tuempresa.com con la sesión de la empresa', '10:02'],
+      ['Subió la portada elegida en #campaña-primavera', '10:03'],
+      ['Escribió el texto que aprobó Ana', '10:04'],
+      ['Comprobó la vista previa en móvil', '10:05']
+    ];
+    const last = s.mode === 'ok' ? ['Publicó con tu OK', '10:07'] : (s.mode === 'no' ? ['No publicó: dijiste «Ahora no»', '10:06'] : (control ? ['Te ha dado el control', '10:06'] : ['Quiere pulsar «Publicar»', 'ahora']));
+    const steps = STEPS.map(([text, time]) => ({ text, time, dot: '#0B8A5F', tick: '1', fg: '#3D404A', w: '400' }))
+      .concat([{ text: last[0], time: last[1], dot: ask ? '#FFC93C' : (s.mode === 'ok' ? '#0B8A5F' : '#A9ACB6'), tick: s.mode === 'ok' ? '1' : '0', fg: '#12131A', w: '600' }]);
+    return {
+      status: ask ? 'Se ha parado antes de publicar y te espera' : (control ? 'En pausa mientras tú controlas el navegador' : (s.mode === 'ok' ? 'Publicado. Vuelve a la campaña' : 'Ha cancelado la publicación')),
+      statusFg: ask ? '#8A5A00' : '#5C606C',
+      botAnim: ask ? 'beckon 1.8s ease-out infinite' : (control ? 'none' : 'none'),
+      ctrlBtn: control ? { text: 'Devolver a Iris', bg: '#12131A', fg: '#FFFFFF' } : { text: 'Tomar el control', bg: 'rgba(18,19,26,.06)', fg: '#12131A' },
+      toggleControl: () => this.setState({ mode: control ? 'ask' : 'control', armed: false }),
+      frameShadow: control ? '0 0 0 3px #12131A, 0 30px 70px -36px rgba(18,19,26,.45)' : '0 1px 2px rgba(18,19,26,.05), 0 30px 70px -36px rgba(18,19,26,.35)',
+      liveBadge: control ? { text: 'Tú', bg: '#12131A', fg: '#FFFFFF', anim: 'none' } : (ask ? { text: 'En pausa', bg: '#FFF4D1', fg: '#8A5A00', anim: 'none' } : { text: 'En directo', bg: '#E1F4EC', fg: '#0B6B4A', anim: 'halo 1.8s ease-out infinite' }),
+      pageFilter: ask ? 'saturate(.9)' : 'none',
+      targetOp: ask ? '1' : '0',
+      cursorOp: control ? '0' : '1',
+      control,
+      askOpen: ask,
+      confirmBtn: s.armed ? { text: 'Pulsa otra vez para publicar', bg: '#12131A', fg: '#FFFFFF' } : { text: 'Publicar ahora', bg: '#FFC93C', fg: '#12131A' },
+      confirm: () => {
+        if (!s.armed) { this.setState({ armed: true }); clearTimeout(this.t); this.t = setTimeout(() => this.setState({ armed: false }), 3000); return; }
+        clearTimeout(this.t); this.setState({ mode: 'ok', armed: false });
+      },
+      deny: () => this.setState({ mode: 'no', armed: false }),
+      doneMsg: s.mode === 'ok' ? { show: true, text: 'Publicado a las 10:07 · captura guardada en el Archivo', bg: '#E1F4EC', fg: '#0B5A3E' } : (s.mode === 'no' ? { show: true, text: 'No se ha publicado. Iris te deja el borrador listo.', bg: '#12131A', fg: '#FFFFFF' } : { show: false, text: '', bg: '', fg: '' }),
+      steps
+    };
+  }
+}
+</script>
+</body>
+</html>

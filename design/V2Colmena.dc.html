@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Tu colmena</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+.msg .msg-tools{opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.msg:hover .msg-tools,.msg:focus-within .msg-tools{opacity:1;transform:none;pointer-events:auto}
+@keyframes fly{from{opacity:0;transform:translate(var(--x),var(--y)) scale(.2) rotate(var(--r))}to{opacity:1;transform:none}}
+@keyframes burst{0%{opacity:1;transform:none}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(.3) rotate(var(--r))}}
+@keyframes shock{0%{opacity:.7;transform:translate(-50%,-50%) scale(.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(9)}}
+@keyframes wake{0%{filter:grayscale(1) brightness(.5)}55%{filter:grayscale(0) brightness(1.35) drop-shadow(0 0 60px rgba(255,201,60,.9))}100%{filter:grayscale(0) brightness(1) drop-shadow(0 0 40px rgba(255,201,60,.45))}}
+@keyframes glowin{from{opacity:0}to{opacity:1}}
+@keyframes zoomout{from{opacity:0;transform:scale(1.25)}to{opacity:1;transform:none}}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; align-items: flex-start; min-height: 1800px; background: #F5F5F2">
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100vh; min-height: 560px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<a href="V2Hoy.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Hoy</span><span aria-label="2 cosas te esperan" style="position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #FFC93C; color: #12131A; font: 600 10px/18px 'Geist', sans-serif; text-align: center; box-shadow: 0 0 0 2px #EBEBE6">2</span></a>
+<a href="V2Conversacion.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Conversa-<br>ciones</span><span aria-label="Te han mencionado" style="position: absolute; top: 6px; right: 16px; width: 9px; height: 9px; border-radius: 50%; background: #12131A; box-shadow: 0 0 0 2px #EBEBE6"></span></a>
+<a href="V2Codigo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Código</span></a>
+<a href="V2Colmena.dc.html" aria-current="page" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 600; text-align: center; letter-spacing: 0.01em">Colmena</span></a>
+<a href="V2Rutinas.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"></path><path d="M19.8 4.5v3.6h-3.6"></path><path d="M12 8.2V12l2.6 1.6"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Rutinas</span></a>
+<a href="V2Archivo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M3 4h18v3.5H3z"></path><path d="M9.5 11.5h5"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Archivo</span></a>
+<span style="flex: 1"></span>
+<a href="V2Hoy.dc.html#pedir" title="Pedir algo (⌘K)" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; color: #4A4D57"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="font-size: 11px; font-weight: 500">Pedir</span><kbd style="font: 500 10px/1 'Geist Mono', monospace; color: #6B6F7A">⌘K</kbd></a>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 11px/1 'Geist', sans-serif">TÚ</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+<div style="position: relative; flex: 1; min-width: 0; min-height: 100vh; padding-bottom: 40px">
+<main style="max-width: 1240px; margin: 0 auto; padding: 64px clamp(20px, 4vw, 48px) 40px; display: flex; flex-direction: column; gap: 40px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h1 style="margin: 0; font: 600 clamp(48px, 7vw, 84px)/0.95 'Bricolage Grotesque', sans-serif; letter-spacing: -0.05em">Tu colmena</h1>
+<p style="margin: 0; font-size: 17px; color: #5C606C">{{countLine}}</p>
+</div>
+<button type="button" onClick="{{startNew}}" style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 24px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nuevo bot</button>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start">
+
+<div role="listbox" aria-label="Bots" style="flex: 1 1 520px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px">
+<sc-for list="{{bots}}" as="b" hint-placeholder-count="6">
+<button type="button" role="option" aria-selected="{{b.sel}}" onClick="{{b.pick}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 22px; padding: 26px 22px 22px; text-align: left; border: 0; border-radius: 28px; cursor: pointer; transition: box-shadow .3s ease, transform .3s ease; background: #FFFFFF; box-shadow: {{b.ring}}; transform: {{b.lift}}; animation: {{b.enter}}">
+<span aria-hidden="true" style="display: inline-grid; filter: {{b.glow}}; animation: {{b.anim}}"><span style="display: block; width: 64px; height: 64px; background: {{b.fill}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}"></span></span>
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font: 600 21px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">{{b.name}}</strong><span style="font-size: 14px; color: #5C606C">{{b.role}}</span></span>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{b.stFg}}"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: {{b.dot}}"></span>{{b.state}}</span>
+</button>
+</sc-for>
+</div>
+
+<aside aria-live="polite" style="flex: 1 1 440px; min-width: 0; position: sticky; top: 24px; background: #FFFFFF; border-radius: 34px; overflow: hidden; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 30px 70px -36px rgba(18,19,26,.35)">
+
+<sc-if value="{{showProfile}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; animation: fade .35s ease-out">
+<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 20px; padding: 34px 32px 28px; background: {{p.wash}}">
+<span aria-hidden="true" style="display: inline-grid; filter: {{p.glow}}; animation: {{p.anim}}"><span style="display: block; width: 92px; height: 92px; background: {{p.fill}}; clip-path: {{p.clip}}; border-radius: {{p.radius}}"></span></span>
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">{{p.name}}</h2><p style="margin: 0; font-size: 17px; line-height: 1.5; color: #3D404A">{{p.about}}</p></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><a href="V2Conversacion.dc.html" style="display: flex; align-items: center; height: 46px; padding: 0 20px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600">Hablar con {{p.name}}</a><button type="button" onClick="{{togglePause}}" style="height: 46px; padding: 0 20px; border: 0; border-radius: 999px; background: rgba(255,255,255,.7); cursor: pointer; font-size: 15px; font-weight: 600">{{pauseLabel}}</button></div>
+</div>
+
+<div style="padding: 8px 32px 32px; display: flex; flex-direction: column">
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 22px 0; border-bottom: 1px solid rgba(18,19,26,.07)">
+<h3 style="margin: 0; font-size: 13px; font-weight: 500; color: #6B6F7A">Sabe</h3>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{p.skills}}" as="k" hint-placeholder-count="4"><span style="padding: 8px 14px; border-radius: 999px; background: #F4F4F0; font-size: 14px">{{k.label}}</span></sc-for></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 22px 0; border-bottom: 1px solid rgba(18,19,26,.07)">
+<h3 style="margin: 0 0 8px; font-size: 13px; font-weight: 500; color: #6B6F7A">Puede usar</h3>
+<sc-for list="{{tools}}" as="t" hint-placeholder-count="4">
+<button type="button" role="switch" aria-checked="{{t.on}}" onClick="{{t.toggle}}" style="display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left">
+<span style="flex: 1; font-size: 15px">{{t.label}}</span>
+<span aria-hidden="true" style="width: 46px; height: 28px; flex: none; padding: 3px; border-radius: 14px; transition: background .25s ease; background: {{t.bg}}"><span style="display: block; width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 4px rgba(18,19,26,.2); transition: transform .25s cubic-bezier(.2,.8,.2,1); transform: {{t.x}}"></span></span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 22px 0; border-bottom: 1px solid rgba(18,19,26,.07)">
+<h3 style="margin: 0; font-size: 13px; font-weight: 500; color: #6B6F7A">Cómo trabaja</h3>
+<sc-for list="{{how}}" as="h" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 15px; font-weight: 500">{{h.label}}</span>
+<div role="radiogroup" aria-label="{{h.label}}" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; border-radius: 14px; background: rgba(18,19,26,.05)">
+<sc-for list="{{h.opts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="min-height: 40px; padding: 4px 8px; border: 0; border-radius: 11px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s ease; background: {{o.bg}}; box-shadow: {{o.sh}}">{{o.label}}</button></sc-for>
+</div>
+<span role="status" style="font-size: 13px; line-height: 1.45; color: #5C606C">{{h.desc}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 22px 0; border-bottom: 1px solid rgba(18,19,26,.07)">
+<h3 style="margin: 0; font-size: 13px; font-weight: 500; color: #6B6F7A">Límites</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.6">Puede gastar hasta <button type="button" aria-haspopup="listbox" aria-expanded="{{budgetExp}}" onClick="{{toggleBudget}}" style="display: inline-flex; align-items: center; gap: 4px; padding: 0 4px; border: 0; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; text-decoration: underline; text-decoration-color: #FFC93C; text-decoration-thickness: 3px; text-underline-offset: 5px; background: {{budgetBg}}">{{budget}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .45"><path d="m6 9 6 6 6-6"></path></svg></button> al mes. Antes de enviar algo fuera o borrar, te pregunta.</p>
+<sc-if value="{{budgetOpen}}" hint-placeholder-val="{{ false }}"><div role="listbox" aria-label="Límite al mes" style="display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border-radius: 18px; background: #F4F4F0; animation: rise .2s ease-out"><sc-for list="{{budgets}}" as="o" hint-placeholder-count="4"><button type="button" role="option" aria-selected="{{o.on}}" onClick="{{o.pick}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: {{o.bg}}; color: {{o.fg}}">{{o.label}}</button></sc-for></div></sc-if>
+<span style="height: 4px; border-radius: 2px; background: rgba(18,19,26,.08); overflow: hidden"><span style="display: block; height: 100%; border-radius: 2px; background: #12131A; transition: width .4s ease; width: {{p.spentW}}"></span></span>
+<span style="font-size: 13px; color: #6B6F7A">{{p.spent}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 22px 0 0">
+<h3 style="margin: 0 0 6px; font-size: 13px; font-weight: 500; color: #6B6F7A">Recuerda</h3>
+<sc-for list="{{memory}}" as="m" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 46px; animation: fade .3s ease-out"><span style="flex: 1; font-size: 15px; line-height: 1.45">{{m.text}}</span><button type="button" onClick="{{m.forget}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: rgba(18,19,26,.05); cursor: pointer; font-size: 13px; font-weight: 500">Olvidar</button></div>
+</sc-for>
+<sc-if value="{{noMemory}}" hint-placeholder-val="{{ false }}"><span style="font-size: 14px; color: #6B6F7A">No recuerda nada de ti todavía.</span></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+
+
+</aside>
+</div>
+</main>
+<sc-if value="{{nb.open}}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; top: 0; right: 0; bottom: 0; left: 84px; z-index: 60; display: flex; justify-content: center; align-items: flex-start; padding: 32px 24px; overflow-y: auto; background: rgba(18,19,26,.3); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: fade .25s ease-out">
+<section role="dialog" aria-modal="true" aria-labelledby="nb-t" style="width: min(1140px, 100%); display: flex; flex-wrap: wrap; background: #FFFFFF; border-radius: 34px; box-shadow: 0 60px 120px -40px rgba(18,19,26,.55); overflow: hidden; animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+
+<aside aria-label="Así se verá" style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 22px; padding: 34px 32px; transition: background .6s ease; background: {{nb.wash}}">
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Así se verá</span>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 34px 20px 28px; border-radius: 28px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 24px 50px -30px rgba(18,19,26,.35); text-align: center">
+<span aria-hidden="true" style="display: inline-grid; animation: drift 5s ease-in-out infinite; filter: {{nb.glow}}"><span style="display: block; width: 116px; height: 116px; transition: all .45s cubic-bezier(.2,.8,.2,1); background: {{nb.fill}}; clip-path: {{nb.clip}}; border-radius: {{nb.radius}}"></span></span>
+<div style="display: flex; flex-direction: column; gap: 6px"><strong style="font: 600 34px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">{{nb.nameShown}}</strong><span style="font-size: 15px; color: #5C606C">{{nb.roleShown}}</span></div>
+<span style="padding: 6px 12px; border-radius: 999px; background: #F4F4F0; font-size: 12px; font-weight: 600; color: #3D404A">{{nb.audienceShown}}</span>
+<p style="margin: 0; padding: 14px 16px; border-radius: 18px; background: #F6F6F3; font-size: 15px; line-height: 1.5; color: #1E2029; text-align: left">«{{nb.hello}}»</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{nb.steps}}" as="st" hint-placeholder-count="3"><button type="button" onClick="{{st.go}}" aria-current="{{st.cur}}" style="display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 0 12px; border: 0; border-radius: 14px; cursor: pointer; text-align: left; background: {{st.bg}}"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; font: 600 12px/1 'Geist', sans-serif; background: {{st.dotBg}}; color: {{st.dotFg}}">{{st.n}}</span><span style="font-size: 15px; font-weight: {{st.w}}">{{st.label}}</span></button></sc-for>
+</div>
+</aside>
+
+<div style="flex: 2 1 560px; min-width: 0; display: flex; flex-direction: column; padding: 30px 34px 28px; gap: 24px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><h2 id="nb-t" style="margin: 0; font: 600 34px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">{{nb.title}}</h2><button type="button" onClick="{{nb.close}}" aria-label="Cerrar y volver a Tu colmena" style="width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.06); cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></div>
+
+<sc-if value="{{nb.s1}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 22px; animation: fade .3s ease-out">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<label for="nb-desc" style="font-size: 17px; color: #3D404A">Cuéntaselo como a un compañero nuevo. Con una o dos frases basta; luego lo afinas.</label>
+<div style="position: relative">
+<textarea id="nb-desc" rows="4" value="{{nb.desc}}" onChange="{{nb.descChange}}" placeholder="Ej.: Quiero alguien que conteste los correos de clientes con nuestro tono y me pase los difíciles." style="width: 100%; padding: 18px 64px 18px 20px; border: 0; border-radius: 22px; outline: none; background: #F4F4F0; font-size: 17px; line-height: 1.55; resize: vertical"></textarea>
+<button type="button" onClick="{{nb.dictate}}" aria-label="{{nb.micLabel}}" style="position: absolute; right: 12px; bottom: 14px; width: 42px; height: 42px; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; transition: background .2s ease; background: {{nb.micBg}}; color: {{nb.micFg}}; animation: {{nb.micAnim}}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"></path></svg></button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><span style="font-size: 13px; color: #6B6F7A; margin-right: 4px">O empieza con un ejemplo</span><sc-for list="{{nb.examples}}" as="e" hint-placeholder-count="4"><button type="button" onClick="{{e.pick}}" style="height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px rgba(18,19,26,.12); cursor: pointer; font-size: 13px; color: #3D404A">{{e.label}}</button></sc-for></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 20px; background: #F6F6F3">
+<span style="font-size: 13px; font-weight: 500; color: #6B6F7A">Atlas lo va revisando mientras escribes</span>
+<sc-for list="{{nb.checks}}" as="c" hint-placeholder-count="4"><div style="display: flex; align-items: center; gap: 10px; font-size: 14px"><span aria-hidden="true" style="width: 20px; height: 20px; flex: none; display: grid; place-items: center; border-radius: 50%; transition: all .25s ease; background: {{c.bg}}; box-shadow: {{c.ring}}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{c.tick}}"><path d="m5 12 5 5 9-10"></path></svg></span><span style="color: {{c.fg}}">{{c.label}}</span></div></sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 18px">
+<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Para quién será</span><div role="radiogroup" aria-label="Para quién será" style="display: flex; gap: 2px; padding: 3px; border-radius: 16px; background: rgba(18,19,26,.05)"><sc-for list="{{nb.audience}}" as="o" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 0; border-radius: 13px; cursor: pointer; text-align: left; background: {{o.bg}}; box-shadow: {{o.sh}}"><strong style="font-size: 14px; font-weight: 600">{{o.label}}</strong><span style="font-size: 12px; line-height: 1.35; color: #5C606C">{{o.desc}}</span></button></sc-for></div></div>
+<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Dale material (opcional)</span><button type="button" onClick="{{nb.addFile}}" style="flex: 1; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px; border: 1.5px dashed rgba(18,19,26,.2); border-radius: 16px; background: transparent; cursor: pointer; font-size: 14px; color: #3D404A"><strong style="font-weight: 600">Arrastra ejemplos de su trabajo</strong><span style="font-size: 12px; color: #6B6F7A">Contratos, correos, una hoja… Máximo cinco.</span></button>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{nb.files}}" as="f" hint-placeholder-count="0"><span style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px 0 12px; border-radius: 999px; background: #F4F4F0; font-size: 13px; animation: pop .3s ease-out">{{f.name}}<button type="button" onClick="{{f.remove}}" aria-label="Quitar" style="width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #6B6F7A">×</button></span></sc-for></div></div>
+</div>
+<sc-if value="{{nb.preparing}}" hint-placeholder-val="{{ false }}"><div role="status" style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 18px; background: #F6F6F3; animation: rise .3s ease-out"><span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(18,19,26,.15); border-top-color: #12131A; animation: spin .8s linear infinite"></span><span style="font-size: 15px; font-weight: 500; background: linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 2s linear infinite">Colmena está preparando nombre, instrucciones, habilidades y permisos…</span></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{nb.s2}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 22px; animation: fade .3s ease-out">
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Nombre</span><input type="text" value="{{nb.name}}" onChange="{{nb.nameChange}}" placeholder="Ponle un nombre" maxlength="20" style="height: 54px; padding: 0 18px; border: 0; border-radius: 16px; outline: none; background: #F4F4F0; font: 600 20px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em"></label>
+<label style="flex: 2 1 280px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Puesto</span><input type="text" value="{{nb.role}}" onChange="{{nb.roleChange}}" placeholder="Qué hace, en pocas palabras" style="height: 54px; padding: 0 18px; border: 0; border-radius: 16px; outline: none; background: #F4F4F0; font-size: 16px"></label>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: -10px"><span style="font-size: 13px; color: #6B6F7A; margin-right: 4px">Ideas de nombre</span><sc-for list="{{nb.nameIdeas}}" as="n" hint-placeholder-count="4"><button type="button" onClick="{{n.pick}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{n.bg}}; color: {{n.fg}}">{{n.label}}</button></sc-for></div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 24px; background: #F6F6F3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px"><span style="font: 600 18px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.015em">Su aspecto</span><div role="radiogroup" aria-label="Tipo de avatar" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(18,19,26,.06)"><sc-for list="{{nb.looks}}" as="o" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{o.bg}}; box-shadow: {{o.sh}}">{{o.label}}</button></sc-for></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Forma</span><div role="radiogroup" aria-label="Forma del avatar" style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{nb.shapes}}" as="o" hint-placeholder-count="6"><button type="button" role="radio" aria-checked="{{o.on}}" aria-label="{{o.label}}" title="{{o.label}}" onClick="{{o.pick}}" style="width: 58px; height: 58px; display: grid; place-items: center; border: 0; border-radius: 16px; cursor: pointer; transition: all .2s ease; background: #FFFFFF; box-shadow: {{o.ring}}"><span aria-hidden="true" style="width: 30px; height: 30px; background: {{o.fill}}; clip-path: {{o.clip}}; border-radius: {{o.radius}}"></span></button></sc-for></div></div>
+<sc-if value="{{nb.colorMode}}" hint-placeholder-val="{{ true }}"><div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Color <span style="color: #8A8D96; font-weight: 400">· la miel está reservada para «te necesita»</span></span><div role="radiogroup" aria-label="Color del avatar" style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{nb.colors}}" as="o" hint-placeholder-count="10"><button type="button" role="radio" aria-checked="{{o.on}}" aria-label="{{o.label}}" title="{{o.label}}" onClick="{{o.pick}}" style="width: 38px; height: 38px; border: 0; border-radius: 50%; cursor: pointer; transition: box-shadow .2s ease; background: {{o.c}}; box-shadow: {{o.ring}}"></button></sc-for></div></div></sc-if>
+<sc-if value="{{nb.portraitMode}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px; animation: fade .25s ease-out">
+<span style="font-size: 13px; line-height: 1.45; color: #5C606C">Dibujamos cuatro opciones con tu cuenta de ChatGPT y eliges una. Se verá dentro de su forma en todo Colmena.</span>
+<sc-if value="{{nb.pIdle}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{nb.draw}}" style="align-self: flex-start; height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Dibujar cuatro opciones</button></sc-if>
+<sc-if value="{{nb.pDrawing}}" hint-placeholder-val="{{ false }}"><div role="status" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px"><sc-for list="{{nb.ghosts}}" as="g" hint-placeholder-count="4"><span aria-hidden="true" style="aspect-ratio: 1; border-radius: 18px; background: linear-gradient(90deg, #EAEAE4 0%, #F6F6F2 50%, #EAEAE4 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite"></span></sc-for></div><span style="font-size: 13px; color: #6B6F7A">Dibujando cuatro opciones…</span></sc-if>
+<sc-if value="{{nb.pReady}}" hint-placeholder-val="{{ false }}"><div role="radiogroup" aria-label="Opciones de retrato" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px"><sc-for list="{{nb.portraits}}" as="o" hint-placeholder-count="4"><button type="button" role="radio" aria-checked="{{o.on}}" aria-label="{{o.label}}" onClick="{{o.pick}}" style="aspect-ratio: 1; display: grid; place-items: center; border: 0; border-radius: 18px; cursor: pointer; background: #FFFFFF; transition: box-shadow .2s ease; box-shadow: {{o.ring}}; animation: develop .9s ease-out both; animation-delay: {{o.d}}"><span aria-hidden="true" style="width: 74%; height: 74%; background: {{o.art}}; clip-path: {{o.clip}}; border-radius: {{o.radius}}"></span></button></sc-for></div><div style="display: flex; gap: 8px"><button type="button" onClick="{{nb.draw}}" style="height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 13px; font-weight: 600">Otras cuatro</button><button type="button" onClick="{{nb.clearPortrait}}" style="height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #5C606C">Quitar el retrato</button></div></sc-if>
+</div>
+</sc-if>
+</div>
+
+<label style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Instrucciones · Colmena ha preparado esto</span><textarea rows="4" value="{{nb.instr}}" onChange="{{nb.instrChange}}" style="padding: 16px 18px; border: 0; border-radius: 18px; outline: none; background: #F4F4F0; font-size: 15px; line-height: 1.55; resize: vertical"></textarea></label>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Habilidades</span><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><sc-for list="{{nb.skills}}" as="k" hint-placeholder-count="3"><span style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 6px 0 14px; border-radius: 999px; background: #F4F4F0; font-size: 14px; animation: pop .3s ease-out">{{k.label}}<button type="button" onClick="{{k.remove}}" aria-label="Quitar esta habilidad" style="width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #6B6F7A">×</button></span></sc-for><label style="display: flex; align-items: center; gap: 4px; height: 36px; padding: 0 4px 0 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(18,19,26,.12)"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Nombre de la habilidad</span><input type="text" value="{{nb.skillIn}}" onChange="{{nb.skillInChange}}" placeholder="Ej.: Resumir contratos" style="width: 170px; border: 0; outline: none; background: transparent; font-size: 14px"><button type="button" onClick="{{nb.addSkill}}" style="height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 12px; font-weight: 600">Añadir</button></label></div></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Puede usar</span>
+<sc-for list="{{nb.tools}}" as="t" hint-placeholder-count="4"><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-height: 52px; border-bottom: 1px solid rgba(18,19,26,.06)"><span style="flex: 1 1 160px; font-size: 15px">{{t.label}}</span><div role="radiogroup" aria-label="{{t.label}}" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(18,19,26,.05)"><sc-for list="{{t.opts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{o.bg}}; box-shadow: {{o.sh}}">{{o.label}}</button></sc-for></div></div></sc-for>
+<span style="padding-top: 8px; font-size: 13px; color: #6B6F7A">Enviar algo fuera, mover dinero, borrar o instalar siempre piden permiso.</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{nb.s3}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px; animation: fade .3s ease-out">
+<p style="margin: 0; font-size: 16px; line-height: 1.5; color: #3D404A">Hazle una pregunta como se la harías en el trabajo. Responde con las instrucciones que acabas de escribir. <strong style="color: #12131A; font-weight: 600">Nada de esto se guarda ni se envía.</strong></p>
+<div style="display: flex; flex-direction: column; gap: 14px; min-height: 220px; padding: 20px; border-radius: 24px; background: #F6F6F3">
+<sc-for list="{{nb.chat}}" as="m" hint-placeholder-count="0"><div style="display: flex; justify-content: {{m.justify}}; animation: rise .35s ease-out"><span style="max-width: 82%; padding: 12px 16px; border-radius: 20px; font-size: 15px; line-height: 1.5; background: {{m.bg}}; color: #12131A">{{m.text}}</span></div></sc-for>
+<sc-if value="{{nb.thinking}}" hint-placeholder-val="{{ false }}"><span role="status" style="font-size: 14px; color: #6B6F7A">{{nb.nameShown}} está pensando…</span></sc-if>
+<sc-if value="{{nb.chatEmpty}}" hint-placeholder-val="{{ true }}"><div style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{nb.testIdeas}}" as="e" hint-placeholder-count="2"><button type="button" onClick="{{e.pick}}" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; cursor: pointer; font-size: 13px">{{e.label}}</button></sc-for></div></sc-if>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 20px; border-radius: 999px; background: #F4F4F0"><label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pregunta de prueba</span><input type="text" value="{{nb.q}}" onChange="{{nb.qChange}}" placeholder="Hazle una pregunta de prueba…" style="flex: 1; min-width: 0; height: 46px; border: 0; outline: none; background: transparent; font-size: 15px"></label><button type="button" onClick="{{nb.ask}}" aria-label="Enviar pregunta de prueba" style="width: 46px; height: 46px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 14px 18px; border-radius: 18px; background: #F6F6F3; font-size: 14px; color: #3D404A"><span><strong style="color: #12131A">{{nb.nameShown}}</strong> · {{nb.roleShown}}</span><span>{{nb.audienceShown}}</span><span>Autonomía: hace y te avisa</span><span>{{nb.skillCount}}</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{nb.err}}" hint-placeholder-val="{{ false }}"><p role="alert" style="margin: 0; font-size: 14px; color: #B4372A; animation: rise .25s ease-out">{{nb.errText}}</p></sc-if>
+<div style="margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-top: 18px; border-top: 1px solid rgba(18,19,26,.06)">
+<span style="font-size: 13px; color: #6B6F7A">{{nb.foot}}</span>
+<div style="display: flex; gap: 8px">
+<sc-if value="{{nb.canBack}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{nb.back}}" style="height: 52px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 15px; font-weight: 600">Atrás</button></sc-if>
+<button type="button" onClick="{{nb.primary}}" style="height: 52px; padding: 0 26px; border: 0; border-radius: 999px; cursor: pointer; font-size: 15px; font-weight: 600; transition: all .2s ease; background: {{nb.pBg}}; color: {{nb.pFg}}">{{nb.pText}}</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"seleccionado":{"editor":"enum","options":["vera","atlas","tomas","iris","nora","bruno"],"default":"vera"},"nuevoBot":{"editor":"enum","options":["cerrado","describe","ajusta","prueba"],"default":"cerrado"},"$preview":{"width":1440,"height":1800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    this.B = [
+      { id: 'atlas', name: 'Atlas', role: 'Coordina y reparte', color: '#FFC93C', clip: HEX, radius: '0', work: true, state: 'Coordinando el informe Q3', about: 'Lee lo que pides, decide quién lo hace y vigila los plazos. Si dos personas piden cosas distintas, pregunta.', skills: ['Repartir trabajo', 'Plazos', 'Resúmenes de sala', 'Votaciones'], tools: [1, 1, 1, 0], mem: ['Los lunes prefieres el plan de la semana antes de las 9:00', 'Marta aprueba todo lo que va al comité'], used: 3, budgets: [20, 50, 100] },
+      { id: 'tomas', name: 'Tomás', role: 'Datos y hojas de cálculo', color: '#0B8A5F', clip: 'none', radius: '24%', work: true, state: 'Analizando devoluciones', about: 'Limpia datos, cruza hojas y calcula. Siempre te dice de dónde sale cada cifra.', skills: ['Hojas de cálculo', 'Gráficos', 'Previsiones', 'Detectar errores'], tools: [0, 0, 1, 1], mem: ['Las cifras oficiales son las que cierra contabilidad', 'Usa coma decimal y euros'], used: 12, budgets: [50, 100, 20] },
+      { id: 'iris', name: 'Iris', role: 'Diseño y diapositivas', color: '#FF5CA8', clip: DIA, radius: '0', work: true, state: 'Dibujando portadas', about: 'Hace diapositivas, portadas e imágenes con la identidad de tu empresa.', skills: ['Diapositivas', 'Imágenes', 'Identidad de marca'], tools: [0, 0, 1, 0], mem: ['Marta prefiere un estilo sobrio'], used: 24, budgets: [30, 60, 15] },
+      { id: 'vera', name: 'Vera', role: 'Escribe y resume', color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%', work: true, state: 'Escribiendo un resumen', about: 'Redacta correos, resúmenes e informes en tu tono. Nunca envía nada sin preguntarte.', skills: ['Correos', 'Resúmenes', 'Informes', 'Corregir textos'], tools: [1, 1, 1, 0], mem: ['Firmas los correos como «Un saludo»', 'Al comité le gustan los resúmenes de una página', 'No uses anglicismos'], used: 2, budgets: [20, 40, 10] },
+      { id: 'nora', name: 'Nora', role: 'Investiga y busca', color: '#2F6BFF', clip: 'none', radius: '50%', work: false, state: 'Libre', about: 'Busca información, compara fuentes y te dice qué es fiable y qué no.', skills: ['Buscar en la web', 'Comparar fuentes', 'Estudios de mercado'], tools: [0, 0, 1, 0], mem: [], used: 0, budgets: [20, 40, 10] },
+      { id: 'bruno', name: 'Bruno', role: 'Facturas y pagos', color: '#FF7A1A', clip: 'none', radius: '50% 50% 14% 14%', work: false, state: 'Libre', about: 'Registra facturas, controla los pagos y te avisa de lo que vence.', skills: ['Facturas', 'Gastos', 'Vencimientos'], tools: [1, 0, 1, 1], mem: ['Avisar si una factura pasa de 500 €'], used: 6, budgets: [20, 40, 10] }
+    ];
+    const tools = {}; const mem = {}; const bud = {};
+    this.B.forEach(b => { tools[b.id] = b.tools.slice(); mem[b.id] = b.mem.slice(); bud[b.id] = 0; });
+    const sel = props.seleccionado || 'vera';
+    this.state = { sel, tools, mem, bud, paused: {}, hired: [], auto: {}, think: {}, nb: this.nbFrom(props.nuevoBot) };
+  }
+  nbFrom(v) {
+    const n = this.nbInit(v && v !== 'cerrado');
+    if (v === 'ajusta' || v === 'prueba') Object.assign(n, { step: v === 'ajusta' ? 2 : 3, desc: 'Que lea las facturas que llegan al correo, las apunte en la hoja de gastos y me avise si alguna pasa de 500 €.', name: 'Leo', role: 'Facturas de proveedores', skills: ['Leer facturas', 'Hoja de gastos', 'Avisar de importes altos'], instr: 'Lee las facturas que llegan al correo, apúntalas en la hoja de gastos y avísame si alguna pasa de 500 € o le falta algún dato. Nunca pagues ni respondas a un proveedor sin preguntarme.', tools: { correo: 1, calendario: 0, archivos: 1, hojas: 2 } });
+    if (v === 'prueba') n.chat = [{ who: 'user', text: '¿Qué harías con esta factura de 820 €?' }, { who: 'bot', text: 'La apunto en la hoja de gastos y, como pasa de 500 €, te la dejo marcada en Hoy para que la revises. No la pago ni contesto al proveedor.' }];
+    return n;
+  }
+  componentDidUpdate(prev) {
+    if (prev.seleccionado !== this.props.seleccionado) this.setState({ sel: this.props.seleccionado || 'vera' });
+    if (prev.nuevoBot !== this.props.nuevoBot) this.setState({ nb: this.nbFrom(this.props.nuevoBot) });
+  }
+  componentWillUnmount() { clearTimeout(this.nbT); clearTimeout(this.nbA); clearTimeout(this.nbP); }
+
+  fill(c) { return `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${c}`; }
+  nbVals() {
+    const s = this.state;
+    const n = s.nb;
+    const set = patch => this.setState({ nb: { ...this.state.nb, ...patch } });
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const SHAPES = [['circle', 'Círculo', 'none', '50%'], ['hex', 'Hexágono', HEX, '0'], ['square', 'Cuadrado', 'none', '24%'], ['diamond', 'Rombo', DIA, '0'], ['arch', 'Arco', 'none', '50% 50% 14% 14%'], ['leaf', 'Hoja', 'none', '50% 12% 50% 12%']];
+    const COLORS = [['#0E7C86', 'Turquesa'], ['#2F6BFF', 'Azul'], ['#7B4DFF', 'Violeta'], ['#FF5CA8', 'Rosa'], ['#FF7A1A', 'Naranja'], ['#0B8A5F', 'Verde'], ['#D9366F', 'Frambuesa'], ['#4F5BD5', 'Añil'], ['#2B2D36', 'Tinta'], ['#B08D57', 'Arena']];
+    const shape = SHAPES.find(x => x[0] === n.shape) || SHAPES[0];
+    const c = n.color;
+    const ARTS = [
+      [`radial-gradient(circle at 50% 36%, #FFE7D1 0 17%, rgba(255,231,209,0) 17.5%), radial-gradient(ellipse 62% 42% at 50% 100%, ${c} 0 60%, rgba(0,0,0,0) 61%), linear-gradient(160deg, #F4F1EA, #E6E0F5)`, `radial-gradient(circle at 35% 40%, #FFFFFF 0 9%, rgba(255,255,255,0) 9.5%), radial-gradient(circle at 65% 40%, #FFFFFF 0 9%, rgba(255,255,255,0) 9.5%), radial-gradient(circle at 36% 42%, #12131A 0 4%, rgba(0,0,0,0) 4.5%), radial-gradient(circle at 66% 42%, #12131A 0 4%, rgba(0,0,0,0) 4.5%), ${c}`, `conic-gradient(from 200deg at 50% 60%, ${c}, #FFE39A, ${c})`, `radial-gradient(circle at 70% 30%, #FFE39A 0 14%, rgba(0,0,0,0) 14.5%), radial-gradient(120% 70% at 20% 110%, ${c} 0 48%, rgba(0,0,0,0) 48.5%), linear-gradient(180deg, #FFF8EA, #F1ECFF)`],
+      [`repeating-linear-gradient(135deg, ${c} 0 10px, #FFFFFF 10px 20px)`, `radial-gradient(circle at 50% 50%, #FFFFFF 0 22%, ${c} 22.5% 40%, #12131A 40.5% 46%, ${c} 46.5%)`, `linear-gradient(180deg, ${c} 0 50%, #FFE39A 50% 100%)`, `radial-gradient(circle at 30% 30%, ${c} 0 30%, rgba(0,0,0,0) 30.5%), radial-gradient(circle at 70% 70%, #12131A 0 22%, rgba(0,0,0,0) 22.5%), #F4F1EA`]
+    ];
+    const arts = ARTS[n.pSet % ARTS.length];
+    const art = n.look === 'portrait' && n.portrait != null ? arts[n.portrait] : null;
+    const fill = art || this.fill(c);
+    const d = n.desc.toLowerCase();
+    const cat = /factura|gasto|pago|proveedor/.test(d) ? 'fact' : (/correo|cliente|respond|contest/.test(d) ? 'mail' : (/traduc|idioma|inglés|portugués/.test(d) ? 'trad' : (/código|web|publicar|programa/.test(d) ? 'code' : (/ventas|resumen|informe|lunes/.test(d) ? 'rep' : 'gen'))));
+    const DRAFT = {
+      fact: { names: ['Leo', 'Marga', 'Bea', 'Íñigo'], role: 'Facturas de proveedores', color: '#0E7C86', shape: 'circle', skills: ['Leer facturas', 'Hoja de gastos', 'Avisar de importes altos'], instr: 'Lee las facturas que llegan al correo, apúntalas en la hoja de gastos y avísame si alguna pasa de 500 € o le falta algún dato. Nunca pagues ni respondas a un proveedor sin preguntarme.', tools: { correo: 1, calendario: 0, archivos: 1, hojas: 2 }, answer: 'Esta semana han llegado 9 facturas. Las he apuntado todas; dos pasan de 500 €: Transportes Ruiz (820 €) y Papelería Sur (612 €). ¿Te las dejo marcadas para que las revises?' },
+      mail: { names: ['Clara', 'Toni', 'Rocío', 'Pau'], role: 'Atención a clientes', color: '#2F6BFF', shape: 'leaf', skills: ['Responder correos', 'Detectar quejas', 'Tono de la marca'], instr: 'Contesta los correos de clientes con nuestro tono cercano. Si es una queja, un cliente nuevo o algo con dinero, prepárame el borrador y pásamelo a mí.', tools: { correo: 2, calendario: 0, archivos: 1, hojas: 0 }, answer: 'Te propongo esta respuesta: «Hola, Laura: siento el retraso. Tu pedido sale mañana y te enviamos el seguimiento por correo». Como es una queja, no la envío: te la dejo en Hoy.' },
+      trad: { names: ['Lía', 'Duarte', 'Noa', 'Ian'], role: 'Traducciones', color: '#7B4DFF', shape: 'diamond', skills: ['Traducir catálogos', 'Glosario de la marca'], instr: 'Traduce los catálogos al inglés y al portugués respetando nuestro glosario. Marca las frases dudosas en lugar de inventarlas.', tools: { correo: 0, calendario: 0, archivos: 2, hojas: 1 }, answer: '«Silla de roble macizo» → EN: «Solid oak chair» · PT: «Cadeira de carvalho maciço». He respetado el glosario; no había frases dudosas.' },
+      code: { names: ['Kai', 'Elena', 'Marco', 'Uma'], role: 'Revisión de la web', color: '#0B8A5F', shape: 'square', skills: ['Revisar cambios', 'Probar antes de publicar'], instr: 'Revisa el código de la web antes de publicar y avísame si algo falla. No publiques nada tú.', tools: { correo: 0, calendario: 0, archivos: 2, hojas: 0 }, answer: 'He revisado los 4 cambios de hoy. Uno rompe el botón de pago en móvil; te dejo el detalle y una propuesta de arreglo, sin publicar nada.' },
+      rep: { names: ['Ana', 'Sergi', 'Olga', 'Bruno'], role: 'Resumen semanal de ventas', color: '#FF7A1A', shape: 'arch', skills: ['Resumir ventas', 'Comparar semanas', 'Gráficos'], instr: 'Cada lunes prepara un resumen de ventas de la semana: tres cifras, un gráfico y lo que ha cambiado respecto a la anterior.', tools: { correo: 0, calendario: 0, archivos: 1, hojas: 1 }, answer: 'Semana del 6 al 12: 48.200 € (+6 %). Lo que más sube: sillas de exterior. Lo que baja: textil. Te dejo el gráfico en el Archivo.' },
+      gen: { names: ['Leo', 'Nuria', 'Teo', 'Alba'], role: 'Ayudante', color: '#4F5BD5', shape: 'circle', skills: ['Resumir', 'Organizar tareas'], instr: n.desc || 'Ayúdame con las tareas que te pida.', tools: { correo: 1, calendario: 1, archivos: 1, hojas: 0 }, answer: 'Entendido. Antes de nada, ¿con qué información trabajo: tu correo, una carpeta o una hoja?' }
+    }[cat];
+    const checks = [
+      ['Qué tiene que hacer', /revis|contest|respond|prepar|traduc|apunt|lee|resum|busca|organiz/.test(d)],
+      ['Qué te entrega o cuándo te avisa', /avis|resumen|tabla|entreg|me pase|cada lunes|cada día|antes de/.test(d)],
+      ['Con qué información trabaja', /correo|hoja|carpeta|contrato|factura|catálogo|código|web|calendario/.test(d) || n.files.length > 0],
+      ['Qué no debe hacer nunca', /nunca|sin preguntar|no envíes|no publiques/.test(d)]
+    ];
+    const err = n.err;
+    const steps = [['Describe', 1], ['Ajusta', 2], ['Pruébalo y contrata', 3]];
+    const nameShown = n.step === 1 ? (n.desc.trim().length > 20 ? DRAFT.names[0] : 'Tu bot') : (n.name.trim() || 'Sin nombre');
+    const roleShown = n.step === 1 ? (n.desc.trim().length > 20 ? DRAFT.role : 'Describe lo que hará') : (n.role.trim() || 'Sin puesto');
+    const seg = (on, label, pick) => ({ label, on: String(on), bg: on ? '#FFFFFF' : 'transparent', sh: on ? '0 1px 3px rgba(18,19,26,.15)' : 'none', pick });
+    const hire = () => {
+      const id = 'h' + Date.now();
+      const bot = { id, name: n.name.trim(), role: n.role.trim(), color: c, clip: shape[2], radius: shape[3], art, work: false, state: 'Recién contratado', about: n.instr, skills: n.skills.slice(), tools: [n.tools.correo ? 1 : 0, n.tools.calendario ? 1 : 0, n.tools.archivos ? 1 : 0, n.tools.hojas ? 1 : 0], mem: [], used: 0, budgets: [20, 40, 10], isNew: true };
+      this.setState({ hired: [...(s.hired || []), bot], sel: id, tools: { ...s.tools, [id]: bot.tools }, mem: { ...s.mem, [id]: [] }, bud: { ...s.bud, [id]: 0 }, nb: this.nbInit(false) });
+    };
+    const primary = () => {
+      if (n.step === 1) {
+        if (n.desc.trim().length < 20) { set({ err: 'Añade un poco más de detalle y el bot saldrá mejor a la primera.' }); return; }
+        set({ preparing: true, err: '' });
+        clearTimeout(this.nbT);
+        this.nbT = setTimeout(() => this.setState({ nb: { ...this.state.nb, preparing: false, step: 2, name: DRAFT.names[0], role: DRAFT.role, color: DRAFT.color, shape: DRAFT.shape, skills: DRAFT.skills.slice(), instr: DRAFT.instr, tools: { ...DRAFT.tools } } }), 1800);
+        return;
+      }
+      if (n.step === 2) {
+        if (!n.name.trim()) { set({ err: 'Ponle un nombre antes de contratarlo.' }); return; }
+        if (!n.role.trim()) { set({ err: 'Indica su puesto antes de contratarlo.' }); return; }
+        set({ step: 3, err: '' }); return;
+      }
+      hire();
+    };
+    const ask = text => {
+      const t = (text ?? n.q).trim(); if (!t) return;
+      set({ chat: [...n.chat, { who: 'user', text: t }], q: '', thinking: true });
+      clearTimeout(this.nbA);
+      this.nbA = setTimeout(() => this.setState({ nb: { ...this.state.nb, thinking: false, chat: [...this.state.nb.chat, { who: 'bot', text: DRAFT.answer }] } }), 1300);
+    };
+    const TOOLS = [['correo', 'Correo'], ['calendario', 'Calendario'], ['archivos', 'Archivos de la empresa'], ['hojas', 'Hojas de cálculo']];
+    return {
+      startNew: () => this.setState({ nb: this.nbInit(true) }),
+      nb: {
+        open: n.open,
+        close: () => { clearTimeout(this.nbT); this.setState({ nb: { ...this.state.nb, open: false } }); },
+        title: ['Un bot nuevo', 'Ajústalo a tu gusto', 'Pruébalo y contrátalo'][n.step - 1],
+        s1: n.step === 1, s2: n.step === 2, s3: n.step === 3,
+        wash: `linear-gradient(180deg, ${c}24, ${c}08)`,
+        glow: `drop-shadow(0 16px 30px ${c}66)`,
+        fill, clip: shape[2], radius: shape[3],
+        nameShown, roleShown,
+        audienceShown: n.aud === 'yo' ? 'Solo para ti' : 'Para todo el equipo',
+        hello: n.step === 1 && n.desc.trim().length <= 20 ? 'Cuéntame qué necesitas y me preparo.' : `Hola, soy ${nameShown}. Me encargo de: ${roleShown.toLowerCase()}. Te pregunto antes de hacer nada importante.`,
+        steps: steps.map(([label, k]) => ({ label, n: String(k), cur: String(n.step === k), bg: n.step === k ? 'rgba(255,255,255,.75)' : 'transparent', dotBg: n.step > k ? '#0B8A5F' : (n.step === k ? '#12131A' : 'rgba(18,19,26,.1)'), dotFg: n.step >= k ? '#FFFFFF' : '#5C606C', w: n.step === k ? '600' : '500', go: () => { if (k < n.step || (k === 2 && n.name)) set({ step: k, err: '' }); } })),
+        desc: n.desc, descChange: e => set({ desc: e.target.value, err: '' }),
+        dictate: () => { if (n.mic) set({ mic: false, desc: (n.desc ? n.desc + ' ' : '') + 'Que lea las facturas que llegan al correo, las apunte en la hoja de gastos y me avise si alguna pasa de 500 €. Nunca pagues sin preguntarme.' }); else set({ mic: true }); },
+        micLabel: n.mic ? 'Escuchando… toca para parar' : 'Dictar', micBg: n.mic ? '#FF5A4E' : '#FFFFFF', micFg: n.mic ? '#FFFFFF' : '#3D404A', micAnim: n.mic ? 'halo 1.4s ease-out infinite' : 'none',
+        examples: ['Que conteste los correos de clientes con nuestro tono y me pase los difíciles.', 'Que prepare cada lunes un resumen de ventas de la semana.', 'Que revise el código de la web antes de publicar y me avise si algo falla.', 'Que traduzca los catálogos al inglés y al portugués respetando nuestro glosario.'].map(t => ({ label: t.length > 46 ? t.slice(0, 44) + '…' : t, pick: () => set({ desc: t, err: '' }) })),
+        checks: checks.map(([label, ok]) => ({ label, bg: ok ? '#0B8A5F' : 'transparent', ring: ok ? 'none' : 'inset 0 0 0 1.5px rgba(18,19,26,.22)', tick: ok ? '1' : '0', fg: ok ? '#12131A' : '#6B6F7A' })),
+        audience: [['yo', 'Solo para mí', 'Lo verás en tus chats; nadie más podrá usarlo.'], ['equipo', 'Para todo el equipo', 'Podrá unirse a las salas y trabajar con otros bots.']].map(([v, label, desc]) => ({ ...seg(n.aud === v, label, () => set({ aud: v })), desc })),
+        addFile: () => { const pool = ['factura_ruiz_oct.pdf', 'hoja_gastos_2026.xlsx', 'correo_proveedor.eml', 'condiciones_pago.docx', 'ejemplo_respuesta.txt']; if (n.files.length < 5) set({ files: [...n.files, pool[n.files.length]] }); },
+        files: n.files.map((name, i) => ({ name, remove: () => set({ files: n.files.filter((_, j) => j !== i) }) })),
+        preparing: n.preparing,
+        name: n.name, nameChange: e => set({ name: e.target.value, err: '' }),
+        role: n.role, roleChange: e => set({ role: e.target.value, err: '' }),
+        nameIdeas: DRAFT.names.map(x => ({ label: x, bg: n.name === x ? '#12131A' : 'rgba(18,19,26,.06)', fg: n.name === x ? '#FFFFFF' : '#12131A', pick: () => set({ name: x, err: '' }) })),
+        looks: [seg(n.look === 'color', 'Forma y color', () => set({ look: 'color' })), seg(n.look === 'portrait', 'Retrato dibujado', () => set({ look: 'portrait' }))],
+        shapes: SHAPES.map(([id, label, clip, radius]) => ({ label, clip, radius, fill: id === n.shape ? (art || this.fill(c)) : this.fill(c), on: String(id === n.shape), ring: id === n.shape ? '0 0 0 2px #12131A' : '0 1px 2px rgba(18,19,26,.08)', pick: () => set({ shape: id }) })),
+        colorMode: n.look === 'color',
+        colors: COLORS.map(([hex, label]) => ({ c: hex, label, on: String(hex === c), ring: hex === c ? '0 0 0 3px #FFFFFF, 0 0 0 5px #12131A' : 'inset 0 0 0 1px rgba(0,0,0,.08)', pick: () => set({ color: hex }) })),
+        portraitMode: n.look === 'portrait',
+        pIdle: n.pStatus === 'idle', pDrawing: n.pStatus === 'drawing', pReady: n.pStatus === 'ready',
+        ghosts: [1, 2, 3, 4].map(i => ({ i })),
+        draw: () => { set({ pStatus: 'drawing', portrait: null }); clearTimeout(this.nbP); this.nbP = setTimeout(() => this.setState({ nb: { ...this.state.nb, pStatus: 'ready', pSet: this.state.nb.pSet + 1, portrait: 0 } }), 1800); },
+        portraits: arts.map((a, i) => ({ art: a, clip: shape[2], radius: shape[3], label: 'Opción ' + (i + 1), on: String(n.portrait === i), ring: n.portrait === i ? '0 0 0 2px #12131A' : '0 1px 2px rgba(18,19,26,.08)', d: (i * 0.12) + 's', pick: () => set({ portrait: i }) })),
+        clearPortrait: () => set({ portrait: null, pStatus: 'idle', look: 'color' }),
+        instr: n.instr, instrChange: e => set({ instr: e.target.value }),
+        skills: n.skills.map((label, i) => ({ label, remove: () => set({ skills: n.skills.filter((_, j) => j !== i) }) })),
+        skillIn: n.skillIn, skillInChange: e => set({ skillIn: e.target.value }),
+        addSkill: () => { const t = n.skillIn.trim(); if (t) set({ skills: [...n.skills, t], skillIn: '' }); },
+        tools: TOOLS.map(([k, label]) => ({ label, opts: ['No', 'Lee', 'Escribe'].map((l, v) => seg(n.tools[k] === v, l, () => set({ tools: { ...n.tools, [k]: v } }))) })),
+        chat: n.chat.map(m => ({ text: m.text, justify: m.who === 'user' ? 'flex-end' : 'flex-start', bg: m.who === 'user' ? '#E3E3DC' : '#FFFFFF' })),
+        chatEmpty: n.chat.length === 0 && !n.thinking,
+        thinking: n.thinking,
+        testIdeas: ['¿Qué harías con esta factura de 820 €?', '¿Qué no harías nunca sin preguntarme?'].map(t => ({ label: t, pick: () => ask(t) })),
+        q: n.q, qChange: e => set({ q: e.target.value }), ask: () => ask(),
+        skillCount: `${n.skills.length} ${n.skills.length === 1 ? 'habilidad' : 'habilidades'}`,
+        err: !!err, errText: err,
+        foot: ['Paso 1 de 3 · Colmena propondrá nombre, instrucciones, habilidades y permisos.', 'Paso 2 de 3 · Borrador guardado', 'Paso 3 de 3 · Empezará pidiéndote permiso para cada cosa nueva.'][n.step - 1],
+        canBack: n.step > 1, back: () => set({ step: n.step - 1, err: '' }),
+        pText: n.step === 1 ? (n.preparing ? 'Preparando tu bot…' : 'Preparar mi bot') : (n.step === 2 ? 'Siguiente: probarlo' : `Contratar a ${n.name.trim() || 'tu bot'}`),
+        pBg: n.step === 3 ? '#FFC93C' : '#12131A', pFg: n.step === 3 ? '#12131A' : '#FFFFFF',
+        primary
+      }
+    };
+  }
+  nbInit(open) {
+    return { open, step: 1, desc: '', aud: 'equipo', files: [], mic: false, preparing: false, name: '', role: '', look: 'color', shape: 'circle', color: '#0E7C86', pStatus: 'idle', pSet: 0, portrait: null, instr: '', skills: [], skillIn: '', tools: { correo: 1, calendario: 0, archivos: 1, hojas: 0 }, chat: [], q: '', thinking: false, err: '' };
+  }
+  renderVals() {
+    const s = this.state;
+    const all = this.B.slice();
+    all.push(...(s.hired || []));
+    const working = all.filter(b => b.work && !s.paused[b.id]).length;
+    const cur = all.find(b => b.id === s.sel) || all[0];
+    const isPaused = !!s.paused[cur.id];
+    const TOOLS = ['Correo', 'Calendario', 'Archivos de la empresa', 'Hojas de cálculo'];
+    return {
+      ...this.nbVals(),
+      countLine: `${all.length} bots · ${working} trabajando ahora`,
+      bots: all.map(b => {
+        const on = b.id === cur.id;
+        const work = b.work && !s.paused[b.id];
+        return {
+          name: b.name, role: b.role, state: s.paused[b.id] ? 'En pausa' : b.state, sel: String(on),
+          fill: b.art || this.fill(b.color), clip: b.clip, radius: b.radius,
+          glow: work ? `drop-shadow(0 8px 16px ${b.color}88)` : 'drop-shadow(0 4px 8px rgba(18,19,26,.16))',
+          anim: work ? 'breathe 2.8s ease-in-out infinite' : 'none',
+          dot: work ? '#0B8A5F' : '#C9CBD1', stFg: work ? '#0B6B4A' : '#6B6F7A',
+          ring: on ? '0 0 0 2px #12131A, 0 24px 50px -24px rgba(18,19,26,.4)' : '0 1px 2px rgba(18,19,26,.05), 0 12px 30px -20px rgba(18,19,26,.2)',
+          lift: on ? 'translateY(-2px)' : 'none',
+          enter: b.isNew ? 'pop .5s ease-out' : 'none',
+          pick: () => this.setState({ sel: b.id })
+        };
+      }),
+      showProfile: true,
+      p: {
+        name: cur.name, about: cur.about,
+        fill: cur.art || this.fill(cur.color), clip: cur.clip, radius: cur.radius,
+        wash: `linear-gradient(180deg, ${cur.color}22, rgba(255,255,255,0))`,
+        glow: cur.work && !isPaused ? `drop-shadow(0 12px 24px ${cur.color}99)` : 'drop-shadow(0 6px 12px rgba(18,19,26,.18))',
+        anim: cur.work && !isPaused ? 'breathe 2.8s ease-in-out infinite' : 'none',
+        skills: cur.skills.map(label => ({ label })),
+        spentW: Math.min(100, cur.used / cur.budgets[s.bud[cur.id] || 0] * 100) + '%',
+        spent: `${cur.used} € gastados este mes`
+      },
+      pauseLabel: isPaused ? 'Reanudar' : 'Pausar',
+      togglePause: () => this.setState({ paused: { ...s.paused, [cur.id]: !isPaused } }),
+      tools: TOOLS.map((label, i) => {
+        const on = !!(s.tools[cur.id] || [])[i];
+        return { label, on: String(on), bg: on ? '#0B8A5F' : 'rgba(18,19,26,.14)', x: on ? 'translateX(18px)' : 'translateX(0)', toggle: () => { const t = { ...s.tools }; t[cur.id] = (t[cur.id] || [0, 0, 0, 0]).slice(); t[cur.id][i] = on ? 0 : 1; this.setState({ tools: t }); } };
+      }),
+      how: [
+        { key: 'auto', label: 'Autonomía', def: 1, opts: ['Solo sugiere', 'Hace y te avisa', 'Hace solo'], descs: ['Te propone lo que haría y espera a que digas que sí.', 'Hace el trabajo y te cuenta lo que ha hecho. Lo que sale fuera siempre te lo pregunta.', 'Trabaja sin avisarte salvo en las líneas rojas: enviar fuera, pagar, borrar o instalar.'] },
+        { key: 'think', label: 'Forma de pensar', def: 1, opts: ['Rápido', 'Equilibrado', 'A fondo'], descs: ['Responde enseguida. Para tareas cortas y conocidas.', 'Piensa lo justo. Lo mejor para casi todo.', 'Se toma su tiempo y gasta más. Para análisis y decisiones importantes.'] }
+      ].map(h => { const v = (s[h.key] || {})[cur.id] ?? h.def; return { label: h.label, desc: h.descs[v], opts: h.opts.map((label, i) => ({ label, on: String(v === i), bg: v === i ? '#FFFFFF' : 'transparent', sh: v === i ? '0 1px 3px rgba(18,19,26,.15)' : 'none', pick: () => this.setState({ [h.key]: { ...(s[h.key] || {}), [cur.id]: i } }) })) }; }),
+      budget: cur.budgets[s.bud[cur.id] || 0] + ' €',
+      budgetOpen: !!s.budOpen, budgetExp: String(!!s.budOpen), budgetBg: s.budOpen ? 'rgba(255,201,60,.25)' : 'transparent',
+      toggleBudget: () => this.setState({ budOpen: !s.budOpen }),
+      budgets: cur.budgets.concat([0]).map((v, i) => { const on = i < cur.budgets.length && (s.bud[cur.id] || 0) === i; return { label: v ? v + ' €' : 'Sin límite (te avisa al 80 %)', on: String(on), bg: on ? '#12131A' : '#FFFFFF', fg: on ? '#FFFFFF' : '#12131A', pick: () => this.setState({ bud: { ...s.bud, [cur.id]: i < cur.budgets.length ? i : 0 }, budOpen: false }) }; }),
+      memory: (s.mem[cur.id] || []).map((text, i) => ({ text, forget: () => { const m = { ...s.mem }; m[cur.id] = m[cur.id].filter((_, j) => j !== i); this.setState({ mem: m }); } })),
+      noMemory: (s.mem[cur.id] || []).length === 0,
+    };
+  }
+}
+</script>
+</body>
+</html>

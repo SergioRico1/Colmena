@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Nexo · Diálogos de conexión y permiso</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#1D1D1F;text-decoration:none}a:hover{color:#000}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #E4E4E1; font-family: 'Geist', system-ui, sans-serif; color: #1D1D1F; display: flex; align-items: flex-start; justify-content: center; gap: 40px; padding-top: 72px">
+
+  <!-- 1 · Name the account -->
+  <div style="width: 420px; display: flex; flex-direction: column; gap: 18px">
+    <div role="dialog" aria-label="Nombrar la cuenta" style="border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 24px 60px rgba(0,0,0,0.12); padding: 28px; display: flex; flex-direction: column; gap: 22px">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center">
+        <span style="position: relative; width: 56px; height: 56px; border-radius: 17px; background: #F2F2F0; font-size: 22px; font-weight: 600; display: flex; align-items: center; justify-content: center">G
+          <span style="position: absolute; right: -6px; bottom: -6px; width: 24px; height: 24px; border-radius: 50%; background: #3A7D5C; border: 3px solid #FFFFFF; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+        </span>
+        <span style="font-size: 20px; font-weight: 600; letter-spacing: -0.02em">Gmail está conectado</span>
+        <span style="font-size: 14px; color: #6E6E73; line-height: 1.5">¿Cómo quieres llamar a esta cuenta? Así sabrás cuál usa Nexo.</span>
+      </div>
+
+      <div role="radiogroup" aria-label="Nombre de la cuenta" style="display: flex; gap: 8px; justify-content: center">
+        <sc-for list="{{names}}" as="n" hint-placeholder-count="3">
+          <button role="radio" aria-checked="{{n.on}}" onClick="{{n.pick}}" style="height: 40px; border: 0; padding: 0 16px; border-radius: 12px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; background: {{n.bg}}; color: {{n.fg}}; box-shadow: {{n.sh}}"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{n.dot}}"></span>{{n.label}}</button>
+        </sc-for>
+      </div>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; color: #6E6E73">O escribe otro nombre</span>
+        <input type="text" value="{{nameValue}}" style="height: 46px; border: 0; outline: none; border-radius: 12px; background: #F5F5F3; padding: 0 14px; font-family: inherit; font-size: 15px; color: #1D1D1F">
+      </label>
+
+      <button style="height: 48px; border: 0; border-radius: 14px; background: #1D1D1F; color: #FFFFFF; font-size: 15px; font-weight: 500">Listo</button>
+    </div>
+    <span style="font-size: 13px; color: #4A4A4F; text-align: center; line-height: 1.5">Al conectar · una sola pregunta, con respuestas a un clic</span>
+  </div>
+
+  <!-- 2 · Low-risk read -->
+  <div style="width: 420px; display: flex; flex-direction: column; gap: 18px">
+    <div role="dialog" aria-label="Permitir lectura" style="border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 24px 60px rgba(0,0,0,0.12); padding: 26px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #B5482B; box-shadow: 0 0 0 3px rgba(181,72,43,0.16)"></span>
+        <span style="font-size: 13px; font-weight: 600; flex-grow: 1">Nexo</span>
+        <span style="height: 24px; display: flex; align-items: center; padding: 0 9px; border-radius: 7px; background: #E3EEE8; color: #2F6A4C; font-size: 12px; font-weight: 500">Solo lectura</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 20px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.25">¿Puedo ver tu perfil de Gmail?</span>
+        <span style="font-size: 14px; color: #6E6E73; line-height: 1.5">Para saber desde qué dirección trabajar. No cambia nada en tu cuenta.</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #F7F7F5">
+        <span style="width: 32px; height: 32px; border-radius: 10px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">G</span>
+        <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px"><span style="font-size: 14px; font-weight: 500">Gmail · Personal</span><span style="font-size: 12px; color: #6E6E73">Leerá tu nombre y tu dirección</span></span>
+      </div>
+
+      <button aria-expanded="{{open}}" onClick="{{toggleDetails}}" style="align-self: flex-start; height: 32px; border: 0; padding: 0; background: transparent; font-size: 13px; color: #6E6E73; display: flex; align-items: center; gap: 6px">Detalles técnicos<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="transform: {{chev}}"><path d="M6 9l6 6 6-6"></path></svg></button>
+      <sc-if value="{{open}}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top: -10px; padding: 12px 14px; border-radius: 12px; background: #1D1D1F; color: #D1D1D6; font-family: 'Geist Mono', monospace; font-size: 11px; line-height: 1.7; white-space: pre-line">GMAIL_GET_PROFILE
+{ "user_id": "me" }
+cuenta ca_iZmO8Q4VtjMo · vía Composio</div>
+      </sc-if>
+
+      <button role="checkbox" aria-checked="{{remember}}" onClick="{{toggleRemember}}" style="border: 0; background: transparent; padding: 0; text-align: left; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #1D1D1F; min-height: 32px">
+        <span style="width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0; background: {{remBox}}; box-shadow: {{remRing}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+        No volver a preguntar para lecturas en Gmail
+      </button>
+
+      <div style="display: flex; gap: 8px">
+        <button style="height: 46px; border: 0; padding: 0 18px; border-radius: 14px; background: rgba(0,0,0,0.05); font-size: 14px; font-weight: 500">Ahora no</button>
+        <button style="flex-grow: 1; height: 46px; border: 0; border-radius: 14px; background: #1D1D1F; color: #FFFFFF; font-size: 14px; font-weight: 500">Permitir</button>
+      </div>
+    </div>
+    <span style="font-size: 13px; color: #4A4A4F; text-align: center; line-height: 1.5">Leer · la pregunta en lenguaje humano, el JSON escondido</span>
+  </div>
+
+  <!-- 3 · Irreversible action -->
+  <div style="width: 420px; display: flex; flex-direction: column; gap: 18px">
+    <div role="dialog" aria-label="Confirmar envío" style="border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 24px 60px rgba(0,0,0,0.12); padding: 26px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="width: 9px; height: 9px; border-radius: 50%; background: #B5482B; box-shadow: 0 0 0 3px rgba(181,72,43,0.16)"></span>
+        <span style="font-size: 13px; font-weight: 600; flex-grow: 1">Nexo</span>
+        <span style="height: 24px; display: flex; align-items: center; padding: 0 9px; border-radius: 7px; background: #FBF1EC; color: #9A3B22; font-size: 12px; font-weight: 500">No se puede deshacer</span>
+      </div>
+      <span style="font-size: 20px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.25">Voy a enviar este correo desde Gmail · Personal</span>
+
+      <div style="border-radius: 16px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); overflow: hidden">
+        <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; border-bottom: 1px solid #F0F0EE">
+          <span><span style="color: #6E6E73; display: inline-block; width: 56px">Para</span>[correo del hotel]</span>
+          <span><span style="color: #6E6E73; display: inline-block; width: 56px">Asunto</span>Llegada tarde · 14 de octubre</span>
+        </div>
+        <div style="padding: 14px 16px; font-size: 14px; line-height: 1.55; color: #2C2C2E">Hola, tenemos reserva del 14 al 17 de octubre. Llegaremos hacia las 23:00. ¿Habrá alguien en recepción?</div>
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #4A4A4F">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A3B22" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path></svg>
+        Una vez enviado no se puede recuperar, aunque detengas a Nexo.
+      </div>
+
+      <div style="display: flex; gap: 8px">
+        <button style="height: 50px; border: 0; padding: 0 18px; border-radius: 14px; background: rgba(0,0,0,0.05); font-size: 14px; font-weight: 500">Editar</button>
+        <button onClick="{{send}}" style="flex-grow: 1; position: relative; overflow: hidden; height: 50px; border: 0; border-radius: 14px; background: #1D1D1F; color: #FFFFFF; font-size: 14px; font-weight: 500">
+          <span style="position: absolute; left: 0; top: 0; bottom: 0; width: {{holdW}}; background: #B5482B"></span>
+          <span style="position: relative">{{sendLabel}}</span>
+        </button>
+      </div>
+    </div>
+    <span style="font-size: 13px; color: #4A4A4F; text-align: center; line-height: 1.5">Enviar, pagar, borrar · ves el resultado y mantienes pulsado</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { name: 'Personal', open: false, remember: false, sent: false }; }
+  renderVals() {
+    var self = this, st = this.state;
+    var opts = [{ label: 'Personal', dot: '#3A7D5C' }, { label: 'Trabajo', dot: '#7D5A78' }, { label: 'Familia', dot: '#A9803F' }];
+    return {
+      names: opts.map(function (o) {
+        var on = o.label === st.name;
+        return { label: o.label, dot: o.dot, on: on, bg: on ? '#1D1D1F' : '#FFFFFF', fg: on ? '#FFFFFF' : '#1D1D1F', sh: on ? 'none' : '0 0 0 1px rgba(0,0,0,0.1)', pick: function () { self.setState({ name: o.label }); } };
+      }),
+      nameValue: 'Gmail ' + st.name.toLowerCase(),
+      open: st.open, chev: st.open ? 'rotate(180deg)' : 'none',
+      toggleDetails: function () { self.setState({ open: !self.state.open }); },
+      remember: st.remember, remBox: st.remember ? '#1D1D1F' : '#FFFFFF', remRing: st.remember ? 'none' : 'inset 0 0 0 1.5px #C7C7CC',
+      toggleRemember: function () { self.setState({ remember: !self.state.remember }); },
+      holdW: st.sent ? '100%' : '38%',
+      sendLabel: st.sent ? 'Enviado' : 'Mantén pulsado para enviar',
+      send: function () { self.setState({ sent: !self.state.sent }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

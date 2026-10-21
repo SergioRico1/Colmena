@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Perfil de Tomás</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+</style>
+</helmet>
+<div style="min-height: 1760px; display: flex; flex-wrap: wrap; background: #EEF0F4">
+
+<nav aria-label="Navegación principal" style="flex: 1 1 248px; background: #12131A; color: #C9CCD6; padding: 20px 14px 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<span style="font: 800 22px/1 'Bricolage Grotesque', sans-serif; color: #FFFFFF; letter-spacing: -0.01em">Colmena</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Inicio</a>
+<a href="Bandeja.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1 3h6l1-3h4M5 5h14l1 8v6H4v-6z"></path></svg><span style="flex: 1">Bandeja</span><span style="min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #FFC93C; color: #12131A; font: 600 11px/20px 'Geist Mono', monospace; text-align: center">3</span></a>
+<a href="Misiones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg><span style="flex: 1">Misiones</span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #9DA2B0">3</span></a>
+<a href="Biblioteca.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4v16H5zM11 4h4v16h-4zM17 6l3 .8-3.2 13.4-3-.8z"></path></svg>Biblioteca</a>
+<a href="Automatizaciones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Automatizaciones</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><span style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Salas</span><button type="button" aria-label="Nueva sala" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; color: #9DA2B0; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #FFFFFF; font-size: 14px; font-weight: 600"><span style="color: #9DA2B0">#</span><span style="flex: 1">informe-q3</span><span style="width: 8px; height: 8px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Debate.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>campaña-primavera</a>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>facturación</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><a href="Equipo.dc.html" style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Tu equipo</a><a href="NuevoBot.dc.html" aria-label="Añadir bot" style="width: 28px; height: 28px; display: grid; place-items: center; color: #9DA2B0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a></div>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 12px/1 'Bricolage Grotesque', sans-serif">A</span>Atlas</a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 12px/1 'Bricolage Grotesque', sans-serif">N</span>Nora</a>
+<a href="Bot.dc.html" aria-current="true" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px; background: #1D1F27; color: #FFFFFF; font-size: 14px; font-weight: 600"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 6px; font: 800 12px/1 'Bricolage Grotesque', sans-serif">T</span>Tomás</a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 11px/1 'Bricolage Grotesque', sans-serif">I</span>Iris</a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; font: 800 12px/1 'Bricolage Grotesque', sans-serif">B</span>Bruno</a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 12px/1 'Bricolage Grotesque', sans-serif">V</span>Vera</a>
+<a href="NuevoBot.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px dashed #3A3E4B; color: #C9CCD6; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Contratar otro bot</a>
+</div>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #2C2F3A">
+<span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #E6E8EE; color: #12131A; display: grid; place-items: center; font-weight: 700; font-size: 13px">TÚ</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="color: #FFFFFF; font-weight: 600; font-size: 14px">Tu cuenta</span><span style="font-size: 12px; color: #9DA2B0">Administrador</span></span>
+<a href="Ajustes.dc.html" aria-label="Ajustes y conectores" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: #C9CCD6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></a>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<header style="background: #0B8A5F; color: #FFFFFF; padding: 28px clamp(16px, 3vw, 40px) 0; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px">
+<div style="display: flex; align-items: center; gap: 20px">
+<span aria-hidden="true" style="width: 84px; height: 84px; flex: none; display: grid; place-items: center; background: #FFFFFF; color: #0B8A5F; border-radius: 18px; font: 800 44px/1 'Bricolage Grotesque', sans-serif; box-shadow: 6px 6px 0 #12131A">T</span>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<p style="margin: 0; font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #FFFFFF"><a href="Equipo.dc.html" style="color: #FFFFFF">Tu equipo</a> / Datos y finanzas</p>
+<h1 style="margin: 0; font: 800 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.025em">Tomás</h1>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 14px">
+<span style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; background: #FFC93C; color: #12131A; border-radius: 15px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 2px; background: #12131A"></span>Te espera en 1 sala</span>
+<span style="display: flex; align-items: center; height: 30px; padding: 0 12px; background: rgba(255,255,255,0.14); border-radius: 15px">En 2 salas</span>
+<span style="display: flex; align-items: center; height: 30px; padding: 0 12px; background: rgba(255,255,255,0.14); border-radius: 15px">Trabaja en la nube</span>
+</div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Chat.dc.html" style="display: flex; align-items: center; height: 46px; padding: 0 16px; background: transparent; color: #FFFFFF; border: 1.5px solid rgba(255,255,255,0.6); border-radius: 12px; font-weight: 600; font-size: 14px">Abrir chat</a>
+<button type="button" style="height: 46px; padding: 0 16px; background: transparent; color: #FFFFFF; border: 1.5px solid rgba(255,255,255,0.6); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px">Duplicar</button>
+<button type="button" style="height: 46px; padding: 0 20px; background: #FFC93C; color: #12131A; border: 2px solid #12131A; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px">Guardar cambios</button>
+</div>
+</div>
+<div style="display: flex; gap: 4px; flex-wrap: wrap" aria-label="Secciones del perfil">
+<a href="#rol" style="display: flex; align-items: center; height: 46px; padding: 0 16px; border-radius: 12px 12px 0 0; background: #EEF0F4; color: #12131A; font-weight: 600; font-size: 14px">Perfil</a>
+<a href="#habilidades" style="display: flex; align-items: center; height: 46px; padding: 0 16px; color: #FFFFFF; font-size: 14px">Habilidades</a>
+<a href="#herramientas" style="display: flex; align-items: center; height: 46px; padding: 0 16px; color: #FFFFFF; font-size: 14px">Herramientas</a>
+<a href="#memoria" style="display: flex; align-items: center; height: 46px; padding: 0 16px; color: #FFFFFF; font-size: 14px">Memoria</a>
+<a href="#equipo" style="display: flex; align-items: center; height: 46px; padding: 0 16px; color: #FFFFFF; font-size: 14px">Equipo y canales</a>
+<a href="#rol" style="display: flex; align-items: center; height: 46px; padding: 0 16px; color: #FFFFFF; font-size: 14px">Historial</a>
+</div>
+</header>
+
+<div style="padding: 28px clamp(16px, 3vw, 40px) 56px; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<div style="flex: 3 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+<section id="rol" aria-labelledby="rol-t" style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+<h2 id="rol-t" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Rol e instrucciones</h2>
+<button type="button" style="height: 40px; padding: 0 12px; background: transparent; border: 1px solid #DCE0E8; border-radius: 10px; cursor: pointer; font-size: 14px">Editar</button>
+</div>
+<div style="padding: 16px 18px; background: #F7F8FA; border: 1px solid #E6E8EE; border-radius: 12px; font-size: 15px; line-height: 1.6; color: #2B2D36">Eres el analista de datos y finanzas del equipo de operaciones. Trabajas con hojas de cálculo, cuentas y previsiones. Da las cifras en miles de euros con un decimal. Si falta un dato, no lo inventes: pregunta o márcalo como estimación.</div>
+<p style="margin: 0; font-size: 13px; color: #555A68">Escribe como se lo explicarías a un compañero nuevo. No hace falta saber de IA.</p>
+</section>
+
+<section aria-labelledby="pers-t" style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 id="pers-t" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Personalidad</h2>
+<p style="margin: 0; font-size: 14px; color: #555A68">Cómo habla y cuánto se arriesga. Mueve los controles y pruébalo en privado.</p>
+</div>
+<sc-for list="{{sliders}}" as="s" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 96px 1fr 96px; align-items: center; gap: 14px">
+<span style="font-size: 14px; color: #4A4F5C; text-align: right">{{s.left}}</span>
+<input type="range" min="0" max="100" step="5" value="{{s.v}}" onChange="{{s.change}}" aria-label="{{s.aria}}" style="width: 100%; height: 44px; accent-color: #0B8A5F; cursor: pointer">
+<span style="font-size: 14px; color: #4A4F5C">{{s.right}}</span>
+</div>
+</sc-for>
+</section>
+
+<section id="habilidades" aria-labelledby="hab-t" style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">
+<h2 id="hab-t" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Habilidades</h2>
+<button type="button" style="display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; background: transparent; border: 1px solid #DCE0E8; border-radius: 10px; cursor: pointer; font-size: 14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Añadir</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px; border: 2px solid #12131A; border-radius: 14px; background: #E1F4EC">
+<div style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 6px">
+<span style="align-self: flex-start; padding: 4px 8px; background: #12131A; color: #FFFFFF; border-radius: 6px; font: 600 11px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase">Aprendida sola · nueva</span>
+<strong style="font-size: 16px">Conciliación bancaria mensual</strong>
+<span style="font-size: 14px; line-height: 1.45; color: #2B2D36">La creó el 12 de octubre tras repetir cuatro tareas parecidas. Aún no la usa sin tu visto bueno.</span>
+</div>
+<div style="display: flex; gap: 8px"><button type="button" style="height: 44px; padding: 0 14px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px">Revisar pasos</button><button type="button" style="height: 44px; padding: 0 14px; background: #FFFFFF; border: 1px solid #12131A; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px">Activar</button></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px">
+<div style="padding: 14px; border: 1px solid #E6E8EE; border-radius: 12px; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">Análisis de hojas de cálculo</strong><span style="font-size: 13px; color: #555A68">Instalada · usada 31 veces</span></div>
+<div style="padding: 14px; border: 1px solid #E6E8EE; border-radius: 12px; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">Gráficos y tablas dinámicas</strong><span style="font-size: 13px; color: #555A68">Instalada · usada 18 veces</span></div>
+<div style="padding: 14px; border: 1px solid #E6E8EE; border-radius: 12px; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">Previsión de tesorería</strong><span style="font-size: 13px; color: #555A68">Aprendida en septiembre · usada 6 veces</span></div>
+<div style="padding: 14px; border: 1px solid #E6E8EE; border-radius: 12px; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">Informe para el comité</strong><span style="font-size: 13px; color: #555A68">Compartida por Vera · usada 3 veces</span></div>
+</div>
+</section>
+
+<section id="memoria" aria-labelledby="mem-t" style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 id="mem-t" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Lo que Tomás recuerda</h2>
+<p style="margin: 0; font-size: 14px; color: #555A68">Puedes corregir o borrar cualquier recuerdo. Los compartidos los ve todo el equipo.</p>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 56px; border-top: 1px solid #E6E8EE">
+<span style="flex: 1; font-size: 15px; line-height: 1.4">Prefieres las cifras en miles de euros, con un decimal.</span>
+<span style="font-size: 12px; color: #555A68; white-space: nowrap">Se lo dijiste · 3 oct</span>
+<button type="button" aria-label="Borrar este recuerdo" style="width: 44px; height: 44px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 10px; cursor: pointer; color: #555A68"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 56px; border-top: 1px solid #E6E8EE">
+<span style="flex: 1; font-size: 15px; line-height: 1.4">El comité pide como máximo 8 diapositivas.</span>
+<span style="font-size: 12px; color: #555A68; white-space: nowrap">Compartido · equipo</span>
+<button type="button" aria-label="Borrar este recuerdo" style="width: 44px; height: 44px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 10px; cursor: pointer; color: #555A68"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 56px; border-top: 1px solid #E6E8EE">
+<span style="flex: 1; font-size: 15px; line-height: 1.4">El año fiscal cierra el 31 de diciembre.</span>
+<span style="font-size: 12px; color: #555A68; white-space: nowrap">Lo dedujo · revisar</span>
+<button type="button" aria-label="Borrar este recuerdo" style="width: 44px; height: 44px; display: grid; place-items: center; background: transparent; border: 0; border-radius: 10px; cursor: pointer; color: #555A68"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"></path></svg></button>
+</div>
+</section>
+</div>
+
+<div style="flex: 2 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+<section aria-labelledby="aut-t" style="background: #FFFFFF; border: 2px solid #12131A; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h2 id="aut-t" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Autonomía</h2>
+<p style="margin: 0; font-size: 14px; color: #555A68">Cuánta libertad tiene cuando nadie le mira.</p>
+</div>
+<div role="radiogroup" aria-label="Nivel de autonomía" style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{levels}}" as="l" hint-placeholder-count="3">
+<button type="button" role="radio" aria-checked="{{l.checked}}" onClick="{{l.pick}}" style="display: grid; grid-template-columns: 22px 1fr; gap: 12px; align-items: start; padding: 14px; text-align: left; border-radius: 12px; cursor: pointer; background: {{l.bg}}; border: {{l.border}}">
+<span style="width: 20px; height: 20px; margin-top: 1px; border-radius: 50%; border: 2px solid #12131A; display: grid; place-items: center"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{l.dot}}"></span></span>
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">{{l.title}}</strong><span style="font-size: 13px; line-height: 1.45; color: #4A4F5C">{{l.desc}}</span></span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding-top: 6px">
+<span style="font-size: 14px; font-weight: 600">Siempre pide permiso para</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; background: #12131A; color: #FFFFFF; border-radius: 17px; font-size: 13px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"></path></svg>Enviar algo fuera</span>
+<span style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; background: #12131A; color: #FFFFFF; border-radius: 17px; font-size: 13px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"></path></svg>Mover dinero</span>
+<span style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; background: #12131A; color: #FFFFFF; border-radius: 17px; font-size: 13px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"></path></svg>Borrar archivos</span>
+<span style="display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; background: #12131A; color: #FFFFFF; border-radius: 17px; font-size: 13px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"></path></svg>Instalar programas</span>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="cer-t" style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<h2 id="cer-t" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Cerebro y lugar de trabajo</h2>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 600">Forma de pensar</span>
+<div role="group" aria-label="Forma de pensar" style="display: flex; gap: 4px; padding: 4px; background: #EEF0F4; border-radius: 12px">
+<button type="button" aria-pressed="false" style="flex: 1; height: 40px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; font-size: 14px">Rápido</button>
+<button type="button" aria-pressed="true" style="flex: 1; height: 40px; border: 0; border-radius: 9px; background: #12131A; color: #FFFFFF; cursor: pointer; font-weight: 600; font-size: 14px">Equilibrado</button>
+<button type="button" aria-pressed="false" style="flex: 1; height: 40px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; font-size: 14px">Profundo</button>
+</div>
+<span style="font-size: 13px; color: #555A68">Profundo tarda más y cuesta más, pero razona mejor con números complejos.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 600">Dónde trabaja</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" aria-pressed="false" style="padding: 12px; text-align: left; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 14px">Este ordenador</strong><span style="font-size: 12px; line-height: 1.4; color: #555A68">Abre tus archivos y programas locales</span></button>
+<button type="button" aria-pressed="true" style="padding: 12px; text-align: left; background: #E1F4EC; border: 2px solid #0B8A5F; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 14px">En la nube</strong><span style="font-size: 12px; line-height: 1.4; color: #2B2D36">Sigue trabajando con el portátil cerrado</span></button>
+</div>
+</div>
+</section>
+
+<section id="herramientas" aria-labelledby="her-t" style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 4px">
+<h2 id="her-t" style="margin: 0 0 10px; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Herramientas y permisos</h2>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; border-top: 1px solid #E6E8EE"><span style="font-size: 15px">Hojas de cálculo</span><button type="button" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; background: #E1F4EC; border: 0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600">Lee y escribe<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; border-top: 1px solid #E6E8EE"><span style="font-size: 15px">Correo</span><button type="button" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; background: #EEF0F4; border: 0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600">Solo lee<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; border-top: 1px solid #E6E8EE"><span style="font-size: 15px">Carpeta compartida</span><button type="button" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; background: #EEF0F4; border: 0; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600">Solo lee<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 54px; border-top: 1px solid #E6E8EE"><span style="font-size: 15px">[TU ERP]</span><button type="button" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; background: transparent; border: 1px dashed #A9AEBB; border-radius: 8px; cursor: pointer; font-size: 13px">Sin acceso<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button></div>
+</section>
+
+<section id="equipo" aria-labelledby="eq-t" style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 16px">
+<h2 id="eq-t" style="margin: 0; font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Equipo y canales</h2>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 14px; font-weight: 600">Puede pedir ayuda a</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 5px; border: 2px solid #12131A; border-radius: 18px; font-size: 13px; font-weight: 600"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span>Nora</span>
+<span style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 5px; border: 2px solid #12131A; border-radius: 18px; font-size: 13px; font-weight: 600"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">I</span>Iris</span>
+<span style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 5px; border: 2px solid #12131A; border-radius: 18px; font-size: 13px; font-weight: 600"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">V</span>Vera</span>
+<span style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 5px; border: 1px dashed #A9AEBB; border-radius: 18px; font-size: 13px; color: #555A68"><span aria-hidden="true" style="width: 24px; height: 24px; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif; opacity: 0.5">B</span>Bruno · no</span>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">Delegar sin preguntarte</span><span style="font-size: 13px; color: #555A68">Si está apagado, te avisa antes de pasar trabajo</span></span>
+<button type="button" role="switch" aria-checked="false" aria-label="Delegar sin preguntarte" style="width: 52px; height: 30px; flex: none; padding: 3px; background: #DCE0E8; border: 0; border-radius: 15px; cursor: pointer; display: flex; justify-content: flex-start"><span style="width: 24px; height: 24px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px; padding-top: 4px">
+<span style="font-size: 14px; font-weight: 600; padding-bottom: 6px">Dónde puedes hablarle</span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 50px; border-top: 1px solid #E6E8EE"><span style="font-size: 15px">Colmena</span><button type="button" role="switch" aria-checked="true" aria-label="Colmena" style="width: 52px; height: 30px; flex: none; padding: 3px; background: #0B8A5F; border: 0; border-radius: 15px; cursor: pointer; display: flex; justify-content: flex-end"><span style="width: 24px; height: 24px; border-radius: 50%; background: #FFFFFF"></span></button></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 50px; border-top: 1px solid #E6E8EE"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">Correo</span><span style="font: 400 12px/1.2 'Geist Mono', monospace; color: #555A68">tomas@[tu-dominio]</span></span><button type="button" role="switch" aria-checked="true" aria-label="Correo" style="width: 52px; height: 30px; flex: none; padding: 3px; background: #0B8A5F; border: 0; border-radius: 15px; cursor: pointer; display: flex; justify-content: flex-end"><span style="width: 24px; height: 24px; border-radius: 50%; background: #FFFFFF"></span></button></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 50px; border-top: 1px solid #E6E8EE"><span style="font-size: 15px">Chat del equipo</span><button type="button" role="switch" aria-checked="true" aria-label="Chat del equipo" style="width: 52px; height: 30px; flex: none; padding: 3px; background: #0B8A5F; border: 0; border-radius: 15px; cursor: pointer; display: flex; justify-content: flex-end"><span style="width: 24px; height: 24px; border-radius: 50%; background: #FFFFFF"></span></button></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 50px; border-top: 1px solid #E6E8EE"><span style="font-size: 15px">Mensajes del móvil</span><button type="button" role="switch" aria-checked="false" aria-label="Mensajes del móvil" style="width: 52px; height: 30px; flex: none; padding: 3px; background: #DCE0E8; border: 0; border-radius: 15px; cursor: pointer; display: flex; justify-content: flex-start"><span style="width: 24px; height: 24px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button></div>
+</div>
+</section>
+
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tono: 35, detalle: 60, riesgo: 20, nivel: 'avisa' };
+  }
+  renderVals() {
+    const defs = [
+      { id: 'tono', left: 'Formal', right: 'Cercano', aria: 'Tono, de formal a cercano' },
+      { id: 'detalle', left: 'Breve', right: 'Detallado', aria: 'Nivel de detalle, de breve a detallado' },
+      { id: 'riesgo', left: 'Prudente', right: 'Atrevido', aria: 'Riesgo, de prudente a atrevido' }
+    ];
+    const sliders = defs.map((d) => ({
+      left: d.left,
+      right: d.right,
+      aria: d.aria,
+      v: this.state[d.id],
+      change: (e) => this.setState({ [d.id]: Number(e.target.value) })
+    }));
+    const lv = [
+      { id: 'sugiere', title: 'Solo sugiere', desc: 'Prepara el trabajo y espera a que tú lo apruebes todo.' },
+      { id: 'avisa', title: 'Actúa y te avisa', desc: 'Hace el trabajo dentro de la sala y te cuenta lo que ha hecho. Recomendado.' },
+      { id: 'solo', title: 'Actúa solo', desc: 'Trabaja sin interrumpirte, salvo en las líneas rojas de abajo.' }
+    ];
+    const levels = lv.map((l) => {
+      const on = l.id === this.state.nivel;
+      return {
+        title: l.title,
+        desc: l.desc,
+        checked: on ? 'true' : 'false',
+        bg: on ? '#E1F4EC' : '#FFFFFF',
+        border: on ? '2px solid #0B8A5F' : '1px solid #DCE0E8',
+        dot: on ? '#12131A' : 'transparent',
+        pick: () => this.setState({ nivel: l.id })
+      };
+    });
+    return { sliders, levels };
+  }
+}
+</script>
+</body>
+</html>

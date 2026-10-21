@@ -1,0 +1,63 @@
+# Dependencies and build output
+node_modules/
+dist/
+release/
+out/
+*.tsbuildinfo
+.vite/
+.cache/
+.eslintcache
+
+# Local data: QA data, branded dev runtime (Colmena.exe), logs, scratch scripts
+.local/
+output/
+.playwright-cli/
+NVIDIA Corporation/
+scratch/
+tmp/
+*.log
+*.tmp
+
+# Screenshots and captures made while testing
+screenshots/
+captures/
+qa-shots/
+
+# User data and secrets: never commit
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.db
+*.db-*
+*.dpapi
+*.vault
+installation.json
+instance.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+*.mobileprovision
+*.provisionprofile
+credentials*.json
+auth.json
+id_rsa*
+id_ed25519*
+
+# Generated from design/ at build time
+public/connections/
+public/design-reference/
+public/screens/
+
+# Editors and OS
+.claude/settings.local.json
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

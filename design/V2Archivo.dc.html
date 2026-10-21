@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Archivo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+.msg .msg-tools{opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.msg:hover .msg-tools,.msg:focus-within .msg-tools{opacity:1;transform:none;pointer-events:auto}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; align-items: flex-start; min-height: 1450px; background: #F5F5F2">
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100vh; min-height: 560px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<a href="V2Hoy.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Hoy</span><span aria-label="2 cosas te esperan" style="position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #FFC93C; color: #12131A; font: 600 10px/18px 'Geist', sans-serif; text-align: center; box-shadow: 0 0 0 2px #EBEBE6">2</span></a>
+<a href="V2Conversacion.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Conversa-<br>ciones</span><span aria-label="Te han mencionado" style="position: absolute; top: 6px; right: 16px; width: 9px; height: 9px; border-radius: 50%; background: #12131A; box-shadow: 0 0 0 2px #EBEBE6"></span></a>
+<a href="V2Codigo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Código</span></a>
+<a href="V2Colmena.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Colmena</span></a>
+<a href="V2Rutinas.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"></path><path d="M19.8 4.5v3.6h-3.6"></path><path d="M12 8.2V12l2.6 1.6"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Rutinas</span></a>
+<a href="V2Archivo.dc.html" aria-current="page" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M3 4h18v3.5H3z"></path><path d="M9.5 11.5h5"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 600; text-align: center; letter-spacing: 0.01em">Archivo</span></a>
+<span style="flex: 1"></span>
+<a href="V2Hoy.dc.html#pedir" title="Pedir algo (⌘K)" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; color: #4A4D57"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="font-size: 11px; font-weight: 500">Pedir</span><kbd style="font: 500 10px/1 'Geist Mono', monospace; color: #6B6F7A">⌘K</kbd></a>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 11px/1 'Geist', sans-serif">TÚ</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+<div style="position: relative; flex: 1; min-width: 0; min-height: 100vh; padding-bottom: 40px">
+<main style="max-width: 1240px; margin: 0 auto; padding: 64px clamp(20px, 4vw, 48px) 40px; display: flex; flex-direction: column; gap: 34px">
+
+<header style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h1 style="margin: 0; font: 600 clamp(48px, 7vw, 84px)/0.95 'Bricolage Grotesque', sans-serif; letter-spacing: -0.05em">Archivo</h1>
+<p style="margin: 0; font-size: 17px; color: #5C606C">{{tabDesc}}</p>
+</div>
+<div role="tablist" aria-label="Qué ver" style="align-self: flex-start; display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(18,19,26,.05)">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border: 0; border-radius: 999px; cursor: pointer; font-size: 15px; font-weight: 600; transition: all .2s ease; background: {{t.bg}}; box-shadow: {{t.sh}}">{{t.label}}<span style="min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font: 600 11px/20px 'Geist', sans-serif; text-align: center; background: {{t.badgeBg}}; color: #12131A; opacity: {{t.badgeOp}}">{{t.badge}}</span></button></sc-for>
+</div>
+<sc-if value="{{isDone}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px">
+<label style="flex: 1 1 320px; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 22px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 14px 34px -22px rgba(18,19,26,.3); color: #6B6F7A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4-4"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar en el archivo</span><input type="search" value="{{q}}" onChange="{{qChange}}" placeholder="Busca por nombre, bot o sala" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 16px; color: #12131A"></label>
+<div role="radiogroup" aria-label="Tipo" style="display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(18,19,26,.05)">
+<sc-for list="{{kinds}}" as="k" hint-placeholder-count="6"><button type="button" role="radio" aria-checked="{{k.on}}" onClick="{{k.pick}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all .2s ease; background: {{k.bg}}; box-shadow: {{k.sh}}">{{k.label}}</button></sc-for>
+</div>
+</div>
+</sc-if>
+</header>
+
+<sc-if value="{{isDone}}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}"><p style="margin: 0; padding: 60px 0; text-align: center; font-size: 17px; color: #6B6F7A">No hay nada que coincida. Prueba con otra palabra.</p></sc-if>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="9">
+<button type="button" onClick="{{it.open}}" style="display: flex; flex-direction: column; gap: 14px; padding: 12px 12px 16px; text-align: left; border: 0; border-radius: 28px; background: #FFFFFF; cursor: pointer; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 14px 34px -24px rgba(18,19,26,.3); animation: rise .4s ease-out">
+<span aria-hidden="true" style="height: 168px; border-radius: 18px; box-shadow: inset 0 0 0 1px rgba(18,19,26,.05); background: {{it.preview}}"></span>
+<span style="display: flex; flex-direction: column; gap: 6px; padding: 0 6px"><strong style="font-size: 16px; font-weight: 600; line-height: 1.3">{{it.name}}</strong><span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6B6F7A"><span aria-hidden="true" style="width: 12px; height: 12px; flex: none; background: {{it.botFill}}; clip-path: {{it.botClip}}; border-radius: {{it.botRadius}}"></span>{{it.meta}}</span></span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isSkills}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px; animation: fade .3s ease-out">
+<sc-for list="{{skills}}" as="k" hint-placeholder-count="4">
+<article style="display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; background: #FFFFFF; border-radius: 26px; transition: box-shadow .3s ease; box-shadow: {{k.shadow}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px">
+<span aria-hidden="true" style="display: inline-grid; filter: drop-shadow(0 3px 6px rgba(18,19,26,.16))"><span style="display: block; width: 30px; height: 30px; background: {{k.fill}}; clip-path: {{k.clip}}; border-radius: {{k.radius}}"></span></span>
+<span style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 3px"><strong style="font: 600 20px/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -0.015em">{{k.name}}</strong><span style="font-size: 14px; color: #5C606C">{{k.meta}}</span></span>
+<span style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: {{k.stBg}}; color: {{k.stFg}}">{{k.state}}</span>
+</div>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3D404A">{{k.desc}}</p>
+<sc-if value="{{k.open}}" hint-placeholder-val="{{ false }}">
+<ol style="margin: 0; padding: 14px 18px 14px 38px; border-radius: 18px; background: #F6F6F3; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5; animation: rise .25s ease-out"><sc-for list="{{k.steps}}" as="st" hint-placeholder-count="3"><li><span style="padding: 1px 4px; border-radius: 4px; background: {{st.bg}}">{{st.text}}</span></li></sc-for></ol>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" aria-expanded="{{k.exp}}" onClick="{{k.toggleSteps}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">{{k.stepsBtn}}</button>
+<button type="button" onClick="{{k.primary}}" style="height: 42px; padding: 0 18px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: {{k.pBg}}; color: {{k.pFg}}">{{k.pText}}</button>
+</div>
+</article>
+</sc-for>
+<button type="button" style="align-self: flex-start; display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1.5px rgba(18,19,26,.15); cursor: pointer; font-size: 14px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Importar una habilidad</button>
+</div>
+</sc-if>
+
+<sc-if value="{{isMem}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 22px; animation: fade .3s ease-out">
+<sc-if value="{{memReviewShow}}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="rev-h" style="display: flex; flex-direction: column; gap: 10px; padding: 22px 24px; border-radius: 26px; background: #FFFFFF; box-shadow: 0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.14)">
+<h2 id="rev-h" style="margin: 0 0 4px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #8A5A00"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #FFC93C; animation: halo 1.8s ease-out infinite"></span>Por revisar · lo dedujeron leyendo correos y webs</h2>
+<sc-for list="{{memReview}}" as="m" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 0; border-top: 1px solid rgba(18,19,26,.06); animation: fade .3s ease-out">
+<span style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; line-height: 1.45">{{m.text}}</span><span style="font-size: 13px; color: #6B6F7A">{{m.src}}</span></span>
+<span style="display: flex; gap: 6px"><button type="button" onClick="{{m.forget}}" style="height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #B4372A">No es así</button><button type="button" onClick="{{m.keep}}" style="height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600">Es correcto</button></span>
+</div>
+</sc-for>
+</section>
+</sc-if>
+<section aria-labelledby="ok-h" style="display: flex; flex-direction: column; background: #FFFFFF; border-radius: 26px; overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 24px 10px"><h2 id="ok-h" style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Lo que saben de ti</h2><span style="display: flex; gap: 8px"><button type="button" style="height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 13px; font-weight: 600">Importar de ChatGPT</button><button type="button" style="height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600">Contarles algo</button></span></div>
+<sc-for list="{{memOk}}" as="m" hint-placeholder-count="5">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-height: 64px; padding: 10px 24px; border-top: 1px solid rgba(18,19,26,.06); animation: fade .3s ease-out">
+<span aria-hidden="true" style="width: 20px; height: 20px; flex: none; background: {{m.fill}}; clip-path: {{m.clip}}; border-radius: {{m.radius}}"></span>
+<span style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; line-height: 1.45">{{m.text}}</span><span style="font-size: 13px; color: #6B6F7A">{{m.src}}</span></span>
+<button type="button" onClick="{{m.forget}}" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.05); cursor: pointer; font-size: 13px; font-weight: 500">Olvidar</button>
+</div>
+</sc-for>
+</section>
+<p style="margin: 0 8px; font-size: 13px; line-height: 1.5; color: #6B6F7A">Lo que deducen de webs, correos o apps queda «por revisar» y no lo usan hasta que digas que es correcto.</p>
+</div>
+</sc-if>
+
+</main>
+
+<sc-if value="{{look}}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 40px 20px; background: rgba(18,19,26,.32); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: fade .25s ease-out">
+<div role="dialog" aria-modal="true" aria-labelledby="look-t" style="width: min(980px, 100%); max-height: 100%; overflow: auto; display: flex; flex-wrap: wrap; background: #FFFFFF; border-radius: 34px; box-shadow: 0 60px 120px -40px rgba(18,19,26,.6); animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<div aria-hidden="true" style="flex: 3 1 420px; min-height: 420px; margin: 14px; border-radius: 24px; box-shadow: inset 0 0 0 1px rgba(18,19,26,.05); background: {{cur.preview}}"></div>
+<div style="flex: 2 1 300px; padding: 34px 32px 28px 18px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px"><h2 id="look-t" style="margin: 0; font: 600 30px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">{{cur.name}}</h2><button type="button" onClick="{{close}}" aria-label="Cerrar" style="width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.06); cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></div>
+<dl style="margin: 0; display: grid; grid-template-columns: 96px 1fr; gap: 14px 12px; font-size: 15px">
+<dt style="color: #6B6F7A">Lo hizo</dt><dd style="margin: 0; display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 16px; height: 16px; background: {{cur.botFill}}; clip-path: {{cur.botClip}}; border-radius: {{cur.botRadius}}"></span>{{cur.bot}}</dd>
+<dt style="color: #6B6F7A">Para</dt><dd style="margin: 0">{{cur.forWho}}</dd>
+<dt style="color: #6B6F7A">Dónde</dt><dd style="margin: 0">{{cur.where}}</dd>
+<dt style="color: #6B6F7A">Cuándo</dt><dd style="margin: 0">{{cur.when}}</dd>
+<dt style="color: #6B6F7A">Versiones</dt><dd style="margin: 0">{{cur.versions}}</dd>
+</dl>
+<div style="margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px"><button type="button" style="height: 48px; padding: 0 24px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600">Abrir</button><button type="button" style="height: 48px; padding: 0 20px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 15px; font-weight: 600">Compartir</button><a href="V2Encargo.dc.html" style="display: flex; align-items: center; height: 48px; padding: 0 12px; font-size: 15px; font-weight: 500; color: #1F4FD1">Cómo se hizo</a></div>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"pestana":{"editor":"enum","options":["hecho","habilidades","saben de ti"],"default":"hecho"},"vistaPrevia":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1450}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { q: '', kind: 'todo', sel: props.vistaPrevia ? 0 : -1, tab: this.tabFrom(props.pestana), skill: {}, open: { 0: true }, mem: { r0: 'r', r1: 'r' }, forgot: {} };
+  }
+  tabFrom(v) { return v === 'habilidades' ? 'skills' : (v === 'saben de ti' ? 'mem' : 'done'); }
+  componentDidUpdate(prev) { if (prev.pestana !== this.props.pestana) this.setState({ tab: this.tabFrom(this.props.pestana) }); if (prev.vistaPrevia !== this.props.vistaPrevia) this.setState({ sel: this.props.vistaPrevia ? 0 : -1 }); }
+  renderVals() {
+    const s = this.state;
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const BOT = {
+      Vera: ['#7B4DFF', 'none', '50% 12% 50% 12%'], Tomás: ['#0B8A5F', 'none', '24%'], Iris: ['#FF5CA8', DIA, '0'],
+      Nora: ['#2F6BFF', 'none', '50%'], Atlas: ['#FFC93C', HEX, '0'], Bruno: ['#FF7A1A', 'none', '50% 50% 14% 14%']
+    };
+    const P = {
+      doc: 'linear-gradient(#2B2D36, #2B2D36) 24px 26px / 46% 10px no-repeat, repeating-linear-gradient(180deg, #E6E6E1 0 7px, transparent 7px 18px) 24px 56px / calc(100% - 48px) 62% no-repeat, #FFFFFF',
+      hoja: 'linear-gradient(#0B8A5F, #0B8A5F) 0 0 / 100% 26px no-repeat, repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), #D5E9DF calc(25% - 1px) 25%), repeating-linear-gradient(180deg, #F3FAF6 0 22px, #FFFFFF 22px 44px)',
+      diapo: 'linear-gradient(#2B2D36, #2B2D36) 24% 32% / 40% 8px no-repeat, linear-gradient(#FFFFFF, #FFFFFF) 18% 24% / 64% 52% no-repeat, linear-gradient(135deg, #FF5CA8, #7B4DFF)',
+      codigo: 'linear-gradient(#7DD3A8, #7DD3A8) 24px 32px / 30% 7px no-repeat, linear-gradient(#E6E7EC, #E6E7EC) 44px 54px / 52% 7px no-repeat, linear-gradient(#FFC93C, #FFC93C) 44px 76px / 36% 7px no-repeat, linear-gradient(#E6E7EC, #E6E7EC) 24px 98px / 44% 7px no-repeat, linear-gradient(#E6E7EC, #E6E7EC) 44px 120px / 28% 7px no-repeat, #12131A',
+      img1: 'radial-gradient(circle at 72% 30%, #FFC93C 0 13%, rgba(255,201,60,0) 13.5%), radial-gradient(120% 70% at 20% 110%, #7B4DFF 0 48%, rgba(123,77,255,0) 48.5%), radial-gradient(120% 80% at 90% 120%, #2F6BFF 0 45%, rgba(47,107,255,0) 45.5%), linear-gradient(180deg, #FFF4D1, #F5E9FF)',
+      img2: 'radial-gradient(circle at 30% 40%, #FF5CA8 0 18%, rgba(255,92,168,0) 18.5%), radial-gradient(circle at 62% 58%, #FFC93C 0 14%, rgba(255,201,60,0) 14.5%), radial-gradient(circle at 80% 30%, #0B8A5F 0 9%, rgba(11,138,95,0) 9.5%), linear-gradient(160deg, #FFF7EC, #FFE6F1)'
+    };
+    const ITEMS = [
+      { name: 'Resumen Q3 para el comité', kind: 'doc', bot: 'Vera', when: 'Hoy, 09:26', forWho: 'Marta y el comité', where: '#informe-q3', versions: '2 · la última revisada por ti' },
+      { name: 'Portada del informe Q3', kind: 'img', p: 'img1', bot: 'Vera', when: 'Hoy, 09:27', forWho: 'Tú', where: 'Chat con Vera', versions: '1' },
+      { name: 'Devoluciones, limpia', kind: 'hoja', bot: 'Tomás', when: 'Hoy, 09:30', forWho: 'Luis', where: '#informe-q3', versions: '3' },
+      { name: 'Gastos de octubre', kind: 'hoja', bot: 'Bruno', when: 'Hoy, 08:02', forWho: 'Tú', where: 'Rutina diaria', versions: '15 · una por día' },
+      { name: 'Diapositivas Q3 · v2', kind: 'diapo', bot: 'Iris', when: 'Ayer, 17:10', forWho: 'Marta', where: '#informe-q3', versions: '2' },
+      { name: 'Tres portadas de primavera', kind: 'img', p: 'img2', bot: 'Iris', when: 'Ayer, 12:40', forWho: 'Ana', where: '#campaña-primavera', versions: '3 propuestas' },
+      { name: 'Fuentes del mercado textil', kind: 'doc', bot: 'Nora', when: 'Ayer, 08:40', forWho: 'Tú', where: 'Encargo Informe Q3', versions: '1' },
+      { name: 'Plan de la semana', kind: 'doc', bot: 'Atlas', when: 'Lunes, 09:00', forWho: 'Tú', where: 'Rutina de los lunes', versions: '1' },
+      { name: 'conciliacion_bancaria.py', kind: 'codigo', bot: 'Tomás', when: 'Martes, 16:20', forWho: 'Contabilidad', where: '#facturación', versions: '4' }
+    ];
+    const KINDS = [['todo', 'Todo'], ['doc', 'Documentos'], ['hoja', 'Hojas'], ['img', 'Imágenes'], ['diapo', 'Diapositivas'], ['codigo', 'Código']];
+    const q = s.q.trim().toLowerCase();
+    const shaped = ITEMS.map((it, i) => {
+      const b = BOT[it.bot];
+      return { ...it, i, preview: P[it.p || it.kind], botFill: b[0], botClip: b[1], botRadius: b[2], meta: `${it.bot} · ${it.when}` };
+    });
+    const list = shaped.filter(it => (s.kind === 'todo' || it.kind === s.kind) && (!q || (it.name + ' ' + it.bot + ' ' + it.where).toLowerCase().includes(q)));
+    const cur = shaped[s.sel] || shaped[0];
+    const SK = [
+      { name: 'Preparar el resumen para el comité', bot: 'Vera', st: 'pending', meta: 'Vera la aprendió tras 4 tareas parecidas · nueva', desc: 'Junta las cifras de Tomás, escribe una página en tono sobrio y adjunta el PDF.', steps: [['Pide a Tomás las cifras cerradas del mes', ''], ['Escribe una página: tres cifras, una propuesta', ''], ['Usa el tono de Marta: sobrio, sin adjetivos', ''], ['Te pide OK antes de enviarlo', '']] },
+      { name: 'Registrar facturas del correo', bot: 'Bruno', st: 'improved', meta: 'Bruno propone una versión mejorada · v3', desc: 'Ahora también lee facturas en PDF escaneado y avisa si el IVA no cuadra.', steps: [['Lee las facturas nuevas del correo', ''], ['Si es un PDF escaneado, lo pasa a texto', 'add'], ['Comprueba que el IVA cuadra con la base', 'add'], ['La apunta en la hoja de gastos', '']] },
+      { name: 'Ficha de cliente antes de una reunión', bot: 'Nora', st: 'active', meta: 'Nora · usada 12 veces', desc: 'Quién es, qué compró, últimos correos y lo que dijo la última vez.', steps: [['Busca al cliente en el CRM y en el correo', ''], ['Resume las tres últimas conversaciones', ''], ['Lo deja en Hoy una hora antes', '']] },
+      { name: 'Comparar ventas mes a mes', bot: 'Tomás', st: 'active', meta: 'Tomás · usada 8 veces', desc: 'Con un gráfico y las tres diferencias que importan.', steps: [['Abre la hoja de ventas', ''], ['Calcula la diferencia por familia', ''], ['Dibuja el gráfico y escribe tres frases', '']] }
+    ];
+    const BOTS = { Vera: ['#7B4DFF', 'none', '50% 12% 50% 12%'], Bruno: ['#FF7A1A', 'none', '50% 50% 14% 14%'], Nora: ['#2F6BFF', 'none', '50%'], Tomás: ['#0B8A5F', 'none', '24%'], Atlas: ['#FFC93C', 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)', '0'], Equipo: ['#12131A', 'none', '50%'] };
+    const F2 = c => `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${c}`;
+    const skState = (k, i) => s.skill[i] || k.st;
+    const pendingN = SK.filter((k, i) => ['pending', 'improved'].includes(skState(k, i))).length;
+    const MR = [['Prefieres reuniones antes de las 11:00', 'Lo dedujo Vera leyendo tu calendario'], ['Luis es quien cierra las cifras con contabilidad', 'Lo dedujo Tomás de un correo de Luis']];
+    const MO = [['Firmas los correos como «Un saludo»', 'Lo dijiste · Vera', 'Vera'], ['Al comité le gustan los resúmenes de una página', 'Acuerdo en #informe-q3', 'Equipo'], ['Las cifras oficiales son las que cierra contabilidad', 'Lo dijiste · Tomás', 'Tomás'], ['Avisar si una factura pasa de 500 €', 'Lo dijiste · Bruno', 'Bruno'], ['Marta prefiere un estilo sobrio', 'De un documento · Iris', 'Atlas']];
+    const confirmed = MR.map((m, i) => s.mem['r' + i] === 'ok' ? [m[0], 'Confirmado por ti', 'Equipo'] : null).filter(Boolean);
+    const memOkAll = confirmed.concat(MO).filter(m => !s.forgot[m[0]]);
+    const reviewList = MR.map((m, i) => ({ m, i })).filter(x => s.mem['r' + x.i] === 'r');
+    const TABS = [['done', 'Lo que han hecho', ''], ['skills', 'Habilidades', String(pendingN)], ['mem', 'Lo que saben de ti', String(reviewList.length)]];
+
+    return {
+      q: s.q, qChange: e => this.setState({ q: e.target.value }),
+      kinds: KINDS.map(([id, label]) => { const on = s.kind === id; return { label, on: String(on), bg: on ? '#FFFFFF' : 'transparent', sh: on ? '0 1px 3px rgba(18,19,26,.15)' : 'none', pick: () => this.setState({ kind: id }) }; }),
+      items: list.map(it => ({ ...it, open: () => this.setState({ sel: it.i }) })),
+      empty: list.length === 0,
+      look: s.sel >= 0,
+      cur,
+      close: () => this.setState({ sel: -1 }),
+      isDone: s.tab === 'done', isSkills: s.tab === 'skills', isMem: s.tab === 'mem',
+      tabDesc: { done: 'Todo lo que ha hecho tu colmena, con quién lo hizo y para qué.', skills: 'Lo que tus bots han aprendido a hacer. Una habilidad nueva no se usa hasta que revisas sus pasos.', mem: 'Lo que tus bots recuerdan de ti y de cómo trabajáis. Puedes corregirlo u olvidarlo cuando quieras.' }[s.tab],
+      tabs: TABS.map(([id, label, badge]) => { const on = s.tab === id; return { label, badge, on: String(on), bg: on ? '#FFFFFF' : 'transparent', sh: on ? '0 1px 3px rgba(18,19,26,.15)' : 'none', badgeBg: '#FFC93C', badgeOp: badge && badge !== '0' ? '1' : '0', pick: () => this.setState({ tab: id }) }; }),
+      skills: SK.map((k, i) => {
+        const st = skState(k, i); const b0 = BOTS[k.bot];
+        const pend = st === 'pending' || st === 'improved';
+        const open = !!s.open[i];
+        return { name: k.name, meta: k.meta, desc: k.desc, fill: F2(b0[0]), clip: b0[1], radius: b0[2],
+          state: { pending: 'Revisa los pasos', improved: 'Versión mejorada', active: 'Activa', off: 'Desactivada' }[st],
+          stBg: pend ? '#FFF4D1' : (st === 'active' ? '#E1F4EC' : 'rgba(18,19,26,.06)'), stFg: pend ? '#8A5A00' : (st === 'active' ? '#0B5A3E' : '#5C606C'),
+          shadow: pend ? '0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.14)' : '0 1px 2px rgba(18,19,26,.05)',
+          open, exp: String(open), stepsBtn: open ? 'Ocultar pasos' : (st === 'improved' ? 'Ver qué cambia' : 'Ver pasos'),
+          toggleSteps: () => this.setState({ open: { ...s.open, [i]: !open } }),
+          steps: k.steps.map(([text, kind]) => ({ text: (kind === 'add' && st === 'improved' ? '+ ' : '') + text, bg: kind === 'add' && st === 'improved' ? 'rgba(11,138,95,.14)' : 'transparent' })),
+          pText: pend ? (st === 'improved' ? 'Usar la nueva versión' : 'Activar') : (st === 'active' ? 'Desactivar' : 'Activar'),
+          pBg: pend ? '#12131A' : 'rgba(18,19,26,.06)', pFg: pend ? '#FFFFFF' : '#12131A',
+          primary: () => this.setState({ skill: { ...s.skill, [i]: st === 'active' ? 'off' : 'active' } }) };
+      }),
+      memReviewShow: reviewList.length > 0,
+      memReview: reviewList.map(({ m, i }) => ({ text: m[0], src: m[1], keep: () => this.setState({ mem: { ...s.mem, ['r' + i]: 'ok' } }), forget: () => this.setState({ mem: { ...s.mem, ['r' + i]: 'no' } }) })),
+      memOk: memOkAll.map(m => { const b0 = BOTS[m[2]] || BOTS.Equipo; return { text: m[0], src: m[1], fill: F2(b0[0]), clip: b0[1], radius: b0[2], forget: () => this.setState({ forgot: { ...s.forgot, [m[0]]: true } }) }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Rutinas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+.msg .msg-tools{opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+.msg:hover .msg-tools,.msg:focus-within .msg-tools{opacity:1;transform:none;pointer-events:auto}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; align-items: flex-start; min-height: 1900px; background: #F5F5F2">
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100vh; min-height: 560px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<a href="V2Hoy.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Hoy</span><span aria-label="2 cosas te esperan" style="position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #FFC93C; color: #12131A; font: 600 10px/18px 'Geist', sans-serif; text-align: center; box-shadow: 0 0 0 2px #EBEBE6">2</span></a>
+<a href="V2Conversacion.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Conversa-<br>ciones</span><span aria-label="Te han mencionado" style="position: absolute; top: 6px; right: 16px; width: 9px; height: 9px; border-radius: 50%; background: #12131A; box-shadow: 0 0 0 2px #EBEBE6"></span></a>
+<a href="V2Codigo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Código</span></a>
+<a href="V2Colmena.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Colmena</span></a>
+<a href="V2Rutinas.dc.html" aria-current="page" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"></path><path d="M19.8 4.5v3.6h-3.6"></path><path d="M12 8.2V12l2.6 1.6"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 600; text-align: center; letter-spacing: 0.01em">Rutinas</span></a>
+<a href="V2Archivo.dc.html" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: transparent; color: #4A4D57"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M3 4h18v3.5H3z"></path><path d="M9.5 11.5h5"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: 500; text-align: center; letter-spacing: 0.01em">Archivo</span></a>
+<span style="flex: 1"></span>
+<a href="V2Hoy.dc.html#pedir" title="Pedir algo (⌘K)" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; color: #4A4D57"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4.2-4.2"></path></svg><span style="font-size: 11px; font-weight: 500">Pedir</span><kbd style="font: 500 10px/1 'Geist Mono', monospace; color: #6B6F7A">⌘K</kbd></a>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 11px/1 'Geist', sans-serif">TÚ</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+<div style="position: relative; flex: 1; min-width: 0; min-height: 100vh; padding-bottom: 40px">
+<main style="max-width: 1000px; margin: 0 auto; padding: 64px clamp(20px, 4vw, 48px) 40px; display: flex; flex-direction: column; gap: 40px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h1 style="margin: 0; font: 600 clamp(48px, 7vw, 84px)/0.95 'Bricolage Grotesque', sans-serif; letter-spacing: -0.05em">Rutinas</h1>
+<p style="margin: 0; max-width: 620px; font-size: 17px; line-height: 1.5; color: #5C606C">{{tabDesc}}</p>
+</div>
+<button type="button" onClick="{{newAction}}" style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 24px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>{{newLabel}}</button>
+</header>
+
+<div role="tablist" aria-label="Qué ver" style="align-self: flex-start; margin-top: -14px; display: flex; flex-wrap: wrap; gap: 2px; padding: 4px; border-radius: 999px; background: rgba(18,19,26,.05)">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border: 0; border-radius: 999px; cursor: pointer; font-size: 15px; font-weight: 600; transition: all .2s ease; background: {{t.bg}}; box-shadow: {{t.sh}}">{{t.label}}<span style="font: 500 12px/1 'Geist Mono', monospace; color: #6B6F7A">{{t.n}}</span></button></sc-for>
+</div>
+
+<sc-if value="{{isRut}}" hint-placeholder-val="{{ true }}">
+
+<sc-if value="{{open}}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="new-t" style="position: relative; padding: 34px 34px 28px; background: #FFFFFF; border-radius: 34px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 30px 70px -36px rgba(18,19,26,.35); display: flex; flex-direction: column; gap: 22px; animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<h2 id="new-t" style="margin: 0; font-size: 13px; font-weight: 500; color: #6B6F7A">Nueva rutina · toca cada parte para cambiarla</h2>
+
+<p style="margin: 0; font: 600 clamp(26px, 3.2vw, 36px)/1.45 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; color: #12131A">
+<button type="button" aria-haspopup="dialog" aria-expanded="{{tk.when.exp}}" onClick="{{tk.when.toggle}}" style="display: inline-flex; align-items: center; gap: 8px; padding: 0 8px; border: 0; border-radius: 12px; cursor: pointer; font: inherit; letter-spacing: inherit; color: inherit; text-decoration: underline; text-decoration-color: #FFC93C; text-decoration-thickness: 4px; text-underline-offset: 8px; transition: background .2s ease; background: {{tk.when.bg}}">{{whenText}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .45; transition: transform .2s ease; transform: {{tk.when.rot}}"><path d="m6 9 6 6 6-6"></path></svg></button>,
+<button type="button" aria-haspopup="listbox" aria-expanded="{{tk.who.exp}}" onClick="{{tk.who.toggle}}" style="display: inline-flex; align-items: center; gap: 10px; padding: 0 8px; border: 0; border-radius: 12px; cursor: pointer; font: inherit; letter-spacing: inherit; color: inherit; text-decoration: underline; text-decoration-color: #FFC93C; text-decoration-thickness: 4px; text-underline-offset: 8px; transition: background .2s ease; background: {{tk.who.bg}}"><span aria-hidden="true" style="display: inline-block; width: 24px; height: 24px; background: {{who.fill}}; clip-path: {{who.clip}}; border-radius: {{who.radius}}"></span>{{who.name}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .45; transition: transform .2s ease; transform: {{tk.who.rot}}"><path d="m6 9 6 6 6-6"></path></svg></button>
+<button type="button" aria-haspopup="listbox" aria-expanded="{{tk.what.exp}}" onClick="{{tk.what.toggle}}" style="display: inline-flex; align-items: center; gap: 8px; padding: 0 8px; border: 0; border-radius: 12px; cursor: pointer; font: inherit; letter-spacing: inherit; color: inherit; text-align: left; text-decoration: underline; text-decoration-color: #FFC93C; text-decoration-thickness: 4px; text-underline-offset: 8px; transition: background .2s ease; background: {{tk.what.bg}}">{{what}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .45; transition: transform .2s ease; transform: {{tk.what.rot}}"><path d="m6 9 6 6 6-6"></path></svg></button>
+y
+<button type="button" aria-haspopup="listbox" aria-expanded="{{tk.out.exp}}" onClick="{{tk.out.toggle}}" style="display: inline-flex; align-items: center; gap: 8px; padding: 0 8px; border: 0; border-radius: 12px; cursor: pointer; font: inherit; letter-spacing: inherit; color: inherit; text-align: left; text-decoration: underline; text-decoration-color: #FFC93C; text-decoration-thickness: 4px; text-underline-offset: 8px; transition: background .2s ease; background: {{tk.out.bg}}">{{outText}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .45; transition: transform .2s ease; transform: {{tk.out.rot}}"><path d="m6 9 6 6 6-6"></path></svg></button>.
+</p>
+
+<sc-if value="{{tk.when.open}}" hint-placeholder-val="{{ true }}">
+<div role="dialog" aria-label="Cuándo" style="display: flex; flex-wrap: wrap; gap: 0; border-radius: 26px; background: #F6F6F3; overflow: hidden; animation: rise .3s ease-out">
+<div role="radiogroup" aria-label="Tipo" style="flex: 1 1 260px; padding: 14px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid rgba(18,19,26,.06)">
+<span style="padding: 8px 12px; font-size: 12px; font-weight: 500; color: #6B6F7A">A una hora</span>
+<sc-for list="{{typesTime}}" as="t" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{t.on}}" onClick="{{t.pick}}" style="display: flex; align-items: center; min-height: 44px; padding: 0 14px; border: 0; border-radius: 14px; cursor: pointer; text-align: left; font-size: 15px; font-weight: 500; transition: background .2s ease; background: {{t.bg}}; color: {{t.fg}}">{{t.label}}</button></sc-for>
+<span style="padding: 12px 12px 8px; font-size: 12px; font-weight: 500; color: #6B6F7A">Cuando pase algo</span>
+<sc-for list="{{typesEvent}}" as="t" hint-placeholder-count="5"><button type="button" role="radio" aria-checked="{{t.on}}" onClick="{{t.pick}}" style="display: flex; align-items: center; min-height: 44px; padding: 0 14px; border: 0; border-radius: 14px; cursor: pointer; text-align: left; font-size: 15px; font-weight: 500; transition: background .2s ease; background: {{t.bg}}; color: {{t.fg}}">{{t.label}}</button></sc-for>
+</div>
+<div style="flex: 2 1 380px; padding: 24px 26px; display: flex; flex-direction: column; gap: 20px">
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 10px; animation: fade .3s ease-out">
+<span style="font-size: 13px; font-weight: 500; color: #5C606C">{{g.label}}</span>
+<div role="radiogroup" aria-label="{{g.label}}" style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{g.items}}" as="i" hint-placeholder-count="4"><button type="button" role="radio" aria-checked="{{i.on}}" onClick="{{i.pick}}" style="min-width: 44px; height: 42px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all .2s ease; background: {{i.bg}}; color: {{i.fg}}; box-shadow: {{i.sh}}">{{i.label}}</button></sc-for></div>
+</div>
+</sc-for>
+<sc-if value="{{field.show}}" hint-placeholder-val="{{ false }}">
+<label style="display: flex; flex-direction: column; gap: 10px; animation: fade .3s ease-out"><span style="font-size: 13px; font-weight: 500; color: #5C606C">{{field.label}}</span><input type="text" value="{{field.value}}" onChange="{{field.change}}" style="height: 50px; padding: 0 18px; border: 0; border-radius: 16px; outline: none; background: #FFFFFF; font-size: 16px; box-shadow: 0 1px 2px rgba(18,19,26,.06)"></label>
+</sc-if>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{tk.who.open}}" hint-placeholder-val="{{ false }}">
+<div role="dialog" aria-labelledby="who-h" style="padding: 18px; border-radius: 26px; background: #F6F6F3; display: flex; flex-direction: column; gap: 12px; animation: rise .3s ease-out">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 8px"><h3 id="who-h" style="margin: 0; font: 600 20px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">¿Quién lo hace?</h3><span style="font-size: 13px; color: #6B6F7A">Elige el bot que mejor sabe hacerlo</span></div>
+<div role="listbox" aria-labelledby="who-h" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px">
+<sc-for list="{{whoOpts}}" as="o" hint-placeholder-count="6">
+<button type="button" role="option" aria-selected="{{o.on}}" onClick="{{o.pick}}" style="display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 10px 14px; border: 0; border-radius: 18px; cursor: pointer; text-align: left; transition: background .2s ease, box-shadow .2s ease; background: {{o.bg}}; box-shadow: {{o.sh}}">
+<span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 3px 6px rgba(18,19,26,.18))"><span style="display: block; width: 34px; height: 34px; background: {{o.fill}}; clip-path: {{o.clip}}; border-radius: {{o.radius}}"></span></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 15px; font-weight: 600">{{o.name}}</strong><span style="font-size: 13px; color: #5C606C">{{o.role}}</span></span>
+<span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: {{o.checkBg}}; box-shadow: {{o.checkRing}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{o.tick}}"><path d="m5 12 5 5 9-10"></path></svg></span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{tk.what.open}}" hint-placeholder-val="{{ false }}">
+<div role="dialog" aria-labelledby="what-h" style="padding: 18px; border-radius: 26px; background: #F6F6F3; display: flex; flex-direction: column; gap: 12px; animation: rise .3s ease-out">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 8px"><h3 id="what-h" style="margin: 0; font: 600 20px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">{{whatTitle}}</h3><span style="font-size: 13px; color: #6B6F7A">Ideas según lo que sabe hacer</span></div>
+<div role="listbox" aria-labelledby="what-h" style="display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{whatOpts}}" as="o" hint-placeholder-count="4">
+<button type="button" role="option" aria-selected="{{o.on}}" onClick="{{o.pick}}" style="display: flex; align-items: center; gap: 14px; min-height: 54px; padding: 8px 16px; border: 0; border-radius: 16px; cursor: pointer; text-align: left; transition: background .2s ease; background: {{o.bg}}; box-shadow: {{o.sh}}">
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; font-weight: 600">{{o.label}}</strong><span style="font-size: 13px; color: #5C606C">{{o.desc}}</span></span>
+<span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: {{o.checkBg}}; box-shadow: {{o.checkRing}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{o.tick}}"><path d="m5 12 5 5 9-10"></path></svg></span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 18px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.06)">
+<label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Otra cosa</span><input type="text" value="{{custom}}" onChange="{{customChange}}" placeholder="Otra cosa: escríbelo con tus palabras" style="flex: 1; min-width: 0; height: 44px; border: 0; outline: none; background: transparent; font-size: 15px"></label>
+<button type="button" onClick="{{useCustom}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: {{customBtn.bg}}; color: {{customBtn.fg}}">Usar</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{tk.out.open}}" hint-placeholder-val="{{ false }}">
+<div role="dialog" aria-labelledby="out-h" style="padding: 18px; border-radius: 26px; background: #F6F6F3; display: flex; flex-direction: column; gap: 12px; animation: rise .3s ease-out">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 8px"><h3 id="out-h" style="margin: 0; font: 600 20px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">¿Qué hace con el resultado?</h3><span style="font-size: 13px; color: #6B6F7A">Dónde lo verás</span></div>
+<div role="listbox" aria-labelledby="out-h" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px">
+<sc-for list="{{outOpts}}" as="o" hint-placeholder-count="5">
+<button type="button" role="option" aria-selected="{{o.on}}" onClick="{{o.pick}}" style="display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 10px 14px; border: 0; border-radius: 18px; cursor: pointer; text-align: left; transition: background .2s ease; background: {{o.bg}}; box-shadow: {{o.sh}}">
+<span aria-hidden="true" style="width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 11px; font: 600 15px/1 'Geist', sans-serif; background: {{o.tint}}">{{o.glyph}}</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; font-weight: 600">{{o.label}}</strong><span style="font-size: 13px; color: #5C606C">{{o.desc}}</span></span>
+<span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: {{o.checkBg}}; box-shadow: {{o.checkRing}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{o.tick}}"><path d="m5 12 5 5 9-10"></path></svg></span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{outRoomShow}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 8px; animation: fade .25s ease-out"><span style="font-size: 13px; font-weight: 500; color: #5C606C">¿En qué sala?</span>
+<sc-for list="{{rooms}}" as="r" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{r.on}}" onClick="{{r.pick}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 500; background: {{r.bg}}; color: {{r.fg}}; box-shadow: {{r.sh}}">{{r.label}}</button></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{panelOpen}}" hint-placeholder-val="{{ false }}"><div style="display: flex; justify-content: flex-end; margin-top: -8px"><button type="button" onClick="{{closePanel}}" style="height: 42px; padding: 0 20px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Listo</button></div></sc-if>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding-top: 6px; border-top: 1px solid rgba(18,19,26,.06)">
+<span role="status" style="flex: 1 1 320px; padding-top: 14px; font-size: 14px; line-height: 1.5; color: #5C606C">{{preview}}</span>
+<span style="display: flex; gap: 8px; padding-top: 14px"><button type="button" onClick="{{test}}" style="height: 48px; padding: 0 20px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 15px; font-weight: 600">{{testLabel}}</button><button type="button" onClick="{{activate}}" style="height: 48px; padding: 0 24px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600">Activar</button></span>
+</div>
+</section>
+</sc-if>
+
+<section aria-labelledby="list-t" style="display: flex; flex-direction: column; gap: 14px">
+<h2 id="list-t" style="margin: 0 0 4px; font: 600 30px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Activas</h2>
+<sc-for list="{{routines}}" as="r" hint-placeholder-count="4">
+<article style="display: flex; align-items: center; gap: 22px; padding: 24px 26px; background: #FFFFFF; border-radius: 28px; transition: opacity .3s ease; opacity: {{r.op}}; animation: {{r.enter}}">
+<span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 4px 8px rgba(18,19,26,.16))"><span style="display: block; width: 40px; height: 40px; background: {{r.fill}}; clip-path: {{r.clip}}; border-radius: {{r.radius}}"></span></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 18px; line-height: 1.45; letter-spacing: -0.01em">{{r.text}}</span><span style="font-size: 13px; color: #6B6F7A">{{r.meta}}</span></span>
+<button type="button" role="switch" aria-checked="{{r.on}}" aria-label="{{r.aria}}" onClick="{{r.toggle}}" style="width: 52px; height: 32px; flex: none; padding: 3px; border: 0; border-radius: 16px; cursor: pointer; transition: background .25s ease; background: {{r.bg}}"><span style="display: block; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 4px rgba(18,19,26,.2); transition: transform .25s cubic-bezier(.2,.8,.2,1); transform: {{r.x}}"></span></button>
+</article>
+</sc-for>
+</section>
+
+</sc-if>
+
+<sc-if value="{{isOrd}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px; animation: fade .3s ease-out">
+
+<sc-if value="{{ordForm}}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="of-t" style="padding: 30px 32px 26px; background: #FFFFFF; border-radius: 34px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 30px 70px -36px rgba(18,19,26,.35); display: flex; flex-direction: column; gap: 20px; animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<h2 id="of-t" style="margin: 0; font: 600 28px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Nuevo encargo</h2>
+<label style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Nombre del encargo</span><input type="text" value="{{of.name}}" onChange="{{of.nameChange}}" placeholder="Facturas de proveedores" style="height: 52px; padding: 0 18px; border: 0; border-radius: 16px; outline: none; background: #F4F4F0; font-size: 17px; font-weight: 600"></label>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Quién se encarga</span><div role="radiogroup" aria-label="Quién se encarga" style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{of.bots}}" as="o" hint-placeholder-count="6"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px 0 12px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: {{o.bg}}; color: {{o.fg}}"><span aria-hidden="true" style="width: 16px; height: 16px; background: {{o.fill}}; clip-path: {{o.clip}}; border-radius: {{o.radius}}"></span>{{o.name}}</button></sc-for></div></div>
+<label style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Qué haces</span><textarea rows="2" value="{{of.what}}" onChange="{{of.whatChange}}" placeholder="Revisa las facturas que lleguen y apúntalas en la hoja de gastos." style="padding: 14px 18px; border: 0; border-radius: 16px; outline: none; background: #F4F4F0; font-size: 16px; line-height: 1.5; resize: vertical"></textarea></label>
+<label style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Cuándo para y te pregunta</span><textarea rows="2" value="{{of.stop}}" onChange="{{of.stopChange}}" placeholder="Si el importe pasa de 500 € o falta algún dato." style="padding: 14px 18px; border: 0; border-radius: 16px; outline: none; background: #F4F4F0; font-size: 16px; line-height: 1.5; resize: vertical"></textarea></label>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Avisos como mucho</span><div role="radiogroup" aria-label="Avisos como mucho" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(18,19,26,.05)"><sc-for list="{{of.notify}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="flex: 1; height: 38px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{o.bg}}; box-shadow: {{o.sh}}">{{o.label}}</button></sc-for></div></div>
+<div style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13px; font-weight: 500; color: #5C606C">Hasta (opcional)</span><div role="radiogroup" aria-label="Hasta" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(18,19,26,.05)"><sc-for list="{{of.until}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="flex: 1; height: 38px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{o.bg}}; box-shadow: {{o.sh}}">{{o.label}}</button></sc-for></div></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 20px; background: #F6F6F3"><span style="font-size: 14px; line-height: 1.45">Aunque el encargo diga otra cosa, siempre te pide permiso para:</span><div style="display: flex; flex-wrap: wrap; gap: 6px"><span style="display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: #FFFFFF; font-size: 13px; font-weight: 500">🔒 Enviar algo fuera</span><span style="display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: #FFFFFF; font-size: 13px; font-weight: 500">🔒 Mover dinero</span><span style="display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: #FFFFFF; font-size: 13px; font-weight: 500">🔒 Borrar archivos</span><span style="display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: #FFFFFF; font-size: 13px; font-weight: 500">🔒 Instalar programas</span></div></div>
+<div style="display: flex; justify-content: flex-end; gap: 8px"><button type="button" onClick="{{of.cancel}}" style="height: 48px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 15px; font-weight: 600">Cancelar</button><button type="button" onClick="{{of.save}}" style="height: 48px; padding: 0 24px; border: 0; border-radius: 999px; cursor: pointer; font-size: 15px; font-weight: 600; background: {{of.saveBg}}; color: {{of.saveFg}}">Guardar encargo</button></div>
+</section>
+</sc-if>
+
+<sc-for list="{{orders}}" as="o" hint-placeholder-count="2">
+<article style="display: flex; flex-direction: column; gap: 16px; padding: 26px 28px; background: #FFFFFF; border-radius: 30px; animation: {{o.enter}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px"><span aria-hidden="true" style="display: inline-grid; filter: drop-shadow(0 3px 6px rgba(18,19,26,.16))"><span style="display: block; width: 36px; height: 36px; background: {{o.fill}}; clip-path: {{o.clip}}; border-radius: {{o.radius}}"></span></span><span style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 3px"><strong style="font: 600 22px/1.15 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">{{o.name}}</strong><span style="font-size: 14px; color: #5C606C">{{o.meta}}</span></span><span style="display: flex; gap: 6px"><button type="button" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">Editar</button><button type="button" onClick="{{o.toRoutine}}" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1.5px rgba(18,19,26,.15); cursor: pointer; font-size: 14px; font-weight: 600">{{o.routineLabel}}</button></span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 18px; background: #F6F6F3"><span style="font-size: 12px; font-weight: 500; color: #6B6F7A">Qué hace</span><span style="font-size: 15px; line-height: 1.5">{{o.what}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 18px; background: #F6F6F3"><span style="font-size: 12px; font-weight: 500; color: #6B6F7A">Para y te pregunta</span><span style="font-size: 15px; line-height: 1.5">{{o.stop}}</span></div>
+</div>
+<span style="font-size: 13px; color: #6B6F7A">{{o.foot}}</span>
+</article>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isRem}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px; animation: fade .3s ease-out">
+<section aria-labelledby="rf-t" style="padding: 26px 28px; background: #FFFFFF; border-radius: 30px; display: flex; flex-direction: column; gap: 16px">
+<h2 id="rf-t" style="margin: 0; font-size: 13px; font-weight: 500; color: #6B6F7A">Nuevo recordatorio · vale en cualquier sala o chat</h2>
+<p style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font: 600 clamp(22px, 2.6vw, 28px)/1.4 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Cuando se hable de
+<label style="flex: 1 1 260px; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Cuando se hable de</span><input type="text" value="{{rf.topic}}" onChange="{{rf.topicChange}}" placeholder="contrato de limpieza, limpieza" style="flex: 1; min-width: 0; height: 50px; padding: 0 16px; border: 0; border-radius: 14px; outline: none; background: #F4F4F0; font: 500 18px/1 'Geist', sans-serif"></label>,
+recuérdame
+<label style="flex: 2 1 320px; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Recuérdame</span><input type="text" value="{{rf.what}}" onChange="{{rf.whatChange}}" placeholder="que el preaviso es de 30 días" style="flex: 1; min-width: 0; height: 50px; padding: 0 16px; border: 0; border-radius: 14px; outline: none; background: #F4F4F0; font: 500 18px/1 'Geist', sans-serif"></label>.</p>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px"><span role="status" style="font-size: 13px; color: {{rf.hintFg}}">{{rf.hint}}</span><button type="button" onClick="{{rf.add}}" style="height: 46px; padding: 0 22px; border: 0; border-radius: 999px; cursor: pointer; font-size: 15px; font-weight: 600; background: {{rf.btnBg}}; color: {{rf.btnFg}}">Añadir</button></div>
+</section>
+<sc-for list="{{reminders}}" as="r" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 20px 24px; background: #FFFFFF; border-radius: 24px; animation: {{r.enter}}">
+<span style="flex: 1 1 360px; font-size: 18px; line-height: 1.5">Cuando se hable de <strong style="font-weight: 600; box-shadow: inset 0 -0.38em 0 rgba(255,201,60,.45)">{{r.topic}}</strong>, recuérdame <strong style="font-weight: 600">{{r.what}}</strong>.</span>
+<span style="font-size: 13px; color: #6B6F7A">{{r.meta}}</span>
+<button type="button" onClick="{{r.remove}}" aria-label="Borrar este recordatorio" style="width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.05); cursor: pointer; color: #5C606C"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</div>
+</sc-for>
+<sc-if value="{{noRem}}" hint-placeholder-val="{{ false }}"><p style="margin: 0; padding: 20px; text-align: center; font-size: 15px; color: #6B6F7A">Sin recordatorios por tema.</p></sc-if>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 20px 24px; border-radius: 24px; background: rgba(255,255,255,.55)">
+<span style="font-size: 13px; font-weight: 500; color: #6B6F7A">Así aparece en una sala</span>
+<div style="display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start"><span style="display: grid; place-items: center; width: 30px; height: 30px"><span aria-hidden="true" style="display: inline-grid; flex: none; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 24px; height: 24px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0"></span></span></span><span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; color: #6B6F7A"><strong style="color: #12131A; font-weight: 600">Atlas</strong> · recordatorio para ti · en #facturación</span><span style="font-size: 15px; line-height: 1.5">Se está hablando del <strong style="font-weight: 600">contrato de limpieza</strong>. Me pediste que te recordara que el preaviso es de 30 días y hay que pedir dos presupuestos.</span></span></div>
+</div>
+</div>
+</sc-if>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"nueva":{"editor":"boolean","default":true},"pestana":{"editor":"enum","options":["rutinas","encargos","recordatorios"],"default":"rutinas"},"panel":{"editor":"enum","options":["cuando","quien","que","resultado","ninguno"],"default":"cuando"},"cuando":{"editor":"enum","options":["dia","semana","vez","correo","archivo","evento","sala","hoja"],"default":"semana"},"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tab: { encargos: 'ord', recordatorios: 'rem' }[props.pestana] || 'rut', ordForm: false, of: { name: '', bot: 'bruno', what: '', stop: '', notify: 1, until: 0 }, orders: [], toR: {}, rf: { topic: '', what: '' }, rems: [['contrato de limpieza, limpieza', 'que el preaviso es de 30 días y hay que pedir dos presupuestos', 'Lo recordó 2 veces · última en #facturación'], ['viaje a Valencia', 'que Ana no puede los lunes', 'Aún no ha salido']], remsNew: 0,
+      open: props.nueva !== false, panel: this.panelFrom(props.panel), type: props.cuando || 'semana',
+      hour: '9:00', day: 'lunes', laborables: 'Laborables', date: 'el viernes 17', from: 'facturas@proveedor.es', folder: 'Facturas', before: '1 hora', meet: 'reunión con clientes', room: '#facturación', roomWhen: 'alguien escriba', sheet: 'Ventas 2026', col: 'Importe',
+      who: 'vera', what: 'resume lo importante', custom: '', out: 'hoy', outRoom: '#informe-q3', on: [true, true, true, false], added: [], tested: false
+    };
+  }
+  componentDidUpdate(prev) {
+    if (prev.pestana !== this.props.pestana) this.setState({ tab: { encargos: 'ord', recordatorios: 'rem' }[this.props.pestana] || 'rut' });
+    if (prev.nueva !== this.props.nueva) this.setState({ open: this.props.nueva !== false });
+    if (prev.cuando !== this.props.cuando) this.setState({ type: this.props.cuando || 'semana', panel: 'when' });
+    if (prev.panel !== this.props.panel) this.setState({ panel: this.panelFrom(this.props.panel) });
+  }
+  panelFrom(v) { return { cuando: 'when', quien: 'who', que: 'what', resultado: 'out', ninguno: null }[v || 'cuando'] ?? 'when'; }
+  fill(c) { return `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${c}`; }
+  renderVals() {
+    const s = this.state;
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const WHO = [
+      { id: 'atlas', name: 'Atlas', role: 'Coordina y reparte el trabajo', c: '#FFC93C', clip: HEX, r: '0' },
+      { id: 'vera', name: 'Vera', role: 'Escribe y resume', c: '#7B4DFF', clip: 'none', r: '50% 12% 50% 12%' },
+      { id: 'tomas', name: 'Tomás', role: 'Datos y hojas de cálculo', c: '#0B8A5F', clip: 'none', r: '24%' },
+      { id: 'bruno', name: 'Bruno', role: 'Facturas y pagos', c: '#FF7A1A', clip: 'none', r: '50% 50% 14% 14%' },
+      { id: 'nora', name: 'Nora', role: 'Investiga y busca', c: '#2F6BFF', clip: 'none', r: '50%' },
+      { id: 'iris', name: 'Iris', role: 'Diseño y diapositivas', c: '#FF5CA8', clip: 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)', r: '0' }
+    ];
+    const WHAT_BY = {
+      atlas: [['prepara el plan de la semana', 'Repasa encargos y plazos y propone prioridades'], ['resume lo que ha pasado en las salas', 'Decisiones, pendientes y quién espera a quién'], ['revisa los plazos de los encargos', 'Avisa de lo que va con retraso']],
+      vera: [['resume lo importante', 'Correos, salas y documentos nuevos, en una página'], ['prepara el orden del día', 'A partir de tu calendario y de lo pendiente'], ['responde los correos urgentes', 'Los deja como borrador para que los revises'], ['escribe el resumen semanal', 'Para dirección, en tono sobrio']],
+      tomas: [['actualiza las cifras', 'Vuelve a calcular las hojas conectadas'], ['compara las ventas con el mes anterior', 'Con un gráfico y las tres diferencias clave'], ['busca errores en la hoja', 'Duplicados, fórmulas rotas y valores raros']],
+      bruno: [['registra las facturas nuevas', 'Las apunta en la hoja de gastos'], ['avisa de los pagos que vencen', 'Los de los próximos 7 días'], ['concilia el banco', 'Cruza movimientos con facturas']],
+      nora: [['busca noticias del sector', 'Solo fuentes fiables, con enlaces'], ['prepara una ficha del cliente', 'Quién es, qué compró y qué ha pasado'], ['vigila a la competencia', 'Precios, lanzamientos y cambios en su web']],
+      iris: [['prepara las diapositivas de la reunión', 'Con la identidad de la empresa'], ['adapta las imágenes para redes', 'Tamaños y versiones para cada red']]
+    };
+    const OUTS = [
+      { id: 'hoy', label: 'te lo deja en Hoy', title: 'Te lo deja en Hoy', desc: 'Lo verás al abrir Colmena', glyph: '☀', tint: '#FFF4D1' },
+      { id: 'sala', label: 'lo publica en ', title: 'Lo publica en una sala', desc: 'Lo verá todo el que esté en la sala', glyph: '#', tint: '#EDEDE8' },
+      { id: 'correo', label: 'te lo manda por correo', title: 'Te lo manda por correo', desc: 'A tu dirección de la empresa', glyph: '@', tint: '#EAF0FF' },
+      { id: 'archivo', label: 'lo guarda en el Archivo', title: 'Lo guarda en el Archivo', desc: 'Sin avisarte; lo buscas cuando quieras', glyph: '▤', tint: '#EAF6F0' },
+      { id: 'ok', label: 'te pide OK antes de hacer nada', title: 'Te pide OK antes de nada', desc: 'Te llega a Hoy como algo que te toca', glyph: '✓', tint: '#FFF4D1' }
+    ];
+    const whoObj = WHO.find(w => w.id === s.who) || WHO[1];
+    const who = whoObj;
+    const outObj = OUTS.find(o => o.id === s.out) || OUTS[0];
+    const outText = outObj.id === 'sala' ? outObj.label + s.outRoom : outObj.label;
+    const check = on => ({ on: String(on), bg: on ? '#FFFFFF' : 'transparent', sh: on ? '0 0 0 2px #12131A' : 'none', checkBg: on ? '#12131A' : 'transparent', checkRing: on ? 'none' : 'inset 0 0 0 1.5px rgba(18,19,26,.2)', tick: on ? '1' : '0' });
+    const tok = k => ({ open: s.panel === k, exp: String(s.panel === k), bg: s.panel === k ? 'rgba(255,201,60,.28)' : 'transparent', rot: s.panel === k ? 'rotate(180deg)' : 'none', toggle: () => this.setState({ panel: s.panel === k ? null : k }) });
+    const set = (k, v) => () => this.setState({ [k]: v });
+    const pill = (k, vals) => vals.map(v => { const on = s[k] === v; return { label: v, on: String(on), bg: on ? '#12131A' : '#FFFFFF', fg: on ? '#FFFFFF' : '#12131A', sh: on ? 'none' : '0 1px 2px rgba(18,19,26,.06)', pick: set(k, v) }; });
+    const HOURS = ['8:00', '9:00', '13:00', '18:00'];
+    const T = {
+      dia: { label: 'Cada día', groups: [['Días', pill('laborables', ['Laborables', 'Todos los días'])], ['Hora', pill('hour', HOURS)]], when: () => `${s.laborables === 'Laborables' ? 'Cada día laborable' : 'Cada día'} a las ${s.hour}` },
+      semana: { label: 'Cada semana', groups: [['Día', pill('day', ['lunes', 'martes', 'miércoles', 'jueves', 'viernes'])], ['Hora', pill('hour', HOURS)]], when: () => `Cada ${s.day} a las ${s.hour}` },
+      vez: { label: 'Una sola vez', groups: [['Día', pill('date', ['mañana', 'el viernes 17', 'el lunes 20'])], ['Hora', pill('hour', HOURS)]], when: () => { const d = s.date.charAt(0).toUpperCase() + s.date.slice(1); return `${d} a las ${s.hour}`; } },
+      correo: { label: 'Llegue un correo', groups: [], field: ['De quién', 'from'], when: () => `Cuando llegue un correo de ${s.from || 'alguien'}` },
+      archivo: { label: 'Se suba un archivo', groups: [['A la carpeta', pill('folder', ['Facturas', 'Contratos', 'Diseño', 'Clientes'])]], when: () => `Cuando se suba un archivo a «${s.folder}»` },
+      evento: { label: 'Se acerque una reunión', groups: [['Cuánto antes', pill('before', ['15 minutos', '1 hora', '1 día'])], ['Qué reuniones', pill('meet', ['reunión con clientes', 'reunión del comité', 'cualquier reunión'])]], when: () => `${s.before === '1 día' ? 'Un día' : (s.before === '1 hora' ? 'Una hora' : 'Quince minutos')} antes de cada ${s.meet}` },
+      sala: { label: 'Alguien escriba en una sala', groups: [['Sala', pill('room', ['#informe-q3', '#campaña-primavera', '#facturación'])], ['Cuándo', pill('roomWhen', ['alguien escriba', 'te mencionen', 'haya una decisión'])]], when: () => `Cuando ${s.roomWhen} en ${s.room}` },
+      hoja: { label: 'Cambie una hoja de cálculo', groups: [['Hoja', pill('sheet', ['Ventas 2026', 'Gastos', 'Devoluciones'])]], field: ['Columna que vigilar', 'col'], when: () => `Cuando cambie «${s.col || 'cualquier columna'}» en ${s.sheet}` }
+    };
+    const cur = T[s.type];
+    const types = ids => ids.map(id => { const on = s.type === id; return { label: T[id].label, on: String(on), bg: on ? '#FFFFFF' : 'transparent', fg: '#12131A', pick: () => this.setState({ type: id, tested: false }) }; });
+    const timeBased = ['dia', 'semana', 'vez'].includes(s.type);
+    const preview = timeBased
+      ? (s.type === 'vez' ? `Se hará ${s.date} a las ${s.hour} y se apagará sola.` : `Próximas veces: ${s.type === 'semana' ? `${s.day} 19, ${s.day} 26 y ${s.day} 2 de noviembre` : 'mañana, el lunes y el martes'}, a las ${s.hour}.`)
+      : (s.tested ? 'Con lo que ya ha pasado esta semana, se habría activado 3 veces. Parece correcto.' : 'Pruébala con lo que ya ha pasado para ver si se activaría.');
+    const BASE = [
+      { text: 'Cada día laborable a las 8:00, Bruno registra las facturas nuevas y te avisa si alguna pasa de 500 €.', meta: 'Última vez hoy a las 8:00 · 12 facturas', w: WHO[3] },
+      { text: 'Cada lunes a las 9:00, Atlas prepara el plan de la semana y te lo deja en Hoy.', meta: 'Próxima vez el lunes 19 a las 9:00', w: WHO[0] },
+      { text: 'Cuando llegue un correo de un cliente con «urgente», Vera prepara una respuesta y te pide OK.', meta: 'Se activó 2 veces esta semana', w: WHO[1] },
+      { text: 'Una hora antes de cada reunión con clientes, Nora te prepara una ficha del cliente.', meta: 'En pausa desde el viernes', w: WHO[4] }
+    ];
+    const all = s.added.map(a => ({ ...a, isNew: true })).concat(BASE);
+    const onList = s.added.map(a => a.on).concat(s.on);
+    const sentence = `${cur.when()}, ${who.name} ${s.what} y ${outText}.`;
+    const BOTS2 = { atlas: ['Atlas', '#FFC93C', HEX, '0'], vera: ['Vera', '#7B4DFF', 'none', '50% 12% 50% 12%'], tomas: ['Tomás', '#0B8A5F', 'none', '24%'], bruno: ['Bruno', '#FF7A1A', 'none', '50% 50% 14% 14%'], nora: ['Nora', '#2F6BFF', 'none', '50%'], iris: ['Iris', '#FF5CA8', 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)', '0'] };
+    const ORD0 = [
+      { name: 'Facturas de proveedores', bot: 'bruno', what: 'Revisa las facturas que lleguen y apúntalas en la hoja de gastos.', stop: 'Si el importe pasa de 500 € o falta algún dato.', foot: 'Avisos como mucho: 1 al día · sin fecha de fin · 41 facturas este mes' },
+      { name: 'Correos de clientes urgentes', bot: 'vera', what: 'Lee los correos de clientes y prepara una respuesta para los urgentes.', stop: 'Antes de responder a un cliente nuevo o si hay una queja.', foot: 'Avisos como mucho: cada vez · hasta el 31 de diciembre' }
+    ];
+    const allOrders = s.orders.concat(ORD0);
+    const of = s.of;
+    const ofReady = of.name.trim() && of.what.trim();
+    const pseg = (val, list, key) => list.map((label, i) => ({ label, on: String(val === i), bg: val === i ? '#FFFFFF' : 'transparent', sh: val === i ? '0 1px 3px rgba(18,19,26,.15)' : 'none', pick: () => this.setState({ of: { ...of, [key]: i } }) }));
+    const rf = s.rf;
+    const rfReady = rf.topic.trim() && rf.what.trim();
+    const isR = s.tab === 'rut';
+    return {
+      open: s.open,
+      openNew: () => this.setState({ open: true, panel: 'when' }),
+      isRut: isR, isOrd: s.tab === 'ord', isRem: s.tab === 'rem',
+      tabs: [['rut', 'Rutinas', 4 + s.added.length], ['ord', 'Encargos', allOrders.length], ['rem', 'Recordatorios por tema', s.rems.length]].map(([id, label, n]) => ({ label, n: String(n), on: String(s.tab === id), bg: s.tab === id ? '#FFFFFF' : 'transparent', sh: s.tab === id ? '0 1px 3px rgba(18,19,26,.15)' : 'none', pick: () => this.setState({ tab: id }) })),
+      tabDesc: { rut: 'Lo que tu colmena hace sola, cuando toca. Se leen como una frase.', ord: 'Trabajos de fondo que un bot atiende siempre que hace falta, con sus límites claros.', rem: '«Cuando se hable de X, recuérdame Y». Te avisa y lo deja anotado en la sala.' }[s.tab],
+      newLabel: { rut: 'Nueva rutina', ord: 'Nuevo encargo', rem: 'Nuevo recordatorio' }[s.tab],
+      newAction: () => s.tab === 'rut' ? this.setState({ open: true, panel: 'when' }) : (s.tab === 'ord' ? this.setState({ ordForm: true }) : null),
+      ordForm: s.ordForm,
+      of: {
+        name: of.name, nameChange: e => this.setState({ of: { ...of, name: e.target.value } }),
+        what: of.what, whatChange: e => this.setState({ of: { ...of, what: e.target.value } }),
+        stop: of.stop, stopChange: e => this.setState({ of: { ...of, stop: e.target.value } }),
+        bots: Object.entries(BOTS2).map(([id, b2]) => { const on = of.bot === id; return { name: b2[0], on: String(on), bg: on ? '#12131A' : 'rgba(18,19,26,.05)', fg: on ? '#FFFFFF' : '#12131A', fill: this.fill(b2[1]), clip: b2[2], radius: b2[3], pick: () => this.setState({ of: { ...of, bot: id } }) }; }),
+        notify: pseg(of.notify, ['Cada vez', '1 al día', '1 a la semana'], 'notify'),
+        until: pseg(of.until, ['Sin fecha', 'Fin de mes', 'Fin de año'], 'until'),
+        saveBg: ofReady ? '#12131A' : 'rgba(18,19,26,.08)', saveFg: ofReady ? '#FFFFFF' : '#8A8D96',
+        cancel: () => this.setState({ ordForm: false }),
+        save: () => { if (!ofReady) return; this.setState({ orders: [{ name: of.name, bot: of.bot, what: of.what, stop: of.stop || 'Solo en las líneas rojas.', foot: `Avisos como mucho: ${['cada vez', '1 al día', '1 a la semana'][of.notify]} · ${['sin fecha de fin', 'hasta fin de mes', 'hasta fin de año'][of.until]} · recién creado`, isNew: true }, ...s.orders], ordForm: false, of: { name: '', bot: 'bruno', what: '', stop: '', notify: 1, until: 0 } }); }
+      },
+      orders: allOrders.map((o, i) => { const b2 = BOTS2[o.bot]; return { name: o.name, meta: b2[0] + ' se encarga', what: o.what, stop: o.stop, foot: o.foot, fill: this.fill(b2[1]), clip: b2[2], radius: b2[3], enter: o.isNew ? 'pop .45s ease-out' : 'none', routineLabel: s.toR[o.name] ? 'Automatización creada ✓' : 'Crear la automatización', toRoutine: () => this.setState({ toR: { ...s.toR, [o.name]: true } }) }; }),
+      rf: {
+        topic: rf.topic, topicChange: e => this.setState({ rf: { ...rf, topic: e.target.value } }),
+        what: rf.what, whatChange: e => this.setState({ rf: { ...rf, what: e.target.value } }),
+        hint: rfReady || !(rf.topic || rf.what) ? 'Palabras o frases separadas por comas.' : 'Escribe al menos una palabra o frase en cada lado.',
+        hintFg: rfReady || !(rf.topic || rf.what) ? '#6B6F7A' : '#8A5A00',
+        btnBg: rfReady ? '#12131A' : 'rgba(18,19,26,.08)', btnFg: rfReady ? '#FFFFFF' : '#8A8D96',
+        add: () => { if (!rfReady) return; this.setState({ rems: [[rf.topic.trim(), rf.what.trim(), 'Recién añadido'], ...s.rems], rf: { topic: '', what: '' }, remsNew: s.remsNew + 1 }); }
+      },
+      reminders: s.rems.map(([topic, what, meta], i) => ({ topic, what, meta, enter: i < s.remsNew ? 'pop .45s ease-out' : 'none', remove: () => this.setState({ rems: s.rems.filter((_, j) => j !== i), remsNew: Math.max(0, s.remsNew - (i < s.remsNew ? 1 : 0)) }) })),
+      noRem: s.rems.length === 0,
+      tk: { when: tok('when'), who: tok('who'), what: tok('what'), out: tok('out') },
+      panelOpen: !!s.panel,
+      closePanel: () => this.setState({ panel: null }),
+      whenText: cur.when(),
+      who: { name: who.name, fill: this.fill(who.c), clip: who.clip, radius: who.r },
+      whoOpts: WHO.map(w => ({ ...check(w.id === s.who), name: w.name, role: w.role, fill: this.fill(w.c), clip: w.clip, radius: w.r, pick: () => this.setState({ who: w.id, what: (WHAT_BY[w.id] || [['resume lo importante']])[0][0], panel: 'what' }) })),
+      what: s.what,
+      whatTitle: `¿Qué hace ${who.name}?`,
+      whatOpts: (WHAT_BY[who.id] || []).map(([label, desc]) => ({ ...check(label === s.what), label: label.charAt(0).toUpperCase() + label.slice(1), desc, pick: () => this.setState({ what: label, panel: 'out' }) })),
+      custom: s.custom,
+      customChange: e => this.setState({ custom: e.target.value }),
+      customBtn: s.custom.trim() ? { bg: '#12131A', fg: '#FFFFFF' } : { bg: 'rgba(18,19,26,.08)', fg: '#8A8D96' },
+      useCustom: () => { const t = s.custom.trim(); if (t) this.setState({ what: t.charAt(0).toLowerCase() + t.slice(1), custom: '', panel: 'out' }); },
+      outText,
+      outOpts: OUTS.map(o => ({ ...check(o.id === s.out), label: o.title, desc: o.desc, glyph: o.glyph, tint: o.tint, pick: () => this.setState({ out: o.id }) })),
+      outRoomShow: s.out === 'sala',
+      rooms: ['#informe-q3', '#campaña-primavera', '#facturación'].map(r => { const on = s.outRoom === r; return { label: r, on: String(on), bg: on ? '#12131A' : '#FFFFFF', fg: on ? '#FFFFFF' : '#12131A', sh: on ? 'none' : '0 1px 2px rgba(18,19,26,.06)', pick: () => this.setState({ outRoom: r }) }; }),
+      typesTime: types(['dia', 'semana', 'vez']),
+      typesEvent: types(['correo', 'archivo', 'evento', 'sala', 'hoja']),
+      groups: cur.groups.map(([label, items]) => ({ label, items })),
+      field: cur.field ? { show: true, label: cur.field[0], value: s[cur.field[1]], change: e => this.setState({ [cur.field[1]]: e.target.value }) } : { show: false, label: '', value: '', change: () => {} },
+      preview,
+      testLabel: timeBased ? 'Probar ahora' : (s.tested ? 'Probada' : 'Probar'),
+      test: () => this.setState({ tested: true }),
+      activate: () => this.setState({ added: [{ text: sentence, meta: 'Recién activada', w: who, on: true }, ...s.added], open: false, panel: null }),
+      routines: all.map((r, i) => {
+        const on = onList[i];
+        return {
+          text: r.text, meta: r.meta, fill: this.fill(r.w.c), clip: r.w.clip, radius: r.w.r,
+          on: String(on), aria: 'Activar o pausar: ' + r.text, bg: on ? '#0B8A5F' : 'rgba(18,19,26,.14)', x: on ? 'translateX(20px)' : 'translateX(0)', op: on ? '1' : '.55',
+          enter: r.isNew ? 'pop .5s ease-out' : 'none',
+          toggle: () => {
+            const nAdded = s.added.length;
+            if (i < nAdded) { const added = s.added.map((a, j) => j === i ? { ...a, on: !a.on } : a); this.setState({ added }); }
+            else { const o = s.on.slice(); o[i - nAdded] = !o[i - nAdded]; this.setState({ on: o }); }
+          }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

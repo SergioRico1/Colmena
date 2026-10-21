@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Arquitectura de la información</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+a{color:#12131A}a:hover{color:#2F6BFF}
+</style>
+</helmet>
+<div style="min-height: 1640px; background: #EEF0F4">
+
+<header style="background: #12131A; color: #FFFFFF; padding: 48px 20px 52px">
+<div style="max-width: 1280px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 760px">
+<div style="display: flex; align-items: center; gap: 10px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<span style="font: 500 13px/1 'Geist Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; color: #C9CCD6">Colmena · cómo está organizada</span>
+</div>
+<h1 style="margin: 0; font: 800 clamp(36px, 5vw, 60px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; text-wrap: balance">Arquitectura de la información</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.5; color: #C9CCD6; max-width: 620px">Seis piezas, ocho secciones y tres formas de trabajar. Pensado para quien diseña, programa, analiza o gestiona, sin necesidad de saber nada de IA.</p>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<a href="Main.dc.html" style="display: flex; align-items: center; height: 46px; padding: 0 18px; background: #FFC93C; color: #12131A; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none">Ver las pantallas</a>
+</div>
+</div>
+</header>
+
+<div style="max-width: 1280px; margin: 0 auto; padding: 48px 20px 72px; display: flex; flex-direction: column; gap: 56px">
+
+<section aria-labelledby="modelo" style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap">
+<span style="font: 500 14px/1 'Geist Mono', monospace; color: #555A68">01</span>
+<h2 id="modelo" style="margin: 0; font: 800 32px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">El modelo: seis piezas</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px">
+<div style="flex: 1 1 200px; background: #12131A; color: #FFFFFF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><span style="font: 500 12px/1 'Geist Mono', monospace; color: #FFC93C; letter-spacing: 0.06em; text-transform: uppercase">Contenedor</span><strong style="font: 700 22px/1.1 'Bricolage Grotesque', sans-serif">Espacio</strong><span style="font-size: 14px; line-height: 1.45; color: #C9CCD6">El equipo o departamento. Tiene sus bots, salas, conectores y reglas.</span></div>
+<div aria-hidden="true" style="display: grid; place-items: center; width: 28px; flex: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12131A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+<div style="flex: 1 1 200px; background: #FFFFFF; border: 2px solid #12131A; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68; letter-spacing: 0.06em; text-transform: uppercase">Dónde se habla</span><strong style="font: 700 22px/1.1 'Bricolage Grotesque', sans-serif">Sala</strong><span style="font-size: 14px; line-height: 1.45; color: #4A4F5C">Personas y bots conversando sobre un tema. Privada (tú y un bot) o de equipo.</span></div>
+<div aria-hidden="true" style="display: grid; place-items: center; width: 28px; flex: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12131A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+<div style="flex: 1 1 200px; background: #FFFFFF; border: 2px solid #12131A; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68; letter-spacing: 0.06em; text-transform: uppercase">Qué se hace</span><strong style="font: 700 22px/1.1 'Bricolage Grotesque', sans-serif">Misión</strong><span style="font-size: 14px; line-height: 1.45; color: #4A4F5C">Un encargo con objetivo, plan, responsables y fecha. Nace en una sala.</span></div>
+<div aria-hidden="true" style="display: grid; place-items: center; width: 28px; flex: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#12131A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></div>
+<div style="flex: 1 1 200px; background: #FFC93C; border: 2px solid #12131A; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><span style="font: 500 12px/1 'Geist Mono', monospace; color: #12131A; letter-spacing: 0.06em; text-transform: uppercase">Qué sale</span><strong style="font: 700 22px/1.1 'Bricolage Grotesque', sans-serif">Entregable</strong><span style="font-size: 14px; line-height: 1.45; color: #12131A">Hoja, documento, diseño o código. Se guarda solo en la Biblioteca.</span></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<div style="flex: 1 1 380px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; gap: 16px; align-items: flex-start">
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(3, 26px); gap: 4px; flex: none">
+<span style="width: 26px; height: 26px; background: #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"></span><span style="width: 26px; height: 26px; background: #2F6BFF; border-radius: 50%"></span><span style="width: 26px; height: 26px; background: #0B8A5F; border-radius: 6px"></span><span style="width: 26px; height: 26px; background: #FF5CA8; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%)"></span><span style="width: 26px; height: 26px; background: #FF7A1A; border-radius: 50% 50% 5px 5px"></span><span style="width: 26px; height: 26px; background: #7B4DFF; border-radius: 50% 4px 50% 4px"></span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><strong style="font: 700 22px/1.1 'Bricolage Grotesque', sans-serif">Bot</strong><span style="font-size: 14px; line-height: 1.45; color: #4A4F5C">Un compañero con rol, personalidad, habilidades, herramientas, memoria y nivel de autonomía. Participa en salas y misiones; puede hablar con otros bots.</span></div>
+</div>
+<div style="flex: 1 1 380px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 6px"><strong style="font: 700 22px/1.1 'Bricolage Grotesque', sans-serif">Biblioteca</strong><span style="font-size: 14px; line-height: 1.45; color: #4A4F5C">Lo que el espacio sabe y tiene: archivos, entregables, memoria compartida y las habilidades que los bots aprenden con el uso.</span></div>
+</div>
+</section>
+
+<section aria-labelledby="nav" style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap">
+<span style="font: 500 14px/1 'Geist Mono', monospace; color: #555A68">02</span>
+<h2 id="nav" style="margin: 0; font: 800 32px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Mapa de navegación</h2>
+<span style="font-size: 15px; color: #4A4F5C">Barra lateral: cinco secciones fijas y dos listas, como en un chat de equipo</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 12px">
+
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><strong style="font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Inicio</strong><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68">A</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #4A4F5C">Qué pasa hoy y qué te necesita.</span>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px"><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Pedir algo (un bot, equipo o debate)</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Misiones en marcha</li><li style="padding: 7px 10px; background: #FFF4D1; border-radius: 8px; font-weight: 600">Necesitan tu OK</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Programado hoy</li></ul>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><strong style="font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Salas</strong><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68">B</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #4A4F5C">Donde se conversa y se trabaja.</span>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px"><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Mensajes, como en un chat de equipo</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Lo que hablan los bots, en hilos</li><li style="padding: 7px 10px; background: #FFF4D1; border-radius: 8px; font-weight: 600">Pregunta pendiente, fijada arriba</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Panel lateral: hilo o progreso</li></ul>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><strong style="font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Misiones</strong><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68">C</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #4A4F5C">Todos los encargos, de todas las salas.</span>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px"><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Filtros: mías · me esperan · terminadas</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Vista tablero y vista calendario</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Plantillas de misión</li></ul>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><strong style="font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Tu equipo</strong><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68">D</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #4A4F5C">Un chat por bot, como mensajes directos.</span>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px"><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Chat 1:1 con sus conversaciones anteriores</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Documentos y tablas en un panel lateral</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Perfil: rol, autonomía, habilidades, memoria</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Galería para contratar bots nuevos</li></ul>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><strong style="font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Biblioteca</strong><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68">E</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #4A4F5C">Lo que el equipo sabe y ha producido.</span>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px"><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Archivos y entregables</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Memoria compartida</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Habilidades aprendidas · por revisar</li></ul>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><strong style="font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Automatizaciones</strong><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68">F</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #4A4F5C">Trabajo que ocurre sin que lo pidas.</span>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px"><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Programadas: cada día a las 8:00…</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Disparadores: cuando llegue un correo…</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Historial de ejecuciones</li></ul>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><strong style="font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Conectores</strong><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68">G</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #4A4F5C">Dentro de Ajustes: apps y lugares a los que llegan.</span>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px"><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Apps conectadas</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Este ordenador: carpetas y programas</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Permisos por bot</li></ul>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between"><strong style="font: 700 20px/1.1 'Bricolage Grotesque', sans-serif">Ajustes</strong><span style="font: 500 12px/1 'Geist Mono', monospace; color: #555A68">H</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #4A4F5C">Reglas del espacio, para quien lo administra.</span>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px"><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Personas y roles</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Límites de gasto y tiempo</li><li style="padding: 7px 10px; background: #F4F5F8; border-radius: 8px">Seguridad y registro de acciones</li></ul>
+</div>
+</div>
+
+<div style="background: #12131A; color: #FFFFFF; border-radius: 16px; padding: 18px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px">
+<strong style="font: 700 18px/1.1 'Bricolage Grotesque', sans-serif; color: #FFC93C">Siempre a mano</strong>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px"><span style="font: 500 12px/1 'Geist Mono', monospace; padding: 5px 7px; border: 1px solid #3A3E4B; border-radius: 6px">⌘K</span>Buscar y dar órdenes</span>
+<span style="font-size: 14px">Bandeja de OKs, también en la barra lateral</span>
+<span style="font-size: 14px">@ para llamar a cualquier bot</span>
+<span style="font-size: 14px">Estado del equipo en la barra lateral</span>
+<span style="font-size: 14px">Pausar a todo el equipo</span>
+</div>
+</section>
+
+<section style="display: flex; flex-wrap: wrap; gap: 24px">
+<div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; gap: 14px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #555A68">03</span><h2 style="margin: 0; font: 800 32px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Tres formas de trabajar</h2></div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; padding: 16px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Un bot</strong><span style="font-size: 14px; line-height: 1.5; color: #2B2D36">Conversación directa. Para dudas y tareas cortas: «Nora, resume este informe».</span></div>
+<div style="display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; background: #FFFFFF; border: 2px solid #12131A; border-radius: 14px; padding: 16px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Equipo</strong><span style="font-size: 14px; line-height: 1.5; color: #2B2D36">Atlas propone un plan, tú lo apruebas, los bots se reparten el trabajo y se pasan material. Ves un resumen de lo que hablan entre ellos.</span></div>
+<div style="display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; padding: 16px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Debate</strong><span style="font-size: 14px; line-height: 1.5; color: #2B2D36">Varios bots resuelven lo mismo por separado, se critican y tú comparas las propuestas lado a lado.</span></div>
+</div>
+</div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; gap: 14px"><span style="font: 500 14px/1 'Geist Mono', monospace; color: #555A68">04</span><h2 style="margin: 0; font: 800 32px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Autonomía</h2></div>
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px; overflow: hidden">
+<div style="display: grid; grid-template-columns: 8px 1fr; min-height: 64px"><span style="background: #DCE0E8"></span><span style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">1 · Solo sugiere</strong><span style="font-size: 14px; color: #4A4F5C">Prepara y espera tu aprobación.</span></span></div>
+<div style="display: grid; grid-template-columns: 8px 1fr; min-height: 64px; border-top: 1px solid #E6E8EE"><span style="background: #8C91A0"></span><span style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">2 · Actúa y te avisa</strong><span style="font-size: 14px; color: #4A4F5C">El nivel por defecto para todo bot nuevo.</span></span></div>
+<div style="display: grid; grid-template-columns: 8px 1fr; min-height: 64px; border-top: 1px solid #E6E8EE"><span style="background: #12131A"></span><span style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 15px">3 · Actúa solo</strong><span style="font-size: 14px; color: #4A4F5C">Para tareas repetidas y de confianza.</span></span></div>
+<div style="padding: 14px 16px; background: #FFF4D1; border-top: 1px solid #F2D27A; font-size: 14px; line-height: 1.5"><strong>Líneas rojas:</strong> enviar algo fuera, mover dinero, borrar o instalar siempre piden permiso, sea cual sea el nivel.</div>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="identidad" style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap">
+<span style="font: 500 14px/1 'Geist Mono', monospace; color: #555A68">05</span>
+<h2 id="identidad" style="margin: 0; font: 800 32px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Identidad de los bots</h2>
+<span style="font-size: 15px; color: #4A4F5C">Forma, color e inicial: nunca solo el color</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px"><span aria-hidden="true" style="width: 56px; height: 56px; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 26px/1 'Bricolage Grotesque', sans-serif">A</span><strong style="font-size: 16px">Atlas</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Coordinador · hexágono</span></div>
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px"><span aria-hidden="true" style="width: 56px; height: 56px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 26px/1 'Bricolage Grotesque', sans-serif">N</span><strong style="font-size: 16px">Nora</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Investigación · círculo</span></div>
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px"><span aria-hidden="true" style="width: 56px; height: 56px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 12px; font: 800 26px/1 'Bricolage Grotesque', sans-serif">T</span><strong style="font-size: 16px">Tomás</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Datos y finanzas · cuadrado</span></div>
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px"><span aria-hidden="true" style="width: 56px; height: 56px; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 22px/1 'Bricolage Grotesque', sans-serif">I</span><strong style="font-size: 16px">Iris</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Diseño · rombo</span></div>
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px"><span aria-hidden="true" style="width: 56px; height: 56px; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 10px 10px; font: 800 26px/1 'Bricolage Grotesque', sans-serif">B</span><strong style="font-size: 16px">Bruno</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Código · arco</span></div>
+<div style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px"><span aria-hidden="true" style="width: 56px; height: 56px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 8px 50% 8px; font: 800 26px/1 'Bricolage Grotesque', sans-serif">V</span><strong style="font-size: 16px">Vera</strong><span style="font-size: 13px; line-height: 1.4; color: #4A4F5C">Redacción · hoja</span></div>
+</div>
+</section>
+
+<section aria-labelledby="principios" style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: baseline; gap: 14px">
+<span style="font: 500 14px/1 'Geist Mono', monospace; color: #555A68">06</span>
+<h2 id="principios" style="margin: 0; font: 800 32px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Principios de experiencia</h2>
+</div>
+<ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 12px">
+<li style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Lo que te bloquea, siempre arriba</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">Un único estilo, borde negro y sombra miel, marca todo lo que espera por ti, en cualquier pantalla.</span></li>
+<li style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Entre bots: resumen, no ruido</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">Lo que hablan entre ellos va en un hilo con una línea de resumen. Lo abres con un clic y puedes intervenir.</span></li>
+<li style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Nada nuevo que aprender</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">El chat con un bot funciona como un asistente de IA de escritorio; las salas, como un chat de equipo: mensajes, hilos, @menciones y archivos.</span></li>
+<li style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Lenguaje de oficina</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">Se dice bot, instrucciones, habilidad y forma de pensar. Nada de agentes, prompts, tokens o modelos en la interfaz principal.</span></li>
+<li style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Cada acción tiene dueño</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">Todo mensaje, traspaso y entregable lleva la cara del bot que lo hizo y la hora. El registro se puede auditar.</span></li>
+<li style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Aprender, con permiso</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">Los bots crean habilidades al repetir tareas, pero no las usan hasta que alguien revisa los pasos.</span></li>
+<li style="background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font: 700 18px/1.2 'Bricolage Grotesque', sans-serif">Siempre se puede parar</strong><span style="font-size: 14px; line-height: 1.5; color: #4A4F5C">Pausar a un bot, a una sala o a todo el equipo está a un clic, y el trabajo hecho se conserva.</span></li>
+</ol>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

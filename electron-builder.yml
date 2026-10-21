@@ -1,0 +1,102 @@
+# Installers for Colmena (electron-builder). `npm run dist` builds for this platform;
+# GitHub Actions builds Windows and macOS on a v* tag and publishes to GitHub Releases
+# (see docs/RELEASING.md). Code signing turns on by itself when its secrets are present.
+appId: Colmena.App # Windows AppUserModelID (same as desktop/main.cjs) and macOS bundle id
+productName: Colmena
+copyright: Copyright © 2026 Sergio Rico
+artifactName: Colmena-${version}-${os}-${arch}.${ext}
+
+directories:
+  output: release
+  buildResources: build
+
+# The server runs as a separate Node process (Electron's own Node, ELECTRON_RUN_AS_NODE):
+# plain files, not an asar archive, so its ES modules, native addons (node-pty,
+# @napi-rs/canvas) and helper programs load exactly as in development.
+asar: false
+# Colmena speaks Spanish; English stays as Chromium's fallback. Other locales are 45 MB.
+electronLanguages: [es, en-US]
+# N-API addons with prebuilt binaries: nothing to compile for Electron.
+npmRebuild: false
+nodeGypRebuild: false
+buildDependenciesFromSource: false
+
+files:
+  - package.json
+  - desktop/**
+  - server/**
+  - dist/**
+  - prompts/**
+  - licenses/**
+  - LICENSE
+  - THIRD_PARTY_NOTICES.md
+  - "!desktop/icons/*-src.*"
+  - "!**/*.{map,pdb}"
+  # Sources and build leftovers of node-pty; its prebuilt binaries stay.
+  - "!node_modules/node-pty/{src,deps,third_party,scripts,typings,binding.gyp}"
+  - "!node_modules/node-pty/build/**/obj/**"
+  - "!node_modules/@napi-rs/canvas-{android,linux}-*/**"
+
+publish:
+  - provider: github
+    owner: SergioRico1
+    repo: Colmena
+    releaseType: release
+
+# A stable release also writes beta.yml, so people on the beta channel get it when it is newer.
+generateUpdatesFilesForAllChannels: true
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.ico
+  executableName: Colmena
+  # Signing with a certificate from CSC_LINK / CSC_KEY_PASSWORD (WIN_CSC_LINK too) when set.
+  signAndEditExecutable: true
+  verifyUpdateCodeSignature: false
+
+nsis:
+  oneClick: false
+  perMachine: false
+  # «Solo para mí» (no admin) by default; «Para todos los usuarios» is offered and asks for admin.
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Colmena
+  uninstallDisplayName: Colmena
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  # Your bots, chats and accounts live in %LOCALAPPDATA%\Colmena: uninstalling never deletes them.
+  deleteAppDataOnUninstall: false
+  differentialPackage: true
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip # electron-updater installs updates from the zip
+      arch: [x64, arm64]
+  icon: build/icon.png
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # Signed when CSC_LINK holds a «Developer ID Application» certificate; notarized when
+  # APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID are set (see docs/RELEASING.md).
+  notarize: true
+  extendInfo:
+    NSAppleEventsUsageDescription: Colmena controls other apps only when you ask a bot to.
+    NSMicrophoneUsageDescription: Colmena uses the microphone when you dictate a message.
+
+dmg:
+  title: Colmena ${version}
+  contents:
+    - x: 140
+      y: 190
+    - x: 400
+      y: 190
+      type: link
+      path: /Applications

@@ -1,0 +1,201 @@
+/* Fonts served locally (the mockups load the same families from Google Fonts).
+   Bricolage Grotesque uses the variable "opsz" build so optical sizing matches. */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("../../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-ext-opsz-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("../../node_modules/@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-opsz-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+button:disabled{cursor:not-allowed}
+@keyframes colmena-spin{to{transform:rotate(360deg)}}
+@keyframes colmena-blink{50%{opacity:0}}
+@keyframes colmena-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+/* ---------- Layout: the window never scrolls as a whole ----------
+   Sidebar, each column and each panel scroll on their own (like Slack). In chats
+   only the messages scroll: header stays on top, the composer anchored at the bottom. */
+html,body{height:100%;overflow:hidden;overflow:clip}
+#root{position:relative;height:100%;box-sizing:border-box;overflow:clip;display:flex;flex-direction:column}
+#root > :not(style):not([data-window-chrome]){flex:1 1 auto;min-height:0!important;overflow-y:auto}
+html.colmena-desktop{--chrome:36px}
+html.colmena-desktop #root{padding-top:36px}
+html.colmena-desktop[data-v2]{--chrome:0px}
+html.colmena-desktop[data-v2] #root{padding-top:0}
+@media (min-width: 900px){
+  #root > div:has(> nav.colmena-sidebar){overflow:hidden!important;flex-wrap:nowrap!important}
+  #root > div:has(> nav.colmena-sidebar) > :not(style){height:100%;min-height:0!important;overflow-y:auto;overscroll-behavior:contain}
+  #root > div:has(> nav.colmena-sidebar) > nav.colmena-sidebar{overflow:hidden}
+  .colmena-sidebar{flex-shrink:0}
+  .colmena-sidebar-scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#2C2F3A transparent}
+  .colmena-chat{overflow:hidden!important}
+  .colmena-chat > *{flex-shrink:0}
+  .colmena-chat > .colmena-chat-body{flex:1 1 0!important;min-height:0;flex-wrap:nowrap!important;overflow:hidden}
+  .colmena-chat-body > *{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+}
+.colmena-sidebar-scroll::-webkit-scrollbar{width:8px}
+.colmena-sidebar-scroll::-webkit-scrollbar-thumb{background:#2C2F3A;border-radius:8px;border:2px solid #12131A}
+.colmena-sidebar-scroll::-webkit-scrollbar-thumb:hover{background:#3A3E4B}
+.colmena-sidebar-scroll::-webkit-scrollbar-track{background:transparent}
+/* Keyboard focus everywhere (mouse clicks show nothing): blue on light, white on the dark sidebar. */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid #2F6BFF;outline-offset:2px}
+.colmena-sidebar :where(a,button):focus-visible{outline-color:#FFFFFF}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+.colmena-skeleton{background:linear-gradient(90deg,#E6E8EE 0%,#F2F4F7 40%,#E6E8EE 80%);background-size:300% 100%;animation:colmena-shimmer 1.6s ease-in-out infinite}
+@keyframes colmena-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+.colmena-skeleton--dark{background:linear-gradient(90deg,#262833 0%,#353845 40%,#262833 80%);background-size:300% 100%}
+/* Jump targets (profile sections…) land below sticky tab bars. */
+main [id]{scroll-margin-top:72px}
+@keyframes colmena-breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.96)}}
+/* «Pregunta rápida»: a transparent window around a Colmena card. */
+html.colmena-quick,html.colmena-quick body{background:transparent!important}
+html.colmena-quick #root{padding-top:0!important}
+/* Conversation rows (Slack-style): soft hover, floating actions, time in the gutter of a continued message. */
+.msg-row{position:relative;border-radius:10px}
+.msg-row:hover{background:#F7F8FA}
+.msg-actions{position:absolute;top:-14px;right:12px;display:flex;gap:2px;padding:2px;background:#FFFFFF;border:1px solid #DCE0E8;border-radius:10px;box-shadow:0 6px 16px -8px rgba(18,19,26,.35);opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:2}
+.msg-row:hover .msg-actions,.msg-row:focus-within .msg-actions,.msg-actions:has([aria-pressed="true"]){opacity:1;pointer-events:auto}
+.msg-gutter-time{align-self:start;padding-top:3px;font-size:11px;color:#555A68;text-align:right;opacity:0;font-variant-numeric:tabular-nums}
+.msg-row:hover .msg-gutter-time{opacity:1}
+/* Reactions (Slack): chips under the message, one-click picks in the hover toolbar */
+.msg-actions button:hover,.react-pick:hover{background:#EEF0F4 !important}
+.react-chip:hover{border-color:#B8BECB !important}
+.react-chip[aria-pressed="true"]:hover{border-color:#1F4FD1 !important}
+.react-count{animation:react-pop .18s ease-out}
+@keyframes react-pop{from{transform:translateY(3px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.react-count{animation:none}}
+/* Links and images are never dragged as a URL ghost (Electron app, not a web page);
+   only what is meant to move (rooms in the sidebar) is draggable. */
+a,img,svg{-webkit-user-drag:none}
+[draggable="true"]{-webkit-user-drag:element}
+/* Your messages in a room: same layout as everyone's (Slack), on a very soft gray so you find them at a glance */
+.msg-row--mine{background:#F4F5F8}
+.msg-row--mine:hover{background:#EDEFF3}
+.msg-row--mine + .msg-row--mine{border-top-left-radius:0;border-top-right-radius:0}
+.msg-row--mine:has(+ .msg-row--mine){border-bottom-left-radius:0;border-bottom-right-radius:0}
+/* ── Micro-animations (lib/motion.js): short, transform/opacity only ───────── */
+:root{--c-ease:cubic-bezier(.2,.8,.2,1)}
+@keyframes c-rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes c-pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes c-pop-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes c-slide-down{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes c-flash{0%{background-color:#FFF1C2}100%{background-color:rgba(255,241,194,0)}}
+@keyframes c-bump{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes c-launch{0%{transform:none;opacity:1}45%{transform:translateY(-12px);opacity:0}46%{transform:translateY(10px);opacity:0}100%{transform:none;opacity:1}}
+.c-enter{animation:c-rise 240ms var(--c-ease) both}
+.c-pop{animation:c-pop 240ms var(--c-ease) both}
+.c-band{animation:c-slide-down 180ms var(--c-ease) both}
+.c-flash{animation:c-flash 1.6s ease-out both;border-radius:8px}
+.c-bump{display:inline-block;animation:c-bump 260ms var(--c-ease)}
+.c-launch{animation:c-launch 340ms var(--c-ease)}
+.c-press{transition:transform 80ms ease}
+.c-press:active:not(:disabled){transform:scale(.96)}
+.msg-actions{transform:translateY(2px);transition:opacity .12s ease,transform .12s var(--c-ease)}
+.msg-row:hover .msg-actions,.msg-row:focus-within .msg-actions{transform:none}
+/* ── Animations, second pass ─────────────────────────────────────────────── */
+@keyframes c-fade{from{opacity:0}to{opacity:1}}
+@keyframes c-panel{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes c-dialog{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes c-drop{from{opacity:0;transform:translateY(-8px) scale(.99)}to{opacity:1;transform:none}}
+@keyframes c-grow-y{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes c-dash{to{stroke-dashoffset:0}}
+/* 1 · a decided card folds away (lib/motion.js leave) */
+.c-leaving{overflow:hidden;opacity:0;transform:translateX(18px);margin-top:0!important;margin-bottom:0!important;padding-top:0!important;padding-bottom:0!important;border-width:0!important;transition:height 220ms var(--c-ease),opacity 160ms ease,transform 200ms var(--c-ease),padding 220ms var(--c-ease),margin 220ms var(--c-ease)}
+/* 2 · sliding indicator behind segmented controls and tabs */
+.c-seg{position:relative;isolation:isolate}
+.c-seg-pill{position:absolute;z-index:-1;border-radius:inherit;transition:left 220ms var(--c-ease),width 220ms var(--c-ease),top 220ms var(--c-ease),height 220ms var(--c-ease);pointer-events:none}
+/* 3 · side panels slide in; 4 · dialogs and their backdrop */
+.c-panel{animation:c-panel 200ms var(--c-ease) both}
+[role="dialog"][aria-modal="true"]{animation:c-dialog 180ms var(--c-ease) both}
+div:not(#root):has(> [role="dialog"][aria-modal="true"]){animation:c-fade 160ms ease both}
+/* 5 · copied / downloaded */
+.c-ok{display:inline-flex;align-items:center;gap:4px;animation:c-pop 240ms var(--c-ease) both}
+/* 6 · charts of a new answer grow once */
+.c-chart-in rect[data-bar]{transform-box:fill-box;transform-origin:50% 100%;animation:c-grow-y 420ms var(--c-ease) both}
+.c-chart-in polyline{stroke-dasharray:3000;stroke-dashoffset:3000;animation:c-dash 800ms ease-out forwards}
+.c-chart-in circle{animation:c-fade 240ms 600ms both}
+.c-chart-in path[data-slice]{transform-box:view-box;transform-origin:50% 50%;animation:c-pop-in 320ms var(--c-ease) both}
+/* 7 · progress segments fill instead of jumping */
+.c-seg-fill{transition:background-color 300ms ease,background-image 300ms ease,opacity 300ms ease}
+/* 8 · a check that draws itself once */
+.c-draw path,.c-draw polyline{stroke-dasharray:40;stroke-dashoffset:40;animation:c-dash 520ms ease-out 80ms forwards}
+/* 10 · drop zone */
+.c-drop-zone{animation:c-fade 140ms ease both}
+/* 11 · quick-ask window */
+.c-quick{animation:c-drop 170ms var(--c-ease) both}
+/* 12 · cards that open something lift a little on hover */
+.c-lift{transition:transform 160ms var(--c-ease),box-shadow 160ms ease}
+.c-lift:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(18,19,26,.35)}
+[role="alertdialog"][aria-modal="true"]{animation:c-dialog 180ms var(--c-ease) both}
+div:not(#root):has(> [role="alertdialog"][aria-modal="true"]){animation:c-fade 160ms ease both}
+aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) both}
+/* inline confirmations («¿Borrar …?») appear instead of popping */
+[role="alertdialog"]:not([aria-modal]){animation:c-slide-down 160ms var(--c-ease) both}
+/* Draggable left edge of the side panels (usePanelWidth). */
+.c-panel-resize{position:absolute;top:0;bottom:0;left:-5px;width:10px;cursor:col-resize;z-index:5;touch-action:none;outline:none}
+.c-panel-resize::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;background:transparent;transition:background .12s ease}
+.c-panel-resize:hover::after,.c-panel-resize:focus-visible::after,.c-resizing .c-panel-resize::after{background:#FFC93C}
+.c-resizing,.c-resizing *{cursor:col-resize !important;user-select:none !important}
+.c-resizing iframe{pointer-events:none}
+/* Working dots (OpenClaw): three dots that breathe while a bot works. */
+.c-dots{display:inline-flex;align-items:center;gap:3px;height:12px}
+.c-dots>i{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.25;animation:c-dot 1.1s infinite ease-in-out}
+.c-dots>i:nth-child(2){animation-delay:.15s}.c-dots>i:nth-child(3){animation-delay:.3s}
+@keyframes c-dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+@media (prefers-reduced-motion: reduce){.c-dots>i{animation:none;opacity:.6}}
+/* Hive phrase after 30 s of work: it fades in each time it changes. */
+.c-phrase{color:#6B7080;animation:c-fade 400ms ease both}
+@keyframes c-new-below{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
+.c-new-below{animation:c-new-below 180ms var(--c-ease) both}
+.c-spin{animation:colmena-spin .9s linear infinite}
+.c-panel-resize--end{left:auto;right:-5px}
+/* Side panel tabs (SideDock): close buttons show on hover, focus and for the active tab. */
+.c-dock-tab .c-dock-x{opacity:0;transition:opacity .12s ease}
+.c-dock-tab:hover .c-dock-x,.c-dock-tab:focus-within .c-dock-x,.c-dock-tab[aria-selected="true"] .c-dock-x{opacity:1}
+.c-dock-tab:hover{background:#EEF0F4}
+.c-dock-tab[aria-selected="true"]{background:#FFFFFF}
+.c-sel-btn:hover{background:#2B2D36!important}
+/* Copy buttons of tables and code blocks in answers: shown on hover and keyboard focus. */
+/* Links in a bot answer read as links (as the room links of NeedCard). */
+.rm-md a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(18,19,26,.28);transition:text-decoration-color .2s ease}
+.rm-md a:hover{text-decoration-color:currentColor}
+.c-md-copy{opacity:0;transition:opacity .12s ease}
+.c-md-table:hover .c-md-copy,.c-md-code:hover .c-md-copy,.c-md-copy:focus-visible{opacity:1}
+@media (hover:none){.c-md-copy{opacity:1}}
+/* A message you jumped to (search, a link): highlighted for a moment (OpenClaw reply target). */
+@keyframes c-reveal{0%,20%{box-shadow:0 0 0 3px #FFC93C;background-color:#FFF4D1}100%{box-shadow:0 0 0 0 rgba(255,201,60,0);background-color:rgba(255,244,209,0)}}
+.c-reveal{animation:c-reveal 1.3s ease-out both;border-radius:12px}
+@media (prefers-reduced-motion:reduce){.c-reveal{animation:none;box-shadow:0 0 0 3px #FFC93C}}
+
+/* Colmena 2.0 motion (design/V2*.dc.html): breathe, glow, appear; available before any screen. */
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

@@ -1,0 +1,98 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 4317
+    },
+    {
+      "name": "qa",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server/index.mjs"
+      ],
+      "port": 4319,
+      "env": {
+        "COLMENA_DATA_DIR": ".local/qa-data",
+        "COLMENA_PORT": "4319"
+      }
+    },
+    {
+      "name": "qa-prod",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server/index.mjs",
+        "--production"
+      ],
+      "port": 4323,
+      "env": {
+        "COLMENA_DATA_DIR": ".local/qa-data",
+        "COLMENA_PORT": "4323"
+      }
+    },
+    {
+      "name": "fake",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        ".local/fake-harness.mjs"
+      ],
+      "port": 4330
+    },
+    {
+      "name": "qa-watch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server/index.mjs"
+      ],
+      "port": 4321,
+      "env": {
+        "COLMENA_DATA_DIR": ".local/qa-watch",
+        "COLMENA_PORT": "4321"
+      }
+    },
+    {
+      "name": "qa-limits",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server/index.mjs",
+        "--production"
+      ],
+      "port": 4331,
+      "env": {
+        "COLMENA_DATA_DIR": ".local/qa-limits",
+        "COLMENA_PORT": "4331"
+      }
+    },
+    {
+      "name": "qa-undo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server/index.mjs",
+        "--production"
+      ],
+      "port": 4332,
+      "env": {
+        "COLMENA_DATA_DIR": ".local/qa-undo",
+        "COLMENA_PORT": "4332"
+      }
+    },
+    {
+      "name": "qa-code",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server/index.mjs"
+      ],
+      "port": 4334,
+      "env": {
+        "COLMENA_DATA_DIR": ".local/qa-code",
+        "COLMENA_PORT": "4334",
+        "COLMENA_CODE_DEBUG": "1"
+      }
+    }
+  ]
+}

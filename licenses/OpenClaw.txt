@@ -1,0 +1,28 @@
+Partes de Colmena adaptadas de OpenClaw (openclaw/openclaw):
+- prompts/SOUL.md (original literal) y prompts/SOUL.colmena.md
+- server/provider.mjs: búsqueda web nativa {type:"web_search"} (extensions/openai/native-web-search.ts) y creación de imágenes con image_generation (extensions/openai/image-generation-provider.ts, image-generation-codex-response.ts); reintentos acotados con el mismo modelo y modelo de respaldo (docs/concepts/model-failover.md)
+- server/web.mjs: exceedsNestingDepth y extracción con Readability + linkedom (extensions/web-readability/web-content-extractor.ts)
+- server/images.mjs: validación de la imagen recibida
+- prompts/skills/*.md: habilidades iniciales traducidas y adaptadas de skills/summarize, blogwatcher, diagram-maker, visualize, spike y healthcheck (MIT) y skills/skill-creator (Apache-2.0, ver licenses/OpenClaw-skill-creator-Apache-2.0.txt)
+
+MIT License
+
+Copyright (c) 2026 OpenClaw Foundation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

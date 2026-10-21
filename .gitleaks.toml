@@ -1,0 +1,14 @@
+# gitleaks: the default rules, minus the obviously fake keys the tests use as fixtures.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test fixtures"
+paths = ['''^tests/''']
+regexes = [
+  '''fixture''',
+  '''SUPERSECRETO''',
+  '''sk-test_''',
+  '''TEST_ONLY''',
+  '''GOOD_KEY|BAD_KEY''',
+]

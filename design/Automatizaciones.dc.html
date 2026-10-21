@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena · Automatizaciones</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+</style>
+</helmet>
+<div style="min-height: 1200px; display: flex; flex-wrap: wrap; background: #EEF0F4">
+
+<nav aria-label="Navegación principal" style="flex: 1 1 248px; background: #12131A; color: #C9CCD6; padding: 20px 14px 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px">
+<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 2h14l7 14-7 14H9L2 16z" fill="#FFC93C"></path><path d="M12.5 9h7l3.5 7-3.5 7h-7L9 16z" fill="#12131A"></path></svg>
+<span style="font: 800 22px/1 'Bricolage Grotesque', sans-serif; color: #FFFFFF; letter-spacing: -0.01em">Colmena</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Inicio</a>
+<a href="Bandeja.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 13h4l1 3h6l1-3h4M5 5h14l1 8v6H4v-6z"></path></svg><span style="flex: 1">Bandeja</span><span style="min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #FFC93C; color: #12131A; font: 600 11px/20px 'Geist Mono', monospace; text-align: center">3</span></a>
+<a href="Misiones.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg><span style="flex: 1">Misiones</span><span style="font: 500 12px/1 'Geist Mono', monospace; color: #9DA2B0">3</span></a>
+<a href="Biblioteca.dc.html" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4v16H5zM11 4h4v16h-4zM17 6l3 .8-3.2 13.4-3-.8z"></path></svg>Biblioteca</a>
+<a href="Automatizaciones.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 10px; background: #FFC93C; color: #12131A; font-weight: 600; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>Automatizaciones</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><span style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Salas</span><button type="button" aria-label="Nueva sala" style="width: 28px; height: 28px; display: grid; place-items: center; background: transparent; border: 0; color: #9DA2B0; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #FFFFFF; font-size: 14px; font-weight: 600"><span style="color: #9DA2B0">#</span><span style="flex: 1">informe-q3</span><span style="width: 8px; height: 8px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Debate.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>campaña-primavera</a>
+<a href="Sala.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #C9CCD6; font-size: 14px"><span style="color: #9DA2B0">#</span>facturación</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 12px 4px"><a href="Equipo.dc.html" style="font: 500 11px/1 'Geist Mono', monospace; color: #9DA2B0; letter-spacing: 0.06em; text-transform: uppercase">Tu equipo</a><a href="NuevoBot.dc.html" aria-label="Añadir bot" style="width: 28px; height: 28px; display: grid; place-items: center; color: #9DA2B0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a></div>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 11px/1 'Bricolage Grotesque', sans-serif">A</span><span style="flex: 1">Atlas</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 11px/1 'Bricolage Grotesque', sans-serif">N</span><span style="flex: 1">Nora</span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">T</span><span style="flex: 1">Tomás</span><span style="width: 7px; height: 7px; border-radius: 2px; background: #FFC93C" aria-label="Te espera"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF5CA8; color: #12131A; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">I</span><span style="flex: 1">Iris</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FF7A1A; color: #12131A; border-radius: 50% 50% 5px 5px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">B</span><span style="flex: 1">Bruno</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #3DDC97" aria-label="Trabajando"></span></a>
+<a href="Chat.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; color: #E6E8EE; font-size: 14px"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 4px 50% 4px; font: 800 11px/1 'Bricolage Grotesque', sans-serif">V</span><span style="flex: 1">Vera</span></a>
+</div>
+<div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #2C2F3A">
+<span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 50%; background: #E6E8EE; color: #12131A; display: grid; place-items: center; font-weight: 700; font-size: 13px">TÚ</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="color: #FFFFFF; font-weight: 600; font-size: 14px">Tu cuenta</span><span style="font-size: 12px; color: #9DA2B0">Administrador</span></span>
+<a href="Ajustes.dc.html" aria-label="Ajustes y conectores" style="width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: #C9CCD6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></a>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; align-items: stretch">
+
+<section aria-labelledby="auto-t" style="flex: 1 1 440px; min-width: 0; padding: 28px clamp(16px, 3vw, 32px) 48px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 id="auto-t" style="margin: 0; font: 800 36px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Automatizaciones</h1>
+<p style="margin: 0; font-size: 15px; color: #4A4F5C">Trabajo que pasa solo, a una hora o cuando ocurre algo.</p>
+</div>
+<button type="button" style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 18px; background: #FFC93C; border: 2px solid #12131A; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nueva</button>
+</div>
+
+<div style="display: flex; gap: 12px; padding: 14px 16px; background: #E7EEFF; border: 1px solid #B4C8FF; border-radius: 14px">
+<span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 13px/1 'Bricolage Grotesque', sans-serif">A</span>
+<div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.45">
+<span><strong>Atlas ha notado</strong> que cada lunes pides «resumen de ventas de la semana». ¿Lo automatizamos?</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><button type="button" style="height: 38px; padding: 0 12px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 9px; cursor: pointer; font-weight: 600; font-size: 13px">Sí, cada lunes a las 9:00</button><button type="button" style="height: 38px; padding: 0 12px; background: transparent; border: 0; cursor: pointer; font-size: 13px; color: #2B2D36">Ahora no</button></div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+
+<div style="display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 12px; padding: 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px">
+<span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 5px 50% 5px; font: 800 13px/1 'Bricolage Grotesque', sans-serif">V</span>
+<span style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><strong style="font-size: 15px">Resumen del correo</strong><span style="font-size: 13px; color: #4A4F5C">Días laborables, 08:00 · Hoy ✓</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="Resumen del correo" style="width: 48px; height: 28px; padding: 3px; background: #12131A; border: 0; border-radius: 14px; cursor: pointer; display: flex; justify-content: flex-end"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFC93C"></span></button>
+</div>
+
+<div style="display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 12px; padding: 14px; background: #FFFFFF; border: 2px solid #12131A; border-radius: 14px">
+<span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 7px; font: 800 13px/1 'Bricolage Grotesque', sans-serif">T</span>
+<span style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><strong style="font-size: 15px">Guardar las facturas que llegan</strong><span style="font-size: 13px; color: #4A4F5C">Cuando llega un correo · Hace 1 h ✓</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="Guardar las facturas que llegan" style="width: 48px; height: 28px; padding: 3px; background: #12131A; border: 0; border-radius: 14px; cursor: pointer; display: flex; justify-content: flex-end"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFC93C"></span></button>
+</div>
+
+<div style="display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 12px; padding: 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px">
+<span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 13px/1 'Bricolage Grotesque', sans-serif">N</span>
+<span style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><strong style="font-size: 15px">Vigilar precios de la competencia</strong><span style="font-size: 13px; color: #4A4F5C">Cada día, 13:00 · Ayer ✓</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="Vigilar precios de la competencia" style="width: 48px; height: 28px; padding: 3px; background: #12131A; border: 0; border-radius: 14px; cursor: pointer; display: flex; justify-content: flex-end"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFC93C"></span></button>
+</div>
+
+<div style="display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 12px; padding: 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px">
+<span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #0B8A5F; color: #FFFFFF; border-radius: 7px; font: 800 13px/1 'Bricolage Grotesque', sans-serif">T</span>
+<span style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><strong style="font-size: 15px">Cierre de caja del día</strong><span style="font-size: 13px; color: #4A4F5C">Cada día, 18:30 · Ayer ✓</span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="Cierre de caja del día" style="width: 48px; height: 28px; padding: 3px; background: #12131A; border: 0; border-radius: 14px; cursor: pointer; display: flex; justify-content: flex-end"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFC93C"></span></button>
+</div>
+
+<div style="display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 12px; padding: 14px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 14px">
+<span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #7B4DFF; color: #FFFFFF; border-radius: 50% 5px 50% 5px; font: 800 13px/1 'Bricolage Grotesque', sans-serif">V</span>
+<span style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><strong style="font-size: 15px">Resumen semanal para dirección</strong><span style="font-size: 13px; color: #4A4F5C">Jueves, 10:00 · <span style="padding: 2px 6px; background: #FFF4D1; border-radius: 4px; color: #12131A; font-weight: 600">Te espera</span></span></span>
+<button type="button" role="switch" aria-checked="true" aria-label="Resumen semanal para dirección" style="width: 48px; height: 28px; padding: 3px; background: #12131A; border: 0; border-radius: 14px; cursor: pointer; display: flex; justify-content: flex-end"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFC93C"></span></button>
+</div>
+
+<div style="display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 12px; padding: 14px; background: #F7F8FA; border: 1px dashed #A9AEBB; border-radius: 14px">
+<span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; background: #2F6BFF; color: #FFFFFF; border-radius: 50%; font: 800 13px/1 'Bricolage Grotesque', sans-serif; opacity: 0.55">N</span>
+<span style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><strong style="font-size: 15px; color: #4A4F5C">Avisar de contratos que vencen</strong><span style="font-size: 13px; color: #4A4F5C">Lunes, 09:00 · Pausada</span></span>
+<button type="button" role="switch" aria-checked="false" aria-label="Avisar de contratos que vencen" style="width: 48px; height: 28px; padding: 3px; background: #DCE0E8; border: 0; border-radius: 14px; cursor: pointer; display: flex; justify-content: flex-start"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button>
+</div>
+</div>
+</section>
+
+<sc-if value="{{anyOpen}}" hint-placeholder-val="{{ true }}"><button type="button" aria-label="Cerrar el menú" onClick="{{closeMenus}}" style="position: fixed; inset: 0; z-index: 15; background: rgba(18,19,26,0.06); border: 0; cursor: default"></button></sc-if>
+<section aria-labelledby="regla-t" style="position: relative; z-index: 16; flex: 1.3 1 520px; min-width: 0; background: #FFFFFF; border-left: 1px solid #DCE0E8; padding: 28px clamp(16px, 3vw, 32px) 48px; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #555A68">Editar automatización</span>
+<h2 id="regla-t" style="margin: 0; font: 800 26px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.015em">Guardar las facturas que llegan</h2>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center">
+<span style="font: 700 18px/1 'Bricolage Grotesque', sans-serif">Cuando</span>
+<div style="position: relative; min-width: 0">
+<button type="button" aria-haspopup="listbox" aria-expanded="{{cuandoOpenStr}}" onClick="{{toggleCuando}}" style="position: relative; z-index: 21; width: 100%; min-height: 52px; padding: 10px 12px; text-align: left; background: {{cuandoBg}}; border: 1.5px solid #12131A; border-radius: 12px; cursor: pointer; font-size: 15px; line-height: 1.4; display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{trigger.icon}}"></path></svg></span><span style="flex: 1">{{trigger.sentence}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" style="flex: none"><path d="{{cuandoChevron}}"></path></svg></button>
+<sc-if value="{{cuandoOpen}}" hint-placeholder-val="{{ true }}">
+<div role="listbox" aria-label="Cuándo se pone en marcha" style="position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 22; background: #FFFFFF; border: 2px solid #12131A; border-radius: 16px; box-shadow: 0 18px 40px rgba(18,19,26,.22); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+<label style="display: flex; align-items: center; gap: 8px; height: 44px; margin: 2px 2px 6px; padding: 0 12px; background: #F7F8FA; border: 1px solid #DCE0E8; border-radius: 10px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.5-4.5"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar disparador</span><input type="text" placeholder="Busca: «factura», «lunes», «carpeta»…" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"></label>
+<sc-for list="{{triggerItems}}" as="o" hint-placeholder-count="10">
+<sc-if value="{{o.header}}" hint-placeholder-val="{{ false }}"><span style="display: block; padding: 10px 10px 4px; font: 600 11px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #555A68">{{o.label}}</span></sc-if>
+<sc-if value="{{o.option}}" hint-placeholder-val="{{ true }}"><button type="button" role="option" aria-selected="{{o.selected}}" onClick="{{o.pick}}" style="width: 100%; display: grid; grid-template-columns: 32px 1fr 20px; gap: 10px; align-items: center; min-height: 52px; padding: 6px 10px; text-align: left; border: 0; border-radius: 10px; cursor: pointer; background: {{o.bg}}"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; background: #EEF0F4; border-radius: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{o.icon}}"></path></svg></span><span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px">{{o.label}}</strong><span style="font-size: 12px; color: #4A4F5C">{{o.desc}}</span></span><sc-if value="{{o.isSelected}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#12131A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></sc-if></button></sc-if>
+</sc-for>
+<button type="button" style="display: flex; align-items: center; gap: 10px; min-height: 48px; margin-top: 6px; padding: 0 12px; background: #FFF4D1; border: 1px dashed #C98A00; border-radius: 10px; cursor: pointer; font-size: 14px; text-align: left"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; background: #FFC93C; color: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); font: 800 10px/1 'Bricolage Grotesque', sans-serif">A</span><span>¿No está? <strong>Descríbelo con tus palabras</strong> y Atlas lo prepara</span></button>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: start">
+<span style="padding-top: 18px; font: 500 12px/1.3 'Geist Mono', monospace; letter-spacing: 0.04em; text-transform: uppercase; color: #555A68">Detalles</span>
+<div style="min-width: 0"><dc-import name="Disparador" tipo="{{trigger.id}}" on-resumen="{{setResumen}}" hint-size="100%,640px"></dc-import></div>
+</div>
+<div style="display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center">
+<span style="font: 700 18px/1 'Bricolage Grotesque', sans-serif">Quién</span>
+<div style="position: relative; min-width: 0">
+<button type="button" aria-haspopup="listbox" aria-expanded="{{quienOpenStr}}" onClick="{{toggleQuien}}" style="position: relative; z-index: 21; min-height: 52px; padding: 8px 12px 8px 8px; background: {{quienBg}}; border: 1.5px solid #12131A; border-radius: 12px; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 32px; height: 32px; flex: none; display: grid; place-items: center; font: 800 14px/1 'Bricolage Grotesque', sans-serif; background: {{who.bg}}; color: {{who.fg}}; border-radius: {{who.radius}}; clip-path: {{who.clip}}">{{who.letter}}</span><strong>{{who.short}}</strong><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="{{quienChevron}}"></path></svg></button>
+<sc-if value="{{quienOpen}}" hint-placeholder-val="{{ false }}">
+<div role="listbox" aria-label="Qué bot lo hace" style="position: absolute; left: 0; top: calc(100% + 8px); z-index: 22; width: min(460px, 82vw); background: #FFFFFF; border: 2px solid #12131A; border-radius: 16px; box-shadow: 0 18px 40px rgba(18,19,26,.22); padding: 8px; display: flex; flex-direction: column; gap: 2px">
+<div style="margin: 2px 2px 6px; padding: 10px 12px; background: #F7F8FA; border-radius: 10px; font-size: 13px; line-height: 1.45; color: #2B2D36"><strong>Para esto hace falta:</strong> leer el correo, escribir en la carpeta y escribir en hojas.</div>
+<sc-for list="{{whoItems}}" as="b" hint-placeholder-count="6">
+<button type="button" role="option" aria-selected="{{b.selected}}" aria-disabled="{{b.disabledStr}}" disabled="{{b.disabled}}" onClick="{{b.pick}}" style="width: 100%; display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; min-height: 58px; padding: 6px 10px; text-align: left; border: 0; border-radius: 10px; background: {{b.rowBg}}; cursor: {{b.cursor}}; opacity: {{b.opacity}}">
+<span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; font: 800 14px/1 'Bricolage Grotesque', sans-serif; background: {{b.bg}}; color: {{b.fg}}; border-radius: {{b.radius}}; clip-path: {{b.clip}}">{{b.letter}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px">{{b.name}}</strong><span style="font-size: 12px; line-height: 1.35; color: {{b.descColor}}">{{b.desc}}</span></span>
+<span style="display: flex; align-items: center; gap: 6px"><sc-if value="{{b.recommended}}" hint-placeholder-val="{{ false }}"><span style="padding: 4px 8px; background: #FFC93C; border-radius: 6px; font: 600 11px/1 'Geist Mono', monospace">Recomendado</span></sc-if><sc-if value="{{b.isSelected}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#12131A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></sc-if></span>
+</button>
+</sc-for>
+<a href="Ajustes.dc.html" style="display: flex; align-items: center; min-height: 44px; margin-top: 6px; padding: 0 12px; border-top: 1px solid #E6E8EE; font-size: 14px; font-weight: 600; color: #1F4FD1">Dar acceso al correo a otro bot</a>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: start">
+<span style="font: 700 18px/1 'Bricolage Grotesque', sans-serif; padding-top: 16px">Hace</span>
+<div style="min-height: 52px; padding: 12px 14px; background: #F7F8FA; border: 1.5px solid #12131A; border-radius: 12px; font-size: 15px; line-height: 1.5">Guarda el PDF en <strong>Contabilidad / 2026 / Facturas</strong> y apunta proveedor, fecha e importe en la hoja <strong>Gastos 2026</strong>.</div>
+</div>
+<div style="display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: start">
+<span style="font: 700 18px/1 'Bricolage Grotesque', sans-serif; padding-top: 16px">Avísame</span>
+<div style="min-height: 52px; padding: 12px 14px; background: #FFF4D1; border: 1.5px solid #12131A; border-radius: 12px; font-size: 15px; line-height: 1.5">solo si el importe supera [TU LÍMITE] o el proveedor es nuevo</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; background: #F7F8FA; border-radius: 12px">
+<span style="font-size: 14px; font-weight: 600">{{whoNeeds}}</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px">
+<span style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 15px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Correo · leer</span>
+<span style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; background: #FFFFFF; border: 1px solid #DCE0E8; border-radius: 15px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B6B4A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Hojas de cálculo · escribir</span>
+<span style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; background: #FFF4D1; border: 1px solid #F2D27A; border-radius: 15px; font-weight: 600">Carpeta compartida · escribir · falta tu permiso</span>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 46px; padding: 0 16px; background: #FFFFFF; border: 1px solid #12131A; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px">Probar con el último correo</button>
+<button type="button" style="height: 46px; padding: 0 18px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px">Guardar cambios</button>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<h3 style="margin: 0 0 8px; font: 700 18px/1.1 'Bricolage Grotesque', sans-serif">Últimas veces</h3>
+<div style="display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 12px; min-height: 50px; border-top: 1px solid #E6E8EE; font-size: 14px"><span style="font: 500 13px/1 'Geist Mono', monospace; color: #555A68">Hoy 09:47</span><span>Factura de [PROVEEDOR A]</span><span style="display: flex; align-items: center; gap: 4px; color: #0B6B4A; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Guardada</span></div>
+<div style="display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 12px; min-height: 50px; border-top: 1px solid #E6E8EE; font-size: 14px"><span style="font: 500 13px/1 'Geist Mono', monospace; color: #555A68">Ayer 16:20</span><span>Factura de [PROVEEDOR B]</span><span style="padding: 3px 8px; background: #FFF4D1; border-radius: 6px; font-weight: 600">Proveedor nuevo · te avisó</span></div>
+<div style="display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 12px; min-height: 50px; border-top: 1px solid #E6E8EE; border-bottom: 1px solid #E6E8EE; font-size: 14px"><span style="font: 500 13px/1 'Geist Mono', monospace; color: #555A68">Lun 11:05</span><span>Correo sin factura</span><span style="color: #4A4F5C">Ignorado</span></div>
+</div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"abierto":{"editor":"enum","options":["cuando","quien","ninguno"],"default":"ninguno"},"disparador":{"editor":"enum","options":["dia","semana","vez","correo","archivo","evento","sala","hoja"],"default":"correo"},"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const a = props.abierto ?? 'ninguno';
+    this.state = { open: a === 'ninguno' ? null : a, trigger: props.disparador ?? 'correo', who: 'tomas', summaries: {} };
+  }
+  componentDidUpdate(prev) {
+    if (prev.abierto !== this.props.abierto) {
+      const a = this.props.abierto ?? 'ninguno';
+      this.setState({ open: a === 'ninguno' ? null : a });
+    }
+    if (prev.disparador !== this.props.disparador && this.props.disparador) {
+      this.setState({ trigger: this.props.disparador });
+    }
+  }
+  renderVals() {
+    const s = this.state;
+    const ICON = {
+      dia: 'M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
+      semana: 'M4 6h16v14H4zM4 10h16M9 3v4M15 3v4',
+      vez: 'M5 21V4h12l-2 4 2 4H5',
+      correo: 'M3 5h18v14H3zM3 7l9 6 9-6',
+      archivo: 'M3 6h7l2 2h9v11H3z',
+      evento: 'M4 6h16v14H4zM4 10h16M8 14h4',
+      sala: 'M4 5h16v11H9l-5 4z',
+      hoja: 'M4 4h16v16H4zM4 10h16M10 4v16'
+    };
+    const triggers = [
+      { header: true, label: 'A una hora' },
+      { id: 'dia', label: 'Cada día a una hora', desc: 'Ej.: los laborables a las 08:00', sentence: 'sean las 08:00 de un día laborable' },
+      { id: 'semana', label: 'Cada semana', desc: 'Ej.: los lunes a las 09:00', sentence: 'sea lunes a las 09:00' },
+      { id: 'vez', label: 'Una sola vez', desc: 'En una fecha y hora concretas', sentence: 'llegue el [FECHA] a las [HORA]' },
+      { header: true, label: 'Cuando pase algo' },
+      { id: 'correo', label: 'Llegue un correo', desc: 'De alguien, con un asunto o con adjuntos', sentence: 'llegue un correo con una factura adjunta a facturas@[tu-dominio]' },
+      { id: 'archivo', label: 'Se suba un archivo', desc: 'A una carpeta compartida', sentence: 'se suba un archivo a Contabilidad / 2026' },
+      { id: 'evento', label: 'Se acerque un evento', desc: 'Del calendario, con antelación', sentence: 'falten 30 minutos para una reunión del calendario' },
+      { id: 'sala', label: 'Alguien escriba en una sala', desc: 'O mencione a un bot', sentence: 'alguien escriba en # facturación' },
+      { id: 'hoja', label: 'Cambie una hoja de cálculo', desc: 'Una fila nueva o un valor', sentence: 'se añada una fila a la hoja Gastos 2026' }
+    ];
+    const cur = triggers.find((t) => t.id === s.trigger) || triggers[5];
+    const triggerItems = triggers.map((t) => {
+      if (t.header) return { header: true, option: false, label: t.label };
+      const on = t.id === s.trigger;
+      return {
+        header: false, option: true, label: t.label, desc: t.desc, icon: ICON[t.id],
+        selected: on ? 'true' : 'false', isSelected: on,
+        bg: on ? '#FFF4D1' : '#FFFFFF',
+        pick: () => this.setState({ trigger: t.id, open: null })
+      };
+    });
+    const bots = [
+      { id: 'atlas', name: 'Que decida Atlas', short: 'Atlas decide', letter: 'A', bg: '#FFC93C', fg: '#12131A', radius: '0', clip: 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)', desc: 'Elige cada vez al bot que mejor encaje', ok: true },
+      { id: 'tomas', name: 'Tomás · Datos y finanzas', short: 'Tomás', letter: 'T', bg: '#0B8A5F', fg: '#FFFFFF', radius: '7px', clip: 'none', desc: 'Ya guarda facturas. Le falta permiso para escribir en la carpeta.', ok: true, rec: true },
+      { id: 'vera', name: 'Vera · Redacción', short: 'Vera', letter: 'V', bg: '#7B4DFF', fg: '#FFFFFF', radius: '50% 5px 50% 5px', clip: 'none', desc: 'Lee el correo. Le falta escribir en hojas y en la carpeta.', ok: true },
+      { id: 'nora', name: 'Nora · Investigación', short: 'Nora', letter: 'N', bg: '#2F6BFF', fg: '#FFFFFF', radius: '50%', clip: 'none', desc: 'No tiene acceso al correo', ok: false },
+      { id: 'iris', name: 'Iris · Diseño', short: 'Iris', letter: 'I', bg: '#FF5CA8', fg: '#12131A', radius: '0', clip: 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)', desc: 'No tiene acceso al correo', ok: false },
+      { id: 'bruno', name: 'Bruno · Código', short: 'Bruno', letter: 'B', bg: '#FF7A1A', fg: '#12131A', radius: '50% 50% 6px 6px', clip: 'none', desc: 'No tiene acceso al correo', ok: false }
+    ];
+    const who = bots.find((b) => b.id === s.who) || bots[1];
+    const whoItems = bots.map((b) => {
+      const on = b.id === s.who;
+      return Object.assign({}, b, {
+        selected: on ? 'true' : 'false', isSelected: on,
+        recommended: !!b.rec,
+        disabled: !b.ok, disabledStr: b.ok ? 'false' : 'true',
+        rowBg: on ? '#FFF4D1' : '#FFFFFF',
+        cursor: b.ok ? 'pointer' : 'not-allowed',
+        opacity: b.ok ? '1' : '0.55',
+        descColor: b.ok ? '#4A4F5C' : '#B4372A',
+        pick: () => { if (b.ok) this.setState({ who: b.id, open: null }); }
+      });
+    });
+    const cuandoOpen = s.open === 'cuando';
+    const quienOpen = s.open === 'quien';
+    return {
+      trigger: { id: cur.id, icon: ICON[cur.id], sentence: s.summaries[cur.id] || cur.sentence },
+      setResumen: (id, text) => {
+        if (this.state.summaries[id] !== text) this.setState({ summaries: Object.assign({}, this.state.summaries, { [id]: text }) });
+      },
+      triggerItems,
+      cuandoOpen,
+      cuandoOpenStr: cuandoOpen ? 'true' : 'false',
+      cuandoBg: cuandoOpen ? '#FFFFFF' : '#F7F8FA',
+      cuandoChevron: cuandoOpen ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6',
+      toggleCuando: () => this.setState({ open: cuandoOpen ? null : 'cuando' }),
+      who,
+      whoItems,
+      quienOpen,
+      quienOpenStr: quienOpen ? 'true' : 'false',
+      quienBg: quienOpen ? '#FFFFFF' : '#E1F4EC',
+      quienChevron: quienOpen ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6',
+      toggleQuien: () => this.setState({ open: quienOpen ? null : 'quien' }),
+      whoNeeds: who.id === 'atlas' ? 'El bot que elija Atlas necesitará' : who.short + ' necesitará',
+      anyOpen: cuandoOpen || quienOpen,
+      closeMenus: () => this.setState({ open: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

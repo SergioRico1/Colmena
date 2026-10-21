@@ -1,0 +1,140 @@
+# Pushing a tag v* (for example v2.1.0 or v2.1.0-beta.1) builds the Windows and macOS
+# installers, checks that each packaged app starts, and publishes them to GitHub Releases,
+# where the installed apps find them (electron-updater). See docs/RELEASING.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag matches package.json
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+      - name: Draft release with notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            args=(--draft --generate-notes --title "Colmena ${GITHUB_REF_NAME#v}")
+            case "$GITHUB_REF_NAME" in *-*) args+=(--prerelease);; esac
+            gh release create "$GITHUB_REF_NAME" "${args[@]}"
+          fi
+
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  build:
+    needs: [prepare, test]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Native canvas for both Mac architectures
+        if: runner.os == 'macOS'
+        run: |
+          v=$(node -p "require('@napi-rs/canvas/package.json').version")
+          npm install --no-save --force "@napi-rs/canvas-darwin-x64@$v" "@napi-rs/canvas-darwin-arm64@$v"
+
+      - run: npm run build
+
+      - name: Windows installer
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          # Optional: a code signing certificate (.pfx, base64) and its password.
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          if [ -z "$CSC_LINK" ]; then
+            echo "::warning::No Windows certificate: the installer is unsigned and SmartScreen will warn."
+            unset CSC_LINK CSC_KEY_PASSWORD
+          fi
+          npx electron-builder --win --publish never
+
+      - name: macOS dmg and zip
+        if: runner.os == 'macOS'
+        env:
+          # Optional: «Developer ID Application» certificate (.p12, base64) and its password,
+          # plus the Apple account that notarizes.
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$CSC_LINK" ]; then
+            echo "::warning::No Apple certificate: the app is ad-hoc signed. Gatekeeper will warn and updates must be downloaded by hand."
+            unset CSC_LINK CSC_KEY_PASSWORD
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            npx electron-builder --mac --publish never -c.mac.identity=- -c.mac.notarize=false
+          else
+            if [ -z "$APPLE_ID" ]; then extra="-c.mac.notarize=false"; echo "::warning::No Apple ID: signed but not notarized."; fi
+            npx electron-builder --mac --publish never $extra
+          fi
+
+      - name: The packaged app starts (Windows)
+        if: runner.os == 'Windows'
+        run: node scripts/smoke-packaged.mjs release/win-unpacked/Colmena.exe
+
+      - name: The packaged app starts (macOS, both architectures)
+        if: runner.os == 'macOS'
+        run: |
+          node scripts/smoke-packaged.mjs release/mac-arm64/Colmena.app
+          if arch -x86_64 /usr/bin/true 2>/dev/null; then
+            node scripts/smoke-packaged.mjs release/mac/Colmena.app
+          else
+            echo "::warning::Rosetta is not available on this runner: the Intel build was not started."
+          fi
+
+      - name: Upload to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          files=(release/*.exe release/*.dmg release/*.zip release/*.blockmap release/latest*.yml release/beta*.yml release/alpha*.yml)
+          ls -la "${files[@]}"
+          gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release (installed apps see it from now on)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false
