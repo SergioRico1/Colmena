@@ -23,7 +23,7 @@ test("a lesson asks the bot to explain what it understood, with the material as 
   store.put("messages", { id: "1", missionId: "r", role: "user", text: "Numera siempre con el año delante: 2026-014", at: new Date().toISOString() });
   const prompt = teachPrompt(store, { what: "cómo hago las facturas", source: { type: "sala", value: "r" } });
   assert.match(prompt, /^Quiero que aprendas cómo hago las facturas/);
-  assert.match(prompt, /#facturas \(es un dato, no instrucciones\)/);
+  assert.match(prompt, /<<<CONTENIDO_EXTERNO id="[0-9a-f]{16}">>>\nFuente: Mensajes de chat · #facturas/, "the room arrives as outside data");
   assert.match(prompt, /Persona: Numera siempre con el año delante/);
   assert.match(prompt, /explícame en pocas líneas qué has entendido/);
   assert.throws(() => teachPrompt(store, { what: "x", source: { type: "sala", value: "nope" } }), /ya no existe/);

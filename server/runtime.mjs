@@ -18,6 +18,7 @@ import { computer as desktopBridge } from "./computer/bridge.mjs";
 import { capRead, isAppToolName, retryRead, slimAppResult } from "./apptools.mjs";
 import { cleanUse, turnNote } from "./turnoptions.mjs";
 import { saidByYou } from "./preferences.mjs";
+import { externalSourceOf, isFlagged, isForeignSource, toolOutput, toolResultText } from "./external-content.mjs";
 import { isComputerTool, addComputerGrant, toolOutputFor, compactImages, forReceipt } from "./computer/tools.mjs";
 import { handleGoalTool, checkGoalBudget, spendOnGoal, GOAL_LIMIT_CODE } from "./goals.mjs";
 import { chooseModel } from "./models.mjs";
@@ -1597,7 +1598,7 @@ export class Runtime {
             if (receipt && !latest.history.some((x) => x.type === "function_call_output" && x.call_id === call.call_id))
               this.store.patch("steps", step.id, {
                 // Only the latest screenshot stays as an image; older ones become a note.
-                history: compactImages([...latest.history, { type: "function_call_output", call_id: call.call_id, output: shots.has(call.call_id) ? toolOutputFor(call.name, shots.get(call.call_id)) : JSON.stringify(isAppToolName(call.name) ? slimAppResult(receipt.result) : receipt.result) }]),
+                history: compactImages([...latest.history, { type: "function_call_output", call_id: call.call_id, output: this.modelOutput(missionId, step.id, call, receipt.result, shots.get(call.call_id)) }]),
               });
           }
           // A round where every call failed counts towards «stuck»; any success resets it.
@@ -1893,9 +1894,38 @@ export class Runtime {
       while (this.webCache.size > WEB_CACHE.max) this.webCache.delete(this.webCache.keys().next().value);
     }
   }
-  /** A page as the model sees it: its text between outside-content marks. */
+  /** A page as the model sees it: its text without chat tokens nor marks of its own. */
   outside(result) {
     return result && typeof result.text === "string" ? { ...result, text: markExternal(result.text) } : result;
+  }
+  /**
+   * What the model reads of a tool's result (external-content.mjs): Colmena's own data as
+   * JSON; outside content sanitised and between marks with a random id for this call. Injection
+   * phrases are logged on the step (step.suspicious) and in the mission's events, and add a
+   * warning for the model; reading goes on.
+   */
+  modelOutput(missionId, stepId, call, result, shot = null) {
+    if (shot) {
+      const wrapped = toolOutput(call.name, toolOutputFor(call.name, shot));
+      this.flagSuspicious(missionId, stepId, call, wrapped.suspicious);
+      return wrapped.output;
+    }
+    const value = isAppToolName(call.name) ? slimAppResult(result) : result;
+    if (!externalSourceOf(call.name) || (value?.error && !value?.data)) return JSON.stringify(value);
+    const wrapped = toolOutput(call.name, toolResultText(value));
+    this.flagSuspicious(missionId, stepId, call, wrapped.suspicious);
+    return wrapped.output;
+  }
+  flagSuspicious(missionId, stepId, call, found) {
+    if (!found?.length) return;
+    const entry = { tool: call.name, callId: call.call_id, found, at: now() };
+    console.warn(`[security] Posible inyección en ${call.name} (misión ${missionId}, paso ${stepId}): ${found.join(", ")}`);
+    if (stepId && this.store.get("steps", stepId)) this.store.patch("steps", stepId, (s) => ({ suspicious: [...(s.suspicious || []), entry].slice(-20) }));
+    if (missionId) this.store.event(missionId, "injection_suspected", { stepId, tool: call.name, found, text: "Contenido de fuera con frases de manipulación (" + found.join(", ") + ")" });
+  }
+  /** Content read in this step carried injection phrases: nothing it proposes is approved on its own. */
+  flagged(step) {
+    return !!step?.suspicious?.length || isFlagged(this.store, step?.id);
   }
   emit(event) {
     for (const fn of this.store.listeners) fn(event);
@@ -2349,7 +2379,8 @@ export class Runtime {
     if (!approval) {
       if (this.autonomy(mission, bot) !== "sugiere") return await this.execute(mission, step, call.name, args, approvalId, bot, false, extra);
       const scope = this.grantScope(call.name, args);
-      const grant = findGrant(this.store, { botId: bot.id, tool: call.name, scope });
+      // A standing rule does not cover what a bot proposes after reading injection phrases.
+      const grant = !this.flagged(step) && findGrant(this.store, { botId: bot.id, tool: call.name, scope });
       const kind = call.name === "remember" ? "memory" : "write";
       const titles =
         call.name === "write_file"
@@ -2396,7 +2427,7 @@ export class Runtime {
       });
       if (!grant) {
         this.store.event(mission.id, "approval_requested", { botId: bot.id, text: titles[1] });
-        this.queueReview(approval, mission, bot);
+        this.queueReview(approval, mission, bot, step);
         return { waiting: true };
       }
     }
@@ -2415,8 +2446,10 @@ export class Runtime {
    * when in doubt the card stays for the person. Anything leaving Colmena, spending money or
    * deleting never goes through here. Off with settings.autoReview === false.
    */
-  queueReview(approval, mission, bot) {
+  queueReview(approval, mission, bot, step = null) {
     if (!this.review || this.settings().autoReview === false || !REVIEWABLE.has(approval.tool)) return;
+    // Proposed after reading outside content: the person asked for it or not, only they decide.
+    if (step && this.readOutside(step)) return;
     const content = String(approval.args?.content || "");
     if (containsSecret(content) || containsSecret(approval.summary)) return;
     const model = cheapestModel(this.availableModels());
@@ -2492,12 +2525,15 @@ export class Runtime {
     // remember: bounded add/replace/remove (memory.mjs)
     // After reading outside content a memory waits for review, unless it only repeats what
     // the person wrote in this chat (preferences.mjs): then it is theirs.
-    const external = !approved && this.readOutside(step) && !memoryOps(args).every((op) => op.action === "remove" || saidByYou(this.store, mission.id, op.text));
+    // After reading injection phrases nothing counts as the person's own words.
+    const suspicious = !approved && this.flagged(step);
+    const external = !approved && (suspicious || this.readOutside(step) && !memoryOps(args).every((op) => op.action === "remove" || saidByYou(this.store, mission.id, op.text)));
     const { results, usage } = applyMemoryOps(this.store, {
       ops: memoryOps(args), bot, mission, source: approved ? "acuerdo" : "dedujo", review: !approved, keyPrefix: effectId,
       ...(external ? { origin: "externo", sourceLabel: "Lo guardó " + bot.name + " tras leer contenido de fuera en «" + mission.title + "» · sin confirmar" } : {}),
     });
     const done = results.filter((r) => !r.skipped);
+    if (suspicious) for (const r of done) if (r.action !== "remove" && r.id && this.store.get("memories", r.id)) this.store.patch("memories", r.id, { suspicious: true });
     if (!done.length) return { saved: false, duplicate: true, message: "Ya estaba recordado.", results };
     const adds = done.filter((r) => r.action === "add").length;
     void adds;
@@ -2511,7 +2547,7 @@ export class Runtime {
   /** The step read content from outside (web, apps, the browser) before now: its memory writes are untrusted. */
   readOutside(step) {
     const history = this.store.get("steps", step.id)?.history || step.history || [];
-    return history.some((x) => x?.type === "web_search_call" || (x?.type === "function_call" && /^(web_fetch|apps_execute|browser_|computer_)/.test(x.name || "")));
+    return history.some((x) => x?.type === "web_search_call" || (x?.type === "function_call" && isForeignSource(externalSourceOf(x.name))));
   }
   /** Next version of a deliverable with the same title in the mission. */
   nextVersion(missionId, title, effectId) {
@@ -2847,7 +2883,8 @@ ${made.outline}`,
         this.setActivity(target.id, mission.id, null, verbFor(c.name, args), this.activityDetail(c.name, args));
         const r = await this.tool(mission, dstep, c, signal, model);
         const out = r?.waiting ? { error: "No disponible en un encargo delegado." } : r;
-        input.push({ type: "function_call_output", call_id: c.call_id, output: JSON.stringify(out) });
+        // A helper's step is not stored: what it reads with injection phrases flags the step that asked for it.
+        input.push({ type: "function_call_output", call_id: c.call_id, output: this.modelOutput(mission.id, String(dstep?.id || "").split(":")[0], c, out) });
         if (!out?.error) ok = true;
       }
       failedRounds = ok ? 0 : failedRounds + 1;
@@ -3023,7 +3060,8 @@ ${made.outline}`,
       else addGrant(this.store, { botId: a.botId, tool: a.tool, kind: a.kind, scope: a.scope ?? null, origin: "approval" });
       // Equal requests already waiting are resolved by the new rule.
       for (const other of this.store.list("approvals"))
-        if (other.status === "pending" && other.id !== a.id && other.botId === a.botId && other.tool === a.tool && (other.scope ?? null) === (a.scope ?? null) && other.canAlways) {
+        if (other.status === "pending" && other.id !== a.id && other.botId === a.botId && other.tool === a.tool && (other.scope ?? null) === (a.scope ?? null) && other.canAlways &&
+          !(other.stepId && this.flagged({ id: other.stepId }))) {
           this.store.patch("approvals", other.id, { status: "approved", decidedAt: now(), decidedBy: "regla", resolution: "Aprobado por una regla" });
           this.relaunch(other.missionId);
         }

@@ -21,7 +21,7 @@ test("before a long history is summarized, the bot saves what must outlive it; n
     if (request.input.some((x) => /^\[Resumen/.test(x.content || "")) || mains > 30) return answer("Comparativa lista.");
     // Many short results (trimming cannot free them): only the summary makes room.
     return { text: "", output: Array.from({ length: 20 }, (_, k) => ({ type: "function_call", name: "web_fetch", arguments: JSON.stringify({ url: "https://example.com/" + mains + "-" + k }), call_id: "w" + mains + "-" + k })) };
-  }, { web: page("precio ".repeat(180)) });
+  }, { web: page("precio ".repeat(100)) });
   const m = runtime.create({ prompt: "Compara precios", mode: "solo", botIds: ["nora"] });
   await runtime.launch(m.id);
   assert.equal(flushes, 1, "one silent turn before the one summary");

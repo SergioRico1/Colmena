@@ -1,6 +1,7 @@
 // How Colmena says, in plain Spanish, what a bot wants to do in one of your apps
 // («crear un evento en Google Calendar: «Renovar PlayStation Plus», 11 nov.»), from the
 // prepared action (tool slug like GOOGLECALENDAR_CREATE_EVENT, toolkit and arguments).
+import { withoutExternal } from "./external-content.mjs";
 
 const VERBS = [
   [/(?:^|_)(?:CREATE|NEW|INSERT)(?:_|$)/, "crear"], [/(?:^|_)(?:ADD|APPEND)(?:_|$)/, "añadir"],
@@ -51,6 +52,9 @@ export function describeAppAction(a, args = {}) {
 
 // ---- Your words in the chat count ------------------------------------------------------
 const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+// Your words in a message, without the outside content wrapped in it (an automation's trigger
+// email quoted in its first message never asks for a send).
+const yours = (m) => fold(withoutExternal(m?.text));
 const YES = /^\s*(?:(?:si|vale|ok|okay|okey|adelante|dale|claro|perfecto|de acuerdo|hazlo|venga)\b[\s,.!]*)+(?:(?:hazlo|adelante|por favor|porfa|claro|estas autorizad[oa]|te autorizo|autorizado|puedes|envialo|mandalo|enviala|mandala)\b[\s,.!]*)*$|^\s*(?:estas autorizad[oa]|te autorizo|autorizado|tienes permiso|envialo|mandalo|enviala|mandala)[\s,.!]*$/;
 const NO = /^\s*(?:no|ahora no|mejor no|no lo hagas|no lo envies|cancela|para)[\s,.!]*$/;
 /** «sí», «vale, hazlo», «estás autorizado»… (short, nothing else in the message). */
@@ -95,21 +99,21 @@ export function namesFor(store, stepId, addresses = []) {
 export function saysSend(store, missionId) {
   const last = store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && typeof m.text === "string")
     .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
-  return !!last && SEND_VERB.test(fold(last.text)) && !/\b(no|todavia no|aun no|nunca)\s+(lo |la )?(envies|mandes)\b/.test(fold(last.text));
+  return !!last && SEND_VERB.test(yours(last)) && !/\b(no|todavia no|aun no|nunca)\s+(lo |la )?(envies|mandes)\b/.test(yours(last));
 }
 
 /** «Envíamelo», «mándamelo a mi correo»: you are sending it to yourself. */
 export function asksForSelf(store, missionId) {
   const last = store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && typeof m.text === "string")
     .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
-  return saysSend(store, missionId) && /\b(enviame\w*|mandame\w*|reenviame\w*|a mi correo|a mi email|a mi mail|a mi mism[oa])\b/.test(fold(last?.text));
+  return saysSend(store, missionId) && /\b(enviame\w*|mandame\w*|reenviame\w*|a mi correo|a mi email|a mi mail|a mi mism[oa])\b/.test(yours(last));
 }
 
 export function explicitlyAsked(store, missionId, recipients = [], { names = {} } = {}) {
   const last = store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && typeof m.text === "string")
     .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
   if (!last) return false;
-  const text = fold(last.text);
+  const text = yours(last);
   if (!SEND_VERB.test(text) || !recipients.length) return false;
   return recipients.every((r) => {
     const address = fold(r).trim();

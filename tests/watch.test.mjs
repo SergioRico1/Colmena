@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { NOW, fakeConnections, mail, temp, watcherFor } from "./fixtures/watch-fixture.mjs";
+import { NOW, fakeConnections, itemsIn, mail, temp, watcherFor } from "./fixtures/watch-fixture.mjs";
 import { availability, gmailUrl, ownAddress, sourceLinks, watchBot, watchNotesState } from "../server/watch.mjs";
 import { needsOf, needsCount } from "../src/components/v2/needs.js";
 
@@ -29,7 +29,7 @@ test("a proposed meeting: it looks at your calendar and asks in its chat whether
   assert.deepEqual(calls.map((c) => c.model), ["gpt-6-luna", "gpt-6-luna", "gpt-6.1-sol"]);
   assert.ok(calls.every((c) => c.reasoning?.effort === "low"));
   // Picking sees snippets; only the picked mail is read in full, as text.
-  const sortedInput = JSON.parse(calls[1].input[0].content);
+  const sortedInput = itemsIn(calls[1].input[0].content);
   assert.ok(sortedInput.nuevo[0].texto.endsWith("(texto completo)"));
   assert.doesNotMatch(sortedInput.nuevo[0].texto, /<p>/);
   assert.equal(sortedInput.nuevo[0].fuente, "Correo");

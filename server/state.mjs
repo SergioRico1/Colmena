@@ -8,6 +8,7 @@ import { ago, subtitle, TOOLKITS, CONNECTOR_NAMES, editorConfig } from "./trigge
 import { TOOL_KEYS } from "./store.mjs";
 import { extraToolCard, documentCardExtras, webSearchToolCall, recoveryToolCalls } from "./tools.mjs";
 import { isProjectTool, projectToolCard } from "./projects/tools.mjs";
+import { unwrapExternal } from "./external-content.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
@@ -554,7 +555,9 @@ export function toolCalls(step, { bots, receipt } = {}) {
     let result;
     // A screenshot output is [input_text, input_image]: its text part is the JSON result.
     const stored = outputs.get(call.call_id);
-    const raw = Array.isArray(stored) ? stored.find((p) => p?.type === "input_text")?.text : stored;
+    const shown = Array.isArray(stored) ? stored.find((p) => p?.type === "input_text")?.text : stored;
+    // Outside content reaches the model wrapped (external-content.mjs); the card reads the JSON inside.
+    const raw = unwrapExternal(shown) ?? shown;
     if (raw !== undefined) {
       try {
         result = JSON.parse(raw);

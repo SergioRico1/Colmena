@@ -5,6 +5,7 @@ import { deniedResult } from './denial.mjs';
 import { TOOLKITS } from './triggers.mjs';
 import { asksForSelf, explicitlyAsked, namesFor, saysSend } from './appactions.mjs';
 import { draftFields } from './gmaildrafts.mjs';
+import { isFlagged } from './external-content.mjs';
 
 // A send you asked for in so many words leaves on its own after this long (cancel in the chat).
 export const AUTO_SEND_MS = 10000;
@@ -184,9 +185,12 @@ export class Connections {
       const access = category ? this.store.get('bots', step.botId)?.tools?.[category] : undefined;
       const granted = kind === 'read' ? this.store.get('connectionGrants', review.read_grant)?.active
         : !redLine && this.store.get('connectionGrants', writeGrant(step.botId, p))?.active;
-      if (granted || runsWithoutAsking({kind, redLine}, access))
+      // After reading content with injection phrases (runtime flags the step), a change waits
+      // for you whatever the rules say; reads still run.
+      const flagged = isFlagged(this.store, step.id);
+      if ((granted || runsWithoutAsking({kind, redLine}, access)) && !(flagged && kind !== 'read'))
         return this.decide(id, {decision: 'approved', revision: ticket.revision, remember: false, auto: true});
-      if (kind === 'send') {
+      if (kind === 'send' && !flagged) {
         const to = review.draft ? [...review.draft.to, ...review.draft.cc] : recipientsOf(review.arguments);
         // «Envíalo» about the draft it prepared here, which you have seen: that is the OK.
         const ownDraft = review.draft && this.preparedHere(mission.id, p.arguments?.draft_id);

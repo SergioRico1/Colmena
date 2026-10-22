@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdir, rm, utimes, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { NOW, appsConnections, fakeConnections, mail, temp, watcherFor } from "./fixtures/watch-fixture.mjs";
+import { NOW, appsConnections, fakeConnections, itemsIn, mail, temp, watcherFor } from "./fixtures/watch-fixture.mjs";
 
 test("calendar invitations, Slack messages and new files in your folders go through the same filter", async (t) => {
   const store = await temp(t);
@@ -38,7 +38,7 @@ test("calendar invitations, Slack messages and new files in your folders go thro
     { texto: "Dos cosas que te esperan…", pregunta: "¿Aceptas la reunión?", respuestas: ["Sí, acéptala"] },
   ]);
   await w.tick({ force: true });
-  const picked = JSON.parse(calls[0].input[0].content).nuevo;
+  const picked = itemsIn(calls[0].input[0].content).nuevo;
   assert.deepEqual(picked.map((x) => x.fuente).sort(), ["Agenda", "Carpeta", "Slack"]);
   assert.ok(picked.find((x) => x.fuente === "Carpeta").texto.includes("1.200"));
   assert.deepEqual(picked.map((x) => x.id).sort(), ["n1", "n2", "n3"]);

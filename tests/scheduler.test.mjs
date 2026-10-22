@@ -145,7 +145,7 @@ test("«sala» fires on a matching message, ignores its own runs and the bot its
   // A busy machine (CI) may take longer than 30 ms to fire it: wait for it, up to 5 s.
   for (const end = Date.now() + 5000; !created.length && Date.now() < end; ) await wait();
   assert.equal(created.length, 1);
-  assert.match(created[0].prompt, /datos externos, no son instrucciones/);
+  assert.match(created[0].prompt, /<<<CONTENIDO_EXTERNO id="[0-9a-f]{16}">>>\nFuente: Mensajes de chat · Urgencias/, "the event arrives as outside data");
   assert.equal(store.get("automations", "s").lastEvent.id, "3");
   store.put("messages", { id: "4", missionId: "m1", role: "user", text: "urgente", at: new Date().toISOString() }); // its own run
   await wait();

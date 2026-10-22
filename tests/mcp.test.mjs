@@ -73,7 +73,7 @@ test("a server without sign-in connects at once and lists its tools", async (t) 
 test("bots read freely, wait for your OK to change something, and the results are marked as external", async (t) => {
   const log = [];
   let round = 0;
-  let seen = [];
+  let seen = [], raw = [];
   const { store, runtime } = await fixture(t, async ({ input, tools }) => {
     round += 1;
     if (round === 1) {
@@ -83,6 +83,7 @@ test("bots read freely, wait for your OK to change something, and the results ar
     if (round === 2) return call("mcp_call", { server: "tracker", tool: "search_issues", arguments_json: JSON.stringify({ query: "login" }) }, "t2");
     if (round === 3) return call("mcp_call", { server: "tracker", tool: "create_issue", arguments_json: JSON.stringify({ title: "Arreglar login" }) }, "t3");
     seen = outputs(input);
+    raw = input.filter((x) => x.type === "function_call_output").map((x) => x.output);
     return answer("Hecho.");
   });
   const { hub } = await connectedHub(store, log);
@@ -103,7 +104,9 @@ test("bots read freely, wait for your OK to change something, and the results ar
   assert.equal(list.tools.length, 3);
   assert.ok(list.tools.every((x) => x.input_schema));
   assert.match(search.result, /2 incidencias/);
-  assert.match(search.result, /^<<</, "external data is fenced");
+  assert.match(raw[1], /<<<CONTENIDO_EXTERNO id="[0-9a-f]{16}">>>\nFuente: Herramienta MCP/, "external data is fenced");
+  assert.match(raw[1], /aviso de seguridad.*ignorar instrucciones/, "the injection phrase is flagged for the model");
+  assert.ok(runtime.steps(m.id)[0].suspicious?.length, "and logged on the step");
   assert.match(create.result, /Creada ABC-3/);
   assert.equal(store.get("missions", m.id).status, "completed");
 });

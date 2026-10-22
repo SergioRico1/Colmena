@@ -39,7 +39,7 @@ async function runComputerTool(runtime, computer, name, rawArgs, { mission, step
       return result;
     }
     const p = plan.approval;
-    const grant = plan.policy === "approval" && findComputerGrant(store, { botId: bot.id, tool: plan.name, scope: p.grantScope });
+    const grant = plan.policy === "approval" && !runtime.flagged?.(step) && findComputerGrant(store, { botId: bot.id, tool: plan.name, scope: p.grantScope });
     a = store.put("approvals", {
       id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id,
       tool: plan.name, args: plan.args, kind: "permission", scope: p.grantScope, scopeLabel: p.scopeLabel,

@@ -227,7 +227,7 @@ async function apiRequest(runtime, secrets, raw, { mission, step, bot, call, sig
   let a = store.get("approvals", approvalId);
   if (!a) {
     const scope = "api:" + site;
-    const grant = findGrant(store, { botId: bot.id, tool: "api_request", scope });
+    const grant = !runtime.flagged?.(step) && findGrant(store, { botId: bot.id, tool: "api_request", scope });
     a = store.put("approvals", {
       id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id,
       tool: "api_request", args: { method: args.method, url: args.url, headers: args.headers.map((h) => h.name), body: clip(args.body || "", 2000) }, kind: "permission", scope,

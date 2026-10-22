@@ -46,7 +46,7 @@ test("old tool outputs are trimmed before each call; a huge history is summarize
       return { text: "", output: Array.from({ length: 20 }, (_, k) => ({ type: "function_call", name: "web_fetch", arguments: JSON.stringify({ url: "https://example.com/" + mains.length + "-" + k }), call_id: "w" + mains.length + "-" + k })) };
     if (mains.length > 45 || summarized) return answer("Precios comparados");
     return call("list_files", {}, "l" + mains.length);
-  }, { web: async (url) => ({ url, finalUrl: url, title: "Página", text: url.endsWith("grande") ? "precio ".repeat(16000) : "precio ".repeat(180), truncated: false, untrusted: true }) });
+  }, { web: async (url) => ({ url, finalUrl: url, title: "Página", text: url.endsWith("grande") ? "precio ".repeat(16000) : "precio ".repeat(100), truncated: false, untrusted: true }) });
   const m = runtime.create({ prompt: "Compara precios en cuatro webs" });
   await runtime.launch(m.id);
   assert.equal(summaries.length, 1);

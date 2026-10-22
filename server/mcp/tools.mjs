@@ -102,7 +102,7 @@ async function callTool(runtime, hub, raw, { mission, step, bot, call, signal })
   let a = store.get("approvals", approvalId);
   if (!a) {
     const scope = "mcp:" + s.id + ":" + tool.name;
-    const grant = policy === "approval" && findGrant(store, { botId: bot.id, tool: "mcp_call", scope });
+    const grant = policy === "approval" && !runtime.flagged?.(step) && findGrant(store, { botId: bot.id, tool: "mcp_call", scope });
     const red = policy === "redline";
     a = store.put("approvals", {
       id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id,

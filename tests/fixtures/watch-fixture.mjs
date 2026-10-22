@@ -5,6 +5,17 @@ import path from "node:path";
 import { Store } from "../../server/store.mjs";
 import { Watcher } from "../../server/watch.mjs";
 
+/**
+ * The picking and sorting input: each new item is its own wrapped block (external-content.mjs)
+ * and the notes it already wrote follow. Returns { nuevo, blocks, yaLeContaste }.
+ */
+export function itemsIn(content) {
+  const blocks = [...String(content).matchAll(/<<<CONTENIDO_EXTERNO id="([0-9a-f]{16})">>>\n([\s\S]*?)\n---\n([\s\S]*?)\n<<<FIN_CONTENIDO_EXTERNO id="\1">>>/g)]
+    .map((m) => ({ id: m[1], header: m[2], body: m[3] }));
+  const recent = /yaLeContaste \(tus propias notas, no datos de fuera\): (.*)$/s.exec(String(content));
+  return { nuevo: blocks.map((b) => JSON.parse(b.body)), blocks, yaLeContaste: recent ? JSON.parse(recent[1]) : null };
+}
+
 export async function temp(t) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "colmena-watch-"));
   const store = new Store(directory);

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, answer, settle } from "./fixtures/runtime-fixture.mjs";
+import { unwrapExternal } from "../server/external-content.mjs";
 
 const calls = (...list) => ({ text: "", usage: { input_tokens: 10, output_tokens: 5 }, output: list.map(([name, args, id]) => ({ type: "function_call", name, arguments: JSON.stringify(args), call_id: id })) });
 
@@ -60,7 +61,7 @@ test("the same page is fetched once: in parallel, and again within 15 minutes", 
   await runtime.launch(m.id);
   await settle(runtime);
   assert.equal(fetched, 2, "one download of /a and one of /refusa");
-  const out = Object.fromEntries(runtime.steps(m.id)[0].history.filter((x) => x.type === "function_call_output").map((x) => [x.call_id, JSON.parse(x.output)]));
+  const out = Object.fromEntries(runtime.steps(m.id)[0].history.filter((x) => x.type === "function_call_output").map((x) => [x.call_id, JSON.parse(unwrapExternal(x.output) ?? x.output)]));
   assert.equal(out.c.cachedMinutesAgo, 0);
   assert.match(out.e.error, /429.*prueba otra fuente/);
 });
