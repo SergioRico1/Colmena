@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes spin{to{transform:rotate(360deg)}}\n@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}\n@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}\n@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.row-hover{transition:background .15s ease}\n.row-hover:hover{background:rgba(18,19,26,.035)}\n.tools{opacity:0;transition:opacity .15s ease}\n.turn:hover .tools,.turn:focus-within .tools{opacity:1}\n@media (max-width: 1180px){[data-codepanel]{display:none!important}}\n@media (max-width: 860px){[data-projects]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","comparar","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -119,9 +119,9 @@ export class Logic extends DCLogic {
       ['Guardar y subir', 'Commit y push a GitHub.', 'm8 17 4-4 4 4', 'M12 13v8', 12, 6],
       ['Guardar, subir y abrir PR', 'Bruno escribe el título y la descripción del PR.', 'M5 9v12', 'M12 6h5a2 2 0 0 1 2 2v7', 5, 6]
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
-    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['inicio', 'Inicio']];
+    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['comparar', 'Comparar'], ['inicio', 'Inicio']];
     return {
-      home: s.mode === 'inicio', inTask: s.mode !== 'inicio', working,
+      home: s.mode === 'inicio', comparing: s.mode === 'comparar', inTask: s.mode !== 'inicio' && s.mode !== 'comparar', working,
       railDot: s.mode === 'plan' || s.mode === 'pide',
       is: { objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
       label: LABEL[s.mode], aura, groups, log, diff, tabs,
@@ -432,6 +432,207 @@ export function View({ v }) {
             </section>
           </>
         ) : null}
+        {v.comparing ? (
+          <>
+            <section aria-label="Comparar" style={{flex: "1", minWidth: "0", height: "100%", overflowY: "auto", animation: "fade .3s ease-out"}}>
+              <div style={{maxWidth: "1180px", margin: "0 auto", padding: "34px clamp(20px, 3vw, 40px) 40px", display: "flex", flexDirection: "column", gap: "22px"}}>
+                <header style={{display: "flex", alignItems: "flex-end", gap: "16px", flexWrap: "wrap"}}>
+                  <div style={{flex: "1 1 360px", display: "flex", flexDirection: "column", gap: "6px"}}>
+                    <span style={{font: "500 11px/1.3 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A"}}>
+                      {"Comparar · 3 motores con la misma petición"}
+                    </span>
+                    <h1 style={{margin: "0", font: "600 28px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em"}}>
+                      {"Bizum en el checkout"}
+                    </h1>
+                  </div>
+                  <button type="button" style={{height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                    {"Probar todos"}
+                  </button>
+                </header>
+                <div style={{display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", alignItems: "start"}}>
+                  <article style={{display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 0 0 2px #0B8A5F, 0 1px 2px rgba(18,19,26,.04)"}}>
+                    <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+                      <span aria-hidden="true" style={{display: "block", width: "26px", height: "26px", flex: "none", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A", borderRadius: "50% 50% 14% 14%"}} />
+                      <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px"}}>
+                        <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                          {"Claude Code · Opus 5.5"}
+                        </strong>
+                        <span style={{fontSize: "12px", color: "#6B6F7A"}}>
+                          {"Listo para revisar"}
+                        </span>
+                      </span>
+                      <span style={{font: "500 12px/1 'Geist Mono', monospace"}}>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+128"}
+                        </span>
+                        {" "}
+                        <span style={{color: "#A33A2C"}}>
+                          {"−14"}
+                        </span>
+                      </span>
+                    </div>
+                    <span style={{alignSelf: "flex-start", padding: "5px 11px", borderRadius: "999px", background: "#E1F4EC", color: "#0B5A3E", fontSize: "12px", fontWeight: "600"}}>
+                      {"Pasan los tests · 6 s"}
+                    </span>
+                    <div style={{display: "flex", flexDirection: "column", gap: "2px", padding: "8px", borderRadius: "14px", background: "#FAFAF8"}}>
+                      <span style={{display: "flex", gap: "8px", padding: "4px 6px", font: "400 12px/1.3 'Geist Mono', monospace"}}>
+                        <span style={{flex: "1"}}>
+                          {"PaymentMethods.jsx"}
+                        </span>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+86"}
+                        </span>
+                        <span style={{color: "#A33A2C"}}>
+                          {"−9"}
+                        </span>
+                      </span>
+                      <span style={{display: "flex", gap: "8px", padding: "4px 6px", font: "400 12px/1.3 'Geist Mono', monospace"}}>
+                        <span style={{flex: "1"}}>
+                          {"payments.js"}
+                        </span>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+38"}
+                        </span>
+                        <span style={{color: "#A33A2C"}}>
+                          {"−5"}
+                        </span>
+                      </span>
+                      <span style={{display: "flex", gap: "8px", padding: "4px 6px", font: "400 12px/1.3 'Geist Mono', monospace"}}>
+                        <span style={{flex: "1"}}>
+                          {"payments.test.js"}
+                        </span>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+4"}
+                        </span>
+                        <span style={{color: "#A33A2C"}} />
+                      </span>
+                    </div>
+                    <p style={{margin: "0", fontSize: "13px", lineHeight: "1.55", color: "#3D404A"}}>
+                      {"Bizum aparece junto a la tarjeta y los 24 tests pasan. Lo he probado con un pago de prueba."}
+                    </p>
+                    <div style={{display: "flex", gap: "6px"}}>
+                      <button type="button" style={{height: "36px", padding: "0 14px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                        {"Abrir"}
+                      </button>
+                      <button type="button" style={{height: "36px", padding: "0 14px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                        {"Elegir este"}
+                      </button>
+                    </div>
+                  </article>
+                  <article style={{display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.04)"}}>
+                    <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+                      <span aria-hidden="true" style={{display: "block", width: "26px", height: "26px", flex: "none", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A", borderRadius: "50% 50% 14% 14%"}} />
+                      <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px"}}>
+                        <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                          {"Codex · GPT-6.1 Sol"}
+                        </strong>
+                        <span style={{fontSize: "12px", color: "#6B6F7A"}}>
+                          {"Listo para revisar"}
+                        </span>
+                      </span>
+                      <span style={{font: "500 12px/1 'Geist Mono', monospace"}}>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+96"}
+                        </span>
+                        {" "}
+                        <span style={{color: "#A33A2C"}}>
+                          {"−11"}
+                        </span>
+                      </span>
+                    </div>
+                    <span style={{alignSelf: "flex-start", padding: "5px 11px", borderRadius: "999px", background: "#FCEEEB", color: "#7A2A1F", fontSize: "12px", fontWeight: "600"}}>
+                      {"Fallan los tests · 5 s"}
+                    </span>
+                    <div style={{display: "flex", flexDirection: "column", gap: "2px", padding: "8px", borderRadius: "14px", background: "#FAFAF8"}}>
+                      <span style={{display: "flex", gap: "8px", padding: "4px 6px", font: "400 12px/1.3 'Geist Mono', monospace"}}>
+                        <span style={{flex: "1"}}>
+                          {"PaymentMethods.jsx"}
+                        </span>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+71"}
+                        </span>
+                        <span style={{color: "#A33A2C"}}>
+                          {"−8"}
+                        </span>
+                      </span>
+                      <span style={{display: "flex", gap: "8px", padding: "4px 6px", font: "400 12px/1.3 'Geist Mono', monospace"}}>
+                        <span style={{flex: "1"}}>
+                          {"payments.js"}
+                        </span>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+25"}
+                        </span>
+                        <span style={{color: "#A33A2C"}}>
+                          {"−3"}
+                        </span>
+                      </span>
+                    </div>
+                    <p style={{margin: "0", fontSize: "13px", lineHeight: "1.55", color: "#3D404A"}}>
+                      {"He añadido Bizum; un test de la cesta falla porque cambié el orden de los métodos."}
+                    </p>
+                    <div style={{display: "flex", gap: "6px"}}>
+                      <button type="button" style={{height: "36px", padding: "0 14px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                        {"Abrir"}
+                      </button>
+                      <button type="button" style={{height: "36px", padding: "0 14px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                        {"Elegir este"}
+                      </button>
+                    </div>
+                  </article>
+                  <article style={{display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.04)"}}>
+                    <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
+                      <span aria-hidden="true" style={{display: "block", width: "26px", height: "26px", flex: "none", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A", borderRadius: "50% 50% 14% 14%"}} />
+                      <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px"}}>
+                        <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                          {"OpenCode · DeepSeek V4.1 Flash"}
+                        </strong>
+                        <span style={{fontSize: "12px", color: "#6B6F7A"}}>
+                          {"Listo para revisar"}
+                        </span>
+                      </span>
+                      <span style={{font: "500 12px/1 'Geist Mono', monospace"}}>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+64"}
+                        </span>
+                        {" "}
+                        <span style={{color: "#A33A2C"}}>
+                          {"−6"}
+                        </span>
+                      </span>
+                    </div>
+                    <span style={{alignSelf: "flex-start", padding: "5px 11px", borderRadius: "999px", background: "#E1F4EC", color: "#0B5A3E", fontSize: "12px", fontWeight: "600"}}>
+                      {"Pasan los tests · 7 s"}
+                    </span>
+                    <div style={{display: "flex", flexDirection: "column", gap: "2px", padding: "8px", borderRadius: "14px", background: "#FAFAF8"}}>
+                      <span style={{display: "flex", gap: "8px", padding: "4px 6px", font: "400 12px/1.3 'Geist Mono', monospace"}}>
+                        <span style={{flex: "1"}}>
+                          {"PaymentMethods.jsx"}
+                        </span>
+                        <span style={{color: "#0B6B4A"}}>
+                          {"+64"}
+                        </span>
+                        <span style={{color: "#A33A2C"}}>
+                          {"−6"}
+                        </span>
+                      </span>
+                    </div>
+                    <p style={{margin: "0", fontSize: "13px", lineHeight: "1.55", color: "#3D404A"}}>
+                      {"Bizum listo con lo mínimo: un botón y su llamada; sin tests nuevos."}
+                    </p>
+                    <div style={{display: "flex", gap: "6px"}}>
+                      <button type="button" style={{height: "36px", padding: "0 14px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                        {"Abrir"}
+                      </button>
+                      <button type="button" style={{height: "36px", padding: "0 14px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                        {"Elegir este"}
+                      </button>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+          </>
+        ) : null}
         {v.inTask ? (
           <>
             <section aria-label="Tarea: Bizum en el checkout" style={{flex: "1", minWidth: "0", height: "100%", display: "flex", flexDirection: "column"}}>
@@ -706,6 +907,12 @@ export function View({ v }) {
                         <div style={{display: "flex", flexWrap: "wrap", gap: "8px"}}>
                           <button type="button" style={{height: "46px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#FFC93C", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
                             {"Publicar"}
+                          </button>
+                          <button type="button" title="No vuelve a preguntarlo mientras dure esta tarea" style={{height: "46px", padding: "0 16px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                            {"En esta tarea"}
+                          </button>
+                          <button type="button" title="Esta orden exacta ya no pregunta en este proyecto" style={{height: "46px", padding: "0 16px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                            {"Siempre aquí"}
                           </button>
                           <button type="button" style={{height: "46px", padding: "0 16px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
                             {"Siempre en este proyecto"}

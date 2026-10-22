@@ -115,6 +115,36 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 </section>
 </sc-if>
 
+<sc-if value="{{comparing}}" hint-placeholder-val="{{ false }}">
+<section aria-label="Comparar" style="flex: 1; min-width: 0; height: 100%; overflow-y: auto; animation: fade .3s ease-out">
+<div style="max-width: 1180px; margin: 0 auto; padding: 34px clamp(20px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 22px">
+<header style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap"><div style="flex: 1 1 360px; display: flex; flex-direction: column; gap: 6px"><span style="font: 500 11px/1.3 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Comparar · 3 motores con la misma petición</span><h1 style="margin: 0; font: 600 28px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.025em">Bizum en el checkout</h1></div><button type="button" style="height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Probar todos</button></header>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start">
+<article style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 2px #0B8A5F, 0 1px 2px rgba(18,19,26,.04)">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="display: block; width: 26px; height: 26px; flex: none; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A; border-radius: 50% 50% 14% 14%"></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 15px; font-weight: 600">Claude Code · Opus 5.5</strong><span style="font-size: 12px; color: #6B6F7A">Listo para revisar</span></span><span style="font: 500 12px/1 'Geist Mono', monospace"><span style="color: #0B6B4A">+128</span> <span style="color: #A33A2C">−14</span></span></div>
+<span style="align-self: flex-start; padding: 5px 11px; border-radius: 999px; background: #E1F4EC; color: #0B5A3E; font-size: 12px; font-weight: 600">Pasan los tests · 6 s</span>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 14px; background: #FAFAF8"><span style="display: flex; gap: 8px; padding: 4px 6px; font: 400 12px/1.3 'Geist Mono', monospace"><span style="flex: 1">PaymentMethods.jsx</span><span style="color: #0B6B4A">+86</span><span style="color: #A33A2C">−9</span></span><span style="display: flex; gap: 8px; padding: 4px 6px; font: 400 12px/1.3 'Geist Mono', monospace"><span style="flex: 1">payments.js</span><span style="color: #0B6B4A">+38</span><span style="color: #A33A2C">−5</span></span><span style="display: flex; gap: 8px; padding: 4px 6px; font: 400 12px/1.3 'Geist Mono', monospace"><span style="flex: 1">payments.test.js</span><span style="color: #0B6B4A">+4</span><span style="color: #A33A2C"></span></span></div>
+<p style="margin: 0; font-size: 13px; line-height: 1.55; color: #3D404A">Bizum aparece junto a la tarjeta y los 24 tests pasan. Lo he probado con un pago de prueba.</p>
+<div style="display: flex; gap: 6px"><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 13px; font-weight: 600">Abrir</button><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600">Elegir este</button></div>
+</article>
+<article style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.04)">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="display: block; width: 26px; height: 26px; flex: none; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A; border-radius: 50% 50% 14% 14%"></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 15px; font-weight: 600">Codex · GPT-6.1 Sol</strong><span style="font-size: 12px; color: #6B6F7A">Listo para revisar</span></span><span style="font: 500 12px/1 'Geist Mono', monospace"><span style="color: #0B6B4A">+96</span> <span style="color: #A33A2C">−11</span></span></div>
+<span style="align-self: flex-start; padding: 5px 11px; border-radius: 999px; background: #FCEEEB; color: #7A2A1F; font-size: 12px; font-weight: 600">Fallan los tests · 5 s</span>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 14px; background: #FAFAF8"><span style="display: flex; gap: 8px; padding: 4px 6px; font: 400 12px/1.3 'Geist Mono', monospace"><span style="flex: 1">PaymentMethods.jsx</span><span style="color: #0B6B4A">+71</span><span style="color: #A33A2C">−8</span></span><span style="display: flex; gap: 8px; padding: 4px 6px; font: 400 12px/1.3 'Geist Mono', monospace"><span style="flex: 1">payments.js</span><span style="color: #0B6B4A">+25</span><span style="color: #A33A2C">−3</span></span></div>
+<p style="margin: 0; font-size: 13px; line-height: 1.55; color: #3D404A">He añadido Bizum; un test de la cesta falla porque cambié el orden de los métodos.</p>
+<div style="display: flex; gap: 6px"><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 13px; font-weight: 600">Abrir</button><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600">Elegir este</button></div>
+</article>
+<article style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.04)">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="display: block; width: 26px; height: 26px; flex: none; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A; border-radius: 50% 50% 14% 14%"></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 15px; font-weight: 600">OpenCode · DeepSeek V4.1 Flash</strong><span style="font-size: 12px; color: #6B6F7A">Listo para revisar</span></span><span style="font: 500 12px/1 'Geist Mono', monospace"><span style="color: #0B6B4A">+64</span> <span style="color: #A33A2C">−6</span></span></div>
+<span style="align-self: flex-start; padding: 5px 11px; border-radius: 999px; background: #E1F4EC; color: #0B5A3E; font-size: 12px; font-weight: 600">Pasan los tests · 7 s</span>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 8px; border-radius: 14px; background: #FAFAF8"><span style="display: flex; gap: 8px; padding: 4px 6px; font: 400 12px/1.3 'Geist Mono', monospace"><span style="flex: 1">PaymentMethods.jsx</span><span style="color: #0B6B4A">+64</span><span style="color: #A33A2C">−6</span></span></div>
+<p style="margin: 0; font-size: 13px; line-height: 1.55; color: #3D404A">Bizum listo con lo mínimo: un botón y su llamada; sin tests nuevos.</p>
+<div style="display: flex; gap: 6px"><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 13px; font-weight: 600">Abrir</button><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600">Elegir este</button></div>
+</article>
+</div>
+</div>
+</section>
+</sc-if>
 <sc-if value="{{inTask}}" hint-placeholder-val="{{ true }}">
 <section aria-label="Tarea: Bizum en el checkout" style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column">
 
@@ -210,6 +240,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3D404A">La verán quienes tengan acceso a tu repositorio. Lo demás (editar, probar, instalar dentro del proyecto) lo hace sin preguntarte.</p>
 <div style="display: flex; flex-wrap: wrap; gap: 8px">
 <button type="button" style="height: 46px; padding: 0 18px; border: 0; border-radius: 999px; background: #FFC93C; cursor: pointer; font-size: 14px; font-weight: 600">Publicar</button>
+<button type="button" title="No vuelve a preguntarlo mientras dure esta tarea" style="height: 46px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">En esta tarea</button>
+<button type="button" title="Esta orden exacta ya no pregunta en este proyecto" style="height: 46px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">Siempre aquí</button>
 <button type="button" style="height: 46px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">Siempre en este proyecto</button>
 <button type="button" style="height: 46px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600">Ahora no</button>
 </div>
@@ -343,7 +375,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","comparar","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -456,9 +488,9 @@ class Component extends DCLogic {
       ['Guardar y subir', 'Commit y push a GitHub.', 'm8 17 4-4 4 4', 'M12 13v8', 12, 6],
       ['Guardar, subir y abrir PR', 'Bruno escribe el título y la descripción del PR.', 'M5 9v12', 'M12 6h5a2 2 0 0 1 2 2v7', 5, 6]
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
-    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['inicio', 'Inicio']];
+    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['comparar', 'Comparar'], ['inicio', 'Inicio']];
     return {
-      home: s.mode === 'inicio', inTask: s.mode !== 'inicio', working,
+      home: s.mode === 'inicio', comparing: s.mode === 'comparar', inTask: s.mode !== 'inicio' && s.mode !== 'comparar', working,
       railDot: s.mode === 'plan' || s.mode === 'pide',
       is: { objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
       label: LABEL[s.mode], aura, groups, log, diff, tabs,

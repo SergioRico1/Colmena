@@ -112,7 +112,8 @@ function AskCard({ item, onAnswer }) {
       </div>
     );
   }
-  const status = { allowed: item.always ? "Permitido siempre en este proyecto" : "Lo permitiste", denied: "Dijiste que no", expired: "Ya no hacía falta" }[item.status];
+  const status = { allowed: item.always ? "Permitido siempre en este proyecto" : item.scope === "task" ? "Permitido en esta tarea" : item.scope === "here" ? "Permitida siempre esta orden aquí" : "Lo permitiste", denied: "Dijiste que no", expired: "Ya no hacía falta" }[item.status];
+  const quiet = { height: "46px", padding: "0 16px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: 600 };
   return (
     <div role={pending ? "dialog" : undefined} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: pending ? "22px" : "14px 18px", borderRadius: "24px", background: C.white, boxShadow: pending ? `0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -28px rgba(18,19,26,.4)` : CARD, animation: pending ? "sheet .45s cubic-bezier(.2,.8,.2,1)" : "none" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: pending ? C.honeyText : C.faint }}>
@@ -125,7 +126,9 @@ function AskCard({ item, onAnswer }) {
       {pending ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           <button type="button" onClick={() => onAnswer(item, { decision: "allow" })} style={{ height: "46px", padding: "0 18px", border: 0, borderRadius: "999px", background: red ? C.honey : C.ink, color: red ? C.ink : C.white, cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Permitir</button>
-          {item.durable ? <button type="button" onClick={() => onAnswer(item, { decision: "always" })} style={{ height: "46px", padding: "0 16px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Siempre en este proyecto</button> : null}
+          {item.taskScope ? <button type="button" onClick={() => onAnswer(item, { decision: "task" })} title={red ? "No vuelve a preguntar esto mientras dure esta tarea" : "No vuelve a preguntar por este tipo de paso en esta tarea"} style={quiet}>En esta tarea</button> : null}
+          {item.exact ? <button type="button" onClick={() => onAnswer(item, { decision: "here" })} title={"Esta orden exacta no vuelve a preguntar en este proyecto: " + item.exact} style={quiet}>Siempre aquí</button> : null}
+          {item.durable ? <button type="button" onClick={() => onAnswer(item, { decision: "always" })} style={quiet}>Siempre en este proyecto</button> : null}
           <button type="button" onClick={() => onAnswer(item, { decision: "deny" })} style={{ height: "46px", padding: "0 16px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Ahora no</button>
         </div>
       ) : null}
@@ -233,7 +236,7 @@ export function TimelineRow({ row, ctx }) {
   if (row.kind === "notice") {
     const tone = item.tone === "done" ? { bg: C.greenSoft, fg: "#0B5A3E" } : item.tone === "warn" ? { bg: "#FFF4D1", fg: "#5C4300" } : null;
     return (
-      <span style={{ alignSelf: "center", display: "flex", alignItems: "center", gap: "8px", padding: tone ? "8px 14px" : 0, borderRadius: "999px", background: tone ? tone.bg : "transparent", fontSize: "13px", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
+      <span title={item.detail || undefined} style={{ alignSelf: "center", display: "flex", alignItems: "center", gap: "8px", padding: tone ? "8px 14px" : 0, borderRadius: "999px", background: tone ? tone.bg : "transparent", fontSize: "13px", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
         {item.tone === "done" ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "50%", border: "2px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
         {item.url ? <a href={item.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Abrir en GitHub</a> : null}
         {item.undo && ctx.lastNotice === item.id && !ctx.busy ? (

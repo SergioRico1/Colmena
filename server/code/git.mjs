@@ -164,6 +164,16 @@ export class Snapshots {
     for (const rel of gone) await unlink(path.join(this.scope.root, rel)).catch(() => {});
     return { written: write.length, removed: gone.length, before: now };
   }
+  /** Puts only `rels` back as they were at point `target` (a file new since then is removed). */
+  async restoreFiles(target, rels) {
+    await this.init();
+    const want = await this.backend.files(this.scope, target);
+    const key = (rel) => String(rel).replace(/\\/g, "/");
+    const back = rels.map(key).filter((rel) => want.has(rel));
+    await this.backend.write(this.scope, target, back);
+    for (const rel of rels.map(key).filter((r) => !want.has(r))) await unlink(path.join(this.scope.root, rel)).catch(() => {});
+    return { written: back.length, removed: rels.length - back.length };
+  }
   async drop() {
     await rm(this.scope.dir, { recursive: true, force: true }).catch(() => {});
   }

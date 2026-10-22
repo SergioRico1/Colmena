@@ -30,7 +30,7 @@ export function Seg({ options, value, onChange, small = false, label }) {
         const on = id === value;
         return (
           <button key={id} type="button" role="radio" aria-checked={on} onClick={() => onChange(id)}
-            style={{ height: small ? "24px" : "28px", padding: small ? "0 10px" : "0 12px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: small ? "12px" : "13px", fontWeight: 600, background: on ? C.white : "transparent", color: on ? C.ink : C.muted, boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none" }}>
+            style={{ height: small ? "24px" : "28px", padding: small ? "0 10px" : "0 12px", border: 0, borderRadius: "999px", cursor: "pointer", whiteSpace: "nowrap", fontSize: small ? "12px" : "13px", fontWeight: 600, background: on ? C.white : "transparent", color: on ? C.ink : C.muted, boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none" }}>
             {text}
           </button>
         );

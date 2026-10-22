@@ -69,7 +69,7 @@ export function registerCodeRoutes(app, { code }) {
   app.post("/api/code/tasks", async (req, res) => {
     const body = z.object({
       projectId: id, text: z.string().max(100000).default(""), engine: z.enum(ENGINES).optional(), model: model.optional(), effort: z.enum(EFFORTS).optional(),
-      access: z.enum(ACCESS).optional(), isolated: z.boolean().optional(), mode: z.enum(["build", "plan"]).optional(), attachments: attachments.optional(), label: z.string().trim().max(60).optional(),
+      access: z.enum(ACCESS).optional(), isolated: z.boolean().optional(), mode: z.enum(["build", "plan"]).optional(), attachments: attachments.optional(), label: z.string().trim().max(60).optional(), group: z.string().regex(/^cg-[0-9a-f]{4,16}$/).optional(),
     }).strict().parse(req.body || {});
     res.json({ task: await code.createTask(body) });
   });
@@ -99,7 +99,7 @@ export function registerCodeRoutes(app, { code }) {
   });
   app.post("/api/code/tasks/:id/stop", async (req, res) => res.json(await code.stop(id.parse(req.params.id))));
   app.post("/api/code/tasks/:id/asks/:ask", (req, res) => {
-    const body = z.object({ decision: z.enum(["allow", "always", "deny"]).optional(), answers: z.record(z.string().max(500)).optional() }).strict().parse(req.body || {});
+    const body = z.object({ decision: z.enum(["allow", "always", "task", "here", "deny"]).optional(), answers: z.record(z.string().max(500)).optional() }).strict().parse(req.body || {});
     res.json(code.answer(id.parse(req.params.id), id.parse(req.params.ask), body));
   });
   app.get("/api/code/tasks/:id/diff", async (req, res) => {
@@ -122,6 +122,24 @@ export function registerCodeRoutes(app, { code }) {
     if (body.to === "push") return res.json(await code.push(taskId));
     if (body.to === "pr") return res.json(await code.pullRequest(taskId));
     res.json(await code.commit(taskId, { message: body.message }));
+  });
+  // One file of the diff: undo it, or open it in the editor at that line.
+  app.post("/api/code/tasks/:id/revert-file", async (req, res) => {
+    const body = z.object({ path: z.string().trim().min(1).max(1000), turn: z.number().int().min(1).max(100000).nullable().optional() }).strict().parse(req.body || {});
+    res.json(await code.revertFile(id.parse(req.params.id), body));
+  });
+  app.post("/api/code/tasks/:id/open-editor", async (req, res) => {
+    const body = z.object({ path: z.string().trim().min(1).max(1000), line: z.number().int().min(1).max(10000000).default(1) }).strict().parse(req.body || {});
+    res.json(await code.openInEditor(id.parse(req.params.id), body));
+  });
+  // Several engines at once: what each one did, and their tests.
+  const group = z.string().regex(/^cg-[0-9a-f]{4,16}$/);
+  app.get("/api/code/compare/:group", async (req, res) => res.json(await code.compare(group.parse(req.params.group))));
+  app.post("/api/code/compare/:group/tests", async (req, res) => res.json(await code.compareTests(group.parse(req.params.group))));
+  // Following the task's pull request with gh.
+  app.post("/api/code/tasks/:id/pr", async (req, res) => {
+    const body = z.object({ watch: z.boolean() }).strict().parse(req.body || {});
+    res.json(await code.setPrWatch(id.parse(req.params.id), body.watch));
   });
   // Review before saving, «Ponerse al día» with the base, and Bruno's look at the preview.
   app.post("/api/code/tasks/:id/review", async (req, res) => res.json(await code.review(id.parse(req.params.id))));

@@ -57,12 +57,14 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
     let p = project;
     if (!p) ({ project: p } = await post("/code/projects", { name: (text || "proyecto").split(/\s+/).slice(0, 4).join(" ") }));
     const many = chosen.length > 1;
+    // Started together, they are compared together (/codigo/comparar/<grupo>).
+    const group = many ? "cg-" + Math.random().toString(16).slice(2, 10) : null;
     let first = null;
     for (const c of chosen.length ? chosen : [null]) {
-      const { task } = await post("/code/tasks", { projectId: p.id, text, mode: plan === "plan" ? "plan" : "build", attachments: files, ...(c ? { engine: c.engine, model: c.model } : {}), ...(many ? { label: labelOf(c) } : {}) });
+      const { task } = await post("/code/tasks", { projectId: p.id, text, mode: plan === "plan" ? "plan" : "build", attachments: files, ...(c ? { engine: c.engine, model: c.model } : {}), ...(many ? { label: labelOf(c), group } : {}) });
       first ||= task;
     }
-    navigate("/codigo/" + first.id);
+    navigate(group ? "/codigo/comparar/" + group : "/codigo/" + first.id);
     return true;
   }).then((ok) => ok === true);
   const STARTS = [

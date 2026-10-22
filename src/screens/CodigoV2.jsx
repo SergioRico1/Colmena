@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GitBranch, GitMerge, GitCommitHorizontal, ChevronDown, FileDiff, Globe, ExternalLink, PanelRight, SquareTerminal, Maximize2, Minimize2, Check, Target, Pause, Play, X } from "lucide-react";
+import { GitBranch, GitMerge, GitCommitHorizontal, ChevronDown, FileDiff, Globe, ExternalLink, PanelRight, SquareTerminal, Maximize2, Minimize2, Check, Target, Pause, Play, X, Columns3, GitPullRequest } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import ProjectList, { taskStatus } from "../components/v2/code/ProjectList.jsx";
 import CodeHome, { pickProjectFolder } from "../components/v2/code/CodeHome.jsx";
@@ -16,6 +16,7 @@ import { del, patch, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { usePanelWidth } from "../lib/usePanelWidth.jsx";
 import ShortcutsSheet, { useCodeKeys } from "../components/v2/code/Shortcuts.jsx";
+import Compare from "../components/v2/code/Compare.jsx";
 
 /** Commands for the open task from shortcuts and the palette (TaskView listens). */
 const command = (name) => window.dispatchEvent(new CustomEvent("colmena:code-command", { detail: name }));
@@ -161,6 +162,22 @@ function GoalRow({ task, onGoal }) {
   );
 }
 
+/** The task's pull request as Colmena follows it with gh: CI, conflicts, merged. */
+function PrChip({ pr }) {
+  const look = pr.state === "MERGED" ? ["fusionada", C.greenText] : pr.state === "CLOSED" ? ["cerrada", C.faint]
+    : pr.mergeable === "CONFLICTING" ? ["conflictos", C.honeyText] : pr.checks === "failing" ? ["CI falla", C.red]
+      : pr.checks === "pending" ? ["CI en curso", C.faint] : pr.checks === "passing" ? ["CI pasa", C.greenText] : [pr.number ? "abierta" : "esperando la PR…", C.faint];
+  const label = (pr.number ? "PR #" + pr.number : "PR") + " · " + look[0];
+  const style = { display: "flex", alignItems: "center", gap: "5px", padding: "3px 9px", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "12px", fontWeight: 600, color: look[1], whiteSpace: "nowrap" };
+  const title = pr.watching ? "Colmena sigue esta PR con gh: si falla el CI, hay conflictos o comentan, Bruno se pone con ello (subir sigue pidiendo tu OK)." : "Colmena ya no sigue esta PR.";
+  return (
+    <>
+      <span aria-hidden="true">·</span>
+      {pr.url ? <a href={pr.url} target="_blank" rel="noreferrer" title={title} style={style}><GitPullRequest size={12} strokeWidth={2.4} aria-hidden="true" />{label}</a> : <span title={title} style={style}><GitPullRequest size={12} strokeWidth={2.4} aria-hidden="true" />{label}</span>}
+    </>
+  );
+}
+
 /** Tells the server which task is on screen, so it does not send a notice for it. */
 function useWatch(taskId) {
   useEffect(() => {
@@ -267,6 +284,8 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
             <h1 style={{ margin: 0, font: `600 22px/1.05 ${HEAD}`, letterSpacing: "-0.025em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={task.title}>{task.title}</h1>
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", fontSize: "13px", color: C.muted }}>
               <span role="status" style={{ fontWeight: 500, color: aura.text }}>{task.status === "waiting" ? "Te espera" : running ? "Trabajando" : s.text}</span>
+              {task.group ? <><span aria-hidden="true">·</span><a href={"/codigo/comparar/" + task.group} title="La misma petición con otros motores, lado a lado" style={{ display: "flex", alignItems: "center", gap: "5px", fontWeight: 600, color: C.blue }}><Columns3 size={13} strokeWidth={2.2} aria-hidden="true" />Comparar</a></> : null}
+              {task.pr && (task.pr.number || task.pr.watching) ? <PrChip pr={task.pr} /> : null}
               {compact ? null : task.isolated ? (
                 <>
                   <span aria-hidden="true">·</span>
@@ -399,7 +418,7 @@ export default function CodigoV2({ params = {}, query = {} }) {
     <Shell active="codigo" scroll={false} extraCss={CODE_CSS}>
       <div style={{ display: "flex", height: "100%", minWidth: 0 }}>
         {taskId && panel && wide ? null : <ProjectList projects={projects} currentTask={taskId} onOpen={addFolder} />}
-        {taskId ? (
+        {params.group ? <Compare group={params.group} projects={projects} /> : taskId ? (
           <>
             <TaskView taskId={taskId} narrow={panel && wide} panelOpen={panel} onTogglePanel={() => setPanel(!panel)} onShowTurn={(n) => { setTurn(n); setTab("cambios"); setPanel(true); }} />
             {panel ? <SidePanel taskId={taskId} turn={turn} onTurn={setTurn} tab={tab} setTab={setTab} wide={wide} onWide={setWide} /> : null}

@@ -11,6 +11,7 @@ export const routes = [
   { path: "/conversaciones", screen: "Conversacion" },
   { path: "/chats", screen: "Conversacion" },
   { path: "/codigo", screen: "CodigoV2" },
+  { path: "/codigo/comparar/:group", screen: "CodigoV2" },
   { path: "/codigo/:task", screen: "CodigoV2" },
   { path: "/colmena", screen: "ColmenaV2" },
   { path: "/colmena/nuevo", screen: "ColmenaV2" },

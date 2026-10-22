@@ -180,25 +180,40 @@ export function askTitle(tool, input = {}) {
  * The decision for one tool call.
  * @returns {{decision:'allow'|'ask'|'redline', rule?:string, reason?:string, durable?:boolean}}
  */
-export function decide({ tool, input = {}, access = "project", cwd, roots = [cwd], allowed = [] }) {
+export function decide({ tool, input = {}, access = "project", cwd, roots = [cwd], allowed = [], taskAllow = [], commands = [] }) {
   const all = [cwd, ...roots].filter(Boolean);
   if (READ_TOOLS.has(tool) || tool === "AskUserQuestion" || tool === "ExitPlanMode") return { decision: "allow" };
-  if (tool.startsWith("mcp__")) return access === "ask" ? { decision: "ask", reason: "Usa una herramienta externa." } : { decision: "allow" };
+  // «En esta tarea» (taskAllow: a red line's rule, or «edit» / «shell» / a tool) and «Siempre
+  // aquí» (commands: exact command lines of this project) answer before asking again
+  // (OpenClaw exec approvals). Changing the system and deleting outside always ask.
+  const scoped = (rule) => !ONCE_ONLY.has(rule);
+  const ask = (reason, scope) => ({ decision: "ask", reason, taskScope: scope });
+  if (tool.startsWith("mcp__")) return access === "ask" && !taskAllow.includes(tool) ? ask("Usa una herramienta externa.", tool) : { decision: "allow" };
   if (EDIT_TOOLS.has(tool)) {
     const file = input.file_path || input.notebook_path || "";
-    if (access !== "full" && !all.some((r) => inside(r, path.resolve(cwd || ".", String(file)))))
-      return { decision: "redline", rule: "write-outside", reason: "Cambia un archivo fuera del proyecto." };
-    return access === "ask" ? { decision: "ask", reason: "Cambia un archivo del proyecto." } : { decision: "allow" };
+    if (access !== "full" && !all.some((r) => inside(r, path.resolve(cwd || ".", String(file))))) {
+      if (taskAllow.includes("write-outside")) return { decision: "allow", rule: "write-outside" };
+      return { decision: "redline", rule: "write-outside", reason: "Cambia un archivo fuera del proyecto.", taskScope: "write-outside" };
+    }
+    return access === "ask" && !taskAllow.includes("edit") ? ask("Cambia un archivo del proyecto.", "edit") : { decision: "allow" };
   }
   if (SHELL_TOOLS.has(tool)) {
     // Deleting or writing outside the project stays a red line even with «Todo el ordenador».
     const hit = classifyShell(input.command, { cwd, roots: all });
+    const exact = commandKey(input.command);
     if (hit.redLine) {
       if (hit.durable && allowed.includes(hit.rule)) return { decision: "allow", rule: hit.rule };
-      return { decision: "redline", rule: hit.rule, reason: hit.reason, durable: !!hit.durable };
+      if (scoped(hit.rule) && (taskAllow.includes(hit.rule) || commands.includes(exact))) return { decision: "allow", rule: hit.rule };
+      return { decision: "redline", rule: hit.rule, reason: hit.reason, durable: !!hit.durable, ...(scoped(hit.rule) ? { taskScope: hit.rule, exact } : {}) };
     }
-    return access === "ask" ? { decision: "ask", reason: "Ejecuta una orden en el proyecto." } : { decision: "allow" };
+    if (access !== "ask" || taskAllow.includes("shell") || commands.includes(exact)) return { decision: "allow" };
+    return { ...ask("Ejecuta una orden en el proyecto.", "shell"), exact };
   }
   // Anything new or unknown: free inside the project, asked when the person wants to see every step.
-  return access === "ask" ? { decision: "ask", reason: "Usa " + tool + "." } : { decision: "allow" };
+  return access === "ask" && !taskAllow.includes(tool) ? ask("Usa " + tool + ".", tool) : { decision: "allow" };
 }
+
+/** Red lines that never become «En esta tarea» or «Siempre aquí»: asked every time. */
+export const ONCE_ONLY = new Set(["system", "delete-outside"]);
+/** One command line as «Siempre aquí» keeps it: trimmed, spaces collapsed. */
+export const commandKey = (line) => String(line || "").trim().replace(/\s+/g, " ").slice(0, 2000);

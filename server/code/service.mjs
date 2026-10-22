@@ -13,13 +13,13 @@ import { fileURLToPath } from "node:url";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { now } from "../store.mjs";
 import { killTree } from "../projects/run.mjs";
 import { ClaudeCodeEngine } from "./claude.mjs";
 import { CodexEngine, codexModels, findCodexCli } from "./codex.mjs";
 import { OpenCodeEngine, OPENCODE_MODELS, findOpenCode, installOpenCode } from "./opencode.mjs";
-import { decide, askTitle, ACCESS } from "./policy.mjs";
+import { decide, askTitle, ACCESS, inside } from "./policy.mjs";
 import { Snapshots, repoInfo, addWorktree, removeWorktree, git, slug, copyIncluded, savedRef, keepCommit, dropRef, restoreWorktree } from "./git.mjs";
 import { taskPorts, descendants, stopFamily } from "./ports.mjs";
 import { Terminals, projectScripts } from "./terminal.mjs";
@@ -44,6 +44,8 @@ export const KEYBINDINGS = Object.freeze({
 /** Bruno's look at the preview through his shell (preview-cli.mjs). */
 export const PREVIEW_CLI = fileURLToPath(new URL("./preview-cli.mjs", import.meta.url));
 const IDLE_MS = 30 * 60 * 1000;
+/** How often a followed pull request is looked at (gh pr view). */
+export const PR_POLL_MS = 2 * 60 * 1000;
 const MAX_OUTPUT = 12000;
 /** A copy saved into its base is cleaned up; its last commit stays this long under a hidden ref. */
 export const KEEP_SAVED_MS = 30 * 86400000;
@@ -89,7 +91,8 @@ export function toolLine(tool, input = {}) {
 }
 
 export class CodeService {
-  constructor({ store, directory = store.directory, command = null, codexCommand = undefined, opencodeCommand = undefined, goKey = null, ptySpawn = null, notifier = null, computer = null } = {}) {
+  constructor({ store, directory = store.directory, command = null, codexCommand = undefined, opencodeCommand = undefined, goKey = null, ptySpawn = null, notifier = null, computer = null, ghCommand = undefined } = {}) {
+    this.ghCommand = ghCommand; // GitHub CLI ([exe, ...args] in tests; looked up on the PATH otherwise)
     this.computer = computer; // the desktop browser (server/computer/bridge.mjs): Bruno's look at the preview
     this.apiBase = null; // http://127.0.0.1:<port>/api, set once the server listens (preview-cli.mjs)
     this.store = store;
@@ -115,6 +118,7 @@ export class CodeService {
     for (const item of store.list("codeItems").filter((i) => i.kind === "ask" && i.status === "pending")) store.put("codeItems", { ...item, status: "expired" });
     for (const task of store.list("codeTasks").filter((t) => ["working", "waiting"].includes(t.status))) store.put("codeTasks", { ...task, status: "idle", queue: task.queue || [] });
     void this.pruneSaved().catch(() => {});
+    if (store.list("codeTasks").some((t) => t.pr?.watching)) this.startPrWatch();
   }
 
   emit(event) { this.events.emit("event", event); }
@@ -260,6 +264,7 @@ export class CodeService {
       turns: turns.length, lastChanged: [...turns].reverse().find((x) => x.files?.length)?.n || null, queue: t.queue || [], error: t.error || null, merged: t.merged || null, usage: t.usage || null, limit: t.limit || null, running: !!live?.turn, createdAt: t.createdAt, updatedAt: t.updatedAt,
       goal: t.goal || null, saved: t.saved ? { at: t.saved.at, until: t.saved.until, expired: !!t.saved.expired } : null, included: t.included || null,
       merging: t.merging || null, review: t.review || null, previewCheck: t.previewCheck || null,
+      group: t.group || null, label: t.label || null, tests: t.tests ? { status: t.tests.status, code: t.tests.code, durationMs: t.tests.durationMs, at: t.tests.at } : null, pr: t.pr || null, allow: t.allow || [],
     };
   }
 
@@ -329,7 +334,7 @@ export class CodeService {
     return this.store.get("bots", "bruno") || { id: "bruno", name: "Bruno", instructions: "" };
   }
 
-  async createTask({ projectId, text, engine = "claude-code", model = null, effort = "high", access = "project", isolated = true, mode = "build", attachments = [], label = null }) {
+  async createTask({ projectId, text, engine = "claude-code", model = null, effort = "high", access = "project", isolated = true, mode = "build", attachments = [], label = null, group = null }) {
     const project = this.mustProject(projectId);
     if (!ENGINES.includes(engine)) engine = "claude-code";
     if (engine === "codex" && !this.codexCommand) throw Object.assign(Error("Codex no está instalado en este ordenador."), { status: 409 });
@@ -358,6 +363,7 @@ export class CodeService {
       isolated: copy, cwd, branch, base: baseRef, baseCommit, worktree: copy ? path.join(this.directory, "code", "worktrees", project.id, id) : null, repoTop: repo.top || null,
       status: "idle", turns: [], queue: [], session: { id: randomUUID(), started: false, forkAt: null }, createdAt: now(), updatedAt: now(),
       included: included.length ? included.slice(0, 50) : null,
+      group: group || null, label: label || null, // started together with other engines (compare)
     };
     this.store.put("codeTasks", task);
     try { task.baseSnap = await this.snapsOf(task).capture("base"); this.store.put("codeTasks", task); } catch (e) { console.warn("Código: sin punto base: " + e.message); }
@@ -462,7 +468,7 @@ export class CodeService {
    * `mode` «plan» asks for a plan first (nothing changes until the person says «Implementar»).
    * `attachments` are files saved by saveAttachment (absolute paths the engine reads).
    */
-  async send(taskId, { text, when = "queue", mode = "build", attachments = [], contexts = [] }) {
+  async send(taskId, { text, when = "queue", mode = "build", attachments = [], contexts = [], line = null }) {
     let task = this.mustTask(taskId);
     const message = String(text || "").trim();
     // A preview note's capture must be one Colmena saved (an attachment), like any file.
@@ -476,7 +482,7 @@ export class CodeService {
         this.addItem(taskId, { kind: "user", text: message, attachments: files.length ? files : undefined, contexts: notes.length ? notes : undefined, steer: true, turn: live.turn.n });
         return { steered: true };
       }
-      const queue = [...(task.queue || []), { id: randomUUID().slice(0, 8), text: message, mode, attachments: files, contexts: notes, at: now() }];
+      const queue = [...(task.queue || []), { id: randomUUID().slice(0, 8), text: message, mode, attachments: files, contexts: notes, line, at: now() }];
       this.setTask(taskId, { queue });
       return { queued: true };
     }
@@ -484,7 +490,7 @@ export class CodeService {
     if (task.saved) task = await this.recover(taskId);
     // The turn starts in the background (restore point, the engine starting): the answer to
     // the person comes at once and the timeline shows the rest live.
-    void this.startTurn(task, message, mode, { attachments: files, contexts: notes });
+    void this.startTurn(task, message, mode, { attachments: files, contexts: notes, goal: line });
     return { started: true };
   }
 
@@ -521,7 +527,7 @@ export class CodeService {
       // A goal's own turns show as a quiet line, not as a message of the person.
       const user = compact
         ? this.addItem(task.id, { kind: "notice", text: "Compactando la conversación para liberar contexto…", compact: true, turn: n })
-        : goal ? this.addItem(task.id, { kind: "notice", text: goal, goal: true, turn: n })
+        : goal ? this.addItem(task.id, { kind: "notice", text: goal, goal: true, detail: clip(text, 6000), turn: n })
           : this.addItem(task.id, { kind: "user", text, attachments: attachments.length ? attachments : undefined, contexts: contexts.length ? contexts : undefined, turn: n, mode: mode === "plan" ? "plan" : undefined });
       this.setTask(task.id, { status: "working", error: null });
       let startSnap = null;
@@ -636,7 +642,7 @@ export class CodeService {
     const [first, ...rest] = next.queue || [];
     if (first && !error) {
       this.setTask(taskId, { queue: rest });
-      await this.startTurn(this.mustTask(taskId), first.text, first.mode || "build", { attachments: this.checkAttachments(first.attachments), contexts: cleanContexts(first.contexts) });
+      await this.startTurn(this.mustTask(taskId), first.text, first.mode || "build", { attachments: this.checkAttachments(first.attachments), contexts: cleanContexts(first.contexts), goal: first.line || null });
       return;
     }
     if (goal?.next) { await this.startTurn(this.mustTask(taskId), goal.next, "build", { goal: goal.line }); return; }
@@ -769,11 +775,12 @@ export class CodeService {
     }
     // Codex asking to leave its sandbox (more folders, the network) is the person's call.
     const d = tool === "Permissions" ? { decision: "approval", reason: "Codex pide más permisos de los que tiene esta tarea." }
-      : decide({ tool, input, access: task.access, cwd: task.cwd, roots: [task.cwd], allowed: project.allow || [] });
+      : decide({ tool, input, access: task.access, cwd: task.cwd, roots: [task.cwd], allowed: project.allow || [], taskAllow: task.allow || [], commands: project.commands || [] });
     if (d.decision === "allow") return { behavior: "allow" };
     const line = toolLine(tool, input);
     return this.waitAsk(taskId, {
       kind: "ask", ask: d.decision === "redline" ? "redline" : "approval", tool, rule: d.rule || null, durable: !!d.durable,
+      taskScope: d.taskScope || (tool === "Permissions" ? "Permissions" : null), exact: d.exact || null,
       title: d.decision === "redline" ? redTitle(d.rule) : askTitle(tool, input), reason: d.reason || "", command: clip(input.command || input.file_path || line.detail || "", 2000), turn, toolUseId,
     }, signal);
   }
@@ -809,12 +816,17 @@ export class CodeService {
       pending.resolve({ behavior: "allow", answers: clean });
       return { ok: true };
     }
+    const task = this.mustTask(taskId);
+    const project = this.store.get("codeProjects", task.projectId);
     if (decision === "always" && item.durable && item.rule) {
-      const project = this.store.get("codeProjects", this.mustTask(taskId).projectId);
       if (project && !(project.allow || []).includes(item.rule)) this.store.put("codeProjects", { ...project, allow: [...(project.allow || []), item.rule], updatedAt: now() });
     }
-    const allow = decision === "allow" || decision === "always";
-    this.patchItem(item.id, { status: allow ? "allowed" : "denied", always: decision === "always" });
+    // «En esta tarea»: that kind of step (or that red line) no longer asks in this task.
+    if (decision === "task" && item.taskScope && !(task.allow || []).includes(item.taskScope)) this.setTask(taskId, { allow: [...(task.allow || []), item.taskScope] });
+    // «Siempre aquí»: that exact command, in this project, no longer asks.
+    if (decision === "here" && item.exact && project && !(project.commands || []).includes(item.exact)) this.store.put("codeProjects", { ...project, commands: [...(project.commands || []), item.exact].slice(-200), updatedAt: now() });
+    const allow = ["allow", "always", "task", "here"].includes(decision);
+    this.patchItem(item.id, { status: allow ? "allowed" : "denied", always: decision === "always", scope: ["task", "here"].includes(decision) ? decision : undefined });
     if (!allow && item.toolUseId) {
       const row = this.items(taskId).find((i) => i.kind === "tool" && i.toolUseId === item.toolUseId);
       if (row) this.patchItem(row.id, { status: "denied" });
@@ -920,6 +932,180 @@ export class CodeService {
     this.store.remove("codeTasks", taskId);
     this.emit({ type: "projects" });
     return { ok: true, branchKept, branch: task.branch };
+  }
+
+  // ------------------------------------------------------------------ following the pull request (gh)
+  /** GitHub CLI of this computer: {installed, authed} (asked once a minute at most). */
+  async ghStatus() {
+    if (this.ghCache && Date.now() - this.ghCache.at < 60000) return this.ghCache;
+    const cmd = this.ghCommand === undefined ? ((await whichCommand("gh")) ? ["gh"] : null) : this.ghCommand;
+    let authed = false;
+    if (cmd) authed = (await runCmd(cmd, ["auth", "status"], { timeout: 20000 })).ok;
+    this.ghCache = { installed: !!cmd, authed, cmd, at: Date.now() };
+    return this.ghCache;
+  }
+
+  /** After «subir»: Colmena follows the branch's PR, or says how to let it. */
+  async followPr(taskId, branch) {
+    const gh = await this.ghStatus();
+    if (!gh.installed || !gh.authed) {
+      this.addItem(taskId, { kind: "notice", text: gh.installed ? "Para que Bruno siga la PR (CI, conflictos y comentarios), inicia sesión una vez con «gh auth login» en una terminal." : "Para que Bruno siga la PR (CI, conflictos y comentarios), instala GitHub CLI (gh) e inicia sesión con «gh auth login»." });
+      return false;
+    }
+    const task = this.mustTask(taskId);
+    this.setTask(taskId, { pr: { ...(task.pr || {}), branch, watching: true, since: task.pr?.since || now(), seen: task.pr?.seen || [] } });
+    this.startPrWatch();
+    return true;
+  }
+
+  startPrWatch(ms = PR_POLL_MS) {
+    if (this.prTimer) return;
+    this.prTimer = setInterval(() => { void this.checkPrs().catch((e) => console.warn("Código: PR: " + e.message)); }, ms);
+    this.prTimer.unref?.();
+  }
+
+  /** One round over the followed PRs: merged or closed, failing CI, conflicts, new comments. */
+  async checkPrs() {
+    const tasks = this.store.list("codeTasks").filter((t) => t.pr?.watching);
+    if (!tasks.length) { clearInterval(this.prTimer); this.prTimer = null; return; }
+    const gh = await this.ghStatus();
+    if (!gh.authed) return;
+    for (const t of tasks) await this.checkPr(t.id, gh.cmd).catch((e) => console.warn("Código: PR " + t.id + ": " + e.message));
+  }
+
+  async checkPr(taskId, cmd) {
+    const task = this.mustTask(taskId);
+    const cwd = existsSync(task.cwd) ? task.cwd : task.repoTop;
+    const r = await runCmd(cmd, ["pr", "view", task.pr.branch, "--json", "number,url,state,mergeable,headRefOid,statusCheckRollup,comments,reviews"], { cwd, timeout: 60000 });
+    if (!r.ok) return null; // no PR for this branch yet
+    const pr = JSON.parse(r.stdout);
+    const checks = (pr.statusCheckRollup || []).map((c) => ({ name: c.name || c.context || "check", state: String(c.conclusion || c.state || c.status || "").toUpperCase(), url: c.detailsUrl || c.targetUrl || "" }));
+    const failing = checks.filter((c) => ["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED"].includes(c.state));
+    const pending = checks.some((c) => ["PENDING", "QUEUED", "IN_PROGRESS", "EXPECTED", "WAITING"].includes(c.state));
+    const view = { number: pr.number, url: pr.url, state: pr.state, mergeable: pr.mergeable, checks: failing.length ? "failing" : pending ? "pending" : checks.length ? "passing" : "none" };
+    const prev = task.pr;
+    const seen = new Set(prev.seen || []);
+    const since = Date.parse(prev.since || 0);
+    const said = [...(pr.comments || []), ...(pr.reviews || []).filter((x) => x.body?.trim())]
+      .filter((c) => !seen.has(c.id || c.url) && Date.parse(c.createdAt || c.submittedAt || 0) >= since && !c.viewerDidAuthor);
+    for (const c of said) seen.add(c.id || c.url);
+    let next = { ...prev, ...view, seen: [...seen].slice(-200), checkedAt: now() };
+    if (pr.state !== "OPEN") {
+      next.watching = false;
+      this.setTask(taskId, { pr: next });
+      this.addItem(taskId, { kind: "notice", text: `La PR #${pr.number} ${pr.state === "MERGED" ? "se ha fusionado" : "se ha cerrado"}.`, url: pr.url, tone: pr.state === "MERGED" ? "done" : undefined });
+      this.notifyTask(taskId, "done", `La PR #${pr.number} ${pr.state === "MERGED" ? "se ha fusionado" : "se ha cerrado"}.`);
+      return next;
+    }
+    // Something for Bruno: each one wakes him once (signature), never twice for the same thing.
+    const wake = [];
+    const ciKey = failing.length ? pr.headRefOid + ":" + failing.map((c) => c.name).sort().join(",") : null;
+    if (ciKey && ciKey !== prev.ciKey) {
+      next.ciKey = ciKey;
+      const logs = [];
+      for (const c of failing.slice(0, 3)) {
+        const run = /\/runs\/(\d+)/.exec(c.url)?.[1];
+        if (!run) continue;
+        const log = await runCmd(cmd, ["run", "view", run, "--log-failed"], { cwd, timeout: 90000 });
+        if (log.ok && log.stdout.trim()) logs.push("--- " + c.name + " ---\n" + log.stdout.slice(-4000));
+      }
+      wake.push(`Falla el CI de la PR #${pr.number}: ${failing.map((c) => c.name).join(", ")}.` + (logs.length ? "\n\nLo que dice:\n```\n" + clip(logs.join("\n"), 9000) + "\n```" : ""));
+    }
+    if (pr.mergeable === "CONFLICTING" && prev.mergeable !== "CONFLICTING") wake.push(`La PR #${pr.number} tiene conflictos con ${task.base || "main"}.`);
+    if (said.length) wake.push(`Han comentado en la PR #${pr.number}:\n` + said.slice(0, 10).map((c) => `- ${c.author?.login || "alguien"}: ${clip(String(c.body || "").replace(/\s+/g, " "), 600)}`).join("\n"));
+    this.setTask(taskId, { pr: next });
+    if (!wake.length) return next;
+    this.addItem(taskId, { kind: "notice", text: wake.map((w) => w.split("\n")[0]).join(" "), url: pr.url, tone: "warn" });
+    this.notifyTask(taskId, "needs", wake.map((w) => w.split("\n")[0]).join(" "));
+    await this.send(taskId, { line: "Bruno se pone con la PR #" + pr.number + ": " + wake.map((w) => w.split("\n")[0]).join(" "), text: wake.join("\n\n") + "\n\nArréglalo en tu copia y comprueba que funciona. Para subirlo de nuevo, pide permiso: subir sigue necesitando el OK de la persona." }).catch((e) => console.warn("Código: PR: " + e.message));
+    return next;
+  }
+
+  /** «Dejar de seguir» / «Seguir la PR». */
+  async setPrWatch(taskId, on) {
+    const task = this.mustTask(taskId);
+    if (on) return { following: await this.followPr(taskId, task.pr?.branch || task.branch) };
+    this.setTask(taskId, { pr: task.pr ? { ...task.pr, watching: false } : null });
+    return { following: false };
+  }
+
+  // ------------------------------------------------------------------ one file of the diff
+  /** «Deshacer este archivo»: back to how it was at the start of turn n (or of the task). */
+  async revertFile(taskId, { path: rel, turn = null }) {
+    this.busy(taskId);
+    let task = this.mustTask(taskId);
+    if (task.saved) task = await this.recover(taskId);
+    const file = String(rel || "").replace(/\\/g, "/");
+    if (!file || file.startsWith("/") || file.split("/").includes("..")) throw Object.assign(Error("Ese archivo no es de la tarea."), { status: 400 });
+    const t = turn ? (task.turns || []).find((x) => x.n === Number(turn)) : null;
+    if (turn && !t) throw Object.assign(Error("Ese turno no existe."), { status: 404 });
+    const target = t ? t.startSnap : task.baseSnap;
+    if (!target) throw Object.assign(Error("No hay punto de restauración para eso."), { status: 409 });
+    const snaps = this.snapsOf(task);
+    const before = await snaps.capture("file-" + Date.now());
+    await snaps.restoreFiles(target, [file]);
+    this.addItem(taskId, { kind: "notice", text: `Has deshecho los cambios de ${file}${t ? " en el punto " + t.n : ""}.`, undo: before });
+    return { ok: true };
+  }
+
+  /** «Abrir en el editor» at that line: VS Code, Cursor or Windsurf if one is installed, else the file's app. */
+  async openInEditor(taskId, { path: rel, line = 1 }) {
+    const task = this.mustTask(taskId);
+    const full = path.resolve(task.cwd, String(rel || ""));
+    if (!inside(task.cwd, full)) throw Object.assign(Error("Ese archivo no es de la tarea."), { status: 400 });
+    const where = (cmd) => new Promise((resolve) => execFile(process.platform === "win32" ? "where" : "which", [cmd], { windowsHide: true }, (e, out) => resolve(e ? null : String(out).split(/\r?\n/)[0].trim() || null)));
+    for (const editor of ["code", "cursor", "windsurf"]) {
+      if (!(await where(editor))) continue;
+      const target = full + ":" + Math.max(1, Number(line) || 1);
+      const child = process.platform === "win32"
+        ? spawn("cmd.exe", ["/d", "/c", editor, "-g", target], { detached: true, stdio: "ignore", windowsHide: true })
+        : spawn(editor, ["-g", target], { detached: true, stdio: "ignore" });
+      child.on("error", () => {});
+      child.unref();
+      return { editor };
+    }
+    const opener = process.platform === "win32" ? ["cmd.exe", ["/d", "/c", "start", "", full]] : [process.platform === "darwin" ? "open" : "xdg-open", [full]];
+    const child = spawn(opener[0], opener[1], { detached: true, stdio: "ignore", windowsHide: true });
+    child.on("error", () => {});
+    child.unref();
+    return { editor: null };
+  }
+
+  // ------------------------------------------------------------------ several engines at once: compare
+  /** The tasks started together («Probar con varios a la vez») with what each changed and its tests. */
+  async compare(group) {
+    const tasks = this.store.list("codeTasks").filter((t) => t.group === group).sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+    if (!tasks.length) throw Object.assign(Error("No encuentro esas tareas."), { status: 404 });
+    const out = [];
+    for (const t of tasks) {
+      const d = this.engines.get(t.id)?.turn ? null : await this.diff(t.id).catch(() => null);
+      out.push({ ...this.taskView(t), files: d ? d.files.map((f) => ({ path: f.path, status: f.status, add: f.add, del: f.del })) : null, tests: t.tests || null, said: [...this.items(t.id)].reverse().find((i) => i.kind === "text")?.text?.slice(0, 400) || null });
+    }
+    const script = this.scriptsOf(tasks[0]).find((s) => s.name === "test");
+    return { group, tasks: out, testCommand: script?.command || null };
+  }
+
+  /** Runs the project's «test» script in each task's copy, one after another. */
+  async compareTests(group, { wait = false } = {}) {
+    const { tasks, testCommand } = await this.compare(group);
+    if (!testCommand) throw Object.assign(Error("Este proyecto no tiene un script «test» (en package.json o colmena.json)."), { status: 409 });
+    for (const t of tasks) if (!t.running) this.setTask(t.id, { tests: { status: "queued", command: testCommand, at: now() } });
+    const runs = this.runTests(tasks, testCommand).catch((e) => console.warn("Código: tests: " + e.message));
+    if (wait) await runs;
+    return { started: true };
+  }
+
+  async runTests(tasks, testCommand) {
+    for (const t of tasks) {
+      if (t.running || !existsSync(t.cwd)) continue;
+      this.setTask(t.id, { tests: { status: "running", command: testCommand, at: now() } });
+      const started = Date.now();
+      const result = await new Promise((resolve) => {
+        const shell = process.platform === "win32" ? ["cmd.exe", ["/d", "/s", "/c", testCommand]] : ["/bin/sh", ["-c", testCommand]];
+        execFile(shell[0], shell[1], { cwd: t.cwd, windowsHide: true, timeout: 600000, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, CI: "1" } }, (error, stdout, stderr) => resolve({ ok: !error, code: error?.code ?? 0, tail: clip(String(stdout || "") + String(stderr || ""), 100000).slice(-3000) }));
+      });
+      this.setTask(t.id, { tests: { status: result.ok ? "passed" : "failed", command: testCommand, code: result.code, tail: result.tail, durationMs: Date.now() - started, at: now() } });
+    }
   }
 
   // ------------------------------------------------------------------ the preview through Bruno's eyes
@@ -1185,6 +1371,8 @@ export class CodeService {
     }
     this.addItem(taskId, { kind: "notice", text: "Subido a GitHub en la rama " + branch + ".", tone: "done" });
     this.setTask(taskId, { pushed: now() });
+    // Its PR is followed with gh (CI, conflicts, comments) when GitHub is where it went.
+    if (githubRepo(origin.stdout)) await this.followPr(taskId, branch).catch(() => {});
     return { ok: true, branch, remote: origin.stdout.trim() };
   }
 
@@ -1239,6 +1427,8 @@ export class CodeService {
   }
 
   shutdown() {
+    clearInterval(this.prTimer);
+    this.prTimer = null;
     for (const id of [...this.engines.keys()]) this.closeEngine(id);
     this.terminals.shutdown();
   }
@@ -1256,6 +1446,16 @@ function redTitle(rule) {
     remote: "Bruno quiere conectarse a otro equipo",
     kill: "Bruno quiere cerrar programas",
   }[rule] || "Bruno necesita tu OK";
+}
+
+/** A program on the PATH (where / which), or null. */
+function whichCommand(name) {
+  return new Promise((resolve) => execFile(process.platform === "win32" ? "where" : "which", [name], { windowsHide: true, timeout: 10000 }, (e, out) => resolve(e ? null : String(out).split(/\r?\n/)[0].trim() || null)));
+}
+/** Runs [exe, ...lead] with args: {ok, stdout, stderr} (never throws). */
+function runCmd(command, args, { cwd, timeout = 60000 } = {}) {
+  const [exe, ...lead] = command;
+  return new Promise((resolve) => execFile(exe, [...lead, ...args], { cwd, windowsHide: true, timeout, maxBuffer: 16 * 1024 * 1024, env: { ...process.env, GH_PROMPT_DISABLED: "1", NO_COLOR: "1" } }, (error, stdout, stderr) => resolve({ ok: !error, stdout: String(stdout || ""), stderr: String(stderr || "") })));
 }
 
 /** Context chips of a message: a terminal excerpt, a comment on diff lines, a preview note. */

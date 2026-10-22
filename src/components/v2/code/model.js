@@ -38,6 +38,24 @@ export function parsePatch(patch) {
   return rows;
 }
 
+/** Diff rows → side by side pairs: each run of deletions faces the additions after it. */
+export function sideBySide(rows) {
+  const out = [];
+  let dels = [], adds = [];
+  const flush = () => {
+    for (let i = 0; i < Math.max(dels.length, adds.length); i++) out.push({ type: "pair", left: dels[i] || null, right: adds[i] || null, k: (dels[i] || adds[i]).k });
+    dels = []; adds = [];
+  };
+  rows.forEach((row, k) => {
+    const r = { ...row, k };
+    if (row.type === "del") { if (adds.length) flush(); dels.push(r); }
+    else if (row.type === "add") adds.push(r);
+    else { flush(); if (row.type === "hunk") out.push(r); else if (row.type === "ctx") out.push({ type: "pair", left: r, right: r, k }); }
+  });
+  flush();
+  return out;
+}
+
 /** Picked rows of a file's diff → a context chip: «a.js:12-14», the lines with their signs. */
 export function diffContext(file, rows, from, to, note) {
   const picked = rows.slice(from, to + 1).filter((r) => ["add", "del", "ctx"].includes(r.type));
