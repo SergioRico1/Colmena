@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Pencil, SquareTerminal, Globe, FilePen, FileDiff, History, ChevronRight, Bot, Sparkles, ListChecks, Wrench, Undo2, Check, Target } from "lucide-react";
+import { Search, Pencil, SquareTerminal, Globe, FilePen, FileDiff, History, ChevronRight, Bot, Sparkles, ListChecks, Wrench, Undo2, Check, Target, ShieldAlert, ShieldCheck } from "lucide-react";
 import Markdown from "../../room/Markdown.jsx";
 import { C, MONO, HEAD, CARD, Stat } from "./parts.jsx";
 export { buildRows } from "./model.js";
@@ -133,6 +133,46 @@ function AskCard({ item, onAnswer }) {
   );
 }
 
+const SEVERITY = {
+  P0: { bg: "#FCEEEB", fg: "#A33A2C", text: "Rompe algo" }, P1: { bg: "#FFF4D1", fg: "#8A5A00", text: "Fallo real" },
+  P2: { bg: "rgba(31,79,209,.08)", fg: "#1F4FD1", text: "Conviene arreglar" }, P3: { bg: C.soft, fg: C.muted, text: "Detalle" },
+};
+
+/** The review before saving (OpenClaw autoreview): findings P0–P3, each one can go to Bruno. */
+function ReviewCard({ item, onFinding, onFindings, busy }) {
+  const findings = item.findings || [];
+  const serious = findings.filter((f) => f.severity === "P0" || f.severity === "P1").length;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 20px 16px", borderRadius: "24px", background: C.white, boxShadow: serious ? `0 0 0 1px rgba(255,201,60,.6), ${CARD}` : CARD, animation: "rise .3s ease-out" }}>
+      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: serious ? C.honeyText : findings.length ? C.text : C.greenText }}>
+        {findings.length ? <ShieldAlert size={15} strokeWidth={2.2} aria-hidden="true" /> : <ShieldCheck size={15} strokeWidth={2.2} aria-hidden="true" />}
+        {findings.length ? `Revisión · ${findings.length === 1 ? "1 hallazgo" : findings.length + " hallazgos"}${serious ? " · " + serious + " importante" + (serious === 1 ? "" : "s") : ""}` : "Revisión · sin problemas"}
+        <span style={{ marginLeft: "auto", fontWeight: 400, color: C.quiet }}>{item.files === 1 ? "1 archivo" : item.files + " archivos"}</span>
+      </span>
+      {item.summary ? <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.55, color: C.body }}>{item.summary}</p> : null}
+      {findings.map((f, k) => {
+        const s = SEVERITY[f.severity] || SEVERITY.P2;
+        return (
+          <div key={k} className="code-turn" style={{ display: "flex", gap: "12px", padding: "12px", borderRadius: "16px", background: "#FAFAF8" }}>
+            <span title={s.text} style={{ flex: "none", alignSelf: "flex-start", padding: "3px 8px", borderRadius: "999px", background: s.bg, color: s.fg, font: `600 11px/1.3 ${MONO}` }}>{f.severity}</span>
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+              <strong style={{ fontSize: "14px", fontWeight: 600 }}>{f.title}</strong>
+              {f.file ? <span style={{ font: `400 12px/1.3 ${MONO}`, color: C.faint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.file}{f.line ? ":" + f.line : ""}</span> : null}
+              {f.detail ? <span style={{ fontSize: "13px", lineHeight: 1.5, color: C.text }}>{f.detail}</span> : null}
+            </span>
+            <button type="button" className="code-tools" onClick={() => onFinding(f)} title="Añádelo a tu próximo mensaje" style={{ flex: "none", alignSelf: "center", height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>Pasar a Bruno</button>
+          </div>
+        );
+      })}
+      {findings.length ? (
+        <button type="button" disabled={busy} onClick={() => onFindings(findings)} style={{ alignSelf: "flex-start", height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: busy ? "default" : "pointer", fontSize: "13px", fontWeight: 600, opacity: busy ? 0.55 : 1 }}>
+          Que Bruno lo arregle todo
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 /** A proposed plan (T3 Code): Implementar · En una tarea nueva · Refinar. */
 function PlanCard({ item, busy, onPlan }) {
   const open = item.status === "open";
@@ -189,6 +229,7 @@ export function TimelineRow({ row, ctx }) {
   if (row.kind === "turn") return <TurnCard item={item} total={ctx.turns} busy={ctx.busy} onDiff={ctx.onDiff} onRestore={ctx.onRestore} />;
   if (row.kind === "ask") return <AskCard item={item} onAnswer={ctx.onAnswer} />;
   if (row.kind === "plan") return <PlanCard item={item} busy={ctx.busy} onPlan={ctx.onPlan} />;
+  if (row.kind === "review") return <ReviewCard item={item} busy={ctx.busy} onFinding={ctx.onFinding} onFindings={ctx.onFindings} />;
   if (row.kind === "notice") {
     const tone = item.tone === "done" ? { bg: C.greenSoft, fg: "#0B5A3E" } : item.tone === "warn" ? { bg: "#FFF4D1", fg: "#5C4300" } : null;
     return (

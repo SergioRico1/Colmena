@@ -109,6 +109,18 @@ else
           return result.canceled || !result.filePaths[0] ? null : result.filePaths[0];
         });
       }
+      // «Código» › Vista previa › Anotar: only a part of Colmena's own window, as PNG.
+      if (!ipcMain._colmenaRect) {
+        ipcMain._colmenaRect = true;
+        ipcMain.handle("colmena-capture-rect", async (event, rect) => {
+          const owner = BrowserWindow.fromWebContents(event.sender);
+          if (!owner || owner.isDestroyed()) return null;
+          const r = { x: Math.max(0, Math.round(rect.x)), y: Math.max(0, Math.round(rect.y)), width: Math.min(4000, Math.round(rect.width)), height: Math.min(4000, Math.round(rect.height)) };
+          if (r.width < 4 || r.height < 4) return null;
+          const image = await owner.webContents.capturePage(r);
+          return image.isEmpty() ? null : image.toDataURL();
+        });
+      }
       win.on("closed", () => ipcMain.removeListener("colmena-window", onWindow));
       // Login pages (ChatGPT and app connections) open in the system browser;
       // the window itself only ever shows the local Colmena origin.

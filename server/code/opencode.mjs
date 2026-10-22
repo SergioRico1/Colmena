@@ -153,7 +153,7 @@ export class OpenCodeEngine extends EventEmitter {
     if (!this.command) throw Object.assign(Error("OpenCode no está instalado para Colmena. Pulsa «Instalar OpenCode»."), { status: 503 });
     this.port = await freePort();
     this.password = randomBytes(18).toString("hex");
-    const env = { ...process.env, OPENCODE_SERVER_PASSWORD: this.password };
+    const env = { ...process.env, ...(this.o.env || {}), OPENCODE_SERVER_PASSWORD: this.password };
     if (this.o.apiKey) env.OPENCODE_API_KEY = this.o.apiKey; // only in the child's memory, never on disk
     const [exe, ...lead] = this.command;
     this.proc = spawn(exe, [...lead, "serve", "--port", String(this.port), "--hostname", "127.0.0.1", "--pure"], { cwd: this.o.cwd, env, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });

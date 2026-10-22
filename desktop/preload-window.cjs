@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld("colmenaWindow", {
   toggleMaximize: () => ipcRenderer.send("colmena-window", "toggle-maximize"),
   close: () => ipcRenderer.send("colmena-window", "close"),
   pickFolder: (purpose) => ipcRenderer.invoke("colmena-pick-folder", purpose === "code" ? "code" : "share"),
+  // «Código» › Vista previa › Anotar: a PNG data URL of that rectangle of this window.
+  captureRect: (rect) => ipcRenderer.invoke("colmena-capture-rect", { x: Number(rect?.x) || 0, y: Number(rect?.y) || 0, width: Number(rect?.width) || 0, height: Number(rect?.height) || 0 }),
   // «+» › Captura: {dataUrl, width, height, bytes, name}, or null when you cancel an area.
   capture: {
     windows: () => ipcRenderer.invoke("colmena-main-capture", "windows"),

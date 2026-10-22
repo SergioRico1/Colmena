@@ -84,7 +84,7 @@ runtime.projects = new Projects({ store, runtime, computer });
 // «Código»: projects and tasks worked by Claude Code of this computer (server/code/).
 // Its OpenCode engine uses your OpenCode Go key from the vault, only in that process's memory.
 // A task that ends or waits for you says so like a mission does (Ajustes › Avisos).
-runtime.code = new CodeService({ store, directory, goKey: () => provider.secret?.("opencode-apikey"), notifier: scheduler.notifier });
+runtime.code = new CodeService({ store, directory, goKey: () => provider.secret?.("opencode-apikey"), notifier: scheduler.notifier, computer });
 const mcpTools = mcpExtraTools(runtime, runtime.mcp);
 // Desktop apps through Cua Driver, when it is installed (started on demand, no admin).
 const desktop = new CuaDesktop();
@@ -159,6 +159,7 @@ await new Promise((resolve, reject) => {
 });
 origin = "http://127.0.0.1:" + server.address().port;
 runtime.code.excludePorts = [server.address().port];
+runtime.code.apiBase = "http://127.0.0.1:" + server.address().port + "/api"; // Bruno's preview-cli.mjs
 instance.ready(origin);
 scheduler.start();
 // Long pauses of the server are written down (and shown in /api/health).

@@ -4,15 +4,23 @@
 // asks a question. Without --input-format it answers a one-shot --print (commit messages).
 import { createInterface } from "node:readline";
 import { randomUUID } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const args = process.argv.slice(2);
 const value = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : null);
 if (!args.includes("--input-format")) {
+  // One-shot --print: a commit message, or a review (findings as JSON) when asked for one.
+  let input = "";
   process.stdin.resume();
-  process.stdin.on("end", () => { process.stdout.write("feat: add a note\n"); process.exit(0); });
-  process.stdin.on("data", () => {});
+  process.stdin.on("end", () => {
+    if (/careful code reviewer/.test(input)) {
+      const serious = !/sin fallos/.test(input);
+      process.stdout.write(JSON.stringify({ summary: serious ? "Hay un fallo que conviene arreglar antes de guardar." : "Todo bien.", findings: serious ? [{ severity: "P3", title: "Falta un salto de línea", file: "nota.txt", line: 1, detail: "Detalle menor." }, { severity: "P1", title: "La nota se pisa", file: "nota.txt", line: 1, detail: "Si escribes dos veces se pierde la primera nota." }] : [] }) + "\n");
+    } else process.stdout.write("feat: add a note\n");
+    process.exit(0);
+  });
+  process.stdin.on("data", (d) => { input += d; });
 } else {
   const session = value("--session-id") || value("--resume") || "s-fake";
   const out = (m) => process.stdout.write(JSON.stringify(m) + "\n");
@@ -60,6 +68,13 @@ if (!args.includes("--input-format")) {
       const q = { question: "¿Qué color?", header: "Color", multiSelect: false, options: [{ label: "Rojo", description: "" }, { label: "Azul", description: "" }] };
       const t = await tool("AskUserQuestion", { questions: [q] });
       assistant([{ type: "text", text: "Elegiste " + (t.input.answers?.["¿Qué color?"] || "nada") + "." }]);
+    } else if (/hay conflictos en: /.test(text)) {
+      // Resolves Git's conflict marks keeping both sides (ours first).
+      for (const file of /hay conflictos en: ([^\n]+)\./.exec(text)[1].split(", ")) {
+        const full = path.join(process.cwd(), file);
+        writeFileSync(full, readFileSync(full, "utf8").split("\n").filter((l) => !/^(<<<<<<<|=======|>>>>>>>)/.test(l)).join("\n"));
+      }
+      assistant([{ type: "text", text: "Conflictos resueltos." }]);
     } else if (/Tu objetivo es|Sigue con el objetivo/.test(text)) {
       // «/goal»: «bloquea» blocks at once; otherwise the second turn says it is done.
       goals++;

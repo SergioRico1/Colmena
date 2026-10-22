@@ -8,7 +8,8 @@
 // stay out of the app-wide /api/events stream so a long turn never refreshes other screens.
 import { EventEmitter } from "node:events";
 import { existsSync, statSync } from "node:fs";
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -40,6 +41,8 @@ export const KEYBINDINGS = Object.freeze({
   togglePanel: "mod+j", widePanel: "mod+shift+j", tabChanges: "mod+1", tabPreview: "mod+2", tabTerminal: "mod+3",
   newTerminal: "mod+shift+t", save: "mod+shift+s", shortcuts: "f1",
 });
+/** Bruno's look at the preview through his shell (preview-cli.mjs). */
+export const PREVIEW_CLI = fileURLToPath(new URL("./preview-cli.mjs", import.meta.url));
 const IDLE_MS = 30 * 60 * 1000;
 const MAX_OUTPUT = 12000;
 /** A copy saved into its base is cleaned up; its last commit stays this long under a hidden ref. */
@@ -86,7 +89,9 @@ export function toolLine(tool, input = {}) {
 }
 
 export class CodeService {
-  constructor({ store, directory = store.directory, command = null, codexCommand = undefined, opencodeCommand = undefined, goKey = null, ptySpawn = null, notifier = null } = {}) {
+  constructor({ store, directory = store.directory, command = null, codexCommand = undefined, opencodeCommand = undefined, goKey = null, ptySpawn = null, notifier = null, computer = null } = {}) {
+    this.computer = computer; // the desktop browser (server/computer/bridge.mjs): Bruno's look at the preview
+    this.apiBase = null; // http://127.0.0.1:<port>/api, set once the server listens (preview-cli.mjs)
     this.store = store;
     this.directory = path.resolve(directory);
     this.command = command; // Claude Code ([exe, ...args] in tests)
@@ -253,7 +258,8 @@ export class CodeService {
       id: t.id, projectId: t.projectId, title: t.title, botId: t.botId, status: t.status, engine: t.engine || "claude-code", model: t.model, effort: t.effort, access: t.access,
       isolated: !!t.isolated, branch: t.branch || null, base: t.base || null, cwd: t.cwd, add: turns.reduce((n, x) => n + (x.add || 0), 0), del: turns.reduce((n, x) => n + (x.del || 0), 0),
       turns: turns.length, lastChanged: [...turns].reverse().find((x) => x.files?.length)?.n || null, queue: t.queue || [], error: t.error || null, merged: t.merged || null, usage: t.usage || null, limit: t.limit || null, running: !!live?.turn, createdAt: t.createdAt, updatedAt: t.updatedAt,
-      goal: t.goal || null, saved: t.saved ? { at: t.saved.at, until: t.saved.until } : null, included: t.included || null,
+      goal: t.goal || null, saved: t.saved ? { at: t.saved.at, until: t.saved.until, expired: !!t.saved.expired } : null, included: t.included || null,
+      merging: t.merging || null, review: t.review || null, previewCheck: t.previewCheck || null,
     };
   }
 
@@ -402,6 +408,9 @@ export class CodeService {
       "Antes de decir que algo está listo, pruébalo (tests, build o arrancando la app) y di qué has comprobado.",
       "Para ver la app, arranca su servidor de desarrollo en segundo plano (run_in_background) y di su dirección (http://127.0.0.1:PUERTO): Colmena la enseña en la vista previa. Comprueba que esa dirección se ve como página y no como su código: el servidor debe enviar el HTML con Content-Type text/html (y CSS y JS con su tipo). Si faltan las dependencias (node_modules), instálalas.",
       "Publicar, subir a GitHub, borrar o escribir fuera del proyecto, instalar programas para todo el ordenador o cerrar programas por su nombre necesita el OK de la persona: Colmena se lo pregunta. Si dice que no, no lo intentes de otra manera. Parar por su PID los procesos que tú mismo arrancaste no necesita OK.",
+      ...(this.computer?.available && this.apiBase ? [
+        `Para mirar la app como la persona (errores de la consola, cargas que fallan, el texto, los elementos y una captura), con su servidor en marcha ejecuta: node "${PREVIEW_CLI}" ver [ruta o puerto]. Después: node "${PREVIEW_CLI}" pulsa <ref> · escribe <ref> <texto> · tecla <tecla>. Hazlo tras cada cambio visible y antes de decir que está listo.`,
+      ] : []),
     ].join("\n");
   }
 
@@ -409,7 +418,8 @@ export class CodeService {
     const live = this.engines.get(task.id);
     if (live?.engine.alive) return live;
     const session = task.session || { id: randomUUID(), started: false };
-    const common = { cwd: task.cwd, model: task.model, effort: task.effort, access: task.access, instructions: this.instructions(task), authorize: (req) => this.authorize(task.id, req) };
+    const env = this.apiBase ? { COLMENA_CODE_API: this.apiBase, COLMENA_CODE_TASK: task.id } : {};
+    const common = { cwd: task.cwd, model: task.model, effort: task.effort, access: task.access, env, instructions: this.instructions(task), authorize: (req) => this.authorize(task.id, req) };
     const engine = task.engine === "codex"
       ? new CodexEngine({ ...common, command: this.codexCommand, threadId: session.started ? session.id : null, rollback: session.rollback || 0 })
       : task.engine === "opencode"
@@ -455,7 +465,8 @@ export class CodeService {
   async send(taskId, { text, when = "queue", mode = "build", attachments = [], contexts = [] }) {
     let task = this.mustTask(taskId);
     const message = String(text || "").trim();
-    const notes = cleanContexts(contexts);
+    // A preview note's capture must be one Colmena saved (an attachment), like any file.
+    const notes = cleanContexts(contexts).map((c) => (c.image && !this.checkAttachments([{ path: c.image }]).length ? { ...c, image: undefined } : c));
     if (!message && !attachments.length && !notes.length) throw Object.assign(Error("Escribe algo para Bruno."), { status: 400 });
     const files = this.checkAttachments(attachments);
     const live = this.engines.get(taskId);
@@ -617,6 +628,9 @@ export class CodeService {
     const next = this.setTask(taskId, { turns: [...(task.turns || []), record], status: failed ? "error" : turn.plan ? "planned" : "idle", error: failed ? "turn" : null });
     entry.idle = setTimeout(() => { if (!entry.turn) this.closeEngine(taskId); }, IDLE_MS);
     entry.idle.unref?.();
+    // Conflicts with the base: closed when Bruno left no marks. The preview: looked at after a change.
+    if (next.merging && !failed && !turn.stopped) await this.closeMerge(taskId).catch((e) => console.warn("Código: merge abierto: " + e.message));
+    if (files.length && !failed && !turn.stopped) void this.checkAfterTurn(taskId, turn.n);
     const goal = turn.compact ? null : this.goalAfter(taskId, turn, { failed, stopped: !!turn.stopped || interrupted });
     // The queue goes on by itself (T3 Code): the next message starts the next turn.
     const [first, ...rest] = next.queue || [];
@@ -894,6 +908,7 @@ export class CodeService {
     const task = this.mustTask(taskId);
     const hadEngine = this.engines.has(taskId) || this.terminals.pids(taskId).length > 0;
     this.closeEngine(taskId);
+    this.closePreview(taskId);
     await this.terminals.closeTask(taskId);
     // Windows keeps a folder while a process still runs in it: give the tree a moment to go.
     if (hadEngine) await new Promise((r) => setTimeout(r, 1500));
@@ -905,6 +920,159 @@ export class CodeService {
     this.store.remove("codeTasks", taskId);
     this.emit({ type: "projects" });
     return { ok: true, branchKept, branch: task.branch };
+  }
+
+  // ------------------------------------------------------------------ the preview through Bruno's eyes
+  /**
+   * Opens the task's web server in Colmena's desktop browser (its «preview» op: console errors,
+   * failed loads, visible text, a capture) and reads its elements with refs for «pulsa» and
+   * «escribe». The capture is saved for the engine to read; the result is kept as previewCheck.
+   */
+  async previewCheck(taskId, { path: route = "/", port = null } = {}) {
+    const task = this.mustTask(taskId);
+    if (!this.computer?.available) throw Object.assign(Error("Mirar la vista previa así solo funciona en Colmena de escritorio."), { status: 409 });
+    const ports = await this.ports(taskId);
+    const chosen = port ? ports.find((p) => p.port === Number(port)) : ports[0];
+    if (!chosen) throw Object.assign(Error(port ? "Ese puerto no es de un servidor de esta tarea." : "No hay ningún servidor de esta tarea en marcha: arráncalo primero."), { status: 409 });
+    const url = new URL("/" + String(route || "").replace(/^\/+/, ""), "http://127.0.0.1:" + chosen.port).href;
+    const page = await this.computer.call("preview", { missionId: "code:" + taskId, botId: "bruno", botName: this.bot().name, color: "#FF7A1A", url, port: chosen.port, waitMs: 1500 }, { timeout: 70000 });
+    return this.previewResult(task, page);
+  }
+
+  /** «pulsa», «escribe», «tecla» on the page of the last check (refs from its elements). */
+  async previewAct(taskId, { kind, ref = "", text = "" }) {
+    const task = this.mustTask(taskId);
+    if (!this.computer?.available) throw Object.assign(Error("Mirar la vista previa así solo funciona en Colmena de escritorio."), { status: 409 });
+    const keys = { missionId: "code:" + taskId, botId: "bruno" };
+    const done = await this.computer.call("act", { ...keys, kind, ref, text }, { timeout: 30000 });
+    const shot = await this.computer.call("screenshot", { ...keys, width: 1280, quality: 62 }, { timeout: 20000 }).catch(() => null);
+    return this.previewResult(task, { ...done, url: done?.url || shot?.url, title: done?.title || shot?.title, jpegBase64: shot?.jpegBase64, console: done?.console || [] });
+  }
+
+  async previewResult(task, page) {
+    const keys = { missionId: "code:" + task.id, botId: "bruno" };
+    const snap = await this.computer.call("snapshot", { ...keys, mode: "elementos", maxChars: 6000 }, { timeout: 30000 }).catch(() => null);
+    const log = Array.isArray(page.console) ? page.console : [];
+    const line = (e) => clip(String(e.text || e.message || e).replace(/\s+/g, " "), 300) + (e.url ? " (" + clip(e.url, 120) + ")" : "");
+    const errors = log.filter((e) => e.level === "error").map(line).slice(0, 20);
+    const warnings = log.filter((e) => e.level === "warning").map(line).slice(0, 10);
+    let screenshot = null;
+    if (page.jpegBase64) {
+      screenshot = path.join(this.directory, "code", "tmp", "vista-" + task.id + ".jpg");
+      await mkdir(path.dirname(screenshot), { recursive: true });
+      await writeFile(screenshot, Buffer.from(page.jpegBase64, "base64"));
+    }
+    const check = { url: page.url, errors: errors.length, warnings: warnings.length, loadError: page.loadError || null, first: errors[0] || page.loadError || null, at: now() };
+    this.setTask(task.id, { previewCheck: check });
+    return { url: page.url, title: page.title || "", loadError: page.loadError || null, errors, warnings, text: clip(page.text || snap?.text || "", 1500), elements: snap?.text ? clip(snap.text, 6000) : "", screenshot };
+  }
+
+  /** The desktop browser's page of this task goes with it (and its port stops being allowed). */
+  closePreview(taskId) {
+    if (!this.computer?.available) return;
+    this.computer.call("closeMission", { missionId: "code:" + taskId }).catch(() => {});
+    this.computer.call("previewRevoke", { missionId: "code:" + taskId }).catch(() => {});
+  }
+
+  /** After a turn that changed files: Bruno looks at the preview, and the timeline says how it went. */
+  async checkAfterTurn(taskId, n) {
+    if (!this.computer?.available) return;
+    const ports = await this.ports(taskId).catch(() => []);
+    if (!ports.length) return;
+    const item = this.addItem(taskId, { kind: "tool", tool: "Preview", verb: "web", text: "Revisando la vista previa en 127.0.0.1:" + ports[0].port, detail: "", status: "running", turn: n });
+    try {
+      const r = await this.previewCheck(taskId, { port: ports[0].port });
+      const said = r.loadError ? "no cargó" : r.errors.length ? (r.errors.length === 1 ? "1 error" : r.errors.length + " errores") : "0 errores";
+      this.patchItem(item.id, { text: "Revisó la vista previa en " + r.url.replace(/^http:\/\//, "").replace(/\/$/, "") + " · " + said, status: r.loadError || r.errors.length ? "error" : "done", output: clip([r.loadError, ...r.errors, ...r.warnings].filter(Boolean).join("\n") || "Consola: sin errores.", MAX_OUTPUT) });
+    } catch (error) {
+      this.patchItem(item.id, { text: "No se pudo revisar la vista previa", status: "error", output: clip(error.message, 600) });
+    }
+  }
+
+  // ------------------------------------------------------------------ review before saving (OpenClaw autoreview)
+  /**
+   * A reviewer without tools reads the task's changes and answers with findings P0–P3
+   * (P0 breaks something, P3 is a nit). Kept as a «review» item; each finding can go to Bruno.
+   */
+  async review(taskId) {
+    this.busy(taskId);
+    let task = this.mustTask(taskId);
+    if (task.saved) task = await this.recover(taskId);
+    const d = await this.diff(taskId);
+    if (!d.files.length) throw Object.assign(Error("No hay cambios que revisar."), { status: 409 });
+    const patch = clip(d.files.map((f) => f.patch || "Binary or empty: " + f.path).join("\n"), 80000);
+    const prompt = [
+      "You are a careful code reviewer. Review ONLY the changes below for real problems: bugs, crashes, security holes, data loss, broken behaviour, missing error handling, and clear quality issues.",
+      "Severity: P0 = breaks the app or loses data, P1 = a real bug the person will hit, P2 = should be fixed, P3 = minor polish. Do not invent problems; an empty list is a good answer.",
+      "Reply with JSON only: {\"summary\": string, \"findings\": [{\"severity\": \"P0\"|\"P1\"|\"P2\"|\"P3\", \"title\": string, \"file\": string, \"line\": number|null, \"detail\": string}]}.",
+      "Write summary, title and detail in plain Spanish for a non-technical person (detail: what goes wrong and how to fix it, two sentences at most). At most 8 findings, most severe first.",
+      "", "Task: " + task.title, "", patch,
+    ].join("\n");
+    const said = await this.quickText(task, prompt, { model: "claude-sonnet-5-5", timeout: 240000 });
+    if (!said) throw Object.assign(Error("No se pudo hacer la revisión: ni Claude Code ni Codex respondieron."), { status: 502 });
+    let parsed;
+    try { parsed = JSON.parse(String(said).replace(/^[^{]*/, "").replace(/[^}]*$/, "")); } catch { throw Object.assign(Error("La revisión no vino en el formato esperado. Vuelve a intentarlo."), { status: 502 }); }
+    const findings = (Array.isArray(parsed.findings) ? parsed.findings : []).slice(0, 8).map((f) => ({
+      severity: /^P[0-3]$/.test(f.severity) ? f.severity : "P2", title: clip(f.title || "Sin título", 160), file: f.file ? clip(f.file, 300) : null,
+      line: Number.isFinite(Number(f.line)) && f.line !== null ? Number(f.line) : null, detail: clip(f.detail || "", 800),
+    })).sort((a, b) => a.severity.localeCompare(b.severity));
+    const turns = (task.turns || []).length;
+    const item = this.addItem(taskId, { kind: "review", summary: clip(parsed.summary || "", 600), findings, files: d.files.length, turnsAt: turns });
+    this.setTask(taskId, { review: { at: now(), turns, item: item.id, serious: findings.filter((f) => f.severity <= "P1").length, total: findings.length } });
+    return { item, findings, serious: findings.filter((f) => f.severity <= "P1").length };
+  }
+
+  // ------------------------------------------------------------------ «Ponerse al día» with the base
+  /**
+   * Brings the base branch's newest commits into the task's copy (OpenClaw managed worktrees:
+   * the copy absorbs the base, then saving into it is clean). Conflicts are Bruno's to resolve
+   * in his copy; Colmena closes the merge when no conflict marks are left.
+   */
+  async catchUp(taskId) {
+    this.busy(taskId);
+    let task = this.mustTask(taskId);
+    if (!task.isolated) throw Object.assign(Error("Esta tarea trabaja directamente en tu carpeta."), { status: 409 });
+    if (task.merging) throw Object.assign(Error("Bruno aún está resolviendo los conflictos con " + task.base + "."), { status: 409 });
+    if (task.saved) task = await this.recover(taskId);
+    await this.commit(taskId);
+    const base = task.base || "main";
+    const behind = Number((await git(["rev-list", "--count", "HEAD.." + base], { cwd: task.cwd })).stdout.trim()) || 0;
+    if (!behind) { this.addItem(taskId, { kind: "notice", text: "Ya estaba al día con " + base + "." }); return { upToDate: true }; }
+    try {
+      await git([...(await identity(task.cwd)), "merge", "--no-edit", "-m", "Merge " + base + " into " + task.branch, base], { cwd: task.cwd });
+      this.addItem(taskId, { kind: "notice", text: `Traído lo último de ${base} (${behind === 1 ? "1 cambio" : behind + " cambios"}): sin conflictos.`, tone: "done" });
+      return { merged: true, behind };
+    } catch (error) {
+      const files = (await git(["diff", "--name-only", "--diff-filter=U"], { cwd: task.cwd, ok: [0, 1] }).catch(() => ({ stdout: "" }))).stdout.split(/\r?\n/).filter(Boolean);
+      if (!files.length) {
+        await git(["merge", "--abort"], { cwd: task.cwd, ok: [0, 128] }).catch(() => {});
+        throw Object.assign(Error("No se pudo traer lo último de " + base + ": " + error.message), { status: 409 });
+      }
+      this.setTask(taskId, { merging: { base, files: files.slice(0, 50), at: now() } });
+      const prompt = [
+        `Colmena ha traído lo último de ${base} a tu copia y hay conflictos en: ${files.join(", ")}.`,
+        "Resuélvelos editando esos archivos: quita las marcas <<<<<<<, ======= y >>>>>>> y deja lo correcto de los dos lados (lo tuyo y lo nuevo de " + base + ").",
+        "Después comprueba que todo funciona (tests o build). No hagas commit ni merge: Colmena cierra el merge cuando acabes.",
+      ].join("\n");
+      void this.startTurn(this.mustTask(taskId), prompt, "build", { goal: `Bruno resuelve los conflictos con ${base}: ${files.slice(0, 3).join(", ")}${files.length > 3 ? "…" : ""}` });
+      return { resolving: true, files };
+    }
+  }
+
+  /** After Bruno's turn on conflicts: closes the merge when no marks are left. */
+  async closeMerge(taskId) {
+    const task = this.mustTask(taskId);
+    if (!task.merging) return null;
+    const marked = (await git(["grep", "-l", "-E", "^(<<<<<<<|>>>>>>>)( |$)", "--", ...task.merging.files], { cwd: task.cwd, ok: [0, 1] }).catch(() => ({ stdout: "" }))).stdout.split(/\r?\n/).filter(Boolean);
+    if (marked.length) {
+      this.addItem(taskId, { kind: "notice", text: "Aún quedan conflictos en " + marked.join(", ") + ". Pídele a Bruno que los termine.", tone: "warn" });
+      return { left: marked };
+    }
+    await git(["add", "-A"], { cwd: task.cwd });
+    await git([...(await identity(task.cwd)), "commit", "--no-edit", "-q"], { cwd: task.cwd, ok: [0, 1] });
+    this.setTask(taskId, { merging: null });
+    this.addItem(taskId, { kind: "notice", text: "Conflictos resueltos: tu copia ya tiene lo último de " + task.merging.base + ". Ya puedes guardar.", tone: "done" });
+    return { closed: true };
   }
 
   // ------------------------------------------------------------------ saving (commit, merge, push, PR)
@@ -928,11 +1096,19 @@ export class CodeService {
     const task = this.mustTask(taskId);
     if (!task.isolated) throw Object.assign(Error("Esta tarea trabaja directamente en tu carpeta."), { status: 409 });
     if (task.saved) throw Object.assign(Error("Ya está guardada en " + (task.base || "main") + "."), { status: 409 });
+    if (task.merging) throw Object.assign(Error("Bruno aún está resolviendo los conflictos con " + task.base + ": guarda cuando acabe."), { status: 409 });
     await this.commit(taskId);
     const project = this.mustProject(task.projectId);
     const root = await repoInfo(project.root);
     if (root.branch !== task.base) throw Object.assign(Error(`Tu carpeta está en la rama ${root.branch || "(ninguna)"}, no en ${task.base}. Cámbiala a ${task.base} y vuelve a intentarlo.`), { status: 409 });
     if (root.dirty) throw Object.assign(Error(`Tu carpeta tiene cambios sin guardar en ${task.base}. Guárdalos o descártalos y vuelve a intentarlo.`), { status: 409 });
+    // OpenClaw's ancestor check: when the base moved on, the copy takes it in first (Bruno
+    // resolves any conflict there), so saving into the base never conflicts.
+    const ancestor = await git(["merge-base", "--is-ancestor", task.base, task.branch], { cwd: root.top, ok: [0, 1] });
+    if (ancestor.code === 1) {
+      const up = await this.catchUp(taskId);
+      if (up.resolving) return { resolving: true, files: up.files };
+    }
     try {
       await git([...(await identity(root.top)), "merge", "--no-ff", "--no-edit", "-m", `Merge ${task.branch}: ${task.title}`, task.branch], { cwd: root.top });
     } catch (error) {
@@ -955,6 +1131,7 @@ export class CodeService {
     await keepCommit({ repo: task.repoTop, ref, commit: head });
     const busy = this.engines.has(taskId) || this.terminals.pids(taskId).length > 0;
     this.closeEngine(taskId);
+    this.closePreview(taskId);
     await this.terminals.closeTask(taskId, { forget: false });
     if (busy) await new Promise((r) => setTimeout(r, 1500)); // Windows keeps a folder while a process runs in it
     await removeWorktree({ repo: task.repoTop, dir: task.worktree, branch: task.branch, base: head });
@@ -1037,16 +1214,16 @@ export class CodeService {
   }
 
   /** A short text from Claude Code (Haiku) or, without it, from Codex; null when neither answers. */
-  async quickText(task, prompt) {
+  async quickText(task, prompt, { model = "claude-haiku-5-5", timeout = 120000 } = {}) {
     const { cleanEnv, findClaudeCli } = await import("../providers/claude-cli.mjs");
     const run = (command, args, opts = {}) => new Promise((resolve) => {
       const [exe, ...lead] = Array.isArray(command) ? command : [command];
-      const child = execFile(exe, [...lead, ...args], { cwd: task.cwd, env: cleanEnv(), windowsHide: true, timeout: 120000, maxBuffer: 2 * 1024 * 1024, ...opts }, (error, stdout) => resolve(error ? null : String(stdout || "").trim() || null));
+      const child = execFile(exe, [...lead, ...args], { cwd: task.cwd, env: cleanEnv(), windowsHide: true, timeout, maxBuffer: 2 * 1024 * 1024, ...opts }, (error, stdout) => resolve(error ? null : String(stdout || "").trim() || null));
       child.stdin.end(prompt);
     });
     const claude = this.command || findClaudeCli();
     if (claude && task.engine !== "codex") {
-      const out = await run(claude, ["--print", "--model", "claude-haiku-5-5", "--tools", "", "--setting-sources", "", "--no-session-persistence", "--permission-mode", "dontAsk"]);
+      const out = await run(claude, ["--print", "--model", model, "--tools", "", "--setting-sources", "", "--no-session-persistence", "--permission-mode", "dontAsk"]);
       if (out) return out;
     }
     if (this.codexCommand) {
@@ -1057,7 +1234,7 @@ export class CodeService {
       await rm(file, { force: true }).catch(() => {});
       if (text?.trim()) return text.trim();
     }
-    if (claude && task.engine === "codex") return run(claude, ["--print", "--model", "claude-haiku-5-5", "--tools", "", "--setting-sources", "", "--no-session-persistence", "--permission-mode", "dontAsk"]);
+    if (claude && task.engine === "codex") return run(claude, ["--print", "--model", model, "--tools", "", "--setting-sources", "", "--no-session-persistence", "--permission-mode", "dontAsk"]);
     return null;
   }
 

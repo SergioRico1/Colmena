@@ -123,6 +123,17 @@ export function registerCodeRoutes(app, { code }) {
     if (body.to === "pr") return res.json(await code.pullRequest(taskId));
     res.json(await code.commit(taskId, { message: body.message }));
   });
+  // Review before saving, «Ponerse al día» with the base, and Bruno's look at the preview.
+  app.post("/api/code/tasks/:id/review", async (req, res) => res.json(await code.review(id.parse(req.params.id))));
+  app.post("/api/code/tasks/:id/catch-up", async (req, res) => res.json(await code.catchUp(id.parse(req.params.id))));
+  app.post("/api/code/tasks/:id/preview/check", async (req, res) => {
+    const body = z.object({ path: z.string().max(400).optional(), port: z.number().int().min(1024).max(65535).optional() }).strict().parse(req.body || {});
+    res.json(await code.previewCheck(id.parse(req.params.id), body));
+  });
+  app.post("/api/code/tasks/:id/preview/act", async (req, res) => {
+    const body = z.object({ kind: z.enum(["click", "escribir", "tecla"]), ref: z.string().max(40).default(""), text: z.string().max(4000).default("") }).strict().parse(req.body || {});
+    res.json(await code.previewAct(id.parse(req.params.id), body));
+  });
   app.post("/api/code/tasks/:id/plans/:item", async (req, res) => {
     const body = z.object({ action: z.enum(["implement", "new", "refine"]), text: z.string().max(100000).optional() }).strict().parse(req.body || {});
     res.json(await code.planAction(id.parse(req.params.id), { item: id.parse(req.params.item), ...body }));

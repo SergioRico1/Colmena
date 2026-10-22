@@ -38,6 +38,24 @@ export function parsePatch(patch) {
   return rows;
 }
 
+/** Picked rows of a file's diff → a context chip: «a.js:12-14», the lines with their signs. */
+export function diffContext(file, rows, from, to, note) {
+  const picked = rows.slice(from, to + 1).filter((r) => ["add", "del", "ctx"].includes(r.type));
+  const nums = picked.map((r) => r.b ?? r.a).filter((n) => n != null);
+  const lines = nums.length ? [Math.min(...nums), Math.max(...nums)] : [];
+  const where = lines.length ? (lines[0] === lines[1] ? ":" + lines[0] : ":" + lines[0] + "-" + lines[1]) : "";
+  return { kind: "diff", label: file.split("/").pop() + where, file, lines, note, text: picked.map((r) => ({ add: "+", del: "-", ctx: " " })[r.type] + r.text).join("\n") };
+}
+
+/** A review finding → a context chip for the composer. */
+export function findingContext(f) {
+  return { kind: "diff", label: f.severity + " · " + f.title, file: f.file || undefined, lines: f.line ? [f.line, f.line] : undefined, note: f.title + ". " + (f.detail || ""), text: "" };
+}
+/** Review findings → one message for Bruno, most severe first. */
+export function findingsText(findings) {
+  return "Arregla esto que ha encontrado la revisión y comprueba que funciona:\n" + findings.map((f) => `- [${f.severity}] ${f.title}${f.file ? ` (${f.file}${f.line ? ":" + f.line : ""})` : ""}: ${f.detail || ""}`.trim()).join("\n");
+}
+
 /** The «/», «$» or «@» word being typed at the caret, or null. */
 export function triggerAt(text, caret) {
   const before = String(text).slice(0, caret);

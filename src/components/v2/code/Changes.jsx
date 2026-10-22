@@ -2,10 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, FileCode2, Search } from "lucide-react";
 import { get } from "../../../lib/api.js";
 import { C, MONO, Seg, Stat } from "./parts.jsx";
-import { parsePatch } from "./model.js";
+import { parsePatch, diffContext } from "./model.js";
+import { addContext } from "./Extras.jsx";
 
 // «Cambios» (T3 Code's diff panel): one turn or the whole task against where it started,
 // files on top, the unified diff below, and a search across it (Enter jumps to the next hit).
+// Click a line number (Shift+click: several) to comment those lines: the comment goes into
+// your next message as a chip.
 
 const STYLE = {
   add: { bg: "#EEF8F2", fg: "#0B4A33", sign: "+", signFg: "#0B8A5F" },
@@ -13,7 +16,24 @@ const STYLE = {
   ctx: { bg: "transparent", fg: C.text, sign: " ", signFg: "#A9ACB6" },
 };
 
-function Line({ row, query, active }) {
+/** The comment box under selected diff lines (T3 Code AnnotatableCodeView): it becomes a chip. */
+function CommentBox({ label, onAdd, onCancel }) {
+  const [note, setNote] = useState("");
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) onAdd(note.trim()); }} style={{ margin: "6px 14px 10px 100px", padding: "10px", display: "flex", flexDirection: "column", gap: "8px", borderRadius: "14px", background: C.white, boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 14px 30px -18px rgba(18,19,26,.35)", animation: "rise .2s ease-out" }}>
+      <span style={{ font: `500 11px/1 ${MONO}`, color: C.faint }}>{label}</span>
+      <textarea autoFocus rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué le dirías a Bruno de estas líneas?"
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (note.trim()) onAdd(note.trim()); } if (e.key === "Escape") onCancel(); }}
+        style={{ border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "13px", lineHeight: 1.5 }} />
+      <span style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
+        <button type="button" onClick={onCancel} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: C.muted }}>Cancelar</button>
+        <button type="submit" disabled={!note.trim()} style={{ height: "30px", padding: "0 14px", border: 0, borderRadius: "999px", background: note.trim() ? C.ink : "rgba(18,19,26,.12)", color: C.white, cursor: note.trim() ? "pointer" : "default", fontSize: "12px", fontWeight: 600 }}>Añadir al mensaje</button>
+      </span>
+    </form>
+  );
+}
+
+function Line({ row, query, active, picked = false, onPick = null }) {
   const s = STYLE[row.type];
   let content = row.text;
   if (query) {
@@ -28,16 +48,18 @@ function Line({ row, query, active }) {
     if (parts.length) { if (i < row.text.length) parts.push(row.text.slice(i)); content = parts; }
   }
   return (
-    <div data-active={active ? "" : undefined} style={{ display: "grid", gridTemplateColumns: "42px 42px 16px 1fr", alignItems: "baseline", minHeight: "21px", paddingRight: "14px", background: s.bg, font: `400 12.5px/21px ${MONO}` }}>
-      <span style={{ paddingRight: "8px", textAlign: "right", color: "#A9ACB6", userSelect: "none" }}>{row.a ?? ""}</span>
-      <span style={{ paddingRight: "8px", textAlign: "right", color: "#A9ACB6", userSelect: "none" }}>{row.b ?? ""}</span>
+    <div data-active={active ? "" : undefined} style={{ display: "grid", gridTemplateColumns: "42px 42px 16px 1fr", alignItems: "baseline", minHeight: "21px", paddingRight: "14px", background: picked ? "rgba(255,201,60,.28)" : s.bg, boxShadow: picked ? "inset 3px 0 0 #FFC93C" : "none", font: `400 12.5px/21px ${MONO}` }}>
+      <span onMouseDown={onPick} title={onPick ? "Selecciona la línea para comentarla (Mayús: varias)" : undefined} style={{ gridColumn: "1 / span 2", display: "grid", gridTemplateColumns: "42px 42px", cursor: onPick ? "pointer" : "default", userSelect: "none" }}>
+        <span style={{ paddingRight: "8px", textAlign: "right", color: picked ? C.honeyText : "#A9ACB6" }}>{row.a ?? ""}</span>
+        <span style={{ paddingRight: "8px", textAlign: "right", color: picked ? C.honeyText : "#A9ACB6" }}>{row.b ?? ""}</span>
+      </span>
       <span style={{ color: s.signFg, userSelect: "none" }}>{s.sign}</span>
       <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-all", color: s.fg }}>{content}</span>
     </div>
   );
 }
 
-function FileDiff({ file, query, activeKey, open, onToggle, refFn }) {
+function FileDiff({ file, query, activeKey, open, onToggle, refFn, pick = null, onPick = null, onComment = null }) {
   const rows = useMemo(() => parsePatch(file.patch), [file.patch]);
   const dir = file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/") + 1) : "";
   const name = file.path.slice(dir.length);
@@ -54,7 +76,12 @@ function FileDiff({ file, query, activeKey, open, onToggle, refFn }) {
           {rows.map((row, k) => row.type === "hunk"
             ? <div key={k} style={{ padding: "6px 16px 4px 100px", font: `400 11.5px/1.4 ${MONO}`, color: C.quiet, background: "rgba(18,19,26,.025)" }}>línea {row.start}{row.text ? " · " + row.text : ""}</div>
             : row.type === "note" ? null
-              : <Line key={k} row={row} query={query} active={activeKey === file.path + ":" + k} />)}
+              : (
+                <div key={k}>
+                  <Line row={row} query={query} active={activeKey === file.path + ":" + k} picked={!!pick && k >= pick.from && k <= pick.to} onPick={onPick ? (e) => { e.preventDefault(); onPick(k, e.shiftKey); } : null} />
+                  {pick && k === pick.to && onComment ? <CommentBox label={diffContext(file.path, rows, pick.from, pick.to, "").label} onCancel={() => onPick(null)} onAdd={(note) => onComment(diffContext(file.path, rows, pick.from, pick.to, note))} /> : null}
+                </div>
+              ))}
         </div>
       ) : null}
     </section>
@@ -68,6 +95,8 @@ export default function Changes({ task, turn, onTurn }) {
   const [q, setQ] = useState("");
   const [hit, setHit] = useState(0);
   const [closed, setClosed] = useState(() => new Set());
+  const [sel, setSel] = useState(null); // lines picked to comment: {path, from, to, anchor}
+  useEffect(() => { setSel(null); }, [task?.id, turn, scope]);
   const refs = useRef(new Map());
   const body = useRef(null);
   const turns = task?.turns || 0;
@@ -126,7 +155,10 @@ export default function Changes({ task, turn, onTurn }) {
         ) : null}
         {files.map((f) => (
           <FileDiff key={f.path} file={f} query={query} activeKey={hits[hit]} open={!closed.has(f.path)} refFn={(el) => (el ? refs.current.set(f.path, el) : refs.current.delete(f.path))}
-            onToggle={() => setClosed((s) => { const x = new Set(s); x.has(f.path) ? x.delete(f.path) : x.add(f.path); return x; })} />
+            onToggle={() => setClosed((s) => { const x = new Set(s); x.has(f.path) ? x.delete(f.path) : x.add(f.path); return x; })}
+            pick={sel?.path === f.path ? sel : null}
+            onPick={(k, extend) => setSel((s) => (k === null ? null : extend && s?.path === f.path ? { path: f.path, from: Math.min(s.anchor, k), to: Math.max(s.anchor, k), anchor: s.anchor } : { path: f.path, from: k, to: k, anchor: k }))}
+            onComment={(context) => { addContext(task.id, context); setSel(null); }} />
         ))}
         {data?.truncated ? <p style={{ margin: "12px 16px", fontSize: "12px", color: C.faint }}>El cambio es muy grande: solo se muestra una parte.</p> : null}
       </div>

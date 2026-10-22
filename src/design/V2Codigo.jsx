@@ -5,14 +5,14 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes spin{to{transform:rotate(360deg)}}\n@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}\n@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}\n@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.row-hover{transition:background .15s ease}\n.row-hover:hover{background:rgba(18,19,26,.035)}\n.tools{opacity:0;transition:opacity .15s ease}\n.turn:hover .tools,.turn:focus-within .tools{opacity:1}\n@media (max-width: 1180px){[data-codepanel]{display:none!important}}\n@media (max-width: 860px){[data-projects]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
     super(props);
     this.state = { mode: this.mode(props.estado), tab: this.tab(props.panel), scope: 'turno', open: 2, git: false, model: false, access: false, when: 'cola', build: 'construir' };
   }
-  mode(v) { return v === 'pide OK' ? 'pide' : (v || 'trabajando'); }
+  mode(v) { return v === 'pide OK' ? 'pide' : v === 'revisión' ? 'revision' : (v || 'trabajando'); }
   tab(v) { return v === 'vista previa' ? 'vista' : (v || 'cambios'); }
   componentDidUpdate(prev) {
     if (prev.estado !== this.props.estado) this.setState({ mode: this.mode(this.props.estado) });
@@ -22,8 +22,8 @@ export class Logic extends DCLogic {
     const s = this.state;
     const working = s.mode === 'trabajando' || s.mode === 'objetivo';
     const seg = (on) => on ? { bg: '#FFFFFF', fg: '#12131A', sh: '0 1px 2px rgba(18,19,26,.1)' } : { bg: 'transparent', fg: '#5C606C', sh: 'none' };
-    const SHORT = { objetivo: 'Trabajando · vuelta 3', trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
-    const LABEL = { objetivo: 'Trabajando · objetivo, vuelta 3 de 12', trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
+    const SHORT = { revision: 'Listo para revisar', objetivo: 'Trabajando · vuelta 3', trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
+    const LABEL = { revision: 'Listo para revisar · revisado', objetivo: 'Trabajando · objetivo, vuelta 3 de 12', trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
     const aura = working ? { anim: 'breathe 1.4s ease-in-out infinite', filter: 'drop-shadow(0 3px 7px #FF7A1A88)', text: '#12131A', line: 'rgba(255,122,26,.25)' }
       : (s.mode === 'plan' || s.mode === 'pide') ? { anim: 'beckon 1.8s ease-out infinite', filter: 'none', text: '#8A5A00', line: 'rgba(255,201,60,.6)' }
       : { anim: 'none', filter: 'drop-shadow(0 2px 4px rgba(18,19,26,.16))', text: '#0B6B4A', line: 'rgba(11,138,95,.35)' };
@@ -39,7 +39,8 @@ export class Logic extends DCLogic {
       pick: (e) => { if (e) e.preventDefault(); this.setState({ mode: 'trabajando' }); }
     });
     const cur = s.mode !== 'inicio';
-    const firstKind = (working || s.mode === 'inicio') ? 'work' : (s.mode === 'listo' ? 'done' : 'wait');
+    const ready = s.mode === 'listo' || s.mode === 'revision';
+    const firstKind = (working || s.mode === 'inicio') ? 'work' : (ready ? 'done' : 'wait');
     // «Por estado» (T3 Code sidebar): what needs you first, then what is stuck, runs, is ready.
     const bizum = task('Bizum en el checkout', 'tienda-web · ' + (SHORT[s.mode] || 'Trabajando'), firstKind, '+128', '−14', cur);
     const GROUPS = [
@@ -85,9 +86,9 @@ export class Logic extends DCLogic {
       ['48', '52', ' ', '}', ''],
       ['', '53', '+', 'export const ', 'BIZUM', '_LIMIT = 1000;']
     ];
-    const diff = DIFF.map(([a, b, sign, pre, hit, post]) => ({
+    const diff = DIFF.map(([a, b, sign, pre, hit, post], i) => ({
       a, b, sign, pre, hit: hit || '', post: post || '',
-      bg: sign === '+' ? '#EEF8F2' : (sign === '−' ? '#FCEEEB' : 'transparent'),
+      bg: s.mode === 'revision' && i >= 3 && i <= 7 ? 'rgba(255,201,60,.28)' : sign === '+' ? '#EEF8F2' : (sign === '−' ? '#FCEEEB' : 'transparent'),
       fg: sign === '+' ? '#0B4A33' : (sign === '−' ? '#7A2A1F' : '#3D404A'),
       signFg: sign === '+' ? '#0B8A5F' : (sign === '−' ? '#C2412D' : '#A9ACB6')
     }));
@@ -118,11 +119,11 @@ export class Logic extends DCLogic {
       ['Guardar y subir', 'Commit y push a GitHub.', 'm8 17 4-4 4 4', 'M12 13v8', 12, 6],
       ['Guardar, subir y abrir PR', 'Bruno escribe el título y la descripción del PR.', 'M5 9v12', 'M12 6h5a2 2 0 0 1 2 2v7', 5, 6]
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
-    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['inicio', 'Inicio']];
+    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['inicio', 'Inicio']];
     return {
       home: s.mode === 'inicio', inTask: s.mode !== 'inicio', working,
       railDot: s.mode === 'plan' || s.mode === 'pide',
-      is: { objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: s.mode === 'listo' },
+      is: { objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
       label: LABEL[s.mode], aura, groups, log, diff, tabs,
       tab: { cambios: s.tab === 'cambios', vista: s.tab === 'vista', terminal: s.tab === 'terminal' },
       goHome: () => this.setState({ mode: 'inicio' }),
@@ -144,7 +145,7 @@ export class Logic extends DCLogic {
         { n: '3', text: 'Revisar contraste en checkout, carrito y fichas de producto.' },
         { n: '4', text: 'Capturas de las 3 páginas en claro y oscuro para que las compares.' }
       ],
-      git: { label: s.mode === 'listo' ? 'Guardar en main' : 'Guardar cambios', open: s.git, items: GIT, toggle: () => this.setState({ git: !s.git, model: false, access: false }), primary: () => this.setState({ git: !s.git }) },
+      git: { label: ready ? 'Guardar en main' : 'Guardar cambios', open: s.git, items: GIT, toggle: () => this.setState({ git: !s.git, model: false, access: false }), primary: () => this.setState({ git: !s.git }) },
       modelOpen: s.model, accessOpen: s.access, engines, access,
       toggleModel: () => this.setState({ model: !s.model, access: false, git: false }),
       toggleAccess: () => this.setState({ access: !s.access, model: false, git: false }),
@@ -731,6 +732,67 @@ export function View({ v }) {
                       </div>
                     </>
                   ) : null}
+                  {v.is?.revision ? (
+                    <>
+                      <div style={{display: "flex", flexDirection: "column", gap: "12px", padding: "20px 20px 16px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 1px 2px rgba(18,19,26,.04)", animation: "rise .3s ease-out"}}>
+                        <span style={{display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: "600", color: "#8A5A00"}}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+                            <path d="M12 8v4" />
+                            <path d="M12 16h.01" />
+                          </svg>
+                          {"Revisión antes de guardar · 2 hallazgos · 1 importante"}
+                          <span style={{marginLeft: "auto", fontWeight: "400", color: "#8A8D96"}}>
+                            {"3 archivos"}
+                          </span>
+                        </span>
+                        <p style={{margin: "0", fontSize: "14px", lineHeight: "1.55", color: "#1E2029"}}>
+                          {"Bizum funciona, pero si el banco rechaza el pago el cliente no ve ningún aviso."}
+                        </p>
+                        <div style={{display: "flex", gap: "12px", padding: "12px", borderRadius: "16px", background: "#FAFAF8"}}>
+                          <span style={{flex: "none", alignSelf: "flex-start", padding: "3px 8px", borderRadius: "999px", background: "#FFF4D1", color: "#8A5A00", font: "600 11px/1.3 'Geist Mono', monospace"}}>
+                            {"P1"}
+                          </span>
+                          <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "4px"}}>
+                            <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                              {"Un pago rechazado no avisa al cliente"}
+                            </strong>
+                            <span style={{font: "400 12px/1.3 'Geist Mono', monospace", color: "#6B6F7A"}}>
+                              {"src/lib/payments.js:41"}
+                            </span>
+                            <span style={{fontSize: "13px", lineHeight: "1.5", color: "#3D404A"}}>
+                              {"Si Bizum devuelve error, la página se queda igual. Muestra un mensaje y deja reintentar."}
+                            </span>
+                          </span>
+                          <button type="button" style={{flex: "none", alignSelf: "center", height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap"}}>
+                            {"Pasar a Bruno"}
+                          </button>
+                        </div>
+                        <div style={{display: "flex", gap: "12px", padding: "12px", borderRadius: "16px", background: "#FAFAF8"}}>
+                          <span style={{flex: "none", alignSelf: "flex-start", padding: "3px 8px", borderRadius: "999px", background: "#F4F4F0", color: "#5C606C", font: "600 11px/1.3 'Geist Mono', monospace"}}>
+                            {"P3"}
+                          </span>
+                          <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "4px"}}>
+                            <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                              {"Falta el nombre accesible del botón"}
+                            </strong>
+                            <span style={{font: "400 12px/1.3 'Geist Mono', monospace", color: "#6B6F7A"}}>
+                              {"src/checkout/PaymentMethods.jsx:47"}
+                            </span>
+                            <span style={{fontSize: "13px", lineHeight: "1.5", color: "#3D404A"}}>
+                              {"Añade aria-label para los lectores de pantalla."}
+                            </span>
+                          </span>
+                          <button type="button" style={{flex: "none", alignSelf: "center", height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: "600", whiteSpace: "nowrap"}}>
+                            {"Pasar a Bruno"}
+                          </button>
+                        </div>
+                        <button type="button" style={{alignSelf: "flex-start", height: "40px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                          {"Que Bruno lo arregle todo"}
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               </div>
               <form style={{flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "4px clamp(18px, 3vw, 32px) 20px"}}>
@@ -1035,6 +1097,26 @@ export function View({ v }) {
                             </div>
                           </React.Fragment>
                         ))}
+                        {v.is?.revision ? (
+                          <>
+                            <div style={{margin: "6px 14px 10px 90px", padding: "10px", display: "flex", flexDirection: "column", gap: "8px", borderRadius: "14px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 14px 30px -18px rgba(18,19,26,.35)"}}>
+                              <span style={{font: "500 11px/1 'Geist Mono', monospace", color: "#6B6F7A"}}>
+                                {"PaymentMethods.jsx:45-49"}
+                              </span>
+                              <span style={{fontSize: "13px", lineHeight: "1.5"}}>
+                                {"Pon Bizum antes que la tarjeta: es lo que más usan."}
+                              </span>
+                              <span style={{display: "flex", justifyContent: "flex-end", gap: "6px"}}>
+                                <button type="button" style={{height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "12px", fontWeight: "600", color: "#5C606C"}}>
+                                  {"Cancelar"}
+                                </button>
+                                <button type="button" style={{height: "30px", padding: "0 14px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "12px", fontWeight: "600"}}>
+                                  {"Añadir al mensaje"}
+                                </button>
+                              </span>
+                            </div>
+                          </>
+                        ) : null}
                       </div>
                     </div>
                   </>

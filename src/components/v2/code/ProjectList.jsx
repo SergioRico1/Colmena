@@ -15,6 +15,7 @@ const STATUS = {
 
 export function taskStatus(t) {
   if (STATUS[t.status]) return STATUS[t.status];
+  if (t.merging) return { text: "Conflictos con " + (t.base || "main"), dot: C.honey, fg: C.honeyText, state: "wait" };
   if (t.goal && ["blocked", "limited"].includes(t.goal.status)) return { text: "Te espera · objetivo", dot: C.honey, fg: C.honeyText, state: "wait" };
   if (t.turns) return { text: t.merged || t.saved ? "Guardado" : t.isolated ? "Listo para revisar" : "Listo", dot: C.green, fg: C.faint, state: "rest" };
   return { text: "Nueva", dot: "#C9CBD1", fg: C.faint, state: "rest" };
@@ -26,7 +27,7 @@ export const GROUPS = [
   ["wait", "Te espera"], ["stuck", "Atascadas"], ["work", "Trabajando"], ["review", "Para revisar"], ["saved", "Guardadas"], ["new", "Nuevas"],
 ];
 export function groupOf(t) {
-  if (["waiting", "planned"].includes(t.status) || (t.goal && ["blocked", "limited"].includes(t.goal.status) && t.status !== "working")) return "wait";
+  if (["waiting", "planned"].includes(t.status) || ((t.merging || (t.goal && ["blocked", "limited"].includes(t.goal.status))) && t.status !== "working")) return "wait";
   if (t.status === "error") return "stuck";
   if (t.status === "working" || t.running) return "work";
   if (t.merged || t.saved) return "saved";

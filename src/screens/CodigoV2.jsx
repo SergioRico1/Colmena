@@ -8,6 +8,8 @@ import Changes from "../components/v2/code/Changes.jsx";
 import Preview from "../components/v2/code/Preview.jsx";
 import TerminalPanel from "../components/v2/code/Terminal.jsx";
 import { buildRows, TimelineRow, withoutGoalMark } from "../components/v2/code/Timeline.jsx";
+import { findingContext, findingsText } from "../components/v2/code/model.js";
+import { addContext } from "../components/v2/code/Extras.jsx";
 import { useCodeProjects, useCodeTask } from "../components/v2/code/useCode.js";
 import { C, HEAD, MONO, SHEET, FRAME, CODE_CSS, BrunoMark, MenuItem } from "../components/v2/code/parts.jsx";
 import { del, patch, post } from "../lib/api.js";
@@ -32,6 +34,7 @@ function SaveButton({ task, project, onDone, compact = false }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
+  const [warn, setWarn] = useState(null); // {serious} after a review, {resolving: files} on conflicts
   if (!task?.isolated && !project?.repo) return null;
   const base = task.base || "main";
   // Saved into its base: the copy was cleaned up (it comes back if you write again).
@@ -44,24 +47,40 @@ function SaveButton({ task, project, onDone, compact = false }) {
       </span>
     );
   }
-  const save = async (to) => {
-    setOpen(false); setBusy(to); setError(null);
+  const reviewed = task.review && task.review.turns === task.turns;
+  const save = async (to, { force = false } = {}) => {
+    setOpen(false); setBusy(to); setError(null); setWarn(null);
     try {
+      if (to === "review" || to === "catchup") {
+        const r = await post("/code/tasks/" + task.id + (to === "review" ? "/review" : "/catch-up"), {});
+        if (r?.resolving) setWarn({ resolving: r.files });
+        onDone?.();
+        return;
+      }
+      // «Guardar en main» goes through a review first (OpenClaw autoreview): P0–P1 stop it.
+      if (to === "base" && !force) {
+        let serious = reviewed ? task.review.serious : null;
+        if (serious === null) { setBusy("review"); serious = (await post("/code/tasks/" + task.id + "/review", {})).serious; setBusy("base"); }
+        if (serious) { setWarn({ serious }); onDone?.(); return; }
+      }
       const r = await post("/code/tasks/" + task.id + "/save", { to });
+      if (r?.resolving) setWarn({ resolving: r.files });
       if (r?.url) window.open(r.url, "_blank", "noopener");
       onDone?.();
     } catch (e) { setError(e.message); } finally { setBusy(null); }
   };
   // The person pressing «subir» is the OK for publishing: no second question.
   const items = [
-    ...(task.isolated ? [["base", "Guardar en " + base, "Commit en " + task.branch + " y merge en tu carpeta."]] : []),
+    ...(task.isolated ? [["base", "Guardar en " + base, "Revisión, commit en " + task.branch + " y merge en tu carpeta."]] : []),
     ["branch", task.isolated ? "Guardar solo en su rama" : "Guardar", "Commit con el mensaje que escribe Bruno."],
     ["push", "Guardar y subir", "Commit y push a GitHub" + (task.branch ? " en " + task.branch : "") + "."],
     ["pr", "Guardar, subir y abrir PR", "Bruno escribe el título y la descripción; tú lo creas en GitHub."],
+    ["review", "Revisar los cambios", "Un revisor sin herramientas busca fallos y los ordena de P0 a P3."],
+    ...(task.isolated ? [["catchup", "Ponerse al día con " + base, "Trae lo último de " + base + " a la copia; si algo choca, Bruno lo resuelve."]] : []),
   ];
   const [primary] = items;
-  const disabled = !!busy || task.running;
-  const label = { base: "Guardando…", branch: "Guardando…", push: "Subiendo…", pr: "Preparando PR…" }[busy];
+  const disabled = !!busy || task.running || !!task.merging;
+  const label = { base: "Guardando…", branch: "Guardando…", push: "Subiendo…", pr: "Preparando PR…", review: "Revisando…", catchup: "Trayendo " + base + "…" }[busy];
   return (
     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
       <button type="button" disabled={disabled} onClick={() => save(primary[0])} title={primary[2]}
@@ -78,6 +97,18 @@ function SaveButton({ task, project, onDone, compact = false }) {
         </div>
       ) : null}
       {error ? <p role="alert" style={{ position: "absolute", top: "48px", right: 0, width: "340px", margin: 0, padding: "12px 14px", borderRadius: "16px", background: C.white, boxShadow: SHEET, fontSize: "13px", lineHeight: 1.45, color: C.red, zIndex: 30 }} onClick={() => setError(null)}>{error}</p> : null}
+      {warn ? (
+        <div role="alertdialog" aria-label="Antes de guardar" style={{ position: "absolute", top: "48px", right: 0, width: "350px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", borderRadius: "20px", background: C.white, boxShadow: SHEET, zIndex: 30, animation: "rise .2s ease-out" }}>
+          <span style={{ fontSize: "14px", lineHeight: 1.5, color: C.text }}>
+            {warn.resolving ? `Hay cambios que chocan con ${base}: Bruno los está resolviendo en su copia (${warn.resolving.slice(0, 3).join(", ")}). Cuando acabe, vuelve a guardar.`
+              : `La revisión ha encontrado ${warn.serious === 1 ? "un problema importante" : warn.serious + " problemas importantes"} (P0–P1). Los tienes en la conversación.`}
+          </span>
+          <span style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+            <button type="button" onClick={() => setWarn(null)} style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>Vale</button>
+            {warn.serious ? <button type="button" onClick={() => save("base", { force: true })} style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>Guardar igualmente</button> : null}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -186,6 +217,8 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
     onUndoRestore: (item) => act(() => post("/code/tasks/" + task.id + "/restore", { undo: item.undo })),
     onAnswer: (item, body) => act(() => post("/code/tasks/" + task.id + "/asks/" + item.id, body)),
     onEditFrom: (item) => act(async () => { const r = await post("/code/tasks/" + task.id + "/edit-from", { item: item.id }); setDraft({ text: r.text }); }),
+    onFinding: (f) => addContext(task.id, findingContext(f)),
+    onFindings: (list) => act(() => post("/code/tasks/" + task.id + "/messages", { text: findingsText(list), when: "queue" })),
     onPlan: (item, action) => {
       if (action === "refine") { setMode("plan"); setDraft({ text: "" }); return; }
       return act(async () => {
