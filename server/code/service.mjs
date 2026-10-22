@@ -19,7 +19,7 @@ import { ClaudeCodeEngine } from "./claude.mjs";
 import { CodexEngine, codexModels, findCodexCli } from "./codex.mjs";
 import { OpenCodeEngine, OPENCODE_MODELS, findOpenCode, installOpenCode } from "./opencode.mjs";
 import { decide, askTitle, ACCESS } from "./policy.mjs";
-import { Snapshots, repoInfo, addWorktree, removeWorktree, git, slug } from "./git.mjs";
+import { Snapshots, repoInfo, addWorktree, removeWorktree, git, slug, copyIncluded, savedRef, keepCommit, dropRef, restoreWorktree } from "./git.mjs";
 import { taskPorts, descendants, stopFamily } from "./ports.mjs";
 import { Terminals, projectScripts } from "./terminal.mjs";
 import { expandSkills } from "./context.mjs";
@@ -42,6 +42,12 @@ export const KEYBINDINGS = Object.freeze({
 });
 const IDLE_MS = 30 * 60 * 1000;
 const MAX_OUTPUT = 12000;
+/** A copy saved into its base is cleaned up; its last commit stays this long under a hidden ref. */
+export const KEEP_SAVED_MS = 30 * 86400000;
+/** `/goal`: turns Bruno may take on his own before he stops and asks (OpenClaw goal budget). */
+export const GOAL_TURNS = 12;
+/** The mark Bruno ends each goal turn with: «[objetivo: cumplido | sigue | bloqueado — motivo]». */
+export const GOAL_MARK = /\[\s*objetivo\s*:\s*(cumplido|sigue|bloqueado)\s*(?:[—–:-]\s*([^\]]*))?\]/i;
 const DENIED = "La persona ha dicho que no. No lo intentes de otra manera: sigue sin ello o explícale qué necesitas.";
 
 const clip = (s, n) => { s = String(s ?? ""); return s.length > n ? s.slice(0, n) + "…" : s; };
@@ -80,7 +86,7 @@ export function toolLine(tool, input = {}) {
 }
 
 export class CodeService {
-  constructor({ store, directory = store.directory, command = null, codexCommand = undefined, opencodeCommand = undefined, goKey = null, ptySpawn = null } = {}) {
+  constructor({ store, directory = store.directory, command = null, codexCommand = undefined, opencodeCommand = undefined, goKey = null, ptySpawn = null, notifier = null } = {}) {
     this.store = store;
     this.directory = path.resolve(directory);
     this.command = command; // Claude Code ([exe, ...args] in tests)
@@ -97,12 +103,49 @@ export class CodeService {
     this.starting = new Set(); // tasks whose turn is starting (a message now waits in the queue)
     this.families = new Map(); // taskId → Map(pid → {pid, command}): what its engine started
     this.terminals = new Terminals({ directory: this.directory, spawn: ptySpawn });
+    this.terminals.onSetup = (e) => this.setupDone(e);
+    this.notifier = notifier; // Avisos (server/notifications.mjs): Windows notice and sound
+    this.watch = { task: null, focused: false, until: 0 }; // the task the person has in front of them
     // Questions that were open when Colmena closed can no longer be answered.
     for (const item of store.list("codeItems").filter((i) => i.kind === "ask" && i.status === "pending")) store.put("codeItems", { ...item, status: "expired" });
     for (const task of store.list("codeTasks").filter((t) => ["working", "waiting"].includes(t.status))) store.put("codeTasks", { ...task, status: "idle", queue: task.queue || [] });
+    void this.pruneSaved().catch(() => {});
   }
 
   emit(event) { this.events.emit("event", event); }
+
+  /** A setup script of a new copy ended: its «Preparando…» line says how. */
+  setupDone({ taskId, id, title, ok }) {
+    const notice = this.store.get("codeTasks", taskId) && this.items(taskId).find((i) => i.kind === "notice" && i.setup === id);
+    if (!notice) return;
+    this.patchItem(notice.id, { text: ok ? "Copia lista: «" + title + "» terminó bien." : "«" + title + "» falló al preparar la copia: mira su terminal.", tone: ok ? "done" : "warn", setup: null });
+  }
+
+  /** The «Código» screen says which task it shows and whether the window has the focus. */
+  setWatch({ task = null, focused = false } = {}) {
+    this.watch = { task: task ? String(task) : null, focused: !!focused, until: Date.now() + 90000 };
+    return { ok: true };
+  }
+  watching(taskId) {
+    return this.watch.task === taskId && this.watch.focused && Date.now() < this.watch.until;
+  }
+
+  /**
+   * A Windows notice and its sound (Ajustes › Avisos) when a task ends («done»), needs the person
+   * («needs») or gets stuck («failed»); not while the person is looking at that very task.
+   */
+  notifyTask(taskId, kind, text) {
+    const task = this.store.get("codeTasks", taskId);
+    if (!this.notifier || !task || this.watching(taskId)) return null;
+    const name = this.bot().name;
+    const title = kind === "done" ? `${name} ha terminado «${task.title}»` : kind === "failed" ? `«${task.title}» se ha atascado` : `${name} te espera en «${task.title}»`;
+    try {
+      return this.notifier.notify({ kind, botId: "bruno", title: clip(title, 120), text: clip(String(text || "").replace(/\s+/g, " ").trim(), 240), url: "/codigo/" + taskId, extra: { codeTask: taskId } });
+    } catch (error) {
+      console.warn("Código: sin aviso: " + error.message);
+      return null;
+    }
+  }
 
   /** The engines of this computer with their models: [{id, label, available, models}]. */
   async catalog() {
@@ -210,6 +253,7 @@ export class CodeService {
       id: t.id, projectId: t.projectId, title: t.title, botId: t.botId, status: t.status, engine: t.engine || "claude-code", model: t.model, effort: t.effort, access: t.access,
       isolated: !!t.isolated, branch: t.branch || null, base: t.base || null, cwd: t.cwd, add: turns.reduce((n, x) => n + (x.add || 0), 0), del: turns.reduce((n, x) => n + (x.del || 0), 0),
       turns: turns.length, lastChanged: [...turns].reverse().find((x) => x.files?.length)?.n || null, queue: t.queue || [], error: t.error || null, merged: t.merged || null, usage: t.usage || null, limit: t.limit || null, running: !!live?.turn, createdAt: t.createdAt, updatedAt: t.updatedAt,
+      goal: t.goal || null, saved: t.saved ? { at: t.saved.at, until: t.saved.until } : null, included: t.included || null,
     };
   }
 
@@ -301,19 +345,24 @@ export class CodeService {
       await addWorktree({ repo: repo.top, dir: cwd, branch, base: baseCommit });
       if (rel && !rel.startsWith("..")) cwd = path.join(cwd, rel);
     }
+    // The copy starts ready: ignored files listed in .worktreeinclude (like .env) come along.
+    const included = copy ? await copyIncluded({ from: repo.top, to: path.join(this.directory, "code", "worktrees", project.id, id) }).catch(() => []) : [];
     const task = {
       id, projectId: project.id, title, botId: "bruno", engine, model, effort, access: ACCESS.includes(access) ? access : "project",
       isolated: copy, cwd, branch, base: baseRef, baseCommit, worktree: copy ? path.join(this.directory, "code", "worktrees", project.id, id) : null, repoTop: repo.top || null,
       status: "idle", turns: [], queue: [], session: { id: randomUUID(), started: false, forkAt: null }, createdAt: now(), updatedAt: now(),
+      included: included.length ? included.slice(0, 50) : null,
     };
     this.store.put("codeTasks", task);
     try { task.baseSnap = await this.snapsOf(task).capture("base"); this.store.put("codeTasks", task); } catch (e) { console.warn("Código: sin punto base: " + e.message); }
     this.store.patch("codeProjects", project.id, { updatedAt: now() });
     this.emit({ type: "projects" });
+    if (included.length) this.addItem(id, { kind: "notice", text: "Copia preparada con " + (included.length === 1 ? included[0] : included.length + " archivos de .worktreeinclude (" + included.slice(0, 3).join(", ") + (included.length > 3 ? "…" : "") + ")") + "." });
     // The project's setup scripts (colmena.json «onCreate», T3 Code's runOnWorktreeCreate) run
-    // in a terminal of the new copy, like installing its dependencies.
+    // in a terminal of the new copy, like installing its dependencies; each says when it ends.
     for (const script of this.scriptsOf(task).filter((x) => x.onCreate).slice(0, 3)) {
-      await this.terminals.open(task.id, { cwd: task.cwd, command: script.command, title: script.name }).catch(() => {});
+      const opened = await this.terminals.open(task.id, { cwd: task.cwd, command: script.command, title: script.name, setup: true }).catch(() => null);
+      if (opened) this.addItem(id, { kind: "notice", text: "Preparando la copia: «" + script.name + "» en una terminal…", setup: opened.id });
     }
     if (String(text || "").trim() || attachments.length) await this.send(id, { text, mode, attachments });
     else this.emit({ type: "projects" });
@@ -403,25 +452,28 @@ export class CodeService {
    * `mode` «plan» asks for a plan first (nothing changes until the person says «Implementar»).
    * `attachments` are files saved by saveAttachment (absolute paths the engine reads).
    */
-  async send(taskId, { text, when = "queue", mode = "build", attachments = [] }) {
-    const task = this.mustTask(taskId);
+  async send(taskId, { text, when = "queue", mode = "build", attachments = [], contexts = [] }) {
+    let task = this.mustTask(taskId);
     const message = String(text || "").trim();
-    if (!message && !attachments.length) throw Object.assign(Error("Escribe algo para Bruno."), { status: 400 });
+    const notes = cleanContexts(contexts);
+    if (!message && !attachments.length && !notes.length) throw Object.assign(Error("Escribe algo para Bruno."), { status: 400 });
     const files = this.checkAttachments(attachments);
     const live = this.engines.get(taskId);
     if (live?.turn || this.starting.has(taskId)) {
       if (when === "steer" && live?.turn) {
-        await live.engine.steer(await this.prepare(task, message, files));
-        this.addItem(taskId, { kind: "user", text: message, attachments: files.length ? files : undefined, steer: true, turn: live.turn.n });
+        await live.engine.steer(await this.prepare(task, message, files, notes));
+        this.addItem(taskId, { kind: "user", text: message, attachments: files.length ? files : undefined, contexts: notes.length ? notes : undefined, steer: true, turn: live.turn.n });
         return { steered: true };
       }
-      const queue = [...(task.queue || []), { id: randomUUID().slice(0, 8), text: message, mode, attachments: files, at: now() }];
+      const queue = [...(task.queue || []), { id: randomUUID().slice(0, 8), text: message, mode, attachments: files, contexts: notes, at: now() }];
       this.setTask(taskId, { queue });
       return { queued: true };
     }
+    // A copy cleaned up after «Guardar en …» comes back from its hidden ref to go on.
+    if (task.saved) task = await this.recover(taskId);
     // The turn starts in the background (restore point, the engine starting): the answer to
     // the person comes at once and the timeline shows the rest live.
-    void this.startTurn(task, message, mode, { attachments: files });
+    void this.startTurn(task, message, mode, { attachments: files, contexts: notes });
     return { started: true };
   }
 
@@ -433,10 +485,13 @@ export class CodeService {
   }
 
   /** What the engine gets: the message, the `$skills` it names and where the attachments are. */
-  async prepare(task, text, files = []) {
+  async prepare(task, text, files = [], contexts = []) {
     const { text: withSkills } = await expandSkills(text, task.cwd).catch(() => ({ text }));
-    if (!files.length) return withSkills;
-    return (withSkills || "Mira lo que te adjunto.") + "\n\nArchivos adjuntos (léelos desde estas rutas):\n" + files.map((f) => "- " + f.path + (f.image ? " (imagen)" : "")).join("\n");
+    let out = withSkills;
+    // Context chips (a terminal excerpt, a comment on a diff line…) go after the words.
+    if (contexts.length) out = (out || "Mira esto.") + "\n\n" + contexts.map(contextBlock).join("\n\n");
+    if (!files.length) return out;
+    return (out || "Mira lo que te adjunto.") + "\n\nArchivos adjuntos (léelos desde estas rutas):\n" + files.map((f) => "- " + f.path + (f.image ? " (imagen)" : "")).join("\n");
   }
 
   /** «Compactar»: the engine summarizes the conversation so far to free context (T3 Code). */
@@ -448,13 +503,15 @@ export class CodeService {
     return { started: true };
   }
 
-  async startTurn(task, text, mode = "build", { attachments = [], compact = false } = {}) {
+  async startTurn(task, text, mode = "build", { attachments = [], contexts = [], compact = false, goal = null } = {}) {
     const n = (task.turns || []).length + 1;
     this.starting.add(task.id);
     try {
+      // A goal's own turns show as a quiet line, not as a message of the person.
       const user = compact
         ? this.addItem(task.id, { kind: "notice", text: "Compactando la conversación para liberar contexto…", compact: true, turn: n })
-        : this.addItem(task.id, { kind: "user", text, attachments: attachments.length ? attachments : undefined, turn: n, mode: mode === "plan" ? "plan" : undefined });
+        : goal ? this.addItem(task.id, { kind: "notice", text: goal, goal: true, turn: n })
+          : this.addItem(task.id, { kind: "user", text, attachments: attachments.length ? attachments : undefined, contexts: contexts.length ? contexts : undefined, turn: n, mode: mode === "plan" ? "plan" : undefined });
       this.setTask(task.id, { status: "working", error: null });
       let startSnap = null;
       try { startSnap = await this.snapsOf(task).capture("t" + n + "-start-" + Date.now()); } catch {}
@@ -470,7 +527,7 @@ export class CodeService {
       entry.turn = { n, mode, compact, startSnap, userItemId: user.id, started: Date.now(), live: "", tools: new Map(), lastAssistant: null };
       try {
         if (compact) await (entry.engine.compact ? entry.engine.compact() : entry.engine.send("/compact", { mode: "build" }));
-        else await entry.engine.send(await this.prepare(task, text, attachments), { mode });
+        else await entry.engine.send(await this.prepare(task, text, attachments, contexts), { mode });
       } catch (error) {
         await this.finishTurn(task.id, entry, error);
         return;
@@ -513,6 +570,8 @@ export class CodeService {
     }
     if (e.type === "plan") {
       turn.plan = true;
+      turn.live = "";
+      this.emit({ type: "delta", task: taskId, reset: true });
       this.addItem(taskId, { kind: "plan", text: clip(e.text, 40000), status: "open", turn: turn.n });
       return;
     }
@@ -558,12 +617,89 @@ export class CodeService {
     const next = this.setTask(taskId, { turns: [...(task.turns || []), record], status: failed ? "error" : turn.plan ? "planned" : "idle", error: failed ? "turn" : null });
     entry.idle = setTimeout(() => { if (!entry.turn) this.closeEngine(taskId); }, IDLE_MS);
     entry.idle.unref?.();
+    const goal = turn.compact ? null : this.goalAfter(taskId, turn, { failed, stopped: !!turn.stopped || interrupted });
     // The queue goes on by itself (T3 Code): the next message starts the next turn.
     const [first, ...rest] = next.queue || [];
     if (first && !error) {
       this.setTask(taskId, { queue: rest });
-      await this.startTurn(this.mustTask(taskId), first.text, first.mode || "build", { attachments: this.checkAttachments(first.attachments) });
+      await this.startTurn(this.mustTask(taskId), first.text, first.mode || "build", { attachments: this.checkAttachments(first.attachments), contexts: cleanContexts(first.contexts) });
+      return;
     }
+    if (goal?.next) { await this.startTurn(this.mustTask(taskId), goal.next, "build", { goal: goal.line }); return; }
+    if (turn.stopped || turn.compact) return;
+    // Avisos: the turn ended, Bruno needs the person, or it got stuck.
+    const said = [...this.items(taskId)].reverse().find((i) => i.kind === "text" && i.turn === turn.n)?.text || "";
+    if (failed) this.notifyTask(taskId, "failed", error.message || "Bruno no pudo terminar este turno.");
+    else if (goal?.notice) this.notifyTask(taskId, goal.kind, goal.notice);
+    else if (turn.plan) this.notifyTask(taskId, "needs", "Te propone un plan: nada cambia hasta que digas «Implementar».");
+    else this.notifyTask(taskId, "done", (files.length ? (files.length === 1 ? "1 archivo cambiado. " : files.length + " archivos cambiados. ") : "") + said.replace(GOAL_MARK, "").slice(0, 200));
+  }
+
+  // ------------------------------------------------------------------ goals («/goal»)
+  /** «/goal <qué es estar hecho>»: Bruno keeps going turn after turn until he says it is done. */
+  async setGoal(taskId, { action = "set", text = "" }) {
+    const task = this.mustTask(taskId);
+    const goal = task.goal || null;
+    if (action === "set") {
+      const objective = clip(String(text || "").trim(), 2000);
+      if (!objective) throw Object.assign(Error("Di qué es «hecho»: por ejemplo, /goal pasan todos los tests."), { status: 400 });
+      // A task started with only its goal takes its name from it.
+      const title = !(task.turns || []).length && task.title === "Tarea nueva" ? { title: clip(objective.split(/\r?\n/)[0], 70) } : {};
+      this.setTask(taskId, { ...title, goal: { text: objective, status: "active", turns: 0, max: GOAL_TURNS, note: null, at: now() } });
+      return this.goalTurn(taskId, "Objetivo: «" + clip(objective, 160) + "»");
+    }
+    if (!goal) throw Object.assign(Error("Esta tarea no tiene objetivo."), { status: 409 });
+    if (action === "clear") { this.setTask(taskId, { goal: null }); this.addItem(taskId, { kind: "notice", text: "Has quitado el objetivo." }); return { ok: true }; }
+    if (action === "pause") { this.setTask(taskId, { goal: { ...goal, status: "paused", note: "Lo has pausado." } }); return { ok: true }; }
+    if (action === "complete") { this.setTask(taskId, { goal: { ...goal, status: "complete", note: "Lo diste por cumplido." } }); return { ok: true }; }
+    if (action === "resume") {
+      this.setTask(taskId, { goal: { ...goal, status: "active", turns: 0, note: null } });
+      return this.goalTurn(taskId, "Sigues con el objetivo");
+    }
+    throw Object.assign(Error("Acción de objetivo desconocida."), { status: 400 });
+  }
+
+  /** Starts (or queues behind the running turn) the next turn toward the goal. */
+  async goalTurn(taskId, line) {
+    const task = this.mustTask(taskId);
+    const prompt = goalPrompt(task.goal, true);
+    if (this.engines.get(taskId)?.turn || this.starting.has(taskId)) return { queued: true }; // the turn that ends picks it up
+    void this.startTurn(task.saved ? await this.recover(taskId) : task, prompt, "build", { goal: line });
+    return { started: true };
+  }
+
+  /** After a turn: Bruno's mark says whether the goal is done, goes on or is blocked. */
+  goalAfter(taskId, turn, { failed, stopped }) {
+    const task = this.mustTask(taskId);
+    const goal = task.goal;
+    if (!goal || goal.status !== "active" || turn.mode === "plan") return null;
+    // The mark is read from the turn's last answer and taken out of what the person sees.
+    const last = [...this.items(taskId)].reverse().find((i) => i.kind === "text" && i.turn === turn.n);
+    const m = last ? GOAL_MARK.exec(last.text) : null;
+    if (last && m) this.patchItem(last.id, { text: last.text.replace(GOAL_MARK, "").trim() || "…" });
+    const set = (changes) => this.setTask(taskId, { goal: { ...goal, ...changes } });
+    if (stopped) { set({ status: "paused", note: "Lo paraste." }); return null; }
+    if (failed) { set({ status: "paused", note: "El turno falló." }); return null; }
+    const said = (m?.[1] || "sigue").toLowerCase();
+    if (said === "cumplido") {
+      set({ status: "complete", note: null, turns: goal.turns + 1 });
+      this.addItem(taskId, { kind: "notice", text: "Objetivo cumplido: «" + clip(goal.text, 120) + "».", tone: "done" });
+      return { kind: "done", notice: "Objetivo cumplido: " + goal.text };
+    }
+    if (said === "bloqueado") {
+      const why = clip((m?.[2] || "").trim() || "Necesita algo de ti para seguir.", 300);
+      set({ status: "blocked", note: why, turns: goal.turns + 1 });
+      this.addItem(taskId, { kind: "notice", text: "Objetivo bloqueado: " + why, tone: "warn" });
+      return { kind: "needs", notice: "Objetivo bloqueado: " + why };
+    }
+    const turns = goal.turns + 1;
+    if (turns >= (goal.max || GOAL_TURNS)) {
+      set({ status: "limited", note: `Ha dado ${turns} vueltas sin cumplirlo.`, turns });
+      this.addItem(taskId, { kind: "notice", text: `Bruno ha parado tras ${turns} vueltas: el objetivo aún no se cumple. Reanúdalo o cámbialo.`, tone: "warn" });
+      return { kind: "needs", notice: `Ha dado ${turns} vueltas sin cumplir el objetivo.` };
+    }
+    set({ turns });
+    return { next: goalPrompt({ ...goal, turns }, false), line: `Sigue con el objetivo · vuelta ${turns + 1} de ${goal.max || GOAL_TURNS}` };
   }
 
   /** «Implementar» / «En una tarea nueva» / «Refinar» on a plan (T3 Code proposed plan). */
@@ -590,7 +726,7 @@ export class CodeService {
     if (this.engines.get(taskId) === entry) this.engines.delete(taskId);
     clearTimeout(entry.idle);
     for (const [askId, pending] of this.asks) if (pending.taskId === taskId) { pending.resolve({ behavior: "deny", message: DENIED }); this.asks.delete(askId); this.patchItem(askId, { status: "expired" }); }
-    if (entry.turn) void this.finishTurn(taskId, entry, error || Error((entry.engine.kind === "codex" ? "Codex" : "Claude Code") + " se cerró."));
+    if (entry.turn) void this.finishTurn(taskId, entry, error || Error((ENGINE_LABEL[entry.engine.kind] || "El motor") + " se cerró."));
   }
 
   async stop(taskId) {
@@ -632,6 +768,7 @@ export class CodeService {
     const item = this.addItem(taskId, { ...data, status: "pending" });
     this.setTask(taskId, { status: "waiting" });
     this.emit({ type: "attention", task: taskId });
+    this.notifyTask(taskId, "needs", data.ask === "question" ? data.questions?.[0]?.question || "Bruno te pregunta algo." : data.title + (data.command ? ": " + data.command : ""));
     return new Promise((resolve) => {
       const done = (value) => {
         if (!this.asks.has(item.id)) return;
@@ -694,6 +831,7 @@ export class CodeService {
   /** «Volver aquí»: the folder as it was right after turn n (n = 0: before the first turn). */
   async restore(taskId, { turn = null, undo = null }) {
     this.busy(taskId);
+    if (this.mustTask(taskId).saved) await this.recover(taskId);
     const task = this.mustTask(taskId);
     if (undo) { // «Deshacer» right after a «Volver aquí»: the folder as it was before it
       const notice = this.items(taskId).find((i) => i.kind === "notice" && i.undo === undo);
@@ -714,6 +852,7 @@ export class CodeService {
   /** «Editar desde aquí»: files back to before that message, the conversation cut there. */
   async editFrom(taskId, { item: itemId }) {
     this.busy(taskId);
+    if (this.mustTask(taskId).saved) await this.recover(taskId);
     const task = this.mustTask(taskId);
     const item = this.store.get("codeItems", String(itemId));
     if (!item || item.taskId !== taskId || item.kind !== "user" || item.steer) throw Object.assign(Error("Solo puedes editar desde un mensaje tuyo."), { status: 400 });
@@ -759,7 +898,7 @@ export class CodeService {
     // Windows keeps a folder while a process still runs in it: give the tree a moment to go.
     if (hadEngine) await new Promise((r) => setTimeout(r, 1500));
     let branchKept = false;
-    if (task.isolated && task.worktree && task.repoTop) ({ branchKept } = await removeWorktree({ repo: task.repoTop, dir: task.worktree, branch: task.branch, base: task.baseCommit }).catch(() => ({ branchKept: true })));
+    if (task.isolated && task.worktree && task.repoTop && !task.saved) ({ branchKept } = await removeWorktree({ repo: task.repoTop, dir: task.worktree, branch: task.branch, base: task.baseCommit }).catch(() => ({ branchKept: true })));
     await this.snapsOf(task).drop();
     this.snaps.delete(taskId);
     for (const item of this.items(taskId)) this.store.remove("codeItems", item.id);
@@ -772,6 +911,7 @@ export class CodeService {
   /** Commits everything in the task's copy, with a message Bruno writes (or the title). */
   async commit(taskId, { message = null } = {}) {
     this.busy(taskId);
+    if (this.mustTask(taskId).saved) await this.recover(taskId);
     const task = this.mustTask(taskId);
     const info = await repoInfo(task.cwd);
     if (!info.repo) throw Object.assign(Error("Esta carpeta no usa Git."), { status: 409 });
@@ -787,6 +927,7 @@ export class CodeService {
   async merge(taskId) {
     const task = this.mustTask(taskId);
     if (!task.isolated) throw Object.assign(Error("Esta tarea trabaja directamente en tu carpeta."), { status: 409 });
+    if (task.saved) throw Object.assign(Error("Ya está guardada en " + (task.base || "main") + "."), { status: 409 });
     await this.commit(taskId);
     const project = this.mustProject(task.projectId);
     const root = await repoInfo(project.root);
@@ -800,7 +941,52 @@ export class CodeService {
     }
     this.addItem(taskId, { kind: "notice", text: "Guardado en " + task.base + ". Ya está en tu carpeta " + project.root + ".", tone: "done" });
     this.setTask(taskId, { merged: now() });
+    // Its copy is no longer needed: cleaned up, its last commit kept 30 days under a hidden ref.
+    await this.cleanUpCopy(taskId).catch((e) => console.warn("Código: la copia sigue: " + e.message));
     return { ok: true };
+  }
+
+  /** After «Guardar en …»: the copy goes, recoverable for 30 days (OpenClaw managed worktrees). */
+  async cleanUpCopy(taskId) {
+    const task = this.mustTask(taskId);
+    if (!task.isolated || !task.worktree || !task.repoTop || task.saved) return;
+    const head = (await git(["rev-parse", "HEAD"], { cwd: task.worktree })).stdout.trim();
+    const ref = savedRef(taskId);
+    await keepCommit({ repo: task.repoTop, ref, commit: head });
+    const busy = this.engines.has(taskId) || this.terminals.pids(taskId).length > 0;
+    this.closeEngine(taskId);
+    await this.terminals.closeTask(taskId, { forget: false });
+    if (busy) await new Promise((r) => setTimeout(r, 1500)); // Windows keeps a folder while a process runs in it
+    await removeWorktree({ repo: task.repoTop, dir: task.worktree, branch: task.branch, base: head });
+    const until = new Date(Date.now() + KEEP_SAVED_MS).toISOString();
+    this.store.put("codeSaved", { id: taskId, repo: task.repoTop, ref, commit: head, until });
+    this.setTask(taskId, { saved: { ref, commit: head, at: now(), until } });
+    this.addItem(taskId, { kind: "notice", text: "Copia limpiada. Si vuelves a escribir aquí, Colmena la recupera tal cual (hasta 30 días)." });
+  }
+
+  /** Brings a cleaned-up copy back: same folder, same branch, same commit. */
+  async recover(taskId) {
+    const task = this.mustTask(taskId);
+    if (!task.saved) return task;
+    if (task.saved.expired) throw Object.assign(Error("Esta copia se limpió hace más de 30 días y ya no se puede recuperar. Empieza una tarea nueva."), { status: 409 });
+    await restoreWorktree({ repo: task.repoTop, dir: task.worktree, branch: task.branch, ref: task.saved.ref });
+    await copyIncluded({ from: task.repoTop, to: task.worktree }).catch(() => []);
+    await dropRef({ repo: task.repoTop, ref: task.saved.ref });
+    this.store.remove("codeSaved", taskId);
+    this.snaps.delete(taskId);
+    this.addItem(taskId, { kind: "notice", text: "Copia recuperada en la rama " + task.branch + "." });
+    return this.setTask(taskId, { saved: null, merged: null });
+  }
+
+  /** Hidden refs of cleaned-up copies older than 30 days go (their task can no longer recover). */
+  async pruneSaved(time = Date.now()) {
+    for (const rec of this.store.list("codeSaved")) {
+      if (Date.parse(rec.until) > time) continue;
+      await dropRef({ repo: rec.repo, ref: rec.ref });
+      this.store.remove("codeSaved", rec.id);
+      const task = this.store.get("codeTasks", rec.id);
+      if (task?.saved) this.setTask(task.id, { saved: { ...task.saved, expired: true } });
+    }
   }
 
   /** «Guardar y subir»: commit, then `git push -u origin <branch>` (the button is the person's OK). */
@@ -893,6 +1079,31 @@ function redTitle(rule) {
     remote: "Bruno quiere conectarse a otro equipo",
     kill: "Bruno quiere cerrar programas",
   }[rule] || "Bruno necesita tu OK";
+}
+
+/** Context chips of a message: a terminal excerpt, a comment on diff lines, a preview note. */
+export const CONTEXT_KINDS = ["terminal", "diff", "preview"];
+export function cleanContexts(list = []) {
+  return (Array.isArray(list) ? list : []).filter((c) => c && CONTEXT_KINDS.includes(c.kind) && String(c.text || c.note || "").trim()).slice(0, 20).map((c) => ({
+    kind: c.kind, label: clip(String(c.label || "").trim() || { terminal: "Terminal", diff: "Cambio", preview: "Vista previa" }[c.kind], 160),
+    text: clip(String(c.text || ""), 20000), note: c.note ? clip(String(c.note), 4000) : undefined,
+    file: c.file ? clip(String(c.file), 400) : undefined, lines: Array.isArray(c.lines) ? c.lines.slice(0, 2).map(Number).filter(Number.isFinite) : undefined,
+    url: c.url ? clip(String(c.url), 400) : undefined, image: c.image ? clip(String(c.image), 1000) : undefined,
+  }));
+}
+/** How a context chip reaches the engine: its label, the person's note and the excerpt. */
+export function contextBlock(c) {
+  const head = c.kind === "diff" ? `Comentario sobre ${c.file || "un archivo"}${c.lines?.length ? (c.lines[0] === c.lines[1] || c.lines.length === 1 ? ", línea " + c.lines[0] : ", líneas " + c.lines[0] + "-" + c.lines[1]) : ""}`
+    : c.kind === "preview" ? `Nota sobre la vista previa${c.url ? " (" + c.url + ")" : ""}` : c.label;
+  return [head + ":", c.note ? c.note : null, c.text ? "```\n" + c.text.replace(/```/g, "ʼʼʼ") + "\n```" : null, c.image ? "Captura: " + c.image : null].filter(Boolean).join("\n");
+}
+
+/** The message of a goal's turn: the objective and how to say how it goes. */
+export function goalPrompt(goal, first = false) {
+  const mark = "Termina tu respuesta con una línea aparte con exactamente una de estas marcas: «[objetivo: cumplido]» si ya está hecho y comprobado, «[objetivo: sigue]» si queda trabajo, o «[objetivo: bloqueado — motivo]» si necesitas algo de la persona.";
+  return first
+    ? `Tu objetivo es: ${goal.text}\nTrabaja hasta cumplirlo: Colmena te dará más turnos por tu cuenta (hasta ${goal.max || GOAL_TURNS}). Comprueba de verdad que se cumple antes de darlo por hecho.\n${mark}`
+    : `Sigue con el objetivo: ${goal.text}\n(vuelta ${goal.turns + 1} de ${goal.max || GOAL_TURNS}). Revisa lo que falta y avanza.\n${mark}`;
 }
 
 /** «https://github.com/a/b.git» / «git@github.com:a/b.git» → «a/b» (null for other hosts). */

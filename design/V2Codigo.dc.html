@@ -60,15 +60,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 8px"><h2 style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Código</h2><button type="button" onClick="{{goHome}}" title="Nueva tarea (Ctrl+N)" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 11px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Nueva</button></div>
 <label style="display: flex; align-items: center; gap: 8px; height: 40px; margin: 0 4px; padding: 0 12px; background: rgba(18,19,26,.045); border-radius: 12px; color: #5C606C"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar tareas</span><input type="search" placeholder="Buscar tareas" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"><kbd style="font: 500 11px/1 'Geist Mono', monospace; color: #8A8D96">Ctrl K</kbd></label>
 
-<sc-for list="{{projects}}" as="p" hint-placeholder-count="2">
-<div style="display: flex; flex-direction: column; gap: 2px; padding-top: 6px">
-<div style="display: flex; align-items: center; gap: 10px; padding: 6px 8px">
-<span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 9px; background: #E9E9E4; color: #3D404A"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v5"></path><circle cx="13" cy="12" r="2"></circle><path d="M18 19c-2.8 0-5-2.2-5-5v8"></path><circle cx="20" cy="19" r="2"></circle></svg></span>
-<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{p.name}}</strong><span style="font: 400 11px/1.3 'Geist Mono', monospace; color: #8A8D96; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{p.sub}}</span></span>
-<button type="button" aria-label="Nueva tarea en este proyecto" title="Nueva tarea en este proyecto" style="width: 28px; height: 28px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #6B6F7A; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
-</div>
+<div role="radiogroup" aria-label="Ordenar las tareas" style="align-self: flex-start; display: flex; gap: 2px; margin: 0 4px; padding: 3px; border-radius: 999px; background: #F4F4F0"><button type="button" role="radio" aria-checked="true" style="height: 24px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.1)">Por estado</button><button type="button" role="radio" aria-checked="false" style="height: 24px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; background: transparent; color: #5C606C">Por proyecto</button></div>
+<sc-for list="{{groups}}" as="p" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 4px; font: 500 11px/1.3 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: {{p.fg}}">{{p.label}}<span style="color: #8A8D96">{{p.count}}</span></span>
 <sc-for list="{{p.tasks}}" as="t" hint-placeholder-count="3">
-<a href="#" onClick="{{t.pick}}" aria-current="{{t.current}}" class="row-hover" style="display: flex; align-items: center; gap: 11px; margin-left: 14px; padding: 9px 10px; border-radius: 14px; background: {{t.bg}}; box-shadow: {{t.shadow}}">
+<a href="#" onClick="{{t.pick}}" aria-current="{{t.current}}" class="row-hover" style="display: flex; align-items: center; gap: 11px; margin-left: 4px; padding: 9px 10px; border-radius: 14px; background: {{t.bg}}; box-shadow: {{t.shadow}}">
 <span aria-hidden="true" style="display: inline-grid; flex: none; animation: {{t.anim}}; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 18px; height: 18px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A; border-radius: 50% 50% 14% 14%"></span></span>
 <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: {{t.weight}}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{t.title}}</span><span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: {{t.statusFg}}"><span aria-hidden="true" style="width: 6px; height: 6px; flex: none; border-radius: 50%; background: {{t.dot}}"></span>{{t.status}}</span></span>
 <span style="font: 500 11px/1 'Geist Mono', monospace; color: #8A8D96; white-space: nowrap"><span style="color: #0B6B4A">{{t.add}}</span> <span style="color: #A33A2C">{{t.del}}</span></span>
@@ -231,7 +228,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 <form style="flex: none; width: 100%; max-width: 800px; margin: 0 auto; padding: 4px clamp(18px, 3vw, 32px) 20px">
 <sc-if value="{{working}}" hint-placeholder-val="{{ true }}"><div style="display: flex; align-items: center; gap: 10px; margin: 0 0 8px 14px; font-size: 12px; color: #6B6F7A"><span>Si escribes mientras trabaja:</span><div role="radiogroup" aria-label="Si escribes mientras trabaja" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(18,19,26,.05)"><sc-for list="{{when}}" as="w" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{w.on}}" onClick="{{w.pick}}" style="height: 24px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 500; background: {{w.bg}}; color: {{w.fg}}; box-shadow: {{w.sh}}">{{w.label}}</button></sc-for></div></div></sc-if>
+<sc-if value="{{is.objetivo}}" hint-placeholder-val="{{ false }}"><div role="status" aria-label="Objetivo" style="position: relative; overflow: hidden; display: flex; align-items: center; gap: 10px; margin: 0 8px 8px; padding: 9px 8px 9px 12px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05); animation: rise .25s ease-out"><span aria-hidden="true" style="width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: rgba(255,122,26,.12); color: #FF7A1A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Bizum funciona en móvil y escritorio, con su test</span><span style="font-size: 12px; color: #3D404A">Vuelta 3 de 12 · sigue solo hasta cumplirlo</span></span><button type="button" style="height: 28px; padding: 0 10px; display: flex; align-items: center; gap: 5px; border: 0; border-radius: 999px; background: rgba(18,19,26,.05); cursor: pointer; font-size: 12px; font-weight: 600"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"></rect><rect x="6" y="4" width="4" height="16" rx="1"></rect></svg>Pausar</button><button type="button" aria-label="Quitar el objetivo" style="width: 28px; height: 28px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer; color: #5C606C"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button><span aria-hidden="true" style="position: absolute; left: 0; bottom: 0; height: 2px; width: 22%; background: #FF7A1A"></span></div></sc-if>
 <div style="position: relative; display: flex; flex-direction: column; gap: 8px; padding: 14px 12px 10px 18px; border-radius: 26px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 22px 50px -30px rgba(18,19,26,.4)">
+<sc-if value="{{is.objetivo}}" hint-placeholder-val="{{ false }}"><div style="display: flex; flex-wrap: wrap; gap: 6px"><span title="Error: listen EADDRINUSE 127.0.0.1:5201" style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 10px; border-radius: 999px; background: #FFF4D1; box-shadow: inset 0 0 0 1px rgba(255,201,60,.55); font-size: 12px; color: #5C4300"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 11 2-2-2-2"></path><path d="M11 13h4"></path><rect width="18" height="18" x="3" y="3" rx="2"></rect></svg>dev · 2 líneas<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" style="margin: 0 4px"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></span></div></sc-if>
 <label style="display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pide un cambio a Bruno</span><textarea rows="2" placeholder="Pide un cambio a Bruno…  (/ comandos, @ archivos)" style="flex: 1; min-width: 0; border: 0; outline: none; resize: none; background: transparent; font-size: 15px; line-height: 1.55"></textarea></label>
 <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
 <div role="radiogroup" aria-label="Modo" style="display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: #F4F4F0"><sc-for list="{{modes}}" as="m" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{m.on}}" onClick="{{m.pick}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{m.bg}}; color: {{m.fg}}; box-shadow: {{m.sh}}">{{m.label}}</button></sc-for></div>
@@ -334,7 +333,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["trabajando","plan","pide OK","listo","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -348,10 +347,10 @@ class Component extends DCLogic {
   }
   renderVals() {
     const s = this.state;
-    const working = s.mode === 'trabajando';
+    const working = s.mode === 'trabajando' || s.mode === 'objetivo';
     const seg = (on) => on ? { bg: '#FFFFFF', fg: '#12131A', sh: '0 1px 2px rgba(18,19,26,.1)' } : { bg: 'transparent', fg: '#5C606C', sh: 'none' };
-    const SHORT = { trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
-    const LABEL = { trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
+    const SHORT = { objetivo: 'Trabajando · vuelta 3', trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
+    const LABEL = { objetivo: 'Trabajando · objetivo, vuelta 3 de 12', trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
     const aura = working ? { anim: 'breathe 1.4s ease-in-out infinite', filter: 'drop-shadow(0 3px 7px #FF7A1A88)', text: '#12131A', line: 'rgba(255,122,26,.25)' }
       : (s.mode === 'plan' || s.mode === 'pide') ? { anim: 'beckon 1.8s ease-out infinite', filter: 'none', text: '#8A5A00', line: 'rgba(255,201,60,.6)' }
       : { anim: 'none', filter: 'drop-shadow(0 2px 4px rgba(18,19,26,.16))', text: '#0B6B4A', line: 'rgba(11,138,95,.35)' };
@@ -368,16 +367,17 @@ class Component extends DCLogic {
     });
     const cur = s.mode !== 'inicio';
     const firstKind = (working || s.mode === 'inicio') ? 'work' : (s.mode === 'listo' ? 'done' : 'wait');
-    const projects = [
-      { name: 'tienda-web', sub: 'main · E:\\Proyectos\\tienda-web', tasks: [
-        task('Bizum en el checkout', SHORT[s.mode] || 'Trabajando', firstKind, '+128', '−14', cur),
-        task('Modo oscuro', 'Te espera · plan', 'wait', '', '', false),
-        task('Menú en el móvil', 'Guardado · ayer', 'done', '+12', '−3', false)
-      ] },
-      { name: 'presupuestos', sub: 'sin git · historial de Colmena', tasks: [
-        task('Exportar a PDF', 'Listo · lun', 'done', '+64', '−8', false)
-      ] }
+    // «Por estado» (T3 Code sidebar): what needs you first, then what is stuck, runs, is ready.
+    const bizum = task('Bizum en el checkout', 'tienda-web · ' + (SHORT[s.mode] || 'Trabajando'), firstKind, '+128', '−14', cur);
+    const GROUPS = [
+      ['wait', 'Te espera', '#8A5A00', [task('Modo oscuro', 'tienda-web · plan', 'wait', '', '', false), task('Migrar pedidos', 'tienda-web · objetivo bloqueado', 'wait', '+40', '−6', false)]],
+      ['stuck', 'Atascadas', '#A33A2C', [Object.assign(task('Test de la cesta', 'tienda-web · Atascada', 'stuck', '+3', '−1', false), { dot: '#C2412D', statusFg: '#A33A2C' })]],
+      ['work', 'Trabajando', '#6B6F7A', []],
+      ['review', 'Para revisar', '#6B6F7A', [task('Exportar a PDF', 'presupuestos · lun', 'done', '+64', '−8', false)]],
+      ['saved', 'Guardadas', '#6B6F7A', [task('Menú en el móvil', 'tienda-web · ayer', 'done', '+12', '−3', false)]]
     ];
+    const home = { work: 'work', wait: 'wait', done: 'review' }[firstKind] || 'work';
+    const groups = GROUPS.map(([key, label, fg, list]) => ({ label, fg, tasks: key === home ? [bizum, ...list] : list })).filter((g) => g.tasks.length).map((g) => ({ ...g, count: String(g.tasks.length) }));
     const P = {
       read: ['M19 11a8 8 0 1 1-16 0 8 8 0 1 1 16 0', 'm21 21-4.3-4.3'],
       edit: ['M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z', 'm15 5 4 4'],
@@ -445,12 +445,12 @@ class Component extends DCLogic {
       ['Guardar y subir', 'Commit y push a GitHub.', 'm8 17 4-4 4 4', 'M12 13v8', 12, 6],
       ['Guardar, subir y abrir PR', 'Bruno escribe el título y la descripción del PR.', 'M5 9v12', 'M12 6h5a2 2 0 0 1 2 2v7', 5, 6]
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
-    const DEMO = [['trabajando', 'Trabajando'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['inicio', 'Inicio']];
+    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['inicio', 'Inicio']];
     return {
       home: s.mode === 'inicio', inTask: s.mode !== 'inicio', working,
       railDot: s.mode === 'plan' || s.mode === 'pide',
-      is: { trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: s.mode === 'listo' },
-      label: LABEL[s.mode], aura, projects, log, diff, tabs,
+      is: { objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: s.mode === 'listo' },
+      label: LABEL[s.mode], aura, groups, log, diff, tabs,
       tab: { cambios: s.tab === 'cambios', vista: s.tab === 'vista', terminal: s.tab === 'terminal' },
       goHome: () => this.setState({ mode: 'inicio' }),
       openTask: () => this.setState({ mode: 'trabajando' }),

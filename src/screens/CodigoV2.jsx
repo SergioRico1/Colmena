@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GitBranch, GitMerge, GitCommitHorizontal, ChevronDown, FileDiff, Globe, ExternalLink, PanelRight, SquareTerminal, Maximize2, Minimize2 } from "lucide-react";
+import { GitBranch, GitMerge, GitCommitHorizontal, ChevronDown, FileDiff, Globe, ExternalLink, PanelRight, SquareTerminal, Maximize2, Minimize2, Check, Target, Pause, Play, X } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import ProjectList, { taskStatus } from "../components/v2/code/ProjectList.jsx";
 import CodeHome, { pickProjectFolder } from "../components/v2/code/CodeHome.jsx";
@@ -7,7 +7,7 @@ import Composer from "../components/v2/code/Composer.jsx";
 import Changes from "../components/v2/code/Changes.jsx";
 import Preview from "../components/v2/code/Preview.jsx";
 import TerminalPanel from "../components/v2/code/Terminal.jsx";
-import { buildRows, TimelineRow } from "../components/v2/code/Timeline.jsx";
+import { buildRows, TimelineRow, withoutGoalMark } from "../components/v2/code/Timeline.jsx";
 import { useCodeProjects, useCodeTask } from "../components/v2/code/useCode.js";
 import { C, HEAD, MONO, SHEET, FRAME, CODE_CSS, BrunoMark, MenuItem } from "../components/v2/code/parts.jsx";
 import { del, patch, post } from "../lib/api.js";
@@ -34,6 +34,16 @@ function SaveButton({ task, project, onDone, compact = false }) {
   const [error, setError] = useState(null);
   if (!task?.isolated && !project?.repo) return null;
   const base = task.base || "main";
+  // Saved into its base: the copy was cleaned up (it comes back if you write again).
+  if (task.saved) {
+    const until = new Date(task.saved.until).toLocaleDateString("es-ES", { day: "numeric", month: "long" });
+    return (
+      <span title={task.saved.expired ? "La copia ya no se puede recuperar." : "Su copia se ha limpiado. Si escribes aquí, vuelve tal cual (hasta el " + until + ")."}
+        style={{ display: "flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 14px", borderRadius: "999px", background: C.greenSoft, color: "#0B5A3E", fontSize: "14px", fontWeight: 600, whiteSpace: "nowrap" }}>
+        <Check size={15} strokeWidth={2.6} aria-hidden="true" />{compact ? null : "Guardado en " + base}
+      </span>
+    );
+  }
   const save = async (to) => {
     setOpen(false); setBusy(to); setError(null);
     try {
@@ -76,7 +86,7 @@ function SaveButton({ task, project, onDone, compact = false }) {
 function LimitLine({ task }) {
   const l = task?.limit;
   if (!l || (l.status === "allowed" && !(l.utilization >= 0.75))) return null;
-  const engine = task.engine === "codex" ? "ChatGPT" : "Claude";
+  const engine = { codex: "ChatGPT", opencode: "OpenCode", "claude-code": "Claude" }[task.engine] || "Claude";
   const span = l.type === "seven_day" ? "semanal" : l.type === "five_hour" ? "de 5 horas" : "";
   const when = l.resetsAt ? new Date(l.resetsAt).toLocaleString("es-ES", { weekday: new Date(l.resetsAt).toDateString() === new Date().toDateString() ? undefined : "long", hour: "2-digit", minute: "2-digit" }) : null;
   const stop = l.status !== "allowed";
@@ -88,6 +98,57 @@ function LimitLine({ task }) {
   );
 }
 
+/** «/goal» (T3 Code Goals, OpenClaw goal): the objective above the composer and how it goes. */
+function GoalRow({ task, onGoal }) {
+  const g = task?.goal;
+  if (!g) return null;
+  const max = g.max || 12;
+  const look = {
+    active: { text: task.running ? `Vuelta ${Math.min(g.turns + 1, max)} de ${max}` : "En marcha", fg: C.text, bar: C.bruno },
+    complete: { text: "Cumplido", fg: C.greenText, bar: C.green },
+    blocked: { text: "Bloqueado" + (g.note ? ": " + g.note : ""), fg: C.honeyText, bar: C.honey },
+    limited: { text: g.note || "Se paró", fg: C.honeyText, bar: C.honey },
+    paused: { text: "En pausa" + (g.note && g.note !== "Lo has pausado." ? " · " + g.note : ""), fg: C.faint, bar: "#C9CBD1" },
+  }[g.status] || { text: g.status, fg: C.faint, bar: "#C9CBD1" };
+  const pct = g.status === "complete" ? 1 : Math.min(1, (g.turns + (task.running ? 0.5 : 0)) / max);
+  const live = g.status === "active";
+  const btn = { height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" };
+  return (
+    <div role="status" aria-label="Objetivo" style={{ position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", margin: "0 8px 8px", padding: "9px 8px 9px 12px", borderRadius: "16px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05)", animation: "rise .25s ease-out" }}>
+      <span aria-hidden="true" style={{ width: "26px", height: "26px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: g.status === "complete" ? C.greenSoft : live ? "rgba(255,122,26,.12)" : C.soft, color: g.status === "complete" ? C.green : live ? C.bruno : C.muted }}>
+        {g.status === "complete" ? <Check size={14} strokeWidth={2.6} /> : <Target size={14} strokeWidth={2.2} />}
+      </span>
+      <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={g.text}>{g.text}</span>
+        <span style={{ fontSize: "12px", color: look.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{look.text}</span>
+      </span>
+      {live ? <button type="button" onClick={() => onGoal("pause")} style={btn} title="Bruno acaba el turno en curso y no sigue solo"><Pause size={11} strokeWidth={2.6} aria-hidden="true" />Pausar</button> : null}
+      {["paused", "blocked", "limited"].includes(g.status) ? <button type="button" onClick={() => onGoal("resume")} style={btn} title="Bruno sigue con el objetivo"><Play size={11} strokeWidth={2.6} aria-hidden="true" />Reanudar</button> : null}
+      <button type="button" onClick={() => onGoal("clear")} aria-label="Quitar el objetivo" title="Quitar el objetivo" style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: C.muted }}><X size={13} strokeWidth={2.4} aria-hidden="true" /></button>
+      <span aria-hidden="true" style={{ position: "absolute", left: 0, bottom: 0, height: "2px", width: pct * 100 + "%", background: look.bar, transition: "width .5s ease" }} />
+    </div>
+  );
+}
+
+/** Tells the server which task is on screen, so it does not send a notice for it. */
+function useWatch(taskId) {
+  useEffect(() => {
+    const tell = () => post("/code/watch", { task: taskId, focused: document.visibilityState === "visible" && document.hasFocus() }).catch(() => {});
+    tell();
+    const timer = setInterval(tell, 45000);
+    window.addEventListener("focus", tell);
+    window.addEventListener("blur", tell);
+    document.addEventListener("visibilitychange", tell);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", tell);
+      window.removeEventListener("blur", tell);
+      document.removeEventListener("visibilitychange", tell);
+      post("/code/watch", { task: null, focused: false }).catch(() => {});
+    };
+  }, [taskId]);
+}
+
 function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn }) {
   const { task, project, items, live, models, commands, error, reload } = useCodeTask(taskId);
   const [busy, setBusy] = useState(false);
@@ -95,6 +156,7 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
   const [problem, setProblem] = useState(null);
   const [mode, setMode] = useState("build");
   useEffect(() => { setMode("build"); }, [taskId]);
+  useWatch(taskId);
   // A narrow column (wide side panel) keeps the title and drops the branch details.
   const sectionRef = useRef(null);
   const commandRef = useRef(() => {});
@@ -141,14 +203,25 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
     else if (name === "guardar" && (task.isolated || project?.repo)) act(() => post("/code/tasks/" + task.id + "/save", { to: task.isolated ? "base" : "branch" }).then(reload));
   };
   const s = taskStatus(task);
-  const waiting = task.status === "waiting";
+  const waiting = task.status === "waiting" || (s.state === "wait" && !running);
   const aura = running && !waiting ? { line: "rgba(255,122,26,.25)", text: C.ink } : waiting ? { line: "rgba(255,201,60,.6)", text: C.honeyText } : { line: task.turns ? "rgba(11,138,95,.35)" : "rgba(18,19,26,.06)", text: C.greenText };
-  const send = (text, when, how = "build", files = []) => act(async () => {
+  const goal = (action, text) => act(() => post("/code/tasks/" + task.id + "/goal", { action, ...(text ? { text } : {}) }));
+  const send = (text, when, how = "build", files = [], contexts = []) => act(async () => {
+    // «/goal <qué es estar hecho>» sets the objective; «/goal pausa | sigue | quita» drive it.
+    const g = /^\/goal(?:\s+([\s\S]*))?$/i.exec(text);
+    if (g && !files.length && !contexts.length) {
+      const rest = (g[1] || "").trim();
+      const word = rest.toLowerCase();
+      const action = !rest ? null : ["pausa", "pausar", "pause"].includes(word) ? "pause" : ["sigue", "reanuda", "reanudar", "resume"].includes(word) ? "resume" : ["quita", "quitar", "borra", "clear"].includes(word) ? "clear" : "set";
+      if (!action) { setProblem(task.goal ? null : "Escribe qué es «hecho» después de /goal: por ejemplo, /goal pasan todos los tests."); return !!task.goal; }
+      await post("/code/tasks/" + task.id + "/goal", { action, ...(action === "set" ? { text: rest } : {}) });
+      return true;
+    }
     setBusy(true);
     try {
       // A plan-mode message while a plan waits refines it (T3 Code «Refine»).
-      if (how === "plan" && openPlan && !running && !files.length) await post("/code/tasks/" + task.id + "/plans/" + openPlan.id, { action: "refine", text });
-      else await post("/code/tasks/" + task.id + "/messages", { text, when, mode: how, attachments: files });
+      if (how === "plan" && openPlan && !running && !files.length && !contexts.length) await post("/code/tasks/" + task.id + "/plans/" + openPlan.id, { action: "refine", text });
+      else await post("/code/tasks/" + task.id + "/messages", { text, when, mode: how, attachments: files, contexts });
     } finally { setBusy(false); }
     return true;
   });
@@ -160,12 +233,16 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "5px" }}>
             <h1 style={{ margin: 0, font: `600 22px/1.05 ${HEAD}`, letterSpacing: "-0.025em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={task.title}>{task.title}</h1>
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", fontSize: "13px", color: C.muted }}>
-              <span role="status" style={{ fontWeight: 500, color: aura.text }}>{waiting ? "Te espera" : running ? "Trabajando" : s.text}</span>
+              <span role="status" style={{ fontWeight: 500, color: aura.text }}>{task.status === "waiting" ? "Te espera" : running ? "Trabajando" : s.text}</span>
               {compact ? null : task.isolated ? (
                 <>
                   <span aria-hidden="true">·</span>
                   <span title={task.branch} style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0, maxWidth: "260px", fontFamily: MONO, fontSize: "12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><GitBranch size={13} strokeWidth={2} aria-hidden="true" />{task.branch}</span>
-                  <span title={"Bruno trabaja en una copia aparte (git worktree). " + (task.base || "main") + " no cambia hasta que lo guardes."} style={{ padding: "3px 9px", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "12px" }}>Copia aparte de {task.base || "main"}</span>
+                  {task.saved ? (
+                    <span title="Ya está en tu carpeta. Su copia se ha limpiado; si vuelves a escribir aquí, Colmena la recupera tal cual." style={{ padding: "3px 9px", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "12px" }}>{task.saved.expired ? "Copia ya no disponible" : "Copia limpiada · vuelve si escribes"}</span>
+                  ) : (
+                    <span title={"Bruno trabaja en una copia aparte (git worktree). " + (task.base || "main") + " no cambia hasta que lo guardes."} style={{ padding: "3px 9px", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "12px" }}>Copia aparte de {task.base || "main"}</span>
+                  )}
                 </>
               ) : project ? (
                 <><span aria-hidden="true">·</span><span style={{ fontFamily: MONO, fontSize: "12px" }}>{project.root}</span></>
@@ -185,7 +262,7 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
       <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
         <div style={{ width: "100%", maxWidth: "760px", margin: "0 auto", padding: "22px clamp(18px, 3vw, 32px) 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
           {rows.map((row) => <TimelineRow key={row.id} row={row} ctx={ctx} />)}
-          {live ? <div style={{ color: C.body, fontSize: "16px", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{live}<span aria-hidden="true" style={{ display: "inline-block", width: "7px", height: "16px", marginLeft: "2px", verticalAlign: "-2px", background: C.bruno, animation: "caret 1s steps(1) infinite" }} /></div> : null}
+          {live ? <div style={{ color: C.body, fontSize: "16px", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{withoutGoalMark(live)}<span aria-hidden="true" style={{ display: "inline-block", width: "7px", height: "16px", marginLeft: "2px", verticalAlign: "-2px", background: C.bruno, animation: "caret 1s steps(1) infinite" }} /></div> : null}
           {running && !waiting && !live ? (
             <span style={{ alignSelf: "flex-start", fontSize: "16px", fontWeight: 500, background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>Bruno está trabajando…</span>
           ) : null}
@@ -193,7 +270,8 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
         </div>
       </div>
       <Composer task={task} models={models} busy={busy} running={running} draft={draft} mode={mode} onMode={setMode}
-        projectId={task.projectId} commands={task.engine === "codex" ? [] : commands} status={<LimitLine task={task} />}
+        projectId={task.projectId} commands={task.engine === "codex" ? [] : commands} status={<><GoalRow task={task} onGoal={goal} /><LimitLine task={task} /></>}
+        disabled={task.saved?.expired ? "Esta copia se limpió hace más de 30 días: empieza una tarea nueva." : null}
         onCommand={(name) => {
           if (name === "plan") setMode("plan");
           else if (name === "construir") setMode("build");

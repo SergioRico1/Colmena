@@ -188,9 +188,12 @@ test("a task end to end with a fake Claude Code", { skip: !hasGit, timeout: 1200
     await code.merge(view.id);
     assert.ok(existsSync(path.join(repo, "nota.txt")));
     assert.match(execFileSync("git", ["log", "--format=%s", "-3"], { cwd: repo }).toString(), /feat: add a note/);
+    // Saved into main, the copy is cleaned up (its branch merged); a hidden ref keeps it.
+    assert.ok(!existsSync(view.cwd));
+    assert.ok(code.mustTask(view.id).saved?.until);
 
     const removed = await code.deleteTask(view.id);
-    assert.equal(removed.branchKept, true);
+    assert.equal(removed.branchKept, false);
     assert.ok(!existsSync(view.cwd));
     assert.equal(code.items(view.id).length, 0);
   } finally {

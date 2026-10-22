@@ -1,14 +1,22 @@
 import { useEffect, useRef, useState } from "react";
-import { FileCode2, Sparkles, SquareSlash, Paperclip, X, ImageIcon } from "lucide-react";
+import { FileCode2, Sparkles, SquareSlash, Paperclip, X, ImageIcon, SquareTerminal, MessageSquareText, Globe } from "lucide-react";
 import { get, post } from "../../../lib/api.js";
 import { C, MONO, SHEET } from "./parts.jsx";
 import { triggerAt } from "./model.js";
 
-// The composer's extras (T3 Code): «/» commands, «$» skills, «@» files of the task, and
-// attachments (the paperclip, pasting an image or dropping files on the box).
+// The composer's extras (T3 Code): «/» commands, «$» skills, «@» files of the task,
+// attachments (the paperclip, pasting an image or dropping files on the box) and context chips
+// (a terminal excerpt, a comment on diff lines, a preview note) sent with «colmena:code-context».
+
+/** Sends a context chip to the open task's composer (Terminal.jsx, Changes.jsx, Preview.jsx). */
+export function addContext(taskId, context) {
+  window.dispatchEvent(new CustomEvent("colmena:code-context", { detail: { taskId, context } }));
+}
+const CONTEXT_ICON = { terminal: SquareTerminal, diff: MessageSquareText, preview: Globe };
 
 /** Colmena's own commands, then the engine's (Claude Code reports its slash commands). */
 export const BUILT_IN = [
+  { name: "goal", text: "Objetivo: Bruno sigue solo hasta cumplirlo (/goal pasan los tests)", arg: true },
   { name: "plan", text: "Pasar a modo Plan: primero un plan, sin tocar nada" },
   { name: "construir", text: "Volver a modo Construir" },
   { name: "compactar", text: "Resumir la conversación para liberar contexto" },
@@ -30,6 +38,7 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
   const [active, setActive] = useState(0);
   const [closedAt, setClosedAt] = useState(null);
   const [files, setFiles] = useState([]);
+  const [contexts, setContexts] = useState([]);
   const [uploading, setUploading] = useState(0);
   const [error, setError] = useState(null);
   const skills = useRef(null);
@@ -64,6 +73,12 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
 
   const pick = (item) => {
     if (!trig) return;
+    if (trig.kind === "/" && item.arg) { // «/goal …» takes words after it
+      const word = "/" + item.name + " ";
+      setText(word + text.slice(trig.end).replace(/^\s+/, ""));
+      requestAnimationFrame(() => { area.current?.focus(); area.current?.setSelectionRange(word.length, word.length); setCaret(word.length); });
+      return;
+    }
     if (trig.kind === "/" && item.built) {
       setText(text.slice(0, trig.start) + text.slice(trig.end).replace(/^\s+/, ""));
       onCommand?.(item.name);
@@ -141,8 +156,28 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
     </div>
   ) : null;
 
-  const chips = files.length || uploading || error ? (
+  useEffect(() => {
+    const on = (e) => {
+      if (!e.detail?.context || (e.detail.taskId && e.detail.taskId !== taskId)) return;
+      setContexts((all) => [...all, { ...e.detail.context, key: Date.now() + Math.random() }].slice(-20));
+      requestAnimationFrame(() => area.current?.focus());
+    };
+    window.addEventListener("colmena:code-context", on);
+    return () => window.removeEventListener("colmena:code-context", on);
+  }, [taskId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const chips = files.length || uploading || error || contexts.length ? (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+      {contexts.map((c) => {
+        const Icon = CONTEXT_ICON[c.kind] || FileCode2;
+        return (
+          <span key={c.key} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "999px", background: "#FFF4D1", boxShadow: "inset 0 0 0 1px rgba(255,201,60,.55)", fontSize: "12px", color: "#5C4300", maxWidth: "280px", animation: "rise .2s ease-out" }}>
+            <Icon size={13} strokeWidth={2} aria-hidden="true" />
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.label}</span>
+            <button type="button" onClick={() => setContexts((all) => all.filter((x) => x.key !== c.key))} aria-label={"Quitar " + c.label} style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#8A5A00" }}><X size={11} strokeWidth={2.4} aria-hidden="true" /></button>
+          </span>
+        );
+      })}
       {files.map((f) => (
         <span key={f.path} title={f.path} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "999px", background: C.soft, fontSize: "12px", color: C.text, maxWidth: "240px" }}>
           {f.image ? <ImageIcon size={13} strokeWidth={2} aria-hidden="true" /> : <Paperclip size={13} strokeWidth={2} aria-hidden="true" />}
@@ -160,5 +195,5 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
       <Paperclip size={16} strokeWidth={2} aria-hidden="true" />
     </button>
   );
-  return { menu, chips, clip, onKeyDown, track, onPaste, onDrop, files, clear: () => setFiles([]), uploading: uploading > 0 };
+  return { menu, chips, clip, onKeyDown, track, onPaste, onDrop, files, contexts: contexts.map(({ key, ...c }) => c), clear: () => { setFiles([]); setContexts([]); }, uploading: uploading > 0 };
 }

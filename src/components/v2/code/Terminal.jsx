@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, Plus, X } from "lucide-react";
+import { Play, Plus, X, CornerDownLeft } from "lucide-react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { del, get, post } from "../../../lib/api.js";
 import { C, MONO } from "./parts.jsx";
+import { addContext } from "./Extras.jsx";
 
 // «Terminal» (T3 Code): real shells in the task folder (node-pty on the server, xterm here),
-// the project's scripts one click away, and what was on screen kept between sessions.
+// the project's scripts one click away, and what was on screen kept between sessions. Select
+// some output and «Enviar a Bruno» puts it in your next message as a chip (T3 Code).
+
+const MAX_EXCERPT = 12000;
 
 const THEME = {
   background: "#12131A", foreground: "#E6E7EC", cursor: "#FF7A1A", cursorAccent: "#12131A", selectionBackground: "rgba(255,255,255,.18)",
@@ -17,11 +21,15 @@ const THEME = {
 
 function Screen({ taskId, term, onExit }) {
   const box = useRef(null);
+  const xref = useRef(null);
+  const [selection, setSelection] = useState("");
   useEffect(() => {
     const xterm = new XTerm({ fontFamily: "'Geist Mono', ui-monospace, monospace", fontSize: 12.5, lineHeight: 1.25, cursorBlink: true, scrollback: 5000, theme: THEME, allowProposedApi: false });
     const fit = new FitAddon();
     xterm.loadAddon(fit);
     xterm.open(box.current);
+    xref.current = xterm;
+    const picked = xterm.onSelectionChange(() => setSelection(xterm.getSelection().trim()));
     const base = "/code/tasks/" + taskId + "/terminals/" + term.id;
     let alive = true, pending = "", timer = null, exited = !term.running;
     const send = () => { timer = null; const data = pending; pending = ""; if (data && !exited) post(base + "/input", { data }).catch(() => {}); };
@@ -42,9 +50,26 @@ function Screen({ taskId, term, onExit }) {
       else if (f.type === "exit") { exited = true; xterm.write("\r\n\x1b[2mLa terminal se ha cerrado.\x1b[0m\r\n"); onExit?.(); source.close(); }
     };
     xterm.focus();
-    return () => { alive = false; observer.disconnect(); typing.dispose(); source.close(); clearTimeout(timer); xterm.dispose(); };
+    return () => { alive = false; observer.disconnect(); typing.dispose(); picked.dispose(); source.close(); clearTimeout(timer); xterm.dispose(); xref.current = null; };
   }, [taskId, term.id]);
-  return <div ref={box} style={{ position: "absolute", inset: "10px 6px 6px 14px" }} />;
+  const send = () => {
+    const text = selection.length > MAX_EXCERPT ? selection.slice(-MAX_EXCERPT) : selection;
+    const lines = text.split(/\r?\n/).length;
+    addContext(taskId, { kind: "terminal", label: term.title + " · " + (lines === 1 ? "1 línea" : lines + " líneas"), text });
+    xref.current?.clearSelection();
+    setSelection("");
+  };
+  return (
+    <>
+      <div ref={box} style={{ position: "absolute", inset: "10px 6px 6px 14px" }} />
+      {selection ? (
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={send} title="Añade lo seleccionado a tu próximo mensaje"
+          style={{ position: "absolute", right: "16px", bottom: "14px", zIndex: 2, display: "flex", alignItems: "center", gap: "7px", height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: C.white, color: C.ink, cursor: "pointer", fontSize: "13px", fontWeight: 600, boxShadow: "0 12px 30px -12px rgba(0,0,0,.6)", animation: "rise .2s ease-out" }}>
+          <CornerDownLeft size={13} strokeWidth={2.4} aria-hidden="true" />Enviar a Bruno
+        </button>
+      ) : null}
+    </>
+  );
 }
 
 export default function TerminalPanel({ task }) {

@@ -60,11 +60,17 @@ if (!args.includes("--input-format")) {
       const q = { question: "¿Qué color?", header: "Color", multiSelect: false, options: [{ label: "Rojo", description: "" }, { label: "Azul", description: "" }] };
       const t = await tool("AskUserQuestion", { questions: [q] });
       assistant([{ type: "text", text: "Elegiste " + (t.input.answers?.["¿Qué color?"] || "nada") + "." }]);
+    } else if (/Tu objetivo es|Sigue con el objetivo/.test(text)) {
+      // «/goal»: «bloquea» blocks at once; otherwise the second turn says it is done.
+      goals++;
+      const mark = /(Tu objetivo es|Sigue con el objetivo): [^\n]*bloquea/.test(text) ? "[objetivo: bloqueado — falta la clave de la API]" : goals < 2 ? "[objetivo: sigue]" : "[objetivo: cumplido]";
+      assistant([{ type: "text", text: "Vuelta " + goals + ".\n\n" + mark }]);
     } else {
       assistant([{ type: "text", text: "Vale." }]);
     }
     result();
   }
+  let goals = 0;
   let chain = Promise.resolve();
   createInterface({ input: process.stdin }).on("line", (line) => {
     let m;

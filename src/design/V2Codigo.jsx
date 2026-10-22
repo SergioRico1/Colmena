@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes spin{to{transform:rotate(360deg)}}\n@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}\n@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}\n@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.row-hover{transition:background .15s ease}\n.row-hover:hover{background:rgba(18,19,26,.035)}\n.tools{opacity:0;transition:opacity .15s ease}\n.turn:hover .tools,.turn:focus-within .tools{opacity:1}\n@media (max-width: 1180px){[data-codepanel]{display:none!important}}\n@media (max-width: 860px){[data-projects]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"estado":{"editor":"enum","options":["trabajando","plan","pide OK","listo","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -20,10 +20,10 @@ export class Logic extends DCLogic {
   }
   renderVals() {
     const s = this.state;
-    const working = s.mode === 'trabajando';
+    const working = s.mode === 'trabajando' || s.mode === 'objetivo';
     const seg = (on) => on ? { bg: '#FFFFFF', fg: '#12131A', sh: '0 1px 2px rgba(18,19,26,.1)' } : { bg: 'transparent', fg: '#5C606C', sh: 'none' };
-    const SHORT = { trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
-    const LABEL = { trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
+    const SHORT = { objetivo: 'Trabajando · vuelta 3', trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
+    const LABEL = { objetivo: 'Trabajando · objetivo, vuelta 3 de 12', trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
     const aura = working ? { anim: 'breathe 1.4s ease-in-out infinite', filter: 'drop-shadow(0 3px 7px #FF7A1A88)', text: '#12131A', line: 'rgba(255,122,26,.25)' }
       : (s.mode === 'plan' || s.mode === 'pide') ? { anim: 'beckon 1.8s ease-out infinite', filter: 'none', text: '#8A5A00', line: 'rgba(255,201,60,.6)' }
       : { anim: 'none', filter: 'drop-shadow(0 2px 4px rgba(18,19,26,.16))', text: '#0B6B4A', line: 'rgba(11,138,95,.35)' };
@@ -40,16 +40,17 @@ export class Logic extends DCLogic {
     });
     const cur = s.mode !== 'inicio';
     const firstKind = (working || s.mode === 'inicio') ? 'work' : (s.mode === 'listo' ? 'done' : 'wait');
-    const projects = [
-      { name: 'tienda-web', sub: 'main · E:\\Proyectos\\tienda-web', tasks: [
-        task('Bizum en el checkout', SHORT[s.mode] || 'Trabajando', firstKind, '+128', '−14', cur),
-        task('Modo oscuro', 'Te espera · plan', 'wait', '', '', false),
-        task('Menú en el móvil', 'Guardado · ayer', 'done', '+12', '−3', false)
-      ] },
-      { name: 'presupuestos', sub: 'sin git · historial de Colmena', tasks: [
-        task('Exportar a PDF', 'Listo · lun', 'done', '+64', '−8', false)
-      ] }
+    // «Por estado» (T3 Code sidebar): what needs you first, then what is stuck, runs, is ready.
+    const bizum = task('Bizum en el checkout', 'tienda-web · ' + (SHORT[s.mode] || 'Trabajando'), firstKind, '+128', '−14', cur);
+    const GROUPS = [
+      ['wait', 'Te espera', '#8A5A00', [task('Modo oscuro', 'tienda-web · plan', 'wait', '', '', false), task('Migrar pedidos', 'tienda-web · objetivo bloqueado', 'wait', '+40', '−6', false)]],
+      ['stuck', 'Atascadas', '#A33A2C', [Object.assign(task('Test de la cesta', 'tienda-web · Atascada', 'stuck', '+3', '−1', false), { dot: '#C2412D', statusFg: '#A33A2C' })]],
+      ['work', 'Trabajando', '#6B6F7A', []],
+      ['review', 'Para revisar', '#6B6F7A', [task('Exportar a PDF', 'presupuestos · lun', 'done', '+64', '−8', false)]],
+      ['saved', 'Guardadas', '#6B6F7A', [task('Menú en el móvil', 'tienda-web · ayer', 'done', '+12', '−3', false)]]
     ];
+    const home = { work: 'work', wait: 'wait', done: 'review' }[firstKind] || 'work';
+    const groups = GROUPS.map(([key, label, fg, list]) => ({ label, fg, tasks: key === home ? [bizum, ...list] : list })).filter((g) => g.tasks.length).map((g) => ({ ...g, count: String(g.tasks.length) }));
     const P = {
       read: ['M19 11a8 8 0 1 1-16 0 8 8 0 1 1 16 0', 'm21 21-4.3-4.3'],
       edit: ['M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z', 'm15 5 4 4'],
@@ -117,12 +118,12 @@ export class Logic extends DCLogic {
       ['Guardar y subir', 'Commit y push a GitHub.', 'm8 17 4-4 4 4', 'M12 13v8', 12, 6],
       ['Guardar, subir y abrir PR', 'Bruno escribe el título y la descripción del PR.', 'M5 9v12', 'M12 6h5a2 2 0 0 1 2 2v7', 5, 6]
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
-    const DEMO = [['trabajando', 'Trabajando'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['inicio', 'Inicio']];
+    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['inicio', 'Inicio']];
     return {
       home: s.mode === 'inicio', inTask: s.mode !== 'inicio', working,
       railDot: s.mode === 'plan' || s.mode === 'pide',
-      is: { trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: s.mode === 'listo' },
-      label: LABEL[s.mode], aura, projects, log, diff, tabs,
+      is: { objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: s.mode === 'listo' },
+      label: LABEL[s.mode], aura, groups, log, diff, tabs,
       tab: { cambios: s.tab === 'cambios', vista: s.tab === 'vista', terminal: s.tab === 'terminal' },
       goHome: () => this.setState({ mode: 'inicio' }),
       openTask: () => this.setState({ mode: 'trabajando' }),
@@ -285,36 +286,26 @@ export function View({ v }) {
               {"Ctrl K"}
             </kbd>
           </label>
-          {(v.projects || []).map((p, $index) => (
+          <div role="radiogroup" aria-label="Ordenar las tareas" style={{alignSelf: "flex-start", display: "flex", gap: "2px", margin: "0 4px", padding: "3px", borderRadius: "999px", background: "#F4F4F0"}}>
+            <button type="button" role="radio" aria-checked="true" style={{height: "24px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFFFFF", color: "#12131A", boxShadow: "0 1px 2px rgba(18,19,26,.1)"}}>
+              {"Por estado"}
+            </button>
+            <button type="button" role="radio" aria-checked="false" style={{height: "24px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", color: "#5C606C"}}>
+              {"Por proyecto"}
+            </button>
+          </div>
+          {(v.groups || []).map((p, $index) => (
             <React.Fragment key={$index}>
-              <div style={{display: "flex", flexDirection: "column", gap: "2px", paddingTop: "6px"}}>
-                <div style={{display: "flex", alignItems: "center", gap: "10px", padding: "6px 8px"}}>
-                  <span aria-hidden="true" style={{width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", borderRadius: "9px", background: "#E9E9E4", color: "#3D404A"}}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v5" />
-                      <circle cx="13" cy="12" r="2" />
-                      <path d="M18 19c-2.8 0-5-2.2-5-5v8" />
-                      <circle cx="20" cy="19" r="2" />
-                    </svg>
+              <div style={{display: "flex", flexDirection: "column", gap: "2px"}}>
+                <span style={{display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px 4px", font: "500 11px/1.3 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: p?.fg}}>
+                  {p?.label}
+                  <span style={{color: "#8A8D96"}}>
+                    {p?.count}
                   </span>
-                  <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px"}}>
-                    <strong style={{fontSize: "14px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>
-                      {p?.name}
-                    </strong>
-                    <span style={{font: "400 11px/1.3 'Geist Mono', monospace", color: "#8A8D96", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>
-                      {p?.sub}
-                    </span>
-                  </span>
-                  <button type="button" aria-label="Nueva tarea en este proyecto" title="Nueva tarea en este proyecto" style={{width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", color: "#6B6F7A", cursor: "pointer"}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                      <path d="M5 12h14" />
-                      <path d="M12 5v14" />
-                    </svg>
-                  </button>
-                </div>
+                </span>
                 {(p?.tasks || []).map((t, $index) => (
                   <React.Fragment key={$index}>
-                    <a href="#" onClick={t?.pick} aria-current={t?.current} className="row-hover" style={{display: "flex", alignItems: "center", gap: "11px", marginLeft: "14px", padding: "9px 10px", borderRadius: "14px", background: t?.bg, boxShadow: t?.shadow}}>
+                    <a href="#" onClick={t?.pick} aria-current={t?.current} className="row-hover" style={{display: "flex", alignItems: "center", gap: "11px", marginLeft: "4px", padding: "9px 10px", borderRadius: "14px", background: t?.bg, boxShadow: t?.shadow}}>
                       <span aria-hidden="true" style={{display: "inline-grid", flex: "none", animation: t?.anim, filter: "drop-shadow(0 2px 3px rgba(18,19,26,.16))"}}>
                         <span style={{display: "block", width: "18px", height: "18px", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A", borderRadius: "50% 50% 14% 14%"}} />
                       </span>
@@ -761,7 +752,60 @@ export function View({ v }) {
                     </div>
                   </>
                 ) : null}
+                {v.is?.objetivo ? (
+                  <>
+                    <div role="status" aria-label="Objetivo" style={{position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", margin: "0 8px 8px", padding: "9px 8px 9px 12px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05)", animation: "rise .25s ease-out"}}>
+                      <span aria-hidden="true" style={{width: "26px", height: "26px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "rgba(255,122,26,.12)", color: "#FF7A1A"}}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <circle cx="12" cy="12" r="6" />
+                          <circle cx="12" cy="12" r="2" />
+                        </svg>
+                      </span>
+                      <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px"}}>
+                        <span style={{fontSize: "13px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>
+                          {"Bizum funciona en móvil y escritorio, con su test"}
+                        </span>
+                        <span style={{fontSize: "12px", color: "#3D404A"}}>
+                          {"Vuelta 3 de 12 · sigue solo hasta cumplirlo"}
+                        </span>
+                      </span>
+                      <button type="button" style={{height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "12px", fontWeight: "600"}}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+                          <rect x="14" y="4" width="4" height="16" rx="1" />
+                          <rect x="6" y="4" width="4" height="16" rx="1" />
+                        </svg>
+                        {"Pausar"}
+                      </button>
+                      <button type="button" aria-label="Quitar el objetivo" style={{width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C"}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                          <path d="M18 6 6 18" />
+                          <path d="m6 6 12 12" />
+                        </svg>
+                      </button>
+                      <span aria-hidden="true" style={{position: "absolute", left: "0", bottom: "0", height: "2px", width: "22%", background: "#FF7A1A"}} />
+                    </div>
+                  </>
+                ) : null}
                 <div style={{position: "relative", display: "flex", flexDirection: "column", gap: "8px", padding: "14px 12px 10px 18px", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 22px 50px -30px rgba(18,19,26,.4)"}}>
+                  {v.is?.objetivo ? (
+                    <>
+                      <div style={{display: "flex", flexWrap: "wrap", gap: "6px"}}>
+                        <span title="Error: listen EADDRINUSE 127.0.0.1:5201" style={{display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "999px", background: "#FFF4D1", boxShadow: "inset 0 0 0 1px rgba(255,201,60,.55)", fontSize: "12px", color: "#5C4300"}}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="m7 11 2-2-2-2" />
+                            <path d="M11 13h4" />
+                            <rect width="18" height="18" x="3" y="3" rx="2" />
+                          </svg>
+                          {"dev · 2 líneas"}
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{margin: "0 4px"}}>
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                          </svg>
+                        </span>
+                      </div>
+                    </>
+                  ) : null}
                   <label style={{display: "flex"}}>
                     <span style={{position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)"}}>
                       {"Pide un cambio a Bruno"}

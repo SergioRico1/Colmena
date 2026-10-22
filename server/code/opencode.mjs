@@ -94,6 +94,20 @@ export function permissionToTool(p) {
   }
 }
 
+/** Colmena's effort → the model's own variant (OpenCode «variant»: each model has its own set). */
+const VARIANTS = ["minimal", "low", "medium", "high", "xhigh", "max"];
+export function pickVariant(effort, variants = []) {
+  const have = variants.filter((v) => VARIANTS.includes(v));
+  if (!have.length) return null;
+  if (have.includes(effort)) return effort;
+  const want = VARIANTS.indexOf(effort) < 0 ? VARIANTS.indexOf("high") : VARIANTS.indexOf(effort);
+  // The closest one; between two as close, the lighter.
+  return have.map((v) => [v, Math.abs(VARIANTS.indexOf(v) - want), VARIANTS.indexOf(v)]).sort((a, b) => a[1] - b[1] || a[2] - b[2])[0][0];
+}
+
+/** The last answer of a plan turn is the plan: «Plan» headings and the like stay as written. */
+export const planOf = (texts) => texts.map((t) => String(t || "").trim()).filter(Boolean).join("\n\n");
+
 const RULES = [
   { permission: "*", pattern: "*", action: "ask" },
   { permission: "read", pattern: "*", action: "allow" },
@@ -110,7 +124,7 @@ const RULES = [
 
 export class OpenCodeEngine extends EventEmitter {
   /**
-   * @param {object} o  cwd, model («provider/model»), instructions, authorize(req), command,
+   * @param {object} o  cwd, model («provider/model»), effort, instructions, authorize(req), command,
    *                    sessionId (resume), forkAt (assistant message to fork at), apiKey (OpenCode Go)
    */
   constructor(o) {
@@ -125,6 +139,9 @@ export class OpenCodeEngine extends EventEmitter {
     this.texts = new Set(); // text parts already given whole
     this.turn = false;
     this.commands = [];
+    this.mode = "build";
+    this.planTexts = [];
+    this.variant = null;
   }
 
   get model() {
@@ -155,6 +172,10 @@ export class OpenCodeEngine extends EventEmitter {
       await new Promise((r) => setTimeout(r, 250));
     }
     this.listen();
+    // The model's variants, for the task's effort (asked once; none known → OpenCode's default).
+    const providers = await this.api("GET", "/provider").catch(() => null);
+    const info = (providers?.all || []).find((p) => p.id === this.model.providerID)?.models?.[this.model.modelID];
+    this.variant = pickVariant(this.o.effort || "high", Object.keys(info?.variants || {}));
     let session = null;
     if (this.sessionId) session = await this.api("GET", "/session/" + this.sessionId).catch(() => null);
     if (session?.id && this.o.forkAt) session = await this.api("POST", "/session/" + session.id + "/fork", { messageID: this.o.forkAt }).catch(() => session);
@@ -217,7 +238,9 @@ export class OpenCodeEngine extends EventEmitter {
         if (!this.turn) return;
         if (part.type === "text" && part.time?.end && !part.synthetic && !this.texts.has(part.id) && part.text?.trim()) {
           this.texts.add(part.id);
-          out({ type: "text", text: part.text });
+          // A plan turn's answer is the plan: it comes whole when the turn ends (PlanCard).
+          if (this.mode === "plan") this.planTexts.push(part.text);
+          else out({ type: "text", text: part.text });
         } else if (part.type === "tool") {
           const st = part.state || {};
           // Its input is only known once it runs (pending parts come empty).
@@ -273,17 +296,27 @@ export class OpenCodeEngine extends EventEmitter {
     const interrupted = !!this.aborted;
     this.lastError = null;
     this.aborted = false;
+    const plan = this.mode === "plan" && !error && !interrupted ? planOf(this.planTexts) : "";
+    if (this.mode === "plan" && !plan) for (const text of this.planTexts) this.emit("event", { type: "text", text });
+    if (plan) this.emit("event", { type: "plan", text: plan });
+    this.mode = "build";
+    this.planTexts = [];
     this.emit("event", { type: "done", interrupted, error });
   }
 
+  body(text, mode) {
+    return { parts: [{ type: "text", text: String(text) }], model: this.model, agent: mode === "plan" ? "plan" : "build", system: this.o.instructions || undefined, ...(this.variant ? { variant: this.variant } : {}) };
+  }
   async send(text, { mode = "build" } = {}) {
     this.turn = true;
     this.busy = false;
-    await this.api("POST", "/session/" + this.sessionId + "/prompt_async", { parts: [{ type: "text", text: String(text) }], model: this.model, agent: mode === "plan" ? "plan" : "build", system: this.o.instructions || undefined });
+    this.mode = mode === "plan" ? "plan" : "build";
+    this.planTexts = [];
+    await this.api("POST", "/session/" + this.sessionId + "/prompt_async", this.body(text, this.mode));
   }
   /** OpenCode takes a message sent while it works at its next step. */
   steer(text) {
-    return this.api("POST", "/session/" + this.sessionId + "/prompt_async", { parts: [{ type: "text", text: String(text) }], model: this.model, agent: "build", system: this.o.instructions || undefined });
+    return this.api("POST", "/session/" + this.sessionId + "/prompt_async", this.body(text, this.mode || "build"));
   }
   interrupt() { this.aborted = true; return this.api("POST", "/session/" + this.sessionId + "/abort").catch(() => null); }
   async compact() {

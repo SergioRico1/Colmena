@@ -83,7 +83,8 @@ const computerTools = computerExtraTools(runtime, { computer });
 runtime.projects = new Projects({ store, runtime, computer });
 // «Código»: projects and tasks worked by Claude Code of this computer (server/code/).
 // Its OpenCode engine uses your OpenCode Go key from the vault, only in that process's memory.
-runtime.code = new CodeService({ store, directory, goKey: () => provider.secret?.("opencode-apikey") });
+// A task that ends or waits for you says so like a mission does (Ajustes › Avisos).
+runtime.code = new CodeService({ store, directory, goKey: () => provider.secret?.("opencode-apikey"), notifier: scheduler.notifier });
 const mcpTools = mcpExtraTools(runtime, runtime.mcp);
 // Desktop apps through Cua Driver, when it is installed (started on demand, no admin).
 const desktop = new CuaDesktop();

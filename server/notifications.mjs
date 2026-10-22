@@ -235,7 +235,10 @@ export class Notifier {
   /** Inserts (or refreshes the unread one of the same mission and kind) and emits {type:'notify'}. */
   notify({ kind, missionId = null, botId = null, title, text, url = null, signature = null, count = null, extra = null }) {
     const at = new Date(this.clock()).toISOString();
-    const same = missionId ? this.store.where("notifications", "missionId", missionId).find((n) => !n.read && n.kind === kind) : null;
+    // A «Código» task has no mission: its notices share the task's key instead.
+    const codeTask = extra?.codeTask || null;
+    const same = missionId ? this.store.where("notifications", "missionId", missionId).find((n) => !n.read && n.kind === kind)
+      : codeTask ? this.store.list("notifications").find((n) => !n.read && n.kind === kind && n.codeTask === codeTask) : null;
     const record = this.store.put("notifications", {
       ...(same || {}), id: same?.id || id(), kind, missionId, botId, title, text, url, read: false, createdAt: at,
       ...(signature ? { signature } : {}), ...(count != null ? { count } : {}), ...(extra || {}),
@@ -245,7 +248,7 @@ export class Notifier {
     if (shouldPop(settings, kind, new Date(this.clock()))) {
       const how = delivery(settings, kind);
       if (how.toast || how.sound)
-        this.emit({ type: "notify", id: record.id, kind, title, text, url, tag: noticeTag(missionId || record.id), toast: how.toast, sound: how.sound, ...(extra?.quick ? { quick: extra.quick } : {}) });
+        this.emit({ type: "notify", id: record.id, kind, title, text, url, tag: noticeTag(missionId || codeTask || record.id), toast: how.toast, sound: how.sound, ...(extra?.quick ? { quick: extra.quick } : {}) });
     }
     return record;
   }

@@ -55,6 +55,13 @@ export async function saveScript(folder, { name, command, onCreate = false }) {
   return scripts;
 }
 
+/** The typed line of a setup script: the command, then «[colmena:listo]» or «[colmena:fallo]». */
+export function setupLine(command, platform = process.platform) {
+  return platform === "win32"
+    ? `${command}; if ($?) { Write-Host ('[colmena' + ':listo]') } else { Write-Host ('[colmena' + ':fallo]') }`
+    : `${command} && echo "[colmena"":listo]" || echo "[colmena"":fallo]"`;
+}
+
 /** Keeps the tail of a terminal's output, never cutting an escape sequence in half. */
 export function trimBuffer(text, max = MAX_BUFFER) {
   if (text.length <= max) return text;
@@ -91,7 +98,7 @@ export class Terminals {
   view(s) { return { id: s.id, title: s.title, running: !s.exited, command: s.command, pid: s.pid }; }
 
   /** Opens a shell in `cwd` (and types `command` in it), or brings a saved one back to life. */
-  async open(taskId, { cwd, id = null, command = null, title = null, cols = 100, rows = 30 }) {
+  async open(taskId, { cwd, id = null, command = null, title = null, cols = 100, rows = 30, setup = false }) {
     if (id && this.sessions.get(this.key(taskId, id))?.exited === false) return this.view(this.sessions.get(this.key(taskId, id)));
     if (!id && [...this.sessions.values()].filter((s) => s.taskId === taskId && !s.exited).length >= MAX_TERMINALS)
       throw Object.assign(Error("Ya hay " + MAX_TERMINALS + " terminales abiertas en esta tarea: cierra alguna."), { status: 409 });
@@ -105,13 +112,14 @@ export class Terminals {
     for (const k of Object.keys(env)) if (/^COLMENA_/.test(k)) delete env[k];
     const proc = (this.spawnImpl || ((...a) => loadPty().spawn(...a)))(shell, args, { name: "xterm-256color", cols, rows, cwd, env });
     if (!title) try { title = JSON.parse(readFileSync(this.logFile(taskId, id).replace(/\.log$/, ".json"), "utf8")).title; } catch {}
-    const s = { taskId, id, title: title || (command ? command : "Terminal"), command, cwd, proc, pid: proc.pid, buffer, listeners: new Set(), exited: false, saveTimer: null };
+    const s = { taskId, id, title: title || (command ? command : "Terminal"), command, cwd, proc, pid: proc.pid, buffer, listeners: new Set(), exited: false, saveTimer: null, setup: setup ? "" : null };
     this.sessions.set(this.key(taskId, id), s);
     // Its name survives a restart next to its scrollback.
     const meta = this.logFile(taskId, id).replace(/\.log$/, ".json");
     mkdir(path.dirname(meta), { recursive: true }).then(() => writeFile(meta, JSON.stringify({ title: s.title, command }), "utf8")).catch(() => {});
     proc.onData((data) => {
       s.buffer = trimBuffer(s.buffer + data);
+      if (s.setup !== null) this.watchSetup(s, data);
       for (const fn of s.listeners) fn({ type: "data", data });
       this.saveSoon(s);
     });
@@ -120,8 +128,17 @@ export class Terminals {
       for (const fn of s.listeners) fn({ type: "exit", code: exitCode });
       this.saveSoon(s);
     });
-    if (command) setTimeout(() => { try { proc.write(command + "\r"); } catch {} }, 300);
+    if (command) setTimeout(() => { try { proc.write((setup ? setupLine(command) : command) + "\r"); } catch {} }, 300);
     return this.view(s);
+  }
+
+  /** A setup script says when it ends (its line prints a mark the typed line never shows whole). */
+  watchSetup(s, data) {
+    s.setup = (s.setup + data.replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, "")).slice(-400);
+    const m = /\[colmena:(listo|fallo)\]/.exec(s.setup);
+    if (!m) return;
+    s.setup = null;
+    this.onSetup?.({ taskId: s.taskId, id: s.id, title: s.title, ok: m[1] === "listo" });
   }
 
   saveSoon(s) {

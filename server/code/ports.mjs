@@ -1,7 +1,8 @@
-// The preview's port scanner (T3 Code PortScanner on Windows: netstat + the process list):
-// which local web servers belong to a task — those started by its engine (descendants of the
+// The preview's port scanner (T3 Code PortScanner: netstat + the process list on Windows,
+// lsof + ps on macOS and Linux): which local web servers belong to a task — those started by its engine (descendants of the
 // engine process or of its terminals) or whose command line runs inside the task folder.
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 const run = (file, args, timeout = 8000) => new Promise((resolve) => {
@@ -21,9 +22,42 @@ export function parseNetstat(text) {
   return out;
 }
 
+/** Listening TCP ports on loopback/any → pid (from `lsof -nP -iTCP -sTCP:LISTEN -F pn`). */
+export function parseLsof(text) {
+  const out = [];
+  let pid = null;
+  for (const line of String(text).split(/\r?\n/)) {
+    if (line.startsWith("p")) { pid = Number(line.slice(1)) || null; continue; }
+    const m = /^n(.*):(\d+)$/.exec(line);
+    if (!m || !pid) continue;
+    const host = m[1].replace(/^\[|\]$/g, "");
+    if (!["*", "localhost", "0.0.0.0", "127.0.0.1", "::", "::1"].includes(host)) continue;
+    out.push({ port: Number(m[2]), pid });
+  }
+  return out;
+}
+
+/** `ps -axww -o pid=,ppid=,command=` → Map(pid → {pid, parent, name, command}). */
+export function parsePs(text) {
+  const processes = new Map();
+  for (const line of String(text).split(/\r?\n/)) {
+    const m = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(line);
+    if (!m) continue;
+    const command = m[3].trim();
+    processes.set(Number(m[1]), { pid: Number(m[1]), parent: Number(m[2]), name: path.posix.basename(command.split(/\s+/)[0] || ""), command });
+  }
+  return processes;
+}
+
 let cache = { at: 0, value: null };
 async function snapshot() {
   if (cache.value && Date.now() - cache.at < 2500) return cache.value;
+  if (process.platform !== "win32") {
+    const lsof = ["/usr/sbin/lsof", "/usr/bin/lsof"].find((f) => existsSync(f)) || "lsof";
+    const [net, procs] = await Promise.all([run(lsof, ["-nP", "-iTCP", "-sTCP:LISTEN", "-F", "pn"]), run("/bin/ps", ["-axww", "-o", "pid=,ppid=,command="])]);
+    cache = { at: Date.now(), value: { listening: parseLsof(net), processes: parsePs(procs) } };
+    return cache.value;
+  }
   const system = process.env.SystemRoot || "C:\\Windows";
   const [net, procs] = await Promise.all([
     run(path.join(system, "System32", "NETSTAT.EXE"), ["-ano", "-p", "TCP"]),
@@ -43,7 +77,7 @@ async function snapshot() {
  * still count as its own after their parent exits (a server started with Start-Process).
  */
 export async function descendants(rootPids = []) {
-  if (process.platform !== "win32" || !rootPids.length) return [];
+  if (!rootPids.length) return [];
   cache.at = 0; // fresh: what was started a moment ago counts
   const { processes } = await snapshot();
   const out = [];
@@ -57,14 +91,15 @@ export async function descendants(rootPids = []) {
 
 /** Stops remembered processes that are still the same ones (same PID and command line). */
 export async function stopFamily(family = []) {
-  if (process.platform !== "win32" || !family.length) return 0;
+  if (!family.length) return 0;
   cache.at = 0;
   const { processes } = await snapshot();
   const taskkill = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "taskkill.exe");
   let n = 0;
   for (const { pid, command } of family) {
     if (processes.get(pid)?.command !== command) continue; // gone, or the PID now belongs to another program
-    await run(taskkill, ["/PID", String(pid), "/T", "/F"]);
+    if (process.platform === "win32") await run(taskkill, ["/PID", String(pid), "/T", "/F"]);
+    else try { process.kill(pid, "SIGTERM"); } catch { continue; }
     n++;
   }
   return n;
@@ -72,7 +107,6 @@ export async function stopFamily(family = []) {
 
 /** Ports of a task: [{port, pid, name, url}] (Colmena's own port left out). */
 export async function taskPorts({ rootPids = [], folders = [], exclude = [] } = {}) {
-  if (process.platform !== "win32") return [];
   const { listening, processes } = await snapshot();
   const lowered = folders.filter(Boolean).map((f) => path.resolve(f).toLowerCase());
   const belongs = (pid) => {

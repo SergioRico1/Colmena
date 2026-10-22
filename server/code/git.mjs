@@ -5,7 +5,8 @@
 // person's .git (T3 Code keeps them as hidden commits under private refs; same idea).
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { mkdir, rm, rmdir, unlink, writeFile } from "node:fs/promises";
+import { existsSync, statSync } from "node:fs";
+import { copyFile, mkdir, rm, rmdir, unlink, writeFile } from "node:fs/promises";
 import { GitBackend, walkFolder, CHECKPOINT_LIMITS } from "../checkpoints.mjs";
 
 /** The person's Git, without inherited GIT_* overrides and never prompting. */
@@ -65,6 +66,48 @@ export async function removeWorktree({ repo, dir, branch, base }) {
     return { branchKept: false };
   }
   return { branchKept: true };
+}
+
+/**
+ * `.worktreeinclude` (Claude Code / OpenClaw): ignored files of the project a new copy needs to
+ * start, like `.env`. Only files Git ignores are copied (tracked ones are in the copy already),
+ * up to 400 files and 50 MB. Returns the copied paths.
+ */
+export async function copyIncluded({ from, to, maxFiles = 400, maxBytes = 50 * 1024 * 1024 }) {
+  const list = path.join(from, ".worktreeinclude");
+  if (!existsSync(list)) return [];
+  const listed = (await git(["ls-files", "-z", "--others", "--ignored", "--exclude-from=" + list], { cwd: from, ok: [0, 128] }).catch(() => ({ stdout: "" }))).stdout.split("\0").filter(Boolean);
+  if (!listed.length) return [];
+  const ignored = (await git(["check-ignore", "-z", "--stdin"], { cwd: from, input: listed.join("\0") + "\0", ok: [0, 1, 128] }).catch(() => ({ stdout: "" }))).stdout.split("\0").filter(Boolean);
+  const copied = [];
+  let bytes = 0;
+  for (const rel of ignored.slice(0, maxFiles)) {
+    const src = path.join(from, rel);
+    try {
+      const size = statSync(src).size;
+      if (bytes + size > maxBytes) break;
+      await mkdir(path.dirname(path.join(to, rel)), { recursive: true });
+      await copyFile(src, path.join(to, rel));
+      bytes += size;
+      copied.push(rel.replace(/\\/g, "/"));
+    } catch {}
+  }
+  return copied;
+}
+
+/** A hidden ref that keeps a saved copy's last commit (OpenClaw managed-worktree snapshot). */
+export const savedRef = (taskId) => "refs/colmena/saved/" + taskId;
+export async function keepCommit({ repo, ref, commit }) {
+  await git(["update-ref", ref, commit], { cwd: repo });
+}
+export async function dropRef({ repo, ref }) {
+  await git(["update-ref", "-d", ref], { cwd: repo, ok: [0, 1, 128] }).catch(() => {});
+}
+/** Brings a cleaned-up copy back from its hidden ref (its branch again, from the same commit). */
+export async function restoreWorktree({ repo, dir, branch, ref }) {
+  await mkdir(path.dirname(dir), { recursive: true });
+  const exists = (await git(["rev-parse", "--verify", "-q", "refs/heads/" + branch], { cwd: repo, ok: [0, 1] })).stdout.trim();
+  await git(exists ? ["worktree", "add", "--", dir, branch] : ["worktree", "add", "-b", branch, "--", dir, ref], { cwd: repo, timeout: 300000 });
 }
 
 // ------------------------------------------------------------------ restore points

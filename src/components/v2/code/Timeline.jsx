@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Pencil, SquareTerminal, Globe, FilePen, FileDiff, History, ChevronRight, Bot, Sparkles, ListChecks, Wrench, Undo2, Check } from "lucide-react";
+import { Search, Pencil, SquareTerminal, Globe, FilePen, FileDiff, History, ChevronRight, Bot, Sparkles, ListChecks, Wrench, Undo2, Check, Target } from "lucide-react";
 import Markdown from "../../room/Markdown.jsx";
 import { C, MONO, HEAD, CARD, Stat } from "./parts.jsx";
 export { buildRows } from "./model.js";
@@ -7,6 +7,9 @@ export { buildRows } from "./model.js";
 // The timeline of a «Código» task: your messages, Bruno's answers, a grouped work log with
 // each command's output on unfold (T3 Code), a card per turn that changed files («Ver
 // cambios», «Volver aquí»), Bruno's questions and red lines.
+
+/** Bruno's «[objetivo: …]» line is for Colmena (server/code/service.mjs GOAL_MARK), not for you. */
+export const withoutGoalMark = (text) => String(text || "").replace(/\n*\[\s*objetivo\s*:\s*(cumplido|sigue|bloqueado)[^\]]*\]\s*$/i, "");
 
 const VERB_ICON = { read: Search, search: Search, write: FilePen, edit: Pencil, run: SquareTerminal, web: Globe, agent: Bot, skill: Sparkles, plan: ListChecks, tool: Wrench };
 
@@ -161,6 +164,11 @@ export function TimelineRow({ row, ctx }) {
       <div className="code-turn" style={{ alignSelf: "flex-end", maxWidth: "86%", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
         <div style={{ padding: "14px 18px", background: "#E8E8E2", borderRadius: "22px 22px 8px 22px", fontSize: "15px", lineHeight: 1.55, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
           {item.steer ? <span style={{ display: "block", fontSize: "12px", color: C.faint, marginBottom: "4px" }}>Se lo pasaste mientras trabajaba</span> : null}{item.text}
+          {item.contexts?.length ? (
+            <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "10px" : 0 }}>
+              {item.contexts.map((c, k) => <span key={k} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ padding: "4px 10px", borderRadius: "999px", background: "#FFF4D1", fontSize: "12px", color: "#5C4300" }}>{c.label}</span>)}
+            </span>
+          ) : null}
           {item.attachments?.length ? (
             <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "10px" : 0 }}>
               {item.attachments.map((a) => <span key={a.path} title={a.path} style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,.7)", fontSize: "12px", color: C.text }}>{a.image ? "Imagen · " : ""}{a.name}</span>)}
@@ -177,14 +185,15 @@ export function TimelineRow({ row, ctx }) {
       </div>
     );
   }
-  if (row.kind === "text") return <div style={{ color: C.body }}><Markdown text={item.text} size={16} /></div>;
+  if (row.kind === "text") return <div style={{ color: C.body }}><Markdown text={withoutGoalMark(item.text)} size={16} /></div>;
   if (row.kind === "turn") return <TurnCard item={item} total={ctx.turns} busy={ctx.busy} onDiff={ctx.onDiff} onRestore={ctx.onRestore} />;
   if (row.kind === "ask") return <AskCard item={item} onAnswer={ctx.onAnswer} />;
   if (row.kind === "plan") return <PlanCard item={item} busy={ctx.busy} onPlan={ctx.onPlan} />;
   if (row.kind === "notice") {
+    const tone = item.tone === "done" ? { bg: C.greenSoft, fg: "#0B5A3E" } : item.tone === "warn" ? { bg: "#FFF4D1", fg: "#5C4300" } : null;
     return (
-      <span style={{ alignSelf: "center", display: "flex", alignItems: "center", gap: "10px", padding: item.tone === "done" ? "8px 14px" : 0, borderRadius: "999px", background: item.tone === "done" ? C.greenSoft : "transparent", fontSize: "13px", color: item.tone === "done" ? "#0B5A3E" : C.faint, textAlign: "center" }}>
-        {item.tone === "done" ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : null}{item.text}
+      <span style={{ alignSelf: "center", display: "flex", alignItems: "center", gap: "8px", padding: tone ? "8px 14px" : 0, borderRadius: "999px", background: tone ? tone.bg : "transparent", fontSize: "13px", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
+        {item.tone === "done" ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "50%", border: "2px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
         {item.url ? <a href={item.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Abrir en GitHub</a> : null}
         {item.undo && ctx.lastNotice === item.id && !ctx.busy ? (
           <button type="button" onClick={() => ctx.onUndoRestore(item)} style={{ display: "flex", alignItems: "center", gap: "5px", height: "26px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: C.ink }}>

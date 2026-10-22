@@ -4,12 +4,14 @@
 // task status) as SSE for the open screen.
 import express from "express";
 import { z } from "zod";
-import { EFFORTS, ENGINES } from "./service.mjs";
+import { EFFORTS, ENGINES, CONTEXT_KINDS } from "./service.mjs";
 import { ACCESS } from "./policy.mjs";
 import { saveScript } from "./terminal.mjs";
 import { listFiles, fuzzyFiles, listSkills, saveAttachment } from "./context.mjs";
 
 const attachments = z.array(z.object({ path: z.string().min(1).max(1000) }).passthrough()).max(20);
+/** Context chips (service.mjs cleanContexts keeps only what it knows). */
+const contexts = z.array(z.object({ kind: z.enum(CONTEXT_KINDS), label: z.string().max(400).optional(), text: z.string().max(40000).optional(), note: z.string().max(8000).optional() }).passthrough()).max(20);
 
 /** Attachments come as base64 JSON: their route gets a bigger body than the rest of the API. */
 export const codeUploadParser = (() => {
@@ -78,8 +80,18 @@ export function registerCodeRoutes(app, { code }) {
   });
   app.delete("/api/code/tasks/:id", async (req, res) => res.json(await code.deleteTask(id.parse(req.params.id))));
   app.post("/api/code/tasks/:id/messages", async (req, res) => {
-    const body = z.object({ text: z.string().trim().max(100000).default(""), when: z.enum(["queue", "steer"]).default("queue"), mode: z.enum(["build", "plan"]).default("build"), attachments: attachments.default([]) }).strict().parse(req.body || {});
+    const body = z.object({ text: z.string().trim().max(100000).default(""), when: z.enum(["queue", "steer"]).default("queue"), mode: z.enum(["build", "plan"]).default("build"), attachments: attachments.default([]), contexts: contexts.default([]) }).strict().parse(req.body || {});
     res.json(await code.send(id.parse(req.params.id), body));
+  });
+  // «/goal»: Bruno keeps going until he says it is done (or pause, resume, clear it).
+  app.post("/api/code/tasks/:id/goal", async (req, res) => {
+    const body = z.object({ action: z.enum(["set", "pause", "resume", "clear", "complete"]).default("set"), text: z.string().max(4000).optional() }).strict().parse(req.body || {});
+    res.json(await code.setGoal(id.parse(req.params.id), body));
+  });
+  // Which task the person is looking at (no notice for what is already on screen).
+  app.post("/api/code/watch", (req, res) => {
+    const body = z.object({ task: z.string().trim().max(80).nullable().optional(), focused: z.boolean().default(false) }).strict().parse(req.body || {});
+    res.json(code.setWatch(body));
   });
   app.delete("/api/code/tasks/:id/queue/:item", (req, res) => {
     const task = code.mustTask(id.parse(req.params.id));
@@ -128,7 +140,8 @@ export function registerCodeRoutes(app, { code }) {
     res.json({ scripts: await saveScript(project.root, body) });
   });
   app.post("/api/code/tasks/:id/terminals", async (req, res) => {
-    const task = code.mustTask(id.parse(req.params.id));
+    let task = code.mustTask(id.parse(req.params.id));
+    if (task.saved) task = await code.recover(task.id); // a cleaned-up copy comes back first
     const body = z.object({ id: term.optional(), script: z.string().trim().min(1).max(60).optional(), cols: z.number().int().min(20).max(400).default(100), rows: z.number().int().min(5).max(200).default(30) }).strict().parse(req.body || {});
     const script = body.script ? code.scriptsOf(task).find((s) => s.name === body.script) : null;
     if (body.script && !script) throw Object.assign(Error("Ese script no está en colmena.json ni en package.json."), { status: 404 });

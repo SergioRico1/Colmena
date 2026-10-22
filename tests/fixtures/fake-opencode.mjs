@@ -19,7 +19,7 @@ const ask = (sessionID, permission, patterns, metadata) => new Promise((resolve)
   send("permission.asked", { id, sessionID, permission, patterns, metadata, always: [], tool: { messageID: "msg_x", callID: "call_" + n } });
 });
 
-async function prompt(sessionID, text, agent) {
+async function prompt(sessionID, text, agent, variant) {
   const dir = process.cwd();
   send("session.status", { sessionID, status: { type: "busy" } });
   const msg = "msg_a" + ++n;
@@ -38,6 +38,8 @@ async function prompt(sessionID, text, agent) {
     send("message.part.delta", { sessionID, messageID: msg, partID: "prt_t" + n, field: "text", delta: "He" });
     part({ id: "prt_t" + n, type: "text", text: "He escrito la nota.", time: { start: 1, end: 2 } });
     part({ id: "prt_s" + n, type: "step-finish", tokens: { input: 900, output: 10, reasoning: 0, cache: { read: 100, write: 0 } } });
+  } else if (/variante/.test(text)) {
+    part({ id: "prt_t" + n, type: "text", text: "Variante: " + (variant || "ninguna"), time: { start: 1, end: 2 } });
   } else if (/push/.test(text)) {
     const call = "call_b" + ++n;
     part({ id: "prt_b", type: "tool", tool: "bash", callID: call, state: { status: "running", input: { command: "git push origin main", description: "Subir" } } });
@@ -67,11 +69,12 @@ http.createServer((req, res) => {
       res.write("data: " + JSON.stringify({ type: "server.connected", properties: {} }) + "\n\n");
       return;
     }
+    if (p === "/provider") return json(res, 200, { all: [{ id: "opencode", models: { "deepseek-v4.1-flash-free": { variants: { low: {}, high: {}, max: {} } } } }] });
     if (p === "/session" && req.method === "POST") { const id = "ses_" + ++n; sessions.set(id, data); return json(res, 200, { id }); }
     let m = /^\/session\/([^/]+)$/.exec(p);
     if (m && req.method === "GET") return sessions.has(m[1]) ? json(res, 200, { id: m[1] }) : json(res, 404, {});
     m = /^\/session\/([^/]+)\/prompt_async$/.exec(p);
-    if (m) { const sid = m[1]; json(res, 200, true); setTimeout(() => prompt(sid, data.parts?.[0]?.text || "", data.agent), 20); return; }
+    if (m) { const sid = m[1]; json(res, 200, true); setTimeout(() => prompt(sid, data.parts?.[0]?.text || "", data.agent, data.variant), 20); return; }
     m = /^\/session\/([^/]+)\/(abort|summarize)$/.exec(p);
     if (m) return json(res, 200, true);
     m = /^\/permission\/([^/]+)\/reply$/.exec(p);

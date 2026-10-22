@@ -14,7 +14,7 @@ const readWhen = () => { try { return localStorage.getItem(WHEN_KEY) === "steer"
 
 export const ENGINE_NAME = { "claude-code": "Claude Code", codex: "Codex", opencode: "OpenCode" };
 
-export default function Composer({ task = null, models = [], busy = false, running = false, onSend, onStop, onChange, onUnqueue, placeholder, draft = null, footer = null, autoFocus = false, mode = "build", onMode = null, projectId = null, commands = [], onCommand = null, status = null }) {
+export default function Composer({ task = null, models = [], busy = false, running = false, onSend, onStop, onChange, onUnqueue, placeholder, draft = null, footer = null, autoFocus = false, mode = "build", onMode = null, projectId = null, commands = [], onCommand = null, status = null, disabled = null }) {
   const [text, setText] = useState("");
   const [when, setWhen] = useState(readWhen);
   const area = useRef(null);
@@ -30,11 +30,13 @@ export default function Composer({ task = null, models = [], busy = false, runni
   const submit = async (e) => {
     e?.preventDefault();
     const value = text.trim();
-    if ((!value && !extras.files.length) || busy || extras.uploading) return;
-    const ok = await onSend(value, running ? when : "queue", mode, extras.files);
+    if ((!value && !extras.files.length && !extras.contexts.length) || busy || extras.uploading) return;
+    const ok = await onSend(value, running ? when : "queue", mode, extras.files, extras.contexts);
     if (ok !== false) { setText(""); extras.clear(); }
   };
   const queue = task?.queue || [];
+  const ready = !!(text.trim() || extras.files.length || extras.contexts.length);
+  if (disabled) return <p style={{ flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "16px clamp(18px, 3vw, 32px) 24px", fontSize: "14px", color: C.faint, textAlign: "center" }}>{disabled}</p>;
   return (
     <form onSubmit={submit} className="code-composer" style={{ flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "4px clamp(18px, 3vw, 32px) 20px" }}>
       {queue.length ? (
@@ -111,7 +113,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
                 <span aria-hidden="true" style={{ width: "11px", height: "11px", borderRadius: "3px", background: C.ink }} />
               </button>
             ) : null}
-            <button type="submit" aria-label="Enviar" disabled={(!text.trim() && !extras.files.length) || busy} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: (text.trim() || extras.files.length) && !busy ? C.ink : "rgba(18,19,26,.14)", color: C.white, cursor: (text.trim() || extras.files.length) && !busy ? "pointer" : "default", transition: "background .15s ease" }}>
+            <button type="submit" aria-label="Enviar" disabled={!ready || busy} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: ready && !busy ? C.ink : "rgba(18,19,26,.14)", color: C.white, cursor: ready && !busy ? "pointer" : "default", transition: "background .15s ease" }}>
               <ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" />
             </button>
           </div>
