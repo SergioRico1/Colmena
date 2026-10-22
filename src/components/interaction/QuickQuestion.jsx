@@ -5,6 +5,7 @@ import { useStore } from "../../lib/store.jsx";
 import { BotAvatar, ErrorLine, findBot, useDismiss } from "../room/common.jsx";
 import Markdown from "../room/Markdown.jsx";
 import { ListenButton } from "./Voice.jsx";
+import { later } from "../../lib/undoToast.js";
 
 // «Pregunta rápida» (OpenClaw /btw): ask about what is going on without interrupting.
 // POST /api/missions/:id/aside answers with the mission's context and no tools; nothing is
@@ -102,9 +103,11 @@ export default function QuickQuestion({ mission, bots, align = "right", buttonSt
       setBusy(false);
     }
   };
+  // Gone at once; the server forgets it after the five-second «Deshacer».
   const discard = (a) => {
     setAsides((all) => all.filter((x) => x.id !== a.id));
-    if (!a.shared) del(`/missions/${mission.id}/aside/${a.id}`).catch(() => {});
+    later({ id: "aside:" + a.id, text: "Respuesta descartada", undone: () => setAsides((all) => (all.some((x) => x.id === a.id) ? all : [...all, a])),
+      run: () => (a.shared ? null : del(`/missions/${mission.id}/aside/${a.id}`)) });
   };
 
   return (

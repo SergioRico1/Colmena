@@ -18,6 +18,7 @@ import LightboxLayer from "./components/room/Lightbox.jsx";
 import LinkPreviewLayer from "./components/room/LinkPreview.jsx";
 import ConnectionStatus from "./components/ConnectionStatus.jsx";
 import UpdateNotice from "./components/UpdateNotice.jsx";
+import UndoToasts from "./components/v2/UndoToasts.jsx";
 import { listenForNoticeSounds } from "./lib/noticeSounds.js";
 
 const live = import.meta.glob("./screens/*.jsx");
@@ -66,6 +67,7 @@ function App() {
       <LinkPreviewLayer />
       <ConnectionStatus />
       <UpdateNotice />
+      <UndoToasts />
       <Suspense fallback={null}>
         <Screen params={params} query={query} />
         {Palette && route?.screen !== "DesignGallery" ? <Palette /> : null}

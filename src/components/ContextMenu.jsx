@@ -6,13 +6,14 @@ import { navigate } from "../lib/router.jsx";
 import { exportConversation } from "../lib/exportConversation.jsx";
 import { useStore } from "../lib/store.jsx";
 import { missionUrl, roomUrl } from "../lib/format.js";
+import { later, reversible } from "../lib/undoToast.js";
 
 // Colmena's own right-click menu (the desktop window has none of its own). One listener
 // for the whole app reads what is under the pointer, so screens keep the exact markup of
 // the designs: rooms and chats (/sala/:id, /misiones/:id, /chat/:bot?c=id), bots
 // (/chat/:bot, /equipo/:bot), other links, text fields and selected text.
 // Look: a Colmena card (white, #DCE0E8, radius 12) with 36px rows; destructive actions in
-// the app's error red and always behind a confirmation dialog.
+// the app's error red; they take effect after a five-second «Deshacer» (src/lib/undoToast.js).
 
 const ACTIVE = ["queued", "running", "planning", "waiting", "awaiting_plan", "awaiting_choice"];
 // Lucide icons (the app's icon set), never hand-drawn.
@@ -265,11 +266,15 @@ export default function ContextMenuLayer() {
     else if (m.status === "paused") items.push({ label: "Reanudar", icon: "play", onSelect: () => run(() => post(`/missions/${encodeURIComponent(m.id)}/control`, { action: "resume" })).catch(() => {}) });
     // Tidy the sidebar: snooze until later, archive when done, or copy it to try another way.
     const room = (body) => run(() => patch(`/missions/${encodeURIComponent(m.id)}`, body)).catch(() => {});
+    // Archiving and snoozing are made at once and undone with the opposite change (5 s notice).
+    const tidy = (body, text, back) => run(() => patch(`/missions/${encodeURIComponent(m.id)}`, body))
+      .then(() => reversible({ id: "mission:" + m.id, text, undo: () => run(() => patch(`/missions/${encodeURIComponent(m.id)}`, back)) }))
+      .catch(() => {});
     const snoozed = m.snoozedUntil && Date.parse(m.snoozedUntil) > Date.now();
     if (snoozed) items.push({ label: "Mostrar ahora", icon: "wake", hint: new Date(m.snoozedUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }), onSelect: () => room({ snoozedUntil: null }) });
-    else if (!m.archived) items.push({ label: "Posponer", icon: "snooze", subLabel: "Posponer " + name, items: snoozeChoices().map((c) => ({ label: c.label, hint: c.hint, icon: "snooze", onSelect: () => room({ snooze: c.id }) })) });
-    if (m.archived) items.push({ label: "Desarchivar", icon: "unarchive", onSelect: () => room({ archived: false }) });
-    else if (!["queued", "running", "planning"].includes(m.status)) items.push({ label: "Archivar", icon: "archive", onSelect: () => room({ archived: true }) });
+    else if (!m.archived) items.push({ label: "Posponer", icon: "snooze", subLabel: "Posponer " + name, items: snoozeChoices().map((c) => ({ label: c.label, hint: c.hint, icon: "snooze", onSelect: () => tidy({ snooze: c.id }, `${isChat ? "Conversación pospuesta" : "Sala pospuesta"} · ${c.label.toLowerCase()}`, { snoozedUntil: null }) })) });
+    if (m.archived) items.push({ label: "Desarchivar", icon: "unarchive", onSelect: () => tidy({ archived: false }, isChat ? "Conversación desarchivada" : "Sala desarchivada", { archived: true }) });
+    else if (!["queued", "running", "planning"].includes(m.status)) items.push({ label: "Archivar", icon: "archive", onSelect: () => tidy({ archived: true }, isChat ? "Conversación archivada" : "Sala archivada", { archived: false }) });
     if (m.mode !== "debate") items.push({ label: isChat ? "Duplicar conversación" : "Duplicar sala", icon: "duplicate", onSelect: () => run(() => post(`/missions/${encodeURIComponent(m.id)}/fork`, {})).then((copy) => copy && navigate(roomUrl(copy))).catch(() => {}) });
     // The whole conversation as a document (OpenClaw /export).
     items.push({ label: "Exportar", icon: "export", subLabel: "Exportar " + name, items: [
@@ -280,22 +285,21 @@ export default function ContextMenuLayer() {
     // What the bots learned here (memories, skills) can be seen and forgotten.
     if (!["queued", "running", "planning"].includes(m.status)) items.push({ label: "Olvidar lo aprendido aquí…", icon: "forget", onSelect: () => setForget({ missionId: m.id, title: m.title || name }) });
     items.push({ separator: true });
+    // No confirmation screen (v2): it leaves the list at once and is deleted after the
+    // five-second «Deshacer». A team at work here stops only when the delete goes through.
     const working = ACTIVE.includes(m.status) && m.status !== "awaiting_choice";
     items.push({
-      label: isChat ? "Borrar conversación…" : "Borrar sala…", icon: "trash", danger: true,
-      onSelect: () => setConfirm({
-        eyebrow: name,
-        title: isChat ? "¿Borrar esta conversación?" : "¿Borrar esta sala?",
-        text: (working ? "El equipo está trabajando aquí: se detendrá. " : "")
-          + (isChat ? `Se borran los mensajes con ${bot?.name || "el bot"}. ` : "Se borran la conversación, el plan y los pasos. ")
-          + "Los entregables se quedan en la Biblioteca. No se puede deshacer.",
-        action: isChat ? "Borrar conversación" : "Borrar sala",
-        onConfirm: async () => {
-          await run(() => del(`/missions/${encodeURIComponent(m.id)}`));
-          if (location.pathname.includes(m.id) || new URLSearchParams(location.search).get("c") === m.id)
-            navigate(isChat ? `/chat/${m.botIds?.[0] || ""}` : "/", { replace: true });
-        },
-      }),
+      label: isChat ? "Borrar conversación" : "Borrar sala", icon: "trash", danger: true,
+      onSelect: () => {
+        later({
+          id: "mission:" + m.id, keys: ["mission:" + m.id],
+          text: (isChat ? "Conversación borrada" : "Sala borrada") + (working ? " · el equipo se detendrá" : ""),
+          error: isChat ? "No se pudo borrar la conversación" : "No se pudo borrar la sala",
+          run: () => run(() => del(`/missions/${encodeURIComponent(m.id)}`)),
+        });
+        if (location.pathname.includes(m.id) || new URLSearchParams(location.search).get("c") === m.id)
+          navigate(isChat ? `/chat/${m.botIds?.[0] || ""}` : "/", { replace: true });
+      },
     });
     return { label: name, items };
   }, []);

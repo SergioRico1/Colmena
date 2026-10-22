@@ -5,6 +5,7 @@ import { useAction, useResource, useStore } from "../lib/store.jsx";
 import { del, patch, post } from "../lib/api.js";
 import { navigate, useRouter } from "../lib/router.jsx";
 import { isRoom } from "../lib/format.js";
+import { later, useHidden } from "../lib/undoToast.js";
 
 // Colmena 2.0 · Rutinas (design/V2Rutinas.dc.html). Three kinds of standing work, each read
 // as a sentence: routines (automations with a trigger), encargos (standing orders a bot
@@ -78,8 +79,10 @@ export default function RutinasV2() {
   const [orderForm, setOrderForm] = useState(false);
 
   const team = bots.filter((b) => !b.archived);
-  const orderList = orders.data || [];
-  const intentList = intents.data || [];
+  const hiddenOrder = useHidden("order");
+  const hiddenIntent = useHidden("intent");
+  const orderList = (orders.data || []).filter((o) => !hiddenOrder(o.id));
+  const intentList = (intents.data || []).filter((i) => !hiddenIntent(i.id));
   const tabs = [["rut", "Rutinas", automations.length], ["ord", "Encargos", orderList.length], ["rem", "Recordatorios por tema", intentList.length]];
   const desc = {
     rut: "Lo que tu colmena hace sola, cuando toca. Se leen como una frase.",
@@ -643,7 +646,7 @@ function Orders({ team, list, loading, form, setForm, automations }) {
             </div>
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "13px", color: FAINT }}>
               {foot}
-              <button type="button" onClick={() => { if (window.confirm(`¿Borrar el encargo «${o.title}»?`)) act.act(() => del(`/standing-orders/${encodeURIComponent(o.id)}`)); }} style={{ border: 0, padding: 0, background: "none", cursor: "pointer", fontSize: "13px", color: FAINT, textDecoration: "underline" }}>Borrar</button>
+              <button type="button" onClick={() => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Encargo «${o.title}» borrado`, error: "No se pudo borrar el encargo", run: () => act.act(() => del(`/standing-orders/${encodeURIComponent(o.id)}`)) })} style={{ border: 0, padding: 0, background: "none", cursor: "pointer", fontSize: "13px", color: FAINT, textDecoration: "underline" }}>Borrar</button>
             </span>
           </article>
         );
@@ -716,7 +719,7 @@ function Reminders({ list, loading, missions, bots }) {
           {!r.active || r.hits >= r.maxHits ? (
             <button type="button" onClick={() => act.act(() => patch(`/intents/${encodeURIComponent(r.id)}`, { active: true }))} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: INK }}>Reactivar</button>
           ) : null}
-          <button type="button" onClick={() => act.act(() => del(`/intents/${encodeURIComponent(r.id)}`))} aria-label="Borrar este recordatorio" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer", color: INK }}>
+          <button type="button" onClick={() => later({ id: "intent:" + r.id, keys: ["intent:" + r.id], text: "Recordatorio borrado", error: "No se pudo borrar el recordatorio", run: () => act.act(() => del(`/intents/${encodeURIComponent(r.id)}`)) })} aria-label="Borrar este recordatorio" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer", color: INK }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
         </div>

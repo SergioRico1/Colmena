@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { addUnsent, removeUnsent } from "./unsent.js";
 import { api } from "./api.js";
+import { useHiddenVersion, visible } from "./undoToast.js";
 
 // Global data layer: /api/state snapshot + SSE invalidation + live text deltas.
 const StoreContext = createContext(null);
@@ -13,6 +14,8 @@ const EMPTY = {
   bots: [], missions: [], approvals: [], automations: [], suggestions: [], skills: [], memories: [],
   artifacts: [], folders: [], people: [], connectors: [], unread: 0, notifications: [],
 };
+
+const HIDEABLE = [["missions", "mission"], ["bots", "bot"], ["automations", "automation"], ["memories", "memory"], ["artifacts", "artifact"], ["folders", "folder"], ["people", "person"], ["approvals", "approval"], ["skills", "skill"], ["goals", "goal"], ["grants", "grant"], ["notifications", "notification"], ["watchNotes", "watchnote"]];
 
 // The last /api/state, kept in the browser: the app opens with what you saw last time and
 // refreshes behind it (OpenClaw keeps chat snapshots the same way). Never the source of truth.
@@ -224,7 +227,14 @@ export function StoreProvider({ children }) {
     return () => (typeof cancelIdleCallback === "function" ? cancelIdleCallback(handle) : clearTimeout(handle));
   }, [state.missions]);
 
-  const value = useMemo(() => ({ ...state, state, ready, error, online, live, activity, refresh, run }), [state, ready, error, online, live, activity, refresh, run]);
+  // What waits five seconds to be deleted («Deshacer», src/lib/undoToast.js) leaves every list at once.
+  const hiddenVersion = useHiddenVersion();
+  const shown = useMemo(() => {
+    const out = { ...state };
+    for (const [key, kind] of HIDEABLE) if (Array.isArray(state[key])) out[key] = visible(kind, state[key]);
+    return out;
+  }, [state, hiddenVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+  const value = useMemo(() => ({ ...shown, state: shown, ready, error, online, live, activity, refresh, run }), [shown, ready, error, online, live, activity, refresh, run]);
   return <StoreContext.Provider value={value}><RevisionContext.Provider value={revision}>{children}</RevisionContext.Provider></StoreContext.Provider>;
 }
 

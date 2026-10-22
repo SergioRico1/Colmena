@@ -7,6 +7,7 @@ import { BotAvatar, ErrorLine, findBot } from "./common.jsx";
 import Markdown from "./Markdown.jsx";
 import WorkingDots from "./Dots.jsx";
 import { ListenButton } from "../interaction/Voice.jsx";
+import { later } from "../../lib/undoToast.js";
 
 // «Preguntar aparte» (OpenClaw Side chat): a side conversation about this room that never
 // interrupts the bots nor enters the room — unless you choose «Pasarla a la sala». Up to 24
@@ -82,9 +83,11 @@ export default function AsidePanel({ mission }) {
       setError(e.message);
     }
   };
+  // Gone at once; the server forgets it after the five-second «Deshacer».
   const discard = (t) => {
     setTurns((all) => all.filter((x) => x.id !== t.id));
-    if (t.status === "answered" && !t.shared) del(`/missions/${encodeURIComponent(mission.id)}/aside/${t.id}`).catch(() => {});
+    later({ id: "aside:" + t.id, text: "Respuesta descartada", undone: () => setTurns((all) => (all.some((x) => x.id === t.id) ? all : [...all, t])),
+      run: () => (t.status === "answered" && !t.shared ? del(`/missions/${encodeURIComponent(mission.id)}/aside/${t.id}`) : null) });
   };
   const pending = turns.some((t) => t.status === "pending");
   const answered = turns.some((t) => t.status === "answered");

@@ -4,6 +4,7 @@ import { post } from "../../lib/api.js";
 import { roomUrl, time } from "../../lib/format.js";
 import { cancel, schedule, useUndoable } from "../../lib/undoable.js";
 import { BotPresence } from "./Presence.jsx";
+import { later } from "../../lib/undoToast.js";
 
 // «Te necesitan» cards of Colmena 2.0 (design/V2Hoy.dc.html): the only honey on the screen.
 // A send shows what goes out and to whom; «Aprobar y enviar» waits 10 s with «Deshacer».
@@ -207,9 +208,9 @@ export function WatchCard({ n, bot }) {
       setBusy(false);
     }
   };
-  const dismiss = async () => {
+  const dismiss = () => {
     setError(null);
-    try { await post(`/watch/notes/${n.id}/dismiss`, {}); } catch (e) { setError(e.message); }
+    later({ id: "watchnote:" + n.id, keys: ["watchnote:" + n.id], text: "Aviso descartado", error: "No se pudo descartar", run: () => post(`/watch/notes/${n.id}/dismiss`, {}) });
   };
   const replies = n.replies?.length ? n.replies : ["Sí, hazlo", "No hace falta"];
   return (

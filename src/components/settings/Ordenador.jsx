@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AccessPills, BotChips, Card, Notice, PageHeader, btn, field } from "./SettingsShell.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { del, patch, post } from "../../lib/api.js";
+import { later } from "../../lib/undoToast.js";
 
 /** Ajustes › Este ordenador: folders the bots may open (POST/PATCH/DELETE /api/folders). */
 export default function Ordenador() {
@@ -9,7 +10,6 @@ export default function Ordenador() {
   const team = bots.filter((b) => b.enabled !== false);
   const { act, busy, error, setError } = useAction();
   const [draft, setDraft] = useState({ path: "", label: "", access: "lee", botIds: [] });
-  const [confirm, setConfirm] = useState(null);
 
   const update = (f, change) => act(() => patch(`/folders/${encodeURIComponent(f.id)}`, change));
   const toggleIn = (list, id) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
@@ -47,14 +47,7 @@ export default function Ordenador() {
                 <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: "12px", color: "#5C606C", overflowWrap: "anywhere" }}>{f.path}</span>
               </span>
               <AccessPills value={f.access || "lee"} label={`Acceso a ${f.label || f.path}`} onChange={(access) => access !== f.access && update(f, { access })} />
-              {confirm === f.id ? (
-                <span style={{ display: "inline-flex", gap: "6px" }}>
-                  <button type="button" disabled={busy} onClick={() => act(() => del(`/folders/${encodeURIComponent(f.id)}`)).then(() => setConfirm(null))} style={{ ...btn.quiet, background: "#E5484D", color: "#FFFFFF", border: "0", fontWeight: "600" }}>Quitar</button>
-                  <button type="button" onClick={() => setConfirm(null)} style={btn.quiet}>Cancelar</button>
-                </span>
-              ) : (
-                <button type="button" onClick={() => setConfirm(f.id)} aria-label={`Quitar ${f.label || f.path}`} style={btn.quiet}>Quitar</button>
-              )}
+              <button type="button" onClick={() => later({ id: "folder:" + f.id, keys: ["folder:" + f.id], text: `Carpeta «${f.label || f.path}» quitada`, error: "No se pudo quitar la carpeta", run: () => act(() => del(`/folders/${encodeURIComponent(f.id)}`)) })} aria-label={`Quitar ${f.label || f.path}`} style={btn.quiet}>Quitar</button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px", paddingLeft: "52px" }}>
               <span style={{ font: "500 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#5C606C" }}>Bots con acceso</span>

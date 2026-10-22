@@ -9,6 +9,7 @@ import { post, patch, del } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { avatarStyle, initial, botById } from "../lib/bots.js";
 import { isRoom, time } from "../lib/format.js";
+import { later } from "../lib/undoToast.js";
 
 // 08 · Automatizaciones (canvas version, with <Disparador> as «Detalles»).
 const TRIGGERS = [
@@ -112,7 +113,6 @@ export default function Automatizaciones({ query = {} }) {
   const [search, setSearch] = useState("");
   const [describe, setDescribe] = useState(null); // { text, busy, error }
   const [preparing, setPreparing] = useState(null); // { text, error }
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [msg, setMsg] = useState(null); // { text, missionId, error }
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -309,11 +309,11 @@ export default function Automatizaciones({ query = {} }) {
     }
   };
   const onProbar = async () => describeResult(await runTest());
-  const onDelete = async () => {
-    const res = await call(() => del(`/automations/${encodeURIComponent(draft.id)}`));
-    if (!res.ok) return;
-    setConfirmDelete(false);
-    const rest = automations.filter((a) => a.id !== draft.id);
+  // No «¿Eliminar?» question: it leaves the list now and is deleted after the five-second «Deshacer».
+  const onDelete = () => {
+    const gone = draft;
+    later({ id: "automation:" + gone.id, keys: ["automation:" + gone.id], text: `Rutina «${gone.name}» eliminada`, error: "No se pudo eliminar la rutina", run: () => run(() => del(`/automations/${encodeURIComponent(gone.id)}`)), undone: () => select(gone.id) });
+    const rest = automations.filter((a) => a.id !== gone.id);
     if (rest.length) select(rest[0].id);
     else { startNew(); navigate("/automatizaciones", { replace: true }); handled.current = JSON.stringify({}); }
   };
@@ -573,18 +573,9 @@ export default function Automatizaciones({ query = {} }) {
                   {isNew ? (
                     <button type="button" onClick={() => (automations.length ? select(automations[0].id) : startNew())} style={{ height: "46px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "14px", color: "#3D404A" }}>{"Descartar"}</button>
                   ) : (
-                    <button type="button" aria-expanded={confirmDelete ? "true" : "false"} onClick={() => setConfirmDelete(true)} style={{ height: "46px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontWeight: "600", fontSize: "14px", color: "#B4372A" }}>{"Eliminar"}</button>
+                    <button type="button" onClick={onDelete} style={{ height: "46px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontWeight: "600", fontSize: "14px", color: "#B4372A" }}>{"Eliminar"}</button>
                   )}
                 </div>
-                {confirmDelete ? (
-                  <div role="alertdialog" aria-labelledby="del-t" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", background: "#FFF4D1", border: "1.5px solid #12131A", borderRadius: "12px", fontSize: "14px", lineHeight: "1.45" }}>
-                    <span id="del-t"><strong>{`¿Eliminar «${draft.name}»?`}</strong>{" Dejará de ponerse en marcha. Las misiones que ya hizo y sus entregables se conservan."}</span>
-                    <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                      <button type="button" autoFocus onClick={onDelete} disabled={saving} style={{ height: "38px", padding: "0 12px", background: "#B4372A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "13px" }}>{saving ? "Eliminando…" : "Sí, eliminar"}</button>
-                      <button type="button" onClick={() => setConfirmDelete(false)} style={{ height: "38px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "13px", color: "#3D404A" }}>{"Cancelar"}</button>
-                    </span>
-                  </div>
-                ) : null}
                 {saveError ? <span role="alert" style={errStyle}>{saveError}</span> : null}
                 {msg ? (
                   <span role="status" style={msg.error ? errStyle : { fontSize: "14px", color: "#3D404A" }}>

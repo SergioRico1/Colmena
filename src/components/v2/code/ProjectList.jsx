@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FolderGit2, Folder, FolderOpen, Plus, Search, X } from "lucide-react";
 import { navigate } from "../../../lib/router.jsx";
 import { del } from "../../../lib/api.js";
+import { later, useHidden } from "../../../lib/undoToast.js";
 import { C, MONO, HEAD, BrunoMark, Stat, Seg, timeAgo } from "./parts.jsx";
 
 // Left column of «Código»: each project with its tasks (design/V2Codigo.dc.html).
@@ -38,13 +39,11 @@ const VIEW_KEY = "colmena:code-list-view";
 const readView = () => { try { return localStorage.getItem(VIEW_KEY) === "projects" ? "projects" : "status"; } catch { return "status"; } };
 
 function TaskRow({ task, current, project = null }) {
-  const [armed, setArmed] = useState(false);
-  useEffect(() => { if (!armed) return undefined; const t = setTimeout(() => setArmed(false), 3000); return () => clearTimeout(t); }, [armed]);
   const s = taskStatus(task);
-  const remove = async (e) => {
+  // The task (its copy, its preview server) goes after the five-second «Deshacer».
+  const remove = (e) => {
     e.preventDefault(); e.stopPropagation();
-    if (!armed) { setArmed(true); return; }
-    await del("/code/tasks/" + task.id).catch(() => {});
+    later({ id: "codetask:" + task.id, keys: ["codetask:" + task.id], text: `Tarea «${task.title}» borrada`, error: "No se pudo borrar la tarea", run: () => del("/code/tasks/" + task.id) });
     if (current) navigate("/codigo");
   };
   return (
@@ -58,10 +57,10 @@ function TaskRow({ task, current, project = null }) {
           <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{project ? project.name + " · " : ""}{project ? (task.status === "idle" ? timeAgo(task.updatedAt) : s.text) : s.text + (task.status === "idle" ? " · " + timeAgo(task.updatedAt) : "")}</span>
         </span>
       </span>
-      {armed ? null : <Stat add={task.add} del={task.del} size={11} />}
-      <button type="button" className="code-x" onClick={remove} aria-label={armed ? "Pulsa otra vez para borrar la tarea" : "Borrar la tarea"} title={armed ? "Pulsa otra vez para borrar" : "Borrar la tarea"}
-        style={{ position: armed ? "static" : "absolute", right: "6px", top: "6px", height: "22px", minWidth: "22px", padding: armed ? "0 8px" : 0, display: "grid", placeItems: "center", border: 0, borderRadius: "999px", background: armed ? C.ink : "rgba(18,19,26,.06)", color: armed ? C.white : C.muted, cursor: "pointer", fontSize: "11px", fontWeight: 600, opacity: armed ? 1 : undefined }}>
-        {armed ? "Borrar" : <X size={12} strokeWidth={2.4} aria-hidden="true" />}
+      <Stat add={task.add} del={task.del} size={11} />
+      <button type="button" className="code-x" onClick={remove} aria-label="Borrar la tarea" title="Borrar la tarea (puedes deshacerlo)"
+        style={{ position: "absolute", right: "6px", top: "6px", height: "22px", minWidth: "22px", padding: 0, display: "grid", placeItems: "center", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", color: C.muted, cursor: "pointer", fontSize: "11px", fontWeight: 600 }}>
+        <X size={12} strokeWidth={2.4} aria-hidden="true" />
       </button>
     </a>
   );
@@ -72,7 +71,8 @@ export default function ProjectList({ projects = [], currentTask = null, onOpen 
   const [view, setViewState] = useState(readView);
   const setView = (v) => { setViewState(v); try { localStorage.setItem(VIEW_KEY, v); } catch {} };
   const query = q.trim().toLowerCase();
-  const shown = projects.map((p) => ({ ...p, tasks: query ? p.tasks.filter((t) => t.title.toLowerCase().includes(query)) : p.tasks })).filter((p) => !query || p.tasks.length || p.name.toLowerCase().includes(query));
+  const hiddenTask = useHidden("codetask");
+  const shown = projects.map((p) => ({ ...p, tasks: p.tasks.filter((t) => !hiddenTask(t.id) && (!query || t.title.toLowerCase().includes(query))) })).filter((p) => !query || p.tasks.length || p.name.toLowerCase().includes(query));
   const groups = view === "status" ? GROUPS.map(([key, label]) => ({
     key, label,
     tasks: shown.flatMap((p) => p.tasks.map((t) => ({ t, p }))).filter(({ t }) => groupOf(t) === key).sort((a, b) => String(b.t.updatedAt).localeCompare(String(a.t.updatedAt))),

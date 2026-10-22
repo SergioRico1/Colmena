@@ -2,6 +2,7 @@ import { useState } from "react";
 import { del, patch, post } from "../../lib/api.js";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { Notice, Spinner, Switch } from "../team/common.jsx";
+import { later, useHidden } from "../../lib/undoToast.js";
 
 // Tarjeta «Encargos» del perfil del bot (OpenClaw standing orders + standing intents):
 // what the bot does on its own, in plain words, and «Cuando se hable de X, recuérdame Y».
@@ -110,8 +111,10 @@ const day = (v) => (v ? new Date(v).toLocaleDateString("es-ES", { day: "numeric"
 
 export default function StandingOrdersCard({ bot }) {
   const { standingOrders = [], intents = [] } = useStore();
-  const orders = standingOrders.filter((o) => o.botId === bot.id);
-  const reminders = intents.filter((i) => i.botId === bot.id);
+  const hiddenOrder = useHidden("order");
+  const hiddenIntent = useHidden("intent");
+  const orders = standingOrders.filter((o) => o.botId === bot.id && !hiddenOrder(o.id));
+  const reminders = intents.filter((i) => i.botId === bot.id && !hiddenIntent(i.id));
   const [editing, setEditing] = useState(null); // 'new' | order id
   const [addingIntent, setAddingIntent] = useState(false);
   const action = useAction();
@@ -152,7 +155,7 @@ export default function StandingOrdersCard({ bot }) {
             {!o.automationId && o.schedule ? <span style={hint}>{`Cuando ${o.schedule.sentence}`}</span> : null}
             <span style={{ flex: "1" }} />
             <button type="button" onClick={() => setEditing(o.id)} style={{ ...ghost, height: "36px" }}>Editar</button>
-            <button type="button" aria-label={`Borrar el encargo «${o.title}»`} disabled={action.busy} onClick={() => action.act(() => del(`/standing-orders/${o.id}`))} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "10px", cursor: "pointer", color: "#6B6F7A" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
+            <button type="button" aria-label={`Borrar el encargo «${o.title}»`} disabled={action.busy} onClick={() => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Encargo «${o.title}» borrado`, error: "No se pudo borrar el encargo", run: () => action.act(() => del(`/standing-orders/${o.id}`)) })} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "10px", cursor: "pointer", color: "#6B6F7A" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
           </div>
         </div>
       )))}
@@ -180,7 +183,7 @@ export default function StandingOrdersCard({ bot }) {
                 <span style={hint}>{[`${i.hits} de ${i.maxHits} avisos`, i.expiresAt ? (expired ? "caducado" : `hasta el ${day(i.expiresAt)}`) : null, spent ? "agotado" : null].filter(Boolean).join(" · ")}</span>
               </span>
               <Switch on={i.active && !expired} label={`Recordatorio ${i.keywords.join(", ")}`} disabled={action.busy || expired} onClick={() => action.act(() => patch(`/intents/${i.id}`, { active: !i.active }))} />
-              <button type="button" aria-label="Borrar este recordatorio" disabled={action.busy} onClick={() => action.act(() => del(`/intents/${i.id}`))} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "10px", cursor: "pointer", color: "#6B6F7A" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
+              <button type="button" aria-label="Borrar este recordatorio" disabled={action.busy} onClick={() => later({ id: "intent:" + i.id, keys: ["intent:" + i.id], text: "Recordatorio borrado", error: "No se pudo borrar el recordatorio", run: () => action.act(() => del(`/intents/${i.id}`)) })} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "10px", cursor: "pointer", color: "#6B6F7A" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
             </div>
           );
         })}

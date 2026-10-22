@@ -4,6 +4,7 @@ import { get, post, del } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { C, HEAD, MONO, CARD, BrunoMark, Stat } from "./parts.jsx";
 import { taskStatus } from "./ProjectList.jsx";
+import { later } from "../../../lib/undoToast.js";
 
 // «Comparar» (Colmena's own; T3 Code does not have it): the same request done by several engines
 // at once, side by side: what each one changed, what it said and whether the project's tests
@@ -43,7 +44,12 @@ export default function Compare({ group, projects = [] }) {
     if (r?.resolving) throw Error("Hay cambios que chocan con " + (t.base || "main") + ": Bruno los está resolviendo en esa tarea. Guarda cuando acabe.");
     setChosen(t.id);
   });
-  const dropOthers = () => act("drop", async () => { for (const t of tasks.filter((x) => x.id !== chosen)) await del("/code/tasks/" + t.id); navigate("/codigo/" + chosen); });
+  const dropOthers = () => {
+    const others = tasks.filter((x) => x.id !== chosen);
+    later({ id: "compare:" + group, keys: others.map((t) => "codetask:" + t.id), text: others.length === 1 ? "La otra versión se descarta" : `Las otras ${others.length} versiones se descartan`, error: "No se pudo descartar",
+      run: async () => { for (const t of others) await del("/code/tasks/" + t.id); } });
+    navigate("/codigo/" + chosen);
+  };
   const working = tasks.some((t) => t.running || t.status === "working");
   return (
     <section aria-label="Comparar" style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", overscrollBehavior: "contain", animation: "fade .3s ease-out" }}>

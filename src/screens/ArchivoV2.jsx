@@ -7,7 +7,7 @@ import { useAction, useResource, useStore } from "../lib/store.jsx";
 import { download, get, patch, pickTextFiles, post, del } from "../lib/api.js";
 import { navigate, useRouter } from "../lib/router.jsx";
 import { shortDate, time } from "../lib/format.js";
-import { cancel, schedule, useUndoable } from "../lib/undoable.js";
+import { later } from "../lib/undoToast.js";
 
 // Colmena 2.0 · Archivo (design/V2Archivo.dc.html): what the colmena has made, the skills
 // the bots learned (none is used until you review its steps) and what they know about you.
@@ -324,23 +324,17 @@ function Skills({ skills, bots }) {
 
 // ───────────────────────────────────────────────────────────── Lo que saben de ti
 function MemoryRow({ m, bot }) {
-  const id = "memory-forget:" + m.id;
   const { run } = useStore();
-  const { waiting, secs } = useUndoable(id);
-  const forget = () => schedule(id, () => run(() => del(`/memories/${encodeURIComponent(m.id)}`)));
+  const forget = () => later({ id: "memory:" + m.id, keys: ["memory:" + m.id], text: "Recuerdo olvidado", error: "No se pudo olvidar", run: () => run(() => del(`/memories/${encodeURIComponent(m.id)}`)) });
   const src = [m.sourceLabel, bot?.name].filter(Boolean).join(" · ");
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "64px", padding: "10px 24px", borderTop: "1px solid rgba(18,19,26,.06)", animation: "fade .3s ease-out", opacity: waiting ? 0.5 : 1, transition: "opacity .2s ease" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "64px", padding: "10px 24px", borderTop: "1px solid rgba(18,19,26,.06)", animation: "fade .3s ease-out" }}>
       {bot ? <BotPresence bot={bot} size={20} /> : <TeamDot size={20} />}
       <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "3px" }}>
-        <span style={{ fontSize: "16px", lineHeight: 1.45, textDecoration: waiting ? "line-through" : "none" }}>{m.text}</span>
-        <span style={{ fontSize: "13px", color: FAINT }}>{waiting ? `Se olvida en ${secs} s` : src}</span>
+        <span style={{ fontSize: "16px", lineHeight: 1.45 }}>{m.text}</span>
+        <span style={{ fontSize: "13px", color: FAINT }}>{src}</span>
       </span>
-      {waiting ? (
-        <button type="button" onClick={() => cancel(id)} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>Deshacer</button>
-      ) : (
-        <button type="button" onClick={forget} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: INK }}>Olvidar</button>
-      )}
+      <button type="button" onClick={forget} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: INK }}>Olvidar</button>
     </div>
   );
 }
@@ -374,7 +368,7 @@ function Memories({ memories, bots }) {
                 <span style={{ fontSize: "13px", color: FAINT }}>{botOf(m.botId) ? `Lo dedujo ${botOf(m.botId).name}` + (m.origin === "externo" ? " de una web, un correo o una app" : "") : m.sourceLabel}</span>
               </span>
               <span style={{ display: "flex", gap: "6px" }}>
-                <button type="button" disabled={act.busy} onClick={() => act.act(() => del(`/memories/${encodeURIComponent(m.id)}`))} style={{ height: "38px", padding: "0 14px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#B4372A" }}>No es así</button>
+                <button type="button" disabled={act.busy} onClick={() => later({ id: "memory:" + m.id, keys: ["memory:" + m.id], text: "Recuerdo descartado", error: "No se pudo descartar", run: () => act.act(() => del(`/memories/${encodeURIComponent(m.id)}`)) })} style={{ height: "38px", padding: "0 14px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#B4372A" }}>No es así</button>
                 <button type="button" disabled={act.busy} onClick={() => act.act(() => patch(`/memories/${encodeURIComponent(m.id)}`, { review: false }))} style={{ height: "38px", padding: "0 16px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>Es correcto</button>
               </span>
             </div>

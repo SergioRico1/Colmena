@@ -6,6 +6,7 @@ import { copyText, ErrorLine } from "./common.jsx";
 import Markdown from "./Markdown.jsx";
 import { CsvTable } from "./ArtifactPanel.jsx";
 import PagePreview from "./PagePreview.jsx";
+import { reversible } from "../../lib/undoToast.js";
 
 // «Archivos» of a room or chat (OpenClaw chat-files-panel + chat-sidebar-file-view): the
 // working folder with what the bots changed or read and what you attached; each file opens
@@ -157,7 +158,11 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
   const startEdit = () => { setText(original); setEditing(true); setNotice(null); };
   // The editor takes the keyboard as soon as it appears.
   useEffect(() => { if (editing) area.current?.focus({ preventScroll: true }); }, [editing]);
-  const discard = () => { drafts.delete(key); setEditing(false); setNotice(null); setText(""); };
+  const discard = () => {
+    const kept = dirty ? { text, entry: drafts.get(key) } : null;
+    drafts.delete(key); setEditing(false); setNotice(null); setText("");
+    if (kept) reversible({ id: "edit:" + key, text: "Cambios descartados", undo: () => { if (kept.entry) drafts.set(key, kept.entry); setText(kept.text); setEditing(true); } });
+  };
   const toDisk = (t) => (file?.lineEnding === "crlf" ? t.replace(/\r?\n/g, "\r\n") : t);
   const save = async (content = text, hash = expectedHash) => {
     if (saving) return;

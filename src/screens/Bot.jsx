@@ -18,6 +18,7 @@ import ForgetButton from "../components/interaction/Forget.jsx";
 import { VoicePicker } from "../components/interaction/VoicePicker.jsx";
 import { SkeletonLines } from "../components/Skeleton.jsx";
 import Journey from "../components/team/Journey.jsx";
+import { later } from "../lib/undoToast.js";
 
 const SLIDERS = [
   { id: "tono", left: "Formal", right: "Cercano", aria: "Tono, de formal a cercano" },
@@ -439,7 +440,7 @@ export default function Bot({ params, query }) {
                     <span style={{ flex: "1", fontSize: "15px", lineHeight: "1.4" }}>{m.text}</span>
                     <span style={{ fontSize: "12px", color: "#6B6F7A", whiteSpace: "nowrap" }}>{memoryLabel(m)}</span>
                     {m.review ? <button type="button" aria-label="Confirmar este recuerdo" title="Es correcto" disabled={itemAction.busy} onClick={() => itemAction.act(() => patch(`/memories/${m.id}`, { review: false }))} style={{ width: "44px", height: "44px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "10px", cursor: "pointer", color: "#0B8A5F" }}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg></button> : null}
-                    <button type="button" aria-label="Borrar este recuerdo" disabled={itemAction.busy} onClick={() => itemAction.act(() => del(`/memories/${m.id}`))} style={{ width: "44px", height: "44px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "10px", cursor: "pointer", color: "#6B6F7A" }}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
+                    <button type="button" aria-label="Borrar este recuerdo" disabled={itemAction.busy} onClick={() => later({ id: "memory:" + m.id, keys: ["memory:" + m.id], text: "Recuerdo borrado", error: "No se pudo borrar", run: () => itemAction.act(() => del(`/memories/${m.id}`)) })} style={{ width: "44px", height: "44px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "10px", cursor: "pointer", color: "#6B6F7A" }}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
                   </div>
                 ))}
                 {!memories.length ? <p style={{ margin: 0, padding: "14px 0 4px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "14px", color: "#6B6F7A" }}>Aún no recuerda nada. Lo que le cuentes en el chat y lo que acordéis aparecerá aquí.</p> : null}

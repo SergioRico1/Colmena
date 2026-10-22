@@ -9,6 +9,7 @@ import { del, get, patch, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { formatTokens } from "../components/settings/format.jsx";
 import { LimitLine } from "../components/v2/LimitNotice.jsx";
+import { later } from "../lib/undoToast.js";
 
 // Colmena 2.0 · 27 «Tu colmena» (design/V2Colmena.dc.html): your bots as presences (they
 // breathe while they work) and, beside them, the chosen one: what it is, what it knows, what it
@@ -164,7 +165,7 @@ function Profile({ bot, skills, memories, missions }) {
             {mem.map((m) => (
               <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "46px", animation: "fade .3s ease-out" }}>
                 <span style={{ flex: "1", fontSize: "15px", lineHeight: "1.45" }}>{m.text}</span>
-                <button type="button" disabled={busy} onClick={() => act(() => del(`/memories/${encodeURIComponent(m.id)}`))} style={{ height: "32px", padding: "0 12px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "13px", fontWeight: "500" }}>{"Olvidar"}</button>
+                <button type="button" disabled={busy} onClick={() => later({ id: "memory:" + m.id, keys: ["memory:" + m.id], text: "Recuerdo olvidado", error: "No se pudo olvidar", run: () => act(() => del(`/memories/${encodeURIComponent(m.id)}`)) })} style={{ height: "32px", padding: "0 12px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "13px", fontWeight: "500" }}>{"Olvidar"}</button>
               </div>
             ))}
             {!mem.length ? <span style={{ fontSize: "14px", color: "#6B6F7A" }}>{"No recuerda nada de ti todavía."}</span> : null}

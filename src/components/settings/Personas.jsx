@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, Notice, PageHeader, btn, field } from "./SettingsShell.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { del, post } from "../../lib/api.js";
+import { later } from "../../lib/undoToast.js";
 
 const ROLES = ["Administrador", "Responsable", "Colaborador", "Solo lectura"];
 const ROLE_HELP = {
@@ -17,7 +18,6 @@ export default function Personas() {
   const { people, settings } = useStore();
   const { act, busy, error, setError } = useAction();
   const [draft, setDraft] = useState({ name: "", email: "", role: "Colaborador" });
-  const [confirm, setConfirm] = useState(null);
 
   const add = async (event) => {
     event.preventDefault();
@@ -36,12 +36,7 @@ export default function Personas() {
       </span>
       <span style={{ padding: "4px 9px", background: p.role === "Administrador" ? "#12131A" : "#F4F4F0", color: p.role === "Administrador" ? "#FFFFFF" : "#3D404A", borderRadius: "6px", fontSize: "12px", fontWeight: "600" }}>{p.role || "Colaborador"}</span>
       {you ? <a href="/ajustes/espacio" style={{ ...btn.quiet, textDecoration: "none" }}>Editar</a>
-        : confirm === p.id ? (
-          <span style={{ display: "inline-flex", gap: "6px" }}>
-            <button type="button" disabled={busy} onClick={() => act(() => del(`/people/${encodeURIComponent(p.id)}`)).then(() => setConfirm(null))} style={{ ...btn.quiet, background: "#E5484D", color: "#FFFFFF", border: "0", fontWeight: "600" }}>Quitar</button>
-            <button type="button" onClick={() => setConfirm(null)} style={btn.quiet}>Cancelar</button>
-          </span>
-        ) : <button type="button" onClick={() => setConfirm(p.id)} aria-label={`Quitar a ${p.name}`} style={btn.quiet}>Quitar</button>}
+        : <button type="button" onClick={() => later({ id: "person:" + p.id, keys: ["person:" + p.id], text: `${p.name || "Persona"} ya no está en el espacio`, error: "No se pudo quitar", run: () => act(() => del(`/people/${encodeURIComponent(p.id)}`)) })} aria-label={`Quitar a ${p.name}`} style={btn.quiet}>Quitar</button>}
     </div>
   );
 

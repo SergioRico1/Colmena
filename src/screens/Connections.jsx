@@ -6,6 +6,7 @@ import SettingsShell, { PageHeader } from "../components/settings/SettingsShell.
 import { useStore } from "../lib/store.jsx";
 import AppLogo from "../components/settings/AppLogo.jsx";
 import { appName, linkUrl, loadAccounts, loadCatalogue, loadStatus, pendingLink, rememberApps, setPendingLink } from "../components/settings/connections.jsx";
+import { isHidden, later, useHiddenVersion } from "../lib/undoToast.js";
 
 // «Apps conectadas» (design/Connections.dc.html, NEXO 09b): one catalogue, MCP first. Apps with
 // their own MCP server connect directly with one click (Colmena registers itself, you sign in in
@@ -42,7 +43,8 @@ export default function Connections({ query = {} }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [authorizationUrl, setAuthorizationUrl] = useState(null);
-  const [confirm, setConfirm] = useState(null);
+  const [, setConfirm] = useState(null);
+  useHiddenVersion(); // repaint when a disconnect waits or is undone
   const [pending, setPending] = useState(pendingLink);
   const [mcpPending, setMcpPending] = useState(null); // {id, name, url}
   const [manual, setManual] = useState(false);
@@ -314,8 +316,8 @@ export default function Connections({ query = {} }) {
     );
   };
   const rows = [
-    ...servers.map((s) => ({ kind: "mcp", s })),
-    ...accounts.map((a) => ({ kind: "account", a })),
+    ...servers.filter((s) => !isHidden("mcp:" + s.id)).map((s) => ({ kind: "mcp", s })),
+    ...accounts.filter((a) => !isHidden("account:" + a.id)).map((a) => ({ kind: "account", a })),
   ];
 
   return (
@@ -340,12 +342,7 @@ export default function Connections({ query = {} }) {
                 status(ok, waiting, ok ? `Conectada · ${s.toolCount} ${s.toolCount === 1 ? "acción" : "acciones"}` : waiting ? "Pendiente de autorización" : s.error || "Hay que volver a conectarla"),
                 <>
                   {!ok ? <button type="button" disabled={busy} onClick={() => connectMcp(s.catalogId ? { catalogId: s.catalogId } : { url: s.url, name: s.name })} style={pill(true)}>Volver a conectar</button> : null}
-                  {confirm === "mcp:" + s.id ? (
-                    <>
-                      <button type="button" disabled={busy} onClick={() => removeServer(s)} style={danger}>Sí, desconectar</button>
-                      <button type="button" onClick={() => setConfirm(null)} style={ghost}>Cancelar</button>
-                    </>
-                  ) : <button type="button" disabled={busy} onClick={() => setConfirm("mcp:" + s.id)} style={ghost}>Desconectar</button>}
+                  <button type="button" disabled={busy} onClick={() => later({ id: "mcp:" + s.id, keys: ["mcp:" + s.id], text: `${s.name} desconectada`, error: "No se pudo desconectar", run: () => removeServer(s) })} style={ghost}>Desconectar</button>
                 </>,
                 ok ? levels : null);
             }
@@ -360,12 +357,7 @@ export default function Connections({ query = {} }) {
               <>
                 <button type="button" onClick={() => navigate("/ajustes/permisos")} style={pill(false)}>Qué puede hacer</button>
                 <button type="button" disabled={busy} onClick={() => connectComposio(a.toolkit)} style={pill(false)}>Añadir otra cuenta</button>
-                {confirm === a.id ? (
-                  <>
-                    <button type="button" disabled={busy} onClick={() => disconnect(a)} style={danger}>Sí, desconectar</button>
-                    <button type="button" onClick={() => setConfirm(null)} style={ghost}>Cancelar</button>
-                  </>
-                ) : <button type="button" disabled={busy} onClick={() => setConfirm(a.id)} style={ghost}>Desconectar</button>}
+                <button type="button" disabled={busy} onClick={() => later({ id: "account:" + a.id, keys: ["account:" + a.id], text: `${appName(a.toolkit)} desconectada`, error: "No se pudo desconectar", run: () => disconnect(a) })} style={ghost}>Desconectar</button>
               </>,
               renaming?.id === a.id ? renameForm(a) : ok ? levels : null);
           })}

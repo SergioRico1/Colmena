@@ -6,6 +6,7 @@ import { useResource, useStore } from "../lib/store.jsx";
 import { del, patch, post } from "../lib/api.js";
 import { findBot } from "../components/room/common.jsx";
 import { formatTokens } from "../components/settings/format.jsx";
+import { later, useHidden } from "../lib/undoToast.js";
 
 // Colmena 2.0 · 32 «Objetivos» (design/V2Objetivos.dc.html): what you want to achieve over
 // weeks. On the left your goals with a ring of progress; on the right the chosen one: why,
@@ -39,7 +40,8 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
     catch (e) { setError(e.message); return null; }
     finally { setBusy(false); }
   };
-  const draft = g?.planDraft?.milestones || [];
+  const draftHidden = useHidden("goalplan");
+  const draft = g && !draftHidden(g.id) ? g.planDraft?.milestones || [] : [];
   const chosen = pick ?? draft.map(() => true);
   const nPick = chosen.filter(Boolean).length;
   const ms = g?.milestones || [];
@@ -177,7 +179,7 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
                       })}
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "8px" }}>
-                      <button type="button" disabled={busy} onClick={() => run(() => del(`/goals/${g.id}/plan`))} style={{ height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>{"Ninguno"}</button>
+                      <button type="button" disabled={busy} onClick={() => later({ id: "goalplan:" + g.id, keys: ["goalplan:" + g.id], text: "Propuesta descartada", error: "No se pudo descartar", run: () => run(() => del(`/goals/${g.id}/plan`)) })} style={{ height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>{"Ninguno"}</button>
                       <button type="button" disabled={busy || !nPick} onClick={() => run(() => post(`/goals/${g.id}/plan/accept`, { indexes: chosen.map((v, i) => (v ? i : -1)).filter((i) => i >= 0) }))} style={{ height: "44px", padding: "0 20px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "14px", fontWeight: "600", background: nPick ? "#12131A" : "rgba(18,19,26,.08)", color: nPick ? "#FFFFFF" : "#8A8D96" }}>{nPick ? (nPick === 1 ? "Añadir 1 hito" : `Añadir ${nPick} hitos`) : "Añadir"}</button>
                     </div>
                   </div>

@@ -10,6 +10,7 @@ import { formatTokens } from "../components/settings/format.jsx";
 import { EngineRow, EngineChoices } from "../components/v2/settings/Engines.jsx";
 import ProviderMark, { WithMark } from "../components/v2/ProviderMark.jsx";
 import { updates, useUpdates } from "../lib/updates.js";
+import { later } from "../lib/undoToast.js";
 
 // Colmena 2.0 · Ajustes (design/V2Ajustes.dc.html): one calm page of grouped rows. The
 // detailed editors (accounts and models, connections, folders, people, the action log) stay
@@ -286,10 +287,12 @@ export default function AjustesV2() {
 
   // ── Privacidad ──
   const [forget, setForget] = useState("idle");
-  const forgetAll = () => act.act(async () => {
-    for (const m of memories) await del(`/memories/${encodeURIComponent(m.id)}`);
-    setForget("done");
-  });
+  const forgetAll = () => {
+    const all = memories.map((m) => m.id);
+    setForget("idle");
+    later({ id: "forget-all", keys: all.map((id) => "memory:" + id), text: "Los bots lo olvidan todo", error: "No se pudo olvidar todo",
+      run: () => act.act(async () => { for (const id of all) await del(`/memories/${encodeURIComponent(id)}`); setForget("done"); }) });
+  };
 
   const limits = settings.limits || {};
   const pct = usage.percent != null ? Math.round(usage.percent) : null;
@@ -477,7 +480,7 @@ export default function AjustesV2() {
                   <span style={{ fontSize: "15px" }}>{g.label || g.title || g.text || "Permiso"}</span>
                   <span style={{ fontSize: "13px", color: FAINT }}>{[botOf(g.botId)?.name || "Todos los bots", g.createdAt ? "desde el " + new Date(g.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "long" }) : null, g.uses ? `${g.uses} veces` : null].filter(Boolean).join(" · ")}</span>
                 </span>
-                <button type="button" disabled={act.busy} onClick={() => act.act(() => del(`/grants/${encodeURIComponent(g.id)}`))} style={{ ...pill(false), height: "36px", padding: "0 14px", fontSize: "13px" }}>Retirar</button>
+                <button type="button" disabled={act.busy} onClick={() => later({ id: "grant:" + g.id, keys: ["grant:" + g.id], text: "Permiso retirado", error: "No se pudo retirar", run: () => act.act(() => del(`/grants/${encodeURIComponent(g.id)}`)) })} style={{ ...pill(false), height: "36px", padding: "0 14px", fontSize: "13px" }}>Retirar</button>
               </div>
             ))}
           </div>

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUp, Ellipsis, Gauge, ShieldCheck, X } from "lucide-react";
 import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
+import { useHidden } from "../../../lib/undoToast.js";
 
 // The «Código» composer (T3 Code): Enter sends, Shift+Enter breaks the line; «Construir» or
 // «Plan» (a plan first, nothing changes until «Implementar»); engine · model, effort and Bruno's
@@ -34,7 +35,8 @@ export default function Composer({ task = null, models = [], busy = false, runni
     const ok = await onSend(value, running ? when : "queue", mode, extras.files, extras.contexts);
     if (ok !== false) { setText(""); extras.clear(); }
   };
-  const queue = task?.queue || [];
+  const hiddenQueued = useHidden("codequeue");
+  const queue = (task?.queue || []).filter((q) => !hiddenQueued(q.id));
   const ready = !!(text.trim() || extras.files.length || extras.contexts.length);
   if (disabled) return <p style={{ flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "16px clamp(18px, 3vw, 32px) 24px", fontSize: "14px", color: C.faint, textAlign: "center" }}>{disabled}</p>;
   return (

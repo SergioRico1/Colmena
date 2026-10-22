@@ -7,6 +7,7 @@ import ApiKeysCard from "./ApiKeys.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { del, download, patch } from "../../lib/api.js";
 import { dateTime } from "../../lib/format.js";
+import { later } from "../../lib/undoToast.js";
 
 const RED_LINES = [
   { title: "Enviar algo fuera", text: "Correos, mensajes y publicaciones a cualquiera fuera de Colmena.", Icon: Send },
@@ -101,7 +102,7 @@ export default function Seguridad() {
                   <strong style={{ fontSize: "14px" }}>{g.label || g.title || g.text || "Regla sin nombre"}</strong>
                   <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: "12px", color: "#5C606C" }}>{[bot(g.botId)?.name || (g.botId ? g.botId : "Todos los bots"), g.createdAt ? `desde ${dateTime(g.createdAt)}` : null].filter(Boolean).join(" · ")}</span>
                 </span>
-                <button type="button" disabled={busy} onClick={() => act(() => del(`/grants/${encodeURIComponent(g.id)}`))} style={btn.quiet}>Revocar</button>
+                <button type="button" disabled={busy} onClick={() => later({ id: "grant:" + g.id, keys: ["grant:" + g.id], text: "Permiso retirado", error: "No se pudo retirar", run: () => act(() => del(`/grants/${encodeURIComponent(g.id)}`)) })} style={btn.quiet}>Revocar</button>
               </div>
             ))}
           </div>

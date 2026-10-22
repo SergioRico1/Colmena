@@ -17,6 +17,7 @@ import { navigate } from "../lib/router.jsx";
 import { usePanelWidth } from "../lib/usePanelWidth.jsx";
 import ShortcutsSheet, { useCodeKeys } from "../components/v2/code/Shortcuts.jsx";
 import Compare from "../components/v2/code/Compare.jsx";
+import { later } from "../lib/undoToast.js";
 
 /** Commands for the open task from shortcuts and the palette (TaskView listens). */
 const command = (name) => window.dispatchEvent(new CustomEvent("colmena:code-command", { detail: name }));
@@ -336,7 +337,7 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
         onSend={send}
         onStop={() => act(() => post("/code/tasks/" + task.id + "/stop", {}))}
         onChange={(body) => act(() => patch("/code/tasks/" + task.id, body))}
-        onUnqueue={(id) => act(() => del("/code/tasks/" + task.id + "/queue/" + id))} />
+        onUnqueue={(id) => later({ id: "codequeue:" + id, keys: ["codequeue:" + id], text: "Mensaje quitado de la cola", error: "No se pudo quitar de la cola", run: () => act(() => del("/code/tasks/" + task.id + "/queue/" + id)) })} />
     </section>
   );
 }

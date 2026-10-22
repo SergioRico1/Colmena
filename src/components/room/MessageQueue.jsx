@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, CornerDownRight, GripVertical, ListOrdered, Pencil, X } from "lucide-react";
 import { del, patch, post } from "../../lib/api.js";
 import { useStore } from "../../lib/store.jsx";
+import { later, useHidden } from "../../lib/undoToast.js";
 
 // Visible queue of a conversation (T3 Code queued runs; first version after OpenMuse
 // apps/mobile/src/conversation-queue.ts, MIT: licenses/OpenMuse.txt). While the bot answers
@@ -30,7 +31,8 @@ export function useConversationQueue({ key }) {
     if (seen.current !== serverKey) { seen.current = serverKey; setLocal(null); }
   }, [serverKey]);
   useEffect(() => setLocal(null), [key]);
-  const pending = local || server;
+  const hiddenQueued = useHidden("queued");
+  const pending = (local || server).filter((m) => !hiddenQueued(m.id));
   const [error, setError] = useState(null);
   const act = useCallback(async (optimistic, fn) => {
     if (optimistic) setLocal(optimistic);
@@ -51,7 +53,8 @@ export function useConversationQueue({ key }) {
     if (!body || !base) return Promise.resolve();
     return act([...pending, { id: "nuevo-" + Date.now(), text: body, at: new Date().toISOString(), sending: true }], () => post(base, { text: body })).catch(() => {});
   }, [act, base, pending]);
-  const remove = useCallback((id) => act(pending.filter((m) => m.id !== id), () => del(`${base}/${encodeURIComponent(id)}`)).catch(() => {}), [act, base, pending]);
+  // Taking a message out of the queue waits five seconds («Deshacer» puts it back).
+  const remove = useCallback((id) => { later({ id: "queued:" + id, keys: ["queued:" + id], text: "Mensaje quitado de la cola", error: "No se pudo quitar de la cola", run: () => act(null, () => del(`${base}/${encodeURIComponent(id)}`)) }); }, [act, base]);
   const edit = useCallback((id, text) => act(pending.map((m) => (m.id === id ? { ...m, text } : m)), () => patch(`${base}/${encodeURIComponent(id)}`, { text })).catch(() => {}), [act, base, pending]);
   // Drag a waiting message (or Alt + ↑/↓) to change the order they go out in.
   const move = useCallback((id, target, after = false) => {
