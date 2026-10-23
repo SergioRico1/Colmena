@@ -336,7 +336,7 @@ const DEFS = {
     },
     summary: { type: "string", description: "Una o dos frases (máx. 240 caracteres) con la idea del plan, sin repetir las tareas." },
   }),
-  propose_soul_change: fn("propose_soul_change", "Propone un cambio en tu SOUL.md (quien eres). No lo cambia: la persona lo revisa y decide. Usalo solo para rasgos duraderos.", { proposal: text, reason: text }),
+  propose_soul_change: fn("propose_soul_change", "Propone un cambio en tu SOUL.md (quien eres). No lo cambia: la persona lo revisa y decide. Usalo solo para rasgos duraderos que la persona pidio con sus palabras. Si nada lo pide, no propongas nada: seguir como eres es una respuesta valida.", { proposal: text, reason: text }),
   propose_automation: {
     type: "function",
     name: "propose_automation",
