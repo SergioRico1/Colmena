@@ -41,6 +41,14 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 - Huecos: días laborables, dentro de la franja, sin pisar nada de nadie, uno por día y si faltan separados 90 min; se marca el más tranquilo. Si alguien dice «Ninguno me va», otra ronda (hasta 4).
 - Cuando todos dicen que sí al mismo hueco, cada Colmena lo apunta en su propio Google Calendar sin invitados (`GOOGLECALENDAR_CREATE_EVENT`; se descarta si llevara invitados). Sin calendario conectado, la tarjeta lo dice.
 
+## Buzón en Cloudflare (`relay/cloudflare/`)
+- Mismo contrato que `relay/server.mjs`, sobre Workers + Durable Objects con SQLite (plan gratuito): un objeto por buzón (dirección) y otro por tarjeta de invitación, con alarma para borrar lo caducado (7 días el correo, 25 h las tarjetas).
+- La entrega en directo es un WebSocket con hibernación (`/v1/ws?auth=…`): mientras no llega nada no se paga tiempo, y el «ping» de cada 25 s lo contesta Cloudflare sin despertar el objeto. `GET /v1/health` dice `stream: "ws"`; el de Node dice `"sse"` y el cliente elige solo (`relay-client.mjs`).
+- Las firmas se comprueban con WebCrypto Ed25519. El registro de peticiones está apagado (`observability.enabled = false`).
+- Probarlo en local: `cd relay/cloudflare && npm install && npx wrangler dev --local --port 8787`, y `COLMENA_TEST_RELAY=http://127.0.0.1:8787 node --test --test-concurrency=1 tests/peers*.test.mjs` (las mismas 17 pruebas).
+- Desplegar: una cuenta gratuita de Cloudflare con su subdominio de workers.dev elegido; `npx wrangler login` (autoriza la persona en el navegador) y `npx wrangler deploy` desde `relay/cloudflare/`. La dirección que sale (`https://colmena-buzon.<subdominio>.workers.dev`) va en `DEFAULT_RELAY` (`server/peers/service.mjs`) para que todas las Colmenas la usen.
+- Coste: el plan gratuito cubre 100 000 peticiones al día; cada mensaje a N personas son N envíos y N confirmaciones. Si se quedara corto, el plan de pago de Workers son 5 $/mes.
+
 ## Pruebas
 - `tests/peers.test.mjs`: tres Colmenas reales (Sergio, Marta, Luis) sobre un buzón local: invitación de un solo uso y palabras iguales, extraños ignorados, chat directo con visto y reacciones, mensajes que esperan con la otra Colmena cerrada, grupo de tres con la lista firmada, listas falsas ignoradas, presencia y «escribiendo» sin guardar, quitar un contacto.
 - `tests/peers-bots.test.mjs`: tu mención despierta a tu bot (sin herramientas ni memoria), la de otro llega como contenido de fuera, «Nunca» lo calla, un bot no despierta a otro, el selector «@» dice de quién es el bot, un fallo solo lo ves tú.

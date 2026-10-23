@@ -80,7 +80,7 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {} 
     return (streams.get(address)?.size || 0) > 0;
   };
 
-  app.get("/v1/health", (_req, res) => res.json({ ok: true, service: "colmena-buzon", version: 1 }));
+  app.get("/v1/health", (_req, res) => res.json({ ok: true, service: "colmena-buzon", version: 1, stream: "sse" }));
 
   app.post("/v1/send", (req, res) => {
     const from = who(req, res);

@@ -1,0 +1,13 @@
+{
+  "name": "colmena-buzon",
+  "private": true,
+  "description": "Colmena's mailbox on Cloudflare Workers + Durable Objects (docs/PEOPLE.md)",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --port 8787",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.150.0"
+  }
+}

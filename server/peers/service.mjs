@@ -21,6 +21,9 @@ import {
 } from "./protocol.mjs";
 import { RelayClient } from "./relay-client.mjs";
 
+// The mailbox every Colmena uses unless Ajustes › Personas or COLMENA_RELAY_URL say another:
+// Colmena's own on Cloudflare (relay/cloudflare/), once deployed. Null: nothing leaves the PC.
+export const DEFAULT_RELAY = null;
 export const PEER_LIMITS = Object.freeze({
   text: 8000, title: 60, name: 80, members: 32, perMinute: 120, inviteHours: 24, invitesOpen: 20, page: 60, seenDays: 31,
 });

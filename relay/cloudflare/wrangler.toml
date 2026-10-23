@@ -1,0 +1,22 @@
+# Colmena's mailbox on Cloudflare (see docs/PEOPLE.md › «Buzón en Cloudflare»).
+# Deploy from this folder: npx wrangler@4.150.0 login, then npx wrangler@4.150.0 deploy
+name = "colmena-buzon"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[[durable_objects.bindings]]
+name = "MAILBOX"
+class_name = "Mailbox"
+
+[[durable_objects.bindings]]
+name = "INVITE"
+class_name = "Invite"
+
+# SQLite-backed Durable Objects (available on the Workers Free plan).
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Mailbox", "Invite"]
+
+[observability]
+enabled = false

@@ -75,7 +75,10 @@ export class RelayClient {
     while (!this.stopped) {
       this.setStatus("connecting");
       try {
-        await this.stream();
+        // The mailbox says how it delivers: SSE (relay/server.mjs) or a WebSocket that
+        // sleeps while nothing arrives (relay/cloudflare/worker.js).
+        const kind = this.kind || (this.kind = (await this.health().catch(() => null))?.stream === "ws" ? "ws" : "sse");
+        await (kind === "ws" ? this.socket() : this.stream());
         this.failures = 0;
       } catch (error) {
         if (this.stopped) break;
@@ -92,6 +95,45 @@ export class RelayClient {
     this.failures = 0;
     clearTimeout(this.wakeTimer);
     this.controller?.abort();
+  }
+  /** The WebSocket mailbox: «ready», then {type:"mail"} rows; «ping» every 25 s → «pong». */
+  socket() {
+    return new Promise((resolve, reject) => {
+      const path = "/v1/ws";
+      const url = this.url.replace(/^http/, "ws") + path + "?auth=" + encodeURIComponent(authHeader(this.identity, "GET", path));
+      const ws = new WebSocket(url);
+      let watchdog = null, ping = null, opened = false;
+      const alive = () => { clearTimeout(watchdog); watchdog = setTimeout(() => ws.close(4000, "sin respuesta"), 70000); };
+      const done = (error) => {
+        clearTimeout(watchdog);
+        clearInterval(ping);
+        this.controller = null;
+        if (this.stopped) resolve();
+        else reject(error || Error(opened ? "Se cortó la conexión con el buzón." : "El buzón no acepta la conexión."));
+      };
+      // kick() and stop() close the socket through the same handle as the SSE stream.
+      this.controller = { abort: () => { try { ws.close(1000, "adiós"); } catch {} } };
+      ws.onopen = () => { opened = true; alive(); ping = setInterval(() => { try { ws.send("ping"); } catch {} }, 25000); };
+      // One at a time and in order, as on the SSE stream (a hello before its first message).
+      let queue = Promise.resolve();
+      ws.onmessage = (e) => {
+        alive();
+        const text = typeof e.data === "string" ? e.data : Buffer.from(e.data).toString("utf8");
+        if (text === "pong") return;
+        let event;
+        try { event = JSON.parse(text); } catch { return; }
+        if (event.type === "ready") { this.failures = 0; this.setStatus("online"); }
+        if (event.type === "mail") queue = queue.then(async () => {
+          try {
+            if (await this.onMail(event)) this.ack(event.id);
+          } catch (error) {
+            this.log("Un mensaje no se pudo procesar: " + error.message);
+          }
+        });
+      };
+      ws.onerror = () => {};
+      ws.onclose = () => done();
+    });
   }
   async stream() {
     this.controller = new AbortController();

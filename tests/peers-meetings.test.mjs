@@ -73,7 +73,8 @@ test("busy blocks keep only times (rounded out to 15 min); free slots avoid them
 
 async function world(t) {
   const base = await mkdtemp(path.join(os.tmpdir(), "colmena-meet-"));
-  const relay = await startRelay({ port: 0, directory: path.join(base, "relay") });
+  // COLMENA_TEST_RELAY=<url> runs the same test against another mailbox (the Cloudflare one).
+  const relay = process.env.COLMENA_TEST_RELAY ? { url: process.env.COLMENA_TEST_RELAY, close: async () => {} } : await startRelay({ port: 0, directory: path.join(base, "relay") });
   const mon = nextMonday();
   // Their agendas (only this code sees the titles).
   const agendas = {

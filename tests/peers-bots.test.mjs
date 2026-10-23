@@ -23,7 +23,8 @@ const until = async (fn, what, ms = 8000) => {
 
 async function pair(t) {
   const base = await mkdtemp(path.join(os.tmpdir(), "colmena-peerbots-"));
-  const relay = await startRelay({ port: 0, directory: path.join(base, "relay") });
+  // COLMENA_TEST_RELAY=<url> runs the same test against another mailbox (the Cloudflare one).
+  const relay = process.env.COLMENA_TEST_RELAY ? { url: process.env.COLMENA_TEST_RELAY, close: async () => {} } : await startRelay({ port: 0, directory: path.join(base, "relay") });
   const people = [];
   for (const name of ["Sergio Rico", "Marta Ruiz"]) {
     const store = new Store(path.join(base, name.split(" ")[0]));

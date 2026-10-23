@@ -26,7 +26,7 @@ import { Projects } from "./projects/tools.mjs";
 import { CodeService } from "./code/service.mjs";
 import { pendingCount } from "./notifications.mjs";
 import { watchStalls } from "./stalls.mjs";
-import { Peers } from "./peers/service.mjs";
+import { DEFAULT_RELAY, Peers } from "./peers/service.mjs";
 import { PeerBots } from "./peers/bots.mjs";
 import { Meetings } from "./peers/meetings.mjs";
 import { connectedCalendar } from "./peers/calendar.mjs";
@@ -136,7 +136,7 @@ const ownName = () => {
   const account = session.status?.() || null;
   return (s.userName && s.userName !== "Tu cuenta" ? s.userName : account?.name) || String(account?.email || "").split("@")[0] || "";
 };
-const peers = new Peers({ store, directory, relayUrl: process.env.COLMENA_RELAY_URL || null, nameOf: ownName, notifier: scheduler.notifier });
+const peers = new Peers({ store, directory, relayUrl: process.env.COLMENA_RELAY_URL || DEFAULT_RELAY, nameOf: ownName, notifier: scheduler.notifier });
 app.locals.peers = peers;
 peers.start().then(() => peers.announceProfile()).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
 // Your bots answer when they are mentioned in a conversation with people (no tools, no memory),
