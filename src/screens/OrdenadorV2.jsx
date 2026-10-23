@@ -180,7 +180,7 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
                 </div>
               ) : null}
               <p style={{ margin: 0, fontSize: "13px", lineHeight: 1.5, color: MUTED }}>Siempre te pregunta antes de enviar, comprar, publicar o borrar.</p>
-              <a href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ fontSize: "14px", fontWeight: 500, color: "#1F4FD1" }}>Cambiar en Ajustes</a>
+              <a href="/ajustes/apps#apps-conectadas" onClick={(e) => { e.preventDefault(); navigate("/ajustes/apps#apps-conectadas"); }} style={{ fontSize: "14px", fontWeight: 500, color: "#1F4FD1" }}>Cambiar en Ajustes</a>
             </section>
           </aside>
         </div>

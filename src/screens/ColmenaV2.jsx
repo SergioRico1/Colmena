@@ -159,7 +159,7 @@ function Profile({ bot, skills, memories, missions }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "22px 0", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
             <h3 style={{ margin: "0", fontSize: "13px", fontWeight: "500", color: "#6B6F7A" }}>{"Límites"}</h3>
-            <p style={{ margin: "0", fontSize: "16px", lineHeight: "1.6" }}>{"Antes de enviar algo fuera, pagar, borrar o instalar, siempre te pregunta. "}<a href="/ajustes#limites" style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>{"Límite de gasto del espacio"}</a></p>
+            <p style={{ margin: "0", fontSize: "16px", lineHeight: "1.6" }}>{"Antes de enviar algo fuera, pagar, borrar o instalar, siempre te pregunta. "}<a href="/ajustes/uso#limite-mensual" style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>{"Límite de gasto del espacio"}</a></p>
             <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{usage ? `En los últimos 30 días ha usado ${formatTokens(usage.tokens || 0)} tokens.` : " "}</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "22px 0 0" }}>

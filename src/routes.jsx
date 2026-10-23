@@ -47,7 +47,8 @@ export const routes = [
   { path: "/ajustes/ia", screen: "AjustesIAV2" },
   { path: "/ajustes/ia-v1", screen: "AjustesIA" },
   { path: "/ajustes/conexiones", screen: "Connections" },
-  { path: "/ajustes/:section", screen: "AjustesSeccion" },
+  // Sections (/ajustes/avisos…) and the detail pages that live below one (ordenador, personas, seguridad).
+  { path: "/ajustes/:section", screen: "AjustesV2" },
   { path: "/permisos/:id", screen: "Permissions" },
   { path: "/mapa", screen: "Mapa" },
   { path: "/rapida", screen: "QuickAsk" },

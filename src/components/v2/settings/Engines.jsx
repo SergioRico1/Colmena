@@ -137,7 +137,7 @@ const ENGINE_SUB = {
 };
 
 /** One account row (Claude or OpenCode Go) with its connect panel. */
-export function EngineRow({ engine, info, last = false }) {
+export function EngineRow({ engine, info, last = false, anchor = null }) {
   const act = useAction();
   const [open, setOpen] = useState(false);
   const connected = !!info?.connected;
@@ -147,7 +147,7 @@ export function EngineRow({ engine, info, last = false }) {
     : { text: ENGINE_SUB[engine].none, fg: MUTED };
   return (
     <>
-      <div style={{ ...rowStyle(last && !open, "76px"), flexWrap: "wrap", gap: "12px 16px", padding: "14px 20px" }}>
+      <div {...(anchor ? { id: anchor, "data-setting": anchor } : {})} style={{ ...rowStyle(last && !open, "76px"), flexWrap: "wrap", gap: "12px 16px", padding: "14px 20px", scrollMarginTop: "24px" }}>
         <EngineLogo engine={engine} />
         <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "3px" }}>
           <strong style={{ fontSize: "16px", fontWeight: 600 }}>{info?.label || engine}</strong>
@@ -168,12 +168,12 @@ const Chevron = ({ open }) => (
 );
 
 /** A row that opens a short list of choices under it (the v2 «Modelo que usan» pattern). */
-export function ChoiceRow({ title, value, valueEngine = null, options, current, onPick, busy, last = false, label = title }) {
+export function ChoiceRow({ title, value, valueEngine = null, options, current, onPick, busy, last = false, label = title, anchor = null }) {
   const [open, setOpen] = useState(false);
   const many = options.length > 1;
   return (
     <>
-      <button type="button" aria-haspopup="listbox" aria-expanded={open} disabled={!many || busy} onClick={() => setOpen(!open)} style={{ ...rowStyle(last && !open), cursor: many ? "pointer" : "default" }}>
+      <button type="button" aria-haspopup="listbox" aria-expanded={open} disabled={!many || busy} onClick={() => setOpen(!open)} {...(anchor ? { id: anchor, "data-setting": anchor } : {})} style={{ ...rowStyle(last && !open), cursor: many ? "pointer" : "default", scrollMarginTop: "24px" }}>
         <span style={{ flex: 1, fontSize: "16px" }}>{title}</span>
         <span style={{ minWidth: 0, fontSize: "15px", color: MUTED, textAlign: "right" }}>{valueEngine ? <WithMark engine={valueEngine}>{value}</WithMark> : value}</span>
         {many ? <Chevron open={open} /> : null}
@@ -225,9 +225,9 @@ export function EngineChoices({ ai, localConfigured, last = true }) {
     <>
       <ChoiceRow title="Piensan con" value={primary.label} valueEngine={primary.id} current={primary.id} busy={act.busy}
         options={engines.map((e) => ({ id: e.id, label: e.label, sub: MODELS_LINE[e.id], icon: <EngineLogo engine={e.id} size={28} /> }))}
-        onPick={(id) => set({ primary: id })} />
+        onPick={(id) => set({ primary: id })} anchor="piensan-con" />
       <ChoiceRow title="Si falla, usar" value={fallback.label.replace(/^Nadie: parar y avisarme$/, "Nadie")} valueEngine={others.some((e) => e.id === fallback.id) ? fallback.id : null} current={fallback.id} busy={act.busy} last={last}
-        options={fallbackOptions} onPick={(id) => set({ fallback: id })} />
+        options={fallbackOptions} onPick={(id) => set({ fallback: id })} anchor="respaldo" />
       {act.error ? <p role="alert" style={{ margin: 0, padding: "10px 20px", fontSize: "14px", color: "#B4231A" }}>{act.error}</p> : null}
     </>
   );

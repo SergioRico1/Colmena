@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
-import Shell from "../components/v2/Shell.jsx";
+import SettingsLayout from "../components/v2/settings/Layout.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { ChoiceRow, EngineLogo } from "../components/v2/settings/Engines.jsx";
 import { WithMark, engineOfModel } from "../components/v2/ProviderMark.jsx";
@@ -108,17 +107,7 @@ export default function AjustesIAV2() {
   const team = engines.find((e) => e.id === ai?.primary) || null;
   const list = bots.filter((b) => b.enabled !== false && b.audience !== "yo");
   return (
-    <Shell active="ajustes">
-      <main style={{ maxWidth: "780px", margin: "0 auto", padding: "40px clamp(20px, 4vw, 40px) 40px", display: "flex", flexDirection: "column", gap: "34px" }}>
-        <header style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-          <a href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "4px", height: "36px", padding: "0 14px 0 8px", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "14px", fontWeight: 500, color: INK, textDecoration: "none" }}>
-            <ChevronLeft size={16} strokeWidth={2.2} aria-hidden="true" />Ajustes
-          </a>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <h1 style={{ margin: 0, font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em" }}>Qué usa cada bot</h1>
-            <span style={{ fontSize: "16px", lineHeight: 1.5, color: MUTED }}>{team ? `Tu equipo piensa con ${team.label}. Cambia aquí la cuenta de un bot concreto.` : "Conecta una cuenta en Ajustes › Inteligencia para que tus bots puedan pensar."}</span>
-          </div>
-        </header>
+    <SettingsLayout active="inteligencia" back="inteligencia" title="Qué usa cada bot" lead={team ? `Tu equipo piensa con ${team.label}. Cambia aquí la cuenta de un bot concreto.` : "Conecta una cuenta en Inteligencia para que tus bots puedan pensar."}>
         <Section id="bots-t" title="Tu equipo">
           {list.map((b, i) => <BotRow key={b.id} bot={b} engines={engines} team={team} last={i === list.length - 1} />)}
         </Section>
@@ -131,7 +120,6 @@ export default function AjustesIAV2() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9DA6" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: "rotate(-90deg)" }}><path d="m6 9 6 6 6-6" /></svg>
           </a>
         </Section>
-      </main>
-    </Shell>
+    </SettingsLayout>
   );
 }

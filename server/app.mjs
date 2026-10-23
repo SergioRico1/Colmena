@@ -35,6 +35,8 @@ import {
 import { normalizeTrigger, triggerInput, defaultNeeds, CONFIG_KEYS, pageLines, findPrice, webDomain } from "./triggers.mjs";
 import { linkPreview, validateWebUrl } from "./web.mjs";
 import { usageCsv, usageHistory } from "./usage.mjs";
+import { registerUsageRoutes } from "./usage-routes.mjs";
+import { registerDiagnosticsRoutes } from "./diagnostics.mjs";
 import { registerMemoryImportRoutes } from "./memory-import.mjs";
 import { registerPortraitRoutes } from "./portraits.mjs";
 
@@ -1546,6 +1548,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerWatchRoutes(app, { store, watcher, check, z, HttpError });
   registerGoalRoutes(app, { store, runtime });
   registerCoreRoutes(app, { store, runtime });
+  registerUsageRoutes(app, { store, runtime });
+  registerDiagnosticsRoutes(app, { store, runtime, connections, version: VERSION });
   registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, HttpError });
   app.use("/api", (_req, res) => res.status(404).json({ error: "Operación no disponible." }));
   app.use((err, _req, res, _next) => {

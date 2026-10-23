@@ -396,6 +396,15 @@
       "w": 1440,
       "x": 15200,
       "y": 20350
+    },
+    "V2AjustesSecciones.dc.html": {
+      "expand": "fill",
+      "h": 2600,
+      "is_interactive": true,
+      "title": "v2 · 37 · Ajustes por secciones",
+      "w": 1440,
+      "x": 16720,
+      "y": 20350
     }
   },
   "createdOnFiles": {
@@ -508,7 +517,8 @@
     "V2Ordenador.dc.html",
     "V2Rapida.dc.html",
     "V2Estados.dc.html",
-    "V2Codigo.dc.html"
+    "V2Codigo.dc.html",
+    "V2AjustesSecciones.dc.html"
   ],
   "pages": [],
   "title": "Colmena — harness de bots"

@@ -65,7 +65,7 @@ export function LimitBanner({ mission, botName = null }) {
         </span>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingLeft: "54px" }}>
-        <button type="button" onClick={() => navigate("/ajustes")} style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", background: "#12131A" }}>Usar otra IA mientras</button>
+        <button type="button" onClick={() => navigate("/ajustes/inteligencia#respaldo")} style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", background: "#12131A" }}>Usar otra IA mientras</button>
         <button type="button" disabled={act.busy} onClick={() => act.act(() => post(`/missions/${mission.id}/control`, { action: "resume" }))} style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "999px", cursor: act.busy ? "wait" : "pointer", fontSize: "13px", fontWeight: 600, color: "#12131A", background: "rgba(18,19,26,.06)" }}>Intentar ahora</button>
       </div>
       {act.error ? <p role="alert" style={{ margin: "0 0 0 54px", fontSize: "13px", color: "#B4372A" }}>{act.error}</p> : null}

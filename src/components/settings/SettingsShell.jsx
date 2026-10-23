@@ -1,9 +1,10 @@
-import Shell from "../v2/Shell.jsx";
+import SettingsLayout from "../v2/settings/Layout.jsx";
 import { BotPresence } from "../v2/Presence.jsx";
-import { navigate } from "../../lib/router.jsx";
+import { PARENT } from "../v2/settings/sections.js";
 
-// Colmena 2.0 chrome for every Ajustes detail page (/ajustes/<section>): the rail, a calm
-// 860 px column, a «‹ Ajustes» pill back to the hub (design/V2Ajustes.dc.html) and the
+// Colmena 2.0 chrome for every Ajustes detail page (/ajustes/ia, /ajustes/conexiones,
+// /ajustes/ordenador…): the Ajustes frame with its section list (src/components/v2/settings/
+// Layout.jsx), the section the page belongs to marked, «‹ <sección>» back to it, and the
 // shared pieces below, all in the v2 language (white 26 px cards, pills, soft fills).
 
 const INK = "#12131A";
@@ -13,35 +14,21 @@ const MUTED = "#5C606C";
  * @param {{ section: string, gap?: string, extraCss?: string, wide?: boolean, children: any }} props
  */
 export default function SettingsShell({ section, gap = "28px", extraCss = "", wide = false, children }) {
+  const parent = PARENT[section] || "cuenta";
   return (
-    <Shell active="ajustes" extraCss={formCss + extraCss}>
-      <main data-section={section} style={{ maxWidth: wide ? "1080px" : "860px", margin: "0 auto", padding: "44px clamp(20px, 4vw, 40px) 56px", display: "flex", flexDirection: "column", gap }}>
-        <a href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px 0 10px", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "14px", fontWeight: 500, color: INK, textDecoration: "none" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-          Ajustes
-        </a>
-        {children}
-      </main>
-    </Shell>
+    <SettingsLayout active={parent} back={parent} title="" lead="" wide={wide} extraCss={formCss + extraCss}>
+      <div data-section={section} style={{ display: "flex", flexDirection: "column", gap, marginTop: "-14px" }}>{children}</div>
+    </SettingsLayout>
   );
 }
 
-export const SECTIONS = [
-  { key: "ia", href: "/ajustes/ia", label: "Cuenta de IA" },
-  { key: "conectores", href: "/ajustes/conexiones", label: "Apps conectadas" },
-  { key: "ordenador", href: "/ajustes/ordenador", label: "Este ordenador" },
-  { key: "personas", href: "/ajustes/personas", label: "Personas" },
-  { key: "limites", href: "/ajustes/limites", label: "Límites y gasto" },
-  { key: "seguridad", href: "/ajustes/seguridad", label: "Seguridad y registro" },
-  { key: "espacio", href: "/ajustes/espacio", label: "Espacio" },
-];
 
-/** Page title block: Bricolage 600 headline and a 17 px lead. */
+/** Page title block: the Bricolage 600 headline of a detail page and its 16 px lead. */
 export function PageHeader({ title, children }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxWidth: "720px" }}>
-      <h1 style={{ margin: 0, font: "600 clamp(40px, 5vw, 56px)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em" }}>{title}</h1>
-      {children ? <p style={{ margin: 0, fontSize: "17px", lineHeight: 1.5, color: MUTED }}>{children}</p> : null}
+      <h2 style={{ margin: 0, font: "600 clamp(34px, 4.4vw, 44px)/1.02 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em" }}>{title}</h2>
+      {children ? <p style={{ margin: 0, fontSize: "16px", lineHeight: 1.5, color: MUTED }}>{children}</p> : null}
     </div>
   );
 }
