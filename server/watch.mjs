@@ -199,13 +199,28 @@ export class Watcher {
   save(changes) {
     return this.store.put("settings", { ...this.state(), ...changes, id: KEY });
   }
-  /** You answered in its chat: its open questions are answered. */
+  /**
+   * You wrote in its chat: only the question you answered is closed. Every note now lands in
+   * the bot's one thread, so a message there used to close all of them (four cards in Hoy, one
+   * reply, all four gone). Answered means: your reply from its card in Hoy, a reply in that
+   * note's thread, or a message right after it (it was the bot's last word in the chat).
+   */
   onChange(change) {
     if (change?.type !== "record" || change.kind !== "messages" || change.op !== "insert" || change.data?.role !== "user") return;
-    const missionId = change.data.missionId;
+    const message = change.data, missionId = message.missionId;
+    const fromCard = this.answering?.get(missionId);
+    if (fromCard) this.answering.delete(missionId);
     setImmediate(() => {
-      for (const n of this.store.where("watchNotes", "missionId", missionId).filter((x) => x.status === "open"))
-        this.store.patch("watchNotes", n.id, { status: "answered", answeredAt: now() });
+      const open = this.store.where("watchNotes", "missionId", missionId).filter((x) => x.status === "open");
+      if (!open.length) return;
+      let target = fromCard ? open.find((n) => n.id === fromCard) : null;
+      if (!fromCard && message.replyTo) target = open.find((n) => n.messageId === message.replyTo);
+      if (!fromCard && !target) {
+        const last = this.store.where("messages", "missionId", missionId)
+          .filter((m) => m.role === "assistant" && m.id !== message.id && String(m.at || "") <= String(message.at || "")).at(-1);
+        target = last ? open.find((n) => n.messageId === last.id) : null;
+      }
+      if (target) this.store.patch("watchNotes", target.id, { status: "answered", answeredAt: now() });
     });
   }
   due(time = this.clock()) {
@@ -450,6 +465,8 @@ export class Watcher {
     const n = this.store.get("watchNotes", noteId);
     if (!n) throw Object.assign(Error("Ese aviso ya no existe."), { status: 404 });
     if (!this.addMessage) throw Error("No puedo responder ahora.");
+    // The message this puts in the chat answers this card only (see onChange).
+    (this.answering ??= new Map()).set(n.missionId, n.id);
     const message = await this.addMessage(n.missionId, text);
     this.store.patch("watchNotes", noteId, { status: "answered", answeredAt: now(), answer: clip(text, 200) });
     return message;

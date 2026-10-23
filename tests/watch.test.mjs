@@ -92,6 +92,29 @@ test("your answer from Hoy is said in the chat and closes the question; typing t
   assert.equal(watchNotesState(store).length, 0);
 });
 
+test("several questions in the bot's one chat: answering one card leaves the others open", async (t) => {
+  const store = await temp(t);
+  const ask = (id, hechos, pregunta) => [
+    { ids: [id] },
+    { puntos: [{ ids: [id], tipo: "peticion", urgente: true, hechos, pideRespuesta: true }] },
+    { texto: hechos, pregunta, respuestas: ["Sí"] },
+  ];
+  const { w } = watcherFor(store, fakeConnections({ inbox: [mail("m1")] }), [...ask("n1", "Oriol pide la revisión.", "¿La reviso yo?"), ...ask("n1", "Nieves propone el miércoles.", "¿Le digo que sí?")]);
+  w.start();
+  t.after(() => w.stop());
+  await w.tick({ force: true });
+  w.connections = fakeConnections({ inbox: [mail("m2", { subject: "Reunión", threadId: "t-2", messageTimestamp: "2026-10-19T08:39:00Z" })] });
+  await w.tick({ force: true });
+  const notes = watchNotesState(store);
+  assert.equal(notes.length, 2);
+  // The card's answer lands in the chat as your message: only that card closes.
+  const first = notes.find((n) => /reviso/.test(n.question));
+  w.answering = new Map([[first.missionId, first.id]]);
+  store.put("messages", { id: "from-card", missionId: first.missionId, role: "user", text: "Sí", kind: "message", at: new Date(NOW + 1000).toISOString() });
+  await new Promise((r) => setImmediate(r));
+  assert.deepEqual(watchNotesState(store).map((n) => n.question), ["¿Le digo que sí?"]);
+});
+
 test("nothing that matters: no message, no notice; «solo lo urgente» keeps only what needs you", async (t) => {
   const store = await temp(t);
   const { w, notices } = watcherFor(store, fakeConnections({ inbox: [mail("n1", { subject: "Boletín" })] }), [{ ids: [] }]);
