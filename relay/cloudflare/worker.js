@@ -10,7 +10,18 @@
 // Signatures are the ones of server/peers/protocol.mjs, checked here with WebCrypto Ed25519.
 import { DurableObject } from "cloudflare:workers";
 
-const LIMITS = { keepDays: 7, perRecipient: 5000, envelope: 72 * 1024, inviteBytes: 4096, inviteHours: 25, skew: 300, maxAge: 30 * 86400, batch: 300 };
+// perSenderDay: envelopes one sender may leave in one mailbox per day (kept in that mailbox);
+// livePerMinute: typing/presence notes per sender and mailbox; sendsPerMinute: per sender, best
+// effort in each Worker instance (a global count would cost one more request per message).
+const LIMITS = { keepDays: 7, perRecipient: 5000, perSenderDay: 3000, livePerMinute: 120, sendsPerMinute: 600, invitesPerMinute: 30, envelope: 72 * 1024, inviteBytes: 4096, inviteHours: 25, skew: 300, maxAge: 30 * 86400, batch: 300 };
+const windows = new Map();
+const limited = (key, max) => {
+  const t = Date.now(), list = (windows.get(key) || []).filter((x) => t - x < 60000);
+  list.push(t);
+  windows.set(key, list);
+  if (windows.size > 5000) for (const [k, v] of windows) if (!v.some((x) => t - x < 60000)) windows.delete(k);
+  return list.length > max;
+};
 const ADDRESS = /^[A-Za-z0-9_-]{43}$/;
 const B64 = /^[A-Za-z0-9+/=_-]+$/;
 const enc = new TextEncoder();
@@ -70,6 +81,7 @@ export default {
         if (body.length > LIMITS.envelope * 2) return fail(413, "Demasiado grande.");
         const from = await checkAuth(request.headers.get("Authorization"), "POST", path, body);
         if (!from) return fail(401, "Firma no válida.");
+        if (limited("send:" + from, LIMITS.sendsPerMinute)) return fail(429, "Demasiados mensajes seguidos.");
         let data;
         try { data = JSON.parse(body); } catch { return fail(400, "Petición no válida."); }
         if (!ADDRESS.test(data?.to)) return fail(400, "Destinatario no válido.");
@@ -94,7 +106,10 @@ export default {
       const invite = /^\/v1\/invites\/([A-Za-z0-9_-]{32})$/.exec(path);
       if (invite) {
         const card = env.INVITE.get(env.INVITE.idFromName(invite[1]));
-        if (request.method === "GET") return card.fetch("https://card/get");
+        if (request.method === "GET") {
+          if (limited("invite:" + (request.headers.get("CF-Connecting-IP") || "?"), LIMITS.invitesPerMinute)) return fail(429, "Demasiados intentos. Espera un minuto.");
+          return card.fetch("https://card/get");
+        }
         const body = request.method === "PUT" ? await request.text() : "";
         const owner = await checkAuth(request.headers.get("Authorization"), request.method, path, body);
         if (!owner) return fail(401, "Firma no válida.");
@@ -114,6 +129,9 @@ export class Mailbox extends DurableObject {
     super(ctx, env);
     this.sql = ctx.storage.sql;
     this.sql.exec("CREATE TABLE IF NOT EXISTS mail (id TEXT PRIMARY KEY, sender TEXT NOT NULL, env TEXT NOT NULL, at INTEGER NOT NULL)");
+    // How much each sender left here each day: nobody can fill your mailbox or the quota.
+    this.sql.exec("CREATE TABLE IF NOT EXISTS quota (sender TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (sender, day))");
+    this.live = new Map();
     // Keep-alives answered without waking the object (no cost while waiting).
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
@@ -136,10 +154,19 @@ export class Mailbox extends DurableObject {
     const path = new URL(request.url).pathname;
     if (path === "/deliver") {
       const row = await request.json();
-      if (row.ephemeral) return json({ ok: true, delivered: this.push({ id: row.id, from: row.from, env: row.env }), stored: false });
+      if (row.ephemeral) {
+        const t = Date.now(), list = (this.live.get(row.from) || []).filter((x) => t - x < 60000);
+        if (list.length >= LIMITS.livePerMinute) return fail(429, "Demasiados avisos seguidos.");
+        this.live.set(row.from, [...list, t]);
+        return json({ ok: true, delivered: this.push({ id: row.id, from: row.from, env: row.env }), stored: false });
+      }
       const count = this.sql.exec("SELECT COUNT(*) AS n FROM mail").one().n;
       if (count >= LIMITS.perRecipient) return fail(507, "El buzón de esa persona está lleno.");
+      const day = new Date().toISOString().slice(0, 10);
+      const used = this.sql.exec("SELECT n FROM quota WHERE sender = ? AND day = ?", row.from, day).toArray()[0]?.n || 0;
+      if (used >= LIMITS.perSenderDay) return fail(429, "Demasiados mensajes para esta persona hoy.");
       const added = this.sql.exec("INSERT OR IGNORE INTO mail (id, sender, env, at) VALUES (?, ?, ?, ?)", row.id, row.from, JSON.stringify(row.env), Date.now()).rowsWritten > 0;
+      if (added) this.sql.exec("INSERT INTO quota (sender, day, n) VALUES (?, ?, 1) ON CONFLICT (sender, day) DO UPDATE SET n = n + 1", row.from, day);
       if (added && !(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(Date.now() + 86400000);
       return json({ ok: true, delivered: added ? this.push({ id: row.id, from: row.from, env: row.env }) : false, stored: true });
     }
@@ -168,7 +195,8 @@ export class Mailbox extends DurableObject {
   }
   async alarm() {
     this.sql.exec("DELETE FROM mail WHERE at < ?", Date.now() - LIMITS.keepDays * 86400000);
-    if (this.sql.exec("SELECT COUNT(*) AS n FROM mail").one().n) await this.ctx.storage.setAlarm(Date.now() + 86400000);
+    this.sql.exec("DELETE FROM quota WHERE day < ?", new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10));
+    if (this.sql.exec("SELECT COUNT(*) AS n FROM mail").one().n || this.sql.exec("SELECT COUNT(*) AS n FROM quota").one().n) await this.ctx.storage.setAlarm(Date.now() + 86400000);
   }
 }
 

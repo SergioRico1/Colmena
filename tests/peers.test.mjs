@@ -235,3 +235,35 @@ test("removing a contact tells them and stops their messages", async (t) => {
   assert.throws(() => marta.peers.post(dm, "¿Hola?"), /Ya no estás/);
   assert.equal(sergio.peers.stateView().contacts.length, 0);
 });
+
+test("the mailbox caps what one sender leaves in one mailbox, and live notes per minute", async (t) => {
+  const base = await mkdtemp(path.join(os.tmpdir(), "colmena-quota-"));
+  const relay = await startRelay({ port: 0, directory: path.join(base, "relay"), limits: { perSenderDay: 3, livePerMinute: 2 } });
+  t.after(async () => { await relay.close(); await rm(base, { recursive: true, force: true }); });
+  const a = newIdentity(), b = newIdentity();
+  const send = async (ephemeral = false) => {
+    const env = seal(a, { to: b.sign.pub, toBox: b.box.pub, body: { type: "msg", text: "hola" } });
+    const body = JSON.stringify({ to: b.sign.pub, env, ...(ephemeral ? { ephemeral: true } : {}) });
+    return (await fetch(relay.url + "/v1/send", { method: "POST", headers: { Authorization: authHeader(a, "POST", "/v1/send", body) }, body })).status;
+  };
+  assert.deepEqual([await send(), await send(), await send(), await send()], [200, 200, 200, 429]);
+  assert.deepEqual([await send(true), await send(true), await send(true)], [200, 200, 429]);
+});
+
+test("live notes only go to who is connected (each one costs a request at the mailbox)", async (t) => {
+  const { people: [sergio, marta] } = await world(t, ["Sergio Rico", "Marta Ruiz"]);
+  await connect(sergio, marta);
+  await until(() => sergio.peers.online(marta.peers.address), "Marta conectada");
+  const sent = [];
+  const real = sergio.peers.client.send.bind(sergio.peers.client);
+  sergio.peers.client.send = (to, env, opts) => { if (opts?.ephemeral) sent.push(to); return real(to, env, opts); };
+  sergio.peers.heartbeat();
+  assert.equal(sent.length, 1, "a Marta, que está conectada");
+  // Marta leaves: no more typing or heartbeats to her.
+  marta.peers.stop();
+  await until(() => !sergio.peers.online(marta.peers.address), "Marta ya no está");
+  sent.length = 0;
+  sergio.peers.heartbeat();
+  sergio.peers.typingNow(dmId(sergio.peers.address, marta.peers.address));
+  assert.equal(sent.length, 0);
+});

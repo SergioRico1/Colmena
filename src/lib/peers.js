@@ -51,7 +51,7 @@ export function useShareChat(id) {
       if (event.type === "typing") {
         setTyping(event.names || []);
         clearTimeout(typingTimer.current);
-        typingTimer.current = setTimeout(() => setTyping([]), 6000);
+        typingTimer.current = setTimeout(() => setTyping([]), 8000);
         setThinking(event.thinking || []);
         clearTimeout(thinkingTimer.current);
         thinkingTimer.current = setTimeout(() => setThinking([]), 90000);
@@ -85,7 +85,7 @@ export function useShareChat(id) {
   }, [id, load]);
   const lastTyping = useRef(0);
   const typingNow = useCallback(() => {
-    if (Date.now() - lastTyping.current < 3000) return;
+    if (Date.now() - lastTyping.current < 5000) return;
     lastTyping.current = Date.now();
     post(`/peers/shares/${encodeURIComponent(id)}/typing`).catch(() => {});
   }, [id]);

@@ -18,17 +18,20 @@ import express from "express";
 import { checkAuth, checkEnvelope, isAddress, MAX_ENVELOPE, ProtocolError } from "../server/peers/protocol.mjs";
 
 export const RELAY_LIMITS = Object.freeze({
-  keepDays: 7, perRecipient: 5000, sendsPerMinute: 600, invitesPerMinute: 30, inviteBytes: 4096, inviteHours: 25, streamsPerAddress: 4,
+  keepDays: 7, perRecipient: 5000, perSenderDay: 3000, livePerMinute: 120, sendsPerMinute: 600, invitesPerMinute: 30, inviteBytes: 4096, inviteHours: 25, streamsPerAddress: 4,
 });
 
-export function createRelay({ directory, now = () => Date.now(), log = () => {} } = {}) {
+export function createRelay({ directory, now = () => Date.now(), log = () => {}, limits = {} } = {}) {
+  const L = { ...RELAY_LIMITS, ...limits };
   mkdirSync(directory, { recursive: true });
   const db = new DatabaseSync(path.join(directory, "relay.sqlite"));
   db.exec(
     "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;" +
       "CREATE TABLE IF NOT EXISTS mail (id TEXT PRIMARY KEY, rcpt TEXT NOT NULL, sender TEXT NOT NULL, env TEXT NOT NULL, at INTEGER NOT NULL);" +
       "CREATE INDEX IF NOT EXISTS mail_rcpt ON mail(rcpt, at);" +
-      "CREATE TABLE IF NOT EXISTS invites (lookup TEXT PRIMARY KEY, owner TEXT NOT NULL, blob TEXT NOT NULL, expires INTEGER NOT NULL);",
+      "CREATE TABLE IF NOT EXISTS invites (lookup TEXT PRIMARY KEY, owner TEXT NOT NULL, blob TEXT NOT NULL, expires INTEGER NOT NULL);" +
+      // How much each sender left in each mailbox per day: nobody can fill yours.
+      "CREATE TABLE IF NOT EXISTS quota (sender TEXT NOT NULL, rcpt TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (sender, rcpt, day));",
   );
   const q = {
     put: db.prepare("INSERT OR IGNORE INTO mail(id, rcpt, sender, env, at) VALUES (?,?,?,?,?)"),
@@ -40,6 +43,9 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {} 
     inviteGet: db.prepare("SELECT blob, expires FROM invites WHERE lookup=?"),
     inviteDel: db.prepare("DELETE FROM invites WHERE lookup=? AND owner=?"),
     invitesOld: db.prepare("DELETE FROM invites WHERE expires < ?"),
+    used: db.prepare("SELECT n FROM quota WHERE sender=? AND rcpt=? AND day=?"),
+    count1: db.prepare("INSERT INTO quota(sender, rcpt, day, n) VALUES (?,?,?,1) ON CONFLICT(sender, rcpt, day) DO UPDATE SET n = n + 1"),
+    quotaOld: db.prepare("DELETE FROM quota WHERE day < ?"),
   };
   const streams = new Map(); // address → Set<res>
   const nonces = new Map(); // nonce → expiry
@@ -53,7 +59,8 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {} 
   };
   const sweep = () => {
     const t = now();
-    q.old.run(t - RELAY_LIMITS.keepDays * 864e5);
+    q.old.run(t - L.keepDays * 864e5);
+    q.quotaOld.run(new Date(t - 2 * 864e5).toISOString().slice(0, 10));
     q.invitesOld.run(t);
     for (const [n, exp] of nonces) if (exp < t) nonces.delete(n);
     for (const [k, list] of windows) if (!list.some((x) => t - x < 60000)) windows.delete(k);
@@ -87,7 +94,7 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {} 
     if (!from) return;
     const data = json(req);
     if (!data || !isAddress(data.to)) return fail(res, 400, "Destinatario no válido.");
-    if (limited("send:" + from, RELAY_LIMITS.sendsPerMinute)) return fail(res, 429, "Demasiados mensajes seguidos.");
+    if (limited("send:" + from, L.sendsPerMinute)) return fail(res, 429, "Demasiados mensajes seguidos.");
     try {
       checkEnvelope(data.env, { now: Math.floor(now() / 1000) });
     } catch (error) {
@@ -95,9 +102,15 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {} 
     }
     if (data.env.from !== from || data.env.to !== data.to) return fail(res, 403, "El sobre no es de quien lo envía.");
     const row = { id: data.env.id, from, env: data.env };
-    if (data.ephemeral === true) return res.json({ ok: true, delivered: push(data.to, row), stored: false });
-    if (q.count.get(data.to).n >= RELAY_LIMITS.perRecipient) return fail(res, 507, "El buzón de esa persona está lleno.");
+    if (data.ephemeral === true) {
+      if (limited("live:" + from + ":" + data.to, L.livePerMinute)) return fail(res, 429, "Demasiados avisos seguidos.");
+      return res.json({ ok: true, delivered: push(data.to, row), stored: false });
+    }
+    if (q.count.get(data.to).n >= L.perRecipient) return fail(res, 507, "El buzón de esa persona está lleno.");
+    const day = new Date(now()).toISOString().slice(0, 10);
+    if ((q.used.get(from, data.to, day)?.n || 0) >= L.perSenderDay) return fail(res, 429, "Demasiados mensajes para esta persona hoy.");
     const added = q.put.run(row.id, data.to, from, JSON.stringify(row.env), now()).changes > 0;
+    if (added) q.count1.run(from, data.to, day);
     const delivered = added ? push(data.to, row) : false;
     res.json({ ok: true, delivered, stored: true });
   });
@@ -106,7 +119,7 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {} 
     const address = who(req, res);
     if (!address) return;
     const set = streams.get(address) || new Set();
-    if (set.size >= RELAY_LIMITS.streamsPerAddress) return fail(res, 429, "Demasiadas conexiones.");
+    if (set.size >= L.streamsPerAddress) return fail(res, 429, "Demasiadas conexiones.");
     res.set({ "Content-Type": "text/event-stream", Connection: "keep-alive" });
     res.flushHeaders();
     res.write("event: ready\ndata: {}\n\n");
@@ -136,15 +149,15 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {} 
     const owner = who(req, res);
     if (!owner) return;
     const data = json(req);
-    if (!lookupOk(req.params.lookup) || typeof data?.blob !== "string" || data.blob.length > RELAY_LIMITS.inviteBytes) return fail(res, 400, "Invitación no válida.");
-    const expires = Math.min(Number(data.expiresAt) || 0, now() + RELAY_LIMITS.inviteHours * 3600000);
+    if (!lookupOk(req.params.lookup) || typeof data?.blob !== "string" || data.blob.length > L.inviteBytes) return fail(res, 400, "Invitación no válida.");
+    const expires = Math.min(Number(data.expiresAt) || 0, now() + L.inviteHours * 3600000);
     if (expires <= now()) return fail(res, 400, "La invitación ya caducó.");
     const changed = q.invitePut.run(req.params.lookup, owner, data.blob, expires).changes;
     if (!changed) return fail(res, 409, "Ese código ya está en uso.");
     res.json({ ok: true, expiresAt: expires });
   });
   app.get("/v1/invites/:lookup", (req, res) => {
-    if (limited("invite:" + (req.socket.remoteAddress || "?"), RELAY_LIMITS.invitesPerMinute)) return fail(res, 429, "Demasiados intentos. Espera un minuto.");
+    if (limited("invite:" + (req.socket.remoteAddress || "?"), L.invitesPerMinute)) return fail(res, 429, "Demasiados intentos. Espera un minuto.");
     const row = lookupOk(req.params.lookup) ? q.inviteGet.get(req.params.lookup) : null;
     if (!row || row.expires < now()) return fail(res, 404, "Esa invitación no existe o ya caducó.");
     res.json({ blob: row.blob, expiresAt: row.expires });
@@ -174,8 +187,8 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {} 
 }
 
 /** Starts the mailbox on `host:port`; resolves to { url, close }. */
-export async function startRelay({ port = 4390, host = "127.0.0.1", directory } = {}) {
-  const relay = createRelay({ directory });
+export async function startRelay({ port = 4390, host = "127.0.0.1", directory, limits } = {}) {
+  const relay = createRelay({ directory, limits });
   const server = http.createServer(relay.app);
   server.requestTimeout = 0; // SSE streams stay open
   await new Promise((resolve, reject) => {

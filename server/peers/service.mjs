@@ -29,10 +29,11 @@ export const PEER_LIMITS = Object.freeze({
 });
 const BINDING = { profile: "peer-identity", hostId: "colmena-peers-v1", clientId: "peer-identity", subject: "identity" };
 const PERSON_COLORS = ["#EFE2D3", "#DCE5EE", "#E2E9D7", "#E3E2F3", "#F3E1E1", "#E1EFEC", "#EEE6D2", "#E6E1EC"];
-const ONLINE_MS = 150000;
-const TYPING_MS = 6000;
+// Presence is refreshed every 10 minutes (only to who is connected), so «connected» lasts 25.
+const ONLINE_MS = 25 * 60000;
+const TYPING_MS = 8000;
 const BOT_THINKING_MS = 90000;
-const PRESENCE_EVERY = 120000;
+const PRESENCE_EVERY = 10 * 60000;
 const RETRY = [5000, 15000, 60000, 300000];
 const ASK_DEFAULTS = Object.freeze({ libre: "pregunta", bots: "mencion", archivos: "nunca" });
 
@@ -277,22 +278,28 @@ export class Peers extends EventEmitter {
   failed(messageId, error) {
     if (this.store.get("peerMessages", messageId)) this.store.patch("peerMessages", messageId, { status: "failed", error: clip(error, 200) });
   }
-  ephemeral(to, body) {
+  /**
+   * A live-only note (typing, presence). The mailbox charges every request, so it only goes
+   * to someone we see connected unless `always` (saying hello when we connect).
+   */
+  ephemeral(to, body, { always = false } = {}) {
     const c = this.contact(to);
-    if (!this.client || this.client.status !== "online" || !c?.box) return;
+    if (!this.client || this.client.status !== "online" || !c?.box || (!always && !this.online(to))) return;
     this.client.send(to, seal(this.identity, { to, toBox: c.box, body }), { ephemeral: true }).catch(() => {});
   }
-  broadcastPresence(state) {
+  /** «online» when we connect goes to every contact (that is how each one learns); after that, and «away», only to who is connected. */
+  broadcastPresence(state, { everyone = state === "online" } = {}) {
     for (const c of this.contacts().filter((x) => x.status === "active")) {
+      if (!everyone && !this.online(c.id)) continue;
       this.lastPresenceTo.set(c.id, this.clock());
-      this.ephemeral(c.id, { type: "presence", state });
+      this.ephemeral(c.id, { type: "presence", state }, { always: true });
     }
   }
-  heartbeat() { if (this.client?.status === "online") this.broadcastPresence("online"); }
+  heartbeat() { if (this.client?.status === "online") this.broadcastPresence("online", { everyone: false }); }
   /** A new contact learns at once that we are here (the next heartbeat may be two minutes away). */
   sayOnline(to) {
     this.lastPresenceTo.set(to, this.clock());
-    this.ephemeral(to, { type: "presence", state: "online" });
+    this.ephemeral(to, { type: "presence", state: "online" }, { always: true });
   }
 
   // ---------------------------------------------------------------- invitations
@@ -506,7 +513,7 @@ export class Peers extends EventEmitter {
     const s = this.share(shareId);
     const t = this.clock();
     this.typingSent ??= new Map(); // memory only: not worth a write
-    if (t - (this.typingSent.get(shareId) || 0) < 3000) return { ok: true };
+    if (t - (this.typingSent.get(shareId) || 0) < 5000) return { ok: true };
     this.typingSent.set(shareId, t);
     for (const id of this.others(s)) this.ephemeral(id, { type: "typing", share: shareId });
     return { ok: true };
