@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWarmOnType } from "../lib/warm.js";
-import { FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal } from "lucide-react";
+import { AudioLines, FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal } from "lucide-react";
+import VoiceCall from "../components/v2/chat/VoiceCall.jsx";
 import Shell from "../components/v2/Shell.jsx";
 import ConvList, { NewConversation, whenLabel } from "../components/v2/chat/ConvList.jsx";
 import Composer from "../components/v2/chat/Composer.jsx";
@@ -157,6 +158,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const toggleChosen = (key) => setChosen((list) => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]));
   const [moreOpen, setMoreOpen] = useState(false);
   const [roomSheet, setRoomSheet] = useState(false);
+  const [talking, setTalking] = useState(false); // «Hablar»: the voice panel over this chat
+  useEffect(() => setTalking(false), [c]);
   const send = useAction();
   const control = useAction();
   const inputRef = useRef(null);
@@ -487,7 +490,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       <Shell active="conversaciones" scroll={false}>
         <div style={{ display: "flex", height: "100%", alignItems: "stretch" }}>
           <ConvList current={c} />
-          <section aria-label={`Conversación con ${bot?.name || ""}`} style={{ flex: "1", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
+          <section aria-label={`Conversación con ${bot?.name || ""}`} style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
+            {talking && c ? <VoiceCall bot={bot} missionId={c} onClose={() => setTalking(false)} /> : null}
             <header style={{ flex: "none", background: "#F5F5F2" }}>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px", padding: "22px clamp(20px, 4vw, 44px) 18px" }}>
                 <span style={{ transition: "filter .4s ease" }}><BotPresence bot={bot} size={44} state={state} /></span>
@@ -495,6 +499,11 @@ function Chat({ botId, query, bots, missions, ready, run }) {
                   <h1 style={{ margin: "0", font: "600 24px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em" }}>{bot?.name}</h1>
                   <span role="status" style={{ fontSize: "14px", color: statusColor, transition: "color .3s ease", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{status}</span>
                 </div>
+                {c && !isOlder ? (
+                  <button type="button" onClick={() => setTalking(true)} title={`Habla con ${bot?.name || "el bot"} y te contesta en voz alta`} style={pill}>
+                    <AudioLines size={17} strokeWidth={2.2} aria-hidden="true" />{"Hablar"}
+                  </button>
+                ) : null}
                 <a href={`/colmena/${botId}`} style={pill}>{`Sobre ${bot?.name || "el bot"}`}</a>
                 <button type="button" onClick={() => setRoomSheet(true)} style={pill}>{"Llevar a una sala"}</button>
                 {c ? (

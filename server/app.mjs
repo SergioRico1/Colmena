@@ -50,6 +50,7 @@ import { registerProjectRoutes } from "./projects/routes.mjs";
 import { registerCodeRoutes, codeUploadParser } from "./code/routes.mjs";
 import { registerInteractionRoutes, extendState } from "./interject.mjs";
 import { Watcher, registerWatchRoutes } from "./watch.mjs";
+import { registerVoiceLiveRoutes } from "./voice-live.mjs";
 import { botThread, olderChats } from "./threads.mjs";
 import { registerGoalRoutes, acceptGoalSuggestion } from "./goals.mjs";
 import { btwQuestion, registerBtwRoutes } from "./btw.mjs";
@@ -676,7 +677,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       artifactId: m.artifactId ?? null, approvalId: m.approvalId ?? null, plan: m.plan ?? null, summary: m.summary ?? null,
       stepId: m.stepId ?? null, options: m.options ?? null, replyTo: m.replyTo ?? null, part: m.part ?? null, to: m.to ?? null,
       ...(m.kind === "progress" ? { callIds: m.callIds || [] } : {}),
-      ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}),
+      ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}), ...(m.voice ? { voice: true } : {}),
       reactions: reactionsOf(m).map((r) => ({ emoji: r.emoji, by: r.by })),
       learned: m.learned ? {
         type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1,
@@ -1553,6 +1554,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   if (runtime?.projects) registerProjectRoutes(app, { store, projects: runtime.projects });
   if (runtime?.code) registerCodeRoutes(app, { code: runtime.code });
   registerWatchRoutes(app, { store, watcher, check, z, HttpError });
+  registerVoiceLiveRoutes(app, { store, runtime, connections, check, z, HttpError }); // «Hablar»: live voice through Codex
   registerGoalRoutes(app, { store, runtime });
   registerCoreRoutes(app, { store, runtime });
   registerUsageRoutes(app, { store, runtime });
