@@ -259,3 +259,7 @@ Resumen: `{ id, name, description, botId|null, status: 'pending'|'active'|'disab
 ## 10. «Deshacer» de 5 segundos (idea de T3 Code)
 
 - `src/lib/undoToast.js` + `src/components/v2/UndoToasts.jsx`: `later()` espera 5 s antes de llamar al servidor (borrar) y mientras tanto quita la cosa de las listas (claves `tipo:id`, filtradas en el `store` y en las pantallas con listas propias); `reversible()` hace el cambio ya (archivar, posponer, pausar el equipo) y «Deshacer» llama al contrario. Ctrl+Z fuera de un campo de texto deshace el último aviso. Sin pantallas de confirmación.
+
+## 11. Paleta Ctrl+K (idea de T3 Code)
+
+- `src/screens/CommandPalette.jsx` + `src/lib/palette.js`: un solo buscador de chats, salas, mensajes (`/api/search`), entregables y archivos, bots, tareas de Código (`/api/code`) y ajustes (`searchSettings`), agrupados por tipo; la primera fila sigue siendo «Pedir». Con «>» solo acciones (nuevo chat, nueva tarea de código, nueva rutina, nuevo bot, «Ir a…», «Cambiar el modelo…», pausar, comprobar, ver el uso, deshacer). «Ir a…» y «Cambiar el modelo…» abren su lista; ⌫ con la caja vacía o Esc vuelven. Orden de T3: todas las palabras deben aparecer, pesa más el título, en empate lo reciente primero. Atajos: Ctrl+K abre y cierra (Código no lo usa), Ctrl+⇧P pausa, Ctrl+N sigue siendo «Nuevo chat» en Chats y «Nueva tarea» en Código.
