@@ -64,6 +64,8 @@ export function skillSummary(s) {
     status: s.status || "pending", origin: s.origin || (s.missionId ? "learned" : "imported"), version: s.version || 1,
     steps: s.steps ?? (String(s.content || "").match(/^\s*\d+[.)]\s+\S/gm) || []).length,
     uses: s.uses || 0, learnedFrom: s.learnedFrom ?? null, missionId: s.missionId ?? null, createdAt: s.createdAt ?? null,
+    // Does it help? (verdicts.mjs) and whether it was consolidated.
+    ...(s.verdict ? { verdict: s.verdict } : {}), ...(s.consolidated ? { consolidated: true } : {}),
   };
 }
 
@@ -82,7 +84,10 @@ export function memorySummary(m) {
     : scope === "equipo" && source !== "dijiste" && source !== "importado"
       ? "Compartido · equipo"
       : SOURCE_LABELS[source] + (date ? " · " + date.getDate() + " " + MS[date.getMonth()] : "");
-  return { id: m.id, text: m.text, botId: m.botId ?? null, scope, source, sourceLabel, review, origin, missionId: m.missionId ?? null, createdAt: m.createdAt ?? null };
+  return {
+    id: m.id, text: m.text, botId: m.botId ?? null, scope, source, sourceLabel, review, origin, missionId: m.missionId ?? null, createdAt: m.createdAt ?? null,
+    ...(m.verdict ? { verdict: m.verdict } : {}), ...(m.consolidated ? { consolidated: true } : {}),
+  };
 }
 
 // ---- Approvals bound to their exact content (OpenMuse actions.ts, MIT: licenses/OpenMuse.txt) ----

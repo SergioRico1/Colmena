@@ -196,7 +196,9 @@ test("condenseUserProfile writes a short USER.md with dated directives; learning
   const { store, runtime, directory } = await fixture(t, p.respond);
   store.patch("settings", "main", { learning: true });
   store.put("memories", { id: "a", text: "Prefiere los informes en Excel", scope: "equipo", source: "dijiste", active: true, createdAt: "2026-10-10T09:00:00Z" });
-  store.put("memories", { id: "b", text: "Trabaja de 8 a 15", scope: "equipo", kind: "preferencia", source: "dedujo", active: true, review: true, createdAt: "2026-10-12T09:00:00Z" });
+  // A bot's deduction enters the profile only once it proved to help (consolidated).
+  store.put("memories", { id: "b", text: "Trabaja de 8 a 15", scope: "equipo", kind: "preferencia", source: "dedujo", active: true, review: true, consolidated: true, createdAt: "2026-10-12T09:00:00Z" });
+  store.put("memories", { id: "d", text: "Prefiere las llamadas cortas", scope: "equipo", kind: "preferencia", source: "dedujo", active: true, createdAt: "2026-10-13T09:00:00Z" });
   store.put("memories", { id: "c", text: "El cierre es el día 5", scope: "equipo", kind: "hecho", source: "dedujo", active: true });
   const result = await condenseUserProfile(store, (params, meta) => runtime.infer(params, meta), { at: new Date("2026-10-15T08:00:00Z") });
   assert.equal(result.status, "completed");
@@ -209,6 +211,7 @@ test("condenseUserProfile writes a short USER.md with dated directives; learning
   assert.match(text, /- \[2026-09-01 · sustituida\] Prefería los informes en PDF/);
   assert.equal(store.get("memories", "a").condensed, true);
   assert.equal(store.get("memories", "c").condensed, undefined, "team facts are not part of the profile");
+  assert.equal(store.get("memories", "d").condensed, undefined, "an unproven deduction stays a memory");
   const prompt = composeInstructions(store, store.get("bots", "nora"));
   assert.match(prompt, /Perfil \(USER\.md\):\n- Prefiere los informes en Excel\n- Trabaja de 8 a 15/);
   assert.doesNotMatch(prompt, /Prefería los informes en PDF/);
@@ -218,6 +221,6 @@ test("condenseUserProfile writes a short USER.md with dated directives; learning
   const tick = await learningTick(store, (q, m) => runtime.infer(q, m), { at: new Date("2026-10-20T08:00:00Z") });
   assert.ok(tick.curated);
   const again = await learningTick(store, (q, m) => runtime.infer(q, m), { at: new Date("2026-10-20T09:00:00Z") });
-  assert.deepEqual(again, { curated: null, profile: null });
+  assert.deepEqual(again, { curated: null, profile: null, observed: 0 });
   assert.equal(p.seen.profiles, 1);
 });

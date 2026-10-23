@@ -4,6 +4,7 @@ import { capabilitiesOf, CAPABILITY_DEFAULTS } from "./tools.mjs";
 import { memoryMeters, MEMORY_LIMITS } from "./memory.mjs";
 import { userProfile, saveUserProfile, learningCounters, REVIEW_EVERY } from "./learning.mjs";
 import { learningTimeline, teachPrompt, TEACH_SOURCES } from "./journey.mjs";
+import { listVerdicts } from "./verdicts.mjs";
 
 // HTTP routes of the learning loop and bot capabilities. The coordinator mounts them
 // in createApp() BEFORE the final `/api` 404 handler:  registerLearningRoutes(app, { store, runtime, computerAvailable })
@@ -14,6 +15,7 @@ import { learningTimeline, teachPrompt, TEACH_SOURCES } from "./journey.mjs";
 //   GET   /api/bots/:id/learning         → {capabilities, computer, memory:{user,memory,bot}, counters, skills:[…+pinned,lastUsedAt]}
 //   PATCH /api/bots/:id/capabilities     {web?, carpetas?, apps?, ordenador?} → {capabilities}
 //   GET   /api/learning/skills           → every skill with curation fields (Biblioteca)
+//   GET   /api/learning/verdicts?botId=  → does what they learned help? [{kind, targetId, value, confidence, hint, summary, title…}]
 //   PATCH /api/skills/:id/curation       {pinned?, status?: 'active'|'archived'} («Fijar», «Reactivar», archivar)
 //   POST  /api/learning/curate           runs the curator now → {checked, stale, archived, reactivated}
 //   GET   /api/user-profile              → {content, chars, limit, updatedAt, directives}
@@ -34,6 +36,7 @@ export function curatedSkill(s, protectedIds = new Set()) {
     steps: s.steps ?? 0, uses: s.uses || 0, learnedFrom: s.learnedFrom ?? null, missionId: s.missionId ?? null,
     createdAt: s.createdAt ?? null, pinned: !!s.pinned, lastUsedAt: s.lastUsedAt ?? null,
     curatedAt: s.curatedAt ?? null, automation: protectedIds.has(s.id), previous: typeof s.previous === "string" ? s.previous : null,
+    verdict: s.verdict ?? null, consolidated: !!s.consolidated,
   };
 }
 
@@ -95,6 +98,7 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
       memory: { ...meters, limits: MEMORY_LIMITS },
       counters: { ...learningCounters(store, bot.id), every: REVIEW_EVERY },
       skills: store.list("skills").filter((s) => s.botId === bot.id).map((s) => curatedSkill(s, protectedIds)),
+      verdicts: listVerdicts(store, { botId: bot.id }),
     });
   });
   app.patch("/api/bots/:id/capabilities", (req, res) => {
@@ -123,6 +127,10 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
       store.patch("skills", skill.id, { status: "archived", curatedAt: new Date().toISOString(), curatedFrom: skill.status });
     }
     res.json(curatedSkill(store.get("skills", skill.id), skillsUsedByAutomations(store)));
+  });
+  app.get("/api/learning/verdicts", (req, res) => {
+    const botId = typeof req.query.botId === "string" && req.query.botId ? req.query.botId : null;
+    res.json(listVerdicts(store, { botId }));
   });
   app.post("/api/learning/curate", (_req, res) => res.json(curateSkills(store, Date.now())));
 

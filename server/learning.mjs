@@ -9,8 +9,10 @@ import {
   readUserProfile, writeUserProfile, renderUserProfile, parseDirectives, PROFILE_LIMIT,
 } from "./memory.mjs";
 import { normalizeTrigger } from "./triggers.mjs";
+import { forget, forgetHash, isForgotten } from "./forgotten.mjs";
+import { observeMission, refreshObservations } from "./verdicts.mjs";
 
-export { containsSecret };
+export { containsSecret, forgetHash, isForgotten };
 
 // Hermes-style closed learning loop (agent/background_review.py):
 // - reviews are triggered by per-bot counters (10 messages of the person → memory;
@@ -334,6 +336,8 @@ export async function learnFromMission({ store, missionId, model, infer, signal,
   // Automatic learning can be switched off; what you ask for explicitly still happens.
   if (settings.learning === false && !force) return { status: "disabled" };
   const mission = store.get("missions", missionId);
+  // Measure first (verdicts.mjs): how this mission went says whether what the bot carried helped.
+  if (mission) try { observeMission(store, missionId); } catch {}
   if (!mission || (!force && mission.status !== "completed")) return { status: "skipped" };
   // «Olvidar lo aprendido aquí»: this mission is never reviewed again.
   if (store.get("forgotten", "mission:" + missionId)) return { status: "skipped", reasons: ["lo olvidaste"] };
@@ -499,7 +503,8 @@ const profileSchema = z.object({
 export async function condenseUserProfile(store, infer, { model = null, force = false, directory = store.directory, at = new Date(), signal } = {}) {
   const settings = store.get("settings", "main") || {};
   if (settings.learning === false) return { status: "disabled" };
-  const fresh = memoryEntries(store, "user").filter((m) => ["dijiste", "importado", "dedujo", "acuerdo", undefined, null].includes(m.source));
+  // What the person said goes in; what a bot deduced only once it proved to help (verdicts.mjs).
+  const fresh = memoryEntries(store, "user").filter((m) => ["dijiste", "importado", "acuerdo", undefined, null].includes(m.source) || (m.source === "dedujo" && m.consolidated));
   const current = readUserProfile(directory) || "";
   if (!fresh.length && !force) return { status: "skipped" };
   const chosen = model || settings.model;
@@ -556,7 +561,9 @@ export function saveUserProfile(store, content, directory = store.directory) {
 export async function learningTick(store, infer, { at = new Date(), model = null, signal } = {}) {
   const state = store.get("learningState", "main") || { id: "main" };
   const time = at.getTime();
-  const out = { curated: null, profile: null };
+  const out = { curated: null, profile: null, observed: 0 };
+  // Reactions and corrections arrive after a mission ends: recent ones are measured again.
+  try { out.observed = refreshObservations(store, { at: time }); } catch {}
   if (!state.lastCurateAt || time - Date.parse(state.lastCurateAt) >= 7 * 86400000) {
     out.curated = curateSkills(store, time);
     store.put("learningState", { ...(store.get("learningState", "main") || { id: "main" }), lastCurateAt: at.toISOString(), lastCurate: { stale: out.curated.stale.length, archived: out.curated.archived.length, reactivated: out.curated.reactivated.length } });
@@ -732,15 +739,6 @@ function parseSkillName(content) {
 
 // ---------- «Olvidar lo aprendido aquí» (OpenClaw memory provenance) ----------
 // records 'forgotten': {id: 'mission:<id>' | '<kind>:<hash>', kind, hash, missionId, botId, createdAt}
-/** Stable hash of what was forgotten: memories by text; skills by name and owner. */
-export function forgetHash(kind, text, botId = null) {
-  const key = kind === "skill" ? normalizeText(text) + "\u0000" + (botId || "") : normalizeText(text);
-  return createHash("sha256").update(kind + "\u0000" + key).digest("hex").slice(0, 32);
-}
-export function isForgotten(store, kind, text, botId = null) {
-  if (!text || !normalizeText(text)) return false;
-  return !!store.get("forgotten", kind + ":" + forgetHash(kind, text, botId));
-}
 /** Memories and skills born in a mission (missionId) that are still in use. */
 export function learnedInMission(store, missionId) {
   return {
@@ -762,13 +760,11 @@ export function forgetMission(store, missionId, { memoryIds = null, skillIds = n
   return store.tx(() => {
     for (const m of memories) {
       store.patch("memories", m.id, { active: false, removed: true, removedAt: at, removedBy: "tú", forgotten: true });
-      const h = forgetHash("memory", m.text);
-      store.put("forgotten", { id: "memory:" + h, kind: "memory", hash: h, missionId, botId: m.botId ?? null, createdAt: at });
+      forget(store, "memory", m.text, null, { missionId });
     }
     for (const s of skills) {
       store.patch("skills", s.id, { status: "disabled", removed: true, removedAt: at, forgotten: true });
-      const h = forgetHash("skill", s.name, s.botId ?? null);
-      store.put("forgotten", { id: "skill:" + h, kind: "skill", hash: h, missionId, botId: s.botId ?? null, createdAt: at });
+      forget(store, "skill", s.name, s.botId ?? null, { missionId });
       for (const a of store.list("approvals").filter((x) => x.kind === "skill" && x.skillId === s.id && x.status === "pending"))
         store.patch("approvals", a.id, { status: "denied", decidedAt: at, decidedBy: "tú", resolution: "Olvidada" });
     }

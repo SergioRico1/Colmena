@@ -200,8 +200,8 @@ export function skillsUsedByAutomations(store) {
 
 /**
  * Weekly pass: active skills without use for 30 days → 'stale' (hidden from the index,
- * visible in Biblioteca); 90 days → 'archived'. Never deletes. Pinned skills and skills
- * used by automations are skipped; never-used skills get 14 days of grace. A stale skill
+ * visible in Biblioteca); 90 days → 'archived'. Never deletes. Pinned skills, skills used
+ * by automations and consolidated ones are skipped; never-used skills get 14 days of grace. A stale skill
  * used again goes back to 'active'. Returns {checked, stale, archived, reactivated}.
  */
 export function curateSkills(store, at = Date.now(), { staleDays = CURATOR.staleDays, archiveDays = CURATOR.archiveDays, graceDays = CURATOR.graceDays } = {}) {
@@ -211,7 +211,8 @@ export function curateSkills(store, at = Date.now(), { staleDays = CURATOR.stale
   for (const s of store.list("skills")) {
     if (!["active", "stale"].includes(s.status)) continue;
     out.checked++;
-    if (s.pinned || protectedIds.has(s.id)) {
+    // Pinned, used by an automation or proven to help (verdicts.mjs): never aged out.
+    if (s.pinned || s.consolidated || protectedIds.has(s.id)) {
       if (s.status === "stale") {
         store.patch("skills", s.id, { status: "active", curatedAt: new Date(time).toISOString(), curatedFrom: "stale" });
         out.reactivated.push(s.id);

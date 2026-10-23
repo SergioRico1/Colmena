@@ -50,6 +50,7 @@ import {
   learnFromMission, learnNow as learnNowFor, learningTick, condenseUserProfile, suggestAlwaysApprove, findGrant, addGrant,
   containsSecret, normalizeText, proposeSoulChange, tokens, jaccard, primaryBot, bumpLearningCounter, proposeAutomationSuggestion,
 } from "./learning.mjs";
+import { decideRevert } from "./verdicts.mjs";
 import { applyMemoryOps, normalizeMemoryOp, guessTarget, MEMORY_LABELS, TARGET_OF } from "./memory.mjs";
 
 export { TOOLS, CONNECTION_TOOLS };
@@ -3041,6 +3042,8 @@ ${made.outline}`,
       this.store.patch("approvals", a.id, { status: decision === "approved" ? "executed" : "denied", decidedAt: now(), decidedBy: "tú", resolution: decision === "approved" ? "SOUL actualizado" : "Propuesta descartada" });
       return;
     }
+    // Something learned made the work worse (verdicts.mjs): put it back, or keep it.
+    if (a.kind === "revert") return void decideRevert(this.store, a, decision);
     if (mission?.status === "cancelled") throw Error("La misión está cancelada.");
     if (a.kind === "plan")
       return this.planDecision(a.missionId, decision === "approved" ? "approved" : "changes", decision === "approved" ? "" : "La persona no aprueba este reparto. Propon otro.");

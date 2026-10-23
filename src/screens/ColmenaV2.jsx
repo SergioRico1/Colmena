@@ -10,6 +10,7 @@ import { navigate } from "../lib/router.jsx";
 import { formatTokens } from "../components/settings/format.jsx";
 import { LimitLine } from "../components/v2/LimitNotice.jsx";
 import { later } from "../lib/undoToast.js";
+import { VerdictList, VerdictMark } from "../components/v2/team/Verdict.jsx";
 
 // Colmena 2.0 · 27 «Tu colmena» (design/V2Colmena.dc.html): your bots as presences (they
 // breathe while they work) and, beside them, the chosen one: what it is, what it knows, what it
@@ -118,8 +119,9 @@ function Profile({ bot, skills, memories, missions }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "22px 0", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
             <h3 style={{ margin: "0", fontSize: "13px", fontWeight: "500", color: "#6B6F7A" }}>{"Sabe"}</h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {own.length ? own.map((k) => <span key={k.id} title={k.description || undefined} style={{ padding: "8px 14px", borderRadius: "999px", background: "#F4F4F0", fontSize: "14px" }}>{k.name}</span>) : <span style={{ fontSize: "14px", color: "#6B6F7A" }}>{"Aún no tiene habilidades guardadas. Las irá aprendiendo con el trabajo."}</span>}
+              {own.length ? own.map((k) => <span key={k.id} title={k.description || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "8px 14px", borderRadius: "999px", background: "#F4F4F0", fontSize: "14px" }}>{k.name}{k.verdict && k.verdict.value !== "dudoso" ? <VerdictMark verdict={k.verdict} compact consolidated={k.consolidated} /> : null}</span>) : <span style={{ fontSize: "14px", color: "#6B6F7A" }}>{"Aún no tiene habilidades guardadas. Las irá aprendiendo con el trabajo."}</span>}
             </div>
+            <VerdictList verdicts={learning?.verdicts} />
             {pendingSkills ? <a href="/archivo?tab=habilidades" style={{ fontSize: "14px", fontWeight: 600, color: "#1F4FD1" }}>{pendingSkills === 1 ? "1 habilidad nueva por revisar" : `${pendingSkills} habilidades nuevas por revisar`}</a> : null}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "22px 0", borderBottom: "1px solid rgba(18,19,26,.07)" }}>

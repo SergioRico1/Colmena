@@ -8,6 +8,7 @@ import { download, get, patch, pickTextFiles, post, del } from "../lib/api.js";
 import { navigate, useRouter } from "../lib/router.jsx";
 import { shortDate, time } from "../lib/format.js";
 import { later } from "../lib/undoToast.js";
+import { VerdictMark, VerdictNote } from "../components/v2/team/Verdict.jsx";
 
 // Colmena 2.0 · Archivo (design/V2Archivo.dc.html): what the colmena has made, the skills
 // the bots learned (none is used until you review its steps) and what they know about you.
@@ -272,6 +273,7 @@ function SkillCard({ s, bot }) {
           <span style={{ fontSize: "14px", color: MUTED }}>{meta}</span>
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "999px", fontSize: "13px", fontWeight: 600, background: pending ? "#FFF4D1" : s.status === "active" ? "#E1F4EC" : "rgba(18,19,26,.06)", color: pending ? "#8A5A00" : s.status === "active" ? "#0B5A3E" : MUTED }}>{state}</span>
+        {!pending && s.verdict ? <VerdictMark verdict={s.verdict} consolidated={s.consolidated} /> : null}
       </div>
       {s.description ? <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.55, color: "#3D404A" }}>{s.description}</p> : null}
       {open ? (
@@ -284,6 +286,7 @@ function SkillCard({ s, bot }) {
           })}
         </ol>
       ) : null}
+      {open && !pending ? <VerdictNote verdict={s.verdict} style={{ padding: "0 4px", animation: "rise .25s ease-out" }} /> : null}
       {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4231A" }}>{act.error}</p> : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
         <button type="button" aria-expanded={open} onClick={() => setOpen((x) => !x)} style={{ height: "42px", padding: "0 16px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: INK }}>
