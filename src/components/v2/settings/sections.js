@@ -68,11 +68,12 @@ export const SECTIONS = [
   },
   {
     id: "privacidad", label: "Privacidad y seguridad", icon: Lock,
-    lead: "Lo que recuerdan de ti, tus contraseñas y el registro de todo lo que hacen.",
+    lead: "Lo que recuerdan de ti, adónde va tu voz, tus contraseñas y el registro de todo lo que hacen.",
     items: [
       ["privado", "Lo que hablas en privado con un bot", "privacidad privado"],
       ["recuerdos", "Qué recuerda cada bot de ti", "memoria recuerdos datos personales"],
       ["olvidar", "Hacer que los bots lo olviden todo", "borrar recuerdos olvidar memoria"],
+      ["dictado", "Dictado por voz", "micrófono voz hablar dictar transcribir reconocimiento idioma español whisper"],
       ["boveda", "Contraseñas de webs", "bóveda vault contraseña login usuario"],
       ["claves", "Claves de API", "api key token secretos"],
       ["registro", "Registro de acciones", "historial auditoría log aprobaciones", "/ajustes/seguridad"],

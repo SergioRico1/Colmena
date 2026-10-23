@@ -70,6 +70,12 @@ jobs:
 
       - run: npm run build
 
+      - name: Dictation helper for macOS (universal)
+        if: runner.os == 'macOS'
+        run: |
+          sh server/dictation/macos/build.sh
+          server/dictation/bin/colmena-dictation --probe
+
       - name: Windows installer
         if: runner.os == 'Windows'
         shell: bash

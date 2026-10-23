@@ -90,6 +90,8 @@ mac:
   extendInfo:
     NSAppleEventsUsageDescription: Colmena controls other apps only when you ask a bot to.
     NSMicrophoneUsageDescription: Colmena uses the microphone when you dictate a message.
+    # Dictation with macOS's own recognizer (server/dictation/macos, built by CI before packaging).
+    NSSpeechRecognitionUsageDescription: Colmena turns your voice into text when you dictate, on this Mac whenever it can.
 
 dmg:
   title: Colmena ${version}

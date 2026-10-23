@@ -6,7 +6,7 @@ import { forgetMission, learnedInMission, retireSuggestions, ideasFromConnection
 import {
   standingOrderView, standingOrders, createStandingOrder, intentView, createIntent, cleanKeywords, startStanding,
 } from "./standing.mjs";
-import { transcriptionAvailable, transcribe } from "./voice.mjs";
+import { transcriptionAvailable, registerVoiceRoutes } from "./voice.mjs";
 import { checkinDue, checkinState, runCheckin } from "./checkins.mjs";
 import { watchNotesState } from "./watch.mjs";
 
@@ -274,11 +274,8 @@ export function registerInteractionRoutes(app, { store, runtime, scheduler, conn
   });
 
   // ------------------------------------------------ voz
-  app.get("/api/voice/status", (_req, res) => res.json({ transcribe: transcriptionAvailable(runtime?.provider) }));
-  app.post("/api/voice/transcribe", async (req, res) => {
-    const data = check(z.object({ audio: z.string().min(16).max(1400000), mime: z.string().trim().min(3).max(120), durationMs: z.number().min(0).max(130000).optional() }).strict(), req.body);
-    res.json(await transcribe({ provider: runtime?.provider, ...data }));
-  });
+  // Dictation: the computer's own recognizer first, then the OpenAI key (server/voice.mjs).
+  const dictation = registerVoiceRoutes(app, { store, runtime, check });
 
   // ------------------------------------------------ olvidar lo aprendido aquí
   app.get("/api/missions/:id/learned", (req, res) => {
@@ -366,5 +363,5 @@ export function registerInteractionRoutes(app, { store, runtime, scheduler, conn
       return String(result?.text || "").split("\n").find((l) => l.trim()) || null;
     };
   }
-  return { standing };
+  return { standing, dictation };
 }

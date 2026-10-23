@@ -12,6 +12,7 @@ import { later, reversible } from "../lib/undoToast.js";
 import SettingsLayout from "../components/v2/settings/Layout.jsx";
 import UsageSection from "../components/v2/settings/Usage.jsx";
 import DiagnosticsSection, { diagnosticsDot, useDiagnostics } from "../components/v2/settings/Diagnostics.jsx";
+import DictationSettings from "../components/v2/settings/Dictation.jsx";
 import { ALIAS, DEFAULT_SECTION, PARENT, SECTION_OF } from "../components/v2/settings/sections.js";
 import { Chevron, FAINT, FieldRow, Group, INK, LINE, LinkRow, MUTED, Segmented, SwitchRow, Text, anchorOf, inputStyle, pill, rowStyle } from "../components/v2/settings/rows.jsx";
 import VaultCard from "../components/settings/Vault.jsx";
@@ -472,6 +473,7 @@ function PrivacySection({ memories, act }) {
           <button type="button" {...anchorOf("olvidar")} onClick={forgetAll} style={{ ...rowStyle(true), cursor: "pointer", fontSize: "16px", color: "#B4372A" }}>Hacer que los bots lo olviden todo</button>
         ) : null}
       </Group>
+      <DictationSettings />
       <div {...anchorOf("boveda")} style={{ scrollMarginTop: "24px", borderRadius: "26px" }}><VaultCard /></div>
       <div {...anchorOf("claves")} style={{ scrollMarginTop: "24px", borderRadius: "26px" }}><ApiKeysCard /></div>
       <Group id="reg-t" title="Registro">

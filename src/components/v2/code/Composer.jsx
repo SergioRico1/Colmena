@@ -3,12 +3,13 @@ import { ArrowUp, Ellipsis, Gauge, ShieldCheck, X } from "lucide-react";
 import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
 import { useHidden } from "../../../lib/undoToast.js";
+import { MicButton, appendDictation } from "../../interaction/Voice.jsx";
 
 // The «Código» composer (T3 Code): Enter sends, Shift+Enter breaks the line; «Construir» or
 // «Plan» (a plan first, nothing changes until «Implementar»); engine · model, effort and Bruno's
 // access as quiet chips; while Bruno works a message waits for the end of the turn («Cuando
 // acabe») or reaches him now («Pasárselo ya»). Queued messages show above. «/» commands,
-// «$» skills, «@» files and attachments come from Extras.jsx.
+// «$» skills, «@» files and attachments come from Extras.jsx; the microphone dictates.
 
 const WHEN_KEY = "colmena:code-while-working";
 const readWhen = () => { try { return localStorage.getItem(WHEN_KEY) === "steer" ? "steer" : "queue"; } catch { return "queue"; } };
@@ -109,6 +110,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
           </div>
           <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px" }}>
             {extras.clip}
+            <MicButton onText={(said) => { appendDictation(setText)(said); extras.track(); }} size={40} style={{ color: C.muted }} />
             {task?.usage?.used ? <ContextRing used={task.usage.used} max={task.usage.window || 200000} disabled={running} onCompact={onCommand ? () => onCommand("compactar") : null} /> : null}
             {running ? (
               <button type="button" onClick={onStop} aria-label="Parar" title="Parar a Bruno" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.08)", cursor: "pointer" }}>

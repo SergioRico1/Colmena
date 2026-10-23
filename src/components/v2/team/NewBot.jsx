@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { post } from "../../../lib/api.js";
 import { pickTextFiles } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
-import { useDictation } from "../../interaction/Voice.jsx";
+import { MicButton, appendDictation } from "../../interaction/Voice.jsx";
 import { SHAPES, gloss } from "../Presence.jsx";
 import { TOOL_KEYS, TOOL_LABEL, skillMarkdown } from "../../team/common.jsx";
 
@@ -44,7 +44,6 @@ export default function NewBot({ onClose, onHired }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const chatEnd = useRef(null);
-  const dict = useDictation({ onText: (said) => setDesc((p) => (p && !/\s$/.test(p) ? p + " " : p) + said) });
   useEffect(() => { const k = (e) => e.key === "Escape" && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   useEffect(() => { chatEnd.current?.scrollIntoView?.({ block: "nearest" }); }, [chat, busy]);
   const set = (patch) => setD((cur) => ({ ...cur, ...patch }));
@@ -155,11 +154,9 @@ export default function NewBot({ onClose, onHired }) {
                 <div style={{ position: "relative" }}>
                   <textarea id="nb-desc" rows="4" value={desc} onChange={(e) => { setDesc(e.target.value); setError(null); }} placeholder="Ej.: Quiero alguien que conteste los correos de clientes con nuestro tono y me pase los difíciles."
                     style={{ width: "100%", padding: "18px 64px 18px 20px", border: "0", borderRadius: "22px", outline: "none", background: "#F4F4F0", fontSize: "17px", lineHeight: "1.55", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
-                  {dict.available ? (
-                    <button type="button" onClick={dict.state === "listening" ? dict.stop : dict.start} aria-label={dict.state === "listening" ? "Dejar de dictar" : "Dictar"} style={{ position: "absolute", right: "12px", bottom: "14px", width: "42px", height: "42px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", cursor: "pointer", background: dict.state === "listening" ? "#12131A" : "#FFFFFF", color: dict.state === "listening" ? "#FFFFFF" : "#3D404A" }}>
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
-                    </button>
-                  ) : null}
+                  <span style={{ position: "absolute", right: "12px", bottom: "14px", display: "flex" }}>
+                    <MicButton onText={appendDictation(setDesc)} size={42} style={{ background: "#FFFFFF" }} />
+                  </span>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
                   <span style={{ fontSize: "13px", color: "#6B6F7A", marginRight: "4px" }}>{"O empieza con un ejemplo"}</span>

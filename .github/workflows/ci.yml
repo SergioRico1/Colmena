@@ -22,6 +22,14 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  # The macOS dictation helper compiles (both architectures) and answers its probe.
+  dictation-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: sh server/dictation/macos/build.sh
+      - run: server/dictation/bin/colmena-dictation --probe --lang es-ES
+
   secrets:
     runs-on: ubuntu-latest
     steps:

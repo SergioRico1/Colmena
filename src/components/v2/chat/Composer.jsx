@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { useDictation } from "../../interaction/Voice.jsx";
+import { Mic, MicOff } from "lucide-react";
+import { DictationHelp, LiveWords, useDictation } from "../../interaction/Voice.jsx";
 import PastedCard from "../../room/PastedCard.jsx";
 import { FileCard } from "../../room/common.jsx";
 import { MESSAGE_MAX, dropOverlay } from "../../../lib/useFileDrop.js";
 import { MentionMirror, findMentions } from "../MentionPill.jsx";
 
 // The Colmena 2.0 writing capsule (design/V2Conversacion.dc.html): a white pill with the text,
-// «Detener» while the bot works, the microphone (dark capsule with a live wave while you speak,
-// up to 2 minutes; «Pasando tu voz a texto…» after) and send. Files: «+», drop or paste.
+// «Detener» while the bot works, the microphone (dark capsule while you speak, up to 2 minutes:
+// the words as they arrive with this computer's recognizer, a wave that follows your voice with
+// an OpenAI key and «Pasando tu voz a texto…» after) and send. Files: «+», drop or paste.
 const MAX_S = 120;
 
 export default function Composer({ value, onChange, onKeyDown, onSubmit, placeholder, label, working, onStop, inputRef, inputProps = {}, files = [], onRemoveFile, onInlinePasted, onAttach, attachOpen = null, chips = [], onRemoveChip, mentionBots = [], drop = null, menu = null, above = null, below = null, busy = false }) {
@@ -17,8 +19,9 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
   const [since, setSince] = useState(0);
   const [k, setK] = useState(0);
   const d = useDictation({ onText: (said) => onChange((prev) => (prev && !/\s$/.test(prev) ? prev + " " : prev || "") + said) });
-  const rec = d.state === "listening";
+  const rec = d.state === "listening" || d.state === "starting";
   const trans = d.state === "transcribing";
+  const live = rec && d.mode === "sistema";
   useEffect(() => {
     if (!rec) return undefined;
     setSince(Date.now());
@@ -31,12 +34,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
   return (
     <form onSubmit={onSubmit} {...(drop?.props || {})} style={{ position: "relative", flex: "none", width: "100%", maxWidth: "860px", margin: "0 auto", padding: "6px clamp(20px, 4vw, 44px) 22px" }}>
       {above}
-      {d.error ? (
-        <p role="alert" style={{ margin: "0 0 10px 18px", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", color: "#8E2A1F", animation: "rise .25s ease-out" }}>
-          {/micr|permis|denied|allowed/i.test(d.error) ? "No puedo usar el micrófono. Revisa el permiso del micrófono en Windows." : d.error}
-          <button type="button" onClick={d.clearError} style={{ height: "30px", padding: "0 10px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: "600", color: "#12131A" }}>{"Entendido"}</button>
-        </p>
-      ) : null}
+      {d.error ? <DictationHelp problem={d.error} onClose={d.clearError} style={{ margin: "0 0 10px auto", maxWidth: "min(440px, 100%)" }} /> : null}
       {chips.length ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", margin: "0 0 10px 12px" }}>
           {chips.map((c) => (
@@ -59,12 +57,16 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
         {menu}
         {rec ? (
           <div role="status" style={{ flex: "1", minWidth: "0", display: "flex", alignItems: "center", gap: "14px", animation: "fade .2s ease-out" }}>
-            <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "50%", background: "#FF5A4E", animation: "halo 1.4s ease-out infinite" }} />
-            <span aria-hidden="true" style={{ flex: "1", minWidth: "0", height: "32px", display: "flex", alignItems: "center", gap: "3px", overflow: "hidden" }}>
-              {bars.map((b, i) => <span key={i} style={{ width: "3px", flex: "none", borderRadius: "2px", background: "#FFFFFF", transition: "height .1s linear", height: b.h, opacity: b.o }} />)}
-            </span>
+            <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "50%", background: "#FF5A4E", animation: "halo 1.4s ease-out infinite", transform: live ? `scale(${1 + d.level * 0.5})` : undefined, transition: "transform .1s linear" }} />
+            {live ? (
+              <LiveWords d={d} dark style={{ flex: "1", fontSize: "16px", lineHeight: "32px" }} />
+            ) : (
+              <span aria-hidden="true" style={{ flex: "1", minWidth: "0", height: "32px", display: "flex", alignItems: "center", gap: "3px", overflow: "hidden" }}>
+                {bars.map((b, i) => <span key={i} style={{ width: "3px", flex: "none", borderRadius: "2px", background: "#FFFFFF", transition: "height .1s linear", height: b.h, opacity: b.o }} />)}
+              </span>
+            )}
             <span style={{ font: "500 14px/1 'Geist Mono', monospace", color: "#FFFFFF" }}>{`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} / 2:00`}</span>
-            <span style={{ fontSize: "13px", color: "#C9CBD3", whiteSpace: "nowrap" }}>{"Escuchando… pulsa para terminar"}</span>
+            {live ? null : <span style={{ fontSize: "13px", color: "#C9CBD3", whiteSpace: "nowrap" }}>{"Escuchando… pulsa para terminar"}</span>}
             <button type="button" onClick={d.stop} aria-label="Dejar de dictar" style={{ ...round, background: "#FFFFFF" }}>
               <span aria-hidden="true" style={{ width: "14px", height: "14px", borderRadius: "4px", background: "#12131A" }} />
             </button>
@@ -95,9 +97,9 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
                 <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "3px", background: "#12131A" }} />
               </button>
             ) : null}
-            {d.available ? (
-              <button type="button" onClick={d.start} aria-label="Dictar con el micrófono" title="Dictar (hasta 2 minutos)" style={{ ...round, background: "rgba(18,19,26,.05)", color: "#3D404A" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
+            {d.available || d.fixable ? (
+              <button type="button" onClick={d.fixable && d.error ? d.clearError : d.start} aria-label={d.fixable ? "El dictado no está disponible: ver cómo activarlo" : "Dictar con el micrófono"} title={d.fixable ? "Dictado no disponible" : "Dictar (hasta 2 minutos)" + (d.engine ? " · " + d.engine : "")} style={{ ...round, background: "rgba(18,19,26,.05)", color: d.fixable ? "#A3A6AF" : "#3D404A" }}>
+                {d.fixable ? <MicOff size={18} strokeWidth={2} aria-hidden="true" /> : <Mic size={18} strokeWidth={2} aria-hidden="true" />}
               </button>
             ) : null}
             <button type="submit" aria-label="Enviar" disabled={busy} style={{ ...round, background: String(value || "").trim() || files.length ? "#12131A" : "#C9CBD1", color: "#FFFFFF", transition: "background .2s ease" }}>

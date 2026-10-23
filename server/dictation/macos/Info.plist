@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Embedded into the helper binary (__TEXT,__info_plist): the Speech framework stops a
+     process whose own Info.plist has no usage description. The prompts the person sees come
+     from Colmena.app's Info.plist (electron-builder.yml › mac.extendInfo). -->
+<plist version="1.0">
+  <dict>
+    <key>CFBundleIdentifier</key>
+    <string>Colmena.App.dictation</string>
+    <key>CFBundleName</key>
+    <string>Colmena</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Colmena uses the microphone when you dictate a message.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Colmena turns your voice into text when you dictate, on this Mac whenever it can.</string>
+  </dict>
+</plist>

@@ -49,6 +49,9 @@ auth.json
 id_rsa*
 id_ed25519*
 
+# The macOS dictation helper, built by server/dictation/macos/build.sh (CI, before packaging)
+server/dictation/bin/
+
 # Generated from design/ at build time
 public/connections/
 public/design-reference/
