@@ -66,7 +66,7 @@ test("«Olvidar lo aprendido aquí»: preview, removal, and never extracted agai
   assert.equal(calls, 0, "a forgotten mission is not reviewed again");
 
   const other = await learnFromMission({ store, missionId: "m2", model: "fixture", infer, force: true });
-  assert.equal(calls, 1);
+  assert.equal(calls, 2, "one call per reviewer (work and subject)");
   assert.equal(other.skill, null, "the forgotten skill is not created again");
   assert.equal(other.memories.length, 0, "the forgotten memory is not saved again");
   assert.ok(other.notes.some((n) => /olvidaste/.test(n)));

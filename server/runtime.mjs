@@ -3207,6 +3207,7 @@ ${made.outline}`,
         store: this.store,
         missionId,
         model,
+        reviewModel: cheapestModel(this.availableModels()), // the two reviewers run on the cheap model
         signal: AbortSignal.any([signal, AbortSignal.timeout(90000)]),
         infer: (params, meta) => this.infer(params, meta),
         force: teach,
@@ -3232,7 +3233,7 @@ ${made.outline}`,
     this.store.patch("missions", missionId, { learningStatus: "running", learningError: null });
     try {
       const result = await learnNowFor({
-        store: this.store, missionId, model, signal: AbortSignal.timeout(150000),
+        store: this.store, missionId, model, reviewModel: cheapestModel(this.availableModels()), signal: AbortSignal.timeout(150000),
         infer: (params, meta) => this.infer(params, meta),
       });
       this.store.patch("missions", missionId, { learningStatus: result.status === "skipped" ? "skipped" : "completed" });

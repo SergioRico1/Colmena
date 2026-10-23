@@ -13,13 +13,16 @@ const SKILL = "---\nname: informe-ventas\ndescription: Úsala cuando haya que pr
 const EMPTY = { memory: [], skill: { action: "none", skillId: null, edits: [], name: "", description: "", content: "" }, soul: null };
 const reflectionOf = (request) => JSON.parse(request.input[0].content);
 
-/** Provider: reflections go to `reflect(payload)`, profile to `profile()`, the rest to `work(request)`. */
+/**
+ * Provider: reflections go to `reflect(payload)`, profile to `profile()`, the rest to `work(request)`.
+ * Each review runs two reviewers (work and subject): `seen.reflections` keeps one per review.
+ */
 function provider({ reflect = () => EMPTY, work = () => answer("ok"), profile = null } = {}) {
   const seen = { reflections: [], profiles: 0 };
   const respond = async (request) => {
     if (request.instructions.startsWith("Extrae")) {
       const payload = reflectionOf(request);
-      seen.reflections.push(payload);
+      if (payload.revisor === "trabajo") seen.reflections.push(payload);
       return answer(JSON.stringify(reflect(payload)));
     }
     if (request.instructions.startsWith("Condensa")) {
