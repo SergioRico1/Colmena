@@ -143,7 +143,7 @@ test("a patch whose text does not match the current version is discarded entirel
 });
 
 test("learnNow forces a review of a simple mission; the route answers and refuses running missions", async (t) => {
-  const p = provider({ reflect: (payload) => ({ ...EMPTY, memory: payload.revisar.memoria ? [{ action: "add", target: "persona", text: "Prefiere respuestas con ejemplos", old: "" }] : [] }) });
+  const p = provider({ reflect: (payload) => ({ ...EMPTY, memory: payload.revisar.memoria ? [{ action: "add", target: "persona", text: "Prefiere respuestas con ejemplos", old: "", por: ["m1"] }] : [] }) });
   const { store, runtime } = await fixture(t, p.respond);
   store.patch("settings", "main", { learning: true });
   const m = runtime.create({ prompt: "Hola" });

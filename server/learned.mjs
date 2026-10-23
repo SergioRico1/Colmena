@@ -18,23 +18,23 @@ export function memoryNoticeText(changes) {
   return first + (done.length > 1 ? " y " + (done.length - 1) + (done.length === 2 ? " cambio más" : " cambios más") : "");
 }
 
-/** Room line for a memory change (replaces the old «X ha guardado un recuerdo»). */
-export function postMemoryNotice(store, { missionId, bot, changes, key, pending = false }) {
+/** Room line for a memory change (replaces the old «X ha guardado un recuerdo»). `why`: what justifies it (learning.mjs whyOf). */
+export function postMemoryNotice(store, { missionId, bot, changes, key, pending = false, why = [] }) {
   const text = memoryNoticeText(changes);
   if (!text || !missionId) return null;
   return store.put("messages", {
     id: "note:" + key, missionId, botId: bot.id, role: "system", kind: "learned", text: text + (pending ? " · por revisar" : ""),
-    learned: { type: "memory", changes: changes.filter((c) => !c.skipped && c.id), undone: false }, at: now(),
+    learned: { type: "memory", changes: changes.filter((c) => !c.skipped && c.id), undone: false, ...(why?.length ? { why } : {}) }, at: now(),
   });
 }
 
 /** Room line for a skill version a bot activated on its own. */
-export function postSkillNotice(store, { missionId, bot, skill, previousId }) {
+export function postSkillNotice(store, { missionId, bot, skill, previousId, why = [] }) {
   if (!missionId || !skill) return null;
   return store.put("messages", {
     id: "note:skill:" + skill.id, missionId, botId: bot.id, role: "system", kind: "learned",
     text: "Aprendido: versión " + (skill.version || 1) + " de «" + clip(skill.name, 80) + "»",
-    learned: { type: "skill", skillId: skill.id, previousId: previousId || null, undone: false }, at: now(),
+    learned: { type: "skill", skillId: skill.id, previousId: previousId || null, undone: false, ...(why?.length ? { why } : {}) }, at: now(),
   });
 }
 

@@ -32,7 +32,7 @@ test("a lesson asks the bot to explain what it understood, with the material as 
 test("«Enséñale» ends with a skill even with automatic learning off, and it shows in the timeline", async (t) => {
   const { store, runtime } = await fixture(t, async ({ instructions }) => {
     if (/Extrae aprendizajes de una tarea de Colmena/.test(instructions))
-      return answer(JSON.stringify({ memory: [{ action: "add", target: "persona", text: "Numera las facturas con el año delante", old: "" }], skill: { action: "create", skillId: null, edits: [], name: "facturas-de-la-casa", description: "Úsala cuando haya que preparar una factura de la empresa.", content: SKILL }, soul: null }));
+      return answer(JSON.stringify({ memory: [{ action: "add", target: "persona", text: "Numera las facturas con el año delante", old: "", por: ["m1"] }], skill: { action: "create", skillId: null, edits: [], name: "facturas-de-la-casa", description: "Úsala cuando haya que preparar una factura de la empresa.", content: SKILL }, soul: null }));
     return answer("He entendido: numeras con el año delante y aplicas el 21 % de IVA.");
   });
   assert.equal(store.get("settings", "main").learning, false, "the fixture has automatic learning off");

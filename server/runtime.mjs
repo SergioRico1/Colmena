@@ -49,7 +49,7 @@ import { parseRef, modelEntry } from "./providers/catalog.mjs";
 import {
   learnFromMission, learnNow as learnNowFor, learningTick, condenseUserProfile, suggestAlwaysApprove, findGrant, addGrant,
   containsSecret, normalizeText, proposeSoulChange, tokens, jaccard, primaryBot, bumpLearningCounter, proposeAutomationSuggestion,
-  rejectSoulProposal,
+  rejectSoulProposal, rememberWhy,
 } from "./learning.mjs";
 import { decideRevert } from "./verdicts.mjs";
 import { applyMemoryOps, normalizeMemoryOp, guessTarget, MEMORY_LABELS, TARGET_OF } from "./memory.mjs";
@@ -2544,7 +2544,7 @@ export class Runtime {
     void adds;
     // «Aprendido: …» with «Deshacer» in the room (approved changes were already seen in the Bandeja).
     if (approved) this.announce(mission.id, bot, bot.name + " ha actualizado su memoria", effectId);
-    else postMemoryNotice(this.store, { missionId: mission.id, bot, changes: results, key: effectId, pending: external });
+    else postMemoryNotice(this.store, { missionId: mission.id, bot, changes: results, key: effectId, pending: external, why: rememberWhy(this.store, mission, done) });
     return external
       ? { saved: true, results, usage, notice: "Guardado como «por revisar»: lo escribiste después de leer contenido de fuera (una web, un correo o una app). No se usará hasta que la persona lo confirme." }
       : { saved: true, results, usage };

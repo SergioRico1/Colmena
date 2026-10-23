@@ -122,11 +122,12 @@ test("memories: dedupe, max 3, secrets filtered; soul proposals need approval", 
       { text: "Nunca usa emojis", scope: "bot", kind: "preferencia" },
       { text: "Trabaja con euros", scope: "equipo", kind: "hecho" },
     ],
-    soul: { proposal: "Sé más directa y usa siempre tablas para cifras.", reason: "La persona lo pidió dos veces" },
+    soul: { proposal: "Sé más directa y usa siempre tablas para cifras.", reason: "La persona lo pidió dos veces", por: ["m1"] },
   })));
   store.patch("settings", "main", { learning: true });
   store.put("memories", { id: "old", text: "El cierre contable es el dia 5", active: true });
-  const m = runtime.create({ prompt: "Analiza" });
+  // Without citations, each memory must be grounded in the person's words (whyOf).
+  const m = runtime.create({ prompt: "Analiza: prefiero informes breves, nunca uso emojis, trabaja con euros y quiero que seas más directa con tablas" });
   await runtime.launch(m.id);
   const learned = store.list("memories").filter((x) => x.missionId === m.id);
   assert.deepEqual(learned.map((x) => x.text), ["Prefiere informes breves", "Nunca usa emojis", "Trabaja con euros"]);

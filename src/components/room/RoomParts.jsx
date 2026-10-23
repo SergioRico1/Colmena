@@ -642,19 +642,30 @@ function LiveTurnCard({ step, bot }) {
   );
 }
 
-/** «Aprendido: …» — a bot changed its memory or a skill on its own; «Deshacer» puts it back. */
+const WHY_LABEL = { mensaje: "Dijiste", correccion: "Corregiste en otra tarea", rechazo: "Paraste una acción", hilo: "En el hilo", plan: "En el plan", recibo: "Al trabajar" };
+
+/** «Aprendido: …» — a bot changed its memory or a skill on its own; «Por qué» shows what justifies it, «Deshacer» puts it back. */
 function LearnedLine({ message, bot, entering = false }) {
   const { act, busy, error } = useAction();
   const [undone, setUndone] = useState(null);
+  const [why, setWhy] = useState(false);
   const done = undone || message.learned?.undone;
   const Icon = message.learned?.type === "skill" ? Wrench : Brain;
   const text = undone?.text || message.text;
+  const reasons = message.learned?.why || [];
+  const link = { display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600" };
   return (
-    <p className={entering ? "c-enter c-flash" : undefined} style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "13px", lineHeight: "1.45", color: "#4A4F5C" }}>
+    <div className={entering ? "c-enter c-flash" : undefined}>
+    <p style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "13px", lineHeight: "1.45", color: "#4A4F5C" }}>
       <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#555A68" }} />
       {bot ? <strong style={{ color: "#12131A" }}>{bot.name}</strong> : null}
       <span style={done ? { textDecoration: "line-through", color: "#555A68" } : null}>{text.replace(/^Deshecho: /, "")}</span>
       {message.at ? <span style={{ color: "#555A68" }}>{"· " + time(message.at)}</span> : null}
+      {reasons.length ? (
+        <button type="button" className="rm-focus" aria-expanded={why} onClick={() => setWhy((x) => !x)} style={{ ...link, color: "#4A4F5C" }}>
+          <ChevronDown size={13} strokeWidth={2.4} aria-hidden="true" style={{ transition: "transform .2s ease", transform: why ? "rotate(180deg)" : "none" }} />Por qué
+        </button>
+      ) : null}
       {done ? <span style={{ color: "#555A68" }}>· deshecho</span> : (
         <button type="button" className="rm-focus" disabled={busy} onClick={() => act(async () => setUndone(await post("/messages/" + message.id + "/undo")))}
           style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>
@@ -663,6 +674,14 @@ function LearnedLine({ message, bot, entering = false }) {
       )}
       {error ? <span style={{ color: "#B4372A" }}>{error}</span> : null}
     </p>
+    {why ? (
+      <ul style={{ margin: "0 0 6px 52px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "12px", background: "rgba(18,19,26,.04)", fontSize: "13px", lineHeight: "1.5", color: "#3D404A", animation: "rise .25s ease-out" }}>
+        {reasons.map((w, i) => (
+          <li key={i}><span style={{ color: "#6B6F7A" }}>{(WHY_LABEL[w.type] || "Visto") + ": "}</span>{"«" + w.quote + "»"}</li>
+        ))}
+      </ul>
+    ) : null}
+    </div>
   );
 }
 

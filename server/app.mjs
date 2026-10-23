@@ -677,7 +677,11 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       ...(m.kind === "progress" ? { callIds: m.callIds || [] } : {}),
       ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}),
       reactions: reactionsOf(m).map((r) => ({ emoji: r.emoji, by: r.by })),
-      learned: m.learned ? { type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1 } : null,
+      learned: m.learned ? {
+        type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1,
+        // «Por qué»: the messages or receipts that justify it (learning.mjs whyOf).
+        ...(m.learned.why?.length ? { why: m.learned.why.map((w) => ({ type: w.type, quote: w.quote, missionId: w.missionId ?? null, auto: !!w.auto })) } : {}),
+      } : null,
     };
     for (const key of MESSAGE_OPTIONAL) if (view[key] === null) delete view[key];
     return view;
