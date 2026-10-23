@@ -19,6 +19,7 @@ import { capRead, isAppToolName, retryRead, slimAppResult } from "./apptools.mjs
 import { cleanUse, turnNote } from "./turnoptions.mjs";
 import { saidByYou } from "./preferences.mjs";
 import { externalSourceOf, isFlagged, isForeignSource, toolOutput, toolResultText } from "./external-content.mjs";
+import { RECEIPT, abandonEffect, beginEffect, finishEffect, isEffect, recoverEffects } from "./receipts.mjs";
 import { isComputerTool, addComputerGrant, toolOutputFor, compactImages, forReceipt } from "./computer/tools.mjs";
 import { handleGoalTool, checkGoalBudget, spendOnGoal, GOAL_LIMIT_CODE } from "./goals.mjs";
 import { chooseModel } from "./models.mjs";
@@ -368,6 +369,8 @@ export class Runtime {
     useDataDirectory(store.directory, store);
     // Initial skills on first start (tests opt in with {seed: true}: their stores start empty).
     if (seed) try { seedSkills(store); } catch {}
+    // An effect a close caught half-way is «sin confirmar», never run again (receipts.mjs).
+    try { this.recovered = recoverEffects(store); } catch (error) { this.recovered = []; console.warn("Colmena: no se pudieron revisar los recibos: " + error.message); }
     // Work cut by a close, crash or sleep: paused and marked, so resumeInterrupted() picks it
     // up on its own once the AI account is ready (OpenClaw restart-recovery).
     for (const m of store.list("missions"))
@@ -1544,27 +1547,45 @@ export class Runtime {
             signal.throwIfAborted();
             const receiptId = step.id + ":" + call.call_id;
             let receipt = this.store.get("receipts", receiptId);
+            // No receipt yet, or one that waits for an OK: the call runs (its approval decides).
+            // Done, «sin confirmar» or already started: never again (receipts.mjs).
+            const open = !receipt || receipt.status === RECEIPT.waiting;
             // The person wrote after the model chose this change: skip it and re-decide with
             // the message in front (OpenClaw steering). Reads still run.
-            if (!receipt && !runsInParallel(call.name) && this.steeredSince(missionId, step)) {
-              this.store.put("receipts", { id: receiptId, tool: call.name, result: { skipped: true, note: "No se hizo: la persona acaba de escribir. Lee su mensaje y vuelve a decidir si hace falta." }, at: now() });
+            if (open && !runsInParallel(call.name) && this.steeredSince(missionId, step)) {
+              this.store.put("receipts", { ...(receipt || {}), id: receiptId, tool: call.name, status: RECEIPT.done, result: { skipped: true, note: "No se hizo: la persona acaba de escribir. Lee su mensaje y vuelve a decidir si hace falta." }, at: now() });
               return;
             }
-            if (!receipt) {
+            if (open) {
               let args = {};
               try { args = JSON.parse(call.arguments); } catch {}
               this.setActivity(bot.id, missionId, step.id, verbFor(call.name, args), this.activityDetail(call.name, args));
               this.toolActivity(step.id, call, args, "running");
               const began = Date.now();
-              const result = await this.tool(mission, step, call, signal, model);
+              // The intent before the effect, in its own transaction: a close from here on
+              // leaves it «sin confirmar», never run twice (T3 Code CommandReceiptStore).
+              const effect = isEffect(call.name);
+              if (effect && !beginEffect(this.store, { id: receiptId, tool: call.name, missionId, stepId: step.id, args: call.arguments }).fresh) return;
+              let result;
+              try {
+                result = await this.tool(mission, step, call, signal, model);
+              } catch (error) {
+                // Stopped mid-way: a keyed internal write may run again; anything else is «sin confirmar».
+                if (effect) abandonEffect(this.store, receiptId);
+                throw error;
+              }
               if (result?.waiting) {
+                if (effect) finishEffect(this.store, receiptId, result);
                 waiting = true;
                 return;
               }
               this.toolActivity(step.id, call, args, result?.error ? "error" : "done");
               // A screenshot goes to the model once, as an image; the receipt keeps the rest.
               if (typeof result?.image === "string" && result.image.startsWith("data:image/")) shots.set(call.call_id, result);
-              receipt = this.store.put("receipts", { id: receiptId, tool: call.name, result: shots.has(call.call_id) ? forReceipt(result) : result, ms: Date.now() - began, at: now() });
+              const stored = shots.has(call.call_id) ? forReceipt(result) : result;
+              receipt = effect
+                ? finishEffect(this.store, receiptId, result, { ms: Date.now() - began, stored })
+                : this.store.put("receipts", { id: receiptId, tool: call.name, status: RECEIPT.done, result: stored, ms: Date.now() - began, at: now() });
               try { bumpLearningCounter(this.store, bot.id, "toolCalls"); } catch {}
               if (READ_TOOLS.has(call.name) && !result?.error)
                 this.store.patch("steps", step.id, { reads: (this.store.get("steps", step.id).reads || 0) + 1 });
@@ -1600,7 +1621,7 @@ export class Runtime {
           for (const call of step.pending) {
             const receipt = this.store.get("receipts", step.id + ":" + call.call_id);
             const latest = this.store.get("steps", step.id);
-            if (receipt && !latest.history.some((x) => x.type === "function_call_output" && x.call_id === call.call_id))
+            if (receipt && receipt.result !== undefined && !latest.history.some((x) => x.type === "function_call_output" && x.call_id === call.call_id))
               this.store.patch("steps", step.id, {
                 // Only the latest screenshot stays as an image; older ones become a note.
                 history: compactImages([...latest.history, { type: "function_call_output", call_id: call.call_id, output: this.modelOutput(missionId, step.id, call, receipt.result, shots.get(call.call_id)) }]),
