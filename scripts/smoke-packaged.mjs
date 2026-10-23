@@ -10,6 +10,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
+// The Intel build on an Apple Silicon runner goes through Rosetta, whose first translation
+// of Electron takes over a minute (the 2.1.0 build timed out at 60 s). Native runs take seconds.
+const SLOW_MS = 300000;
 // Absolute: a relative «release/…» given by CI would otherwise be taken for a package name
 // by require() below (the 2.0.0 release failed on that).
 const given = process.argv[2] ? path.resolve(process.argv[2]) : null;
@@ -32,7 +35,7 @@ const natives = spawnSync(exe, ["-e", `
   createCanvas(4, 4).getContext("2d").fillRect(0, 0, 2, 2);
   require(${JSON.stringify(path.join(app, "node_modules", "node-pty"))});
   console.log("native addons ok " + process.platform + "-" + process.arch + " node " + process.versions.node);
-`], { env, encoding: "utf8", timeout: 60000 });
+`], { env, encoding: "utf8", timeout: SLOW_MS });
 process.stdout.write(natives.stdout || "");
 if (natives.status !== 0) {
   console.error(natives.stderr || natives.error);
@@ -50,7 +53,7 @@ const finish = (code, message) => {
     process.exit(code);
   }, 1500);
 };
-const timer = setTimeout(() => finish(1, "The packaged server did not start within 90 s."), 90000);
+const timer = setTimeout(() => finish(1, `The packaged server did not start within ${SLOW_MS / 1000} s.`), SLOW_MS);
 server.stderr.on("data", (chunk) => { output += chunk; });
 server.on("exit", (code) => finish(1, "The packaged server exited early with code " + code + "."));
 server.stdout.on("data", async (chunk) => {
