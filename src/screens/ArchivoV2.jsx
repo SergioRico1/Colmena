@@ -11,7 +11,7 @@ import { later } from "../lib/undoToast.js";
 import { VerdictMark, VerdictNote } from "../components/v2/team/Verdict.jsx";
 
 // Colmena 2.0 · Archivo (design/V2Archivo.dc.html): what the colmena has made, the skills
-// the bots learned (none is used until you review its steps) and what they know about you.
+// the bots learned (used from now on, with «Deshacer»; some wait for your review) and what they know about you.
 
 const INK = "#12131A";
 const MUTED = "#5C606C";
@@ -83,7 +83,7 @@ export default function ArchivoV2() {
   const tabs = [["done", "Lo que han hecho", 0], ["skills", "Habilidades", pendingSkills], ["mem", "Lo que saben de ti", review]];
   const desc = {
     done: "Todo lo que ha hecho tu colmena, con quién lo hizo y para qué.",
-    skills: "Lo que tus bots han aprendido a hacer. Una habilidad nueva no se usa hasta que revisas sus pasos.",
+    skills: "Lo que tus bots han aprendido a hacer. La usan desde ya y puedes desactivarla; las que esperan tu revisión van primero.",
     mem: "Lo que tus bots recuerdan de ti y de cómo trabajáis. Puedes corregirlo u olvidarlo cuando quieras.",
   }[tab];
 
@@ -314,7 +314,7 @@ function Skills({ skills, bots }) {
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px", animation: "fade .3s ease-out" }}>
-      {!list.length ? <p style={{ margin: 0, padding: "40px 0", textAlign: "center", fontSize: "17px", color: FAINT }}>Aún no han aprendido nada. Cuando un bot repita una tarea, te propondrá guardarla como habilidad.</p> : null}
+      {!list.length ? <p style={{ margin: 0, padding: "40px 0", textAlign: "center", fontSize: "17px", color: FAINT }}>Aún no han aprendido nada. Cuando un bot repita una tarea, guardará cómo la hace como habilidad.</p> : null}
       {list.map((s) => <SkillCard key={s.id} s={s} bot={bots.find((b) => b.id === s.botId) || null} />)}
       {note || act.error ? <p role="status" style={{ margin: 0, fontSize: "14px", color: act.error ? "#B4231A" : MUTED }}>{act.error || note}</p> : null}
       <button type="button" onClick={importSkill} disabled={act.busy} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", height: "46px", padding: "0 18px", border: 0, borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1.5px rgba(18,19,26,.15)", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: INK }}>

@@ -9,7 +9,7 @@ metadata:
 
 # Guía de calidad para crear habilidades
 
-Una habilidad es un procedimiento que un bot sigue igual cada vez. Nadie la usa hasta que la persona revisa sus pasos.
+Una habilidad es un procedimiento que un bot sigue igual cada vez. Antes de activarse pasa unos controles (cabecera válida, «Úsala cuando…», herramientas que existen, tamaño, que no repita otra y que no lleve secretos); después la usa desde ya y la persona la ve con «Deshacer». Los bots en «Solo sugiere», las mejoras de una habilidad apagada y las que repiten otra esperan su revisión.
 
 1. Fija el contrato. Reúne dos o tres casos reales en los que se usaría. Separa los caminos de verdad distintos de las formas de decir lo mismo. Hecho cuando cada camino tiene un disparador concreto, un resultado esperado y dónde se guarda (entregable, memoria, archivo).
 2. Escribe la cabecera:
@@ -24,4 +24,4 @@ Una habilidad es un procedimiento que un bot sigue igual cada vez. Nadie la usa 
    - La cabecera es YAML válido con name y description.
    - Cada paso se puede seguir sin adivinar; no hay dos pasos que digan lo mismo.
    - Pruébala mentalmente con uno de los casos del paso 1: ¿sale el resultado esperado?
-7. Propón la habilidad o la versión mejorada para revisión; muestra qué cambia respecto a la anterior en una o dos frases.
+7. Si se parece mucho a una habilidad que ya existe, mejora esa en vez de crear otra. Explica qué cambia respecto a la versión anterior en una o dos frases.

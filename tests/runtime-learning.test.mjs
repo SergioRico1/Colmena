@@ -6,7 +6,7 @@ import { importSkill, activateSkill, skillDetail, resolveSkillApproval } from ".
 import { suggestAutomation, suggestAlwaysApprove, decideSuggestion, jaccard, containsSecret } from "../server/learning.mjs";
 import { readSoul } from "../server/soul.mjs";
 
-const SKILL = "---\nname: informe-ventas\ndescription: Prepara el informe de ventas\n---\n# Informe\n## Pasos\n1. Lee los datos.\n2. Calcula totales.\n3. Redacta.\n## Comprobacion\nCifras cuadran.\n## Limites\nSin datos inventados.";
+const SKILL = "---\nname: informe-ventas\ndescription: Úsala cuando haya que preparar el informe de ventas\n---\n# Informe\n## Pasos\n1. Lee los datos.\n2. Calcula totales.\n3. Redacta.\n## Comprobacion\nCifras cuadran.\n## Limites\nSin datos inventados.";
 const reflection = (over = {}) => JSON.stringify({
   skill: { action: "none", targetSkillId: null, name: "", description: "", content: "" },
   memories: [],

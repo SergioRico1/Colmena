@@ -2,8 +2,9 @@ import { postSkillNotice } from "./learned.mjs";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { id, now } from "./store.mjs";
-import { importSkill, activateSkill, parseSkill, patchSkill, curateSkills } from "./skills.mjs";
-import { readSoul, proposedSoul, lineDiff } from "./soul.mjs";
+import { importSkill, activateSkill, parseSkill, patchSkill, curateSkills, applySkillEdits } from "./skills.mjs";
+import { readSoul, proposedSoul, lineDiff, autonomyOf } from "./soul.mjs";
+import { checkSkill, checkSoul } from "./skill-checks.mjs";
 import {
   containsSecret, applyMemoryOps, normalizeMemoryOp, memoryEntries, memoryUsage, MEMORY_LABELS,
   readUserProfile, writeUserProfile, renderUserProfile, parseDirectives, PROFILE_LIMIT,
@@ -25,8 +26,10 @@ export { containsSecret, forgetHash, isForgotten };
 // - the review sees the real context: skill index, tool outcomes and corrections;
 // - skills change through minimal patches on the current content ({skillId, edits});
 // - memory changes through bounded add/replace/remove operations.
-// Nothing is activated silently except a patch to an already active skill of a bot
-// whose autonomy is 'solo'.
+// - what a review learns passes checks first (skill-checks.mjs); then, like Hermes, it is
+//   used from now on and the room says so in one line with «Deshacer» — except for bots set
+//   to «Solo sugiere», an improvement to a skill you switched off, or a skill that repeats
+//   another (a merge proposal): those wait for you in «Te necesitan».
 export const REVIEW_EVERY = Object.freeze({ userTurns: 10, toolCalls: 10 });
 
 export const REFLECTION_INSTRUCTIONS = `Extrae aprendizajes de una tarea de Colmena: actualiza la memoria y las habilidades del bot. Devuelve SOLO un objeto JSON valido, sin texto alrededor, con esta forma:
@@ -219,15 +222,17 @@ function forceName(content, name) {
   return content.replace(/^(﻿?---\r?\n[\s\S]*?^)name:.*$/m, (all, head) => head + "name: " + JSON.stringify(name));
 }
 
-function skillApproval(store, { skill, mission, bot, patch }) {
+function skillApproval(store, { skill, mission, bot, patch, merge = null }) {
   return store.put("approvals", {
     id: "skill:" + skill.id,
     missionId: mission.id,
     botId: bot?.id || skill.botId,
     kind: "skill",
     skillId: skill.id,
-    title: `Revisar habilidad: ${skill.name}` + (patch ? ` (versión ${skill.version})` : ""),
-    summary: `${bot?.name || "Un bot"} ${patch ? "propone mejorar" : "ha aprendido"} «${skill.name}» ${skill.learnedFrom || ""}: ${skill.description}`.replace(/\s+:/, ":"),
+    title: merge ? `¿Fusionar «${merge.from}» con «${merge.into.name}»?` : `Revisar habilidad: ${skill.name}` + (patch ? ` (versión ${skill.version})` : ""),
+    summary: merge
+      ? `${bot?.name || "Un bot"} ha aprendido algo muy parecido a «${merge.into.name}». Si lo apruebas, pasa a ser su versión ${skill.version}; si no, se descarta.`
+      : `${bot?.name || "Un bot"} ${patch ? "propone mejorar" : "ha aprendido"} «${skill.name}» ${skill.learnedFrom || ""}: ${skill.description}`.replace(/\s+:/, ":"),
     context: `${bot?.name || "Colmena"} · ${skill.learnedFrom || mission.title}`,
     blocks: 0,
     options: [],
@@ -246,6 +251,8 @@ export function proposeSoulChange(store, { bot, missionId, proposal, reason, key
   const current = readSoul(bot.id, { bot }) || "";
   const next = proposedSoul(current, proposal);
   if (next.trim() === current.trim()) return null;
+  // Checks before it reaches you: size, secrets, orders hidden in it (skill-checks.mjs).
+  if (checkSoul(next).length) return null;
   const open = store.list("approvals").find((a) => a.kind === "soul" && a.botId === bot.id && a.status === "pending");
   if (open) return null;
   // A change you turned down (or undid) is not proposed again, nor one that says almost the same.
@@ -283,6 +290,98 @@ export function proposeSoulChange(store, { bot, missionId, proposal, reason, key
 export function rejectSoulProposal(store, approval) {
   if (approval?.kind !== "soul") return null;
   return forget(store, "soul", approval.raw || approval.proposal, approval.botId ?? null, { missionId: approval.missionId ?? null, reason: "rejected" });
+}
+
+/**
+ * One skill action of a review (create or patch). Nothing is activated before the checks
+ * (skill-checks.mjs) pass; a skill that repeats another becomes a proposal to merge them; a
+ * bot set to «Solo sugiere» proposes instead of activating. Like Hermes, the rest is used
+ * from now on and the room says so with «Deshacer».
+ */
+function applySkillAction(store, { s, plan, mission, bot, readable, force, learnedFrom, out }) {
+  if (!plan.skills || !s || s.action === "none") return;
+  const missionId = mission.id;
+  const selfActivate = autonomyOf(bot) !== "sugiere";
+  const refuse = (what, problems) => {
+    out.notes.push(what + " descartada: " + problems.join(" "));
+    store.event(missionId, "learning", { botId: bot.id, text: what + " descartada en los controles: " + problems[0] });
+  };
+  if (s.action === "create") {
+    if (!s.content.trim() || plan.failed || !(plan.complex || force)) return;
+    if (isForgotten(store, "skill", s.name || parseSkillName(s.content), bot.id)) return void out.notes.push("Habilidad descartada: la olvidaste antes.");
+    const content = withFrontmatter(s.content, s.name, s.description);
+    const check = checkSkill(store, content, { botId: bot.id });
+    if (check.problems.length) return refuse("Habilidad", check.problems);
+    const source = "Aprendida en «" + mission.title + "»";
+    if (check.duplicateOf) {
+      // Almost the same as a skill it has: proposed as the next version of that one, for you to merge.
+      const dup = check.duplicateOf;
+      const merged = importSkill(store, { content: forceName(content, dup.name), source, missionId, botId: dup.botId ?? null, origin: "learned", learnedFrom: `parecida a «${dup.name}»`, previous: dup.id });
+      if (merged.status !== "pending" || isForgotten(store, "skill-patch", merged.content, merged.botId ?? null)) return void out.notes.push(`Habilidad descartada: repite «${dup.name}».`);
+      store.patch("skills", merged.id, { mergeOf: dup.id, mergedName: parseSkillName(content) });
+      skillApproval(store, { skill: store.get("skills", merged.id), mission, bot, merge: { from: parseSkillName(content), into: dup } });
+      store.event(missionId, "learning", { botId: bot.id, text: `${bot.name} propone fusionar lo aprendido con «${dup.name}»` });
+      out.notes.push(`Se parece a «${dup.name}»: propuesta para fusionarlas.`);
+      out.skill = store.get("skills", merged.id);
+      return;
+    }
+    const skill = importSkill(store, { content, source, missionId, botId: bot.id, origin: "learned", learnedFrom: force && !plan.complex ? "al pedirle que aprenda de una misión" : learnedFrom });
+    if (skill.status === "pending" && skill.missionId === missionId) {
+      if (selfActivate) {
+        activateSkill(store, skill.id, "active");
+        postSkillNotice(store, { missionId, bot, skill: store.get("skills", skill.id), previousId: null });
+      } else skillApproval(store, { skill, mission, bot });
+    }
+    store.event(missionId, "learning", { botId: bot.id, text: "Nueva habilidad aprendida: " + skill.name });
+    out.skill = store.get("skills", skill.id) || skill;
+    return;
+  }
+  if (s.action !== "patch") return;
+  const targetId = s.skillId || s.targetSkillId;
+  let target = targetId ? readable.find((x) => x.id === targetId) || null : null;
+  // A single loaded skill is the obvious target when the id is missing or invented.
+  if (!target && plan.used.length === 1 && (!targetId || !store.get("skills", targetId))) target = plan.used[0];
+  // A version already replaced by a newer active one is not patched (it would fork the skill).
+  const fresh = target ? store.get("skills", target.id) : null;
+  const lineage = fresh ? store.list("skills").filter((x) => x.name === fresh.name && (x.botId ?? null) === (fresh.botId ?? null)) : [];
+  if (fresh && fresh.status === "disabled" && lineage.some((x) => x.id !== fresh.id && x.status === "active"))
+    return void out.notes.push("Parche descartado: ya hay una versión más nueva activa.");
+  if (!target) return void out.notes.push("Parche descartado: la habilidad no se leyó en esta revisión.");
+  let content;
+  try {
+    content = s.edits.length ? applySkillEdits(fresh.content, s.edits)
+      : s.content.trim() ? forceName(withFrontmatter(s.content, target.name, s.description || target.description), target.name) : null;
+  } catch (error) {
+    out.notes.push("Parche descartado: " + error.message);
+    store.event(missionId, "learning", { botId: bot.id, text: "Mejora de «" + target.name + "» descartada: no coincidía con la versión actual" });
+    return;
+  }
+  if (!content) return;
+  const check = checkSkill(store, content, { botId: fresh.botId ?? null, lineage: lineage.map((x) => x.id) });
+  if (check.problems.length) return refuse("Mejora", check.problems);
+  // An improvement you undid or discarded before is not brought back.
+  if (isForgotten(store, "skill-patch", content, fresh.botId ?? null)) return void out.notes.push("Mejora descartada: ya la rechazaste antes.");
+  const source = "Mejorada en «" + mission.title + "»";
+  const from = plan.failed ? `mejorada tras un fallo en «${mission.title.slice(0, 60)}»` : `mejorada tras usarla en «${mission.title.slice(0, 60)}»`;
+  let skill;
+  try {
+    skill = s.edits.length
+      ? patchSkill(store, { skillId: target.id, edits: s.edits, source, missionId, learnedFrom: from })
+      : importSkill(store, { content, source, missionId, botId: target.botId ?? null, origin: "learned", learnedFrom: from, previous: target.id });
+  } catch (error) {
+    return void out.notes.push("Parche descartado: " + error.message);
+  }
+  if (!skill || skill.id === target.id) return;
+  if (selfActivate && ["active", "stale"].includes(store.get("skills", target.id)?.status ?? target.status)) {
+    activateSkill(store, skill.id, "active");
+    store.event(missionId, "skill_auto_activated", { botId: bot.id, text: `${bot.name} ha activado la version ${skill.version} de «${skill.name}»` });
+    postSkillNotice(store, { missionId, bot, skill: store.get("skills", skill.id), previousId: target.id });
+  } else {
+    // An improvement to a skill you switched off, or from a bot that only suggests, waits for you.
+    skillApproval(store, { skill, mission, bot, patch: true });
+    store.event(missionId, "learning", { botId: bot.id, text: "Mejora de habilidad pendiente de revisión: " + skill.name });
+  }
+  out.skill = store.get("skills", skill.id);
 }
 
 /** Applies the review's memory operations: invalid ones are dropped, the rest go as one bounded batch. */
@@ -462,79 +561,7 @@ export async function learnFromMission({ store, missionId, model, infer, signal,
   const out = { status: "completed", skill: null, memories: [], soul: null, suggestion, notes: [], reasons: plan.reasons };
   const learnedFrom = plan.similar >= 3 ? `tras ${plan.similar} tareas parecidas` : `tras una tarea de ${plan.calls.length} pasos`;
 
-  const s = reflection.skill;
-  if (plan.skills && s.action === "create" && s.content.trim() && isForgotten(store, "skill", s.name || parseSkillName(s.content), bot.id)) {
-    out.notes.push("Habilidad descartada: la olvidaste antes.");
-  } else if (plan.skills && s.action === "create" && !plan.failed && (plan.complex || force) && s.content.trim()) {
-    const content = withFrontmatter(s.content, s.name, s.description);
-    parseSkill(content);
-    const skill = importSkill(store, {
-      content,
-      source: "Aprendida en «" + mission.title + "»",
-      missionId,
-      botId: bot.id,
-      origin: "learned",
-      learnedFrom: force && !plan.complex ? "al pedirle que aprenda de una misión" : learnedFrom,
-    });
-    // Like Hermes: what a bot learns is used from now on. The room says so with «Deshacer»,
-    // and «Revisar pasos» stays available in its profile.
-    if (skill.status === "pending" && skill.missionId === missionId) {
-      activateSkill(store, skill.id, "active");
-      postSkillNotice(store, { missionId, bot, skill: store.get("skills", skill.id), previousId: null });
-    }
-    store.event(missionId, "learning", { botId: bot.id, text: "Nueva habilidad aprendida: " + skill.name });
-    out.skill = store.get("skills", skill.id) || skill;
-  } else if (plan.skills && s.action === "patch") {
-    const targetId = s.skillId || s.targetSkillId;
-    let target = targetId ? readable.find((x) => x.id === targetId) || null : null;
-    // A single loaded skill is the obvious target when the id is missing or invented.
-    if (!target && plan.used.length === 1 && (!targetId || !store.get("skills", targetId))) target = plan.used[0];
-    let skill = null;
-    // A version already replaced by a newer active one is not patched (it would fork the skill).
-    const fresh = target ? store.get("skills", target.id) : null;
-    const superseded = fresh && fresh.status === "disabled" && store.list("skills").some((x) => x.id !== fresh.id && x.name === fresh.name && (x.botId ?? null) === (fresh.botId ?? null) && x.status === "active");
-    if (superseded) { out.notes.push("Parche descartado: ya hay una versión más nueva activa."); target = null; skill = null; }
-    else if (!target) out.notes.push("Parche descartado: la habilidad no se leyó en esta revisión.");
-    else if (s.edits.length) {
-      try {
-        skill = patchSkill(store, {
-          skillId: target.id, edits: s.edits, source: "Mejorada en «" + mission.title + "»", missionId,
-          learnedFrom: `mejorada tras usarla en «${mission.title.slice(0, 60)}»`,
-        });
-      } catch (error) {
-        out.notes.push("Parche descartado: " + error.message);
-        store.event(missionId, "learning", { botId: bot.id, text: "Mejora de «" + target.name + "» descartada: no coincidía con la versión actual" });
-      }
-    } else if (s.content.trim()) {
-      const content = forceName(withFrontmatter(s.content, target.name, s.description || target.description), target.name);
-      skill = importSkill(store, {
-        content,
-        source: "Mejorada en «" + mission.title + "»",
-        missionId,
-        botId: target.botId ?? null,
-        origin: "learned",
-        learnedFrom: `mejorada tras usarla en «${mission.title.slice(0, 60)}»`,
-        previous: target.id,
-      });
-    }
-    // An improvement you undid or discarded before is not brought back.
-    if (skill && skill.id !== target.id && isForgotten(store, "skill-patch", skill.content, skill.botId ?? null)) {
-      out.notes.push("Mejora descartada: ya la rechazaste antes.");
-      skill = null;
-    }
-    if (skill && skill.id !== target.id) {
-      if (["active", "stale"].includes(store.get("skills", target.id)?.status ?? target.status)) {
-        activateSkill(store, skill.id, "active");
-        store.event(missionId, "skill_auto_activated", { botId: bot.id, text: `${bot.name} ha activado la version ${skill.version} de «${skill.name}»` });
-        postSkillNotice(store, { missionId, bot, skill: store.get("skills", skill.id), previousId: target.id });
-      } else {
-        // An improvement to a skill you switched off stays waiting: switching it back on is yours.
-        skillApproval(store, { skill, mission, bot, patch: true });
-        store.event(missionId, "learning", { botId: bot.id, text: "Mejora de habilidad pendiente de revisión: " + skill.name });
-      }
-      out.skill = store.get("skills", skill.id);
-    }
-  }
+  applySkillAction(store, { s: reflection.skill, plan, mission, bot, readable, force, learnedFrom, out });
   if (plan.memory) {
     const legacy = reflection.memories.map((m) => ({ action: "add", target: m.scope === "bot" ? "bot" : m.kind === "hecho" ? "equipo" : "persona", text: m.text, old: "" }));
     const { saved, notes } = saveMemoryOps(store, { ops: [...reflection.memory, ...legacy], bot, mission });

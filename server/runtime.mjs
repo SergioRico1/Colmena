@@ -100,7 +100,8 @@ const SKILLS_DIR = fileURLToPath(new URL("../prompts/skills/", import.meta.url))
 export const QUEUE_MODES = ["steer", "followup", "collect", "interrupt"];
 /** Incognito chats: 24 h from creation, then deleted with nothing kept (OpenClaw). */
 export const INCOGNITO_MS = 24 * 60 * 60 * 1000;
-const INCOGNITO_DENY = new Set(["remember", "propose_skill", "propose_soul_change", "propose_skill_change"]);
+// The tools that learn: skills are only learned by the review after a mission, which never runs here.
+const INCOGNITO_DENY = new Set(["remember", "propose_soul_change"]);
 const INCOGNITO_NOTE = "# Conversación de incógnito\nEsta conversación es de incógnito: se borra en 24 horas. No guardes nada de ella en tu memoria ni en notas, y no propongas habilidades a partir de ella.";
 const INTERRUPT_CODE = "COLMENA_INTERRUPTED";
 const RETRY_CODE = "COLMENA_RETRY";
