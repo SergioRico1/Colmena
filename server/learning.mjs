@@ -695,6 +695,8 @@ export async function learnFromMission({ store, missionId, model, reviewModel = 
   // Automatic learning can be switched off; what you ask for explicitly still happens.
   if (settings.learning === false && !force) return { status: "disabled" };
   const mission = store.get("missions", missionId);
+  // Incognito: nothing of that chat is measured or learned, not even when asked.
+  if (mission?.incognito) return { status: "skipped", reasons: ["conversación de incógnito"] };
   // Measure first (verdicts.mjs): how this mission went says whether what the bot carried helped.
   if (mission) try { observeMission(store, missionId); } catch {}
   if (!mission) return { status: "skipped" };
@@ -806,6 +808,7 @@ export async function learnNow({ store, missionId, model, reviewModel = null, in
   const mission = store.get("missions", missionId);
   if (!mission) throw Object.assign(Error("Misión no encontrada."), { status: 404 });
   if (["queued", "running", "planning"].includes(mission.status)) throw Object.assign(Error("La misión sigue en marcha. Espera a que termine."), { status: 409 });
+  if (mission.incognito) throw Object.assign(Error("En una conversación de incógnito no se aprende nada."), { status: 409 });
   if ((store.get("settings", "main") || {}).learning === false) throw Object.assign(Error("El aprendizaje está desactivado en Ajustes › Espacio."), { status: 409 });
   return learnFromMission({ store, missionId, model, reviewModel, infer, signal, force: true });
 }

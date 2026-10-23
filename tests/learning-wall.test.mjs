@@ -60,3 +60,16 @@ test("a SOUL change justified by approvals or reactions is never proposed", asyn
   assert.equal(proposeSoulChange(store, { bot, missionId: null, proposal: "Haré lo que la persona aprobó la última vez.", reason: "Para que me apruebe más" }), null);
   assert.ok(proposeSoulChange(store, { bot, missionId: null, proposal: "Voy al grano con frases cortas.", reason: "Lo pidió con sus palabras" }));
 });
+
+test("an incognito chat is never measured nor learned from, not even with «Aprende de esta misión»", async (t) => {
+  const { store } = await fixture(t, async () => answer("ok"));
+  store.patch("settings", "main", { learning: true });
+  store.put("missions", { id: "inc", title: "x", prompt: "Prefiero informes breves", mode: "solo", botIds: ["atlas"], status: "completed", incognito: true, conversation: true });
+  let calls = 0;
+  const infer = async () => { calls++; return { text: "{}" }; };
+  assert.equal((await learnFromMission({ store, missionId: "inc", model: "fixture", infer, force: true })).status, "skipped");
+  const { learnNow } = await import("../server/learning.mjs");
+  await assert.rejects(learnNow({ store, missionId: "inc", model: "fixture", infer }), /incógnito/);
+  assert.equal(calls, 0);
+  assert.equal(store.list("learningObservations").length, 0);
+});
