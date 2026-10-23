@@ -137,6 +137,17 @@ export function observeMission(store, missionId) {
   return touched.filter(Boolean);
 }
 
+/** A deleted mission stops counting: its observations go and the verdicts they fed are recomputed. */
+export function dropObservations(store, missionId) {
+  const gone = store.where("learningObservations", "missionId", missionId);
+  for (const o of gone) store.remove("learningObservations", o.id);
+  for (const key of new Set(gone.map((o) => o.kind + "\u0000" + o.targetId))) {
+    const [kind, targetId] = key.split("\u0000");
+    computeVerdict(store, kind, targetId);
+  }
+  return gone.length;
+}
+
 /** Missions finished in the last `days` days are observed again: reactions and corrections arrive late. */
 export function refreshObservations(store, { at = Date.now(), days = 3 } = {}) {
   let n = 0;
@@ -210,7 +221,12 @@ export function computeVerdict(store, kind, targetId) {
   const target = targetOf(store, kind, targetId);
   if (!target) return null;
   const obs = store.where("learningObservations", "targetId", targetId).filter((o) => o.kind === kind && o.outcome);
-  if (!obs.length) return null;
+  if (!obs.length) {
+    // Nothing left to measure (its missions were deleted): no verdict at all.
+    if (store.get("verdicts", kind + ":" + targetId)) store.remove("verdicts", kind + ":" + targetId);
+    if (target.verdict) store.patch({ skill: "skills", memory: "memories", soul: "approvals" }[kind], targetId, { verdict: null, consolidated: false });
+    return null;
+  }
   const clear = obs.every((o) => o.attribution === "clara");
   const base = baselineOf(store, kind, target, obs);
   const n = obs.length, bn = base.length;

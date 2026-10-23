@@ -6,7 +6,7 @@ import os from "node:os";
 import { Store } from "../server/store.mjs";
 import { importSkill, activateSkill, curateSkills } from "../server/skills.mjs";
 import { isForgotten } from "../server/learning.mjs";
-import { observeMission, missionSignals, computeVerdict, decideRevert, listVerdicts } from "../server/verdicts.mjs";
+import { observeMission, missionSignals, computeVerdict, decideRevert, listVerdicts, dropObservations } from "../server/verdicts.mjs";
 import { useDataDirectory } from "../server/soul.mjs";
 
 const SKILL = (extra = "") => `---\nname: informe-ventas\ndescription: Úsala cuando haya que preparar el informe de ventas\n---\n## Pasos\n1. Lee los datos.\n2. Redacta.${extra}\n`;
@@ -114,4 +114,17 @@ test("learned memories in play are measured with weak attribution: they stay «d
   const before = store.list("learningObservations").length;
   observeMission(store, mission(store, { status: "paused", limited: { engine: "chatgpt" } }));
   assert.equal(store.list("learningObservations").length, before);
+});
+
+test("deleting a mission drops what it measured; a verdict with nothing left disappears", async (t) => {
+  const { store } = await fixture(t);
+  const v1 = activateSkill(store, importSkill(store, { content: SKILL(), botId: "nora", origin: "learned" }).id, "active");
+  const ids = [];
+  for (let i = 0; i < 2; i++) { ids.push(mission(store, { skillId: v1.id, say: ["No, así no"] })); observeMission(store, ids.at(-1)); }
+  assert.equal(store.get("verdicts", "skill:" + v1.id).n, 2);
+  assert.equal(dropObservations(store, ids[0]), 1);
+  assert.equal(store.get("verdicts", "skill:" + v1.id).n, 1);
+  dropObservations(store, ids[1]);
+  assert.equal(store.get("verdicts", "skill:" + v1.id), null);
+  assert.equal(store.get("skills", v1.id).verdict, null);
 });

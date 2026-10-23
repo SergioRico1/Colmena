@@ -10,6 +10,7 @@ import { McpHub } from "./mcp/hub.mjs";
 import { registerMcpRoutes } from "./mcp/routes.mjs";
 import { undoLearned } from "./learned.mjs";
 import { forget } from "./forgotten.mjs";
+import { dropObservations } from "./verdicts.mjs";
 import { QUEUE_MODES, roomSlug } from "./runtime.mjs";
 import { forkRoom, snoozeUntil } from "./rooms.mjs";
 import { reactionsOf, togglePersonReaction } from "./reactions.mjs";
@@ -999,6 +1000,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
         store.put("goals", { ...g, milestones: g.milestones.map((m) => ({ ...m, missionIds: (m.missionIds || []).filter((x) => x !== missionId) })) });
       }
       store.sql("DELETE FROM events WHERE mission=?").run(missionId);
+      // What this room measured stops counting in the verdicts (verdicts.mjs).
+      dropObservations(store, missionId);
       store.remove("missions", missionId);
     });
     await runtime.checkpoints?.idle?.(missionId);
