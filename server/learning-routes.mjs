@@ -102,7 +102,7 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
       computer: computer(),
       memory: { ...meters, limits: MEMORY_LIMITS },
       counters: { ...learningCounters(store, bot.id), every: REVIEW_EVERY },
-      skills: store.list("skills").filter((s) => s.botId === bot.id).map((s) => curatedSkill(s, protectedIds)),
+      skills: store.list("skills").filter((s) => s.botId === bot.id && !s.removed).map((s) => curatedSkill(s, protectedIds)),
       verdicts: listVerdicts(store, { botId: bot.id }),
     });
   });
@@ -117,7 +117,7 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
 
   app.get("/api/learning/skills", (_req, res) => {
     const protectedIds = skillsUsedByAutomations(store);
-    res.json(store.list("skills").map((s) => curatedSkill(s, protectedIds)));
+    res.json(store.list("skills").filter((s) => !s.removed).map((s) => curatedSkill(s, protectedIds)));
   });
   app.patch("/api/skills/:id/curation", (req, res) => {
     const data = check(curationPatch, req.body);

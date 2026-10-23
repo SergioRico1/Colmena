@@ -125,7 +125,7 @@ export function combineReflections(answers) {
   const out = { decision: "mantener", motivo: "", memory: [], memories: [], skills: [], soul: null };
   const changing = list.filter((r) => r.decision !== "mantener");
   if (!changing.length) {
-    out.motivo = [...new Set(list.map((r) => r.motivo.trim()).filter(Boolean))].join(" ");
+    out.motivo = list.map((r) => r.motivo.trim()).find(Boolean) || "";
     return out;
   }
   out.decision = "cambiar";
@@ -152,7 +152,7 @@ export function combineReflections(answers) {
     same.por = [...new Set([...same.por, ...s.por])];
   }
   out.soul = answers[Object.keys(REVIEWERS).indexOf("tema")]?.soul || null;
-  out.motivo = [...new Set(changing.map((r) => r.motivo.trim()).filter(Boolean))].join(" ");
+  out.motivo = changing.map((r) => r.motivo.trim()).find(Boolean) || "";
   return out;
 }
 
@@ -557,7 +557,8 @@ export function rememberWhy(store, mission, results) {
     if (r.skipped || !r.id || r.action === "remove" || !store.get("memories", r.id)) continue;
     const why = whyOf(store, evidence, [], { text: r.text, fallback: latest });
     if (!why.length) continue;
-    store.patch("memories", r.id, { why });
+    // remember writes facts («Prefiere…», «Trabaja con…»): checked again in later tasks.
+    store.patch("memories", r.id, { why, ...(store.get("memories", r.id).nature ? {} : { nature: "hecho" }) });
     for (const w of why) if (!all.some((x) => x.id === w.id)) all.push(w);
   }
   return all.slice(0, 4);

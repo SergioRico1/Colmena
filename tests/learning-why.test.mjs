@@ -89,3 +89,23 @@ test("what a bot saves with remember cites the person's words of that mission", 
   const notice = store.list("messages").find((x) => x.missionId === m.id && x.kind === "learned");
   assert.equal(notice.learned.why[0].type, "mensaje");
 });
+
+test("a memory saved with remember is a fact; a skill forgotten here leaves the lists", async (t) => {
+  const { store, runtime } = await fixture(t, async ({ input }) => (outputs(input).length ? answer("Apuntado.") : call("remember", { operations: [{ action: "add", target: "persona", text: "Trabaja en euros", old: "" }] }, "r1")));
+  const m = runtime.create({ prompt: "Apunta que trabajo en euros", mode: "solo", botIds: ["nora"] });
+  await runtime.launch(m.id);
+  assert.equal(store.list("memories").find((x) => x.text === "Trabaja en euros").nature, "hecho");
+  const { importSkill } = await import("../server/skills.mjs");
+  const { forgetMission } = await import("../server/learning.mjs");
+  const { registerLearningRoutes } = await import("../server/learning-routes.mjs");
+  const express = (await import("express")).default;
+  importSkill(store, { content: "---\nname: x-skill\ndescription: Úsala cuando haga falta\n---\n1. Paso.\n", missionId: m.id, botId: "nora", origin: "learned" });
+  forgetMission(store, m.id);
+  const app = express();
+  registerLearningRoutes(app, { store, runtime });
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((r) => server.once("listening", r));
+  t.after(() => server.close());
+  const list = await (await fetch("http://127.0.0.1:" + server.address().port + "/api/learning/skills")).json();
+  assert.ok(!list.some((s) => s.name === "x-skill"), "forgotten skills are not listed");
+});

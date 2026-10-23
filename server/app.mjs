@@ -1236,7 +1236,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   });
 
   // ------------------------------------------------ skills & memories
-  app.get("/api/skills", (_req, res) => res.json(store.list("skills").map(skillSummary)));
+  app.get("/api/skills", (_req, res) => res.json(store.list("skills").filter((s) => !s.removed).map(skillSummary)));
   app.get("/api/skills/:id", (req, res) => {
     const skill = mustGet("skills", req.params.id, "Habilidad");
     const detail = typeof skillsModule.skillDetail === "function" ? skillsModule.skillDetail(store, skill.id) : null;

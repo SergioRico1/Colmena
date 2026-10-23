@@ -429,7 +429,8 @@ export function buildState(store, runtime, extras = {}) {
       .list("grants")
       .filter((g) => g.active !== false)
       .map((g) => ({ ...pick(g, ["id", "botId", "tool", "kind", "scope", "origin", "createdAt"]), label: grantLabel(g) })),
-    skills: store.list("skills").map(skillSummary),
+    // Skills forgotten with «Olvidar lo aprendido aquí» stay as records (their hash), out of sight.
+    skills: store.list("skills").filter((s) => !s.removed).map(skillSummary),
     memories: store.list("memories").filter((m) => m.active !== false).map(memorySummary),
     // Without their bodies: a year of deliverables is megabytes the summary never reads.
     artifacts: store.listWithout("artifacts", ["content"]).map((a) => artifactSummary(a, ctx.missions)),
