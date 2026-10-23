@@ -120,6 +120,27 @@
       "runtimeArgs": ["server/index.mjs", "--production"],
       "port": 4343,
       "env": { "COLMENA_DATA_DIR": ".local/mu-luis", "COLMENA_PORT": "4343", "COLMENA_RELAY_URL": "http://127.0.0.1:4390" }
+    },
+    {
+      "name": "mu-h-sergio",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [".local/mu-harness.mjs"],
+      "port": 4351,
+      "env": { "COLMENA_DATA_DIR": ".local/muh-sergio", "COLMENA_PORT": "4351", "COLMENA_RELAY_URL": "http://127.0.0.1:4390", "MU_NAME": "Sergio Rico" }
+    },
+    {
+      "name": "mu-h-marta",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [".local/mu-harness.mjs"],
+      "port": 4352,
+      "env": { "COLMENA_DATA_DIR": ".local/muh-marta", "COLMENA_PORT": "4352", "COLMENA_RELAY_URL": "http://127.0.0.1:4390", "MU_NAME": "Marta Ruiz" }
+    },
+    {
+      "name": "mu-h-luis",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [".local/mu-harness.mjs"],
+      "port": 4353,
+      "env": { "COLMENA_DATA_DIR": ".local/muh-luis", "COLMENA_PORT": "4353", "COLMENA_RELAY_URL": "http://127.0.0.1:4390", "MU_NAME": "Luis Gómez" }
     }
   ]
 }

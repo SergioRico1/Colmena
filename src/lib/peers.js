@@ -15,7 +15,13 @@ export const RELAY_LABEL = {
 export function useShareChat(id) {
   const [data, setData] = useState({ share: null, messages: [], more: false, loading: true, error: null });
   const [typing, setTyping] = useState([]);
+  const [thinking, setThinking] = useState([]); // bots answering here («Vera», «Leo (de Marta)»)
   const typingTimer = useRef(null);
+  const thinkingTimer = useRef(null);
+  // A meeting card shows the meeting as it is now (server/peers/meetings.mjs).
+  const updateMeeting = useCallback((meeting) => {
+    setData((d) => ({ ...d, messages: d.messages.map((m) => (m.card?.kind === "meeting" && m.card.id === meeting.id ? { ...m, meeting } : m)) }));
+  }, []);
   const load = useCallback(async () => {
     if (!id) return;
     try {
@@ -28,6 +34,7 @@ export function useShareChat(id) {
   useEffect(() => {
     setData({ share: null, messages: [], more: false, loading: true, error: null });
     setTyping([]);
+    setThinking([]);
     void load();
     const source = new EventSource(`/api/peers/events?share=${encodeURIComponent(id)}`);
     source.onmessage = (e) => {
@@ -45,7 +52,11 @@ export function useShareChat(id) {
         setTyping(event.names || []);
         clearTimeout(typingTimer.current);
         typingTimer.current = setTimeout(() => setTyping([]), 6000);
+        setThinking(event.thinking || []);
+        clearTimeout(thinkingTimer.current);
+        thinkingTimer.current = setTimeout(() => setThinking([]), 90000);
       }
+      if (event.type === "meeting" && event.meeting) updateMeeting(event.meeting);
       if (event.type === "seen" || event.type === "relay" || event.type === "presence") void load();
     };
     // Statuses («Enviando…» → sent) change without a live event: a light refresh now and then.
@@ -56,17 +67,18 @@ export function useShareChat(id) {
       source.close();
       clearInterval(tick);
       clearTimeout(typingTimer.current);
+      clearTimeout(thinkingTimer.current);
       window.removeEventListener("focus", onFocus);
     };
-  }, [id, load]);
+  }, [id, load, updateMeeting]);
   const older = useCallback(async () => {
     const first = data.messages[0];
     if (!first) return;
     const page = await get(`/peers/shares/${encodeURIComponent(id)}/messages?before=${encodeURIComponent(first.id)}`);
     setData((d) => ({ ...d, messages: [...page.messages, ...d.messages], more: page.more }));
   }, [id, data.messages]);
-  const send = useCallback(async (text) => {
-    const message = await post(`/peers/shares/${encodeURIComponent(id)}/messages`, { text });
+  const send = useCallback(async (text, mentions = []) => {
+    const message = await post(`/peers/shares/${encodeURIComponent(id)}/messages`, { text, ...(mentions.length ? { mentions } : {}) });
     setData((d) => (d.messages.some((m) => m.id === message.id) ? d : { ...d, messages: [...d.messages, message] }));
     setTimeout(load, 1200);
     return message;
@@ -100,5 +112,5 @@ export function useShareChat(id) {
     document.addEventListener("visibilitychange", mark);
     return () => document.removeEventListener("visibilitychange", mark);
   }, [id, newest, data.loading, data.share?.unread]);
-  return { ...data, typing, load, older, send, typingNow, react, retry };
+  return { ...data, typing, thinking, load, older, send, typingNow, react, retry, updateMeeting };
 }

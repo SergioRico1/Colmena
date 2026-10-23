@@ -56,13 +56,35 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   app.post("/api/peers/shares/:id/leave", run((req, p) => p.leave(req.params.id)));
   app.get("/api/peers/shares/:id/messages", run((req, p) => p.messages(req.params.id, { before: typeof req.query.before === "string" ? req.query.before : null })));
   app.post("/api/peers/shares/:id/messages", run((req, p) => {
-    const data = check(z.object({ text: z.string().trim().min(1).max(PEER_LIMITS.text), replyTo: id.optional() }).strict(), req.body);
-    return p.post(req.params.id, data.text, { replyTo: data.replyTo || null });
+    const mention = z.object({ owner: z.string().trim().min(43).max(43), bot: z.string().trim().min(1).max(40) }).strict();
+    const data = check(z.object({ text: z.string().trim().min(1).max(PEER_LIMITS.text), replyTo: id.optional(), mentions: z.array(mention).max(8).optional() }).strict(), req.body);
+    return p.post(req.params.id, data.text, { replyTo: data.replyTo || null, mentions: data.mentions || [] });
   }));
   app.post("/api/peers/shares/:id/seen", run((req, p) => p.seen(req.params.id)));
   app.post("/api/peers/shares/:id/typing", run((req, p) => p.typingNow(req.params.id)));
   app.post("/api/peers/messages/:id/reactions", run((req, p) => p.react(req.params.id, check(z.object({ emoji: z.string().trim().min(1).max(16) }).strict(), req.body).emoji)));
   app.post("/api/peers/messages/:id/retry", run((req, p) => p.retry(req.params.id)));
+
+  // Meetings agreed between Colmenas (meetings.mjs): see, preview what would be shared, share
+  // free/busy or decline, vote a slot (-1 = none fits), cancel (the organizer).
+  const meetings = (p) => {
+    if (!p.meetings) throw new PeerError("Las reuniones no están disponibles.", 501);
+    return p.meetings;
+  };
+  const meeting = (p, id) => {
+    const view = meetings(p).view(id);
+    if (!view) throw new PeerError("No existe esa reunión.", 404);
+    return view;
+  };
+  const wrap = (fn) => run(async (req, p) => {
+    try { return await fn(req, p); } catch (error) { throw error instanceof PeerError ? error : new PeerError(error.message, 409); }
+  });
+  app.get("/api/peers/meetings/:id", run((req, p) => meeting(p, req.params.id)));
+  app.get("/api/peers/meetings/:id/preview", wrap((req, p) => { meeting(p, req.params.id); return meetings(p).preview(req.params.id); }));
+  app.post("/api/peers/meetings/:id/share", wrap((req, p) => { meeting(p, req.params.id); return meetings(p).shareFree(req.params.id, check(z.object({ always: z.boolean().optional() }).strict(), req.body)); }));
+  app.post("/api/peers/meetings/:id/decline", wrap((req, p) => { meeting(p, req.params.id); return meetings(p).decline(req.params.id); }));
+  app.post("/api/peers/meetings/:id/vote", wrap((req, p) => { meeting(p, req.params.id); return meetings(p).vote(req.params.id, check(z.object({ slot: z.number().int().min(-1).max(5) }).strict(), req.body).slot); }));
+  app.post("/api/peers/meetings/:id/cancel", wrap((req, p) => { meeting(p, req.params.id); return meetings(p).cancel(req.params.id); }));
 
   app.get("/api/peers/events", (req, res) => {
     const p = getPeers();

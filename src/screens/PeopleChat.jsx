@@ -3,6 +3,8 @@ import { ArrowUp, Lock, LogOut, RotateCw, SmilePlus } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import ConvList from "../components/v2/chat/ConvList.jsx";
 import { PeerAvatar, PeoplePile } from "../components/v2/people/PeerAvatar.jsx";
+import { BotPresence } from "../components/v2/Presence.jsx";
+import MeetingCard from "../components/v2/people/MeetingCard.jsx";
 import { useShareChat, RELAY_LABEL } from "../lib/peers.js";
 import { useStore } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
@@ -25,16 +27,34 @@ const names = (list) => (list.length <= 1 ? list.join("") : list.slice(0, -1).jo
 
 export default function PeopleChat({ params = {} }) {
   const id = params.id;
-  const { peers } = useStore();
+  const { peers, bots: myBots = [] } = useStore();
   const chat = useShareChat(id);
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const [picker, setPicker] = useState(null);
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentions, setMentions] = useState([]); // [{owner, bot, name}] picked with «@»
   const input = useRef(null);
-  useEffect(() => { setText(""); setError(null); input.current?.focus(); }, [id]);
+  useEffect(() => { setText(""); setError(null); setMentions([]); setMentionOpen(false); input.current?.focus(); }, [id]);
   const share = chat.share;
   const relay = peers?.relay?.status || "off";
   const others = useMemo(() => (share?.members || []).filter((m) => !m.me), [share]);
+  // Bots you can name here: yours, then each person's (what their Colmena announced).
+  const mentionable = useMemo(() => {
+    const me = peers?.me?.address;
+    const list = myBots.filter((b) => b.enabled !== false).map((b) => ({ owner: me, bot: b.id, name: b.name, color: b.color, shape: b.shape, note: "tu bot" }));
+    for (const o of others) {
+      const c = (peers?.contacts || []).find((x) => x.id === o.id);
+      for (const b of c?.bots || []) list.push({ owner: o.id, bot: b.id, name: b.name, color: b.color, shape: b.shape, note: "de " + o.name.split(" ")[0] });
+    }
+    return list;
+  }, [myBots, others, peers]);
+  const pickMention = (m) => {
+    setMentionOpen(false);
+    setMentions((all) => (all.some((x) => x.owner === m.owner && x.bot === m.bot) ? all : [...all, m]));
+    setText((t) => (t.endsWith("@") ? t.slice(0, -1) : t) + (t && !/\s$/.test(t) && !t.endsWith("@") ? " " : "") + "@" + m.name + " ");
+    input.current?.focus();
+  };
   if (chat.error === "missing") return <NotFound active="conversaciones" title="Esta conversación ya no está" text="Puede que la otra persona la cerrara. No se ha perdido nada de lo tuyo." />;
   const dm = share?.kind === "dm";
   const other = dm ? others[0] : null;
@@ -45,9 +65,12 @@ export default function PeopleChat({ params = {} }) {
   const send = async () => {
     const value = text.trim();
     if (!value) return;
+    // The bots picked with «@» whose name is still in the text.
+    const named = mentions.filter((m) => value.includes("@" + m.name)).map(({ owner, bot }) => ({ owner, bot }));
     setText("");
+    setMentions([]);
     setError(null);
-    try { await chat.send(value); } catch (e) { setError(e.message); setText(value); }
+    try { await chat.send(value, named); } catch (e) { setError(e.message); setText(value); }
   };
   const leave = async () => {
     try { await post(`/peers/shares/${encodeURIComponent(id)}/leave`); navigate("/chats"); } catch (e) { setError(e.message); }
@@ -103,10 +126,17 @@ export default function PeopleChat({ params = {} }) {
                         {QUICK.map((e) => <button key={e} type="button" aria-label={"Reaccionar " + e} onClick={() => chat.react(m.id, e).catch((x) => setError(x.message))} style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", border: 0, borderRadius: "10px", background: "transparent", cursor: "pointer", fontSize: "18px", lineHeight: 1 }}>{e}</button>)}
                         <button type="button" aria-label="Otra reacción" onClick={() => setPicker(picker === m.id ? null : m.id)} style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", border: 0, borderRadius: "10px", background: "transparent", cursor: "pointer", color: "#3D404A" }}><SmilePlus size={18} strokeWidth={1.9} aria-hidden="true" /></button>
                       </div>
-                      <PeerAvatar person={mine ? { me: true } : { initials: m.author.initials, color: m.author.color }} size={40} />
+                      {m.bot ? (
+                        // A bot of the author (on its owner's computer), with the owner's face beside it.
+                        <span aria-hidden="true" style={{ position: "relative", width: "40px", height: "40px", display: "grid", placeItems: "center" }}>
+                          <BotPresence bot={m.bot} size={32} state="rest" />
+                          <span style={{ position: "absolute", right: "-3px", bottom: "-3px" }}><PeerAvatar person={mine ? { me: true } : { initials: m.author.initials, color: m.author.color }} size={18} /></span>
+                        </span>
+                      ) : <PeerAvatar person={mine ? { me: true } : { initials: m.author.initials, color: m.author.color }} size={40} />}
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
-                        <span style={{ fontSize: "14px" }}><strong style={{ fontWeight: 600 }}>{mine ? "Tú" : m.author.name}</strong> <span style={{ color: "#6B6F7A" }}>{"· " + hhmm(m.at)}</span></span>
+                        <span style={{ fontSize: "14px" }}><strong style={{ fontWeight: 600 }}>{m.bot ? m.bot.name : mine ? "Tú" : m.author.name}</strong> <span style={{ color: "#6B6F7A" }}>{(m.bot ? (mine ? "· tu bot" : "· bot de " + m.author.name.split(" ")[0]) + (m.local ? " · solo lo ves tú" : "") + " " : "") + "· " + hhmm(m.at)}</span></span>
                         <p style={{ margin: 0, fontSize: "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }}>{m.text}</p>
+                        {m.card?.kind === "meeting" ? <MeetingCard meeting={m.meeting} onChange={chat.updateMeeting} /> : null}
                         {picker === m.id ? (
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35)", alignSelf: "flex-start", animation: "rise .2s ease-out" }}>
                             {["👍", "❤️", "😂", "🎉", "🙏", "👀", "✅", "😮", "😢", "🔥"].map((e) => <button key={e} type="button" aria-label={"Reaccionar " + e} onClick={() => { setPicker(null); chat.react(m.id, e).catch((x) => setError(x.message)); }} style={{ width: "36px", height: "36px", border: 0, borderRadius: "10px", background: "transparent", cursor: "pointer", fontSize: "19px" }}>{e}</button>)}
@@ -139,17 +169,37 @@ export default function PeopleChat({ params = {} }) {
                   {names(chat.typing.map((n) => n.split(" ")[0])) + (chat.typing.length > 1 ? " están escribiendo" : " está escribiendo")}
                 </span>
               ) : null}
+              {chat.thinking.length ? (
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#8C8F99", animation: "breathe 1.4s ease-in-out infinite" }} />
+                  {names(chat.thinking) + (chat.thinking.length > 1 ? " están pensando" : " está pensando")}
+                </span>
+              ) : null}
               {error ? <span role="alert" style={{ color: "#B4231A" }}>{error}</span> : null}
             </p>
+            {mentionOpen && mentionable.length ? (
+              <div role="listbox" aria-label="Pedírselo a un bot" style={{ position: "relative" }}>
+                <div style={{ position: "absolute", left: 0, bottom: "10px", width: "min(380px, 100%)", maxHeight: "320px", overflowY: "auto", padding: "8px", background: "rgba(255,255,255,.96)", WebkitBackdropFilter: "blur(20px)", backdropFilter: "blur(20px)", borderRadius: "24px", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "2px", animation: "rise .25s ease-out", zIndex: 10 }}>
+                  {mentionable.map((m) => (
+                    <button key={m.owner + m.bot} type="button" role="option" aria-selected="false" onClick={() => pickMention(m)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "46px", padding: "0 12px", border: 0, borderRadius: "14px", background: "transparent", cursor: "pointer", textAlign: "left" }}>
+                      <BotPresence bot={m} size={22} state="rest" />
+                      <span style={{ flex: 1, fontSize: "15px", fontWeight: 500 }}>{m.name}</span>
+                      <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{m.note}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "8px", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)" }}>
               <label style={{ flex: 1, display: "flex" }}>
                 <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje"}</span>
                 <textarea ref={input} rows={1} value={text} disabled={gone || !share} maxLength={8000}
-                  onChange={(e) => { setText(e.target.value); if (e.target.value.trim()) chat.typingNow(); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
-                  placeholder={gone ? "Ya no estás en esta conversación" : dm ? `Escribe a ${other?.name.split(" ")[0] || ""}…` : "Escribe a todos…"}
+                  onChange={(e) => { const v = e.target.value; setText(v); if (v.trim()) chat.typingNow(); if (/(^|\s)@$/.test(v)) setMentionOpen(true); else if (mentionOpen && !/@\S*$/.test(v)) setMentionOpen(false); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
+                  onKeyDown={(e) => { if (e.key === "Escape" && mentionOpen) { e.preventDefault(); setMentionOpen(false); return; } if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
+                  placeholder={gone ? "Ya no estás en esta conversación" : (dm ? `Escribe a ${other?.name.split(" ")[0] || ""}…` : "Escribe a todos…") + " o @ para pedírselo a un bot"}
                   style={{ flex: 1, minWidth: 0, minHeight: "44px", maxHeight: "200px", padding: "11px 14px", border: 0, outline: "none", resize: "none", background: "transparent", font: "inherit", fontSize: "16px", lineHeight: 1.4 }} />
               </label>
+              <button type="button" aria-label="Pedírselo a un bot" aria-expanded={mentionOpen ? "true" : "false"} onClick={() => setMentionOpen((o) => !o)} disabled={gone || !share} style={{ width: "44px", height: "44px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", cursor: "pointer", font: "600 17px/1 'Geist', sans-serif", background: "rgba(18,19,26,.05)", color: "#12131A" }}>{"@"}</button>
               <button type="submit" aria-label="Enviar" disabled={!text.trim() || gone} style={{ width: "44px", height: "44px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: text.trim() && !gone ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: text.trim() && !gone ? "pointer" : "default" }}>
                 <ArrowUp size={18} strokeWidth={2.4} aria-hidden="true" />
               </button>

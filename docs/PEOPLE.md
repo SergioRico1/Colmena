@@ -28,12 +28,27 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 - Arranque: `node relay/server.mjs --port 4390 --host 127.0.0.1 --data .relay-data`. Colmena lo usa con `COLMENA_RELAY_URL` o Ajustes › Personas › «Dirección del buzón» (https, o http solo en este ordenador).
 - Despliegue previsto (pendiente de la cuenta y el OK del usuario): Cloudflare Workers + Durable Objects (0–5 $/mes) o una máquina pequeña de Fly.io (2–5 $/mes).
 
+## Tus bots en conversaciones con personas (`server/peers/bots.mjs`)
+- Cada Colmena anuncia a sus contactos sus bots (nombre, papel, color y forma; nada de lo que saben) en `hello`, `welcome` y `profile`.
+- Un mensaje puede llevar `mentions` [{owner, bot}] (el selector «@») y `bot` (firmado como uno de tus bots: «Vera · bot de Sergio»). Tus mensajes sin menciones elegidas se leen buscando «@Nombre» de tus bots; los de otros, solo con menciones elegidas.
+- Tu bot contesta en tu ordenador y con tu cuenta de IA, **sin herramientas, sin memoria ni perfil** (`sharedInstructions`: SOUL, papel, instrucciones y las reglas de la conversación compartida). Lo dicho antes y lo que pide otra persona van como contenido de fuera (`external-content.mjs`, con aviso si trae frases de inyección).
+- Lo que pida otra persona solo lo atiende si en Ajustes › Personas tienes «Hablar con tus bots: Si los menciona» para ella (por defecto); «Nunca» lo calla. Los bots nunca despiertan a otros bots, y como mucho 20 respuestas por hora y conversación. Si no puede contestar, te lo dice solo a ti (mensaje `local`, que no sale).
+
+## Reuniones entre dueños (`server/peers/meetings.mjs`, `server/peers/calendar.mjs`)
+- Lo empiezas tú: «@Atlas búscanos un hueco la semana que viene, 45 minutos, por las mañanas». La petición se lee con reglas (minutos, días, franja) de tu mensaje y los últimos de la conversación; sin pistas, 45 minutos en los próximos 7 días de 9 a 18.
+- Protocolo dentro del sobre (como las tareas de A2A, pero sin servidor): `meet.ask` (quien organiza → cada miembro), `meet.busy` (miembro → quien organiza: bloques ocupados o «no comparte»), `meet.vote` (miembro → quien organiza), `meet.state` (quien organiza → todos). Solo quien organiza puede cambiar el estado.
+- Cada Colmena decide con «Cuándo estás libre» para quien pregunta: «Pregúntame» (tarjeta en la conversación con lo que se enviaría), «Siempre» o «Nunca». El código lee la agenda y se queda con inicio y fin redondeados a 15 min: nunca títulos, lugares ni personas. Los bloques solo los recibe quien organiza; los demás ven los huecos propuestos.
+- Huecos: días laborables, dentro de la franja, sin pisar nada de nadie, uno por día y si faltan separados 90 min; se marca el más tranquilo. Si alguien dice «Ninguno me va», otra ronda (hasta 4).
+- Cuando todos dicen que sí al mismo hueco, cada Colmena lo apunta en su propio Google Calendar sin invitados (`GOOGLECALENDAR_CREATE_EVENT`; se descarta si llevara invitados). Sin calendario conectado, la tarjeta lo dice.
+
 ## Pruebas
 - `tests/peers.test.mjs`: tres Colmenas reales (Sergio, Marta, Luis) sobre un buzón local: invitación de un solo uso y palabras iguales, extraños ignorados, chat directo con visto y reacciones, mensajes que esperan con la otra Colmena cerrada, grupo de tres con la lista firmada, listas falsas ignoradas, presencia y «escribiendo» sin guardar, quitar un contacto.
-- Prueba real en este PC: `.claude/launch.json` › `mu-relay`, `mu-sergio`, `mu-marta`, `mu-luis` (datos en `.local/mu-*`).
+- `tests/peers-bots.test.mjs`: tu mención despierta a tu bot (sin herramientas ni memoria), la de otro llega como contenido de fuera, «Nunca» lo calla, un bot no despierta a otro, el selector «@» dice de quién es el bot, un fallo solo lo ves tú.
+- `tests/peers-meetings.test.mjs`: lectura de la petición (también con el cambio de hora), bloques sin títulos, huecos; tres dueños con calendarios simulados («Siempre», «Pregúntame», «Nunca»), solo quien organiza ve los bloques, votos, otra ronda, estados falsos ignorados y un evento sin invitados en cada calendario.
+- Prueba real en este PC: `.claude/launch.json` › `mu-relay`, `mu-sergio`, `mu-marta`, `mu-luis` (datos en `.local/mu-*`); con modelo y calendarios simulados, `mu-h-sergio`, `mu-h-marta`, `mu-h-luis` (`.local/mu-harness.mjs`, datos en `.local/muh-*`).
 
 ## Fases
 1. **Hecho**: identidad, buzón, invitaciones, chats directos y grupos de personas, «visto», reacciones, «escribiendo», presencia, Ajustes › Personas.
-2. Tus bots en conversaciones con personas: responden si los mencionan, con el contexto como contenido de fuera, y sin usar tus cuentas por lo que pida otro.
-3. Bots de otros dueños que negocian: petición estructurada (A2A dentro del sobre), libre/ocupado calculado por código, propuesta de huecos y confirmación de todos; cada uno lo apunta en su propio calendario.
-4. Buzón en la nube (con OK) y puente A2A con agentes externos (OpenClaw).
+2. **Hecho**: tus bots en conversaciones con personas.
+3. **Hecho**: bots de distintos dueños que acuerdan una reunión mirando solo libre/ocupado, con el sí de todos.
+4. Pendiente: buzón en la nube (con OK y cuenta del usuario), puente A2A HTTP con agentes externos (OpenClaw), roles de sala (editor, invitado) y archivos compartidos.

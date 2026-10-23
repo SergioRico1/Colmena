@@ -27,6 +27,9 @@ import { CodeService } from "./code/service.mjs";
 import { pendingCount } from "./notifications.mjs";
 import { watchStalls } from "./stalls.mjs";
 import { Peers } from "./peers/service.mjs";
+import { PeerBots } from "./peers/bots.mjs";
+import { Meetings } from "./peers/meetings.mjs";
+import { connectedCalendar } from "./peers/calendar.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 // The installed app runs this server on Electron's Node (desktop/main.cjs); the programs it
@@ -136,8 +139,13 @@ const ownName = () => {
 const peers = new Peers({ store, directory, relayUrl: process.env.COLMENA_RELAY_URL || null, nameOf: ownName, notifier: scheduler.notifier });
 app.locals.peers = peers;
 peers.start().then(() => peers.announceProfile()).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
+// Your bots answer when they are mentioned in a conversation with people (no tools, no memory),
+// and agree meetings with other people's Colmenas looking only at free/busy.
+peers.meetings = new Meetings({ peers, store, calendar: connectedCalendar(connections) }).start();
+new PeerBots({ peers, store, runtime }).start();
 store.listeners.add((event) => {
-  if (event?.type === "record" && event.kind === "settings" && peers.identity) setTimeout(() => peers.announceProfile(), 0);
+  // Your name or your bots changed: your contacts learn it (announceProfile does nothing if not).
+  if (event?.type === "record" && ["settings", "bots"].includes(event.kind) && peers.identity) setTimeout(() => peers.announceProfile(), 0);
 });
 // What was cut by the last close goes on by itself once the AI account is ready.
 setTimeout(() => {
