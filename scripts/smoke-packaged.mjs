@@ -10,7 +10,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const given = process.argv[2];
+// Absolute: a relative «release/…» given by CI would otherwise be taken for a package name
+// by require() below (the 2.0.0 release failed on that).
+const given = process.argv[2] ? path.resolve(process.argv[2]) : null;
 const candidates = given ? [given] : process.platform === "win32"
   ? [path.join(root, "release", "win-unpacked", "Colmena.exe")]
   : [path.join(root, "release", "mac-arm64", "Colmena.app"), path.join(root, "release", "mac", "Colmena.app")];
