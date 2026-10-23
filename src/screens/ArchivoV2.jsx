@@ -329,7 +329,8 @@ function Skills({ skills, bots }) {
 function MemoryRow({ m, bot }) {
   const { run } = useStore();
   const forget = () => later({ id: "memory:" + m.id, keys: ["memory:" + m.id], text: "Recuerdo olvidado", error: "No se pudo olvidar", run: () => run(() => del(`/memories/${encodeURIComponent(m.id)}`)) });
-  const src = [m.sourceLabel, bot?.name].filter(Boolean).join(" · ");
+  // A fact a bot deduced is checked again in later tasks; a procedure says how something is done.
+  const src = [m.sourceLabel, bot?.name, m.nature === "procedimiento" ? "procedimiento" : m.nature === "hecho" ? "hecho" : null].filter(Boolean).join(" · ");
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "64px", padding: "10px 24px", borderTop: "1px solid rgba(18,19,26,.06)", animation: "fade .3s ease-out" }}>
       {bot ? <BotPresence bot={bot} size={20} /> : <TeamDot size={20} />}

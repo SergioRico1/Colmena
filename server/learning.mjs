@@ -34,7 +34,7 @@ export const REVIEW_EVERY = Object.freeze({ userTurns: 10, toolCalls: 10 });
 
 export const REFLECTION_INSTRUCTIONS = `Extrae aprendizajes de una tarea de Colmena: actualiza la memoria y las habilidades del bot. Devuelve SOLO un objeto JSON valido, sin texto alrededor, con esta forma:
 {"decision":"cambiar"|"mantener","motivo":string,
- "memory":[{"action":"add"|"replace"|"remove","target":"persona"|"equipo"|"bot","text":string,"old":string,"por":[string]}],
+ "memory":[{"action":"add"|"replace"|"remove","target":"persona"|"equipo"|"bot","text":string,"old":string,"tipo":"hecho"|"procedimiento","por":[string]}],
  "skill":{"action":"none"|"patch"|"create","skillId":string|null,"edits":[{"old":string,"new":string}],"name":string,"description":string,"content":string,"por":[string]},
  "soul":{"proposal":string,"reason":string,"por":[string]}|null}
 
@@ -45,6 +45,7 @@ MEMORIA (solo si revisar.memoria es true; si no, "memory":[]):
 - Escribe HECHOS en tercera persona: «Prefiere informes de una pagina», «Trabaja en euros». Nunca ordenes («Responde…», «Usa…»).
 - Antes de añadir, mira memoria.*.recuerdos: si ya esta, no lo repitas; si lo matiza, usa replace (old = trozo literal del recuerdo). Si no cabe, en la MISMA lista fusiona (replace) o quita (remove) lo que sobre.
 - Como mucho 3 recuerdos nuevos. Nunca correos, telefonos, cuentas, claves, enlaces con tokens ni datos sensibles.
+- Cada recuerdo lleva "tipo": "hecho" (como son las cosas: preferencias, datos, decisiones; puede cambiar y se volvera a comprobar) o "procedimiento" (como se hace algo, en una frase). Un procedimiento de varios pasos va a una habilidad, no a la memoria.
 
 HABILIDADES (solo si revisar.habilidades es true; si no, action "none"):
 - Una habilidad es el procedimiento para una CLASE de tareas, a la manera de esta persona: pasos en orden, comprobacion, limites y los tropiezos que costaron tiempo, cada uno como regla general con su porque.
@@ -86,6 +87,8 @@ const reflectionSchema = z.object({
     text: z.string().max(600).default(""),
     old: z.string().max(600).default(""),
     por: z.array(z.string().max(40)).max(8).default([]),
+    // A fact (how things are) or a procedure (how something is done): facts are re-checked later.
+    tipo: z.enum(["hecho", "procedimiento"]).catch("hecho").default("hecho"),
   })).max(12).default([]),
   // Earlier reflection format: plain additions.
   memories: z.array(z.object({
@@ -338,7 +341,8 @@ function applySkillAction(store, { s, plan, mission, bot, readable, force, learn
     }
     const skill = importSkill(store, { content, source, missionId, botId: bot.id, origin: "learned", learnedFrom: force && !plan.complex ? "al pedirle que aprenda de una misión" : learnedFrom });
     if (skill.status === "pending" && skill.missionId === missionId) {
-      if (why.length) store.patch("skills", skill.id, { why });
+      // A skill is always a procedure (facts go to memory).
+      store.patch("skills", skill.id, { nature: "procedimiento", ...(why.length ? { why } : {}) });
       if (selfActivate) {
         activateSkill(store, skill.id, "active");
         postSkillNotice(store, { missionId, bot, skill: store.get("skills", skill.id), previousId: null, why });
@@ -384,7 +388,7 @@ function applySkillAction(store, { s, plan, mission, bot, readable, force, learn
     return void out.notes.push("Parche descartado: " + error.message);
   }
   if (!skill || skill.id === target.id) return;
-  if (why.length) store.patch("skills", skill.id, { why });
+  store.patch("skills", skill.id, { nature: "procedimiento", ...(why.length ? { why } : {}) });
   if (selfActivate && ["active", "stale"].includes(store.get("skills", target.id)?.status ?? target.status)) {
     activateSkill(store, skill.id, "active");
     store.event(missionId, "skill_auto_activated", { botId: bot.id, text: `${bot.name} ha activado la version ${skill.version} de «${skill.name}»` });
@@ -470,7 +474,7 @@ export function rememberWhy(store, mission, results) {
 
 /** Applies the review's memory operations: invalid ones are dropped, the rest go as one bounded batch. */
 function saveMemoryOps(store, { ops, bot, mission, evidence = null }) {
-  const valid = [], notes = [], whys = new Map();
+  const valid = [], notes = [], whys = new Map(), natures = new Map();
   for (const [i, op] of ops.entries()) {
     if (["add", "replace"].includes(op?.action || "add") && isForgotten(store, "memory", op?.text)) {
       notes.push("Recuerdo descartado: lo olvidaste antes.");
@@ -484,6 +488,7 @@ function saveMemoryOps(store, { ops, bot, mission, evidence = null }) {
       }
       whys.set(normalizeText(op.text), why);
     }
+    if (op?.text) natures.set(normalizeText(op.text), op.tipo === "procedimiento" ? "procedimiento" : "hecho");
     try {
       normalizeMemoryOp(op, i);
       valid.push(op);
@@ -512,8 +517,8 @@ function saveMemoryOps(store, { ops, bot, mission, evidence = null }) {
   }
   const saved = store.list("memories").filter((m) => before.get(m.id) !== m.text + "\u0000" + (m.active !== false));
   for (const m of saved) {
-    const why = whys.get(normalizeText(m.text));
-    if (why) store.patch("memories", m.id, { why });
+    const why = whys.get(normalizeText(m.text)), nature = natures.get(normalizeText(m.text));
+    if (why || nature) store.patch("memories", m.id, { ...(why ? { why } : {}), ...(nature ? { nature } : {}) });
   }
   return { saved: saved.map((m) => store.get("memories", m.id) || m), notes, before };
 }

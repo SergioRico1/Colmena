@@ -23,7 +23,7 @@ export function learningTimeline(store, botId, { limit = 200 } = {}) {
     const state = m.active === false ? (m.undone ? "deshecho" : "olvidado") : m.review ? "por revisar" : "activo";
     items.push({
       id: "memory:" + m.id, memoryId: m.id, type: "memory", at: m.createdAt || null,
-      title: m.text, detail: [TARGET_LABEL[m.target] || (m.scope === "equipo" ? "Del equipo" : "Suyo"), m.previousText ? "antes: «" + clip(m.previousText, 120) + "»" : null].filter(Boolean).join(" · "),
+      title: m.text, detail: [TARGET_LABEL[m.target] || (m.scope === "equipo" ? "Del equipo" : "Suyo"), m.nature === "procedimiento" ? "procedimiento" : m.nature === "hecho" ? "hecho" : null, m.previousText ? "antes: «" + clip(m.previousText, 120) + "»" : null].filter(Boolean).join(" · "),
       state, editable: m.active !== false, ...roomOf(m.missionId),
     });
     if (m.removedAt && m.active === false && !m.undone)

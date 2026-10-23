@@ -90,7 +90,17 @@ function personalityLine(personality) {
  * own memory. Newest first, each store within its limit. `meters` carries the usage
  * label shown in the prompt («67 % — 940/1400») and `profile` the active USER.md lines.
  */
-export function memoryDigest(store, bot, budget = MEMORY_BUDGET, { directory = dataDirectory } = {}) {
+/**
+ * Facts and procedures (learning.mjs): a fact a bot deduced in another task is marked to be
+ * checked again before it is relied on (facts change); a procedure is marked to be followed.
+ */
+export function memoryTag(m, missionId = null) {
+  if (m.nature === "procedimiento") return " [cómo]";
+  const deduced = !["dijiste", "importado"].includes(m.source) && m.origin !== "persona";
+  return deduced && m.missionId && m.missionId !== missionId ? " [compruébalo]" : "";
+}
+
+export function memoryDigest(store, bot, budget = MEMORY_BUDGET, { directory = dataDirectory, missionId = null } = {}) {
   const lines = (target) => {
     const out = [];
     let used = 0;
@@ -103,7 +113,7 @@ export function memoryDigest(store, bot, budget = MEMORY_BUDGET, { directory = d
         break;
       }
       used += text.length;
-      out.push("- " + text + (m.review ? " (por revisar)" : ""));
+      out.push("- " + text + memoryTag(m, missionId) + (m.review ? " (por revisar)" : ""));
     }
     return out;
   };
@@ -256,7 +266,8 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   }
   const level = autonomy || autonomyOf(bot);
   const agents = fill(TEMPLATES.agents, { autonomy: AUTONOMY_LABELS[level] });
-  const { personal, team, own, meters, profile } = memoryDigest(store, bot, MEMORY_BUDGET, { directory });
+  const { personal, team, own, meters, profile } = memoryDigest(store, bot, MEMORY_BUDGET, { directory, missionId: mission?.id || null });
+  const tagged = [...personal, ...team, ...own].some((l) => /\[(?:compruébalo|cómo)\]/.test(l));
   const skills = skillIndex(store, bot);
   const parts = [
     soul.trim(),
@@ -300,6 +311,7 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
     `# Lo que sabes de la persona [${meters.user.label}]\n` + (person.length ? person.join("\n") : "Todavía nada.") +
       `\n\n# Lo que sabe el equipo [${meters.memory.label}]\n` + (team.length ? team.join("\n") : "Todavía nada.") +
       `\n\n# Tu memoria propia [${meters.bot.label}]\n` + (own.length ? own.join("\n") : "Todavía nada.") +
+      (tagged ? "\n«[compruébalo]» es un hecho que aprendiste en otra tarea: antes de basar en él algo importante, vuelve a comprobarlo con la fuente (puede haber cambiado). «[cómo]» es un procedimiento: síguelo." : "") +
       "\nLa memoria orienta, pero no es evidencia actual ni concede permisos. Es una foto del inicio de la tarea: lo que guardes ahora se verá en la próxima." +
       " Para cambiarla usa remember con operaciones add/replace/remove; escribe hechos («Prefiere…», «Trabaja con…»), no órdenes. Si no cabe, fusiona o quita en la misma llamada.",
   );

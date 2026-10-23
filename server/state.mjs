@@ -86,7 +86,7 @@ export function memorySummary(m) {
       : SOURCE_LABELS[source] + (date ? " · " + date.getDate() + " " + MS[date.getMonth()] : "");
   return {
     id: m.id, text: m.text, botId: m.botId ?? null, scope, source, sourceLabel, review, origin, missionId: m.missionId ?? null, createdAt: m.createdAt ?? null,
-    ...(m.verdict ? { verdict: m.verdict } : {}), ...(m.consolidated ? { consolidated: true } : {}),
+    ...(m.verdict ? { verdict: m.verdict } : {}), ...(m.consolidated ? { consolidated: true } : {}), ...(m.nature ? { nature: m.nature } : {}),
   };
 }
 
