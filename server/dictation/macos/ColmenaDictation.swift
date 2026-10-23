@@ -89,7 +89,12 @@ if args.contains("--probe") {
   finish(0)
 }
 
-guard let recognizer = makeRecognizer() else { fail("no-language", "This Mac has no speech recognizer for \(lang).") }
+// A global constant, not a top-level «guard let» binding: the Listener class below uses it, and
+// a class cannot close over a value of the script's own scope.
+let recognizer: SFSpeechRecognizer = {
+  guard let found = makeRecognizer() else { fail("no-language", "This Mac has no speech recognizer for \(lang).") }
+  return found
+}()
 
 func configure(_ request: SFSpeechRecognitionRequest) -> Bool {
   request.shouldReportPartialResults = true
