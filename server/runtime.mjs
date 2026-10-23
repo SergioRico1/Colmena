@@ -2498,8 +2498,8 @@ export class Runtime {
       return result;
     }
     if (name === "create_deliverable") {
-      const same = this.store.list("artifacts")
-        .filter((a) => a.missionId === mission.id && a.id !== effectId && String(a.title).toLowerCase() === args.title.toLowerCase())
+      const same = this.store.where("artifacts", "missionId", mission.id)
+        .filter((a) => a.id !== effectId && String(a.title).toLowerCase() === args.title.toLowerCase())
         .sort((a, b) => (b.version || 1) - (a.version || 1))[0];
       const version = same ? (same.version || 1) + 1 : 1;
       // Code and web pages also become a real file of the mission (OpenClaw's workspace):
@@ -2552,8 +2552,8 @@ export class Runtime {
   }
   /** Next version of a deliverable with the same title in the mission. */
   nextVersion(missionId, title, effectId) {
-    const same = this.store.list("artifacts")
-      .filter((a) => a.missionId === missionId && a.id !== effectId && String(a.title).toLowerCase() === String(title).toLowerCase())
+    const same = this.store.where("artifacts", "missionId", missionId)
+      .filter((a) => a.id !== effectId && String(a.title).toLowerCase() === String(title).toLowerCase())
       .sort((a, b) => (b.version || 1) - (a.version || 1))[0];
     return { version: same ? (same.version || 1) + 1 : 1, previousId: same?.id || null };
   }

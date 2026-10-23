@@ -42,6 +42,15 @@ export function historyPage(all = [], { before = null, limit = CHAT_PAGE } = {})
  * span (answers of older records without a stepId are matched by time) and, for the latest
  * page, every step that has not finished yet (the live work, what waits for you).
  */
+/**
+ * A chat page's step views without the answer text a message of the same page already carries
+ * (T3 Code keeps result bodies off the wire): a finished step's `text` is its final message.
+ */
+export function withoutSaidText(views = [], messages = []) {
+  const said = new Set(messages.filter((m) => m.stepId && m.role === "assistant" && (!m.kind || m.kind === "message") && m.text).map((m) => m.stepId));
+  return views.map((s) => (s.status === "completed" && s.text && said.has(s.id) ? { ...s, text: "" } : s));
+}
+
 export function stepsForPage(steps = [], page) {
   if (!page) return [];
   const ids = new Set(page.messages.map((m) => m.stepId).filter(Boolean));

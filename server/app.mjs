@@ -1,7 +1,7 @@
 import { DENY_REASON_MAX } from "./denial.mjs";
 import { isYes, isNo } from "./appactions.mjs";
 
-import { CHAT_PAGE, MAX_PAGE, ROOM_PAGE, historyPage, stepsForPage } from "./history.mjs";
+import { CHAT_PAGE, MAX_PAGE, ROOM_PAGE, historyPage, stepsForPage, withoutSaidText } from "./history.mjs";
 import { createLiveCoalescer } from "./live-coalescer.mjs";
 import { commandOutput } from "./command-output.mjs";
 import { QUEUE_TEXT_MAX, deliverNext, editQueued, enqueue, moveQueued, queueOf, queueView, takeQueued, watchQueues } from "./queue.mjs";
@@ -659,17 +659,25 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     narration: s.status === "running" && s.narration?.text ? { text: s.narration.text, at: s.narration.at } : null,
     round: s.round ?? 1, quietReply: !!s.quietReply,
   });
-  const messageView = (m) => ({
-    id: m.id, role: m.role, botId: m.botId ?? null, text: m.text || "", at: m.at ?? null,
-    kind: m.kind || (m.phase === "plan" ? "plan" : "message"),
-    attachments: (m.attachments || []).map((a) => ({ name: a.name, size: a.size ?? null })),
-    artifactId: m.artifactId ?? null, approvalId: m.approvalId ?? null, plan: m.plan ?? null, summary: m.summary ?? null,
-    stepId: m.stepId ?? null, options: m.options ?? null, replyTo: m.replyTo ?? null, part: m.part ?? null, to: m.to ?? null,
-    ...(m.kind === "progress" ? { callIds: m.callIds || [] } : {}),
-    ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}),
-    reactions: reactionsOf(m).map((r) => ({ emoji: r.emoji, by: r.by })),
-    learned: m.learned ? { type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1 } : null,
-  });
+  // A message as the client gets it. Its optional links (artifact, approval, plan, step, reply…)
+  // only travel when set: an 800-message chat pages in without a wall of «null» (T3 Code payload
+  // budgets, tests/perf-budget.test.mjs). The client replaces records whole, never merges them.
+  const MESSAGE_OPTIONAL = ["artifactId", "approvalId", "plan", "summary", "stepId", "options", "replyTo", "part", "to", "learned"];
+  const messageView = (m) => {
+    const view = {
+      id: m.id, role: m.role, botId: m.botId ?? null, text: m.text || "", at: m.at ?? null,
+      kind: m.kind || (m.phase === "plan" ? "plan" : "message"),
+      attachments: (m.attachments || []).map((a) => ({ name: a.name, size: a.size ?? null })),
+      artifactId: m.artifactId ?? null, approvalId: m.approvalId ?? null, plan: m.plan ?? null, summary: m.summary ?? null,
+      stepId: m.stepId ?? null, options: m.options ?? null, replyTo: m.replyTo ?? null, part: m.part ?? null, to: m.to ?? null,
+      ...(m.kind === "progress" ? { callIds: m.callIds || [] } : {}),
+      ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}),
+      reactions: reactionsOf(m).map((r) => ({ emoji: r.emoji, by: r.by })),
+      learned: m.learned ? { type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1 } : null,
+    };
+    for (const key of MESSAGE_OPTIONAL) if (view[key] === null) delete view[key];
+    return view;
+  };
   app.get("/api/missions/:id", async (req, res) => {
     const m = mustGet("missions", req.params.id, "Misión");
     const ctx = context(store, runtime);
@@ -679,7 +687,9 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const all = store.where("messages", "missionId", m.id);
     const page = req.query.mensajes === "todos" ? null : historyPage(all, { limit: m.conversation ? CHAT_PAGE : ROOM_PAGE });
     const records = store.where("steps", "missionId", m.id);
-    const steps = (m.conversation && page ? stepsForPage(records, page) : records).map((s) => stepView(s, ctx.bots));
+    // A chat page leaves out the answer text its messages already carry (history.mjs).
+    const views = (m.conversation && page ? stepsForPage(records, page) : records).map((s) => stepView(s, ctx.bots));
+    const steps = m.conversation && page ? withoutSaidText(views, page.messages) : views;
     const letters = "ABCDEFGH";
     const proposals =
       m.proposals ||
@@ -721,10 +731,12 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const m = mustGet("missions", req.params.id, "Misión");
     const page = historyPage(store.where("messages", "missionId", m.id), { before: antes, limit: limite ?? (m.conversation ? CHAT_PAGE : ROOM_PAGE) });
     if (!page) throw notFound("Mensaje");
-    const bots = context(store, runtime).bots;
+    // Only the bots: the whole context (every mission, approval…) is not needed for a page.
+    const bots = new Map(store.list("bots").map((b) => [b.id, b]));
+    const views = stepsForPage(store.where("steps", "missionId", m.id), page).map((s) => stepView(s, bots));
     res.json({
       messages: page.messages.map(messageView),
-      steps: stepsForPage(store.where("steps", "missionId", m.id), page).map((s) => stepView(s, bots)),
+      steps: m.conversation ? withoutSaidText(views, page.messages) : views,
       olderCount: page.olderCount,
       cursor: page.cursor,
     });

@@ -227,6 +227,14 @@ export class Store {
     const select = fields.map((f) => `json_extract(data,'$.${f}') AS "${f}"`).join(",");
     return this.sql(`SELECT ${select} FROM records WHERE kind=? ORDER BY rowid`).all(kind);
   }
+  /** Every record of a kind without some heavy top-level fields (dropped by SQLite, never parsed in JS). */
+  listWithout(kind, fields) {
+    if (!fields.length || !fields.every((f) => /^[A-Za-z0-9_]+$/.test(f))) throw Error("Campo no válido.");
+    const paths = fields.map((f) => `'$.${f}'`).join(",");
+    return this.sql(`SELECT json_remove(data,${paths}) AS data FROM records WHERE kind=? ORDER BY rowid`)
+      .all(kind)
+      .map((r) => JSON.parse(r.data));
+  }
   get(kind, id) {
     const row = this.sql("SELECT data FROM records WHERE kind=? AND id=?").get(kind, id);
     return row ? JSON.parse(row.data) : null;

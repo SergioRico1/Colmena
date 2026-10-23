@@ -215,11 +215,21 @@ function activityLine(m, ctx) {
   return MISSION_LABELS[m.status] || "";
 }
 
+// Fields of a mission summary that are usually empty: left out when null or false, so a
+// hundred finished missions do not fill /api/state with «"forkOf":null» (T3 Code keeps the
+// shell lean). The client reads them as optional (undefined is as falsy as null).
+const OPTIONAL_MISSION = ["conversationOf", "incognito", "expiresAt", "limited", "narration", "recap", "queuePaused", "quiet", "dueAt", "automationId", "error", "snoozedUntil", "archived", "forkOf", "nothingNew", "watch", "thread", "lastLine"];
+const leanSummary = (view) => {
+  for (const key of OPTIONAL_MISSION) if (view[key] === null || view[key] === false) delete view[key];
+  return view;
+};
+
 export function missionSummary(m, ctx) {
   const steps = ctx.stepsByMission.get(m.id) || [];
   const pending = ctx.pendingByMission.get(m.id) || [];
-  return {
-    id: m.id, title: m.title, room: missionRoom(m), prompt: String(m.prompt || "").slice(0, 500),
+  return leanSummary({
+    // Lists show and search the start of the request; the whole of it comes with the mission (GET /api/missions/:id).
+    id: m.id, title: m.title, room: missionRoom(m), prompt: String(m.prompt || "").slice(0, 120),
     mode: m.mode || "solo", botIds: m.botIds || [], conversation: !!m.conversation, conversationOf: m.conversationOf ?? null,
     incognito: !!m.incognito, expiresAt: m.incognito ? m.expiresAt ?? null : null,
     status: m.status, statusLabel: m.status === "paused" && m.limited ? "Limitado" : MISSION_LABELS[m.status] || m.status, activityLine: activityLine(m, ctx),
@@ -241,7 +251,7 @@ export function missionSummary(m, ctx) {
     thread: !!m.thread, // the bot's single chat (threads.mjs)
     // The last thing said in a chat, for its row in «Chats» (Markdown marks out).
     lastLine: m.conversation && m.result ? String(m.result).replace(/[*_#>`|]+/g, "").replace(/\s+/g, " ").trim().slice(0, 140) : null,
-  };
+  });
 }
 
 const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "createdAt", "updatedAt"];
@@ -421,7 +431,8 @@ export function buildState(store, runtime, extras = {}) {
       .map((g) => ({ ...pick(g, ["id", "botId", "tool", "kind", "scope", "origin", "createdAt"]), label: grantLabel(g) })),
     skills: store.list("skills").map(skillSummary),
     memories: store.list("memories").filter((m) => m.active !== false).map(memorySummary),
-    artifacts: store.list("artifacts").map((a) => artifactSummary(a, ctx.missions)),
+    // Without their bodies: a year of deliverables is megabytes the summary never reads.
+    artifacts: store.listWithout("artifacts", ["content"]).map((a) => artifactSummary(a, ctx.missions)),
     folders,
     people: [user, ...store.list("people").map((p) => pick(p, ["id", "name", "email", "role", "createdAt"]))],
     connectors: connectorsView(extras.accounts || [], bots, folders),
