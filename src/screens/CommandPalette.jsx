@@ -322,16 +322,16 @@ export default function CommandPalette() {
     if (!menu) return [];
     if (menu.id === "goto") {
       const placeIcon = (p) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", margin: "0 5px" }}>{p.icon}</svg>;
-      const places = PLACES.map((p) => ({ key: "p:" + p.id, icon: placeIcon(p), label: p.label.join(""), terms: [p.label.join("")], right: "Lugar", run: () => go(p.href) }));
-      const sections = SECTIONS.map((s) => ({ key: "p:s:" + s.id, icon: ic(s.icon), label: s.label, terms: [s.label, s.lead], right: "Ajustes", run: () => go("/ajustes/" + s.id) }));
+      const places = PLACES.map((p) => ({ key: "p:" + p.id, icon: placeIcon(p), label: p.label.join(""), terms: [p.label.join("")], group: "Lugares", run: () => go(p.href) }));
+      const sections = SECTIONS.map((s) => ({ key: "p:s:" + s.id, icon: ic(s.icon), label: s.label, terms: [s.label, s.lead], group: "Ajustes", run: () => go("/ajustes/" + s.id) }));
       return rank([...places, ...sections], typed);
     }
     const engines = (ai?.engines || []).filter((e) => e.connected);
-    const items = engines.map((e) => ({ key: "e:" + e.id, icon: e.id === ai?.primary ? ic(Check) : ic(Sparkles), label: <>{"Pensar con "}<strong>{e.label}</strong></>, terms: [e.label, e.detail || ""], right: e.id === ai?.primary ? "Ahora" : e.detail || "", run: () => (e.id === ai?.primary ? close() : setPrimary(e.id, e.label)) }));
+    const items = engines.map((e) => ({ key: "e:" + e.id, icon: e.id === ai?.primary ? ic(Check) : ic(Sparkles), label: <>{"Pensar con "}<strong>{e.label}</strong></>, terms: [e.label, e.detail || ""], group: "IA del equipo", right: e.id === ai?.primary ? "Ahora" : e.detail || "", run: () => (e.id === ai?.primary ? close() : setPrimary(e.id, e.label)) }));
     if (!ai || ai.primary === "openai") {
       for (const m of models.filter((x) => !String(x.slug).includes("/"))) {
         const on = m.slug === settings.model;
-        items.push({ key: "gm:" + m.slug, icon: on ? ic(Check) : ic(Sparkles), label: m.label || m.slug, terms: [m.label || m.slug, m.description || ""], right: on ? "Ahora" : "ChatGPT", run: () => (on ? close() : setModel(m.slug, m.label || m.slug)) });
+        items.push({ key: "gm:" + m.slug, icon: on ? ic(Check) : ic(Sparkles), label: m.label || m.slug, terms: [m.label || m.slug, m.description || ""], group: "Modelo de ChatGPT", right: on ? "Ahora" : null, run: () => (on ? close() : setModel(m.slug, m.label || m.slug)) });
       }
     }
     return rank(items, typed);
@@ -352,7 +352,12 @@ export default function CommandPalette() {
   // Flat option list (order = keyboard order).
   const groups = [];
   if (menu) {
-    groups.push({ title: menu.title, items: menuItems, empty: menu.id === "model" ? "Conecta una IA en Ajustes › Inteligencia." : "Nada se llama así." });
+    // One group per kind of choice (lugares and ajustes; the team's AI and ChatGPT's model).
+    for (const it of menuItems) {
+      const g = groups.find((x) => x.title === it.group);
+      if (g) g.items.push(it); else groups.push({ title: it.group, items: [it] });
+    }
+    if (!groups.length) groups.push({ title: menu.title, items: [], empty: menu.id === "model" ? "Conecta una IA en Ajustes › Inteligencia." : "Nada se llama así." });
   } else if (mention) {
     const matches = matchBots(team, mention.query).slice(0, 6);
     groups.push({ title: "Elegir bot", items: matches.map((b) => ({ key: "pick:" + b.id, tall: true, icon: <Avatar bot={b} size={28} />, label: <><strong>{b.name}</strong> <span style={MUTED}>{"· " + b.role}</span></>, kbd: "↵", run: () => pickBot(b) })), empty: "Ningún bot de tu equipo se llama así." });
