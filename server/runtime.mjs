@@ -49,6 +49,7 @@ import { parseRef, modelEntry } from "./providers/catalog.mjs";
 import {
   learnFromMission, learnNow as learnNowFor, learningTick, condenseUserProfile, suggestAlwaysApprove, findGrant, addGrant,
   containsSecret, normalizeText, proposeSoulChange, tokens, jaccard, primaryBot, bumpLearningCounter, proposeAutomationSuggestion,
+  rejectSoulProposal,
 } from "./learning.mjs";
 import { decideRevert } from "./verdicts.mjs";
 import { applyMemoryOps, normalizeMemoryOp, guessTarget, MEMORY_LABELS, TARGET_OF } from "./memory.mjs";
@@ -950,6 +951,8 @@ export class Runtime {
           ...(providerLimited ? { limited: this.limitRecord(missionId, error) } : {}),
         });
       this.store.event(missionId, limited ? "limit" : providerLimited ? "provider_limit" : unavailable ? "unavailable" : controller.signal.aborted ? "stopped" : "error", { text: error.message });
+      // A failed mission is reviewed too: what went wrong in the method (learning.mjs).
+      if (this.store.get("missions", missionId)?.status === "blocked") this.learnSoon(missionId);
     } finally {
       clearInterval(timer);
       this.progress.delete(missionId);
@@ -3038,7 +3041,7 @@ ${made.outline}`,
         if (mission)
           this.store.put("messages", { id: id(), missionId: a.missionId, role: "system", botId: a.botId, kind: "activity", text: "Se ha actualizado el SOUL de " + (bot?.name || a.botId) + " con tu aprobación.", at: now() });
         this.store.event(a.missionId, "soul_updated", { botId: a.botId, text: "SOUL de " + (bot?.name || a.botId) + " actualizado" });
-      }
+      } else rejectSoulProposal(this.store, a); // never proposed again
       this.store.patch("approvals", a.id, { status: decision === "approved" ? "executed" : "denied", decidedAt: now(), decidedBy: "tú", resolution: decision === "approved" ? "SOUL actualizado" : "Propuesta descartada" });
       return;
     }
@@ -3083,6 +3086,7 @@ ${made.outline}`,
       for (const a of this.store.where("approvals", "missionId", missionId).filter((a) => a.status === "pending" && !["skill", "soul"].includes(a.kind)))
         this.store.patch("approvals", a.id, { status: "denied", decidedAt: now(), decidedBy: "tú", resolution: "Misión cancelada" });
     this.store.event(missionId, cancel ? "cancelled" : "paused", { text: cancel ? "Misión cancelada" : "Misión pausada" });
+    if (cancel) this.learnSoon(missionId);
   }
   /** «Pausar a todo el equipo»: pauses every active mission; work done is kept. */
   pauseAll() {
@@ -3154,6 +3158,15 @@ ${made.outline}`,
     this.store.patch("missions", missionId, { steps: [...m.steps, "combine"], status: "queued" });
     this.store.event(missionId, "combine", { text: "Atlas combina las propuestas de " + names });
     this.launch(missionId);
+  }
+  /** A failed or cancelled mission is reviewed in the background, once its run has unwound. */
+  learnSoon(missionId) {
+    const job = (async () => {
+      await new Promise((r) => setImmediate(r));
+      await this.learn(missionId, this.settings().model || this.provider?.config?.()?.local?.model, AbortSignal.timeout(90000));
+    })();
+    this.jobs.add(job);
+    job.finally(() => this.jobs.delete(job));
   }
   async learn(missionId, model, signal) {
     if (this.store.get("missions", missionId)?.incognito) {

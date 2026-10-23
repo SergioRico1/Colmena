@@ -9,6 +9,7 @@ import { SiteVault, registerVaultRoutes } from "./vault.mjs";
 import { McpHub } from "./mcp/hub.mjs";
 import { registerMcpRoutes } from "./mcp/routes.mjs";
 import { undoLearned } from "./learned.mjs";
+import { forget } from "./forgotten.mjs";
 import { QUEUE_MODES, roomSlug } from "./runtime.mjs";
 import { forkRoom, snoozeUntil } from "./rooms.mjs";
 import { reactionsOf, togglePersonReaction } from "./reactions.mjs";
@@ -1267,7 +1268,10 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     res.json(memorySummary(store.patch("memories", req.params.id, data)));
   });
   app.delete("/api/memories/:id", (req, res) => {
+    const memory = store.get("memories", req.params.id);
     if (!store.remove("memories", req.params.id)) throw notFound("Recuerdo");
+    // A bot's deduction you threw away is never learned again (forgotten.mjs).
+    if (memory.source !== "dijiste") forget(store, "memory", memory.text, null, { missionId: memory.missionId ?? null, reason: "rejected" });
     res.json({ ok: true });
   });
 

@@ -1,6 +1,7 @@
 import { parseDocument } from "yaml";
 import { createHash } from "node:crypto";
 import { id, now } from "./store.mjs";
+import { forget } from "./forgotten.mjs";
 
 // SKILL.md in the agentskills.io / VoltAgent shape: YAML frontmatter with
 // name, description and optional metadata, followed by Markdown. Importing is
@@ -253,6 +254,11 @@ export function skillDetail(store, skillId) {
  */
 export function resolveSkillApproval(store, skillId, status) {
   if (!["active", "disabled"].includes(status)) return [];
+  const open = store.list("approvals").filter((a) => a.kind === "skill" && a.skillId === skillId && a.status === "pending");
+  // A learned skill or improvement you discard is never proposed again (forgotten.mjs).
+  const skill = store.get("skills", skillId);
+  if (status === "disabled" && open.length && skill?.origin === "learned")
+    forget(store, (skill.version || 1) > 1 ? "skill-patch" : "skill", (skill.version || 1) > 1 ? skill.content : skill.name, skill.botId ?? null, { missionId: skill.missionId ?? null, reason: "rejected" });
   return store
     .list("approvals")
     .filter((a) => a.kind === "skill" && a.skillId === skillId && a.status === "pending")

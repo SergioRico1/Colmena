@@ -10,7 +10,7 @@ import {
 } from "./memory.mjs";
 import { normalizeTrigger } from "./triggers.mjs";
 import { forget, forgetHash, isForgotten } from "./forgotten.mjs";
-import { observeMission, refreshObservations } from "./verdicts.mjs";
+import { observeMission, refreshObservations, missionEnding, isCorrection } from "./verdicts.mjs";
 
 export { containsSecret, forgetHash, isForgotten };
 
@@ -18,6 +18,10 @@ export { containsSecret, forgetHash, isForgotten };
 // - reviews are triggered by per-bot counters (10 messages of the person → memory;
 //   10 tool calls → skills), by complex missions, by corrections and on demand
 //   («Aprende de esta misión»); automation runs without errors are not reviewed;
+// - failed and cancelled missions are reviewed too (what went wrong in the method), never
+//   for failures of the environment (accounts, folders, limits, a provider that is down);
+// - the stopped actions with their reason and the corrections of the bot's other recent
+//   missions reach the review, and what was undone or rejected is never proposed again;
 // - the review sees the real context: skill index, tool outcomes and corrections;
 // - skills change through minimal patches on the current content ({skillId, edits});
 // - memory changes through bounded add/replace/remove operations.
@@ -45,6 +49,10 @@ HABILIDADES (solo si revisar.habilidades es true; si no, action "none"):
 - Las correcciones de estilo o formato de una tarea van a la habilidad de esa tarea, no a la memoria.
 
 NO SE GUARDA (ni en memoria ni en habilidades): fallos del entorno (falta una cuenta, una carpeta o una conexion; la persona puede arreglarlo), errores pasajeros que se resolvieron reintentando, afirmaciones negativas sobre herramientas («la herramienta X no va»), relatos de una sola vez, ni intentos fallidos presentados como metodo fiable.
+
+SI LA TAREA FALLO O SE CANCELO (desenlace distinto de "completada"): aprende solo del metodo (un paso mal planteado, una comprobacion que falto, una herramienta mal usada) y, si se cargo una habilidad, corrigela con patch. Nunca crees una habilidad a partir de un fallo. Si el fallo fue del entorno, no guardes nada.
+
+RECHAZOS Y CORRECCIONES: "rechazos" son acciones que la persona paro, con su motivo; "correccionesAnteriores", lo que corrigio en otras tareas de este bot. Si un motivo se repite o aplica a esta clase de tareas, conviertelo en una regla general de la habilidad (con su porque) o en un hecho de la memoria. No copies el caso concreto.
 
 SOUL: solo si la persona expreso con claridad como quiere que sea este bot (tono, caracter); si no, null.
 Si no hay nada que aprender: {"memory":[],"skill":{"action":"none","skillId":null,"edits":[],"name":"","description":"","content":""},"soul":null}.
@@ -153,14 +161,46 @@ export function similarMissions(store, mission, threshold = 0.5) {
     (m) => (m.id === mission.id || m.status === "completed") && primaryBot(m) === bot && jaccard(mine, tokens(m.prompt)) >= threshold,
   );
 }
-const CORRECTION = /\b(?:no|mejor|prefiero|preferir[ií]a|demasiad[oa]s?|cambia|corrige|otra vez|as[ií] no|en vez de|en lugar de|m[aá]s (?:breve|corto|largo|claro|formal|cercano)|menos|sin|quita|evita|est[aá] mal|te has equivocado|no es eso)\b/i;
 /** What the person corrected: follow-ups (in chats only those that look like corrections), thread hints, plan changes. */
 export function personCorrections(store, mission) {
   const own = store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && typeof m.text === "string");
-  const followups = own.slice(1).map((m) => m.text).filter((t) => !mission.conversation || CORRECTION.test(t));
+  const followups = own.slice(1).map((m) => m.text).filter((t) => !mission.conversation || isCorrection(t));
   const hints = store.where("thread", "missionId", mission.id).filter((t) => t.from === "user").map((t) => t.text);
   const plans = store.where("approvals", "missionId", mission.id).filter((a) => a.kind === "plan" && a.note).map((a) => a.note);
   return [...followups, ...hints, ...plans].map((t) => String(t).slice(0, 1500)).slice(-10);
+}
+
+/** Actions of this bot the person stopped with a reason (newest first): the real «why not». */
+export function recentRejections(store, botId, { days = 30, limit = 8, at = Date.now() } = {}) {
+  return store.list("approvals")
+    .filter((a) => a.botId === botId && a.status === "denied" && a.decidedBy === "tú" && String(a.denyReason || "").trim() && !["skill", "soul", "revert", "plan"].includes(a.kind))
+    .filter((a) => at - (Date.parse(a.decidedAt || a.createdAt || "") || 0) <= days * 86400000)
+    .sort((a, b) => String(b.decidedAt || "").localeCompare(String(a.decidedAt || "")))
+    .slice(0, limit)
+    .map((a) => ({ id: a.id, missionId: a.missionId ?? null, accion: String(a.title || a.summary || "").slice(0, 200), motivo: String(a.denyReason).replace(/\s+/g, " ").trim().slice(0, 500) }));
+}
+/** What the person corrected in this bot's other recent missions (newest first). */
+export function recentCorrections(store, botId, exceptMissionId = null, { days = 30, limit = 6, at = Date.now() } = {}) {
+  const out = [];
+  const missions = store.list("missions")
+    .filter((m) => m.id !== exceptMissionId && !m.incognito && primaryBot(m) === botId && at - (Date.parse(m.createdAt || "") || 0) <= days * 86400000)
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  for (const m of missions) {
+    const own = store.where("messages", "missionId", m.id).filter((x) => x.role === "user" && typeof x.text === "string");
+    for (const x of own.slice(1).reverse()) {
+      if (m.conversation && !isCorrection(x.text)) continue;
+      out.push({ id: x.id, missionId: m.id, texto: String(x.text).replace(/\s+/g, " ").trim().slice(0, 600) });
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}
+
+// The environment, not the method: missing accounts, folders or permissions, limits, a provider down.
+const ENVIRONMENT = /(?:conect|cuenta|conexi[oó]n|carpeta|permiso|acceso|l[ií]mite|cuota|no responde|no disponible|unavailable|time(?:d )?out|rate.?limit|quota|network|ECONN|fetch failed|\b429\b|\b5\d\d\b|sin modelo|equipo est[aá] en pausa)/i;
+/** True when a mission failed because of something the person can fix outside the bot. */
+export function environmentFailure(mission) {
+  return !!mission?.limited || ENVIRONMENT.test(String(mission?.error || ""));
 }
 
 function parseReflection(text) {
@@ -208,6 +248,10 @@ export function proposeSoulChange(store, { bot, missionId, proposal, reason, key
   if (next.trim() === current.trim()) return null;
   const open = store.list("approvals").find((a) => a.kind === "soul" && a.botId === bot.id && a.status === "pending");
   if (open) return null;
+  // A change you turned down (or undid) is not proposed again, nor one that says almost the same.
+  if (isForgotten(store, "soul", proposal, bot.id)) return null;
+  const said = tokens(proposal);
+  if (store.list("approvals").some((a) => a.kind === "soul" && a.botId === bot.id && a.status === "denied" && jaccard(said, tokens(a.raw || "")) >= 0.7)) return null;
   const approval = store.put("approvals", {
     id: "soul:" + key,
     missionId,
@@ -221,6 +265,7 @@ export function proposeSoulChange(store, { bot, missionId, proposal, reason, key
     email: null,
     canAlways: false,
     proposal: next,
+    raw: String(proposal).slice(0, 20000),
     current,
     baseHash: createHash("sha256").update(current).digest("hex"),
     diff: lineDiff(current, next),
@@ -232,6 +277,12 @@ export function proposeSoulChange(store, { bot, missionId, proposal, reason, key
   });
   if (missionId) store.event(missionId, "approval_requested", { botId: bot.id, text: `${bot.name} propone un cambio en su SOUL` });
   return approval;
+}
+
+/** A SOUL change you turned down leaves a hash: the bot never proposes it again. */
+export function rejectSoulProposal(store, approval) {
+  if (approval?.kind !== "soul") return null;
+  return forget(store, "soul", approval.raw || approval.proposal, approval.botId ?? null, { missionId: approval.missionId ?? null, reason: "rejected" });
 }
 
 /** Applies the review's memory operations: invalid ones are dropped, the rest go as one bounded batch. */
@@ -303,26 +354,43 @@ export function reviewPlan(store, mission, { force = false } = {}) {
   const errors = outcomes.reduce((n, o) => n + o.fallos, 0);
   const used = usedSkills(store, mission.id);
   const corrections = personCorrections(store, mission);
+  const ending = missionEnding(mission) || "completada";
+  const failed = ending === "fallida" || ending === "cancelada";
+  const rejections = recentRejections(store, bot.id);
+  const stopped = rejections.filter((r) => r.missionId === mission.id).length;
+  const earlier = recentCorrections(store, bot.id, mission.id);
   const similar = similarMissions(store, mission).length;
   const complex = calls.length >= 5 || similar >= 3;
   const counters = learningCounters(store, bot.id);
   const usedRemember = calls.some((c) => c.name === "remember");
   const reasons = [];
   if (force) reasons.push("lo has pedido");
-  if (!force && mission.automationId && !errors && !corrections.length)
-    return { bot, memory: false, skills: false, reasons: ["automatización sin errores"], calls, outcomes, used, corrections, similar, complex, usedRemember };
+  const extra = { ending, failed, rejections, earlier };
+  if (!force && mission.automationId && !errors && !corrections.length && !failed)
+    return { bot, memory: false, skills: false, reasons: ["automatización sin errores"], calls, outcomes, used, corrections, similar, complex, usedRemember, ...extra };
+  if (failed) {
+    // What went wrong in the method: the loaded skill is patched, nothing new is created from a failure.
+    reasons.push(ending === "fallida" ? "la tarea falló" : "la cancelaste");
+    if (corrections.length) reasons.push("hubo correcciones");
+    if (stopped) reasons.push("paraste una acción");
+    return {
+      bot, memory: force || corrections.length > 0 || stopped > 0, skills: force || used.length > 0 || errors >= 2 || corrections.length > 0 || stopped > 0,
+      reasons, calls, outcomes, used, corrections, similar, complex: false, usedRemember, ...extra,
+    };
+  }
   const memoryDue = !usedRemember && counters.userTurns >= REVIEW_EVERY.userTurns;
   const skillDue = !used.length && counters.toolCalls >= REVIEW_EVERY.toolCalls;
   if (memoryDue) reasons.push(`${counters.userTurns} mensajes tuyos desde la última revisión`);
   if (skillDue) reasons.push(`${counters.toolCalls} usos de herramientas desde la última revisión`);
   if (complex) reasons.push(similar >= 3 ? `tras ${similar} tareas parecidas` : `tarea de ${calls.length} pasos`);
   if (corrections.length) reasons.push("hubo correcciones");
+  if (stopped) reasons.push("paraste una acción");
   if (used.length) reasons.push("usó habilidades");
   return {
     bot,
-    memory: force || complex || memoryDue || corrections.length > 0,
-    skills: force || complex || skillDue || used.length > 0 || corrections.length > 0,
-    reasons, calls, outcomes, used, corrections, similar, complex, usedRemember,
+    memory: force || complex || memoryDue || corrections.length > 0 || stopped > 0,
+    skills: force || complex || skillDue || used.length > 0 || corrections.length > 0 || stopped > 0,
+    reasons, calls, outcomes, used, corrections, similar, complex, usedRemember, ...extra,
   };
 }
 
@@ -338,13 +406,18 @@ export async function learnFromMission({ store, missionId, model, infer, signal,
   const mission = store.get("missions", missionId);
   // Measure first (verdicts.mjs): how this mission went says whether what the bot carried helped.
   if (mission) try { observeMission(store, missionId); } catch {}
-  if (!mission || (!force && mission.status !== "completed")) return { status: "skipped" };
+  if (!mission) return { status: "skipped" };
+  const ending = missionEnding(mission);
+  if (!force && !["completada", "fallida", "cancelada"].includes(ending))
+    return { status: "skipped", reasons: ending === "limitada" ? ["límite del proveedor: no es una lección"] : [] };
+  // A failure of the environment (an account, a folder, a limit, a provider down) is not a lesson.
+  if (!force && ending !== "completada" && environmentFailure(mission)) return { status: "skipped", reasons: ["fallo del entorno"] };
   // «Olvidar lo aprendido aquí»: this mission is never reviewed again.
   if (store.get("forgotten", "mission:" + missionId)) return { status: "skipped", reasons: ["lo olvidaste"] };
   const plan = reviewPlan(store, mission, { force });
   const { bot } = plan;
   if (!bot) return { status: "skipped" };
-  const suggestion = force ? null : suggestAutomation(store, mission);
+  const suggestion = force || plan.failed ? null : suggestAutomation(store, mission);
   // Hermes: a bot that already curated memory/skills during the mission starts its counters again.
   if (plan.usedRemember) resetLearningCounters(store, bot.id, ["userTurns"]);
   if (plan.used?.length) resetLearningCounters(store, bot.id, ["toolCalls"]);
@@ -368,10 +441,14 @@ export async function learnFromMission({ store, missionId, model, infer, signal,
         resultado: String(mission.result || "").slice(0, 8000),
         bot: { id: bot.id, nombre: bot.name, rol: bot.role },
         herramientas: plan.outcomes,
+        desenlace: plan.ending,
+        ...(plan.failed && mission.error ? { motivoDelFallo: String(mission.error).slice(0, 600) } : {}),
         correccionesDeLaPersona: plan.corrections,
+        correccionesAnteriores: plan.earlier.map((c) => c.texto),
+        rechazos: plan.rejections.map((r) => ({ accion: r.accion, motivo: r.motivo })),
         mensajesDeLaPersona: userMessages.slice(-10).map((m) => String(m.text || "").slice(0, 1500)),
         tareasParecidas: plan.similar,
-        puedeCrearHabilidad: plan.complex || force,
+        puedeCrearHabilidad: !plan.failed && (plan.complex || force),
         habilidades: index,
         habilidadesLeidas: readable.map((s) => ({ id: s.id, name: s.name, version: s.version, cargada: plan.used.some((u) => u.id === s.id), content: String(s.content).slice(0, 12000) })),
         memoria: memorySnapshot(store, bot),
@@ -388,7 +465,7 @@ export async function learnFromMission({ store, missionId, model, infer, signal,
   const s = reflection.skill;
   if (plan.skills && s.action === "create" && s.content.trim() && isForgotten(store, "skill", s.name || parseSkillName(s.content), bot.id)) {
     out.notes.push("Habilidad descartada: la olvidaste antes.");
-  } else if (plan.skills && s.action === "create" && (plan.complex || force) && s.content.trim()) {
+  } else if (plan.skills && s.action === "create" && !plan.failed && (plan.complex || force) && s.content.trim()) {
     const content = withFrontmatter(s.content, s.name, s.description);
     parseSkill(content);
     const skill = importSkill(store, {
@@ -439,6 +516,11 @@ export async function learnFromMission({ store, missionId, model, infer, signal,
         learnedFrom: `mejorada tras usarla en «${mission.title.slice(0, 60)}»`,
         previous: target.id,
       });
+    }
+    // An improvement you undid or discarded before is not brought back.
+    if (skill && skill.id !== target.id && isForgotten(store, "skill-patch", skill.content, skill.botId ?? null)) {
+      out.notes.push("Mejora descartada: ya la rechazaste antes.");
+      skill = null;
     }
     if (skill && skill.id !== target.id) {
       if (["active", "stale"].includes(store.get("skills", target.id)?.status ?? target.status)) {

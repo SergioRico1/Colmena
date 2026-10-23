@@ -3,6 +3,7 @@
 // in one line, and one click puts things back as they were.
 import { now } from "./store.mjs";
 import { activateSkill } from "./skills.mjs";
+import { forget } from "./forgotten.mjs";
 
 const clip = (t, n = 120) => { const s = String(t || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
 
@@ -37,7 +38,11 @@ export function postSkillNotice(store, { missionId, bot, skill, previousId }) {
   });
 }
 
-/** «Deshacer»: memory back as it was (adds forgotten, edits reverted, removals restored) or the previous skill version active again. */
+/**
+ * «Deshacer»: memory back as it was (adds forgotten, edits reverted, removals restored) or the
+ * previous skill version active again. What was undone leaves a hash (forgotten.mjs): the
+ * review never proposes it again.
+ */
 export function undoLearned(store, messageId) {
   const msg = store.get("messages", messageId);
   if (!msg || msg.kind !== "learned" || !msg.learned) throw Error("Ese aviso ya no existe.");
@@ -46,12 +51,19 @@ export function undoLearned(store, messageId) {
     for (const c of msg.learned.changes || []) {
       const m = store.get("memories", c.id);
       if (!m) continue;
-      if (c.action === "add") store.patch("memories", c.id, { active: false, removedAt: now(), removedBy: "tú", undone: true });
-      else if (c.action === "replace") store.patch("memories", c.id, { text: c.from, previousText: m.text, undone: true });
+      if (c.action === "add") {
+        store.patch("memories", c.id, { active: false, removedAt: now(), removedBy: "tú", undone: true });
+        forget(store, "memory", m.text, null, { missionId: msg.missionId, reason: "undone" });
+      } else if (c.action === "replace") {
+        store.patch("memories", c.id, { text: c.from, previousText: m.text, undone: true });
+        forget(store, "memory", m.text, null, { missionId: msg.missionId, reason: "undone" });
+      }
       else if (c.action === "remove") store.patch("memories", c.id, { active: true, removedAt: null, removedBy: null, undone: true });
     }
   } else if (msg.learned.type === "skill") {
     const { skillId, previousId } = msg.learned;
+    const skill = store.get("skills", skillId);
+    if (skill) forget(store, previousId ? "skill-patch" : "skill", previousId ? skill.content : skill.name, skill.botId ?? null, { missionId: msg.missionId, reason: "undone" });
     if (previousId && store.get("skills", previousId)) activateSkill(store, previousId, "active");
     else if (store.get("skills", skillId)) activateSkill(store, skillId, "disabled");
   }
