@@ -82,7 +82,7 @@ export class Meetings {
     this.log = log;
     this.clock = clock;
     this.asks = new Map();
-    this.onMeet = ({ from, body }) => { void this.receive(from, body).catch((e) => this.log("Reunión: " + e.message)); };
+    this.onMeet = ({ from, body }) => { if (this.peers.stopped) return; void this.receive(from, body).catch((e) => this.log("Reunión: " + e.message)); };
   }
   start() { this.peers.on("meet", this.onMeet); return this; }
   stop() { this.peers.off("meet", this.onMeet); }

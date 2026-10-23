@@ -26,7 +26,7 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 - `POST /v1/send`, `GET /v1/stream` (SSE con lo que espera y lo que llega), `POST /v1/ack`, `PUT|GET|DELETE /v1/invites/:lookup`, `GET /v1/health`. SQLite propio; guarda 7 días como mucho y borra al confirmar recepción. Comprueba que el remitente del sobre es quien firma la petición.
 - Ve quién escribe a quién, cuándo y cuánto ocupa; nunca el contenido.
 - Arranque: `node relay/server.mjs --port 4390 --host 127.0.0.1 --data .relay-data`. Colmena lo usa con `COLMENA_RELAY_URL` o Ajustes › Personas › «Dirección del buzón» (https, o http solo en este ordenador).
-- Despliegue previsto (pendiente de la cuenta y el OK del usuario): Cloudflare Workers + Durable Objects (0–5 $/mes) o una máquina pequeña de Fly.io (2–5 $/mes).
+- En producción va el de Cloudflare (abajo); este sirve para pruebas y para quien quiera montar el suyo.
 
 ## Tus bots en conversaciones con personas (`server/peers/bots.mjs`)
 - Cada Colmena anuncia a sus contactos sus bots (nombre, papel, color y forma; nada de lo que saben) en `hello`, `welcome` y `profile`.
@@ -46,7 +46,7 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 - La entrega en directo es un WebSocket con hibernación (`/v1/ws?auth=…`): mientras no llega nada no se paga tiempo, y el «ping» de cada 25 s lo contesta Cloudflare sin despertar el objeto. `GET /v1/health` dice `stream: "ws"`; el de Node dice `"sse"` y el cliente elige solo (`relay-client.mjs`).
 - Las firmas se comprueban con WebCrypto Ed25519. El registro de peticiones está apagado (`observability.enabled = false`).
 - Probarlo en local: `cd relay/cloudflare && npm install && npx wrangler dev --local --port 8787`, y `COLMENA_TEST_RELAY=http://127.0.0.1:8787 node --test --test-concurrency=1 tests/peers*.test.mjs` (las mismas 17 pruebas).
-- Desplegar: una cuenta gratuita de Cloudflare con su subdominio de workers.dev elegido; `npx wrangler login` (autoriza la persona en el navegador) y `npx wrangler deploy` desde `relay/cloudflare/`. La dirección que sale (`https://colmena-buzon.<subdominio>.workers.dev`) va en `DEFAULT_RELAY` (`server/peers/service.mjs`) para que todas las Colmenas la usen.
+- **Desplegado** el 2026-10-24 en la cuenta de Cloudflare del dueño de Colmena: `https://colmena.klast-lab-fa693a.workers.dev` (Worker `colmena`). Es `DEFAULT_RELAY` (`server/peers/service.mjs`): todas las Colmenas lo usan sin configurar nada; nadie más necesita una cuenta. Volver a desplegar: `npx wrangler deploy` desde `relay/cloudflare/` (con `npx wrangler login` hecho). Las 19 pruebas pasan contra él (`COLMENA_TEST_RELAY=https://colmena.klast-lab-fa693a.workers.dev`).
 - Coste: el plan gratuito cubre 100 000 peticiones al día; cada mensaje a N personas son N envíos y N confirmaciones. Si se quedara corto, el plan de pago de Workers son 5 $/mes.
 
 ## Pruebas
@@ -59,4 +59,4 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 1. **Hecho**: identidad, buzón, invitaciones, chats directos y grupos de personas, «visto», reacciones, «escribiendo», presencia, Ajustes › Personas.
 2. **Hecho**: tus bots en conversaciones con personas.
 3. **Hecho**: bots de distintos dueños que acuerdan una reunión mirando solo libre/ocupado, con el sí de todos.
-4. Pendiente: buzón en la nube (con OK y cuenta del usuario), puente A2A HTTP con agentes externos (OpenClaw), roles de sala (editor, invitado) y archivos compartidos.
+4. Pendiente: buzones federados (cada dirección con su buzón), puente A2A HTTP con agentes externos (OpenClaw), roles de sala (editor, invitado) y archivos compartidos.

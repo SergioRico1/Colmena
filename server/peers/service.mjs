@@ -22,8 +22,8 @@ import {
 import { RelayClient } from "./relay-client.mjs";
 
 // The mailbox every Colmena uses unless Ajustes › Personas or COLMENA_RELAY_URL say another:
-// Colmena's own on Cloudflare (relay/cloudflare/), once deployed. Null: nothing leaves the PC.
-export const DEFAULT_RELAY = null;
+// Colmena's own on Cloudflare (relay/cloudflare/, deployed 2026-10-24).
+export const DEFAULT_RELAY = "https://colmena.klast-lab-fa693a.workers.dev";
 export const PEER_LIMITS = Object.freeze({
   text: 8000, title: 60, name: 80, members: 32, perMinute: 120, inviteHours: 24, invitesOpen: 20, page: 60, seenDays: 31,
 });
@@ -91,6 +91,7 @@ export class Peers extends EventEmitter {
 
   // ---------------------------------------------------------------- lifecycle
   async start() {
+    this.stopped = false;
     this.identity = await this.loadIdentity();
     this.pruneSeen();
     this.connect();
@@ -99,6 +100,7 @@ export class Peers extends EventEmitter {
     return this;
   }
   stop() {
+    this.stopped = true; // what is still arriving is left at the mailbox for next time
     for (const t of this.timers) clearInterval(t);
     this.timers = [];
     if (this.client?.status === "online") this.broadcastPresence("away");
@@ -538,6 +540,7 @@ export class Peers extends EventEmitter {
   // ---------------------------------------------------------------- receiving
   /** One envelope from the mailbox. true = handled (or useless): it can be deleted there. */
   async receive(row) {
+    if (this.stopped) return false;
     const env = row?.env;
     if (!env || typeof env.id !== "string") return true;
     if (this.store.get("peerSeen", env.id)) return true;

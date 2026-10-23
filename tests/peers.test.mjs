@@ -36,7 +36,9 @@ async function world(t, names = ["Sergio Rico", "Marta Ruiz", "Luis Gómez"]) {
     people.push({ name, store, peers, notices });
   }
   t.after(async () => {
-    for (const p of people) { p.peers.stop(); p.store.close(); }
+    for (const p of people) { p.peers.stop(); }
+    await new Promise((r) => setTimeout(r, 300)); // in-flight mail settles
+    for (const p of people) p.store.close();
     await relay.close();
     await rm(base, { recursive: true, force: true });
   });

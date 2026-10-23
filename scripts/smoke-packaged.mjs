@@ -22,7 +22,7 @@ if (!target) {
 const exe = target.endsWith(".app") ? path.join(target, "Contents", "MacOS", "Colmena") : target;
 const app = target.endsWith(".app") ? path.join(target, "Contents", "Resources", "app") : path.join(path.dirname(target), "resources", "app");
 const data = mkdtempSync(path.join(os.tmpdir(), "colmena-smoke-"));
-const env = { ...process.env, ELECTRON_RUN_AS_NODE: "1", COLMENA_DATA_DIR: data, COLMENA_PORT: "0" };
+const env = { ...process.env, ELECTRON_RUN_AS_NODE: "1", COLMENA_DATA_DIR: data, COLMENA_PORT: "0", COLMENA_RELAY_URL: "off" };
 console.log("Packaged app: " + exe);
 
 const natives = spawnSync(exe, ["-e", `

@@ -136,7 +136,9 @@ const ownName = () => {
   const account = session.status?.() || null;
   return (s.userName && s.userName !== "Tu cuenta" ? s.userName : account?.name) || String(account?.email || "").split("@")[0] || "";
 };
-const peers = new Peers({ store, directory, relayUrl: process.env.COLMENA_RELAY_URL || DEFAULT_RELAY, nameOf: ownName, notifier: scheduler.notifier });
+// COLMENA_RELAY_URL=off: no mailbox at all (tests and smoke runs never touch the real one).
+const relayEnv = process.env.COLMENA_RELAY_URL;
+const peers = new Peers({ store, directory, relayUrl: relayEnv === "off" ? null : relayEnv || DEFAULT_RELAY, nameOf: ownName, notifier: scheduler.notifier });
 app.locals.peers = peers;
 peers.start().then(() => peers.announceProfile()).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
 // Your bots answer when they are mentioned in a conversation with people (no tools, no memory),

@@ -98,7 +98,9 @@ async function world(t) {
     people.push({ name, store, peers, calendar, created, bots });
   }
   t.after(async () => {
-    for (const p of people) { p.bots.stop(); p.peers.meetings.stop(); p.peers.stop(); p.store.close(); }
+    for (const p of people) { p.bots.stop(); p.peers.meetings.stop(); p.peers.stop(); }
+    await new Promise((r) => setTimeout(r, 300)); // in-flight mail settles
+    for (const p of people) p.store.close();
     await relay.close();
     await rm(base, { recursive: true, force: true });
   });

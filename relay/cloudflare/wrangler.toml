@@ -1,9 +1,11 @@
 # Colmena's mailbox on Cloudflare (see docs/PEOPLE.md › «Buzón en Cloudflare»).
 # Deploy from this folder: npx wrangler@4.150.0 login, then npx wrangler@4.150.0 deploy
-name = "colmena-buzon"
+# Served at https://colmena.klast-lab-fa693a.workers.dev (the account's workers.dev subdomain).
+name = "colmena"
 main = "worker.js"
 compatibility_date = "2026-10-01"
 workers_dev = true
+preview_urls = false
 
 [[durable_objects.bindings]]
 name = "MAILBOX"

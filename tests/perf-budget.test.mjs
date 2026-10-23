@@ -132,7 +132,7 @@ test("the server is ready with a big user's data within its budget", { skip: !ex
   store.close();
   const started = performance.now();
   const child = spawn(process.execPath, [path.join(ROOT, "server", "index.mjs"), "--production"], {
-    cwd: ROOT, env: { ...process.env, COLMENA_DATA_DIR: directory, COLMENA_PORT: "0", NODE_TEST_CONTEXT: "" }, stdio: ["ignore", "pipe", "pipe"],
+    cwd: ROOT, env: { ...process.env, COLMENA_DATA_DIR: directory, COLMENA_PORT: "0", COLMENA_RELAY_URL: "off", NODE_TEST_CONTEXT: "" }, stdio: ["ignore", "pipe", "pipe"],
   });
   t.after(async () => {
     if (child.exitCode === null) { child.kill(); await new Promise((r) => child.once("exit", r)); }
