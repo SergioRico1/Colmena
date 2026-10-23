@@ -52,9 +52,9 @@ import { registerInteractionRoutes, extendState } from "./interject.mjs";
 import { Watcher, registerWatchRoutes } from "./watch.mjs";
 import { registerVoiceLiveRoutes } from "./voice-live.mjs";
 import { registerPeerRoutes } from "./peers/routes.mjs";
+import { btwQuestion, registerBtwRoutes } from "./btw.mjs";
 import { botThread, olderChats } from "./threads.mjs";
 import { registerGoalRoutes, acceptGoalSuggestion } from "./goals.mjs";
-import { btwQuestion, registerBtwRoutes } from "./btw.mjs";
 
 const APP_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const VERSION = JSON.parse(readFileSync(path.join(APP_ROOT, "package.json"), "utf8")).version;
@@ -785,20 +785,20 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     void Promise.resolve(typeof runtime.warm === "function" ? runtime.warm(req.params.id) : null).catch(() => {});
     res.json({ ok: true });
   });
-  app.post("/api/missions/:id/messages", async (req, res) => {
-    const { text, attachments, replyTo, mode, use, deep } = check(z.object({ text: z.string().trim().min(1).max(20000), attachments: z.array(attachmentInput).max(5).default([]), replyTo: z.string().trim().min(1).max(200).optional(), mode: z.enum(QUEUE_MODES).optional(), use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional() }).strict(), req.body);
-    mustGet("missions", req.params.id, "Misión");
-    const add = need("addMessage");
-    if (!attachments.length && !replyTo && !use?.length && !deep) {
-      const decided = await typedDecision(req.params.id, text);
   // «/btw …» never becomes a message nor waits in the queue: it has its own route (btw.mjs).
   const notAside = (text) => {
     if (btwQuestion(text) !== null) throw new HttpError(400, "«/btw» es una pregunta al margen: no entra en la conversación. Envíala con POST /api/missions/:id/btw.");
   };
+  app.post("/api/missions/:id/messages", async (req, res) => {
+    const { text, attachments, replyTo, mode, use, deep } = check(z.object({ text: z.string().trim().min(1).max(20000), attachments: z.array(attachmentInput).max(5).default([]), replyTo: z.string().trim().min(1).max(200).optional(), mode: z.enum(QUEUE_MODES).optional(), use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional() }).strict(), req.body);
+    mustGet("missions", req.params.id, "Misión");
+    notAside(text);
+    const add = need("addMessage");
+    if (!attachments.length && !replyTo && !use?.length && !deep) {
+      const decided = await typedDecision(req.params.id, text);
       if (decided) return res.json(decided);
     }
     const files = await writeAttachments(req.params.id, attachments);
-    notAside(text);
     res.json(await add(req.params.id, text, files, { ...(replyTo ? { replyTo } : {}), ...(mode ? { mode } : {}), ...(use?.length ? { use } : {}), ...(deep ? { deep } : {}) }));
   });
   // The queue of a conversation (server/queue.mjs): messages written while the bot works,
@@ -808,13 +808,13 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   const queueReply = (res, missionId) => res.json(queueView(store.get("missions", missionId)));
   app.post("/api/missions/:id/queue", (req, res) => {
     const { text } = check(z.object({ text: queueText }).strict(), req.body);
+    notAside(text);
     const m = queued(req);
     enqueue(store, m, text);
     void deliverNext(store, runtime, m.id, sendQueued).catch(() => {});
     queueReply(res, m.id);
   });
   app.patch("/api/missions/:id/queue/:item", (req, res) => {
-    notAside(text);
     const { text, before } = check(z.object({ text: queueText.optional(), before: z.string().trim().min(1).max(200).nullable().optional() }).strict(), req.body);
     const m = queued(req);
     if (text !== undefined) editQueued(store, m, req.params.item, text);
@@ -1559,6 +1559,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   if (runtime?.code) registerCodeRoutes(app, { code: runtime.code });
   registerWatchRoutes(app, { store, watcher, check, z, HttpError });
   registerVoiceLiveRoutes(app, { store, runtime, connections, check, z, HttpError }); // «Hablar»: live voice through Codex
+  registerBtwRoutes(app, { store, runtime, check, z }); // «/btw»: side questions, never stored
   registerPeerRoutes(app, { getPeers: () => app.locals.peers, check, z, HttpError }); // «Personas»: other people's Colmenas
   registerGoalRoutes(app, { store, runtime });
   registerCoreRoutes(app, { store, runtime });
@@ -1568,7 +1569,6 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.use("/api", (_req, res) => res.status(404).json({ error: "Operación no disponible." }));
   app.use((err, _req, res, _next) => {
     if (err instanceof z.ZodError) return res.status(400).json({ error: zodMessage(err), fields: err.issues.map((i) => i.path.join(".")) });
-  registerBtwRoutes(app, { store, runtime, check, z }); // «/btw»: side questions, never stored
     if (err?.type === "entity.parse.failed") return res.status(400).json({ error: "La petición no es un JSON válido." });
     if (err?.type === "entity.too.large") return res.status(413).json({ error: "La petición es demasiado grande." });
     const status = Number.isInteger(err?.status) && err.status >= 400 && err.status < 600 ? err.status : 422;
