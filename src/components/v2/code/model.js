@@ -38,6 +38,41 @@ export function parsePatch(patch) {
   return rows;
 }
 
+// «Por estado» (T3 Code sidebar): pinned on top, what needs you, what is stuck, runs, is ready
+// to review; saved and new after; the snoozed and archived shelves at the end.
+export const GROUPS = [
+  ["pinned", "Fijadas"], ["wait", "Te espera"], ["stuck", "Atascadas"], ["work", "Trabajando"], ["review", "Para revisar"], ["saved", "Guardadas"], ["new", "Nuevas"],
+  ["snoozed", "Pospuestas"], ["archived", "Archivadas"],
+];
+export function groupOf(t) {
+  if (t.archived) return "archived";
+  if (t.snoozed) return "snoozed";
+  if (t.pinned) return "pinned";
+  if (["waiting", "planned"].includes(t.status) || ((t.merging || (t.goal && ["blocked", "limited"].includes(t.goal.status))) && t.status !== "working")) return "wait";
+  if (t.status === "error") return "stuck";
+  if (t.status === "working" || t.running) return "work";
+  if (t.merged || t.saved) return "saved";
+  return t.turns ? "review" : "new";
+}
+
+/**
+ * «Posponer» choices (T3 Code snooze presets): later today (18:00, or in three hours when it is
+ * almost evening), tomorrow at 9:00 and next Monday at 9:00 (unless tomorrow is Monday).
+ */
+export function snoozePresets(now = new Date()) {
+  const at = (days, hour) => { const d = new Date(now); d.setDate(d.getDate() + days); d.setHours(hour, 0, 0, 0); return d; };
+  const evening = at(0, 18);
+  const today = evening - now > 3600000 ? evening : new Date(now.getTime() + 3 * 3600000);
+  const tomorrow = at(1, 9);
+  const out = [
+    { id: "hoy", label: today === evening ? "Más tarde hoy" : "En 3 horas", until: today.toISOString() },
+    { id: "manana", label: "Mañana", until: tomorrow.toISOString() },
+  ];
+  const monday = at((1 - now.getDay() + 7) % 7 || 7, 9);
+  if (monday.getTime() !== tomorrow.getTime()) out.push({ id: "semana", label: "La semana que viene", until: monday.toISOString() });
+  return out;
+}
+
 /** Diff rows → side by side pairs: each run of deletions faces the additions after it. */
 export function sideBySide(rows) {
   const out = [];

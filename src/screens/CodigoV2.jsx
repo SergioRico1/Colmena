@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GitBranch, GitMerge, GitCommitHorizontal, ChevronDown, FileDiff, Globe, ExternalLink, PanelRight, SquareTerminal, Maximize2, Minimize2, Check, Target, Pause, Play, X, Columns3, GitPullRequest } from "lucide-react";
+import { GitBranch, GitMerge, GitCommitHorizontal, ChevronDown, FileDiff, Globe, ExternalLink, PanelRight, SquareTerminal, Maximize2, Minimize2, Check, Target, Pause, Play, X, Columns3, GitPullRequest, Archive, AlarmClock } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
-import ProjectList, { taskStatus } from "../components/v2/code/ProjectList.jsx";
+import ProjectList, { taskStatus, whenLabel } from "../components/v2/code/ProjectList.jsx";
 import CodeHome, { pickProjectFolder } from "../components/v2/code/CodeHome.jsx";
 import Composer from "../components/v2/code/Composer.jsx";
 import Changes from "../components/v2/code/Changes.jsx";
@@ -300,6 +300,16 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
             <h1 style={{ margin: 0, font: `600 22px/1.05 ${HEAD}`, letterSpacing: "-0.025em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={task.title}>{task.title}</h1>
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", fontSize: "13px", color: C.muted }}>
               <span role="status" style={{ fontWeight: 500, color: aura.text }}>{task.status === "waiting" ? "Te espera" : running ? "Trabajando" : s.text}</span>
+              {task.archived || task.snoozed ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <button type="button" onClick={() => act(() => (task.archived ? post("/code/tasks/" + task.id + "/archive", { archived: false }) : post("/code/tasks/" + task.id + "/snooze", { until: null })))}
+                    title={task.archived ? "Archivada: vuelve si le escribes, o pulsa para desarchivarla" : "Pospuesta: pulsa para despertarla ya"}
+                    style={{ display: "flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: C.text }}>
+                    {task.archived ? <><Archive size={12} strokeWidth={2.4} aria-hidden="true" />Archivada · Desarchivar</> : <><AlarmClock size={12} strokeWidth={2.4} aria-hidden="true" />Vuelve {whenLabel(task.snoozed.until)} · Despertar</>}
+                  </button>
+                </>
+              ) : null}
               {task.group ? <><span aria-hidden="true">·</span><a href={"/codigo/comparar/" + task.group} title="La misma petición con otros motores, lado a lado" style={{ display: "flex", alignItems: "center", gap: "5px", fontWeight: 600, color: C.blue }}><Columns3 size={13} strokeWidth={2.2} aria-hidden="true" />Comparar</a></> : null}
               {task.pr && (task.pr.number || task.pr.watching) ? <PrChip pr={task.pr} /> : null}
               {compact ? null : task.isolated ? (

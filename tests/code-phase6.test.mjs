@@ -169,7 +169,10 @@ test("following the pull request: failing CI, conflicts and comments wake Bruno 
     write({ authed: true, pr: { ...pr, state: "MERGED", statusCheckRollup: [] } });
     await code.checkPrs();
     assert.equal(code.mustTask(task.id).pr.watching, false);
-    assert.match(code.items(task.id).at(-1).text, /La PR #7 se ha fusionado/);
+    assert.match(code.items(task.id).at(-2).text, /La PR #7 se ha fusionado/);
+    // Its work is over: it goes to the archived shelf on its own.
+    assert.equal(code.mustTask(task.id).archived.by, "pr");
+    assert.match(code.items(task.id).at(-1).text, /Archivada al cerrarse su PR/);
   } finally { await done(); rmSync(dir, { recursive: true, force: true }); delete process.env.GH_FAKE_STATE; }
 });
 

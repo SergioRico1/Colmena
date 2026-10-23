@@ -44,6 +44,7 @@ export const SECTIONS = [
       ["pausa", "Pausar a todo el equipo", "parar detener todos pausa"],
       ["permisos", "Permisos que diste para siempre", "grants retirar revocar siempre"],
       ["capacidades", "Qué más puede hacer cada bot", "herramientas ficha bot", "/colmena"],
+      ["codigo-archivar", "Tareas de Código: archivar las terminadas", "archivar código tareas inactivas días pr posponer guardar main"],
     ],
   },
   {

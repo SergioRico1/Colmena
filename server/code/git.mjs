@@ -5,7 +5,7 @@
 // person's .git (T3 Code keeps them as hidden commits under private refs; same idea).
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { copyFile, mkdir, rm, rmdir, unlink, writeFile } from "node:fs/promises";
 import { GitBackend, walkFolder, CHECKPOINT_LIMITS } from "../checkpoints.mjs";
 
@@ -53,9 +53,49 @@ export async function addWorktree({ repo, dir, branch, base }) {
   await git(["worktree", "add", "-b", branch, "--", dir, base], { cwd: repo, timeout: 300000 });
 }
 
+/**
+ * Deletes a task's copy without ever touching what its links point to (T3 Code worktreeRemoval).
+ * Git for Windows before 2.54 follows NTFS junctions in `git worktree remove` and deletes what
+ * they point to (a shared node_modules of pnpm, a linked folder). On Windows Git never deletes
+ * the files here: Colmena checks it is a registered, unlocked worktree of `repo`, deletes the
+ * folder with Node's `rm` (which unlinks junctions without following them), then lets Git drop
+ * the missing worktree's metadata. Elsewhere Git only unlinks links, so it runs as before.
+ */
+export async function removeLinkedWorktree({ repo, dir, platform = process.platform }) {
+  const gitFile = path.join(dir, ".git");
+  let linked = false;
+  try { linked = platform === "win32" && statSync(gitFile).isFile(); } catch {}
+  if (!linked) {
+    if (existsSync(dir)) await git(["-c", "status.showUntrackedFiles=normal", "worktree", "remove", "--force", "--", dir], { cwd: repo, ok: [0, 128] });
+    await git(["worktree", "prune"], { cwd: repo, ok: [0, 128] }).catch(() => {});
+    return { removed: !existsSync(dir), byGit: true };
+  }
+  const real = (p) => { try { return realpathSync.native(p).toLowerCase(); } catch { return null; } };
+  const refuse = (why) => Object.assign(Error(`No se borra la copia ${dir}: ${why}`), { status: 409 });
+  // A worktree of this repository: its .git file names an admin folder under the common
+  // worktrees/, whose gitdir points back to this .git file.
+  const adminDir = path.resolve(dir, (await git(["rev-parse", "--absolute-git-dir"], { cwd: dir }).catch(() => { throw refuse("no es una copia de Git"); })).stdout.trim());
+  const commonDir = path.resolve(repo, (await git(["rev-parse", "--git-common-dir"], { cwd: repo })).stdout.trim());
+  let back = null;
+  try { back = path.resolve(adminDir, readFileSync(path.join(adminDir, "gitdir"), "utf8").trim()); } catch {}
+  if (!back || real(back) !== real(gitFile) || real(path.dirname(adminDir)) !== real(path.join(commonDir, "worktrees"))) throw refuse("no es una copia de este proyecto");
+  if (existsSync(path.join(adminDir, "locked"))) throw refuse("está bloqueada (git worktree lock)");
+  // A file held open can stop the delete halfway: putting .git back leaves a copy a retry can remove.
+  const contents = readFileSync(gitFile, "utf8");
+  try {
+    await rm(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 400 });
+  } catch (error) {
+    await writeFile(gitFile, contents).catch(() => {});
+    throw refuse("no se pudo borrar (" + error.message + ")");
+  }
+  await git(["worktree", "remove", "--force", "--force", "--", dir], { cwd: repo, ok: [0, 128] }).catch(() => {});
+  await git(["worktree", "prune"], { cwd: repo, ok: [0, 128] }).catch(() => {});
+  return { removed: !existsSync(dir), byGit: false };
+}
+
 /** Removes the copy; the branch stays unless it has nothing beyond its base. */
 export async function removeWorktree({ repo, dir, branch, base }) {
-  await git(["worktree", "remove", "--force", "--", dir], { cwd: repo, ok: [0, 128] }).catch(() => {});
+  await removeLinkedWorktree({ repo, dir }).catch(() => {});
   await rm(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 400 }).catch(() => {});
   await rmdir(path.dirname(dir)).catch(() => {}); // the project's folder of copies, once empty
   await git(["worktree", "prune"], { cwd: repo, ok: [0, 128] }).catch(() => {});

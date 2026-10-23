@@ -23,9 +23,9 @@ const readJson = (file) => { try { return JSON.parse(readFileSync(file, "utf8"))
 
 /**
  * The project's scripts, for the buttons under the terminal: colmena.json (or T3 Code's
- * t3.json) `{scripts: [{name, command, onCreate | runOnWorktreeCreate}]}` first, then the
+ * t3.json) `{scripts: [{name, command, onCreate | runOnWorktreeCreate, onSettle | runOnSettle}]}` first, then the
  * package.json scripts. The first folder wins (the task's copy, then the project folder).
- * @returns {{name:string, command:string, onCreate:boolean, source:string}[]}
+ * @returns {{name:string, command:string, onCreate:boolean, onSettle:boolean, source:string}[]}
  */
 export function projectScripts(...folders) {
   const out = new Map();
@@ -36,21 +36,21 @@ export function projectScripts(...folders) {
         const name = String(s?.name || "").trim().slice(0, 60);
         const command = String(s?.command || "").trim().slice(0, 1000);
         if (!name || !command || out.has(name)) continue;
-        out.set(name, { name, command, onCreate: !!(s.onCreate || s.runOnWorktreeCreate), source: file });
+        out.set(name, { name, command, onCreate: !!(s.onCreate || s.runOnWorktreeCreate), onSettle: !!(s.onSettle || s.runOnSettle), source: file });
       }
     }
     const pkg = readJson(path.join(folder, "package.json"));
-    for (const name of Object.keys(pkg?.scripts || {})) if (!out.has(name)) out.set(name, { name, command: "npm run " + name, onCreate: false, source: "package.json" });
+    for (const name of Object.keys(pkg?.scripts || {})) if (!out.has(name)) out.set(name, { name, command: "npm run " + name, onCreate: false, onSettle: false, source: "package.json" });
   }
   return [...out.values()].slice(0, 16);
 }
 
 /** Adds (or replaces) a script in the project's colmena.json. */
-export async function saveScript(folder, { name, command, onCreate = false }) {
+export async function saveScript(folder, { name, command, onCreate = false, onSettle = false }) {
   const file = path.join(folder, "colmena.json");
   const data = readJson(file) || {};
   const scripts = (Array.isArray(data.scripts) ? data.scripts : []).filter((s) => s?.name !== name);
-  scripts.push({ name, command, ...(onCreate ? { onCreate: true } : {}) });
+  scripts.push({ name, command, ...(onCreate ? { onCreate: true } : {}), ...(onSettle ? { onSettle: true } : {}) });
   await writeFile(file, JSON.stringify({ ...data, scripts }, null, 2) + "\n", "utf8");
   return scripts;
 }
@@ -196,6 +196,11 @@ export class Terminals {
     s.closed = forget;
     if (!this.spawnImpl && s.pid && !s.exited) killTree({ pid: s.pid, exitCode: null });
     try { s.proc.kill(); } catch {}
+  }
+
+  /** Whether a setup or closing script of the task is still running (background work). */
+  settling(taskId) {
+    return [...this.sessions.values()].some((s) => s.taskId === taskId && s.setup !== null && !s.exited);
   }
 
   /** PIDs of the task's live shells (their servers count as the task's for the preview). */

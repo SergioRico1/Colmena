@@ -76,8 +76,28 @@ export function registerCodeRoutes(app, { code }) {
   });
   app.get("/api/code/tasks/:id", (req, res) => res.json(code.detail(id.parse(req.params.id))));
   app.patch("/api/code/tasks/:id", (req, res) => {
-    const body = z.object({ title: z.string().trim().min(1).max(120).optional(), model: model.optional(), effort: z.enum(EFFORTS).optional(), access: z.enum(ACCESS).optional() }).strict().parse(req.body || {});
+    const body = z.object({ title: z.string().trim().min(1).max(120).optional(), model: model.optional(), effort: z.enum(EFFORTS).optional(), access: z.enum(ACCESS).optional(), pinned: z.boolean().optional(), autoArchive: z.boolean().optional() }).strict().parse(req.body || {});
     res.json({ task: code.patchTask(id.parse(req.params.id), body) });
+  });
+  // Archive (T3 Code settle) and snooze: «Archivar», «Desarchivar», «Posponer», «Despertar».
+  app.post("/api/code/tasks/:id/archive", async (req, res) => {
+    const body = z.object({ archived: z.boolean() }).strict().parse(req.body || {});
+    const taskId = id.parse(req.params.id);
+    res.json({ task: body.archived ? await code.archiveTask(taskId) : code.unarchiveTask(taskId) });
+  });
+  app.post("/api/code/tasks/:id/snooze", (req, res) => {
+    const body = z.object({ until: z.string().datetime({ offset: true }).nullable() }).strict().parse(req.body || {});
+    const taskId = id.parse(req.params.id);
+    res.json({ task: body.until ? code.snoozeTask(taskId, body) : code.wakeTask(taskId) });
+  });
+  app.get("/api/code/archive-settings", (_req, res) => res.json({ rules: code.archiveSettings() }));
+  app.put("/api/code/archive-settings", (req, res) => {
+    const body = z.object({ idleDays: z.number().int().min(0).max(365).optional(), onSave: z.boolean().optional(), onPr: z.boolean().optional(), keepWithPr: z.boolean().optional() }).strict().parse(req.body || {});
+    res.json({ rules: code.setArchiveSettings(body) });
+  });
+  app.patch("/api/code/projects/:id", (req, res) => {
+    const body = z.object({ archive: z.object({ idleDays: z.number().int().min(0).max(365).nullable().optional(), keepWithPr: z.boolean().nullable().optional() }).strict() }).strict().parse(req.body || {});
+    res.json({ project: code.setProjectArchive(id.parse(req.params.id), body.archive) });
   });
   app.delete("/api/code/tasks/:id", async (req, res) => res.json(await code.deleteTask(id.parse(req.params.id))));
   app.post("/api/code/tasks/:id/messages", async (req, res) => {
@@ -168,7 +188,7 @@ export function registerCodeRoutes(app, { code }) {
   });
   app.post("/api/code/projects/:id/scripts", async (req, res) => {
     const project = code.mustProject(id.parse(req.params.id));
-    const body = z.object({ name: z.string().trim().min(1).max(60), command: z.string().trim().min(1).max(1000), onCreate: z.boolean().default(false) }).strict().parse(req.body || {});
+    const body = z.object({ name: z.string().trim().min(1).max(60), command: z.string().trim().min(1).max(1000), onCreate: z.boolean().default(false), onSettle: z.boolean().default(false) }).strict().parse(req.body || {});
     res.json({ scripts: await saveScript(project.root, body) });
   });
   app.post("/api/code/tasks/:id/terminals", async (req, res) => {

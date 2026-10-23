@@ -76,12 +76,12 @@ export default function TerminalPanel({ task }) {
   const [list, setList] = useState(null);
   const [scripts, setScripts] = useState([]);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({ name: "", command: "", onCreate: false });
+  const [draft, setDraft] = useState({ name: "", command: "", onCreate: false, onSettle: false });
   const addScript = async (e) => {
     e.preventDefault();
     setError(null);
     try {
-      await post("/code/projects/" + task.projectId + "/scripts", { name: draft.name.trim(), command: draft.command.trim(), onCreate: draft.onCreate });
+      await post("/code/projects/" + task.projectId + "/scripts", { name: draft.name.trim(), command: draft.command.trim(), onCreate: draft.onCreate, onSettle: draft.onSettle });
       setAdding(false);
       await load();
     } catch (err) { setError(err.message); }
@@ -144,6 +144,7 @@ export default function TerminalPanel({ task }) {
           <input autoFocus value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Nombre (p. ej. web)" aria-label="Nombre del script" style={{ width: "130px", height: "30px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.08)", color: "#E6E7EC", font: `400 12px/1 ${MONO}`, outline: "none" }} />
           <input value={draft.command} onChange={(e) => setDraft({ ...draft, command: e.target.value })} placeholder="Orden (p. ej. npm run dev)" aria-label="Orden del script" style={{ flex: "1 1 180px", height: "30px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.08)", color: "#E6E7EC", font: `400 12px/1 ${MONO}`, outline: "none" }} />
           <label title="Se ejecuta solo en la copia de cada tarea nueva (p. ej. npm install)" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#8A8D96" }}><input type="checkbox" checked={draft.onCreate} onChange={(e) => setDraft({ ...draft, onCreate: e.target.checked })} />Al crear cada tarea</label>
+          <label title="Se ejecuta en la copia de la tarea al archivarla, para liberar disco (p. ej. npm run clean)" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#8A8D96" }}><input type="checkbox" checked={draft.onSettle} onChange={(e) => setDraft({ ...draft, onSettle: e.target.checked })} />Al archivar</label>
           <button type="submit" disabled={!draft.name.trim() || !draft.command.trim()} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: "#FFFFFF", color: C.ink, cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Guardar</button>
           <button type="button" onClick={() => setAdding(false)} style={{ height: "30px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", color: "#8A8D96", cursor: "pointer", fontSize: "12px" }}>Cancelar</button>
         </form>
@@ -151,11 +152,11 @@ export default function TerminalPanel({ task }) {
         <div style={{ flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,.07)" }}>
           <span style={{ fontSize: "12px", color: "#8A8D96", marginRight: "4px" }}>Scripts</span>
           {scripts.map((s) => (
-            <button key={s.name} type="button" onClick={() => open({ script: s.name })} title={s.command + " · en una terminal nueva" + (s.onCreate ? " · también al crear cada tarea" : "")} style={{ display: "flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 11px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.07)", color: "#E6E7EC", cursor: "pointer", font: `500 12px/1 ${MONO}` }}>
+            <button key={s.name} type="button" onClick={() => open({ script: s.name })} title={s.command + " · en una terminal nueva" + (s.onCreate ? " · también al crear cada tarea" : "") + (s.onSettle ? " · también al archivar la tarea" : "")} style={{ display: "flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 11px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.07)", color: "#E6E7EC", cursor: "pointer", font: `500 12px/1 ${MONO}` }}>
               <Play size={10} fill="currentColor" strokeWidth={0} aria-hidden="true" />{s.name}
             </button>
           ))}
-          <button type="button" onClick={() => { setDraft({ name: "", command: "", onCreate: false }); setAdding(true); }} title="Añadir un script del proyecto (se guarda en colmena.json)" style={{ display: "flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: "1px dashed rgba(255,255,255,.18)", borderRadius: "999px", background: "transparent", color: "#8A8D96", cursor: "pointer", fontSize: "12px" }}>
+          <button type="button" onClick={() => { setDraft({ name: "", command: "", onCreate: false, onSettle: false }); setAdding(true); }} title="Añadir un script del proyecto (se guarda en colmena.json)" style={{ display: "flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: "1px dashed rgba(255,255,255,.18)", borderRadius: "999px", background: "transparent", color: "#8A8D96", cursor: "pointer", fontSize: "12px" }}>
             <Plus size={11} strokeWidth={2.4} aria-hidden="true" />Script
           </button>
         </div>

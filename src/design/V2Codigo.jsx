@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes spin{to{transform:rotate(360deg)}}\n@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}\n@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}\n@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.row-hover{transition:background .15s ease}\n.row-hover:hover{background:rgba(18,19,26,.035)}\n.tools{opacity:0;transition:opacity .15s ease}\n.turn:hover .tools,.turn:focus-within .tools{opacity:1}\n@media (max-width: 1180px){[data-codepanel]{display:none!important}}\n@media (max-width: 860px){[data-projects]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","comparar","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -22,8 +22,8 @@ export class Logic extends DCLogic {
     const s = this.state;
     const working = s.mode === 'trabajando' || s.mode === 'objetivo';
     const seg = (on) => on ? { bg: '#FFFFFF', fg: '#12131A', sh: '0 1px 2px rgba(18,19,26,.1)' } : { bg: 'transparent', fg: '#5C606C', sh: 'none' };
-    const SHORT = { revision: 'Listo para revisar', objetivo: 'Trabajando · vuelta 3', trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
-    const LABEL = { revision: 'Listo para revisar · revisado', objetivo: 'Trabajando · objetivo, vuelta 3 de 12', trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
+    const SHORT = { posponer: 'Listo para revisar', revision: 'Listo para revisar', objetivo: 'Trabajando · vuelta 3', trabajando: 'Trabajando · 4 min', plan: 'Te espera', pide: 'Te espera', listo: 'Listo para revisar' };
+    const LABEL = { posponer: 'Listo para revisar', revision: 'Listo para revisar · revisado', objetivo: 'Trabajando · objetivo, vuelta 3 de 12', trabajando: 'Trabajando · 4 min', plan: 'Te espera · plan listo', pide: 'Te espera · quiere publicar', listo: 'Listo para revisar', inicio: '' };
     const aura = working ? { anim: 'breathe 1.4s ease-in-out infinite', filter: 'drop-shadow(0 3px 7px #FF7A1A88)', text: '#12131A', line: 'rgba(255,122,26,.25)' }
       : (s.mode === 'plan' || s.mode === 'pide') ? { anim: 'beckon 1.8s ease-out infinite', filter: 'none', text: '#8A5A00', line: 'rgba(255,201,60,.6)' }
       : { anim: 'none', filter: 'drop-shadow(0 2px 4px rgba(18,19,26,.16))', text: '#0B6B4A', line: 'rgba(11,138,95,.35)' };
@@ -39,11 +39,12 @@ export class Logic extends DCLogic {
       pick: (e) => { if (e) e.preventDefault(); this.setState({ mode: 'trabajando' }); }
     });
     const cur = s.mode !== 'inicio';
-    const ready = s.mode === 'listo' || s.mode === 'revision';
+    const ready = s.mode === 'listo' || s.mode === 'revision' || s.mode === 'posponer';
     const firstKind = (working || s.mode === 'inicio') ? 'work' : (ready ? 'done' : 'wait');
     // «Por estado» (T3 Code sidebar): what needs you first, then what is stuck, runs, is ready.
     const bizum = task('Bizum en el checkout', 'tienda-web · ' + (SHORT[s.mode] || 'Trabajando'), firstKind, '+128', '−14', cur);
     const GROUPS = [
+      ['pinned', 'Fijadas', '#6B6F7A', [task('Rediseño del carrito', 'tienda-web · Listo para revisar', 'done', '+210', '−48', false)]],
       ['wait', 'Te espera', '#8A5A00', [task('Modo oscuro', 'tienda-web · plan', 'wait', '', '', false), task('Migrar pedidos', 'tienda-web · objetivo bloqueado', 'wait', '+40', '−6', false)]],
       ['stuck', 'Atascadas', '#A33A2C', [Object.assign(task('Test de la cesta', 'tienda-web · Atascada', 'stuck', '+3', '−1', false), { dot: '#C2412D', statusFg: '#A33A2C' })]],
       ['work', 'Trabajando', '#6B6F7A', []],
@@ -119,11 +120,11 @@ export class Logic extends DCLogic {
       ['Guardar y subir', 'Commit y push a GitHub.', 'm8 17 4-4 4 4', 'M12 13v8', 12, 6],
       ['Guardar, subir y abrir PR', 'Bruno escribe el título y la descripción del PR.', 'M5 9v12', 'M12 6h5a2 2 0 0 1 2 2v7', 5, 6]
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
-    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['comparar', 'Comparar'], ['inicio', 'Inicio']];
+    const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['posponer', 'Posponer'], ['comparar', 'Comparar'], ['inicio', 'Inicio']];
     return {
       home: s.mode === 'inicio', comparing: s.mode === 'comparar', inTask: s.mode !== 'inicio' && s.mode !== 'comparar', working,
       railDot: s.mode === 'plan' || s.mode === 'pide',
-      is: { objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
+      is: { posponer: s.mode === 'posponer', objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
       label: LABEL[s.mode], aura, groups, log, diff, tabs,
       tab: { cambios: s.tab === 'cambios', vista: s.tab === 'vista', terminal: s.tab === 'terminal' },
       goHome: () => this.setState({ mode: 'inicio' }),
@@ -261,7 +262,7 @@ export function View({ v }) {
             </span>
           </a>
         </nav>
-        <aside data-projects="" aria-label="Proyectos y tareas" style={{flex: "none", width: "272px", height: "100%", overflowY: "auto", overscrollBehavior: "contain", padding: "28px 12px 24px 16px", display: "flex", flexDirection: "column", gap: "14px", borderRight: "1px solid rgba(18,19,26,.07)"}}>
+        <aside data-projects="" aria-label="Proyectos y tareas" style={{position: "relative", flex: "none", width: "272px", height: "100%", overflowY: "auto", overscrollBehavior: "contain", padding: "28px 12px 24px 16px", display: "flex", flexDirection: "column", gap: "14px", borderRight: "1px solid rgba(18,19,26,.07)"}}>
           <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px"}}>
             <h2 style={{margin: "0", font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em"}}>
               {"Código"}
@@ -334,6 +335,60 @@ export function View({ v }) {
               </div>
             </React.Fragment>
           ))}
+          <div style={{display: "flex", flexDirection: "column", gap: "2px"}}>
+            <button type="button" aria-expanded="true" style={{display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px 4px", border: "0", background: "transparent", cursor: "pointer", font: "500 11px/1.3 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A", textAlign: "left"}}>
+              <span style={{display: "inline-grid", transform: "rotate(90deg)"}}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="13" r="8" />
+                <path d="M12 9v4l2 2" />
+                <path d="M5 3 2 6" />
+                <path d="m22 6-3-3" />
+              </svg>
+              {"Pospuestas"}
+              <span style={{color: "#8A8D96"}}>
+                {"1"}
+              </span>
+            </button>
+            <a href="#" className="row-hover" style={{display: "flex", alignItems: "center", gap: "11px", marginLeft: "4px", padding: "9px 10px", borderRadius: "14px", opacity: ".78"}}>
+              <span aria-hidden="true" style={{display: "block", width: "18px", height: "18px", flex: "none", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FF7A1A", borderRadius: "50% 50% 14% 14%"}} />
+              <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px"}}>
+                <span style={{fontSize: "14px", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>
+                  {"Revisar textos legales"}
+                </span>
+                <span style={{display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#6B6F7A"}}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="13" r="8" />
+                    <path d="M12 9v4l2 2" />
+                    <path d="M5 3 2 6" />
+                    <path d="m22 6-3-3" />
+                  </svg>
+                  {"tienda-web · Vuelve mañana 09:00"}
+                </span>
+              </span>
+            </a>
+          </div>
+          <div style={{display: "flex", flexDirection: "column", gap: "2px"}}>
+            <button type="button" aria-expanded="false" style={{display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px 4px", border: "0", background: "transparent", cursor: "pointer", font: "500 11px/1.3 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A", textAlign: "left"}}>
+              <span style={{display: "inline-grid", transform: "none"}}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect width="20" height="5" x="2" y="3" rx="1" />
+                <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+                <path d="M10 12h4" />
+              </svg>
+              {"Archivadas"}
+              <span style={{color: "#8A8D96"}}>
+                {"6"}
+              </span>
+            </button>
+          </div>
           <span style={{flex: "1"}} />
           <button type="button" onClick={v.goHome} style={{display: "flex", alignItems: "center", gap: "10px", height: "42px", margin: "0 4px", padding: "0 12px", border: "1px dashed rgba(18,19,26,.18)", borderRadius: "14px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: "500", color: "#3D404A"}}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -342,6 +397,114 @@ export function View({ v }) {
             {"Abrir otro proyecto"}
           </button>
         </aside>
+        {v.is?.posponer ? (
+          <>
+            <div role="menu" aria-label="Acciones de la tarea" style={{position: "absolute", zIndex: "60", left: "300px", top: "226px", width: "250px", padding: "6px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45)", animation: "rise .18s ease-out"}}>
+              <span style={{display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", borderRadius: "12px", fontSize: "13px", fontWeight: "500", color: "#12131A"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 17v5" />
+                  <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+                </svg>
+                <span style={{flex: "1"}}>
+                  {"Fijar arriba"}
+                </span>
+                <span style={{font: "400 11px/1 'Geist Mono', monospace", color: "#8A8D96"}} />
+              </span>
+              <span style={{display: "block", padding: "8px 10px 4px", font: "500 11px/1.3 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A"}}>
+                {"Posponer"}
+              </span>
+              <span style={{display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", borderRadius: "12px", fontSize: "13px", fontWeight: "500", color: "#12131A"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="13" r="8" />
+                  <path d="M12 9v4l2 2" />
+                  <path d="M5 3 2 6" />
+                  <path d="m22 6-3-3" />
+                </svg>
+                <span style={{flex: "1"}}>
+                  {"Más tarde hoy"}
+                </span>
+                <span style={{font: "400 11px/1 'Geist Mono', monospace", color: "#8A8D96"}}>
+                  {"hoy 18:00"}
+                </span>
+              </span>
+              <span style={{display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", borderRadius: "12px", fontSize: "13px", fontWeight: "500", color: "#12131A"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="13" r="8" />
+                  <path d="M12 9v4l2 2" />
+                  <path d="M5 3 2 6" />
+                  <path d="m22 6-3-3" />
+                </svg>
+                <span style={{flex: "1"}}>
+                  {"Mañana"}
+                </span>
+                <span style={{font: "400 11px/1 'Geist Mono', monospace", color: "#8A8D96"}}>
+                  {"mañana 09:00"}
+                </span>
+              </span>
+              <span style={{display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", borderRadius: "12px", fontSize: "13px", fontWeight: "500", color: "#12131A"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="13" r="8" />
+                  <path d="M12 9v4l2 2" />
+                  <path d="M5 3 2 6" />
+                  <path d="m22 6-3-3" />
+                </svg>
+                <span style={{flex: "1"}}>
+                  {"La semana que viene"}
+                </span>
+                <span style={{font: "400 11px/1 'Geist Mono', monospace", color: "#8A8D96"}}>
+                  {"lun 09:00"}
+                </span>
+              </span>
+              <span style={{display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", borderRadius: "12px", fontSize: "13px", fontWeight: "500", color: "#12131A"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5" />
+                  <path d="M16 2v4" />
+                  <path d="M8 2v4" />
+                  <path d="M3 10h5" />
+                  <circle cx="16" cy="16" r="6" />
+                  <path d="M16 14v2l1 1" />
+                </svg>
+                <span style={{flex: "1"}}>
+                  {"Elegir día y hora…"}
+                </span>
+                <span style={{font: "400 11px/1 'Geist Mono', monospace", color: "#8A8D96"}} />
+              </span>
+              <span style={{display: "block", height: "1px", margin: "4px 8px", background: "rgba(18,19,26,.07)"}} />
+              <span style={{display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", borderRadius: "12px", fontSize: "13px", fontWeight: "500", color: "#12131A"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect width="20" height="5" x="2" y="3" rx="1" />
+                  <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+                  <path d="M10 12h4" />
+                </svg>
+                <span style={{flex: "1"}}>
+                  {"Archivar"}
+                </span>
+                <span style={{font: "400 11px/1 'Geist Mono', monospace", color: "#8A8D96"}} />
+              </span>
+              <span style={{display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", borderRadius: "12px", fontSize: "13px", fontWeight: "500", color: "#12131A"}}>
+                <span style={{width: "14px"}} />
+                <span style={{flex: "1"}}>
+                  {"Archivar sola"}
+                </span>
+                <span style={{font: "400 11px/1 'Geist Mono', monospace", color: "#8A8D96"}}>
+                  {"activado"}
+                </span>
+              </span>
+              <span style={{display: "block", height: "1px", margin: "4px 8px", background: "rgba(18,19,26,.07)"}} />
+              <span style={{display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", borderRadius: "12px", fontSize: "13px", fontWeight: "500", color: "#A33A2C"}}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                </svg>
+                <span style={{flex: "1"}}>
+                  {"Borrar la tarea"}
+                </span>
+                <span style={{font: "400 11px/1 'Geist Mono', monospace", color: "#8A8D96"}} />
+              </span>
+            </div>
+          </>
+        ) : null}
         {v.home ? (
           <>
             <section aria-label="Empezar" style={{flex: "1", minWidth: "0", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", animation: "fade .35s ease-out"}}>

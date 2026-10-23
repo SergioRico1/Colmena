@@ -19,6 +19,7 @@ import VaultCard from "../components/settings/Vault.jsx";
 import ApiKeysCard from "../components/settings/ApiKeys.jsx";
 import AjustesSeccion from "./AjustesSeccion.jsx";
 import DocHistory from "../components/v2/team/DocHistory.jsx";
+import CodeArchiveSettings from "../components/v2/code/ArchiveSettings.jsx";
 
 // Colmena 2.0 · Ajustes by sections (design/V2AjustesSecciones.dc.html): nine sections by
 // what you want to do, each at /ajustes/<section> and each setting at …#<anchor>
@@ -582,6 +583,7 @@ export default function AjustesV2({ params = {} }) {
       {id === "cuenta" ? <AccountSection settings={settings} people={people} set={set} busy={act.busy} /> : null}
       {id === "inteligencia" ? <IntelligenceSection settings={settings} provider={provider} authError={authError} models={models} ai={ai} set={set} act={act} /> : null}
       {id === "autonomia" ? <AutonomySection settings={settings} paused={paused || settings.paused} grants={grants} bots={bots} set={set} act={act} /> : null}
+      {id === "autonomia" ? <CodeArchiveSettings /> : null}
       {id === "apps" ? <AppsSection connectors={connectors} folders={folders} bots={bots} computer={computer} act={act} /> : null}
       {id === "avisos" ? <NoticesSection settings={settings} bots={bots} set={set} busy={act.busy} /> : null}
       {id === "privacidad" ? <PrivacySection memories={memories} act={act} /> : null}
