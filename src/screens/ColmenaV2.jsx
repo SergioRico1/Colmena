@@ -11,6 +11,7 @@ import { formatTokens } from "../components/settings/format.jsx";
 import { LimitLine } from "../components/v2/LimitNotice.jsx";
 import { later } from "../lib/undoToast.js";
 import { VerdictList, VerdictMark } from "../components/v2/team/Verdict.jsx";
+import DocHistory from "../components/v2/team/DocHistory.jsx";
 
 // Colmena 2.0 · 27 «Tu colmena» (design/V2Colmena.dc.html): your bots as presences (they
 // breathe while they work) and, beside them, the chosen one: what it is, what it knows, what it
@@ -171,6 +172,11 @@ function Profile({ bot, skills, memories, missions }) {
               </div>
             ))}
             {!mem.length ? <span style={{ fontSize: "14px", color: "#6B6F7A" }}>{"No recuerda nada de ti todavía."}</span> : null}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "22px 0 0", marginTop: "22px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
+            <h3 style={{ margin: "0 0 2px", fontSize: "13px", fontWeight: "500", color: "#6B6F7A" }}>{"Su forma de ser"}</h3>
+            <p style={{ margin: "0 0 6px", fontSize: "14px", lineHeight: "1.5", color: "#5C606C" }}>{"Cada cambio en su carácter (SOUL.md) queda guardado. Puedes volver a cualquier versión."}</p>
+            <div style={{ margin: "0 -20px" }}><DocHistory doc="soul" botId={bot.id} empty="Su carácter no ha cambiado desde que llegó." /></div>
           </div>
           {error ? <p role="alert" style={{ margin: "14px 0 0", fontSize: "14px", color: "#B4372A" }}>{error}</p> : null}
         </div>

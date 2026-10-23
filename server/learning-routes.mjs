@@ -2,7 +2,8 @@ import { z } from "zod";
 import { activateSkill, setSkillPinned, curateSkills, skillsUsedByAutomations, resolveSkillApproval } from "./skills.mjs";
 import { capabilitiesOf, CAPABILITY_DEFAULTS } from "./tools.mjs";
 import { memoryMeters, MEMORY_LIMITS } from "./memory.mjs";
-import { userProfile, saveUserProfile, learningCounters, REVIEW_EVERY } from "./learning.mjs";
+import { userProfile, saveUserProfile, learningCounters, REVIEW_EVERY, restoreSoulVersion, restoreUserProfileVersion } from "./learning.mjs";
+import { versionsView } from "./doc-history.mjs";
 import { learningTimeline, teachPrompt, TEACH_SOURCES } from "./journey.mjs";
 import { listVerdicts } from "./verdicts.mjs";
 
@@ -21,6 +22,10 @@ import { listVerdicts } from "./verdicts.mjs";
 //   GET   /api/user-profile              → {content, chars, limit, updatedAt, directives}
 //   PUT   /api/user-profile              {content} (edited by the person)
 //   POST  /api/user-profile/condense     condenses the person's memories into USER.md now
+//   GET   /api/bots/:id/soul/versions    → [{id, source, sourceLabel, reason, createdAt, chars, content, current}] newest first
+//   POST  /api/bots/:id/soul/versions/:vid/restore   «Restaurar» → the versions again
+//   GET   /api/user-profile/versions     → the same for USER.md
+//   POST  /api/user-profile/versions/:vid/restore
 
 const httpError = (status, message) => Object.assign(Error(message), { status });
 const check = (schema, input) => schema.parse(input ?? {});
@@ -139,6 +144,16 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
     const { content } = check(z.object({ content: z.string().max(2800) }).strict(), req.body);
     res.json(saveUserProfile(store, content));
   });
+  app.get("/api/bots/:id/soul/versions", (req, res) => {
+    const bot = mustGet("bots", req.params.id, "Bot");
+    res.json(versionsView(store, "soul", bot.id));
+  });
+  app.post("/api/bots/:id/soul/versions/:vid/restore", (req, res) => {
+    const bot = mustGet("bots", req.params.id, "Bot");
+    res.json(restoreSoulVersion(store, bot.id, req.params.vid));
+  });
+  app.get("/api/user-profile/versions", (_req, res) => res.json(versionsView(store, "user", null)));
+  app.post("/api/user-profile/versions/:vid/restore", (req, res) => res.json(restoreUserProfileVersion(store, req.params.vid)));
   app.post("/api/user-profile/condense", async (_req, res) => {
     if (typeof runtime?.condenseUserProfile !== "function") throw httpError(501, "Disponible más adelante.");
     const result = await runtime.condenseUserProfile({ force: true });

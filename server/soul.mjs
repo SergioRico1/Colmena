@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync, lstatSy
 import { standingOrdersText } from "./standing.mjs";
 import path from "node:path";
 import { memoryEntries, memoryMeters, profileDigest, MEMORY_LIMITS } from "./memory.mjs";
+import { recordVersion } from "./doc-history.mjs";
 
 // OpenClaw-style workspace per bot: <dataDir>/bots/<id>/{SOUL,IDENTITY,USER,MEMORY}.md.
 // SOUL.md is the user's to edit. Bots can only propose changes (approval kind 'soul').
@@ -181,13 +182,25 @@ export function readSoul(botId, { directory = dataDirectory, bot = null } = {}) 
   }
 }
 
-export function writeSoul(botId, text, { directory = dataDirectory } = {}) {
+/**
+ * Writes a bot's SOUL.md and keeps a version of it (doc-history.mjs): `source` says who
+ * changed it (tú, propuesta, restaurado) and `reason` why, for «Restaurar» in its profile.
+ */
+export function writeSoul(botId, text, { directory = dataDirectory, store = directory === dataDirectory ? dataStore : null, source = "tú", reason = null, approvalId = null } = {}) {
   if (typeof text !== "string" || text.trim().length < SOUL_LIMITS.min || text.length > SOUL_LIMITS.max)
     throw Error("El SOUL debe tener entre 20 y 20000 caracteres.");
   const folder = botDirectory(botId, directory);
   mkdirSync(folder, { recursive: true });
   const normalized = text.replace(/\r\n/g, "\n");
-  atomicWrite(path.join(folder, "SOUL.md"), normalized);
+  const file = path.join(folder, "SOUL.md");
+  let previous = null;
+  try { previous = readFileSync(file, "utf8"); } catch {}
+  if (previous == null && store) {
+    const bot = store.get?.("bots", botId);
+    if (bot) previous = renderSoulTemplate(bot);
+  }
+  atomicWrite(file, normalized);
+  try { if (store) recordVersion(store, { doc: "soul", botId, content: normalized, previous, source, reason, approvalId }); } catch {}
   return { soul: normalized };
 }
 

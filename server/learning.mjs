@@ -3,7 +3,8 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import { id, now } from "./store.mjs";
 import { importSkill, activateSkill, parseSkill, patchSkill, curateSkills, applySkillEdits } from "./skills.mjs";
-import { readSoul, proposedSoul, lineDiff, autonomyOf } from "./soul.mjs";
+import { readSoul, writeSoul, proposedSoul, lineDiff, autonomyOf } from "./soul.mjs";
+import { recordVersion, versionsView } from "./doc-history.mjs";
 import { checkSkill, checkSoul } from "./skill-checks.mjs";
 import {
   containsSecret, applyMemoryOps, normalizeMemoryOp, memoryEntries, memoryUsage, MEMORY_LABELS,
@@ -764,6 +765,7 @@ export async function condenseUserProfile(store, infer, { model = null, force = 
   const directives = parsed.directives.filter((d) => !containsSecret(d.text));
   const content = renderUserProfile(directives, { date: at.toISOString().slice(0, 10), userName: settings.userName });
   writeUserProfile(directory, content);
+  recordVersion(store, { doc: "user", content, previous: current, source: "condensación", reason: `Resumió ${fresh.length} ${fresh.length === 1 ? "recuerdo" : "recuerdos"}` });
   const stamp = at.toISOString();
   store.tx(() => {
     for (const m of fresh) store.patch("memories", m.id, { condensed: true, condensedAt: stamp });
@@ -780,11 +782,33 @@ export function userProfile(store, directory = store.directory) {
   return { content, chars: content.length, limit: PROFILE_LIMIT, updatedAt: state.profileEditedAt || state.lastProfileAt || null, directives: parseDirectives(content) };
 }
 /** The person edits USER.md by hand (Biblioteca › Memoria). */
-export function saveUserProfile(store, content, directory = store.directory) {
+export function saveUserProfile(store, content, directory = store.directory, { source = "tú", reason = null } = {}) {
+  const previous = readUserProfile(directory);
   const text = writeUserProfile(directory, content);
+  recordVersion(store, { doc: "user", content: text, previous, source, reason });
   const state = store.get("learningState", "main") || { id: "main" };
   store.put("learningState", { ...state, profileEditedAt: now(), profileChars: text.length });
   return userProfile(store, directory);
+}
+
+// ---------- history of SOUL.md and USER.md (doc-history.mjs) ----------
+const versionDay = (v) => new Date(v.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+function versionOf(store, versionId, doc, botId) {
+  const v = store.get("docVersions", versionId);
+  if (!v || v.doc !== doc || (v.botId ?? null) !== (botId ?? null)) throw Object.assign(Error("Esa versión ya no existe."), { status: 404 });
+  return v;
+}
+/** «Restaurar» a SOUL.md version from the bot's profile: one more version, nothing is lost. */
+export function restoreSoulVersion(store, botId, versionId) {
+  const v = versionOf(store, versionId, "soul", botId);
+  writeSoul(botId, v.content, { store, source: "restaurado", reason: "Vuelve a la versión del " + versionDay(v) });
+  return versionsView(store, "soul", botId);
+}
+/** «Restaurar» a USER.md version (Archivo › Lo que saben de ti, or Ajustes). */
+export function restoreUserProfileVersion(store, versionId, directory = store.directory) {
+  const v = versionOf(store, versionId, "user", null);
+  saveUserProfile(store, v.content, directory, { source: "restaurado", reason: "Vuelve a la versión del " + versionDay(v) });
+  return versionsView(store, "user", null);
 }
 
 /**

@@ -36,6 +36,7 @@ export const SECTIONS = [
       ["lineas-rojas", "Siempre te preguntan antes de…", "líneas rojas enviar dinero borrar instalar permiso"],
       ["revisor", "Revisor automático", "aprobar solo rutinario permisos revisión"],
       ["aprenden", "Aprenden de su trabajo", "habilidades recuerdos aprendizaje"],
+      ["perfil-historial", "Tu perfil y sus versiones", "user.md perfil historial versiones restaurar deshacer lo que saben de ti"],
       ["narracion", "Te cuentan en qué están", "narración qué está haciendo progreso"],
       ["sugerencias", "Respuestas sugeridas", "sugerencias botones respuesta rápida"],
       ["resumenes", "Resúmenes de sala", "recaps resumen al volver"],

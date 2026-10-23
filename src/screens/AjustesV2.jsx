@@ -17,6 +17,7 @@ import { Chevron, FAINT, FieldRow, Group, INK, LINE, LinkRow, MUTED, Segmented, 
 import VaultCard from "../components/settings/Vault.jsx";
 import ApiKeysCard from "../components/settings/ApiKeys.jsx";
 import AjustesSeccion from "./AjustesSeccion.jsx";
+import DocHistory from "../components/v2/team/DocHistory.jsx";
 
 // Colmena 2.0 · Ajustes by sections (design/V2AjustesSecciones.dc.html): nine sections by
 // what you want to do, each at /ajustes/<section> and each setting at …#<anchor>
@@ -240,9 +241,12 @@ function AutonomySection({ settings, paused, grants, bots, set, act }) {
       </Group>
       <Group id="solo-t" title="Lo que hacen solos">
         <SwitchRow anchor="revisor" title="Revisor automático" sub="Lo que no sale de Colmena (guardar un archivo, recordar algo) lo aprueba el modelo más barato si es claramente parte de lo que pediste. Si duda, te lo deja a ti." on={settings.autoReview !== false} busy={act.busy} onChange={(v) => set({ autoReview: v })} />
-        <SwitchRow anchor="aprenden" title="Aprenden de su trabajo" sub="Crean habilidades y recuerdos nuevos. Siempre los revisas tú antes de que los usen." on={settings.learning !== false} busy={act.busy} onChange={(v) => set({ learning: v })} />
+        <SwitchRow anchor="aprenden" title="Aprenden de su trabajo" sub="Crean habilidades y recuerdos nuevos, pasan unos controles y los usan desde ya; te lo cuentan con «Deshacer». Los de «Solo sugiere» te los proponen antes." on={settings.learning !== false} busy={act.busy} onChange={(v) => set({ learning: v })} />
         <CheckinRows />
         <LinkRow anchor="capacidades" title="Qué más puede hacer cada bot" value="En Colmena" to="/colmena" last />
+      </Group>
+      <Group id="perfil-t" title="Tu perfil (USER.md) y sus versiones" anchor="perfil-historial" note="Cada cambio de tu perfil queda guardado: puedes volver a cualquier versión. El carácter de cada bot tiene su propio historial en su ficha.">
+        <DocHistory doc="user" empty="Todavía no hay un perfil resumido: Colmena lo prepara cuando sabe lo suficiente de ti." />
       </Group>
       <Group id="cuentan-t" title="Cómo te lo cuentan">
         <SwitchRow anchor="narracion" title="Te cuentan en qué están" sub="Una frase mientras trabajan: «Leyendo tus correos de hoy…»." on={settings.narration !== false} busy={act.busy} onChange={(v) => set({ narration: v })} />

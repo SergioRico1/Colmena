@@ -9,6 +9,7 @@ import { navigate, useRouter } from "../lib/router.jsx";
 import { shortDate, time } from "../lib/format.js";
 import { later } from "../lib/undoToast.js";
 import { VerdictMark, VerdictNote } from "../components/v2/team/Verdict.jsx";
+import DocHistory from "../components/v2/team/DocHistory.jsx";
 
 // Colmena 2.0 · Archivo (design/V2Archivo.dc.html): what the colmena has made, the skills
 // the bots learned (used from now on, with «Deshacer»; some wait for your review) and what they know about you.
@@ -396,6 +397,13 @@ function Memories({ memories, bots }) {
         {act.error ? <p role="alert" style={{ margin: "0 24px 12px", fontSize: "14px", color: "#B4231A" }}>{act.error}</p> : null}
         {!known.length ? <p style={{ margin: 0, padding: "18px 24px 22px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "15px", color: FAINT }}>Todavía no saben nada de ti. Cuéntales algo o tráelo de ChatGPT.</p> : null}
         {known.map((m) => <MemoryRow key={m.id} m={m} bot={botOf(m.botId)} />)}
+      </section>
+      <section aria-labelledby="perfil-h" style={{ display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "26px", overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "20px 24px 8px" }}>
+          <h2 id="perfil-h" style={{ margin: 0, font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Tu perfil y sus versiones</h2>
+          <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.5, color: MUTED }}>El resumen de lo que saben de ti (USER.md). Cada cambio queda guardado y puedes volver a cualquier versión.</p>
+        </div>
+        <div style={{ padding: "0 4px 6px" }}><DocHistory doc="user" empty="Todavía no hay un perfil resumido: Colmena lo prepara cuando sabe lo suficiente de ti." /></div>
       </section>
       <p style={{ margin: "0 8px", fontSize: "13px", lineHeight: 1.5, color: FAINT }}>Lo que deducen de webs, correos o apps queda «por revisar» y no lo usan hasta que digas que es correcto.</p>
     </div>

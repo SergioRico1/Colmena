@@ -3059,7 +3059,7 @@ ${made.outline}`,
         const bot = this.bot(a.botId);
         const current = readSoul(a.botId, { bot }) || "";
         if (sha(current) !== a.baseHash) throw Error("El SOUL ha cambiado desde la propuesta. Revisala de nuevo.");
-        writeSoul(a.botId, a.proposal);
+        writeSoul(a.botId, a.proposal, { source: "propuesta", reason: a.summary, approvalId: a.id }); // a version to restore later
         if (mission)
           this.store.put("messages", { id: id(), missionId: a.missionId, role: "system", botId: a.botId, kind: "activity", text: "Se ha actualizado el SOUL de " + (bot?.name || a.botId) + " con tu aprobación.", at: now() });
         this.store.event(a.missionId, "soul_updated", { botId: a.botId, text: "SOUL de " + (bot?.name || a.botId) + " actualizado" });
