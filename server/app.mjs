@@ -49,6 +49,7 @@ import { registerInteractionRoutes, extendState } from "./interject.mjs";
 import { Watcher, registerWatchRoutes } from "./watch.mjs";
 import { botThread, olderChats } from "./threads.mjs";
 import { registerGoalRoutes, acceptGoalSuggestion } from "./goals.mjs";
+import { btwQuestion, registerBtwRoutes } from "./btw.mjs";
 
 const APP_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const VERSION = JSON.parse(readFileSync(path.join(APP_ROOT, "package.json"), "utf8")).version;
@@ -778,9 +779,14 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const add = need("addMessage");
     if (!attachments.length && !replyTo && !use?.length && !deep) {
       const decided = await typedDecision(req.params.id, text);
+  // «/btw …» never becomes a message nor waits in the queue: it has its own route (btw.mjs).
+  const notAside = (text) => {
+    if (btwQuestion(text) !== null) throw new HttpError(400, "«/btw» es una pregunta al margen: no entra en la conversación. Envíala con POST /api/missions/:id/btw.");
+  };
       if (decided) return res.json(decided);
     }
     const files = await writeAttachments(req.params.id, attachments);
+    notAside(text);
     res.json(await add(req.params.id, text, files, { ...(replyTo ? { replyTo } : {}), ...(mode ? { mode } : {}), ...(use?.length ? { use } : {}), ...(deep ? { deep } : {}) }));
   });
   // The queue of a conversation (server/queue.mjs): messages written while the bot works,
@@ -796,6 +802,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     queueReply(res, m.id);
   });
   app.patch("/api/missions/:id/queue/:item", (req, res) => {
+    notAside(text);
     const { text, before } = check(z.object({ text: queueText.optional(), before: z.string().trim().min(1).max(200).nullable().optional() }).strict(), req.body);
     const m = queued(req);
     if (text !== undefined) editQueued(store, m, req.params.item, text);
@@ -1543,6 +1550,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.use("/api", (_req, res) => res.status(404).json({ error: "Operación no disponible." }));
   app.use((err, _req, res, _next) => {
     if (err instanceof z.ZodError) return res.status(400).json({ error: zodMessage(err), fields: err.issues.map((i) => i.path.join(".")) });
+  registerBtwRoutes(app, { store, runtime, check, z }); // «/btw»: side questions, never stored
     if (err?.type === "entity.parse.failed") return res.status(400).json({ error: "La petición no es un JSON válido." });
     if (err?.type === "entity.too.large") return res.status(413).json({ error: "La petición es demasiado grande." });
     const status = Number.isInteger(err?.status) && err.status >= 400 && err.status < 600 ? err.status : 422;

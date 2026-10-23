@@ -18,6 +18,7 @@ import { usePanelWidth } from "../lib/usePanelWidth.jsx";
 import ShortcutsSheet, { useCodeKeys } from "../components/v2/code/Shortcuts.jsx";
 import Compare from "../components/v2/code/Compare.jsx";
 import { later } from "../lib/undoToast.js";
+import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
 
 /** Commands for the open task from shortcuts and the palette (TaskView listens). */
 const command = (name) => window.dispatchEvent(new CustomEvent("colmena:code-command", { detail: name }));
@@ -206,6 +207,18 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
   const [mode, setMode] = useState("build");
   useEffect(() => { setMode("build"); }, [taskId]);
   useWatch(taskId);
+  // «/btw …»: ask Bruno something while he works, apart from the task (BtwNotes.jsx).
+  const btw = useBtw("/code/tasks/" + taskId + "/btw");
+  useEffect(() => {
+    // Esc closes the newest note when you are not in the middle of writing something.
+    const on = (e) => {
+      const field = e.target?.closest?.("textarea, input");
+      if (field && field.value?.trim()) return;
+      if (sectionRef.current?.contains(e.target) || e.target === document.body) btw.handleKey(e);
+    };
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, [btw.handleKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // A narrow column (wide side panel) keeps the title and drops the branch details.
   const sectionRef = useRef(null);
   const commandRef = useRef(() => {});
@@ -258,6 +271,8 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
   const aura = running && !waiting ? { line: "rgba(255,122,26,.25)", text: C.ink } : waiting ? { line: "rgba(255,201,60,.6)", text: C.honeyText } : { line: task.turns ? "rgba(11,138,95,.35)" : "rgba(18,19,26,.06)", text: C.greenText };
   const goal = (action, text) => act(() => post("/code/tasks/" + task.id + "/goal", { action, ...(text ? { text } : {}) }));
   const send = (text, when, how = "build", files = [], contexts = []) => act(async () => {
+    // «/btw …» is a side question: it never reaches Bruno's task (server/btw.mjs).
+    if (!files.length && !contexts.length && btw.intercept(text)) return true;
     // «/goal <qué es estar hecho>» sets the objective; «/goal pausa | sigue | quita» drive it.
     const g = /^\/goal(?:\s+([\s\S]*))?$/i.exec(text);
     if (g && !files.length && !contexts.length) {
@@ -323,7 +338,7 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
         </div>
       </div>
       <Composer task={task} models={models} busy={busy} running={running} draft={draft} mode={mode} onMode={setMode}
-        projectId={task.projectId} commands={task.engine === "codex" ? [] : commands} status={<><GoalRow task={task} onGoal={goal} /><LimitLine task={task} /></>}
+        projectId={task.projectId} commands={task.engine === "codex" ? [] : commands} status={<><BtwNotes btw={btw} botName="Bruno" /><GoalRow task={task} onGoal={goal} /><LimitLine task={task} /></>}
         disabled={task.saved?.expired ? "Esta copia se limpió hace más de 30 días: empieza una tarea nueva." : null}
         onCommand={(name) => {
           if (name === "plan") setMode("plan");

@@ -8,6 +8,7 @@ import { EFFORTS, ENGINES, CONTEXT_KINDS } from "./service.mjs";
 import { ACCESS } from "./policy.mjs";
 import { saveScript } from "./terminal.mjs";
 import { listFiles, fuzzyFiles, listSkills, saveAttachment } from "./context.mjs";
+import { btwQuestion } from "../btw.mjs";
 
 const attachments = z.array(z.object({ path: z.string().min(1).max(1000) }).passthrough()).max(20);
 /** Context chips (service.mjs cleanContexts keeps only what it knows). */
@@ -81,6 +82,8 @@ export function registerCodeRoutes(app, { code }) {
   app.delete("/api/code/tasks/:id", async (req, res) => res.json(await code.deleteTask(id.parse(req.params.id))));
   app.post("/api/code/tasks/:id/messages", async (req, res) => {
     const body = z.object({ text: z.string().trim().max(100000).default(""), when: z.enum(["queue", "steer"]).default("queue"), mode: z.enum(["build", "plan"]).default("build"), attachments: attachments.default([]), contexts: contexts.default([]) }).strict().parse(req.body || {});
+    // «/btw …» is a side question (POST /api/code/tasks/:id/btw): never a message for Bruno.
+    if (btwQuestion(body.text) !== null) throw Object.assign(Error("«/btw» es una pregunta al margen: no entra en la tarea."), { status: 400 });
     res.json(await code.send(id.parse(req.params.id), body));
   });
   // «/goal»: Bruno keeps going until he says it is done (or pause, resume, clear it).

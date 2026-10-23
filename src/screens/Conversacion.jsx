@@ -36,6 +36,7 @@ import { comboLabel, useDock, usePanelShortcuts } from "../lib/useDock.js";
 import { useRevealMessage } from "../lib/reveal.js";
 import { FailedLine, NewBelow, Suggestions } from "../components/room/RoomParts.jsx";
 import MessageQueue, { useConversationQueue } from "../components/room/MessageQueue.jsx";
+import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
 import AsidePanel, { askAsideAbout } from "../components/room/AsidePanel.jsx";
 import SelectionPopup, { asQuote, quoteInto } from "../components/room/SelectionPopup.jsx";
 import BrowserLive from "../components/computer/BrowserLive.jsx";
@@ -203,10 +204,13 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     }
   };
   const resend = (m) => { unshowSent(`/missions/${c}`, m.id); send.act(() => deliver(m.text)); };
+  // «/btw …»: a side question while it works; never a message nor a queued one (BtwNotes.jsx).
+  const btw = useBtw(c ? `/missions/${c}/btw` : null);
   const submit = (e, { now: sayNow = false } = {}) => {
     e?.preventDefault();
     const body = text.trim();
     if (!body || (send.busy && !c)) return;
+    if (btw.intercept(body)) { setText(""); return; }
     const steer = c && turn && (whileWorking === "steer") !== !!sayNow;
     rememberPrompt(promptKey, body);
     if (c && !files.length && !chosen.length && !steer && (turn || send.busy || queue.pending.length)) {
@@ -242,6 +246,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const suggestions = c && !text.trim() && !turn ? mission?.suggestions || [] : [];
   const onKeyDown = (e) => {
     if (mentions.handleKey(e)) return;
+    if (!text.trim() && btw.handleKey(e)) return;
     if (historyKey(e)) return;
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "s" || e.key === "S")) { e.preventDefault(); stashNow(); return; }
     if (e.key === "Tab" && !e.shiftKey && !text && suggestions.length) { e.preventDefault(); setText(suggestions[0]); return; }
@@ -529,6 +534,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               above={<>
                 <NewBelow show={below} onClick={follow.toEnd} />
                 {pending.filter((a) => a.kind === "secret").map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
+                <BtwNotes btw={btw} botName={bot?.name} nameOf={(id) => findBot(bots, id)?.name} />
                 <Suggestions list={suggestions} onPick={(t) => { setText(t); requestAnimationFrame(() => inputRef.current?.focus()); }} />
               </>}
               below={<>

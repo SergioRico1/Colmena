@@ -17,6 +17,7 @@ const CONTEXT_ICON = { terminal: SquareTerminal, diff: MessageSquareText, previe
 /** Colmena's own commands, then the engine's (Claude Code reports its slash commands). */
 export const BUILT_IN = [
   { name: "goal", text: "Objetivo: Bruno sigue solo hasta cumplirlo (/goal pasan los tests)", arg: true },
+  { name: "btw", text: "Pregunta al margen: Bruno contesta sin dejar lo que hace (/btw ¿qué te falta?)", arg: true },
   { name: "plan", text: "Pasar a modo Plan: primero un plan, sin tocar nada" },
   { name: "construir", text: "Volver a modo Construir" },
   { name: "compactar", text: "Resumir la conversación para liberar contexto" },
