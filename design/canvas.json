@@ -405,6 +405,15 @@
       "w": 1440,
       "x": 16720,
       "y": 20350
+    },
+    "V2Personas.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "v2 · 38 · Con otras personas: invitar, chatear y bots que negocian",
+      "w": 1440,
+      "x": 18240,
+      "y": 20350
     }
   },
   "createdOnFiles": {

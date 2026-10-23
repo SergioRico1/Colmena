@@ -13,6 +13,7 @@ import SettingsLayout from "../components/v2/settings/Layout.jsx";
 import UsageSection from "../components/v2/settings/Usage.jsx";
 import DiagnosticsSection, { diagnosticsDot, useDiagnostics } from "../components/v2/settings/Diagnostics.jsx";
 import DictationSettings from "../components/v2/settings/Dictation.jsx";
+import PeopleSettings from "../components/v2/settings/People.jsx";
 import { ALIAS, DEFAULT_SECTION, PARENT, SECTION_OF } from "../components/v2/settings/sections.js";
 import { Chevron, FAINT, FieldRow, Group, INK, LINE, LinkRow, MUTED, Segmented, SwitchRow, Text, anchorOf, inputStyle, pill, rowStyle } from "../components/v2/settings/rows.jsx";
 import VaultCard from "../components/settings/Vault.jsx";
@@ -65,7 +66,7 @@ function AccountSection({ settings, people, set, busy }) {
       <Group id="esp-t" title="Tu espacio">
         <TextField anchor="nombre-espacio" title="Nombre del espacio" sub="El equipo, la empresa o el departamento que trabaja aquí." value={settings.spaceName} onSave={(v) => set({ spaceName: v })} last />
       </Group>
-      <Group id="per-t" title="Personas del espacio" anchor="personas" note="Colmena funciona en este ordenador: las personas sirven para firmar lo que se aprueba y para asignar tareas. No hay invitaciones ni cuentas en red.">
+      <Group id="per-t" title="Personas del espacio" anchor="personas" note="Las personas de este espacio sirven para firmar lo que se aprueba y para asignar tareas. Para hablar con alguien que usa Colmena en su ordenador, ve a Ajustes › Personas.">
         {others.slice(0, 6).map((p) => (
           <div key={p.id} style={rowStyle(false, "64px")}>
             <PersonPresence name={p.name} size={32} />
@@ -585,6 +586,7 @@ export default function AjustesV2({ params = {} }) {
       {id === "autonomia" ? <AutonomySection settings={settings} paused={paused || settings.paused} grants={grants} bots={bots} set={set} act={act} /> : null}
       {id === "autonomia" ? <CodeArchiveSettings /> : null}
       {id === "apps" ? <AppsSection connectors={connectors} folders={folders} bots={bots} computer={computer} act={act} /> : null}
+      {id === "contactos" ? <PeopleSettings /> : null}
       {id === "avisos" ? <NoticesSection settings={settings} bots={bots} set={set} busy={act.busy} /> : null}
       {id === "privacidad" ? <PrivacySection memories={memories} act={act} /> : null}
       {id === "uso" ? <UsageSection /> : null}

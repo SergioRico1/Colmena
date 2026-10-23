@@ -93,6 +93,33 @@
         "COLMENA_PORT": "4334",
         "COLMENA_CODE_DEBUG": "1"
       }
+    },
+    {
+      "name": "mu-relay",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["relay/server.mjs", "--port", "4390", "--data", ".local/mu-relay"],
+      "port": 4390
+    },
+    {
+      "name": "mu-sergio",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server/index.mjs", "--production"],
+      "port": 4341,
+      "env": { "COLMENA_DATA_DIR": ".local/mu-sergio", "COLMENA_PORT": "4341", "COLMENA_RELAY_URL": "http://127.0.0.1:4390" }
+    },
+    {
+      "name": "mu-marta",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server/index.mjs", "--production"],
+      "port": 4342,
+      "env": { "COLMENA_DATA_DIR": ".local/mu-marta", "COLMENA_PORT": "4342", "COLMENA_RELAY_URL": "http://127.0.0.1:4390" }
+    },
+    {
+      "name": "mu-luis",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server/index.mjs", "--production"],
+      "port": 4343,
+      "env": { "COLMENA_DATA_DIR": ".local/mu-luis", "COLMENA_PORT": "4343", "COLMENA_RELAY_URL": "http://127.0.0.1:4390" }
     }
   ]
 }

@@ -25,6 +25,7 @@ export const routes = [
   { path: "/bandeja/:id/editar", screen: "Revisar" },
   { path: "/chat/:bot", screen: "Conversacion" },
   { path: "/sala/:id", screen: "SalaV2" },
+  { path: "/con/:id", screen: "PeopleChat" }, // a conversation with people (server/peers/)
   { path: "/sala/:id/directo", screen: "SalaV2" },
   { path: "/sala/:id/directo-v1", screen: "EnVivo" },
   { path: "/sala/:id/debate", screen: "DebateV2" },

@@ -7,7 +7,9 @@ const names = Object.keys(designs).map((p) => p.match(/([^/]+)\.jsx$/)[1]).sort(
 export default function DesignGallery({ params }) {
   const name = params.name;
   const Design = useMemo(() => (name && designs[`../design/${name}.jsx`] ? lazy(designs[`../design/${name}.jsx`]) : null), [name]);
-  if (Design) return <Suspense fallback={null}><Design /></Suspense>;
+  // ?paso=…&reunion=… sets the board's props, to open one state directly.
+  const props = useMemo(() => Object.fromEntries(new URLSearchParams(window.location.search)), [name]);
+  if (Design) return <Suspense fallback={null}><Design {...props} /></Suspense>;
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: "48px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
       <h1 style={{ margin: 0, font: "800 40px/1 'Bricolage Grotesque', sans-serif" }}>Diseños originales</h1>

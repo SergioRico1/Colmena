@@ -1,4 +1,4 @@
-import { Bell, Bot, ChartColumn, Info, Lock, Plug, Sparkles, Stethoscope, UserRound } from "lucide-react";
+import { Bell, Bot, ChartColumn, Info, Lock, Plug, Sparkles, Stethoscope, UserRound, UsersRound } from "lucide-react";
 
 // Ajustes by what you want to do (design/V2AjustesSecciones.dc.html), not by how Colmena is
 // built inside. Each section has an address (/ajustes/<id>) and each setting an anchor
@@ -55,6 +55,16 @@ export const SECTIONS = [
       ["que-app", "Qué app usa cada bot", "permisos lee escribe acceso matriz", "/ajustes/permisos"],
       ["carpetas", "Carpetas de este ordenador", "archivos carpeta disco documentos ordenador"],
       ["navegador", "Navegador propio para cada bot", "web chrome navegar"],
+    ],
+  },
+  {
+    id: "contactos", label: "Personas", icon: UsersRound,
+    lead: "Con quién hablas desde Colmena, qué puede pedirte cada uno y por dónde os llegan los mensajes.",
+    items: [
+      ["tu-identidad", "Tú en otras Colmenas", "nombre identidad"],
+      ["invitar", "Invitar a alguien", "invitación código compartir chatear persona amigo compañero"],
+      ["contactos", "Personas conectadas", "contactos amigos hablar palabras de seguridad quitar"],
+      ["buzon", "Cómo os llegan los mensajes", "buzón relé relay servidor cifrado conexión"],
     ],
   },
   {

@@ -51,6 +51,7 @@ import { registerCodeRoutes, codeUploadParser } from "./code/routes.mjs";
 import { registerInteractionRoutes, extendState } from "./interject.mjs";
 import { Watcher, registerWatchRoutes } from "./watch.mjs";
 import { registerVoiceLiveRoutes } from "./voice-live.mjs";
+import { registerPeerRoutes } from "./peers/routes.mjs";
 import { botThread, olderChats } from "./threads.mjs";
 import { registerGoalRoutes, acceptGoalSuggestion } from "./goals.mjs";
 import { btwQuestion, registerBtwRoutes } from "./btw.mjs";
@@ -398,6 +399,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const [[models, tModels], [usage, tUsage]] = await Promise.all([timed(listModels), timed(usageOf)]);
     const t1 = performance.now();
     const state = extendState(store, runtime, buildState(store, runtime, { session, authError, models, usage, accounts: connectorCache.get(), computer }));
+    state.peers = safe(() => app.locals.peers?.identity ? app.locals.peers.stateView() : null); // «Personas» (server/peers/)
     const t2 = performance.now();
     res.set("Server-Timing", `models;dur=${tModels.toFixed(1)}, usage;dur=${tUsage.toFixed(1)}, build;dur=${(t2 - t1).toFixed(1)}, total;dur=${(t2 - t0).toFixed(1)}`);
     res.json(state);
@@ -444,6 +446,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
         if (event.kind === "webSnapshots" || event.kind === "receipts") return;
         // «Código» streams its own records (/api/code/events): a long turn never refreshes other screens.
         if (String(event.kind).startsWith("code")) return;
+        // «Personas» messages travel on /api/peers/events; their conversation row refreshes the state.
+        if (["peerMessages", "peerSeen", "peerOutbox"].includes(event.kind)) return;
         if (event.kind === "messages" || event.kind === "steps") pushes.set(event.kind + ":" + event.id, event);
         kinds.add(event.kind);
       }
@@ -1555,6 +1559,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   if (runtime?.code) registerCodeRoutes(app, { code: runtime.code });
   registerWatchRoutes(app, { store, watcher, check, z, HttpError });
   registerVoiceLiveRoutes(app, { store, runtime, connections, check, z, HttpError }); // «Hablar»: live voice through Codex
+  registerPeerRoutes(app, { getPeers: () => app.locals.peers, check, z, HttpError }); // «Personas»: other people's Colmenas
   registerGoalRoutes(app, { store, runtime });
   registerCoreRoutes(app, { store, runtime });
   registerUsageRoutes(app, { store, runtime });

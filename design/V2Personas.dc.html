@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena v2 · Con otras personas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&amp;family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}
+::placeholder{color:#8A8D96}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
+.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}
+.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}
+@media (max-width: 760px){[data-convlist]{display:none!important}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="position: relative; display: flex; height: 100vh; min-height: 560px; overflow: hidden; background: #F5F5F2">
+<nav aria-label="Lugares de Colmena" style="position: sticky; top: 0; z-index: 40; flex: none; width: 84px; height: 100vh; min-height: 560px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 16px; background: #EBEBE6; border-right: 1px solid rgba(18,19,26,.07)">
+<span aria-hidden="true" title="Zona de los botones de la ventana" style="display: flex; gap: 6px; height: 14px; margin-bottom: 14px"><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span><span style="width: 11px; height: 11px; border-radius: 50%; background: rgba(18,19,26,.14)"></span></span>
+<a href="V2Principios.dc.html" aria-label="Colmena" style="width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center"><img src="colmena-icon-128.png" alt="" width="38" height="38" style="display: block; width: 38px; height: 38px; filter: drop-shadow(0 3px 6px rgba(201,120,0,.35))"></a>
+<sc-for list="{{rail}}" as="r" hint-placeholder-count="6"><a href="{{r.href}}" aria-current="{{r.current}}" style="position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 7px; border-radius: 16px; background: {{r.bg}}; color: {{r.fg}}; box-shadow: {{r.sh}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.d}}"></path></svg><span style="font-size: 11px; line-height: 1.15; font-weight: {{r.weight}}; text-align: center; letter-spacing: 0.01em">{{r.label}}</span><sc-if value="{{r.badge}}" hint-placeholder-val="{{ false }}"><span aria-label="{{r.badgeLabel}}" style="position: absolute; top: 2px; right: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #FFC93C; color: #12131A; font: 600 10px/18px 'Geist', sans-serif; text-align: center; box-shadow: 0 0 0 2px #EBEBE6">{{r.badge}}</span></sc-if></a></sc-for>
+<span style="flex: 1"></span>
+<a href="V2Ajustes.dc.html" aria-label="Tu cuenta y ajustes" style="width: 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px 0 2px; border-radius: 16px; color: #4A4D57"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: {{meBg}}; color: {{meFg}}; font: 600 11px/1 'Geist', sans-serif">{{meIni}}</span><span style="font-size: 11px; font-weight: 500">Ajustes</span></a>
+</nav>
+
+<div style="flex: 1; min-width: 0; height: 100%">
+<div style="display: flex; height: 100%; align-items: stretch">
+
+<sc-if value="{{showList}}" hint-placeholder-val="{{ true }}">
+<aside data-convlist aria-label="Conversaciones" style="flex: none; width: 320px; height: 100%; overflow-y: auto; overscroll-behavior: contain; padding: 28px 14px 28px 20px; display: flex; flex-direction: column; gap: 14px; border-right: 1px solid rgba(18,19,26,.07)">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 8px"><h2 style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Chats</h2><button type="button" onClick="{{openInvite}}" title="Nueva conversación, sala o persona (⌘N)" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px 0 11px; background: #12131A; color: #FFFFFF; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nueva</button></div>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; margin: 0 4px; padding: 0 12px; background: rgba(18,19,26,.045); border-radius: 12px; color: #5C606C"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m20 20-4-4"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar conversaciones</span><input type="search" placeholder="Buscar" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"></label>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{convs}}" as="c" hint-placeholder-count="6"><button type="button" onClick="{{c.go}}" aria-current="{{c.current}}" style="display: flex; align-items: center; gap: 12px; padding: 10px; border: 0; border-radius: 16px; cursor: pointer; text-align: left; background: {{c.bg}}; box-shadow: {{c.sh}}">
+<span aria-hidden="true" style="position: relative; width: 38px; height: 38px; flex: none; display: grid; place-items: center">
+<sc-if value="{{c.isRoom}}" hint-placeholder-val="{{ false }}"><span style="width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: #E9E9E4; font: 600 16px/1 'Geist', sans-serif; color: #3D404A">#</span></sc-if>
+<sc-if value="{{c.isPerson}}" hint-placeholder-val="{{ false }}"><span style="width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: {{c.pbg}}; color: #12131A; font: 600 13px/1 'Geist', sans-serif; letter-spacing: 0.02em; border: {{c.pborder}}">{{c.ini}}</span></sc-if>
+<sc-if value="{{c.isBot}}" hint-placeholder-val="{{ false }}"><span style="display: inline-grid; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16))"><span style="display: block; width: 28px; height: 28px; background: {{c.fill}}; clip-path: {{c.clip}}; border-radius: {{c.radius}}"></span></span></sc-if>
+<sc-if value="{{c.online}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: 0; bottom: 0; width: 11px; height: 11px; border-radius: 50%; background: #1E9E6A; box-shadow: 0 0 0 2px #F5F5F2"></span></sc-if>
+<sc-if value="{{c.shared}}" hint-placeholder-val="{{ false }}"><span title="{{c.sharedLabel}}" style="position: absolute; right: -9px; bottom: -6px; display: flex"><span style="position: relative; z-index: 1; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: {{c.firstBg}}; color: #12131A; font: 600 8px/1 'Geist', sans-serif; letter-spacing: 0.02em; box-shadow: 0 0 0 2px #F5F5F2">{{c.firstIni}}</span><sc-if value="{{c.more}}" hint-placeholder-val="{{ true }}"><span style="margin-left: -4px; min-width: 20px; height: 20px; padding: 0 4px 0 6px; display: grid; place-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font: 600 9px/1 'Geist', sans-serif; box-shadow: 0 0 0 2px #F5F5F2">{{c.more}}</span></sc-if></span></sc-if>
+</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px"><strong style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{c.name}}</strong><span style="font-size: 12px; color: #6B6F7A">{{c.when}}</span></span><span style="display: flex; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{c.last}}</span><sc-if value="{{c.needs}}" hint-placeholder-val="{{ false }}"><span aria-label="Te necesita" style="width: 8px; height: 8px; border-radius: 50%; background: #FFC93C; box-shadow: 0 0 0 3px rgba(255,201,60,.25)"></span></sc-if></span></span>
+</button></sc-for>
+</div>
+</aside>
+</sc-if>
+
+<sc-if value="{{isPerson}}" hint-placeholder-val="{{ false }}">
+<section aria-label="Conversación con Marta Ruiz" style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column">
+<header style="flex: none; background: #F5F5F2; border-bottom: 1px solid rgba(18,19,26,.06)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; padding: 20px clamp(20px, 4vw, 44px) 18px">
+<span aria-hidden="true" style="position: relative; width: 48px; height: 48px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; font: 600 16px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR<span style="position: absolute; right: 0; bottom: 0; width: 13px; height: 13px; border-radius: 50%; background: {{martaDot}}; box-shadow: 0 0 0 2.5px #F5F5F2"></span></span>
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font: 600 26px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Marta Ruiz</h1>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5C606C">{{martaStatus}}<span aria-hidden="true" style="width: 3px; height: 3px; border-radius: 50%; background: #A3A6AE"></span><span style="display: inline-flex; align-items: center; gap: 5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Solo lo leéis vosotros dos</span></span>
+</div>
+<button type="button" onClick="{{toSala}}" style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 18px; border: 0; border-radius: 999px; background: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 8px 20px -12px rgba(18,19,26,.2)">Hacer una sala con bots</button>
+<button type="button" onClick="{{toAjustes}}" style="height: 48px; padding: 0 20px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">Sobre Marta</button>
+</div>
+</header>
+<div style="flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column-reverse">
+<div style="width: 100%; max-width: 840px; margin: 0 auto; padding: 22px clamp(20px, 4vw, 44px) 24px; display: flex; flex-direction: column; gap: 6px">
+<sc-if value="{{pending}}" hint-placeholder-val="{{ false }}">
+<div style="align-self: center; max-width: 520px; margin: 40px 0; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; animation: fade .4s ease-out">
+<span aria-hidden="true" style="display: flex"><span style="width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 15px/1 'Geist', sans-serif; box-shadow: 0 0 0 4px #F5F5F2">TÚ</span><span style="margin-left: -14px; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; font: 600 15px/1 'Geist', sans-serif; border: 1.5px dashed #8C8F99; box-shadow: 0 0 0 4px #F5F5F2">MR</span></span>
+<strong style="font: 600 22px/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Invitación enviada a Marta</strong>
+<span style="font-size: 15px; line-height: 1.55; color: #5C606C">En cuanto la acepte en su Colmena podréis escribiros aquí. Lo que escribas ahora le llegará entonces.</span>
+</div>
+</sc-if>
+<sc-if value="{{chat}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 14px; padding: 2px 0 12px; font-size: 13px; color: #6B6F7A"><span style="flex: 1; height: 1px; background: rgba(18,19,26,.08)"></span>Hoy<span style="flex: 1; height: 1px; background: rgba(18,19,26,.08)"></span></div>
+<sc-for list="{{dm}}" as="m" hint-placeholder-count="4">
+<div class="msg" style="position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 10px 0; animation: rise .3s ease-out">
+<span aria-hidden="true" style="position: relative; width: 40px; height: 40px; display: grid; place-items: center">
+<sc-if value="{{m.person}}" hint-placeholder-val="{{ true }}"><span style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: {{m.bg}}; color: {{m.fg}}; font: 600 14px/1 'Geist', sans-serif; letter-spacing: 0.02em">{{m.ini}}</span></sc-if>
+<sc-if value="{{m.bot}}" hint-placeholder-val="{{ false }}"><span style="display: inline-grid; filter: drop-shadow(0 2px 4px rgba(18,19,26,.16))"><span style="display: block; width: 32px; height: 32px; background: {{m.fill}}; clip-path: {{m.clip}}; border-radius: {{m.radius}}"></span></span></sc-if>
+</span>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<span style="font-size: 14px"><strong style="font-weight: 600">{{m.name}}</strong> <span style="color: #6B6F7A">{{m.meta}}</span></span>
+<p style="margin: 0; font-size: 16px; line-height: 1.6">{{m.text}}</p>
+<sc-if value="{{m.seen}}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; color: #6B6F7A">{{m.seen}}</span></sc-if>
+</div>
+</div>
+</sc-for>
+</sc-if>
+</div>
+</div>
+<form style="flex: none; width: 100%; max-width: 880px; margin: 0 auto; padding: 8px clamp(20px, 4vw, 44px) 22px">
+<sc-if value="{{chat}}" hint-placeholder-val="{{ true }}"><p role="status" style="margin: 0 0 10px 18px; display: flex; gap: 16px; font-size: 13px; color: #5C606C"><span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="display: flex; gap: 3px"><span style="width: 5px; height: 5px; border-radius: 50%; background: #5C606C; animation: dots 1.2s infinite"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #5C606C; animation: dots 1.2s .15s infinite"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #5C606C; animation: dots 1.2s .3s infinite"></span></span>Marta está escribiendo</span></p></sc-if>
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #FFFFFF; border-radius: 999px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)">
+<label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Mensaje para Marta</span><input type="text" placeholder="Escribe a Marta… o @ para pedírselo a un bot" style="flex: 1; min-width: 0; height: 44px; padding: 0 14px; border: 0; outline: none; background: transparent; font-size: 16px"></label>
+<button type="button" aria-label="Mencionar a un bot" style="width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; font: 600 17px/1 'Geist', sans-serif; background: rgba(18,19,26,.05)">@</button>
+<button type="submit" aria-label="Enviar" style="width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+</div>
+</form>
+</section>
+</sc-if>
+
+<sc-if value="{{isSala}}" hint-placeholder-val="{{ false }}">
+<section aria-label="Sala viaje-lisboa" style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column">
+<header style="flex: none; background: #F5F5F2; border-bottom: 1px solid rgba(18,19,26,.06)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; padding: 20px clamp(20px, 4vw, 44px) 18px">
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font: 600 26px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em"><span style="color: #A3A6AE">#</span> viaje-lisboa</h1>
+<span style="font-size: 14px; color: #5C606C">Compartida con Marta y Luis · cada uno con sus bots</span>
+</div>
+<button type="button" aria-label="Ver personas y bots de la sala" style="display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 16px 0 8px; border: 0; border-radius: 999px; background: #FFFFFF; cursor: pointer; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 8px 20px -12px rgba(18,19,26,.2)">
+<span style="display: flex"><span style="margin-right: -8px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 10px/1 'Geist', sans-serif; box-shadow: 0 0 0 2px #FFFFFF">TÚ</span><span style="margin-right: -8px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; font: 600 10px/1 'Geist', sans-serif; box-shadow: 0 0 0 2px #FFFFFF">MR</span><span style="width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #DCE5EE; font: 600 10px/1 'Geist', sans-serif; box-shadow: 0 0 0 2px #FFFFFF">LG</span></span>
+<span aria-hidden="true" style="width: 1px; height: 22px; background: rgba(18,19,26,.1)"></span>
+<span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="display: inline-grid; filter: drop-shadow(0 2px 3px rgba(18,19,26,.16)); animation: {{atlasAnim}}"><span style="display: block; width: 18px; height: 18px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"></span></span><span aria-hidden="true" style="position: relative; display: inline-grid; animation: {{leoAnim}}"><span style="display: block; width: 18px; height: 18px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #0E7C86; border-radius: 50%"></span><span style="position: absolute; right: -5px; bottom: -5px; width: 12px; height: 12px; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; font: 600 5px/1 'Geist', sans-serif; box-shadow: 0 0 0 1.5px #FFFFFF">MR</span></span><span aria-hidden="true" style="position: relative; display: inline-grid; animation: {{leoAnim}}"><span style="display: block; width: 18px; height: 18px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #B4531F; border-radius: 24%"></span><span style="position: absolute; right: -5px; bottom: -5px; width: 12px; height: 12px; display: grid; place-items: center; border-radius: 50%; background: #DCE5EE; font: 600 5px/1 'Geist', sans-serif; box-shadow: 0 0 0 1.5px #FFFFFF">LG</span></span></span>
+</button>
+<button type="button" onClick="{{toPide}}" style="height: 48px; padding: 0 20px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Invitar</button>
+</div>
+</header>
+<div style="flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column-reverse">
+<div style="width: 100%; max-width: 840px; margin: 0 auto; padding: 22px clamp(20px, 4vw, 44px) 24px; display: flex; flex-direction: column; gap: 6px">
+
+<div class="msg" style="display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 10px 0">
+<span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; font: 600 14px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR</span>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><span style="font-size: 14px"><strong style="font-weight: 600">Marta Ruiz</strong> <span style="color: #6B6F7A">· 10:12</span></span><p style="margin: 0; font-size: 16px; line-height: 1.6">Tenemos que vernos antes del viaje para cerrar el programa. ¿La semana que viene, 45 minutos?</p></div>
+</div>
+
+<div class="msg" style="display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 10px 0">
+<span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #DCE5EE; font: 600 14px/1 'Geist', sans-serif; letter-spacing: 0.02em">LG</span>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><span style="font-size: 14px"><strong style="font-weight: 600">Luis Gómez</strong> <span style="color: #6B6F7A">· 10:13</span></span><p style="margin: 0; font-size: 16px; line-height: 1.6">Me apunto. Yo solo puedo por las mañanas.</p></div>
+</div>
+
+<div class="msg" style="display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 10px 0">
+<span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 14px/1 'Geist', sans-serif">TÚ</span>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><span style="font-size: 14px"><strong style="font-weight: 600">Tú</strong> <span style="color: #6B6F7A">· 10:14</span></span><p style="margin: 0; font-size: 16px; line-height: 1.6"><span style="display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 5px; border-radius: 999px; background: rgba(255,201,60,.22); font-weight: 600"><span aria-hidden="true" style="width: 12px; height: 12px; background: #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"></span>Atlas</span> búscanos un hueco con <span style="display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 5px; border-radius: 999px; background: rgba(14,124,134,.14); font-weight: 600"><span aria-hidden="true" style="width: 11px; height: 11px; background: #0E7C86; border-radius: 50%"></span>Leo</span> y <span style="display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px 1px 5px; border-radius: 999px; background: rgba(180,83,31,.14); font-weight: 600"><span aria-hidden="true" style="width: 11px; height: 11px; background: #B4531F; border-radius: 24%"></span>Nico</span>, por las mañanas.</p></div>
+</div>
+
+<div style="display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 10px 0">
+<span aria-hidden="true" style="display: grid; place-items: center; width: 40px; height: 40px"><span style="display: inline-grid; filter: drop-shadow(0 2px 4px rgba(18,19,26,.16)); animation: {{atlasAnim}}"><span style="display: block; width: 32px; height: 32px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"></span></span></span>
+<div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+<span style="font-size: 14px"><strong style="font-weight: 600">Atlas</strong> <span style="color: #6B6F7A">· tu bot · con Leo y Nico, los bots de Marta y Luis · 10:14</span></span>
+
+<div role="group" aria-labelledby="meet-t" style="display: flex; flex-direction: column; gap: 16px; padding: 20px 22px 22px; border-radius: 24px; background: #FFFFFF; box-shadow: {{cardShadow}}; border: {{cardBorder}}; animation: rise .35s ease-out">
+<div style="display: flex; align-items: center; gap: 12px">
+<span aria-hidden="true" style="width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 12px; background: #F2F2EE"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path></svg></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><strong id="meet-t" style="font: 600 19px/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -0.01em">Reunión de los tres · programa de Lisboa</strong><span style="font-size: 13px; color: #6B6F7A">45 minutos · semana del 26 · por la mañana</span></span>
+</div>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{meetSteps}}" as="st" hint-placeholder-count="3"><li style="display: flex; align-items: center; gap: 12px; font-size: 15px; color: {{st.fg}}"><span aria-hidden="true" style="width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 50%; background: {{st.dotBg}}; box-shadow: {{st.dotRing}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{st.tick}}"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="flex: 1">{{st.text}}</span><span style="font-size: 13px; color: #6B6F7A">{{st.note}}</span></li></sc-for>
+</ol>
+<sc-if value="{{showSlots}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(18,19,26,.07)">
+<span style="font-size: 14px; font-weight: 600">{{slotsTitle}}</span>
+<div role="radiogroup" aria-label="Huecos" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{slots}}" as="sl" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{sl.on}}" onClick="{{sl.pick}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 150px; padding: 12px 16px; border: 0; border-radius: 18px; cursor: pointer; text-align: left; background: {{sl.bg}}; color: {{sl.fg}}; box-shadow: {{sl.sh}}"><strong style="font-size: 15px; font-weight: 600">{{sl.day}}</strong><span style="font-size: 13px; opacity: .8">{{sl.time}}</span><sc-if value="{{sl.rec}}" hint-placeholder-val="{{ false }}"><span style="margin-top: 4px; font-size: 12px; font-weight: 600; color: {{sl.recFg}}">Recomendado · el más tranquilo para los tres</span></sc-if></button></sc-for>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{showWaiting}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(18,19,26,.07); animation: fade .3s ease-out">
+<span style="font-size: 14px; color: #5C606C">Respondiste: <strong style="color: #12131A">{{chosen}}</strong></span>
+<span style="font-size: 14px; font-weight: 600">{{votesTitle}}</span>
+<sc-for list="{{votes}}" as="vt" hint-placeholder-count="3"><span style="display: flex; align-items: center; gap: 10px; font-size: 15px"><span aria-hidden="true" style="width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: {{vt.bg}}; color: {{vt.fg}}; font: 600 9px/1 'Geist', sans-serif">{{vt.ini}}</span><span style="flex: 1">{{vt.name}}</span><sc-if value="{{vt.yes}}" hint-placeholder-val="{{ false }}"><span style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #0B6B4A"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Sí</span></sc-if><sc-if value="{{vt.wait}}" hint-placeholder-val="{{ false }}"><span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6B6F7A">esperando<span aria-hidden="true" style="display: flex; gap: 3px"><span style="width: 5px; height: 5px; border-radius: 50%; background: #5C606C; animation: dots 1.2s infinite"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #5C606C; animation: dots 1.2s .15s infinite"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #5C606C; animation: dots 1.2s .3s infinite"></span></span></span></sc-if></span></sc-for>
+<span style="font-size: 13px; line-height: 1.45; color: #5C606C">Si alguien dice que no, Atlas os propone el siguiente hueco que va bien a todos.</span>
+<button type="button" onClick="{{martaSays}}" style="align-self: flex-start; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.05); cursor: pointer; font-size: 13px; font-weight: 600">Ver cuando Luis acepta</button>
+</div>
+</sc-if>
+<sc-if value="{{showDone}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 18px; background: #E8F5EE; animation: develop .5s ease-out">
+<span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #1E9E6A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; font-weight: 600; color: #0B6B4A">{{chosen}} · lo habéis confirmado los tres</strong><span style="font-size: 13px; color: #2F5F4B">Está en el calendario de cada uno. Nadie ha enviado invitaciones por correo.</span></span>
+<button type="button" onClick="{{undoMeet}}" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(11,107,74,.1); color: #0B6B4A; cursor: pointer; font-size: 13px; font-weight: 600">Cambiar</button>
+</div>
+</sc-if>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5C606C"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Ninguno ve las citas del otro: solo si a esa hora está libre u ocupado.</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+<form style="flex: none; width: 100%; max-width: 880px; margin: 0 auto; padding: 8px clamp(20px, 4vw, 44px) 22px">
+<p role="status" style="margin: 0 0 10px 18px; display: flex; gap: 16px; font-size: 13px; color: #5C606C"><span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 9px; height: 9px; background: #0E7C86; border-radius: 50%; animation: breathe 1.4s ease-in-out infinite"></span>{{leoLine}}</span></p>
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #FFFFFF; border-radius: 999px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)">
+<div role="radiogroup" aria-label="Quién lo verá" style="display: flex; gap: 2px; padding: 3px; background: rgba(18,19,26,.05); border-radius: 999px"><button type="button" role="radio" aria-checked="true" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.12)">Toda la sala</button><button type="button" role="radio" aria-checked="false" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent">Solo yo y un bot</button></div>
+<label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Mensaje</span><input type="text" placeholder="Escribe a la sala…" style="flex: 1; min-width: 0; height: 44px; padding: 0 8px; border: 0; outline: none; background: transparent; font-size: 16px"></label>
+<button type="submit" aria-label="Enviar" style="width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+</div>
+</form>
+</section>
+</sc-if>
+
+<sc-if value="{{isAjustes}}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="per-t" style="flex: 1; min-width: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain">
+<div style="width: 100%; max-width: 760px; margin: 0 auto; padding: 44px clamp(20px, 4vw, 44px) 60px; display: flex; flex-direction: column; gap: 30px">
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Ajustes</span><h1 id="per-t" style="margin: 0; font: 600 36px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Personas</h1><p style="margin: 0; font-size: 15px; line-height: 1.5; color: #5C606C">Con quién hablas desde Colmena y qué puede pedirte cada uno.</p></div>
+
+<div style="display: flex; align-items: center; gap: 18px; padding: 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)">
+<span aria-hidden="true" style="width: 56px; height: 56px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 16px/1 'Geist', sans-serif">SR</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 17px; font-weight: 600">Sergio Rico</strong><span style="font-size: 14px; color: #5C606C">Tus palabras de seguridad: <span style="font-weight: 600; color: #12131A">miel · faro · trébol · nube</span></span></span>
+<button type="button" onClick="{{openInvite}}" style="height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Invitar a alguien</button>
+</div>
+
+<section aria-labelledby="ct-h" style="display: flex; flex-direction: column; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2); overflow: hidden">
+<h2 id="ct-h" style="margin: 0; padding: 18px 20px 6px; font-size: 13px; font-weight: 500; color: #6B6F7A">Conectadas · 2</h2>
+<sc-for list="{{contacts}}" as="p" hint-placeholder-count="3">
+<button type="button" onClick="{{p.toggle}}" aria-expanded="{{p.exp}}" style="display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 10px 20px; border: 0; border-top: 1px solid rgba(18,19,26,.06); background: transparent; cursor: pointer; text-align: left">
+<span aria-hidden="true" style="position: relative; width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%; background: {{p.bg}}; font: 600 13px/1 'Geist', sans-serif; border: {{p.border}}">{{p.ini}}<span style="position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%; background: {{p.dot}}; box-shadow: 0 0 0 2px #FFFFFF"></span></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 15px; font-weight: 600">{{p.name}}</strong><span style="font-size: 13px; color: #6B6F7A">{{p.note}}</span></span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .45; transform: {{p.rot}}"><path d="m6 9 6 6 6-6"></path></svg>
+</button>
+<sc-if value="{{p.open}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 6px 20px 22px 74px; animation: rise .2s ease-out">
+<span style="font-size: 13px; font-weight: 500; color: #6B6F7A">Lo que puede pedirte su bot</span>
+<sc-for list="{{p.asks}}" as="a" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px">
+<span style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px; font-weight: 600">{{a.label}}</strong><span style="font-size: 13px; color: #5C606C">{{a.desc}}</span></span>
+<div role="radiogroup" aria-label="{{a.label}}" style="display: flex; gap: 2px; padding: 3px; background: rgba(18,19,26,.05); border-radius: 999px"><sc-for list="{{a.opts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="height: 34px; padding: 0 12px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{o.bg}}; box-shadow: {{o.sh}}">{{o.label}}</button></sc-for></div>
+</div>
+</sc-for>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.45; color: #5C606C"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>Enviar, comprar, publicar o pagar por algo que pida {{p.first}} siempre te pregunta, aunque digas «Siempre» aquí.</span>
+<div style="display: flex; gap: 8px"><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.05); cursor: pointer; font-size: 13px; font-weight: 600">Comprobar palabras de seguridad</button><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #B42318">Dejar de hablar con {{p.first}}</button></div>
+</div>
+</sc-if>
+</sc-for>
+<div style="display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 10px 20px; border-top: 1px solid rgba(18,19,26,.06)"><span aria-hidden="true" style="width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #EEEAE3; border: 1.5px dashed #8C8F99; font: 600 13px/1 'Geist', sans-serif; opacity: .7">JR</span><span style="flex: 1; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 15px; font-weight: 600">Jorge Ríos</strong><span style="font-size: 13px; color: #6B6F7A">Invitado ayer · aún no ha aceptado · caduca en 6 h</span></span><button type="button" style="height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: rgba(18,19,26,.05); cursor: pointer; font-size: 13px; font-weight: 600">Copiar otra vez</button></div>
+</section>
+
+<section aria-labelledby="cx-h" style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)">
+<h2 id="cx-h" style="margin: 0; font-size: 13px; font-weight: 500; color: #6B6F7A">Cómo os llegan los mensajes</h2>
+<div style="display: flex; align-items: center; gap: 14px"><span aria-hidden="true" style="width: 10px; height: 10px; flex: none; border-radius: 50%; background: #1E9E6A; box-shadow: 0 0 0 4px rgba(30,158,106,.15)"></span><span style="flex: 1; font-size: 15px; line-height: 1.5">Conectado al buzón de Colmena. Cada mensaje sale cerrado con llave desde este ordenador y solo lo abre el de la otra persona: el buzón guarda sobres que no puede leer.</span></div>
+<span style="font-size: 13px; line-height: 1.5; color: #5C606C">Si alguien no está conectado, su sobre espera en el buzón hasta 7 días. Tus correos, tu calendario, tus archivos y lo que saben de ti tus bots nunca salen de aquí; solo lo que escribís y lo que tú apruebas compartir.</span>
+</section>
+</div>
+</section>
+</sc-if>
+
+</div>
+</div>
+
+<sc-if value="{{sheetInvite}}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgba(18,19,26,.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fade .25s ease-out">
+<section role="dialog" aria-modal="true" aria-labelledby="inv-t" style="width: min(560px, 100%); display: flex; flex-direction: column; gap: 22px; padding: 28px; border-radius: 32px; background: rgba(255,255,255,.96); box-shadow: 0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06); animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px"><span style="display: flex; flex-direction: column; gap: 6px"><h2 id="inv-t" style="margin: 0; font: 600 26px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">{{invTitle}}</h2><span style="font-size: 15px; line-height: 1.5; color: #5C606C">{{invSub}}</span></span><button type="button" onClick="{{closeSheet}}" aria-label="Cerrar" style="width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.06); cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<sc-if value="{{invAsk}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 18px; border-radius: 999px; background: #F2F2EE"><label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Nombre</span><input type="text" value="{{invName}}" onChange="{{invNameChange}}" placeholder="¿Cómo se llama?" style="flex: 1; min-width: 0; height: 44px; border: 0; outline: none; background: transparent; font-size: 16px"></label><button type="button" onClick="{{makeInvite}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: {{invBtnBg}}; color: #FFFFFF">Crear invitación</button></div>
+<span style="font-size: 13px; line-height: 1.5; color: #5C606C">Colmena no la envía por ti: tú se la mandas por WhatsApp, correo o como prefieras.</span>
+</sc-if>
+<sc-if value="{{invMade}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 22px; background: #F4F4F0; animation: rise .3s ease-out">
+<span style="font-size: 15px; line-height: 1.55; color: #1E2029">«Hola {{invFirst}}, te invito a hablar conmigo desde Colmena. Abre Colmena › Chats › Nueva › Tengo una invitación y pega esto:»</span>
+<code style="align-self: flex-start; padding: 10px 14px; border-radius: 12px; background: #FFFFFF; font: 500 15px/1 'Geist Mono', monospace; letter-spacing: 0.04em; box-shadow: inset 0 0 0 1px rgba(18,19,26,.08)">COLMENA-7KQ4-PZ2V-M9RT</code>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><button type="button" onClick="{{copyInvite}}" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>{{copyLabel}}</button><span style="align-self: center; font-size: 13px; color: #6B6F7A">Sirve una vez · caduca en 24 horas</span></div>
+</div>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{invSteps}}" as="st" hint-placeholder-count="3"><li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.5"><span aria-hidden="true" style="width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: rgba(18,19,26,.06); font: 600 12px/1 'Geist Mono', monospace">{{st.n}}</span><span>{{st.text}}</span></li></sc-for>
+</ol>
+</sc-if>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{sheetAccept}}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgba(18,19,26,.28); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); animation: fade .25s ease-out">
+<section role="dialog" aria-modal="true" aria-labelledby="acc-t" style="width: min(520px, 100%); display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 34px 30px 28px; border-radius: 32px; background: rgba(255,255,255,.96); text-align: center; box-shadow: 0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06); animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">En la Colmena de Marta</span>
+<span aria-hidden="true" style="width: 68px; height: 68px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 20px/1 'Geist', sans-serif; animation: pop .5s ease-out">SR</span>
+<span style="display: flex; flex-direction: column; gap: 8px"><h2 id="acc-t" style="margin: 0; font: 600 26px/1.15 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">{{accTitle}}</h2><span style="font-size: 15px; line-height: 1.55; color: #5C606C">{{accSub}}</span></span>
+<sc-if value="{{accAsk}}" hint-placeholder-val="{{ true }}">
+<div style="width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 22px; background: #F4F4F0">
+<span style="font-size: 13px; color: #5C606C">Pídele a Sergio que te diga las suyas. Deben ser estas:</span>
+<span style="font: 600 21px/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -0.01em">miel · faro · trébol · nube</span>
+</div>
+<div style="width: 100%; display: flex; flex-direction: column; gap: 8px">
+<button type="button" onClick="{{accept}}" style="height: 50px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600">Coinciden · conectar con Sergio</button>
+<button type="button" onClick="{{closeSheet}}" style="height: 44px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #5C606C">No coinciden o no le conozco</button>
+</div>
+<span style="font-size: 13px; line-height: 1.5; color: #6B6F7A">Sergio solo verá lo que le escribas y lo que tú decidas compartir.</span>
+</sc-if>
+<sc-if value="{{accDone}}" hint-placeholder-val="{{ false }}">
+<span style="display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 999px; background: #E8F5EE; color: #0B6B4A; font-size: 15px; font-weight: 600; animation: develop .5s ease-out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Ya podéis escribiros</span>
+<button type="button" onClick="{{toPersona}}" style="height: 48px; padding: 0 22px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600">Abrir la conversación</button>
+</sc-if>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{sheetPide}}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; inset: 0; z-index: 60; display: flex; justify-content: flex-end; background: rgba(18,19,26,.12); animation: fade .25s ease-out">
+<aside role="dialog" aria-modal="true" aria-labelledby="pide-t" style="width: min(480px, 100%); height: 100%; overflow-y: auto; padding: 30px 28px 36px; background: rgba(255,255,255,.95); -webkit-backdrop-filter: blur(30px) saturate(1.6); backdrop-filter: blur(30px) saturate(1.6); border-radius: 34px 0 0 34px; box-shadow: -40px 0 80px -30px rgba(18,19,26,.35); display: flex; flex-direction: column; gap: 24px; animation: sheet .45s cubic-bezier(.2,.8,.2,1)">
+<div style="display: flex; align-items: center; gap: 14px">
+<span aria-hidden="true" style="position: relative; display: inline-grid; animation: beckon 1.6s ease-out infinite"><span style="display: block; width: 40px; height: 40px; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #0E7C86; border-radius: 50%"></span><span style="position: absolute; right: -6px; bottom: -6px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; font: 600 8px/1 'Geist', sans-serif; box-shadow: 0 0 0 2px #FFFFFF">MR</span></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; color: #6B6F7A">Leo · el bot de Marta</span><h2 id="pide-t" style="margin: 0; font: 600 24px/1.15 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">{{pideTitle}}</h2></span>
+<button type="button" onClick="{{closeSheet}}" aria-label="Cerrar" style="width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.06); cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; font-weight: 500; color: #6B6F7A">Esto es todo lo que verá Leo</span>
+<div role="img" aria-label="Tu semana: solo bloques ocupados, sin títulos" style="display: grid; grid-template-columns: 34px repeat(5, 1fr); gap: 4px; padding: 14px; border-radius: 20px; background: #F4F4F0">
+<span></span><sc-for list="{{weekDays}}" as="d" hint-placeholder-count="5"><span style="text-align: center; font-size: 12px; font-weight: 600; color: #5C606C">{{d}}</span></sc-for>
+<sc-for list="{{weekRows}}" as="row" hint-placeholder-count="4"><span style="font: 500 11px/24px 'Geist Mono', monospace; color: #8A8D96">{{row.h}}</span><sc-for list="{{row.cells}}" as="cell" hint-placeholder-count="5"><span style="height: 24px; border-radius: 6px; background: {{cell}}"></span></sc-for></sc-for>
+</div>
+<span style="display: flex; align-items: center; gap: 14px; font-size: 13px; color: #5C606C"><span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 4px; background: #3D404A"></span>Ocupado</span><span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 4px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(18,19,26,.12)"></span>Libre</span><span>Sin títulos, lugares ni personas.</span></span>
+</div>
+<sc-if value="{{pideAsk}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 22px; background: #FFFFFF; border: 1.5px solid #12131A; box-shadow: 0 10px 0 -4px #FFC93C">
+<span style="font-size: 15px; line-height: 1.5">¿Le dejas a Leo ver cuándo estás libre del lunes 26 al viernes 30, de 9 a 13?</span>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<button type="button" onClick="{{pideYes}}" style="display: flex; align-items: center; justify-content: space-between; height: 50px; padding: 0 20px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 15px; font-weight: 600">Sí, solo libre u ocupado<span style="font-size: 12px; font-weight: 600; color: #FFC93C">Recomendado</span></button>
+<button type="button" onClick="{{pideAlways}}" style="height: 46px; padding: 0 20px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600; text-align: left">Sí, y no me preguntes más para Marta</button>
+<button type="button" onClick="{{closeSheet}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #5C606C; text-align: left">Ahora no</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{pideDone}}" hint-placeholder-val="{{ false }}">
+<span style="padding: 14px 16px; border-radius: 18px; background: #E8F5EE; color: #0B6B4A; font-size: 15px; line-height: 1.5; animation: develop .5s ease-out">Respondiste: <strong>{{pideAnswer}}</strong>. Atlas se lo pasa a Leo y sigue buscando el hueco.</span>
+</sc-if>
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 1px solid rgba(18,19,26,.07)">
+<span style="font-size: 13px; font-weight: 500; color: #6B6F7A">Otra petición de Leo</span>
+<div style="display: flex; gap: 12px; padding: 14px 16px; border-radius: 18px; background: #FFF6DE">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A6400" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.5"><strong style="font-weight: 600">«Que Vera mande el presupuesto del hotel a la agencia»</strong><span style="color: #5C606C">Lo pide otra persona y saldría de tu correo: nunca sale sin tu OK, y aquí no hay «siempre».</span></span>
+</div>
+<div style="display: flex; gap: 8px"><a href="V2Revisar.dc.html" style="display: flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: rgba(18,19,26,.06); font-size: 14px; font-weight: 600">Revisar el correo</a><button type="button" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #5C606C">No enviar</button></div>
+</div>
+</aside>
+</div>
+</sc-if>
+
+<sc-if value="{{toast}}" hint-placeholder-val="{{ false }}"><div role="status" style="position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 70; padding: 12px 18px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14px; font-weight: 500; box-shadow: 0 20px 40px -20px rgba(18,19,26,.6); animation: rise .3s ease-out">{{toast}}</div></sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["invitar","aceptar","persona","sala","pide","personas"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.from(props);
+  }
+  from(p) {
+    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '' };
+  }
+  componentDidUpdate(prev) {
+    if (prev.paso !== this.props.paso || prev.reunion !== this.props.reunion) this.setState(this.from(this.props));
+  }
+  flash(toast) {
+    this.setState({ toast });
+    clearTimeout(this.tt);
+    this.tt = setTimeout(() => this.setState({ toast: '' }), 2400);
+  }
+  renderVals() {
+    const s = this.state;
+    const F = c => `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${c}`;
+    const go = paso => () => this.setState({ ...this.from({ paso, reunion: s.meet }), paso });
+    const marta = s.paso === 'aceptar';
+    const RAIL = [
+      ['Hoy', 'V2Hoy.dc.html', 'M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7M16.2 12a4.2 4.2 0 1 1-8.4 0 4.2 4.2 0 0 1 8.4 0', s.paso === 'pide' ? '1' : ''],
+      ['Chats', 'V2Conversacion.dc.html', 'M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z', ''],
+      ['Código', 'V2Codigo.dc.html', 'm18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16', ''],
+      ['Colmena', 'V2Colmena.dc.html', 'M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z', ''],
+      ['Rutinas', 'V2Rutinas.dc.html', 'M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.8 4.5v3.6h-3.6M12 8.2V12l2.6 1.6', ''],
+      ['Archivo', 'V2Archivo.dc.html', 'M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5zM3 4h18v3.5H3zM9.5 11.5h5', '']
+    ];
+    const here = s.paso === 'personas' ? '' : 'Chats';
+    const CONVS = marta
+      ? [['person', 'Sergio Rico', 'ahora', 'Te invita a hablar', 'SR', '#DCE5EE', 'aceptar', false, true],
+         ['bot', 'Leo', 'ayer', 'Contratos revisados', '#0E7C86', '50%', null, false, false],
+         ['room', 'oficina', 'lun', 'Atlas: plan de la semana', '', '', null, false, false]]
+      : [['room', 'viaje-lisboa', '10:14', 'Atlas: tres huecos que os van bien', '', '', 'sala', true, false, 2],
+         ['person', 'Marta Ruiz', s.paso === 'invitar' ? 'ahora' : '10:02', s.paso === 'invitar' ? 'Invitación enviada' : '¿Cerramos el programa esta semana?', 'MR', '#EFE2D3', 'persona', false, s.paso !== 'invitar'],
+         ['bot', 'Vera', 'ayer', 'Resumen del comité', '#7B4DFF', '50% 12% 50% 12%', null, false, false],
+         ['room', 'informe-q3', 'ayer', 'Tomás: devoluciones listas', '', '', null, false, false],
+         ['bot', 'Atlas', 'lun', 'Plan de la semana', '#FFC93C', '0', null, false, false]];
+    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
+    const meetStepsBy = {
+      buscando: [['Atlas mira tu agenda', 'solo libre u ocupado', true], ['Leo mira la de Marta', 'solo libre u ocupado', true], ['Nico mira la de Luis', 'buscando…', false], ['Os propongo los huecos que van bien a los tres', '', false]],
+      elegir: [['Atlas miró tu agenda', 'solo libre u ocupado', true], ['Leo miró la de Marta', 'solo libre u ocupado', true], ['Nico miró la de Luis', 'solo libre u ocupado', true], ['Tres huecos os van bien a los tres', '', true]],
+      esperando: [['Atlas miró tu agenda', 'solo libre u ocupado', true], ['Leo miró la de Marta', 'solo libre u ocupado', true], ['Nico miró la de Luis', 'solo libre u ocupado', true], ['Elegiste un hueco', 'falta 1 de 3', true]],
+      hecha: [['Atlas miró tu agenda', 'solo libre u ocupado', true], ['Leo miró la de Marta', 'solo libre u ocupado', true], ['Nico miró la de Luis', 'solo libre u ocupado', true], ['Os pusisteis de acuerdo los tres', '', true]]
+    };
+    const SLOTS = [['mar', 'Martes 27', '10:00 – 10:45', true], ['mie', 'Miércoles 28', '9:15 – 10:00', false], ['jue', 'Jueves 29', '11:30 – 12:15', false]];
+    const chosenSlot = SLOTS.find(x => x[0] === s.slot) || SLOTS[0];
+    const week = ['L 26', 'M 27', 'X 28', 'J 29', 'V 30'];
+    const BUSY = [[1, 0, 1, 0, 1], [1, 0, 0, 1, 1], [0, 1, 0, 0, 1], [0, 1, 1, 0, 0]];
+    const ASK_OPTS = {
+      libre: ['Cuándo estás libre', 'Solo libre u ocupado: nunca títulos, lugares ni personas.', [['pregunta', 'Pregúntame'], ['siempre', 'Siempre'], ['nunca', 'Nunca']]],
+      salas: ['Hablar con tus bots', 'En salas que compartís. Tus bots no usan tus cuentas por lo que pida.', [['mencion', 'Si los menciona'], ['nunca', 'Nunca']]],
+      archivos: ['Ver tus archivos', 'Solo los que compartas tú en una sala.', [['pregunta', 'Pregúntame'], ['nunca', 'Nunca']]]
+    };
+    const pill = on => ({ on: String(on), bg: on ? '#FFFFFF' : 'transparent', sh: on ? '0 1px 2px rgba(18,19,26,.12)' : 'none' });
+    return {
+      rail: RAIL.map(([label, href, d, badge]) => { const on = label === here; return { label, href, d, badge, badgeLabel: 'Te espera algo', current: on ? 'page' : 'false', bg: on ? '#FFFFFF' : 'transparent', fg: on ? '#12131A' : '#4A4D57', sh: on ? '0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)' : 'none', weight: on ? '600' : '500' }; }),
+      meIni: marta ? 'MR' : 'TÚ', meBg: marta ? '#EFE2D3' : '#12131A', meFg: marta ? '#12131A' : '#FFFFFF',
+      showList: s.paso !== 'personas',
+      convs: CONVS.map(([kind, name, when, last, a, b, to, needs, online, shared]) => { const on = name === current; return {
+        name, when, last, needs, online: kind === 'person' && online, shared: !!shared, more: shared > 1 ? '+' + (shared - 1) : '', firstIni: 'MR', firstBg: '#EFE2D3', sharedLabel: shared ? 'Compartida con ' + shared + (shared === 1 ? ' persona' : ' personas') : '', isRoom: kind === 'room', isPerson: kind === 'person', isBot: kind === 'bot',
+        ini: a, pbg: b, pborder: kind === 'person' && s.paso === 'invitar' && name === 'Marta Ruiz' ? '1.5px dashed #8C8F99' : '0',
+        fill: kind === 'bot' ? F(a) : '', clip: name === 'Atlas' ? 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)' : 'none', radius: b,
+        current: on ? 'page' : 'false', bg: on ? '#FFFFFF' : 'transparent', sh: on ? '0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)' : 'none',
+        go: to ? go(to) : () => {} }; }),
+      openInvite: go('invitar'),
+      isPerson: s.paso === 'persona' || s.paso === 'invitar' || s.paso === 'aceptar',
+      pending: s.paso === 'invitar' || s.paso === 'aceptar', chat: s.paso === 'persona',
+      martaDot: s.paso === 'persona' ? '#1E9E6A' : '#C9CBD1',
+      martaStatus: s.paso === 'persona' ? 'Conectada' : 'Invitada · aún no ha aceptado',
+      toSala: go('sala'), toAjustes: go('personas'), toPide: go('pide'), toPersona: go('persona'),
+      dm: [
+        { person: true, bot: false, ini: 'MR', bg: '#EFE2D3', fg: '#12131A', name: 'Marta Ruiz', meta: '· 09:58', text: 'He visto el hotel que propusiste. ¿Cerramos el programa esta semana?', seen: '' },
+        { person: true, bot: false, ini: 'TÚ', bg: '#12131A', fg: '#FFFFFF', name: 'Tú', meta: '· 10:01', text: 'Sí. Le pido a Vera un resumen de lo que tenemos y te lo paso aquí.', seen: 'Visto por Marta' },
+        { person: false, bot: true, fill: F('#7B4DFF'), clip: 'none', radius: '50% 12% 50% 12%', name: 'Vera', meta: '· tu bot · lo veis los dos · 10:01', text: 'Tres días: llegada el jueves por la tarde, visitas el viernes y reunión con la agencia el sábado por la mañana. Falta confirmar el hotel.', seen: '' },
+        { person: true, bot: false, ini: 'MR', bg: '#EFE2D3', fg: '#12131A', name: 'Marta Ruiz', meta: '· 10:02', text: 'Perfecto. Lo que falta lo vemos en una sala con nuestros bots.', seen: '' }
+      ],
+      isSala: s.paso === 'sala' || s.paso === 'pide',
+      atlasAnim: s.meet === 'buscando' ? 'breathe 1.4s ease-in-out infinite' : 'none',
+      leoAnim: s.meet === 'buscando' ? 'breathe 1.4s ease-in-out infinite' : 'none',
+      leoLine: s.meet === 'buscando' ? 'Nico, el bot de Luis, está mirando su agenda' : s.meet === 'esperando' ? 'Nico le ha avisado a Luis' : 'Leo y Nico, los bots de Marta y Luis, están en la sala',
+      votesTitle: s.meet === 'esperando' ? '2 de 3 habéis dicho que sí' : '',
+      votes: [['TÚ', 'Tú', '#12131A', '#FFFFFF', true], ['MR', 'Marta Ruiz', '#EFE2D3', '#12131A', true], ['LG', 'Luis Gómez', '#DCE5EE', '#12131A', false]].map(([ini, name, bg, fg, yes]) => ({ ini, name, bg, fg, yes, wait: !yes })),
+      cardShadow: s.meet === 'elegir' ? '0 10px 0 -4px #FFC93C' : '0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)',
+      cardBorder: s.meet === 'elegir' ? '1.5px solid #12131A' : '0',
+      meetSteps: meetStepsBy[s.meet].map(([text, note, done]) => ({ text, note, tick: done ? '1' : '0', dotBg: done ? '#1E9E6A' : 'transparent', dotRing: done ? 'none' : 'inset 0 0 0 1.5px rgba(18,19,26,.25)', fg: done ? '#12131A' : '#6B6F7A' })),
+      showSlots: s.meet === 'elegir',
+      slotsTitle: 'Elige uno: Marta y Luis también tienen que decir que sí.',
+      slots: SLOTS.map(([id, day, time, rec]) => { const on = s.slot === id; return { day, time, rec, on: String(on), bg: on ? '#12131A' : '#F4F4F0', fg: on ? '#FFFFFF' : '#12131A', recFg: on ? '#FFC93C' : '#8A6400', sh: on ? '0 10px 24px -12px rgba(18,19,26,.6)' : 'none', pick: () => this.setState({ slot: id, meet: 'esperando' }) }; }),
+      showWaiting: s.meet === 'esperando', showDone: s.meet === 'hecha',
+      chosen: `${chosenSlot[1]}, ${chosenSlot[2]}`,
+      martaSays: () => this.setState({ meet: 'hecha' }),
+      undoMeet: () => this.setState({ meet: 'elegir' }),
+      isAjustes: s.paso === 'personas',
+      contacts: [
+        ['marta', 'MR', 'Marta Ruiz', 'Conectada · su bot Leo está en 1 sala contigo', '#EFE2D3', '#1E9E6A', '0'],
+        ['luis', 'LG', 'Luis Gómez', 'Hace 2 horas · su bot Nico está en 1 sala contigo', '#DCE5EE', '#C9CBD1', '0']
+      ].map(([id, ini, name, note, bg, dot, border]) => { const open = s.open === id; return {
+        ini, name, note, bg, dot, border, first: name.split(' ')[0], open, exp: String(open), rot: open ? 'rotate(180deg)' : 'none',
+        toggle: () => this.setState({ open: open ? null : id }),
+        asks: Object.entries(ASK_OPTS).map(([key, [label, desc, opts]]) => ({ label, desc, opts: opts.map(([v, l]) => ({ label: l, ...pill(s.asks[key] === v), pick: () => this.setState({ asks: { ...s.asks, [key]: v } }) })) })) }; }),
+      sheetInvite: s.paso === 'invitar',
+      invTitle: s.invMade ? 'Invitación para ' + (s.invName.split(' ')[0] || 'Marta') : 'Hablar con una persona',
+      invSub: s.invMade ? 'Cópiala y mándasela. Cuando la pegue en su Colmena, comprobaréis las palabras.' : 'Para chatear con alguien que también usa Colmena, en su propio ordenador.',
+      invAsk: !s.invMade, invMade: s.invMade,
+      invName: s.invName, invNameChange: e => this.setState({ invName: e.target.value }),
+      invBtnBg: s.invName.trim() ? '#12131A' : '#C9CBD1',
+      makeInvite: () => { if (s.invName.trim()) this.setState({ invMade: true }); },
+      invFirst: s.invName.split(' ')[0] || 'Marta',
+      copyLabel: s.copied ? 'Copiada' : 'Copiar invitación',
+      copyInvite: () => { this.setState({ copied: true }); this.flash('Invitación copiada. Pégala en WhatsApp o en un correo.'); },
+      invSteps: [
+        { n: '1', text: 'Se la mandas tú: Colmena no escribe a nadie por ti.' },
+        { n: '2', text: 'La pega en su Colmena y os aparece la otra persona.' },
+        { n: '3', text: 'Os decís las cuatro palabras de seguridad. Si coinciden, nadie se ha colado.' }
+      ],
+      closeSheet: go(s.paso === 'pide' ? 'sala' : 'persona'),
+      sheetAccept: s.paso === 'aceptar',
+      accTitle: s.accepted ? 'Conectada con Sergio' : 'Sergio Rico te invita a hablar',
+      accSub: s.accepted ? 'Sus mensajes llegan cerrados con llave: solo los abre tu ordenador.' : 'Os escribiréis desde Colmena, cada uno en su ordenador y con sus bots.',
+      accAsk: !s.accepted, accDone: s.accepted,
+      accept: () => this.setState({ accepted: true }),
+      sheetPide: s.paso === 'pide',
+      pideTitle: s.pide ? 'Hecho' : 'Quiere saber cuándo estás libre',
+      weekDays: week,
+      weekRows: ['9', '10', '11', '12'].map((h, i) => ({ h, cells: BUSY[i].map(b => (b ? '#3D404A' : '#FFFFFF')) })),
+      pideAsk: !s.pide, pideDone: !!s.pide,
+      pideAnswer: s.pide === 'siempre' ? 'Sí, y no me preguntes más para Marta' : 'Sí, solo libre u ocupado',
+      pideYes: () => this.setState({ pide: 'una' }),
+      pideAlways: () => this.setState({ pide: 'siempre' }),
+      toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

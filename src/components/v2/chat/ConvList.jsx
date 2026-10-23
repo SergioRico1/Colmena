@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { Ticket, UserPlus } from "lucide-react";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { needsYou } from "../../../lib/format.js";
 import { BotPresence, gloss, shapeOf } from "../Presence.jsx";
 import { listRows } from "../../../lib/threads.js";
+import { post } from "../../../lib/api.js";
+import { shareUrl } from "../../../lib/peers.js";
+import { PeerAvatar, ShareFace } from "../people/PeerAvatar.jsx";
+import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 
 // «Chats» column of Colmena 2.0 (the boards call the place «Conversaciones»; the rail fits one line) (design/V2Conversacion.dc.html): rooms (#) and chats
 // with each bot in one list, newest first; the current one as a white piece; a honey dot when
@@ -23,9 +28,10 @@ export const chatUrl = (m) => (m.thread && !m.incognito ? `/chat/${m.botIds?.[0]
 export const salaUrl = (m) => `/sala/${m.id}`;
 
 export default function ConvList({ current = null }) {
-  const { missions, bots, notifications = [] } = useStore();
+  const { missions, bots, notifications = [], peers = null } = useStore();
   const [q, setQ] = useState("");
   const [sheet, setSheet] = useState(false);
+  const [peerSheet, setPeerSheet] = useState(null); // "invitar" | "aceptar"
   useEffect(() => {
     const onKey = (e) => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "n") { e.preventDefault(); setSheet(true); } };
     const onOpen = () => setSheet(true);
@@ -35,9 +41,15 @@ export default function ConvList({ current = null }) {
   }, []);
   const botOf = (id) => bots.find((b) => b.id === id) || null;
   // One row per bot (its single chat, threads.js) and rooms; a private chat only while open.
-  const rows = useMemo(() => listRows(missions, current).slice(0, 60), [missions, current]);
+  // …and the conversations with people (server/peers/), in the same list by time.
+  const rows = useMemo(() => {
+    const chats = listRows(missions, current).slice(0, 60).map((m) => ({ ...m, at: m.rowAt || m.updatedAt || m.createdAt }));
+    const shares = (peers?.shares || []).filter((s) => !s.removed && (!s.left || s.id === current)).map((s) => ({ id: s.id, share: s, at: s.lastAt }));
+    return shares.length ? [...chats, ...shares].sort((a, b) => String(b.at || "").localeCompare(String(a.at || ""))) : chats;
+  }, [missions, current, peers]);
   const shown = rows.filter((m) => {
     if (!q.trim()) return true;
+    if (m.share) return fold([m.share.title, ...m.share.members.map((p) => p.name)].join(" ")).includes(fold(q.trim()));
     const b = botOf(m.botIds?.[0]);
     return fold([m.room, m.title, m.prompt, m.conversation ? b?.name : ""].join(" ")).includes(fold(q.trim()));
   });
@@ -59,6 +71,7 @@ export default function ConvList({ current = null }) {
         {shown.length === 0 ? <p style={{ margin: "8px 10px", fontSize: "14px", color: "#6B6F7A" }}>{q.trim() ? "Ningún chat ni sala coincide." : "Aún no hay chats. Pulsa «Nueva» para empezar."}</p> : null}
         {shown.map((m) => {
           const on = m.id === current;
+          if (m.share) return <ShareRow key={m.id} share={m.share} on={on} />;
           const bot = m.conversation ? botOf(m.botIds?.[0]) : null;
           const unread = notifications.some((n) => !n.read && n.missionId === m.id);
           const attention = needsYou(m);
@@ -86,32 +99,89 @@ export default function ConvList({ current = null }) {
           );
         })}
       </div>
-      {sheet ? <NewConversation onClose={() => setSheet(false)} /> : null}
+      {sheet ? <NewConversation onClose={() => setSheet(false)} onPeople={(which) => { setSheet(false); setPeerSheet(which); }} /> : null}
+      {peerSheet === "invitar" ? <InviteSheet onClose={() => setPeerSheet(null)} /> : null}
+      {peerSheet === "aceptar" ? <AcceptSheet onClose={() => setPeerSheet(null)} /> : null}
     </aside>
   );
 }
 
+/** A conversation with people: the person (or «#» with who wrote last and «+N»), its last line. */
+function ShareRow({ share, on }) {
+  const typing = share.typing?.length ? share.typing.map((n) => n.split(" ")[0]).join(", ") + (share.typing.length > 1 ? " escriben…" : " está escribiendo…") : null;
+  const who = share.lastFrom ? (share.lastFrom === share.members.find((p) => p.me)?.name ? "Tú: " : share.kind === "group" ? share.lastFrom.split(" ")[0] + ": " : "") : "";
+  const line = typing || (share.lastLine ? who + share.lastLine : share.kind === "dm" ? "Aún no os habéis escrito" : `${share.members.length} personas`);
+  const unread = !on && share.unread > 0;
+  return (
+    <a href={shareUrl(share.id)} aria-current={on ? "page" : undefined}
+      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "16px", color: "#12131A", textDecoration: "none", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)" : "none" }}>
+      <ShareFace share={share} ring={on ? "#FFFFFF" : "#F5F5F2"} />
+      <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <strong style={{ flex: "1", minWidth: "0", fontSize: "14px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share.title}</strong>
+          <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{whenLabel(share.lastAt)}</span>
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ flex: "1", minWidth: "0", fontSize: "13px", color: typing ? "#1E2029" : "#5C606C", fontWeight: unread ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
+          {unread ? <span aria-label={share.unread === 1 ? "Un mensaje nuevo" : share.unread + " mensajes nuevos"} style={{ minWidth: "18px", height: "18px", padding: "0 5px", flex: "none", borderRadius: "9px", background: "#12131A", color: "#FFFFFF", font: "600 10px/18px 'Geist', sans-serif", textAlign: "center", boxSizing: "border-box" }}>{share.unread > 9 ? "9+" : share.unread}</span> : null}
+        </span>
+      </span>
+    </a>
+  );
+}
+
 /** «Nuevo chat»: one bot → a private chat; two or more → a room with a name. */
-export function NewConversation({ onClose, preset = [] }) {
-  const { bots } = useStore();
+export function NewConversation({ onClose, preset = [], onPeople = null }) {
+  const { bots, peers = null } = useStore();
   const [sel, setSel] = useState(preset);
   const [q, setQ] = useState("");
   const [name, setName] = useState("");
+  // People (server/peers/): one → your direct conversation, two or more → a group.
+  const [people, setPeople] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
   const team = bots.filter((b) => b.enabled !== false);
-  const pick = (id) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const contacts = (peers?.contacts || []).filter((c) => c.status === "active");
+  // Bots and people do not mix yet: choosing one kind clears the other.
+  const pick = (id) => { setPeople([]); setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])); };
+  const pickPerson = (id) => { setSel([]); setPeople((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])); };
   const chosen = sel.map((id) => team.find((b) => b.id === id)).filter(Boolean);
-  const isRoom = chosen.length >= 2;
-  const auto = chosen.slice(0, 2).map((b) => fold(b.name)).join("-y-");
-  const items = team.filter((b) => !q.trim() || fold(b.name + " " + b.role).includes(fold(q.trim())));
-  const hint = !chosen.length ? "Elige un bot. Si añades otro más, se convertirá en una sala."
-    : chosen.length === 1 ? `Conversación privada con ${chosen[0].name}. Solo la veréis tú y ${chosen[0].name}.`
-      : `Será una sala con ${chosen.length} bots${chosen.some((b) => b.id === "atlas") ? "" : " (Atlas coordina)"}. Escribe tu primer mensaje y empiezan.`;
-  const go = () => {
+  const chosenPeople = people.map((id) => contacts.find((c) => c.id === id)).filter(Boolean);
+  const withPeople = chosenPeople.length > 0;
+  const isRoom = chosen.length >= 2 || chosenPeople.length >= 2;
+  const first = (n) => fold(String(n).split(/\s+/)[0]);
+  const auto = withPeople ? chosenPeople.slice(0, 2).map((c) => first(c.name)).join("-y-") : chosen.slice(0, 2).map((b) => fold(b.name)).join("-y-");
+  const match = (text) => !q.trim() || fold(text).includes(fold(q.trim()));
+  const items = team.filter((b) => match(b.name + " " + b.role));
+  const peopleItems = contacts.filter((c) => match(c.name));
+  const hint = withPeople
+    ? (chosenPeople.length === 1 ? `Conversación con ${chosenPeople[0].name}. Solo la leéis vosotros dos.` : `Una conversación con ${chosenPeople.length} personas y tú. Solo la leéis quienes estéis en ella.`)
+    : !chosen.length ? "Elige un bot o una persona. Si añades otro más, se convertirá en una sala."
+      : chosen.length === 1 ? `Conversación privada con ${chosen[0].name}. Solo la veréis tú y ${chosen[0].name}.`
+        : `Será una sala con ${chosen.length} bots${chosen.some((b) => b.id === "atlas") ? "" : " (Atlas coordina)"}. Escribe tu primer mensaje y empiezan.`;
+  const go = async () => {
+    if (withPeople) {
+      if (busy) return;
+      setBusy(true);
+      setError(null);
+      try {
+        const share = chosenPeople.length === 1
+          ? await post(`/peers/dm/${encodeURIComponent(chosenPeople[0].id)}`)
+          : await post("/peers/shares", { title: (name || auto).slice(0, 60), members: chosenPeople.map((c) => c.id) });
+        onClose();
+        navigate(shareUrl(share.id));
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     if (!chosen.length) return;
     onClose();
     if (chosen.length === 1) navigate(`/chat/${chosen[0].id}`);
@@ -121,7 +191,7 @@ export function NewConversation({ onClose, preset = [] }) {
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: "0", zIndex: "70", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px 24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
       <div role="dialog" aria-modal="true" aria-labelledby="nc-t" style={{ width: "min(620px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "32px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "24px 24px 6px 28px" }}>
-          <h2 id="nc-t" style={{ margin: "0", font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{isRoom ? "Nueva sala" : "Nuevo chat"}</h2>
+          <h2 id="nc-t" style={{ margin: "0", font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{withPeople ? (isRoom ? "Nueva conversación" : "Nuevo chat") : isRoom ? "Nueva sala" : "Nuevo chat"}</h2>
           <button type="button" aria-label="Cerrar" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
@@ -138,8 +208,17 @@ export function NewConversation({ onClose, preset = [] }) {
                 </button>
               </span>
             ))}
-            <input autoFocus type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chosen.length ? "Añadir otro bot" : "Escribe un nombre"} aria-label="Buscar bots"
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (q.trim() && items[0]) { pick(items[0].id); setQ(""); } else go(); } }}
+            {chosenPeople.map((c) => (
+              <span key={c.id} style={{ display: "flex", alignItems: "center", gap: "7px", height: "36px", padding: "0 6px 0 5px", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", fontWeight: "600", animation: "pop .25s ease-out" }}>
+                <PeerAvatar person={c} size={26} />
+                {c.name}
+                <button type="button" aria-label={"Quitar a " + c.name} onClick={() => pickPerson(c.id)} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                </button>
+              </span>
+            ))}
+            <input autoFocus type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chosen.length ? "Añadir otro bot" : withPeople ? "Añadir otra persona" : "Escribe un nombre"} aria-label="Buscar bots y personas"
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (q.trim() && !withPeople && items[0]) { pick(items[0].id); setQ(""); } else if (q.trim() && peopleItems[0]) { pickPerson(peopleItems[0].id); setQ(""); } else go(); } }}
               style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", outline: "none", background: "transparent", fontSize: "15px" }} />
           </div>
           <span style={{ padding: "0 4px", fontSize: "13px", lineHeight: "1.45", color: "#5C606C" }}>{hint}</span>
@@ -152,6 +231,34 @@ export function NewConversation({ onClose, preset = [] }) {
           ) : null}
         </div>
         <div style={{ flex: "1", minHeight: "0", overflowY: "auto", padding: "14px 18px 6px" }}>
+          {peers?.me ? (
+            <>
+              <span style={{ display: "block", padding: "4px 10px 6px", fontSize: "12px", fontWeight: "500", color: "#6B6F7A" }}>{"Personas"}</span>
+              {peopleItems.map((c) => {
+                const on = people.includes(c.id);
+                return (
+                  <button key={c.id} type="button" role="checkbox" aria-checked={on ? "true" : "false"} onClick={() => { pickPerson(c.id); setQ(""); }}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "14px", minHeight: "58px", padding: "6px 10px", border: 0, borderRadius: "16px", background: on ? "rgba(18,19,26,.045)" : "transparent", cursor: "pointer", textAlign: "left" }}>
+                    <PeerAvatar person={c} size={32} dot ring="#FFFFFF" />
+                    <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <strong style={{ fontSize: "15px", fontWeight: "600" }}>{c.name}</strong>
+                      <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{c.online ? "Conectada" : "En su Colmena"}</span>
+                    </span>
+                    <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
+                    </span>
+                  </button>
+                );
+              })}
+              {onPeople && !q.trim() ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "6px 10px 14px" }}>
+                  <button type="button" onClick={() => onPeople("invitar")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
+                  <button type="button" onClick={() => onPeople("aceptar")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}><Ticket size={15} strokeWidth={2.2} aria-hidden="true" />{"Tengo una invitación"}</button>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+          {withPeople ? null : <>
           <span style={{ display: "block", padding: "4px 10px 6px", fontSize: "12px", fontWeight: "500", color: "#6B6F7A" }}>{"Bots"}</span>
           {items.map((b) => {
             const on = sel.includes(b.id);
@@ -169,12 +276,14 @@ export function NewConversation({ onClose, preset = [] }) {
               </button>
             );
           })}
-          {items.length === 0 ? <p style={{ margin: "10px", fontSize: "14px", color: "#6B6F7A" }}>{"No hay ningún bot con ese nombre."}</p> : null}
+          {items.length === 0 && !(q.trim() && peopleItems.length) ? <p style={{ margin: "10px", fontSize: "14px", color: "#6B6F7A" }}>{"No hay ningún bot con ese nombre."}</p> : null}
+          </>}
         </div>
+        {error ? <p role="alert" style={{ margin: "0 28px 8px", fontSize: "14px", color: "#B4231A" }}>{error}</p> : null}
         <div style={{ flex: "none", display: "flex", justifyContent: "flex-end", gap: "10px", padding: "14px 24px 22px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
           <button type="button" onClick={onClose} style={{ height: "50px", padding: "0 20px", border: "0", borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "15px", fontWeight: "600" }}>{"Cancelar"}</button>
-          <button type="button" disabled={!chosen.length} onClick={go} style={{ height: "50px", padding: "0 26px", border: "0", borderRadius: "999px", background: chosen.length ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: chosen.length ? "pointer" : "default", fontSize: "15px", fontWeight: "600" }}>
-            {isRoom ? "Crear sala" : chosen.length ? `Hablar con ${chosen[0].name}` : "Empezar"}
+          <button type="button" disabled={!(chosen.length || withPeople) || busy} onClick={go} style={{ height: "50px", padding: "0 26px", border: "0", borderRadius: "999px", background: chosen.length || withPeople ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: chosen.length || withPeople ? "pointer" : "default", fontSize: "15px", fontWeight: "600" }}>
+            {withPeople ? (isRoom ? "Crear conversación" : `Hablar con ${chosenPeople[0].name.split(" ")[0]}`) : isRoom ? "Crear sala" : chosen.length ? `Hablar con ${chosen[0].name}` : "Empezar"}
           </button>
         </div>
       </div>

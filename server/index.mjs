@@ -26,6 +26,7 @@ import { Projects } from "./projects/tools.mjs";
 import { CodeService } from "./code/service.mjs";
 import { pendingCount } from "./notifications.mjs";
 import { watchStalls } from "./stalls.mjs";
+import { Peers } from "./peers/service.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 // The installed app runs this server on Electron's Node (desktop/main.cjs); the programs it
@@ -124,6 +125,20 @@ if (typeof process.send === "function") {
   setTimeout(sendPresence, 1500).unref();
 }
 const app = createApp({ store, runtime, session, scheduler, connections, getOrigin: () => origin, computer });
+// «Personas»: talking to other people's Colmenas through the mailbox (server/peers/). The
+// mailbox address comes from Ajustes › Personas (or COLMENA_RELAY_URL); without one nothing
+// leaves this computer.
+const ownName = () => {
+  const s = store.get("settings", "main") || {};
+  const account = session.status?.() || null;
+  return (s.userName && s.userName !== "Tu cuenta" ? s.userName : account?.name) || String(account?.email || "").split("@")[0] || "";
+};
+const peers = new Peers({ store, directory, relayUrl: process.env.COLMENA_RELAY_URL || null, nameOf: ownName, notifier: scheduler.notifier });
+app.locals.peers = peers;
+peers.start().then(() => peers.announceProfile()).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
+store.listeners.add((event) => {
+  if (event?.type === "record" && event.kind === "settings" && peers.identity) setTimeout(() => peers.announceProfile(), 0);
+});
 // What was cut by the last close goes on by itself once the AI account is ready.
 setTimeout(() => {
   try { if (aiConnected()) runtime.resumeInterrupted(); } catch {}
@@ -186,6 +201,7 @@ async function close() {
   closing = true;
   scheduler.stop();
   app.locals.watcher?.stop();
+  peers.stop();
   desktop.close();
   runtime.projects?.servers.shutdown();
   runtime.code?.shutdown();

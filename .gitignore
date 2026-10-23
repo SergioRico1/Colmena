@@ -10,6 +10,7 @@ out/
 
 # Local data: QA data, branded dev runtime (Colmena.exe), logs, scratch scripts
 .local/
+.relay-data/
 output/
 .playwright-cli/
 NVIDIA Corporation/

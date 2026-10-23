@@ -46,6 +46,9 @@ Lo que no se puede garantizar:
 - Si el bot, al ver «sin confirmar», decide pedirlo otra vez, es una llamada nueva (con su propia aprobación si es línea roja). Dos llamadas distintas con los mismos argumentos son dos efectos; el detector de bucles avisa, pero no lo impide siempre.
 - Los motores de «Código» (Claude Code, Codex, OpenCode) ejecutan sus propias herramientas; Colmena no pone recibo a cada una, solo no repite turnos solos. Los reintentos internos de un servicio externo (Composio, un servidor MCP, una API) quedan fuera.
 
+## Personas: hablar con otras Colmenas (OpenClaw Reef, 2026-10-23)
+Cada Colmena tiene unas claves propias (Ed25519 para firmar, que es su dirección, y X25519 para cifrar; DPAPI en Windows) y habla con las de otras personas a través de un buzón (`relay/server.mjs`) que solo guarda y reenvía sobres cerrados: cada mensaje va cifrado y firmado para cada destinatario (`server/peers/protocol.mjs`, el esquema de Reef). Se conecta con alguien por una invitación de un solo uso y cuatro palabras de seguridad iguales en los dos lados; las conversaciones son directas o grupos de hasta 32 personas, sin servidor que las posea: quien crea el grupo firma quién está. Solo sale lo que escribís, tu nombre, los «visto» y las reacciones; nada de correo, archivos, memoria ni calendario. Fase 1 (esto): personas, invitaciones, chats directos y grupos. Fase 2: tus bots en conversaciones con personas. Fase 3: bots de otros dueños que negocian (reunión con libre/ocupado y confirmación de todos). Detalle en `docs/PEOPLE.md`.
+
 ## Experiencia (openmuse)
 Aprobaciones ligadas al contenido exacto con caducidad, tarjeta por herramienta, cola de mensajes en el chat, avisos («Una novedad», campana, notificaciones de Windows), ronda de Atlas cada 30 min y disparador «una página web cambia». Licencia MIT en `licenses/OpenMuse.txt`.
 
