@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, UserPlus } from "lucide-react";
+import { Check, Clock3, UserPlus } from "lucide-react";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { useStore } from "../../../lib/store.jsx";
 import { post } from "../../../lib/api.js";
 import { useTaskPeople } from "../../../lib/codeshare.js";
 import { names } from "./PeopleMessage.jsx";
+import { InviteSheet } from "./InviteSheets.jsx";
 
 // «Compartir» in a Código task (design/V2Codigo.dc.html, paso compartir): the people who see
 // it from their Colmena, who is looking now, and the sheet to choose them. They see what it
 // is doing, Bruno's plan and the PR; never your code, your files or your chat with Bruno.
+// Always there, even before you talk to anyone: then each part says what it does and offers
+// «Invitar a alguien» (the invitation sheet), and you come back here when it is done.
 const ASKS = [["pregunta", "Pregúntame"], ["siempre", "Siempre"], ["nunca", "Nunca"]];
 
 export default function TaskPeople({ taskId, project = null }) {
@@ -17,6 +20,7 @@ export default function TaskPeople({ taskId, project = null }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(null);
   const [handing, setHanding] = useState(null); // {person, busy, done}
+  const [inviting, setInviting] = useState(false);
   const box = useRef(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -41,7 +45,15 @@ export default function TaskPeople({ taskId, project = null }) {
     const next = own.some((p) => p.id === id) ? own.filter((p) => p.id !== id).map((p) => p.id) : [...own.map((p) => p.id), id];
     try { await share(next); } catch (e) { setError(e.message); }
   };
-  if (!contacts.length && !people.length) return null;
+  const waiting = (peers.invites || []).filter((i) => i.status !== "used");
+  const toInvite = () => { setOpen(false); setInviting(true); };
+  // Without anyone to choose yet: what this part does is above it; here, how to get someone.
+  const nobody = (what) => (
+    <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "12px", color: "#6B6F7A" }}>
+      {"Primero conéctate con quien " + what + "."}
+      <button type="button" onClick={toInvite} style={{ display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(31,79,209,.08)", color: "#1F4FD1", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}><UserPlus size={13} strokeWidth={2.4} aria-hidden="true" />{"Invitar a alguien"}</button>
+    </span>
+  );
   return (
     <div ref={box} style={{ position: "relative", flex: "none", display: "flex", alignItems: "center", gap: "8px" }}>
       {looking.length ? (
@@ -51,9 +63,9 @@ export default function TaskPeople({ taskId, project = null }) {
         </span>
       ) : null}
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open ? "true" : "false"} aria-label={people.length ? "Compartida con " + names(people.map((p) => p.name)) : "Compartir con una persona"} title="Compartir con personas"
-        style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", minWidth: "40px", padding: people.length ? "0 6px" : 0, justifyContent: "center", border: 0, borderRadius: "999px", background: open ? "#12131A" : "rgba(18,19,26,.06)", color: open ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>
+        style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: people.length ? "0 14px 0 6px" : "0 14px 0 12px", border: 0, borderRadius: "999px", background: open ? "#12131A" : "rgba(18,19,26,.06)", color: open ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap" }}>
         {people.length ? <span style={{ display: "flex" }}>{people.slice(0, 3).map((p, i) => <span key={p.id} style={{ marginLeft: i ? "-8px" : 0, borderRadius: "50%", boxShadow: `0 0 0 2px ${open ? "#12131A" : "#F5F5F2"}` }}><PeerAvatar person={p} size={28} /></span>)}</span> : <UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />}
-        {people.length > 3 ? <span style={{ paddingRight: "6px" }}>{"+" + (people.length - 3)}</span> : null}
+        {people.length > 3 ? "+" + (people.length - 3) : people.length ? "Compartida" : "Compartir"}
       </button>
       {open ? (
         <div role="dialog" aria-label="Compartir la tarea" style={{ position: "absolute", top: "48px", right: 0, zIndex: 40, width: "min(380px, 86vw)", maxHeight: "70vh", overflowY: "auto", padding: "18px", borderRadius: "24px", background: "rgba(255,255,255,.97)", WebkitBackdropFilter: "blur(24px)", backdropFilter: "blur(24px)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out" }}>
@@ -71,29 +83,33 @@ export default function TaskPeople({ taskId, project = null }) {
                   <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? "#1F4FD1" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px #C9CBD1", color: "#FFFFFF" }}>{on ? <Check size={13} strokeWidth={3} /> : null}</span>
                 </button>
               );
-            }) : <span style={{ fontSize: "14px", color: "#5C606C" }}>{"Aún no hablas con nadie. Invita a alguien en Chats › Nueva."}</span>}
+            }) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "16px", background: "#F4F4F0" }}>
+                <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#3D404A" }}>{"Aún no hablas con nadie desde Colmena. Invita a quien quieras que la vea: le das un código, lo pega en su Colmena y aparece aquí."}</span>
+                <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "38px", padding: "0 16px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
+              </div>
+            )}
+            {waiting.map((i) => <span key={i.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", fontSize: "13px", color: "#6B6F7A" }}><Clock3 size={14} strokeWidth={2.2} aria-hidden="true" />{"Esperando a que " + i.name.split(" ")[0] + " acepte tu invitación"}</span>)}
+            {contacts.length ? <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "4px", height: "30px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", color: "#1F4FD1", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}><UserPlus size={14} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien más"}</button> : null}
           </div>
-          {contacts.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
               <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                 <strong style={{ fontSize: "14px", fontWeight: 600 }}>{"Pedir revisión a…"}</strong>
                 <span style={{ fontSize: "12px", lineHeight: 1.5, color: "#5C606C" }}>{"Le llegan el resumen y los cambios; comenta líneas y su bot puede revisarlo con su cuenta. Su revisión vuelve aquí y Bruno se pone con ella."}</span>
               </span>
-              <span style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              {!contacts.length ? nobody("tenga que revisarla") : <span style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {contacts.map((c) => {
                   const pending = (view.reviews || []).find((r) => r.person.id === c.id && r.state === "asked");
                   return <button key={c.id} type="button" disabled={!!pending} onClick={async () => { setError(null); try { await askReview(c.id); } catch (e) { setError(e.message); } }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: 0, borderRadius: "999px", background: pending ? "#FFF6DE" : "rgba(18,19,26,.06)", cursor: pending ? "default" : "pointer", fontSize: "12px", fontWeight: 600, color: "#12131A" }}><PeerAvatar person={c} size={24} />{pending ? c.name.split(" ")[0] + " lo está revisando" : c.name.split(" ")[0]}</button>;
                 })}
-              </span>
+              </span>}
             </div>
-          ) : null}
-          {contacts.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
               <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                 <strong style={{ fontSize: "14px", fontWeight: 600 }}>{"Pasar la tarea a…"}</strong>
                 <span style={{ fontSize: "12px", lineHeight: 1.5, color: "#5C606C" }}>{"Se sube su rama a GitHub, Bruno escribe qué está hecho y qué falta, y su Colmena sigue desde ahí."}</span>
               </span>
-              {handing?.done ? <span role="status" style={{ fontSize: "13px", color: "#0B6B4A" }}>{"Pasada a " + handing.name + ". Te avisamos cuando la coja."}</span> : handing ? (
+              {!contacts.length ? nobody("vaya a seguirla") : handing?.done ? <span role="status" style={{ fontSize: "13px", color: "#0B6B4A" }}>{"Pasada a " + handing.name + ". Te avisamos cuando la coja."}</span> : handing ? (
                 <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
                   <button type="button" disabled={handing.busy} onClick={async () => { setError(null); setHanding({ ...handing, busy: true }); try { await post("/peers/code/tasks/" + encodeURIComponent(taskId) + "/handoff", { person: handing.person }); setHanding({ ...handing, busy: false, done: true }); } catch (e) { setError(e.message); setHanding(null); } }} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>{handing.busy ? "Subiendo y escribiendo el traspaso…" : "Pasársela a " + handing.name}</button>
                   {handing.busy ? null : <button type="button" onClick={() => setHanding(null)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>{"Cancelar"}</button>}
@@ -104,14 +120,13 @@ export default function TaskPeople({ taskId, project = null }) {
                 </span>
               )}
             </div>
-          ) : null}
-          {project && contacts.length ? (
+          {project ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
               <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                 <strong style={{ fontSize: "14px", fontWeight: 600 }}>{"Todo el proyecto «" + project.name + "»"}</strong>
                 <span style={{ fontSize: "12px", lineHeight: 1.5, color: "#5C606C" }}>{"Verán todas sus tareas, lo que hace Bruno en directo y los cambios, y podrán comentar líneas. El código lo cogen de vuestro repositorio, no de aquí."}</span>
               </span>
-              {contacts.map((c) => {
+              {!contacts.length ? nobody("quieras en el proyecto") : contacts.map((c) => {
                 const m = members.find((x) => x.id === c.id);
                 return (
                   <div key={c.id} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "6px 4px" }}>
@@ -135,6 +150,7 @@ export default function TaskPeople({ taskId, project = null }) {
           {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4231A" }}>{error}</span> : null}
         </div>
       ) : null}
+      {inviting ? <InviteSheet onClose={() => { setInviting(false); setOpen(true); }} /> : null}
     </div>
   );
 }

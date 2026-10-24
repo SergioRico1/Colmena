@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes spin{to{transform:rotate(360deg)}}\n@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}\n@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}\n@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.row-hover{transition:background .15s ease}\n.row-hover:hover{background:rgba(18,19,26,.035)}\n.tools{opacity:0;transition:opacity .15s ease}\n.turn:hover .tools,.turn:focus-within .tools{opacity:1}\n@media (max-width: 1180px){[data-codepanel]{display:none!important}}\n@media (max-width: 860px){[data-projects]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","compartida","traspaso","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","compartida","traspaso","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"contactos":{"editor":"enum","options":["con","sin"],"default":"con"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -123,7 +123,9 @@ export class Logic extends DCLogic {
     const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['posponer', 'Posponer'], ['comparar', 'Comparar'], ['inicio', 'Inicio']];
     return {
       home: s.mode === 'inicio', comparing: s.mode === 'comparar', sharedView: s.mode === 'compartida', handoffView: s.mode === 'traspaso', inTask: !['inicio', 'comparar', 'compartida', 'traspaso'].includes(s.mode), working,
-      shareOpen: s.share, toggleShare: () => this.setState({ share: !s.share, git: false }), voted: s.voted, approve: () => this.setState({ voted: true }),
+      shareOpen: s.share, toggleShare: () => this.setState({ share: !s.share, git: false }),
+      hasContacts: this.props.contactos !== 'sin', noContacts: this.props.contactos === 'sin',
+      shareBg: s.share ? '#12131A' : 'rgba(18,19,26,.06)', shareFg: s.share ? '#FFFFFF' : '#12131A', voted: s.voted, approve: () => this.setState({ voted: true }),
       railDot: s.mode === 'plan' || s.mode === 'pide',
       is: { posponer: s.mode === 'posponer', objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
       label: LABEL[s.mode], aura, groups, log, diff, tabs,
@@ -1130,134 +1132,249 @@ export function View({ v }) {
                     </span>
                   </div>
                   <div style={{position: "relative", flex: "none", display: "flex", alignItems: "center", gap: "8px"}}>
-                    <span title="Marta lo está mirando" style={{display: "flex", alignItems: "center"}}>
-                      <span style={{borderRadius: "50%", boxShadow: "0 0 0 2px #1E9E6A"}}>
-                        <span aria-hidden="true" style={{width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 8px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
-                          {"MR"}
-                        </span>
-                      </span>
-                    </span>
-                    <button type="button" onClick={v.toggleShare} aria-expanded={v.shareOpen} aria-label="Compartida con Marta Ruiz" style={{display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 6px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
-                      <span style={{borderRadius: "50%"}}>
-                        <span aria-hidden="true" style={{width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
-                          {"MR"}
-                        </span>
-                      </span>
-                    </button>
-                    {v.shareOpen ? (
+                    {v.hasContacts ? (
                       <>
-                        <div role="dialog" aria-label="Compartir la tarea" style={{position: "absolute", top: "48px", right: "0", zIndex: "40", width: "360px", padding: "18px", borderRadius: "24px", background: "rgba(255,255,255,.97)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out"}}>
-                          <span style={{display: "flex", flexDirection: "column", gap: "4px"}}>
-                            <strong style={{font: "600 18px/1.2 'Bricolage Grotesque', sans-serif"}}>
-                              {"Compartir la tarea"}
-                            </strong>
-                            <span style={{fontSize: "13px", lineHeight: "1.5", color: "#5C606C"}}>
-                              {"Verán en qué está, el plan de Bruno y la PR, y podrán aprobar el plan o pedir cambios. Nunca tu código, tus archivos ni lo que hablas con Bruno. Todo se hace en este ordenador."}
-                            </span>
-                          </span>
-                          <button type="button" role="checkbox" aria-checked="true" style={{display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: "0", borderRadius: "14px", background: "rgba(31,79,209,.07)", cursor: "pointer", textAlign: "left"}}>
-                            <span aria-hidden="true" style={{width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                        <span title="Marta lo está mirando" style={{display: "flex", alignItems: "center"}}>
+                          <span style={{borderRadius: "50%", boxShadow: "0 0 0 2px #1E9E6A"}}>
+                            <span aria-hidden="true" style={{width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 8px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
                               {"MR"}
                             </span>
-                            <span style={{flex: "1", fontSize: "15px", fontWeight: "500"}}>
-                              {"Marta Ruiz"}
+                          </span>
+                        </span>
+                        <button type="button" onClick={v.toggleShare} aria-expanded={v.shareOpen} aria-label="Compartida con Marta Ruiz" style={{display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 6px", whiteSpace: "nowrap", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                          <span style={{borderRadius: "50%"}}>
+                            <span aria-hidden="true" style={{width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                              {"MR"}
                             </span>
-                            <span aria-hidden="true" style={{width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#1F4FD1", color: "#FFFFFF", fontSize: "12px"}}>
-                              {"✓"}
-                            </span>
-                          </button>
-                          <button type="button" role="checkbox" aria-checked="false" style={{display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: "0", borderRadius: "14px", background: "transparent", cursor: "pointer", textAlign: "left"}}>
-                            <span aria-hidden="true" style={{width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
-                              {"LG"}
-                            </span>
-                            <span style={{flex: "1", fontSize: "15px", fontWeight: "500"}}>
-                              {"Luis Gómez"}
-                            </span>
-                            <span aria-hidden="true" style={{width: "22px", height: "22px", borderRadius: "50%", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
-                          </button>
-                          <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
-                            <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
-                              <strong style={{fontSize: "14px", fontWeight: "600"}}>
-                                {"Pasar la tarea a…"}
-                              </strong>
-                              <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
-                                {"Se sube su rama a GitHub, Bruno escribe qué está hecho y qué falta, y su Colmena sigue desde ahí."}
+                          </span>
+                          {"Compartida"}
+                        </button>
+                        {v.shareOpen ? (
+                          <>
+                            <div role="dialog" aria-label="Compartir la tarea" style={{position: "absolute", top: "48px", right: "0", zIndex: "40", width: "360px", padding: "18px", borderRadius: "24px", background: "rgba(255,255,255,.97)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out"}}>
+                              <span style={{display: "flex", flexDirection: "column", gap: "4px"}}>
+                                <strong style={{font: "600 18px/1.2 'Bricolage Grotesque', sans-serif"}}>
+                                  {"Compartir la tarea"}
+                                </strong>
+                                <span style={{fontSize: "13px", lineHeight: "1.5", color: "#5C606C"}}>
+                                  {"Verán en qué está, el plan de Bruno y la PR, y podrán aprobar el plan o pedir cambios. Nunca tu código, tus archivos ni lo que hablas con Bruno. Todo se hace en este ordenador."}
+                                </span>
                               </span>
-                            </span>
-                            <span style={{display: "flex", flexWrap: "wrap", gap: "6px"}}>
-                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
-                                <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", font: "600 8px/1 'Geist', sans-serif"}}>
+                              <button type="button" role="checkbox" aria-checked="true" style={{display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: "0", borderRadius: "14px", background: "rgba(31,79,209,.07)", cursor: "pointer", textAlign: "left"}}>
+                                <span aria-hidden="true" style={{width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
                                   {"MR"}
                                 </span>
-                                {"Marta"}
+                                <span style={{flex: "1", fontSize: "15px", fontWeight: "500"}}>
+                                  {"Marta Ruiz"}
+                                </span>
+                                <span aria-hidden="true" style={{width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#1F4FD1", color: "#FFFFFF", fontSize: "12px"}}>
+                                  {"✓"}
+                                </span>
                               </button>
-                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
-                                <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", font: "600 8px/1 'Geist', sans-serif"}}>
+                              <button type="button" role="checkbox" aria-checked="false" style={{display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: "0", borderRadius: "14px", background: "transparent", cursor: "pointer", textAlign: "left"}}>
+                                <span aria-hidden="true" style={{width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
                                   {"LG"}
                                 </span>
-                                {"Luis"}
-                              </button>
-                            </span>
-                          </div>
-                          <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
-                            <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
-                              <strong style={{fontSize: "14px", fontWeight: "600"}}>
-                                {"Pedir revisión a…"}
-                              </strong>
-                              <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
-                                {"Le llegan el resumen y los cambios; comenta líneas y su bot puede revisarlo con su cuenta. Su revisión vuelve aquí y Bruno se pone con ella."}
-                              </span>
-                            </span>
-                            <span style={{display: "flex", flexWrap: "wrap", gap: "6px"}}>
-                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFF6DE"}}>
-                                <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", font: "600 8px/1 'Geist', sans-serif"}}>
-                                  {"MR"}
+                                <span style={{flex: "1", fontSize: "15px", fontWeight: "500"}}>
+                                  {"Luis Gómez"}
                                 </span>
-                                {"Marta lo está revisando"}
+                                <span aria-hidden="true" style={{width: "22px", height: "22px", borderRadius: "50%", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
                               </button>
-                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
-                                <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", font: "600 8px/1 'Geist', sans-serif"}}>
-                                  {"LG"}
+                              <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                                <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                                  <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                    {"Pasar la tarea a…"}
+                                  </strong>
+                                  <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                    {"Se sube su rama a GitHub, Bruno escribe qué está hecho y qué falta, y su Colmena sigue desde ahí."}
+                                  </span>
                                 </span>
-                                {"Luis"}
-                              </button>
-                            </span>
-                          </div>
-                          <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
-                            <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
-                              <strong style={{fontSize: "14px", fontWeight: "600"}}>
-                                {"Todo el proyecto «tienda-web»"}
-                              </strong>
-                              <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
-                                {"Verán todas sus tareas, lo que hace Bruno en directo y los cambios, y podrán comentar líneas. El código lo cogen de vuestro repositorio, no de aquí."}
+                                <span style={{display: "flex", flexWrap: "wrap", gap: "6px"}}>
+                                  <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
+                                    <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", font: "600 8px/1 'Geist', sans-serif"}}>
+                                      {"MR"}
+                                    </span>
+                                    {"Marta"}
+                                  </button>
+                                  <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
+                                    <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", font: "600 8px/1 'Geist', sans-serif"}}>
+                                      {"LG"}
+                                    </span>
+                                    {"Luis"}
+                                  </button>
+                                </span>
+                              </div>
+                              <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                                <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                                  <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                    {"Pedir revisión a…"}
+                                  </strong>
+                                  <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                    {"Le llegan el resumen y los cambios; comenta líneas y su bot puede revisarlo con su cuenta. Su revisión vuelve aquí y Bruno se pone con ella."}
+                                  </span>
+                                </span>
+                                <span style={{display: "flex", flexWrap: "wrap", gap: "6px"}}>
+                                  <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFF6DE"}}>
+                                    <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", font: "600 8px/1 'Geist', sans-serif"}}>
+                                      {"MR"}
+                                    </span>
+                                    {"Marta lo está revisando"}
+                                  </button>
+                                  <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
+                                    <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", font: "600 8px/1 'Geist', sans-serif"}}>
+                                      {"LG"}
+                                    </span>
+                                    {"Luis"}
+                                  </button>
+                                </span>
+                              </div>
+                              <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                                <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                                  <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                    {"Todo el proyecto «tienda-web»"}
+                                  </strong>
+                                  <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                    {"Verán todas sus tareas, lo que hace Bruno en directo y los cambios, y podrán comentar líneas. El código lo cogen de vuestro repositorio, no de aquí."}
+                                  </span>
+                                </span>
+                                <span style={{display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "500"}}>
+                                  <span aria-hidden="true" style={{width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "6px", background: "#1F4FD1", color: "#FFFFFF", fontSize: "11px"}}>
+                                    {"✓"}
+                                  </span>
+                                  {"Marta Ruiz"}
+                                </span>
+                                <span style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginLeft: "30px", fontSize: "12px", color: "#6B6F7A"}}>
+                                  {"Sus comentarios a Bruno:"}
+                                  <span role="radiogroup" aria-label="Comentarios de Marta Ruiz" style={{display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.05)"}}>
+                                    <button type="button" role="radio" aria-checked="true" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.12)"}}>
+                                      {"Pregúntame"}
+                                    </button>
+                                    <button type="button" role="radio" aria-checked="false" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
+                                      {"Siempre"}
+                                    </button>
+                                    <button type="button" role="radio" aria-checked="false" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
+                                      {"Nunca"}
+                                    </button>
+                                  </span>
+                                </span>
+                                <span style={{display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "500"}}>
+                                  <span aria-hidden="true" style={{width: "20px", height: "20px", borderRadius: "6px", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
+                                  {"Luis Gómez"}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        ) : null}
+                      </>
+                    ) : null}
+                    {v.noContacts ? (
+                      <>
+                        <button type="button" onClick={v.toggleShare} aria-expanded={v.shareOpen} aria-label="Compartir con una persona" style={{display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 12px", border: "0", borderRadius: "999px", background: v.shareBg, color: v.shareFg, cursor: "pointer", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap"}}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <line x1="19" x2="19" y1="8" y2="14" />
+                            <line x1="22" x2="16" y1="11" y2="11" />
+                          </svg>
+                          {"Compartir"}
+                        </button>
+                        {v.shareOpen ? (
+                          <>
+                            <div role="dialog" aria-label="Compartir la tarea" style={{position: "absolute", top: "48px", right: "0", zIndex: "40", width: "380px", maxHeight: "70vh", overflowY: "auto", padding: "18px", borderRadius: "24px", background: "rgba(255,255,255,.97)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out"}}>
+                              <span style={{display: "flex", flexDirection: "column", gap: "4px"}}>
+                                <strong style={{font: "600 18px/1.2 'Bricolage Grotesque', sans-serif"}}>
+                                  {"Compartir la tarea"}
+                                </strong>
+                                <span style={{fontSize: "13px", lineHeight: "1.5", color: "#5C606C"}}>
+                                  {"Verán en qué está, el plan de Bruno y la PR, y podrán aprobar el plan o pedir cambios. Nunca tu código, tus archivos ni lo que hablas con Bruno. Todo se hace en este ordenador."}
+                                </span>
                               </span>
-                            </span>
-                            <span style={{display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "500"}}>
-                              <span aria-hidden="true" style={{width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "6px", background: "#1F4FD1", color: "#FFFFFF", fontSize: "11px"}}>
-                                {"✓"}
+                              <div style={{display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "16px", background: "#F4F4F0"}}>
+                                <span style={{fontSize: "14px", lineHeight: "1.5", color: "#3D404A"}}>
+                                  {"Aún no hablas con nadie desde Colmena. Invita a quien quieras que la vea: le das un código, lo pega en su Colmena y aparece aquí."}
+                                </span>
+                                <button type="button" style={{alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "38px", padding: "0 16px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <line x1="19" x2="19" y1="8" y2="14" />
+                                    <line x1="22" x2="16" y1="11" y2="11" />
+                                  </svg>
+                                  {"Invitar a alguien"}
+                                </button>
+                              </div>
+                              <span style={{display: "flex", alignItems: "center", gap: "8px", padding: "0 10px", fontSize: "13px", color: "#6B6F7A"}}>
+                                {"◷ Esperando a que Ana acepte tu invitación"}
                               </span>
-                              {"Marta Ruiz"}
-                            </span>
-                            <span style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginLeft: "30px", fontSize: "12px", color: "#6B6F7A"}}>
-                              {"Sus comentarios a Bruno:"}
-                              <span role="radiogroup" aria-label="Comentarios de Marta Ruiz" style={{display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.05)"}}>
-                                <button type="button" role="radio" aria-checked="true" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.12)"}}>
-                                  {"Pregúntame"}
-                                </button>
-                                <button type="button" role="radio" aria-checked="false" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
-                                  {"Siempre"}
-                                </button>
-                                <button type="button" role="radio" aria-checked="false" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
-                                  {"Nunca"}
-                                </button>
-                              </span>
-                            </span>
-                            <span style={{display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "500"}}>
-                              <span aria-hidden="true" style={{width: "20px", height: "20px", borderRadius: "6px", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
-                              {"Luis Gómez"}
-                            </span>
-                          </div>
-                        </div>
+                              <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                                <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                                  <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                    {"Pedir revisión a…"}
+                                  </strong>
+                                  <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                    {"Le llegan el resumen y los cambios; comenta líneas y su bot puede revisarlo con su cuenta. Su revisión vuelve aquí y Bruno se pone con ella."}
+                                  </span>
+                                </span>
+                                <span style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "12px", color: "#6B6F7A"}}>
+                                  {"Primero conéctate con quien tenga que revisarla."}
+                                  <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", background: "rgba(31,79,209,.08)", color: "#1F4FD1", cursor: "pointer", fontSize: "12px", fontWeight: "600"}}>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                      <circle cx="9" cy="7" r="4" />
+                                      <line x1="19" x2="19" y1="8" y2="14" />
+                                      <line x1="22" x2="16" y1="11" y2="11" />
+                                    </svg>
+                                    {"Invitar a alguien"}
+                                  </button>
+                                </span>
+                              </div>
+                              <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                                <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                                  <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                    {"Pasar la tarea a…"}
+                                  </strong>
+                                  <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                    {"Se sube su rama a GitHub, Bruno escribe qué está hecho y qué falta, y su Colmena sigue desde ahí."}
+                                  </span>
+                                </span>
+                                <span style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "12px", color: "#6B6F7A"}}>
+                                  {"Primero conéctate con quien vaya a seguirla."}
+                                  <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", background: "rgba(31,79,209,.08)", color: "#1F4FD1", cursor: "pointer", fontSize: "12px", fontWeight: "600"}}>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                      <circle cx="9" cy="7" r="4" />
+                                      <line x1="19" x2="19" y1="8" y2="14" />
+                                      <line x1="22" x2="16" y1="11" y2="11" />
+                                    </svg>
+                                    {"Invitar a alguien"}
+                                  </button>
+                                </span>
+                              </div>
+                              <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                                <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                                  <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                    {"Todo el proyecto «tienda-web»"}
+                                  </strong>
+                                  <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                    {"Verán todas sus tareas, lo que hace Bruno en directo y los cambios, y podrán comentar líneas. El código lo cogen de vuestro repositorio, no de aquí."}
+                                  </span>
+                                </span>
+                                <span style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "12px", color: "#6B6F7A"}}>
+                                  {"Primero conéctate con quien quieras en el proyecto."}
+                                  <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", background: "rgba(31,79,209,.08)", color: "#1F4FD1", cursor: "pointer", fontSize: "12px", fontWeight: "600"}}>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                      <circle cx="9" cy="7" r="4" />
+                                      <line x1="19" x2="19" y1="8" y2="14" />
+                                      <line x1="22" x2="16" y1="11" y2="11" />
+                                    </svg>
+                                    {"Invitar a alguien"}
+                                  </button>
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        ) : null}
                       </>
                     ) : null}
                     <div style={{position: "relative", display: "flex", alignItems: "center"}}>
