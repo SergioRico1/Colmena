@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, CalendarClock, Inbox, KeyRound, Moon, UserMinus, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarClock, Inbox, KeyRound, MessageSquare, Moon, UserMinus, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { INTRO_STEPS } from "../components/v2/people/PeopleIntro.jsx";
 import { navigate } from "../lib/router.jsx";
@@ -15,6 +15,11 @@ const SECTIONS = [
     "En Chats › Nueva elige a varias personas y ponle nombre. Caben hasta 32.",
     "Quien la crea decide quién entra. Si alguien del grupo no está en tus personas, sale en Ajustes › Personas como «Conoces por una conversación»: puede escribir en el grupo, no a ti a solas.",
     "«Salir» te saca a ti; quien la creó puede «Cerrar para todos».",
+  ]],
+  ["hilos", MessageSquare, "Hilos, editar, borrar y buscar", [
+    "Pasa el ratón por un mensaje y pulsa el bocadillo para responder en un hilo. Se abre al lado y solo avisa a quien está en él: quien lo empezó, quien responde y quien mencionas.",
+    "Tus mensajes se pueden editar (los demás verán «editado») y borrar para todos (queda «Mensaje borrado»). Solo tu Colmena puede cambiar lo tuyo: el cambio va firmado por ti, y nadie puede tocar tus mensajes ni tú los de otros.",
+    "Escribe @ para mencionar a una persona: le llega un aviso con su propio sonido. La lupa busca en la conversación; Ctrl+K busca en todas. La búsqueda se hace en tu ordenador.",
   ]],
   ["bots", Bot, "Tus bots en conversaciones con personas", [
     "Menciónalos con @ y contestan ahí, desde tu ordenador. Solo ven lo que se ha dicho en esa conversación: ni tu correo, ni tu agenda, ni tus archivos, ni lo que saben de ti.",

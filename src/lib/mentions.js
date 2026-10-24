@@ -61,3 +61,21 @@ export function mentionSegments(text, named = []) {
   if (at < text.length) out.push({ text: text.slice(at) });
   return out;
 }
+
+/**
+ * The people a message names: the ones picked with «@» whose name (full or first) is still
+ * in the text, then members written by hand with their first name, when only one has it and
+ * no bot here is called that. picks/members: [{id, name, …}] · botNames: names of the bots.
+ */
+export function resolvePeople(text, picks = [], members = [], botNames = []) {
+  const said = (p) => mentions(text, p.name) || mentions(text, p.name.split(" ")[0]);
+  const out = picks.filter((p, i) => said(p) && picks.findIndex((x) => x.id === p.id) === i);
+  const bots = new Set(botNames.map(fold));
+  for (const p of members) {
+    const first = p.name.split(" ")[0];
+    if (out.some((x) => x.id === p.id) || bots.has(fold(first))) continue;
+    if (members.filter((x) => fold(x.name.split(" ")[0]) === fold(first)).length > 1) continue;
+    if (mentions(text, first)) out.push(p);
+  }
+  return out;
+}

@@ -1,7 +1,7 @@
 // «Personas» in the browser: one conversation with people (server/peers/): its messages, what
 // arrives live (/api/peers/events), typing and seen marks.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { get, post } from "./api.js";
+import { del, get, patch, post } from "./api.js";
 
 export const shareUrl = (id) => "/con/" + id;
 
@@ -55,7 +55,7 @@ export function useShareChat(id) {
     source.onmessage = (e) => {
       let event;
       try { event = JSON.parse(e.data); } catch { return; }
-      if (event.type === "message" && event.message) {
+      if (event.type === "message" && event.message && !event.message.thread) {
         setData((d) => {
           const i = d.messages.findIndex((m) => m.id === event.message.id);
           const messages = i >= 0 ? d.messages.map((m, j) => (j === i ? event.message : m)) : [...d.messages, event.message].sort((a, b) => String(a.at).localeCompare(String(b.at)));
@@ -92,8 +92,8 @@ export function useShareChat(id) {
     const page = await get(`/peers/shares/${encodeURIComponent(id)}/messages?before=${encodeURIComponent(first.id)}`);
     setData((d) => ({ ...d, messages: [...page.messages, ...d.messages], more: page.more }));
   }, [id, data.messages]);
-  const send = useCallback(async (text, mentions = []) => {
-    const message = await post(`/peers/shares/${encodeURIComponent(id)}/messages`, { text, ...(mentions.length ? { mentions } : {}) });
+  const send = useCallback(async (text, mentions = [], people = []) => {
+    const message = await post(`/peers/shares/${encodeURIComponent(id)}/messages`, { text, ...(mentions.length ? { mentions } : {}), ...(people.length ? { people } : {}) });
     setData((d) => (d.messages.some((m) => m.id === message.id) ? d : { ...d, messages: [...d.messages, message] }));
     setTimeout(load, 1200);
     return message;
@@ -127,5 +127,55 @@ export function useShareChat(id) {
     document.addEventListener("visibilitychange", mark);
     return () => document.removeEventListener("visibilitychange", mark);
   }, [id, newest, data.loading, data.share?.unread]);
-  return { ...data, typing, thinking, load, older, send, typingNow, react, retry, updateMeeting };
+  const replace = useCallback((message) => setData((d) => ({ ...d, messages: d.messages.map((m) => (m.id === message.id ? message : m)) })), []);
+  const edit = useCallback(async (messageId, text) => replace(await editMessage(messageId, text)), [replace]);
+  const unsend = useCallback(async (messageId) => replace(await unsendMessage(messageId)), [replace]);
+  return { ...data, typing, thinking, load, older, send, typingNow, react, retry, edit, unsend, updateMeeting };
+}
+
+export const editMessage = (messageId, text) => patch(`/peers/messages/${encodeURIComponent(messageId)}`, { text });
+export const unsendMessage = (messageId) => del(`/peers/messages/${encodeURIComponent(messageId)}`);
+
+/** A thread of conversation `shareId`: its first message and the replies, kept live. */
+export function useThread(shareId, rootId) {
+  const [data, setData] = useState({ root: null, messages: [], loading: true, error: null });
+  const load = useCallback(async () => {
+    if (!shareId || !rootId) return;
+    try {
+      const next = await get(`/peers/shares/${encodeURIComponent(shareId)}/messages?thread=${encodeURIComponent(rootId)}`);
+      setData({ root: next.root, messages: next.messages, loading: false, error: null });
+    } catch (error) {
+      setData((d) => ({ ...d, loading: false, error: error.status === 404 ? "missing" : error.message }));
+    }
+  }, [shareId, rootId]);
+  const put = useCallback((message) => setData((d) => {
+    if (message.id === rootId) return { ...d, root: message };
+    if (message.thread !== rootId) return d;
+    const i = d.messages.findIndex((m) => m.id === message.id);
+    return { ...d, messages: i >= 0 ? d.messages.map((m, j) => (j === i ? message : m)) : [...d.messages, message].sort((a, b) => String(a.at).localeCompare(String(b.at))) };
+  }), [rootId]);
+  useEffect(() => {
+    if (!shareId || !rootId) return undefined;
+    setData({ root: null, messages: [], loading: true, error: null });
+    void load();
+    const source = new EventSource(`/api/peers/events?share=${encodeURIComponent(shareId)}`);
+    source.onmessage = (e) => {
+      let event;
+      try { event = JSON.parse(e.data); } catch { return; }
+      if (event.type === "message" && event.message) put(event.message);
+      if (event.type === "seen" || event.type === "relay") void load();
+    };
+    return () => source.close();
+  }, [shareId, rootId, load, put]);
+  const send = useCallback(async (text, mentions = [], people = []) => {
+    put(await post(`/peers/shares/${encodeURIComponent(shareId)}/messages`, { text, thread: rootId, ...(mentions.length ? { mentions } : {}), ...(people.length ? { people } : {}) }));
+  }, [shareId, rootId, put]);
+  const act = useCallback(async (fn) => put(await fn()), [put]);
+  return {
+    ...data, load, send,
+    react: (messageId, emoji) => act(() => post(`/peers/messages/${encodeURIComponent(messageId)}/reactions`, { emoji })),
+    retry: (messageId) => act(() => post(`/peers/messages/${encodeURIComponent(messageId)}/retry`)),
+    edit: (messageId, text) => act(() => editMessage(messageId, text)),
+    unsend: (messageId) => act(() => unsendMessage(messageId)),
+  };
 }

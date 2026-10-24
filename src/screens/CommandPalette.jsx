@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, FileText, File, Hash, Keyboard, MessageCircle, MessageSquareText, Pause, Play, Search, Settings2, Sparkles, Stethoscope, Undo2 } from "lucide-react";
+import { ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, FileText, File, Hash, Keyboard, MessageCircle, MessageSquareText, Pause, Play, Search, Settings2, Sparkles, Stethoscope, Undo2, UsersRound } from "lucide-react";
 import { Avatar, Highlight, matchBots, mentionAt, mentionedBots } from "../components/home/shared.jsx";
 import { useStore } from "../lib/store.jsx";
 import { get, patch, post } from "../lib/api.js";
@@ -11,6 +11,7 @@ import { parseQuery, rank } from "../lib/palette.js";
 import { isHidden, reversible, undoLast, useToasts } from "../lib/undoToast.js";
 import { PLACES } from "../components/v2/Rail.jsx";
 import { SECTIONS, searchSettings, SECTION_OF } from "../components/v2/settings/sections.js";
+import { hitUrl } from "../components/v2/people/ShareSearch.jsx";
 
 // «Buscar o pedir» (Ctrl+K, or the window event 'colmena:palette' with detail.text), T3 Code's
 // CommandPalette in Colmena's words: one box finds chats, rooms, messages, deliverables, bots,
@@ -52,6 +53,7 @@ export default function CommandPalette() {
   const [cycled, setCycled] = useState(null); // bot chosen with Tab
   const [active, setActive] = useState(0);
   const [results, setResults] = useState(null);
+  const [peopleHits, setPeopleHits] = useState([]); // conversations with people (/api/peers/search)
   const [searchFailed, setSearchFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -121,10 +123,12 @@ export default function CommandPalette() {
     const q = plain;
     if (!q) {
       setResults(null);
+      setPeopleHits([]);
       return;
     }
     let alive = true;
     const t = setTimeout(() => {
+      get("/peers/search?q=" + encodeURIComponent(q)).then((r) => alive && setPeopleHits(r.hits || [])).catch(() => alive && setPeopleHits([]));
       get("/search?q=" + encodeURIComponent(q))
         .then((r) => {
           if (!alive) return;
@@ -203,6 +207,16 @@ export default function CommandPalette() {
       });
     }
     groups.push({ title: "Mensajes", items: messages });
+    // What was said with people (on this computer only): opens that conversation or thread at the message.
+    groups.push({
+      title: "Con personas",
+      items: peopleHits.slice(0, 4).map((h) => ({
+        key: "peer:" + h.id, icon: ic(UsersRound),
+        label: <><span style={{ fontWeight: "600" }}>{(h.bot ? h.bot : h.author.split(" ")[0]) + ": "}</span><Highlight text={h.snippet} query={plain.split(/\s+/)[0]} /><span style={MUTED}>{" · " + (h.kind === "dm" ? h.title : "#" + h.title) + (h.thread ? " · hilo" : "")}</span></>,
+        right: shortDate(h.at) || "Personas",
+        run: () => go(hitUrl(h)),
+      })),
+    });
     groups.push({
       title: "Tareas de Código",
       items: rank(codeTasks.filter((t) => !isHidden("codetask:" + t.id)), plain, (t) => [t.title, t.project]).slice(0, 4).map((t) => ({
@@ -240,7 +254,7 @@ export default function CommandPalette() {
       }),
     });
     return groups;
-  }, [plain, results, missions, artifacts, team, bots, codeTasks]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [plain, results, peopleHits, missions, artifacts, team, bots, codeTasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createMission = async (mode) => {
     const prompt = plain;

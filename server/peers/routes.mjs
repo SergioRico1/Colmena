@@ -12,6 +12,8 @@
 // GET  /api/peers/shares/:id/messages?before=  POST /api/peers/shares/:id/messages {text, replyTo?}
 // POST /api/peers/shares/:id/seen              POST /api/peers/shares/:id/typing
 // POST /api/peers/messages/:id/reactions {emoji}   POST /api/peers/messages/:id/retry
+// PATCH /api/peers/messages/:id {text} (yours)     DELETE /api/peers/messages/:id (yours, for everyone)
+// GET  /api/peers/search?q=&share=
 // GET  /api/peers/events?share=                SSE: typing, presence, messages of that conversation
 import { PEER_LIMITS, PeerError } from "./service.mjs";
 
@@ -59,12 +61,15 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   }));
   app.post("/api/peers/shares/:id/members", run((req, p) => p.addMembers(req.params.id, check(z.object({ members: z.array(id).min(1).max(PEER_LIMITS.members - 1) }).strict(), req.body).members)));
   app.post("/api/peers/shares/:id/leave", run((req, p) => p.leave(req.params.id)));
-  app.get("/api/peers/shares/:id/messages", run((req, p) => p.messages(req.params.id, { before: typeof req.query.before === "string" ? req.query.before : null })));
+  app.get("/api/peers/shares/:id/messages", run((req, p) => p.messages(req.params.id, { before: typeof req.query.before === "string" ? req.query.before : null, thread: typeof req.query.thread === "string" ? req.query.thread : null })));
   app.post("/api/peers/shares/:id/messages", run((req, p) => {
     const mention = z.object({ owner: z.string().trim().min(43).max(43), bot: z.string().trim().min(1).max(40) }).strict();
-    const data = check(z.object({ text: z.string().trim().min(1).max(PEER_LIMITS.text), replyTo: id.optional(), mentions: z.array(mention).max(8).optional() }).strict(), req.body);
-    return p.post(req.params.id, data.text, { replyTo: data.replyTo || null, mentions: data.mentions || [] });
+    const data = check(z.object({ text: z.string().trim().min(1).max(PEER_LIMITS.text), replyTo: id.optional(), thread: id.optional(), mentions: z.array(mention).max(8).optional(), people: z.array(z.string().trim().min(43).max(43)).max(16).optional() }).strict(), req.body);
+    return p.post(req.params.id, data.text, { replyTo: data.replyTo || null, thread: data.thread || null, mentions: data.mentions || [], people: data.people || [] });
   }));
+  app.patch("/api/peers/messages/:id", run((req, p) => p.edit(req.params.id, check(z.object({ text: z.string().trim().min(1).max(PEER_LIMITS.text) }).strict(), req.body).text)));
+  app.delete("/api/peers/messages/:id", run((req, p) => p.unsend(req.params.id)));
+  app.get("/api/peers/search", run((req, p) => p.search(check(z.string().max(200), String(req.query.q ?? "")), { shareId: typeof req.query.share === "string" && req.query.share ? req.query.share : null })));
   app.post("/api/peers/shares/:id/seen", run((req, p) => p.seen(req.params.id)));
   app.post("/api/peers/shares/:id/typing", run((req, p) => p.typingNow(req.params.id)));
   app.post("/api/peers/messages/:id/reactions", run((req, p) => p.react(req.params.id, check(z.object({ emoji: z.string().trim().min(1).max(16) }).strict(), req.body).emoji)));

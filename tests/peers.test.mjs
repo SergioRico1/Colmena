@@ -308,3 +308,86 @@ test("a message that names you is a «mention» (its own sound); others are «me
   assert.equal(delivery({}, "mention").sound, "mention");
   assert.equal(delivery({}, "message").sound, "message");
 });
+
+test("threads: replies stay in their thread, the root counts them, and only those in it are called", async (t) => {
+  const { people: [sergio, marta, luis] } = await world(t);
+  await connect(sergio, marta);
+  await connect(sergio, luis);
+  const group = sergio.peers.createGroup("viaje-lisboa", [marta.peers.address, luis.peers.address]);
+  await until(() => marta.store.get("peerShares", group.id) && luis.store.get("peerShares", group.id), "los dos reciben la sala");
+  const root = marta.peers.post(group.id, "¿Hotel o apartamento?");
+  await until(() => sergio.store.get("peerMessages", root.id) && luis.store.get("peerMessages", root.id), "llega la pregunta");
+  const before = luis.notices.length;
+  const reply = sergio.peers.post(group.id, "Apartamento, cerca de Alfama.", { thread: root.id });
+  // A reply to a reply goes to the same thread.
+  const again = sergio.peers.post(group.id, "O en Chiado.", { thread: reply.id });
+  assert.equal(again.thread, root.id);
+  await until(() => marta.store.get("peerMessages", again.id) && luis.store.get("peerMessages", again.id), "llegan las respuestas");
+  // Marta wrote the root: she is called; Luis is not in the thread: no notice, no unread.
+  assert.match(marta.notices.at(-1).title, /ha respondido en un hilo/);
+  assert.ok(marta.notices.at(-1).url.endsWith("?hilo=" + root.id));
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal(luis.notices.length, before);
+  const page = luis.peers.messages(group.id);
+  assert.deepEqual(page.messages.map((m) => m.id), [root.id]);
+  assert.equal(page.messages[0].replies.count, 2);
+  assert.equal(page.messages[0].replies.people[0].initials, "SR");
+  const thread = luis.peers.messages(group.id, { thread: root.id });
+  assert.equal(thread.root.id, root.id);
+  assert.deepEqual(thread.messages.map((m) => m.text), ["Apartamento, cerca de Alfama.", "O en Chiado."]);
+  // Once Luis replies he is in it.
+  luis.peers.post(group.id, "Yo prefiero hotel.", { thread: root.id });
+  const n = luis.notices.length;
+  marta.peers.post(group.id, "Votamos mañana.", { thread: root.id });
+  await until(() => luis.notices.length > n, "Luis ya está en el hilo");
+});
+
+test("edit and delete: only the author's own Colmena can change a message, for everyone", async (t) => {
+  const { people: [sergio, marta, luis] } = await world(t);
+  await connect(sergio, marta);
+  await connect(sergio, luis);
+  const group = sergio.peers.createGroup("viaje-lisboa", [marta.peers.address, luis.peers.address]);
+  await until(() => marta.store.get("peerShares", group.id) && luis.store.get("peerShares", group.id), "los dos reciben la sala");
+  const m = sergio.peers.post(group.id, "Salimos el viernes a las 8");
+  await until(() => marta.store.get("peerMessages", m.id) && luis.store.get("peerMessages", m.id), "llega");
+  const edited = sergio.peers.edit(m.id, "Salimos el viernes a las 9");
+  assert.ok(edited.edited);
+  await until(() => marta.store.get("peerMessages", m.id).text === "Salimos el viernes a las 9" && luis.store.get("peerMessages", m.id).text.endsWith("9"), "llega la edición");
+  assert.ok(marta.peers.messages(group.id).messages.find((x) => x.id === m.id).edited);
+  assert.equal(marta.store.get("peerShares", group.id).lastLine, "Salimos el viernes a las 9");
+  // Nobody else can: not through the API...
+  assert.throws(() => marta.peers.edit(m.id, "Salimos el sábado"), /no se puede editar/);
+  assert.throws(() => marta.peers.unsend(m.id), /no se puede borrar/);
+  // ...nor by sending a signed «edit» of someone else's message from their own Colmena.
+  marta.peers.enqueue(luis.peers.address, { type: "edit", share: group.id, msg: m.id, text: "Cancelado", at: new Date().toISOString() });
+  marta.peers.enqueue(luis.peers.address, { type: "unsend", share: group.id, msg: m.id });
+  void marta.peers.flushOutbox();
+  const probe = marta.peers.post(group.id, "sigo aquí");
+  await until(() => luis.store.get("peerMessages", probe.id), "llega lo de después");
+  assert.equal(luis.store.get("peerMessages", m.id).text, "Salimos el viernes a las 9");
+  // The author deletes it: «Mensaje borrado» everywhere, nothing of the text left.
+  const gone = sergio.peers.unsend(m.id);
+  assert.equal(gone.deleted, true);
+  assert.equal(gone.text, "");
+  await until(() => marta.store.get("peerMessages", m.id).deletedAt && luis.store.get("peerMessages", m.id).deletedAt, "se borra en todas");
+  assert.equal(luis.store.get("peerMessages", m.id).text, "");
+  assert.throws(() => sergio.peers.edit(m.id, "otra vez"), /no se puede editar/);
+  assert.equal(marta.peers.search("viernes").hits.length, 0);
+});
+
+test("search: every word, accents and case out, newest first, in one conversation or all", async (t) => {
+  const { people: [sergio, marta] } = await world(t, ["Sergio Rico", "Marta Ruiz"]);
+  await connect(sergio, marta);
+  const dm = dmId(sergio.peers.address, marta.peers.address);
+  const a = sergio.peers.post(dm, "La reunión con el cliente de Lisboa es el martes.");
+  const b = sergio.peers.post(dm, "Otra reunion, la de presupuesto, el jueves.");
+  await until(() => marta.store.get("peerMessages", a.id) && marta.store.get("peerMessages", b.id), "llegan");
+  const all = marta.peers.search("REUNION");
+  assert.deepEqual(all.hits.map((h) => h.id), [b.id, a.id]);
+  assert.equal(all.hits[0].author, "Sergio Rico");
+  assert.equal(all.hits[0].title, "Sergio Rico");
+  assert.deepEqual(marta.peers.search("reunión lisboa").hits.map((h) => h.id), [a.id]);
+  assert.deepEqual(marta.peers.search("lisboa", { shareId: "dm-otra" }).hits, []);
+  assert.deepEqual(marta.peers.search("a").hits, []);
+  assert.match(marta.peers.search("cliente").hits[0].snippet, /cliente de Lisboa/);
+});

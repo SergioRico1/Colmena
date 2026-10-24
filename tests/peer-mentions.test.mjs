@@ -36,3 +36,16 @@ test("each «@Vera» in a message is drawn with its own owner", () => {
   assert.deepEqual(t.map((s) => s.text), ["Café con ", "@Tomás", " ahora"]);
   assert.deepEqual(mentionSegments("sin menciones", []), [{ text: "sin menciones" }]);
 });
+
+test("people named with @: picked ones while their name is there, a unique first name by hand", async () => {
+  const { resolvePeople } = await import("../src/lib/mentions.js");
+  const marta = { id: "m", name: "Marta Ruiz" }, luis = { id: "l", name: "Luis Gómez" }, marta2 = { id: "m2", name: "Marta Gil" };
+  assert.deepEqual(resolvePeople("@Marta mira esto", [marta], [marta, luis]).map((p) => p.id), ["m"]);
+  assert.deepEqual(resolvePeople("mira esto", [marta], [marta, luis]), []);
+  assert.deepEqual(resolvePeople("hola @luis", [], [marta, luis]).map((p) => p.id), ["l"]);
+  // Two Martas: by hand it is nobody; picked, it is the one picked.
+  assert.deepEqual(resolvePeople("@Marta", [], [marta, marta2]), []);
+  assert.deepEqual(resolvePeople("@Marta Gil ven", [marta2], [marta, marta2]).map((p) => p.id), ["m2"]);
+  // A bot called like someone: «@Nora» by hand is the bot.
+  assert.deepEqual(resolvePeople("@Nora", [], [{ id: "n", name: "Nora Vidal" }], ["Nora"]), []);
+});

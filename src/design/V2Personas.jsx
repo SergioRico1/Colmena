@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}\n.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}\n@media (max-width: 760px){[data-convlist]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -13,7 +13,7 @@ export class Logic extends DCLogic {
     this.state = this.from(props);
   }
   from(p) {
-    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '', noteClosed: false, st: p.estado || 'available', stUntil: p.estado === 'dnd' ? 'hasta las 18:00' : p.estado === 'away' ? 'hasta el lunes 27' : '', stPick: null, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
+    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '', noteClosed: false, mine: 'edited', st: p.estado || 'available', stUntil: p.estado === 'dnd' ? 'hasta las 18:00' : p.estado === 'away' ? 'hasta el lunes 27' : '', stPick: null, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
   }
   componentDidUpdate(prev) {
     if (prev.paso !== this.props.paso || prev.reunion !== this.props.reunion) this.setState(this.from(this.props));
@@ -46,7 +46,7 @@ export class Logic extends DCLogic {
          ['bot', 'Vera', 'ayer', 'Resumen del comité', '#7B4DFF', '50% 12% 50% 12%', null, false, false],
          ['room', 'informe-q3', 'ayer', 'Tomás: devoluciones listas', '', '', null, false, false],
          ['bot', 'Atlas', 'lun', 'Plan de la semana', '#FFC93C', '0', null, false, false]];
-    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
+    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
     const meetStepsBy = {
       buscando: [['Atlas mira tu agenda', 'solo libre u ocupado', true], ['Leo mira la de Marta', 'solo libre u ocupado', true], ['Nico mira la de Luis', 'buscando…', false], ['Os propongo los huecos que van bien a los tres', '', false]],
       elegir: [['Atlas miró tu agenda', 'solo libre u ocupado', true], ['Leo miró la de Marta', 'solo libre u ocupado', true], ['Nico miró la de Luis', 'solo libre u ocupado', true], ['Tres huecos os van bien a los tres', '', true]],
@@ -92,7 +92,14 @@ export class Logic extends DCLogic {
         { person: false, bot: true, fill: F('#7B4DFF'), clip: 'none', radius: '50% 12% 50% 12%', name: 'Vera', meta: '· tu bot · lo veis los dos · 10:01', text: 'Tres días: llegada el jueves por la tarde, visitas el viernes y reunión con la agencia el sábado por la mañana. Falta confirmar el hotel.', seen: '' },
         { person: true, bot: false, ini: 'MR', bg: '#EFE2D3', fg: '#12131A', name: 'Marta Ruiz', meta: '· 10:02', text: 'Perfecto. Lo que falta lo vemos en una sala con nuestros bots.', seen: '' }
       ],
-      isSala: s.paso === 'sala' || s.paso === 'pide',
+      isSala: ['sala', 'pide', 'hilo', 'buscar'].includes(s.paso),
+      isHilo: s.paso === 'hilo', isBuscar: s.paso === 'buscar',
+      toHilo: go('hilo'), toBuscar: go(s.paso === 'buscar' ? 'sala' : 'buscar'),
+      searchBg: s.paso === 'buscar' ? '#12131A' : 'rgba(18,19,26,.06)', searchFg: s.paso === 'buscar' ? '#FFFFFF' : '#12131A',
+      showMine: s.mine === 'edited' || s.mine === 'first', editingMine: s.mine === 'editing', deletedMine: s.mine === 'deleted', editedMine: s.mine === 'edited',
+      mineText: s.mine === 'first' ? 'el martes a las 9 me va bien' : 'el martes a las 9 me va bien, llevo yo el programa impreso',
+      startEdit: () => this.setState({ mine: 'editing' }), saveEdit: () => this.setState({ mine: 'edited' }), cancelEdit: () => this.setState({ mine: 'edited' }),
+      deleteMine: () => { this.setState({ mine: 'deleted' }); this.flash('Mensaje borrado para todos'); },
       atlasAnim: s.meet === 'buscando' ? 'breathe 1.4s ease-in-out infinite' : 'none',
       leoAnim: s.meet === 'buscando' ? 'breathe 1.4s ease-in-out infinite' : 'none',
       leoLine: s.meet === 'buscando' ? 'Nico, el bot de Luis, está mirando su agenda' : s.meet === 'esperando' ? 'Nico le ha avisado a Luis' : 'Leo y Nico, los bots de Marta y Luis, están en la sala',
@@ -532,7 +539,7 @@ export function View({ v }) {
             {v.isSala ? (
               <>
                 <section aria-label="Sala viaje-lisboa" style={{flex: "1", minWidth: "0", height: "100%", display: "flex", flexDirection: "column"}}>
-                  <header style={{flex: "none", background: "#F5F5F2", borderBottom: "1px solid rgba(18,19,26,.06)"}}>
+                  <header style={{position: "relative", zIndex: "5", flex: "none", background: "#F5F5F2", borderBottom: "1px solid rgba(18,19,26,.06)"}}>
                     <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 18px", padding: "20px clamp(20px, 4vw, 44px) 18px"}}>
                       <div style={{flex: "1 1 260px", minWidth: "0", display: "flex", flexDirection: "column", gap: "6px"}}>
                         <h1 style={{margin: "0", font: "600 26px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em"}}>
@@ -576,10 +583,79 @@ export function View({ v }) {
                           </span>
                         </span>
                       </button>
+                      <button type="button" onClick={v.toBuscar} aria-label="Buscar en esta conversación" style={{width: "48px", height: "48px", display: "grid", placeItems: "center", border: "0", borderRadius: "999px", background: v.searchBg, color: v.searchFg, cursor: "pointer"}}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.3-4.3" />
+                        </svg>
+                      </button>
                       <button type="button" onClick={v.toPide} style={{height: "48px", padding: "0 20px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
                         {"Invitar"}
                       </button>
                     </div>
+                    {v.isBuscar ? (
+                      <>
+                        <div role="search" style={{position: "relative", padding: "0 clamp(20px, 4vw, 44px) 14px", animation: "fade .2s ease-out"}}>
+                          <label style={{display: "flex", alignItems: "center", gap: "10px", height: "46px", padding: "0 8px 0 16px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.25)"}}>
+                            <span style={{color: "#6B6F7A", display: "grid"}}>
+                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
+                              </svg>
+                            </span>
+                            <input defaultValue="mañanas" aria-label="Buscar en esta conversación" style={{flex: "1", minWidth: "0", height: "100%", border: "0", outline: "none", background: "transparent", fontSize: "15px"}} />
+                            <span style={{fontSize: "13px", color: "#6B6F7A"}}>
+                              {"2 mensajes"}
+                            </span>
+                            <button type="button" onClick={v.toSala} aria-label="Cerrar la búsqueda" style={{width: "32px", height: "32px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer", color: "#3D404A"}}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M18 6 6 18" />
+                                <path d="m6 6 12 12" />
+                              </svg>
+                            </button>
+                          </label>
+                          <ul role="listbox" aria-label="Mensajes encontrados" style={{position: "absolute", left: "clamp(20px, 4vw, 44px)", right: "clamp(20px, 4vw, 44px)", top: "54px", zIndex: "20", margin: "0", padding: "8px", listStyle: "none", background: "rgba(255,255,255,.97)", WebkitBackdropFilter: "blur(20px)", backdropFilter: "blur(20px)", borderRadius: "22px", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", animation: "rise .2s ease-out"}}>
+                            <li>
+                              <button type="button" onClick={v.toHilo} style={{width: "100%", display: "flex", flexDirection: "column", gap: "3px", padding: "10px 12px", border: "0", borderRadius: "14px", background: "rgba(18,19,26,.035)", cursor: "pointer", textAlign: "left"}}>
+                                <span style={{fontSize: "13px", color: "#6B6F7A"}}>
+                                  <strong style={{fontWeight: "600", color: "#12131A"}}>
+                                    {"Marta Ruiz"}
+                                  </strong>
+                                  {" · en un hilo · 10:19"}
+                                </span>
+                                <span style={{fontSize: "14px", lineHeight: "1.45", color: "#3D404A"}}>
+                                  {"Entonces el martes a las 9, que es por la "}
+                                  <mark style={{background: "#FFE08A", color: "inherit", padding: "0 1px"}}>
+                                    {"mañana"}
+                                  </mark>
+                                  {" para todos."}
+                                </span>
+                              </button>
+                            </li>
+                            <li>
+                              <button type="button" onClick={v.toSala} style={{width: "100%", display: "flex", flexDirection: "column", gap: "3px", padding: "10px 12px", border: "0", borderRadius: "14px", background: "transparent", cursor: "pointer", textAlign: "left"}}>
+                                <span style={{fontSize: "13px", color: "#6B6F7A"}}>
+                                  <strong style={{fontWeight: "600", color: "#12131A"}}>
+                                    {"Luis Gómez"}
+                                  </strong>
+                                  {" · 10:13"}
+                                </span>
+                                <span style={{fontSize: "14px", lineHeight: "1.45", color: "#3D404A"}}>
+                                  {"Me apunto. Yo solo puedo por las "}
+                                  <mark style={{background: "#FFE08A", color: "inherit", padding: "0 1px"}}>
+                                    {"mañana"}
+                                  </mark>
+                                  {"s."}
+                                </span>
+                              </button>
+                            </li>
+                          </ul>
+                          <span style={{display: "block", margin: "8px 0 0 16px", fontSize: "12px", color: "#8C8F99"}}>
+                            {"Se busca en este ordenador. Ctrl+K busca en todas las conversaciones."}
+                          </span>
+                        </div>
+                      </>
+                    ) : null}
                   </header>
                   <div style={{flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse"}}>
                     <div style={{width: "100%", maxWidth: "840px", margin: "0 auto", padding: "22px clamp(20px, 4vw, 44px) 24px", display: "flex", flexDirection: "column", gap: "6px"}}>
@@ -619,6 +695,24 @@ export function View({ v }) {
                           <p style={{margin: "0", fontSize: "16px", lineHeight: "1.6"}}>
                             {"Me apunto. Yo solo puedo por las mañanas."}
                           </p>
+                          <button type="button" onClick={v.toHilo} aria-label="Abrir el hilo: 2 respuestas" style={{alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "10px", height: "36px", padding: "0 14px 0 6px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.04)", cursor: "pointer", fontSize: "13px", color: "#5C606C", whiteSpace: "nowrap"}}>
+                            <span style={{display: "flex"}}>
+                              <span style={{marginRight: "-8px", borderRadius: "50%", boxShadow: "0 0 0 2px #FFFFFF"}}>
+                                <span aria-hidden="true" style={{width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 8px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                                  {"TÚ"}
+                                </span>
+                              </span>
+                              <span style={{borderRadius: "50%", boxShadow: "0 0 0 2px #FFFFFF"}}>
+                                <span aria-hidden="true" style={{width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 8px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                                  {"MR"}
+                                </span>
+                              </span>
+                            </span>
+                            <strong style={{fontWeight: "600", color: "#1F4FD1"}}>
+                              {"2 respuestas"}
+                            </strong>
+                            {"· la última hoy a las 10:21"}
+                          </button>
                         </div>
                       </div>
                       <div className="msg" style={{display: "grid", gridTemplateColumns: "40px 1fr", gap: "14px", padding: "10px 0"}}>
@@ -857,6 +951,160 @@ export function View({ v }) {
                     </div>
                   </form>
                 </section>
+              </>
+            ) : null}
+            {v.isHilo ? (
+              <>
+                <aside aria-label="Hilo" style={{flex: "none", width: "clamp(340px, 34vw, 440px)", height: "100%", display: "flex", flexDirection: "column", background: "#FBFBF9", borderLeft: "1px solid rgba(18,19,26,.07)", animation: "fade .25s ease-out"}}>
+                  <header style={{flex: "none", display: "flex", alignItems: "center", gap: "12px", padding: "22px 20px 16px 24px"}}>
+                    <span style={{flex: "1", display: "flex", flexDirection: "column", gap: "3px"}}>
+                      <strong style={{font: "600 20px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em"}}>
+                        {"Hilo"}
+                      </strong>
+                      <span style={{fontSize: "13px", color: "#6B6F7A"}}>
+                        {"Solo avisa a quien está en él"}
+                      </span>
+                    </span>
+                    <button type="button" onClick={v.toSala} aria-label="Cerrar el hilo" style={{width: "38px", height: "38px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer", color: "#3D404A"}}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  </header>
+                  <div style={{flex: "1", minHeight: "0", overflowY: "auto", padding: "6px 24px 18px", display: "flex", flexDirection: "column", gap: "4px"}}>
+                    <div className="msg" style={{position: "relative", display: "grid", gridTemplateColumns: "32px 1fr", gap: "12px", padding: "10px 0"}}>
+                      <span aria-hidden="true" style={{width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", color: "#12131A", font: "600 11px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                        {"LG"}
+                      </span>
+                      <div style={{display: "flex", flexDirection: "column", gap: "6px", minWidth: "0"}}>
+                        <span style={{fontSize: "14px"}}>
+                          <strong style={{fontWeight: "600"}}>
+                            {"Luis Gómez"}
+                          </strong>
+                          {" "}
+                          <span style={{color: "#6B6F7A"}}>
+                            {"· 10:13"}
+                          </span>
+                        </span>
+                        <p style={{margin: "0", fontSize: "15px", lineHeight: "1.6"}}>
+                          {"Me apunto. Yo solo puedo por las mañanas."}
+                        </p>
+                      </div>
+                    </div>
+                    <div style={{display: "flex", alignItems: "center", gap: "12px", padding: "8px 0 6px", fontSize: "13px", color: "#6B6F7A"}}>
+                      {"2 respuestas"}
+                      <span style={{flex: "1", height: "1px", background: "rgba(18,19,26,.08)"}} />
+                    </div>
+                    <div className="msg" style={{position: "relative", display: "grid", gridTemplateColumns: "32px 1fr", gap: "12px", padding: "10px 0"}}>
+                      <span aria-hidden="true" style={{width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 11px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                        {"MR"}
+                      </span>
+                      <div style={{display: "flex", flexDirection: "column", gap: "6px", minWidth: "0"}}>
+                        <span style={{fontSize: "14px"}}>
+                          <strong style={{fontWeight: "600"}}>
+                            {"Marta Ruiz"}
+                          </strong>
+                          {" "}
+                          <span style={{color: "#6B6F7A"}}>
+                            {"· 10:19"}
+                          </span>
+                        </span>
+                        <p style={{margin: "0", fontSize: "15px", lineHeight: "1.6"}}>
+                          {"Entonces el martes a las 9, que es por la mañana para todos."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="msg" style={{position: "relative", display: "grid", gridTemplateColumns: "32px 1fr", gap: "12px", padding: "10px 0"}}>
+                      <div role="toolbar" aria-label="Acciones del mensaje" style={{position: "absolute", top: "-16px", right: "0", zIndex: "6", display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "#FFFFFF", borderRadius: "14px", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 12px 28px -12px rgba(18,19,26,.35)"}}>
+                        <button type="button" aria-label="Reaccionar 👍" style={{width: "34px", height: "34px", display: "grid", placeItems: "center", border: "0", borderRadius: "10px", background: "transparent", cursor: "pointer", color: "#3D404A", fontSize: "18px"}}>
+                          {"👍"}
+                        </button>
+                        <button type="button" aria-label="Reaccionar ❤️" style={{width: "34px", height: "34px", display: "grid", placeItems: "center", border: "0", borderRadius: "10px", background: "transparent", cursor: "pointer", color: "#3D404A", fontSize: "18px"}}>
+                          {"❤️"}
+                        </button>
+                        <span aria-hidden="true" style={{width: "1px", height: "20px", margin: "0 3px", background: "rgba(18,19,26,.1)"}} />
+                        <button type="button" onClick={v.startEdit} aria-label="Editar" title="Editar" style={{width: "34px", height: "34px", display: "grid", placeItems: "center", border: "0", borderRadius: "10px", background: "transparent", cursor: "pointer", color: "#3D404A"}}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z" />
+                          </svg>
+                        </button>
+                        <button type="button" onClick={v.deleteMine} aria-label="Borrar para todos" title="Borrar para todos" style={{width: "34px", height: "34px", display: "grid", placeItems: "center", border: "0", borderRadius: "10px", background: "transparent", cursor: "pointer", color: "#3D404A", color: "#B4231A"}}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+                      <span aria-hidden="true" style={{width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 11px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                        {"TÚ"}
+                      </span>
+                      <div style={{display: "flex", flexDirection: "column", gap: "6px", minWidth: "0"}}>
+                        <span style={{fontSize: "14px"}}>
+                          <strong style={{fontWeight: "600"}}>
+                            {"Tú"}
+                          </strong>
+                          {" "}
+                          <span style={{color: "#6B6F7A"}}>
+                            {"· 10:21"}
+                          </span>
+                          {v.editedMine ? (
+                            <>
+                              <span title="Editado hoy a las 10:23" style={{color: "#8C8F99"}}>
+                                {" · editado"}
+                              </span>
+                            </>
+                          ) : null}
+                        </span>
+                        {v.showMine ? (
+                          <>
+                            <p style={{margin: "0", fontSize: "15px", lineHeight: "1.6"}}>
+                              <span title="Marta Ruiz" style={{display: "inline-flex", alignItems: "center", gap: "4px", padding: "1px 8px 1px 3px", borderRadius: "999px", background: "rgba(31,79,209,.09)", color: "#1F3FA6", fontWeight: "600"}}>
+                                <span aria-hidden="true" style={{width: "15px", height: "15px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 5px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                                  {"MR"}
+                                </span>
+                                {"Marta"}
+                              </span>
+                              {" "}{v.mineText}
+                            </p>
+                          </>
+                        ) : null}
+                        {v.editingMine ? (
+                          <>
+                            <div style={{display: "flex", flexDirection: "column", gap: "8px", animation: "fade .15s ease-out"}}>
+                              <textarea aria-label="Editar el mensaje" style={{width: "100%", minHeight: "70px", padding: "11px 14px", border: "0", borderRadius: "16px", outline: "none", resize: "none", background: "#FFFFFF", boxShadow: "inset 0 0 0 1.5px rgba(31,79,209,.35), 0 8px 24px -16px rgba(18,19,26,.3)", font: "inherit", fontSize: "15px", lineHeight: "1.5", boxSizing: "border-box"}} defaultValue="@Marta el martes a las 9 me va bien" />
+                              <span style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "13px", color: "#6B6F7A"}}>
+                                <button type="button" onClick={v.saveEdit} style={{height: "32px", padding: "0 14px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                                  {"Guardar"}
+                                </button>
+                                <button type="button" onClick={v.cancelEdit} style={{height: "32px", padding: "0 12px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                                  {"Cancelar"}
+                                </button>
+                                {"Intro guarda · Esc cancela · lo verán todos como «editado»"}
+                              </span>
+                            </div>
+                          </>
+                        ) : null}
+                        {v.deletedMine ? (
+                          <>
+                            <p style={{margin: "0", fontSize: "15px", fontStyle: "italic", color: "#8C8F99"}}>
+                              {"Borraste este mensaje"}
+                            </p>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{flex: "none", padding: "6px 18px 20px"}}>
+                    <div style={{display: "flex", alignItems: "center", gap: "8px", padding: "6px", background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)"}}>
+                      <input type="text" placeholder="Responde en el hilo…" aria-label="Responder en el hilo" style={{flex: "1", minWidth: "0", height: "40px", padding: "0 12px", border: "0", outline: "none", background: "transparent", fontSize: "15px"}} />
+                      <button type="button" aria-label="Mencionar a alguien" style={{width: "40px", height: "40px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "rgba(18,19,26,.05)", font: "600 17px/1 'Geist', sans-serif", cursor: "pointer"}}>
+                        {"@"}
+                      </button>
+                    </div>
+                  </div>
+                </aside>
               </>
             ) : null}
             {v.isAjustes ? (

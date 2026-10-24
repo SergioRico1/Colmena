@@ -64,6 +64,30 @@ const statusOf = (profile) => {
   return { mode: st.mode, until };
 };
 const botsOf = (profile) => (Array.isArray(profile?.bots) ? profile.bots.slice(0, 24).map(cleanBot).filter(Boolean) : []);
+// Search: accents and case out.
+const foldText = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+/** A line of `text` around the first word found: «…tenemos la reunión del lunes en…». */
+const snippetOf = (text, word) => {
+  const flat = String(text).replace(/\s+/g, " ").trim();
+  const at = Math.max(0, foldText(flat).indexOf(word));
+  const start = Math.max(0, at - 50);
+  return (start ? "…" : "") + flat.slice(start, at + 110) + (at + 110 < flat.length ? "…" : "");
+};
+// What is left of a message deleted for everyone.
+const tombstone = () => ({ text: "", deletedAt: now(), mentions: [], people: [], reactions: {}, card: null });
+/** Replies of each thread root: count, last reply and who replied (newest first). */
+const threadsOf = (list) => {
+  const out = new Map();
+  for (const m of list) {
+    if (!m.thread || m.deletedAt) continue;
+    const t = out.get(m.thread) || { count: 0, lastAt: "", who: [] };
+    t.count += 1;
+    if (String(m.at) > t.lastAt) t.lastAt = m.at;
+    t.who = [m.from, ...t.who.filter((w) => w !== m.from)];
+    out.set(m.thread, t);
+  }
+  return out;
+};
 const cleanMentions = (list) => (Array.isArray(list) ? list : []).slice(0, 8)
   .filter((m) => m && isAddress(m.owner) && typeof m.bot === "string" && /^[a-z0-9-]{1,40}$/.test(m.bot))
   .map((m) => ({ owner: m.owner, bot: m.bot }));
@@ -473,21 +497,38 @@ export class Peers extends EventEmitter {
     void this.flushOutbox();
     return { ok: true };
   }
-  messages(shareId, { before = null, limit = PEER_LIMITS.page } = {}) {
+  /**
+   * A page of the conversation (thread replies stay in their thread), or with `thread` the
+   * root of that thread and all its replies.
+   */
+  messages(shareId, { before = null, thread = null, limit = PEER_LIMITS.page } = {}) {
     const s = this.share(shareId);
-    const all = this.store.where("peerMessages", "shareId", shareId).sort((a, b) => String(a.at).localeCompare(String(b.at)) || String(a.id).localeCompare(String(b.id)));
+    const every = this.store.where("peerMessages", "shareId", shareId).sort((a, b) => String(a.at).localeCompare(String(b.at)) || String(a.id).localeCompare(String(b.id)));
+    const threads = threadsOf(every);
+    if (thread) {
+      const root = every.find((m) => m.id === thread && !m.thread);
+      if (!root) throw new PeerError("No existe ese hilo.", 404);
+      return { share: this.shareView(s), root: this.messageView(root, s, threads), messages: every.filter((m) => m.thread === root.id).slice(-500).map((m) => this.messageView(m, s, threads)) };
+    }
+    const all = every.filter((m) => !m.thread);
     const end = before ? all.findIndex((m) => m.id === before) : all.length;
     const page = all.slice(Math.max(0, (end < 0 ? all.length : end) - limit), end < 0 ? all.length : end);
-    return { share: this.shareView(s), messages: page.map((m) => this.messageView(m, s)), more: page.length < all.length && all.indexOf(page[0]) > 0 };
+    return { share: this.shareView(s), messages: page.map((m) => this.messageView(m, s, threads)), more: page.length < all.length && all.indexOf(page[0]) > 0 };
   }
-  messageView(m, s = this.share(m.shareId)) {
+  messageView(m, s = this.share(m.shareId), threads = null) {
     const author = this.person(m.from);
     const mine = m.from === this.address;
     const seenBy = mine ? Object.entries(s.seenBy || {}).filter(([id, v]) => id !== this.address && String(v.at) >= String(m.at)).map(([id]) => this.person(id).name) : [];
     const reactions = Object.entries(m.reactions || {}).filter(([, who]) => who.length).map(([emoji, who]) => ({ emoji, count: who.length, mine: who.includes(this.address), who: who.map((id) => this.person(id).name) }));
+    // A thread root says how many replies it has and who wrote them.
+    const thread = m.thread ? null : (threads || threadsOf(this.store.where("peerMessages", "thread", m.id))).get(m.id);
     return {
       id: m.id, shareId: m.shareId, from: mine ? "me" : m.from, author: { name: author.name, initials: author.initials, color: author.color }, text: m.text, at: m.at,
-      status: m.status || "received", error: m.error || null, replyTo: m.replyTo || null, seenBy, reactions,
+      status: m.status || "received", error: m.error || null, replyTo: m.replyTo || null, thread: m.thread || null, seenBy, reactions,
+      ...(m.editedAt ? { edited: m.editedAt } : {}), ...(m.deletedAt ? { deleted: true } : {}),
+      ...(thread ? { replies: { count: thread.count, lastAt: thread.lastAt, people: thread.who.slice(0, 3).map((id) => { const p = this.person(id); return { id, me: !!p.me, initials: p.initials, color: p.color }; }) } } : {}),
+      // People named with «@» (their first names are in the text).
+      ...(m.people?.length ? { people: m.people.map((id) => { const p = this.person(id); return { id, me: !!p.me, name: p.name, initials: p.initials, color: p.color }; }) } : {}),
       // Written by a bot of `author` (on its owner's computer): «Vera · bot de Sergio».
       ...(m.bot ? { bot: m.bot } : {}), ...(m.mentions?.length ? { mentions: m.mentions } : {}), ...(m.card ? { card: m.card } : {}), ...(m.local ? { local: true } : {}),
       // A meeting card shows the meeting as it is now (meetings.mjs), not as it was sent.
@@ -499,18 +540,25 @@ export class Peers extends EventEmitter {
    * or someone else's) the message is for; `bot` signs it as one of your bots; `card` is a
    * structured part (the meeting card of phase 3).
    */
-  post(shareId, text, { replyTo = null, mentions = [], people = [], bot = null, card = null } = {}) {
+  post(shareId, text, { replyTo = null, thread = null, mentions = [], people = [], bot = null, card = null } = {}) {
     this.requireRelay();
     const s = this.share(shareId);
     if (s.leftAt || s.removedAt) throw new PeerError("Ya no estás en esta conversación.", 409);
     const body = String(text || "").trim();
     if (!body) throw new PeerError("Escribe algo.");
     if (body.length > PEER_LIMITS.text) throw new PeerError("El mensaje es demasiado largo.");
+    // A reply goes to the thread of its root (threads are one level deep).
+    if (thread) {
+      let root = this.store.get("peerMessages", thread);
+      if (root?.thread) root = this.store.get("peerMessages", root.thread);
+      if (!root || root.shareId !== shareId) throw new PeerError("No existe ese mensaje.", 404);
+      thread = root.id;
+    }
     const signed = bot ? cleanBot(bot) : null;
     const named = cleanMentions(mentions);
     const members = new Set(s.members.map((m) => m.id));
     const persons = [...new Set(people)].filter((a) => isAddress(a) && a !== this.address && members.has(a)).slice(0, 16);
-    const extra = { ...(replyTo ? { replyTo } : {}), ...(signed ? { bot: signed } : {}), ...(named.length ? { mentions: named } : {}), ...(persons.length ? { people: persons } : {}), ...(card ? { card } : {}) };
+    const extra = { ...(replyTo ? { replyTo } : {}), ...(thread ? { thread } : {}), ...(signed ? { bot: signed } : {}), ...(named.length ? { mentions: named } : {}), ...(persons.length ? { people: persons } : {}), ...(card ? { card } : {}) };
     const to = this.others(s).filter((id) => ["active", "known", "pending"].includes(this.contact(id)?.status));
     const m = this.store.put("peerMessages", { id: randomUUID(), shareId, from: this.address, text: body, at: now(), status: to.length ? "sending" : "sent", pendingTo: to, ...extra });
     for (const id of to) this.enqueue(id, { type: "msg", share: shareId, id: m.id, at: m.at, text: body, ...extra, ...(s.kind === "group" ? { v: s.version } : {}) }, { messageId: m.id });
@@ -518,8 +566,87 @@ export class Peers extends EventEmitter {
     void this.flushOutbox();
     const view = this.messageView(this.store.get("peerMessages", m.id));
     this.emit("live", { type: "message", shareId, message: view });
+    if (thread) this.emitMessage(shareId, thread);
     this.emit("posted", { share: this.store.get("peerShares", shareId), message: m, mine: true });
     return view;
+  }
+  /** The message as it is now, to whoever has the conversation open. */
+  emitMessage(shareId, messageId) {
+    const m = this.store.get("peerMessages", messageId);
+    if (m) this.emit("live", { type: "message", shareId, message: this.messageView(m) });
+  }
+  /** Changes the text of one of your messages, for everyone (only its author can). */
+  edit(messageId, text) {
+    this.requireRelay();
+    const m = this.store.get("peerMessages", messageId);
+    if (!m || m.from !== this.address || m.deletedAt) throw new PeerError("Ese mensaje no se puede editar.", 409);
+    if (m.bot || m.card || m.local) throw new PeerError("Lo que escriben tus bots no se edita; puedes borrarlo.", 409);
+    const body = String(text || "").trim();
+    if (!body) throw new PeerError("Escribe algo.");
+    if (body.length > PEER_LIMITS.text) throw new PeerError("El mensaje es demasiado largo.");
+    const s = this.share(m.shareId);
+    if (body !== m.text) {
+      const at = now();
+      this.store.patch("peerMessages", m.id, { text: body, editedAt: at });
+      this.sendChange(s, { type: "edit", share: s.id, msg: m.id, text: body, at });
+      this.afterChange(s, m, body);
+    }
+    return this.messageView(this.store.get("peerMessages", m.id), s);
+  }
+  /** Deletes one of your messages (or your bot's) for everyone: a «Mensaje borrado» stays. */
+  unsend(messageId) {
+    const m = this.store.get("peerMessages", messageId);
+    if (!m || m.from !== this.address || m.deletedAt) throw new PeerError("Ese mensaje no se puede borrar.", 409);
+    if (m.card) throw new PeerError("Una reunión no se borra: cancélala desde su tarjeta.", 409);
+    const s = this.share(m.shareId);
+    this.store.patch("peerMessages", m.id, tombstone());
+    if (!m.local) this.sendChange(s, { type: "unsend", share: s.id, msg: m.id });
+    this.afterChange(s, m, null);
+    return this.messageView(this.store.get("peerMessages", m.id), s);
+  }
+  sendChange(s, body) {
+    for (const id of this.others(s)) if (this.contact(id)?.box) this.enqueue(id, body);
+    void this.flushOutbox();
+  }
+  /**
+   * After message `m` changed (`text`, or null if deleted): the conversation's last line and
+   * an unread notice that still show the old words say the new ones.
+   */
+  afterChange(s, m, text) {
+    // Deleted: the row shows what was said before it.
+    const before = text === null ? this.store.where("peerMessages", "shareId", s.id).filter((x) => !x.deletedAt && x.id !== m.id).sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1) : null;
+    const line = text === null ? (before ? lastLineOf((before.bot ? before.bot.name + ": " : "") + before.text) : "") : lastLineOf((m.bot ? m.bot.name + ": " : "") + text);
+    const old = lastLineOf((m.bot ? m.bot.name + ": " : "") + m.text);
+    const share = this.store.get("peerShares", s.id);
+    if (share?.lastLine === old && share.lastAt === m.at) this.store.patch("peerShares", s.id, { lastLine: line });
+    for (const n of this.store.list("notifications").filter((n) => n.peerShare === s.id && !n.read && n.text === lastLineOf(m.text))) {
+      if (text === null) this.store.remove("notifications", n.id);
+      else this.store.patch("notifications", n.id, { text: lastLineOf(text) });
+    }
+    this.emitMessage(s.id, m.id);
+    if (m.thread) this.emitMessage(s.id, m.thread);
+  }
+  /**
+   * Messages with every word of `query` (accents and case do not matter), newest first; in
+   * one conversation with `shareId`.
+   */
+  search(query, { shareId = null, limit = 40 } = {}) {
+    const words = foldText(query).split(/\s+/).filter(Boolean);
+    if (!words.length || words.join("").length < 2) return { hits: [] };
+    const views = new Map();
+    const shareOf = (id) => {
+      if (!views.has(id)) { const s = this.store.get("peerShares", id); views.set(id, s && !s.removedAt ? this.shareView(s) : null); }
+      return views.get(id);
+    };
+    const rows = shareId ? this.store.where("peerMessages", "shareId", shareId) : this.store.list("peerMessages");
+    const hits = rows.filter((m) => !m.deletedAt && m.text && !m.local && words.every((w) => foldText(m.text).includes(w)) && shareOf(m.shareId))
+      .sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, limit);
+    return {
+      hits: hits.map((m) => {
+        const s = shareOf(m.shareId);
+        return { id: m.id, shareId: m.shareId, title: s.title, kind: s.kind, at: m.at, thread: m.thread || null, author: m.from === this.address ? "Tú" : this.person(m.from).name, bot: m.bot?.name || null, snippet: snippetOf(m.text, words[0]) };
+      }),
+    };
   }
   retry(messageId) {
     const m = this.store.get("peerMessages", messageId);
@@ -527,7 +654,9 @@ export class Peers extends EventEmitter {
     const s = this.share(m.shareId);
     const to = this.others(s).filter((id) => this.contact(id)?.box);
     this.store.patch("peerMessages", m.id, { status: "sending", pendingTo: to, error: null });
-    for (const id of to) this.enqueue(id, { type: "msg", share: s.id, id: m.id, at: m.at, text: m.text }, { messageId: m.id });
+    // The same message again, with everything it carried (thread, bot, mentions, card).
+    const extra = Object.fromEntries(["replyTo", "thread", "bot", "mentions", "people", "card"].filter((k) => m[k] && (!Array.isArray(m[k]) || m[k].length)).map((k) => [k, m[k]]));
+    for (const id of to) this.enqueue(id, { type: "msg", share: s.id, id: m.id, at: m.at, text: m.text, ...extra, ...(s.kind === "group" ? { v: s.version } : {}) }, { messageId: m.id });
     void this.flushOutbox();
     return this.messageView(this.store.get("peerMessages", m.id));
   }
@@ -695,6 +824,24 @@ export class Peers extends EventEmitter {
         this.emit("live", { type: "message", shareId: s.id, message: this.messageView(this.store.get("peerMessages", m.id)) });
         return;
       }
+      case "edit":
+      case "unsend": {
+        const s = this.memberShare(body.share, from);
+        const m = s && this.store.get("peerMessages", String(body.msg || ""));
+        // Only whoever wrote it: the envelope is signed by `from`, and it must be the author.
+        if (!m || m.shareId !== s.id || m.from !== from || m.deletedAt) return;
+        if (body.type === "edit") {
+          const text = String(body.text || "").slice(0, PEER_LIMITS.text);
+          if (!text.trim() || m.bot || m.card) return;
+          const at = typeof body.at === "string" && Number.isFinite(Date.parse(body.at)) ? body.at : now();
+          this.store.patch("peerMessages", m.id, { text, editedAt: at });
+          this.afterChange(s, m, text);
+        } else {
+          this.store.patch("peerMessages", m.id, tombstone());
+          this.afterChange(s, m, null);
+        }
+        return;
+      }
       default:
         // A meeting being agreed (meetings.mjs checks who may say what); anything else is a
         // newer Colmena's message type: ignored.
@@ -746,27 +893,38 @@ export class Peers extends EventEmitter {
     const mentions = cleanMentions(body.mentions);
     const people = (Array.isArray(body.people) ? body.people : []).filter((a) => isAddress(a) && s.members.some((m) => m.id === a)).slice(0, 16);
     const card = body.card && typeof body.card === "object" ? body.card : null; // checked by whoever reads it (meetings.mjs)
+    // A thread reply: its root must be here (a reply to a reply goes to the root); a root we
+    // never got leaves it as a plain message.
+    let root = typeof body.thread === "string" ? this.store.get("peerMessages", body.thread.slice(0, 64)) : null;
+    if (root?.thread) root = this.store.get("peerMessages", root.thread);
+    if (root && root.shareId !== s.id) root = null;
+    const named = people.includes(this.address);
+    // In a group, a thread only calls those in it: its author, whoever replied, whoever is named.
+    const calls = !root || s.kind === "dm" || named || root.from === this.address || this.store.where("peerMessages", "thread", root.id).some((r) => r.from === this.address);
     const m = this.store.put("peerMessages", {
       id: body.id, shareId: s.id, from: c.id, text, at, receivedAt: now(), status: "received",
-      ...(typeof body.replyTo === "string" ? { replyTo: body.replyTo.slice(0, 64) } : {}), ...(bot ? { bot } : {}), ...(mentions.length ? { mentions } : {}), ...(people.length ? { people } : {}), ...(card ? { card } : {}),
+      ...(typeof body.replyTo === "string" ? { replyTo: body.replyTo.slice(0, 64) } : {}), ...(root ? { thread: root.id } : {}), ...(bot ? { bot } : {}), ...(mentions.length ? { mentions } : {}), ...(people.length ? { people } : {}), ...(card ? { card } : {}),
     });
-    this.store.patch("peerShares", s.id, { lastAt: at > (s.lastAt || "") ? at : s.lastAt, lastLine: lastLineOf((bot ? bot.name + ": " : "") + text), lastFrom: c.id, lastFromOther: c.id, unread: (s.unread || 0) + 1 });
+    this.store.patch("peerShares", s.id, { lastAt: at > (s.lastAt || "") ? at : s.lastAt, lastLine: lastLineOf((bot ? bot.name + ": " : "") + text), lastFrom: c.id, lastFromOther: c.id, unread: (s.unread || 0) + (calls ? 1 : 0) });
     this.typing.get(s.id)?.delete(bot ? c.id + "#" + bot.name : c.id);
     this.emit("live", { type: "message", shareId: s.id, message: this.messageView(m) });
+    if (root) this.emitMessage(s.id, root.id);
     this.emit("live", this.live(s.id));
     const share = this.store.get("peerShares", s.id);
     this.emit("posted", { share, message: m, mine: false });
+    if (!calls) return;
     const who = bot ? bot.name + " (bot de " + c.name.split(" ")[0] + ")" : c.name;
-    const named = people.includes(this.address);
-    this.notify({ title: named ? who + " te ha mencionado" + (share.kind === "dm" ? "" : " en «" + share.title + "»") : share.kind === "dm" ? who : who + " en «" + share.title + "»", text: lastLineOf(text), shareId: s.id, mention: named });
+    const where = share.kind === "dm" ? "" : " en «" + share.title + "»";
+    const title = named ? who + " te ha mencionado" + where : root ? who + " ha respondido en un hilo" + where : share.kind === "dm" ? who : who + where;
+    this.notify({ title, text: lastLineOf(text), shareId: s.id, mention: named, thread: root?.id || null });
   }
-  notify({ title, text, shareId, mention = false }) {
+  notify({ title, text, shareId, mention = false, thread = null }) {
     if (!this.notifier) return;
     // One notice per conversation: the newest replaces the one you did not read.
     for (const n of this.store.list("notifications").filter((n) => n.peerShare === shareId && !n.read)) this.store.remove("notifications", n.id);
     try {
       // A mention has its own sound and gets through «Avísame de: lo importante».
-      this.notifier.notify({ kind: mention ? "mention" : "message", title, text, url: "/con/" + shareId, extra: { peerShare: shareId } });
+      this.notifier.notify({ kind: mention ? "mention" : "message", title, text, url: "/con/" + shareId + (thread ? "?hilo=" + thread : ""), extra: { peerShare: shareId } });
     } catch (error) {
       this.log("No se pudo avisar: " + error.message);
     }

@@ -22,6 +22,9 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 - **Bandeja de salida** (`peerOutbox`): todo se pone en cola y se reintenta hasta que el buzón lo acepta; un mensaje pasa de «Enviando…» a enviado cuando todas sus copias han salido.
 - **Estado** (`settings.status`, `statusNow` en `server/notifications.mjs`): «No molestar» o «Fuera» hasta una hora o hasta quitarlo. Viaja en el perfil firmado (`profile.status`) a tus contactos, que lo ven junto a tu nombre; mientras dura, `shouldPop` no saca ningún aviso ni suena (todo queda en Hoy). Caducado vale «Disponible».
 - **Menciones de personas**: el mensaje lleva `people` (direcciones de miembros, hasta 16). A quien mencionan le llega un aviso `mention`, con su propio sonido, que salta también con «Solo lo importante».
+- **Hilos**: una respuesta lleva `thread` (el id del primer mensaje; un nivel). Fuera de su hilo no se ve en la conversación: el primer mensaje dice cuántas respuestas tiene. En un grupo solo avisa a quien está en el hilo (quien lo empezó, quien ha respondido, quien sale mencionado). `replyTo` sigue siendo «contesta a» (lo usan los bots, que responden en el hilo si se les pregunta en uno).
+- **Editar y borrar**: `edit {share,msg,text,at}` y `unsend {share,msg}`. Cada Colmena solo los acepta si el sobre (firmado por el remitente) viene del autor del mensaje; lo de los bots no se edita, solo se borra; una reunión se cancela, no se borra. Borrado queda «Mensaje borrado» sin texto, menciones ni reacciones, y el aviso sin leer que lo mostraba se va.
+- **Búsqueda**: `search(q)` en este ordenador (todas las palabras, sin acentos ni mayúsculas), en una conversación o en todas (Ctrl+K). El buzón nunca ve qué buscas.
 - **Límites**: 120 mensajes por minuto por remitente, 8000 caracteres por mensaje, 20 invitaciones abiertas. Los mensajes de otras personas se muestran como texto plano, nunca como HTML ni Markdown.
 
 ## Buzón (`relay/server.mjs`)

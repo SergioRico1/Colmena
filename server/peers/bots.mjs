@@ -102,7 +102,7 @@ export class PeerBots {
       const text = String(res?.text || "").trim().slice(0, PEER_BOT_LIMITS.answer);
       if (!text) return;
       if (this.store.get("peerShares", share.id)?.leftAt) return;
-      this.peers.post(share.id, text, { bot: face, replyTo: message.id });
+      this.peers.post(share.id, text, { bot: face, replyTo: message.id, thread: message.thread || null }); // asked in a thread: answers there
     } catch (error) {
       this.localNote(share, bot, "No he podido contestar: " + (error.message || "error desconocido"));
     } finally {
