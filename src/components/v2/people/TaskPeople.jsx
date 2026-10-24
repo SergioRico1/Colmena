@@ -13,7 +13,7 @@ const ASKS = [["pregunta", "Pregúntame"], ["siempre", "Siempre"], ["nunca", "Nu
 
 export default function TaskPeople({ taskId, project = null }) {
   const { peers } = useStore();
-  const { view, share, invite } = useTaskPeople(taskId);
+  const { view, share, invite, askReview } = useTaskPeople(taskId);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(null);
   const box = useRef(null);
@@ -72,6 +72,20 @@ export default function TaskPeople({ taskId, project = null }) {
               );
             }) : <span style={{ fontSize: "14px", color: "#5C606C" }}>{"Aún no hablas con nadie. Invita a alguien en Chats › Nueva."}</span>}
           </div>
+          {contacts.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
+              <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                <strong style={{ fontSize: "14px", fontWeight: 600 }}>{"Pedir revisión a…"}</strong>
+                <span style={{ fontSize: "12px", lineHeight: 1.5, color: "#5C606C" }}>{"Le llegan el resumen y los cambios; comenta líneas y su bot puede revisarlo con su cuenta. Su revisión vuelve aquí y Bruno se pone con ella."}</span>
+              </span>
+              <span style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {contacts.map((c) => {
+                  const pending = (view.reviews || []).find((r) => r.person.id === c.id && r.state === "asked");
+                  return <button key={c.id} type="button" disabled={!!pending} onClick={async () => { setError(null); try { await askReview(c.id); } catch (e) { setError(e.message); } }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: 0, borderRadius: "999px", background: pending ? "#FFF6DE" : "rgba(18,19,26,.06)", cursor: pending ? "default" : "pointer", fontSize: "12px", fontWeight: 600, color: "#12131A" }}><PeerAvatar person={c} size={24} />{pending ? c.name.split(" ")[0] + " lo está revisando" : c.name.split(" ")[0]}</button>;
+                })}
+              </span>
+            </div>
+          ) : null}
           {project && contacts.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
               <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>

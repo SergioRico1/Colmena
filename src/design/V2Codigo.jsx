@@ -692,6 +692,53 @@ export function View({ v }) {
                     {"Bruno: Paso los colores a variables y ahora reviso el contraste del checkout."}
                   </span>
                 </div>
+                <div style={{display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C"}}>
+                  <span style={{display: "flex", flexDirection: "column", gap: "4px"}}>
+                    <strong style={{font: "600 19px/1.2 'Bricolage Grotesque', sans-serif"}}>
+                      {"Sergio te pide que lo revises"}
+                    </strong>
+                    <span style={{fontSize: "14px", color: "#3D404A"}}>
+                      {"«Mira sobre todo el contraste del checkout»"}
+                    </span>
+                  </span>
+                  <div style={{display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 12px", borderRadius: "14px", background: "#FAFAF8"}}>
+                    <span style={{padding: "3px 8px", borderRadius: "999px", background: "#FFF1E0", color: "#9A4A00", font: "600 11px/1.3 'Geist Mono', monospace"}}>
+                      {"P1"}
+                    </span>
+                    <span style={{flex: "1", display: "flex", flexDirection: "column", gap: "2px", fontSize: "14px"}}>
+                      <strong style={{fontWeight: "600"}}>
+                        {"Sin alternativa para navegadores sin light-dark()"}
+                      </strong>
+                      <span style={{font: "400 12px/1.3 'Geist Mono', monospace", color: "#8C8F99"}}>
+                        {"src/theme/dark.css:11"}
+                      </span>
+                    </span>
+                  </div>
+                  <div style={{display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 12px", borderRadius: "14px", background: "#FAFAF8"}}>
+                    <span style={{padding: "3px 8px", borderRadius: "999px", background: "#FFF6DE", color: "#6B4E00", font: "600 11px/1.3 'Geist Mono', monospace"}}>
+                      {"P2"}
+                    </span>
+                    <span style={{flex: "1", display: "flex", flexDirection: "column", gap: "2px", fontSize: "14px"}}>
+                      <strong style={{fontWeight: "600"}}>
+                        {"El enlace del carrito no llega a 4,5:1 en oscuro"}
+                      </strong>
+                      <span style={{font: "400 12px/1.3 'Geist Mono', monospace", color: "#8C8F99"}}>
+                        {"src/theme/dark.css:24 · de tu bot"}
+                      </span>
+                    </span>
+                  </div>
+                  <span style={{display: "flex", flexWrap: "wrap", gap: "8px"}}>
+                    <button type="button" style={{height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                      {"Revisar con mi bot"}
+                    </button>
+                    <button type="button" style={{height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                      {"Enviar revisión (2)"}
+                    </button>
+                  </span>
+                  <span style={{fontSize: "12px", color: "#8C8F99"}}>
+                    {"Tu bot revisa con tu cuenta de IA y solo ve los cambios, como contenido de otra persona."}
+                  </span>
+                </div>
                 <div style={{display: "flex", flexDirection: "column", gap: "12px"}}>
                   <span style={{display: "flex", alignItems: "center", gap: "10px"}}>
                     <strong style={{flex: "1", font: "600 18px/1.2 'Bricolage Grotesque', sans-serif"}}>
@@ -1075,6 +1122,30 @@ export function View({ v }) {
                             </span>
                             <span aria-hidden="true" style={{width: "22px", height: "22px", borderRadius: "50%", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
                           </button>
+                          <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                            <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                              <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                {"Pedir revisión a…"}
+                              </strong>
+                              <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                {"Le llegan el resumen y los cambios; comenta líneas y su bot puede revisarlo con su cuenta. Su revisión vuelve aquí y Bruno se pone con ella."}
+                              </span>
+                            </span>
+                            <span style={{display: "flex", flexWrap: "wrap", gap: "6px"}}>
+                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFF6DE"}}>
+                                <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", font: "600 8px/1 'Geist', sans-serif"}}>
+                                  {"MR"}
+                                </span>
+                                {"Marta lo está revisando"}
+                              </button>
+                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
+                                <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", font: "600 8px/1 'Geist', sans-serif"}}>
+                                  {"LG"}
+                                </span>
+                                {"Luis"}
+                              </button>
+                            </span>
+                          </div>
                           <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
                             <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
                               <strong style={{fontSize: "14px", fontWeight: "600"}}>

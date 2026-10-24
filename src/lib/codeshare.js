@@ -1,7 +1,7 @@
 // A «Código» task shared with people (server/peers/codeshare.mjs), in the browser: who a task
 // of yours is shared with and who is looking at it; the ones shared with you, kept live.
 import { useCallback, useEffect, useState } from "react";
-import { get, post, put } from "./api.js";
+import { del, get, post, put } from "./api.js";
 
 /** «I am looking at it» while the window is visible, every 30 s; «not any more» on leaving. */
 function useLooking(body) {
@@ -35,11 +35,12 @@ export function useTaskPeople(taskId, { looking = true } = {}) {
     if (ev.task !== taskId) return;
     if (ev.viewers) setView((v) => (v ? { ...v, viewers: ev.viewers } : v));
     if (ev.votes) setView((v) => (v ? { ...v, votes: ev.votes } : v));
-    if (ev.comments) void load();
+    if (ev.comments || ev.reviews) void load();
   }, [taskId, load]));
   const share = useCallback(async (people) => setView(await put("/peers/code/tasks/" + encodeURIComponent(taskId) + "/people", { people })), [taskId]);
+  const askReview = useCallback(async (person, note = "") => setView(await post("/peers/code/tasks/" + encodeURIComponent(taskId) + "/review", { person, note })), [taskId]);
   const invite = useCallback(async (projectId, people) => { await put("/peers/code/projects/" + encodeURIComponent(projectId) + "/people", { people }); await load(); }, [load]);
-  return { view, load, share, invite };
+  return { view, load, share, invite, askReview };
 }
 
 /** The tasks other people share with you. */
@@ -66,5 +67,12 @@ export function useSharedTask(id) {
   const vote = useCallback(async (action, text = "") => setState({ item: await post("/peers/code/shared/" + encodeURIComponent(id) + "/plan", { action, text }), error: null }), [id]);
   const askDiff = useCallback(() => post("/peers/code/shared/" + encodeURIComponent(id) + "/diff"), [id]);
   const comment = useCallback(async (c) => setState({ item: await post("/peers/code/shared/" + encodeURIComponent(id) + "/comments", c), error: null }), [id]);
-  return { ...state, load, vote, askDiff, comment };
+  const base = "/peers/code/shared/" + encodeURIComponent(id) + "/review";
+  const review = {
+    add: async (f) => setState({ item: await post(base + "/draft", f), error: null }),
+    remove: async (fid) => setState({ item: await del(base + "/draft/" + encodeURIComponent(fid)), error: null }),
+    bot: async () => setState({ item: await post(base + "/bot"), error: null }),
+    send: async (verdict, summary = "") => setState({ item: await post(base + "/send", { verdict, summary }), error: null }),
+  };
+  return { ...state, load, vote, askDiff, comment, review };
 }

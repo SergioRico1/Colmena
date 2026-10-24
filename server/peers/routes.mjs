@@ -101,6 +101,13 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   app.put("/api/peers/code/projects/:project/people", run((req, p) => codeShare(p).inviteProject(projectId.parse(req.params.project), check(z.object({ people: z.array(z.object({ id: address, comments: comments.optional() }).strict()).max(16) }).strict(), req.body).people)));
   app.post("/api/peers/code/comments/:id/forward", run((req, p) => codeShare(p).forwardComment(z.string().max(80).parse(req.params.id))));
   app.post("/api/peers/code/comments/:id/drop", run((req, p) => codeShare(p).dropComment(z.string().max(80).parse(req.params.id))));
+  // «Pedir revisión a…»: the owner asks; the reviewer drafts (by hand or with their bot) and sends.
+  const finding = z.object({ severity: z.enum(["P0", "P1", "P2", "P3"]), title: z.string().trim().max(160), file: z.string().max(300).nullable().optional(), line: z.number().int().min(0).max(10_000_000).nullable().optional(), detail: z.string().max(800).optional() }).strict();
+  app.post("/api/peers/code/tasks/:task/review", run((req, p) => { const data = check(z.object({ person: address, note: z.string().max(2000).optional() }).strict(), req.body); return codeShare(p).askReview(id.parse(req.params.task), data.person, data.note || ""); }));
+  app.post("/api/peers/code/shared/:id/review/draft", run((req, p) => codeShare(p).draftAdd(id.parse(req.params.id), check(finding, req.body))));
+  app.delete("/api/peers/code/shared/:id/review/draft/:finding", run((req, p) => codeShare(p).draftRemove(id.parse(req.params.id), z.string().max(20).parse(req.params.finding))));
+  app.post("/api/peers/code/shared/:id/review/bot", run((req, p) => codeShare(p).botReview(id.parse(req.params.id))));
+  app.post("/api/peers/code/shared/:id/review/send", run((req, p) => codeShare(p).submitReview(id.parse(req.params.id), check(z.object({ verdict: z.enum(["approve", "changes"]), summary: z.string().max(1200).optional() }).strict(), req.body))));
   app.get("/api/peers/code/invited", run((_req, p) => ({ items: codeShare(p).invitedProjects() })));
   app.post("/api/peers/code/shared/:id/diff", run((req, p) => codeShare(p).requestDiff(id.parse(req.params.id))));
   app.post("/api/peers/code/shared/:id/comments", run((req, p) => codeShare(p).comment(id.parse(req.params.id), check(z.object({ file: z.string().max(400), line: z.number().int().min(0).max(10_000_000), text: z.string().trim().min(1).max(2000), excerpt: z.string().max(2000).optional() }).strict(), req.body))));

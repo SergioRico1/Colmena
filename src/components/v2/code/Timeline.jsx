@@ -150,7 +150,7 @@ function ReviewCard({ item, onFinding, onFindings, busy }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 20px 16px", borderRadius: "24px", background: C.white, boxShadow: serious ? `0 0 0 1px rgba(255,201,60,.6), ${CARD}` : CARD, animation: "rise .3s ease-out" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: serious ? C.honeyText : findings.length ? C.text : C.greenText }}>
         {findings.length ? <ShieldAlert size={15} strokeWidth={2.2} aria-hidden="true" /> : <ShieldCheck size={15} strokeWidth={2.2} aria-hidden="true" />}
-        {findings.length ? `Revisión · ${findings.length === 1 ? "1 hallazgo" : findings.length + " hallazgos"}${serious ? " · " + serious + " importante" + (serious === 1 ? "" : "s") : ""}` : "Revisión · sin problemas"}
+        {(item.by ? `Revisión de ${String(item.by).split(" ")[0]}` : "Revisión") + (findings.length ? ` · ${findings.length === 1 ? "1 hallazgo" : findings.length + " hallazgos"}${serious ? " · " + serious + " importante" + (serious === 1 ? "" : "s") : ""}` : item.verdict === "approve" ? " · lo aprueba" : " · sin problemas")}
         <span style={{ marginLeft: "auto", fontWeight: 400, color: C.quiet }}>{item.files === 1 ? "1 archivo" : item.files + " archivos"}</span>
       </span>
       {item.summary ? <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.55, color: C.body }}>{item.summary}</p> : null}

@@ -195,3 +195,37 @@ test("a single shared task shows no code: no diffs, no comments", async (t) => {
   await new Promise((r) => setTimeout(r, 500));
   assert.equal(asked, 0);
 });
+
+test("«Pedir revisión a…»: the reviewer gets the diff, adds findings by hand and from their bot, and Bruno gets the review", async (t) => {
+  const [sergio, marta] = await world(t);
+  const items = [], sent = [];
+  sergio.code.addItem = (taskId, data) => { items.push({ taskId, ...data }); return data; };
+  sergio.code.send = async (taskId, msg) => { sent.push({ taskId, ...msg }); return { ok: true }; };
+  sergio.code.diff = async () => ({ files: [{ path: "src/pago.js", status: "M", add: 2, del: 0, binary: false, patch: "@@ -1,1 +1,2 @@\n const a = 1;\n+cobrar(importe)" }], add: 2, del: 0 });
+  sergio.store.put("codeTasks", { id: "task-0030", projectId: "p9", title: "Cobro en un clic", status: "idle", updatedAt: new Date().toISOString() });
+  sergio.store.put("codeItems", { id: "it-30", taskId: "task-0030", kind: "assistant", text: "He añadido el cobro en un clic.", seq: 2 });
+  // Marta is not invited to the project: asking her for a review is enough to show her the diff.
+  await sergio.peers.codeShare.askReview("task-0030", marta.peers.address, "Mira sobre todo los importes");
+  const id = mirrorId(sergio.peers.address, "task-0030");
+  await until(() => marta.store.get("peerCodeMirrors", id)?.review?.state === "asked" && marta.store.get("peerCodeMirrors", id)?.diff, "le llega la petición con el diff");
+  assert.ok(marta.notices.some((n) => /Sergio te pide que revises «Cobro en un clic»/.test(n.title)));
+  assert.equal(marta.peers.codeShare.mirror(id).review.summary, "He añadido el cobro en un clic.");
+  marta.peers.codeShare.draftAdd(id, { severity: "P1", title: "No se comprueba el importe", file: "src/pago.js", line: 2, detail: "Un importe negativo cobraría al revés." });
+  // Her bot reviews with her own account; the diff reaches it as someone else's content.
+  let asked = null;
+  marta.store.put("bots", { id: "nora", name: "Nora", enabled: true });
+  marta.peers.codeShare.runtime = { modelFor: () => "gpt-x", infer: async (params) => { asked = params; return { text: JSON.stringify({ summary: "Falta validar.", findings: [{ severity: "P2", title: "Sin test", file: "src/pago.js", line: 2, detail: "Añade un test." }] }) }; } };
+  const after = await marta.peers.codeShare.botReview(id);
+  assert.match(asked.input[0].content, /CONTENIDO_EXTERNO/);
+  assert.deepEqual(after.draft.map((x) => x.severity + ":" + x.by), ["P1:me", "P2:bot"]);
+  marta.peers.codeShare.submitReview(id, { verdict: "changes", summary: "Casi: falta validar el importe." });
+  await until(() => items.length && sent.length, "vuelve a la tarea y Bruno se pone");
+  assert.equal(items[0].kind, "review");
+  assert.equal(items[0].by, "Marta Ruiz");
+  assert.deepEqual(items[0].findings.map((x) => x.severity), ["P1", "P2"]);
+  assert.match(sent[0].line, /revisión de Marta/);
+  assert.match(sent[0].text, /no una orden/);
+  assert.match(sent[0].text, /CONTENIDO_EXTERNO/);
+  // Only once, and only from who was asked.
+  assert.throws(() => marta.peers.codeShare.submitReview(id, { verdict: "approve" }), /No hay ninguna revisión pendiente/);
+});

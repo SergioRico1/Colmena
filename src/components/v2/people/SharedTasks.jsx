@@ -49,7 +49,7 @@ export function SharedShelf({ current = null }) {
 
 /** One task shared with you. */
 export function SharedTask({ id }) {
-  const { item, error, vote, askDiff, comment } = useSharedTask(id);
+  const { item, error, vote, askDiff, comment, review } = useSharedTask(id);
   const [asked, setAsked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [asking, setAsking] = useState(false);
@@ -161,8 +161,10 @@ export function SharedTask({ id }) {
           <p style={{ margin: 0, fontSize: "15px", color: "#5C606C" }}>{"Aún no hay plan. Te avisamos cuando Bruno proponga uno, y cuando la PR esté lista o falle el CI."}</p>
         )}
 
-        {item.projectInfo ? (
-          <Changes item={item} asked={asked} onAsk={async () => { setAsked(true); try { await askDiff(); } catch (e) { setProblem(e.message); setAsked(false); } }} onComment={comment} first={first} />
+        {item.review ? <ReviewPanel item={item} review={review} first={first} onError={setProblem} /> : null}
+
+        {item.projectInfo || item.review ? (
+          <Changes item={item} asked={asked} onAsk={async () => { setAsked(true); try { await askDiff(); } catch (e) { setProblem(e.message); setAsked(false); } }} onComment={item.review?.state === "asked" ? (c) => review.add({ severity: c.severity || "P2", title: c.text, file: c.file, line: c.line, detail: "" }) : comment} reviewing={item.review?.state === "asked"} first={first} />
         ) : null}
 
         <p style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#6B6F7A" }}><Lock size={13} strokeWidth={2.2} aria-hidden="true" />{item.projectInfo ? "La tarea va en el ordenador de " + first + ". Los cambios te llegan cifrados; el código está en vuestro repositorio." : "La tarea va en el ordenador de " + first + ". Ves lo que hace, nunca su código ni sus archivos."}</p>
@@ -176,7 +178,7 @@ function Empty({ text }) {
 }
 
 // ---- the changes of a task of a project you were invited to, with comments on lines ----
-const COMMENT_STATE = { sent: "Enviado", asked: "Lo verá y decidirá si se lo pasa a Bruno", kept: "Lo verá", dropped: "Descartado" };
+const COMMENT_STATE = { sent: "Enviado", asked: "Lo verá y decidirá si se lo pasa a Bruno", kept: "Lo verá", dropped: "Descartado", draft: "En tu revisión (aún sin enviar)" };
 /** A file's patch as rows: [{kind, text, line}] (line: the new file's line, for comments). */
 function patchRows(patch) {
   const rows = [];
@@ -192,16 +194,17 @@ function patchRows(patch) {
   }
   return rows;
 }
-function Changes({ item, asked, onAsk, onComment, first }) {
+function Changes({ item, asked, onAsk, onComment, first, reviewing = false }) {
   const diff = item.diff;
   const [at, setAt] = useState(null); // {file, line, text}
   const [words, setWords] = useState("");
   const [busy, setBusy] = useState(false);
-  const comments = item.comments || [];
+  const [severity, setSeverity] = useState("P2");
+  const comments = reviewing ? (item.draft || []).filter((x) => x.by === "me").map((x) => ({ id: x.id, file: x.file, line: x.line, text: "[" + x.severity + "] " + x.title, state: "draft" })) : item.comments || [];
   const send = async () => {
     if (!words.trim()) return;
     setBusy(true);
-    try { await onComment({ file: at.file, line: at.line, text: words.trim(), excerpt: at.text }); setAt(null); setWords(""); } finally { setBusy(false); }
+    try { await onComment({ file: at.file, line: at.line, text: words.trim(), excerpt: at.text, severity }); setAt(null); setWords(""); setSeverity("P2"); } finally { setBusy(false); }
   };
   const ROW = { add: ["#E8F5EE", "#0B6B4A", "+"], del: ["#FCEBEA", "#B4231A", "−"], ctx: ["transparent", "#3D404A", " "], hunk: ["#F4F4F0", "#8C8F99", ""] };
   return (
@@ -238,7 +241,8 @@ function Changes({ item, asked, onAsk, onComment, first }) {
                         <textarea autoFocus value={words} onChange={(e) => setWords(e.target.value)} maxLength={2000} placeholder={"Tu comentario sobre la línea " + r.line + ". " + first + " decide si se lo pasa a Bruno."} aria-label="Comentario"
                           onKeyDown={(e) => { if (e.key === "Escape") setAt(null); if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send(); }}
                           style={{ minHeight: "64px", padding: "10px 12px", border: 0, borderRadius: "12px", outline: "none", resize: "vertical", background: "#F7F7F4", font: "inherit", fontSize: "14px" }} />
-                        <span style={{ display: "flex", gap: "6px" }}>
+                        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
+                          {reviewing ? <span role="radiogroup" aria-label="Gravedad" style={{ display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.05)" }}>{["P0", "P1", "P2", "P3"].map((v) => <button key={v} type="button" role="radio" aria-checked={severity === v ? "true" : "false"} onClick={() => setSeverity(v)} style={{ height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", cursor: "pointer", font: "600 11px/1 'Geist Mono', monospace", background: severity === v ? "#FFFFFF" : "transparent", boxShadow: severity === v ? "0 1px 2px rgba(18,19,26,.12)" : "none" }}>{v}</button>)}</span> : null}
                           <button type="button" disabled={busy || !words.trim()} onClick={send} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: words.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>{"Comentar"}</button>
                           <button type="button" onClick={() => setAt(null)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>{"Cancelar"}</button>
                         </span>
@@ -251,6 +255,50 @@ function Changes({ item, asked, onAsk, onComment, first }) {
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ---- a review someone asked you for: your findings (by hand and from your bot), then send ----
+const SEV = { P0: ["#FCEBEA", "#B4231A"], P1: ["#FFF1E0", "#9A4A00"], P2: ["#FFF6DE", "#6B4E00"], P3: ["#F2F2EE", "#5C606C"] };
+function ReviewPanel({ item, review, first, onError }) {
+  const r = item.review;
+  const [busy, setBusy] = useState(null);
+  const [summary, setSummary] = useState("");
+  const draft = item.draft || [];
+  const run = async (what, fn) => { setBusy(what); onError(null); try { await fn(); } catch (e) { onError(e.message); } finally { setBusy(null); } };
+  if (r.state === "sent") {
+    return <p role="status" style={{ margin: 0, padding: "14px 16px", borderRadius: "18px", background: "#E8F5EE", color: "#0B6B4A", fontSize: "14px" }}>{(r.verdict === "approve" ? "Has aprobado los cambios. " : "Has enviado tu revisión. ") + first + " la tiene en su tarea y Bruno se pone con lo que haga falta."}</p>;
+  }
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C", animation: "rise .3s ease-out" }}>
+      <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <strong style={{ font: "600 19px/1.2 'Bricolage Grotesque', sans-serif" }}>{first + " te pide que lo revises"}</strong>
+        {r.note ? <span style={{ fontSize: "14px", color: "#3D404A" }}>{"«" + r.note + "»"}</span> : null}
+      </span>
+      {r.summary ? <p style={{ margin: 0, padding: "12px 14px", borderRadius: "14px", background: "#F4F4F0", fontSize: "14px", lineHeight: 1.55, color: "#2B2E36", whiteSpace: "pre-wrap" }}>{"Bruno dice: " + r.summary}</p> : null}
+      <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Pulsa el bocadillo de una línea de los cambios para comentarla, o pide a tu bot que lo revise con tu cuenta."}</span>
+      {draft.length ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          {draft.map((x) => (
+            <div key={x.id} style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 12px", borderRadius: "14px", background: "#FAFAF8" }}>
+              <span style={{ flex: "none", padding: "3px 8px", borderRadius: "999px", background: SEV[x.severity][0], color: SEV[x.severity][1], font: "600 11px/1.3 'Geist Mono', monospace" }}>{x.severity}</span>
+              <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px", fontSize: "14px" }}>
+                <strong style={{ fontWeight: 600 }}>{x.title}</strong>
+                <span style={{ font: "400 12px/1.3 'Geist Mono', monospace", color: "#8C8F99" }}>{(x.file || "") + (x.line ? ":" + x.line : "") + (x.by === "bot" ? " · de tu bot" : "")}</span>
+                {x.detail ? <span style={{ fontSize: "13px", color: "#3D404A" }}>{x.detail}</span> : null}
+              </span>
+              <button type="button" aria-label="Quitar" onClick={() => run("rm", () => review.remove(x.id))} style={{ height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>{"Quitar"}</button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      <textarea value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={1200} placeholder={item.botSummary ? "Resumen (si lo dejas vacío, va el de tu bot: «" + item.botSummary + "»)" : "Resumen para " + first + " (opcional)"} aria-label="Resumen de tu revisión" style={{ minHeight: "60px", padding: "10px 12px", border: 0, borderRadius: "14px", outline: "none", resize: "vertical", background: "#F7F7F4", font: "inherit", fontSize: "14px" }} />
+      <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        <button type="button" disabled={!!busy || !item.diff?.files?.length} onClick={() => run("bot", () => review.bot())} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>{busy === "bot" ? "Tu bot está revisando…" : "Revisar con mi bot"}</button>
+        <button type="button" disabled={!!busy} onClick={() => run("send", () => review.send(draft.length ? "changes" : "approve", summary))} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>{draft.length ? "Enviar revisión (" + draft.length + ")" : "Aprobar sin cambios"}</button>
+      </span>
+      <span style={{ fontSize: "12px", color: "#8C8F99" }}>{"Tu bot revisa con tu cuenta de IA y solo ve los cambios, como contenido de otra persona."}</span>
     </div>
   );
 }

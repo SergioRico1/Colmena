@@ -149,7 +149,7 @@ peers.start().then(() => peers.announceProfile()).catch((error) => console.warn(
 peers.meetings = new Meetings({ peers, store, calendar: connectedCalendar(connections) }).start();
 new PeerBots({ peers, store, runtime }).start();
 // A Código task shared with people: they see what it is doing; it always runs here.
-peers.codeShare = new CodeShare({ peers, store, code: runtime.code }).start();
+peers.codeShare = new CodeShare({ peers, store, code: runtime.code, runtime }).start();
 // Files and deliverables shared with people: sealed here, opened only in their Colmenas.
 peers.files = new PeerFiles({ peers, store, artifactFile: artifactSource({ store, rootOf: (id) => runtime.root(id) }) }).start();
 // Errands: your bots can ask the bots of people you talk to (their owner approves), and theirs
