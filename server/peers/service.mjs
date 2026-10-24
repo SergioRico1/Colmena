@@ -869,7 +869,7 @@ export class Peers extends EventEmitter {
         // newer Colmena's message type: ignored.
         if (/^meet\.[a-z]+$/.test(body.type)) this.emit("meet", { from: c, body });
         // A Código task shared with you, or one you share (codeshare.mjs checks who may say what).
-        else if (/^code\.[a-z]+$/.test(body.type)) this.emit("code", { from: c, body });
+        else if (/^code\.[a-z]+(\.[a-z]+)?$/.test(body.type)) this.emit("code", { from: c, body });
         // An errand for one of your bots, or the answer to one of theirs (errands.mjs checks who).
         else if (/^errand\.[a-z]+$/.test(body.type)) this.emit("errand", { from: c, body });
         return;

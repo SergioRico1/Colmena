@@ -50,6 +50,8 @@ const SECTIONS = [
     "En una tarea de Código pulsa «Compartir» y elige a quién. Esa persona la ve en su Código, en «Compartidas contigo»: en qué está, el plan de Bruno y la PR con su CI. Nunca tu código, tus archivos ni lo que hablas con Bruno.",
     "Le avisa cuando la PR está lista o falla el CI, y cuando Bruno propone un plan. Cada uno ve quién está mirando la tarea en ese momento.",
     "Puede aprobar el plan o pedir cambios. Eso no pone a Bruno a trabajar: te llega a ti, y tú decides «Implementar» o «Refinar con esto». Lo que pide va a Bruno como sugerencia de otra persona, nunca como una orden.",
+    "En «Compartir» también puedes invitar a todo el proyecto: verá todas sus tareas, lo que hace Bruno en directo y los cambios, y podrá comentar líneas. El código lo coge de vuestro repositorio (GitHub), nunca del buzón.",
+    "Para cada persona eliges qué pasa con sus comentarios: «Pregúntame» (te salen para pasárselos a Bruno o descartarlos), «Siempre» (van directos) o «Nunca» (solo los ves tú). Bruno trabaja siempre en tu ordenador y los recibe como opinión de otra persona; subir, publicar o borrar sigue preguntándote.",
   ]],
   ["buzon", Inbox, "Qué guarda el buzón", [
     "Los mensajes viajan por el buzón de Colmena como sobres cerrados: ve quién escribe a quién y cuándo, nunca lo que pone.",

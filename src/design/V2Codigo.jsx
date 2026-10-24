@@ -677,8 +677,119 @@ export function View({ v }) {
                     {"Aprobar no pone a Bruno a trabajar: se lo dice a Sergio, que decide."}
                   </span>
                 </div>
+                <div style={{display: "flex", flexDirection: "column", gap: "6px", padding: "14px 18px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)"}}>
+                  <span style={{display: "flex", alignItems: "center", gap: "8px", font: "500 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A"}}>
+                    <span aria-hidden="true" style={{width: "7px", height: "7px", borderRadius: "50%", background: "#1E9E6A", animation: "breathe 1.4s ease-in-out infinite"}} />
+                    {"Ahora"}
+                  </span>
+                  <span style={{fontSize: "14px", color: "#3D404A", opacity: ".72"}}>
+                    {"Leyendo src/theme/tokens.css"}
+                  </span>
+                  <span style={{fontSize: "14px", color: "#3D404A", opacity: ".72"}}>
+                    {"Editando src/theme/dark.css"}
+                  </span>
+                  <span style={{fontSize: "14px", color: "#12131A"}}>
+                    {"Bruno: Paso los colores a variables y ahora reviso el contraste del checkout."}
+                  </span>
+                </div>
+                <div style={{display: "flex", flexDirection: "column", gap: "12px"}}>
+                  <span style={{display: "flex", alignItems: "center", gap: "10px"}}>
+                    <strong style={{flex: "1", font: "600 18px/1.2 'Bricolage Grotesque', sans-serif"}}>
+                      {"Cambios "}
+                      <span style={{marginLeft: "8px", font: "500 13px/1 'Geist Mono', monospace"}}>
+                        <span style={{color: "#0B8A5F"}}>
+                          {"+128"}
+                        </span>
+                        {" "}
+                        <span style={{color: "#B4231A"}}>
+                          {"−14"}
+                        </span>
+                      </span>
+                    </strong>
+                    <button type="button" style={{height: "38px", padding: "0 16px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                      {"Actualizar"}
+                    </button>
+                  </span>
+                  <div style={{borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)", overflow: "hidden"}}>
+                    <div style={{display: "flex", gap: "10px", padding: "10px 14px", borderBottom: "1px solid rgba(18,19,26,.06)", font: "500 13px/1.3 'Geist Mono', monospace"}}>
+                      <span style={{flex: "1"}}>
+                        {"src/theme/dark.css"}
+                      </span>
+                      <span style={{color: "#0B8A5F"}}>
+                        {"+42"}
+                      </span>
+                      <span style={{color: "#B4231A"}}>
+                        {"−3"}
+                      </span>
+                    </div>
+                    <div style={{font: "400 12px/1.6 'Geist Mono', monospace"}}>
+                      <div style={{padding: "0 14px", background: "#F4F4F0", color: "#8C8F99"}}>
+                        {"@@ -10,6 +10,9 @@ :root {"}
+                      </div>
+                      <div style={{display: "grid", gridTemplateColumns: "48px 18px 1fr", background: "transparent", color: "#3D404A"}}>
+                        <span style={{padding: "0 8px", textAlign: "right", color: "#A3A6AE"}}>
+                          {"10"}
+                        </span>
+                        <span>
+                          {" "}
+                        </span>
+                        <span style={{whiteSpace: "pre"}}>
+                          {"  --radius: 14px;"}
+                        </span>
+                      </div>
+                      <div style={{display: "grid", gridTemplateColumns: "48px 18px 1fr", background: "#FCEBEA", color: "#B4231A"}}>
+                        <span style={{padding: "0 8px", textAlign: "right", color: "#A3A6AE"}} />
+                        <span>
+                          {"−"}
+                        </span>
+                        <span style={{whiteSpace: "pre"}}>
+                          {"  --ink: #12131A;"}
+                        </span>
+                      </div>
+                      <div style={{display: "grid", gridTemplateColumns: "48px 18px 1fr", background: "#E8F5EE", color: "#0B6B4A"}}>
+                        <span style={{padding: "0 8px", textAlign: "right", color: "#A3A6AE"}}>
+                          {"11"}
+                        </span>
+                        <span>
+                          {"+"}
+                        </span>
+                        <span style={{whiteSpace: "pre"}}>
+                          {"  --ink: light-dark(#12131A, #F5F5F2);"}
+                        </span>
+                      </div>
+                      <div style={{margin: "6px 14px 6px 66px", padding: "8px 12px", borderRadius: "12px", background: "#F4F6FD", fontFamily: "'Geist', sans-serif", fontSize: "13px", color: "#2B2E36"}}>
+                        {"Tú: ¿Y los navegadores sin light-dark()? Mejor con prefers-color-scheme."}
+                        <span style={{display: "block", marginTop: "2px", fontSize: "11px", color: "#6B6F7A"}}>
+                          {"Lo verá y decidirá si se lo pasa a Bruno"}
+                        </span>
+                      </div>
+                      <div style={{display: "grid", gridTemplateColumns: "48px 18px 1fr", background: "#E8F5EE", color: "#0B6B4A"}}>
+                        <span style={{padding: "0 8px", textAlign: "right", color: "#A3A6AE"}}>
+                          {"12"}
+                        </span>
+                        <span>
+                          {"+"}
+                        </span>
+                        <span style={{whiteSpace: "pre"}}>
+                          {"  --paper: light-dark(#F5F5F2, #12131A);"}
+                        </span>
+                      </div>
+                      <div style={{display: "grid", gridTemplateColumns: "48px 18px 1fr", background: "transparent", color: "#3D404A"}}>
+                        <span style={{padding: "0 8px", textAlign: "right", color: "#A3A6AE"}}>
+                          {"13"}
+                        </span>
+                        <span>
+                          {" "}
+                        </span>
+                        <span style={{whiteSpace: "pre"}}>
+                          {"  --honey: #FFC93C;"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <p style={{margin: "0", fontSize: "13px", color: "#6B6F7A"}}>
-                  {"La tarea va en el ordenador de Sergio. Ves lo que hace, nunca su código ni sus archivos."}
+                  {"La tarea va en el ordenador de Sergio. Los cambios te llegan cifrados; el código está en vuestro repositorio."}
                 </p>
               </div>
             </section>
@@ -964,6 +1075,40 @@ export function View({ v }) {
                             </span>
                             <span aria-hidden="true" style={{width: "22px", height: "22px", borderRadius: "50%", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
                           </button>
+                          <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                            <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                              <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                {"Todo el proyecto «tienda-web»"}
+                              </strong>
+                              <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                {"Verán todas sus tareas, lo que hace Bruno en directo y los cambios, y podrán comentar líneas. El código lo cogen de vuestro repositorio, no de aquí."}
+                              </span>
+                            </span>
+                            <span style={{display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "500"}}>
+                              <span aria-hidden="true" style={{width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "6px", background: "#1F4FD1", color: "#FFFFFF", fontSize: "11px"}}>
+                                {"✓"}
+                              </span>
+                              {"Marta Ruiz"}
+                            </span>
+                            <span style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginLeft: "30px", fontSize: "12px", color: "#6B6F7A"}}>
+                              {"Sus comentarios a Bruno:"}
+                              <span role="radiogroup" aria-label="Comentarios de Marta Ruiz" style={{display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.05)"}}>
+                                <button type="button" role="radio" aria-checked="true" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.12)"}}>
+                                  {"Pregúntame"}
+                                </button>
+                                <button type="button" role="radio" aria-checked="false" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
+                                  {"Siempre"}
+                                </button>
+                                <button type="button" role="radio" aria-checked="false" style={{height: "26px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
+                                  {"Nunca"}
+                                </button>
+                              </span>
+                            </span>
+                            <span style={{display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: "500"}}>
+                              <span aria-hidden="true" style={{width: "20px", height: "20px", borderRadius: "6px", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
+                              {"Luis Gómez"}
+                            </span>
+                          </div>
                         </div>
                       </>
                     ) : null}

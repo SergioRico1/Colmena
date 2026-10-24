@@ -19,7 +19,7 @@ import ShortcutsSheet, { useCodeKeys } from "../components/v2/code/Shortcuts.jsx
 import Compare from "../components/v2/code/Compare.jsx";
 import { later } from "../lib/undoToast.js";
 import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
-import TaskPeople from "../components/v2/people/TaskPeople.jsx";
+import TaskPeople, { PeerComments } from "../components/v2/people/TaskPeople.jsx";
 import { SharedTask } from "../components/v2/people/SharedTasks.jsx";
 
 /** Commands for the open task from shortcuts and the palette (TaskView listens). */
@@ -329,7 +329,7 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
               ) : null}
             </span>
           </div>
-          <TaskPeople taskId={task.id} />
+          <TaskPeople taskId={task.id} project={project ? { id: project.id, name: project.name } : null} />
           <SaveButton task={task} project={project} onDone={reload} compact={compact} />
           <button type="button" onClick={onTogglePanel} aria-pressed={panelOpen} aria-label="Panel de cambios y vista previa" title="Cambios y vista previa" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: panelOpen ? "rgba(18,19,26,.06)" : "transparent", cursor: "pointer", color: C.text }}>
             <PanelRight size={17} strokeWidth={2} aria-hidden="true" />
@@ -340,6 +340,7 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
           {running && !waiting ? <span style={{ position: "absolute", top: 0, bottom: 0, width: "35%", background: `linear-gradient(90deg, transparent, ${C.bruno}, transparent)`, animation: "sweep 1.8s ease-in-out infinite" }} /> : null}
         </div>
       </header>
+      <PeerComments taskId={task.id} />
       <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
         <div style={{ width: "100%", maxWidth: "760px", margin: "0 auto", padding: "22px clamp(18px, 3vw, 32px) 24px", display: "flex", flexDirection: "column", gap: "20px" }}>
           {rows.map((row) => <TimelineRow key={row.id} row={row} ctx={ctx} />)}

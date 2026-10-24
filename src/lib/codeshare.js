@@ -35,9 +35,11 @@ export function useTaskPeople(taskId, { looking = true } = {}) {
     if (ev.task !== taskId) return;
     if (ev.viewers) setView((v) => (v ? { ...v, viewers: ev.viewers } : v));
     if (ev.votes) setView((v) => (v ? { ...v, votes: ev.votes } : v));
-  }, [taskId]));
+    if (ev.comments) void load();
+  }, [taskId, load]));
   const share = useCallback(async (people) => setView(await put("/peers/code/tasks/" + encodeURIComponent(taskId) + "/people", { people })), [taskId]);
-  return { view, load, share };
+  const invite = useCallback(async (projectId, people) => { await put("/peers/code/projects/" + encodeURIComponent(projectId) + "/people", { people }); await load(); }, [load]);
+  return { view, load, share, invite };
 }
 
 /** The tasks other people share with you. */
@@ -58,8 +60,11 @@ export function useSharedTask(id) {
   useCodeEvents(useCallback((ev) => {
     if (ev.mirror !== id) return;
     if (ev.viewers) setState((s) => (s.item ? { ...s, item: { ...s.item, viewers: ev.viewers } } : s));
+    else if (ev.log) setState((s) => (s.item ? { ...s, item: { ...s.item, snapshot: { ...s.item.snapshot, log: ev.log } } } : s));
     else void load();
   }, [id, load]));
   const vote = useCallback(async (action, text = "") => setState({ item: await post("/peers/code/shared/" + encodeURIComponent(id) + "/plan", { action, text }), error: null }), [id]);
-  return { ...state, load, vote };
+  const askDiff = useCallback(() => post("/peers/code/shared/" + encodeURIComponent(id) + "/diff"), [id]);
+  const comment = useCallback(async (c) => setState({ item: await post("/peers/code/shared/" + encodeURIComponent(id) + "/comments", c), error: null }), [id]);
+  return { ...state, load, vote, askDiff, comment };
 }

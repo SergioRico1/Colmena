@@ -9,9 +9,11 @@ import { names } from "./PeopleMessage.jsx";
 // «Compartir» in a Código task (design/V2Codigo.dc.html, paso compartir): the people who see
 // it from their Colmena, who is looking now, and the sheet to choose them. They see what it
 // is doing, Bruno's plan and the PR; never your code, your files or your chat with Bruno.
-export default function TaskPeople({ taskId }) {
+const ASKS = [["pregunta", "Pregúntame"], ["siempre", "Siempre"], ["nunca", "Nunca"]];
+
+export default function TaskPeople({ taskId, project = null }) {
   const { peers } = useStore();
-  const { view, share } = useTaskPeople(taskId);
+  const { view, share, invite } = useTaskPeople(taskId);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(null);
   const box = useRef(null);
@@ -25,11 +27,17 @@ export default function TaskPeople({ taskId }) {
   }, [open]);
   if (!peers?.me || !view) return null;
   const contacts = (peers.contacts || []).filter((c) => c.status === "active");
-  const people = view.people || [];
+  const members = view.project?.people || [];
+  // Everyone who sees it: this task's people and the project's.
+  const own = view.people || [];
+  const people = [...own, ...members.filter((m) => !own.some((p) => p.id === m.id))];
+  const setMembers = async (next) => { setError(null); try { await invite(project.id, next); } catch (e) { setError(e.message); } };
+  const toggleMember = (id) => setMembers(members.some((m) => m.id === id) ? members.filter((m) => m.id !== id).map((m) => ({ id: m.id, comments: m.comments })) : [...members.map((m) => ({ id: m.id, comments: m.comments })), { id, comments: "pregunta" }]);
+  const setAsk = (id, comments) => setMembers(members.map((m) => ({ id: m.id, comments: m.id === id ? comments : m.comments })));
   const looking = (view.viewers || []).filter((v) => !v.me);
   const toggle = async (id) => {
     setError(null);
-    const next = people.some((p) => p.id === id) ? people.filter((p) => p.id !== id).map((p) => p.id) : [...people.map((p) => p.id), id];
+    const next = own.some((p) => p.id === id) ? own.filter((p) => p.id !== id).map((p) => p.id) : [...own.map((p) => p.id), id];
     try { await share(next); } catch (e) { setError(e.message); }
   };
   if (!contacts.length && !people.length) return null;
@@ -47,14 +55,14 @@ export default function TaskPeople({ taskId }) {
         {people.length > 3 ? <span style={{ paddingRight: "6px" }}>{"+" + (people.length - 3)}</span> : null}
       </button>
       {open ? (
-        <div role="dialog" aria-label="Compartir la tarea" style={{ position: "absolute", top: "48px", right: 0, zIndex: 40, width: "min(360px, 86vw)", padding: "18px", borderRadius: "24px", background: "rgba(255,255,255,.97)", WebkitBackdropFilter: "blur(24px)", backdropFilter: "blur(24px)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out" }}>
+        <div role="dialog" aria-label="Compartir la tarea" style={{ position: "absolute", top: "48px", right: 0, zIndex: 40, width: "min(380px, 86vw)", maxHeight: "70vh", overflowY: "auto", padding: "18px", borderRadius: "24px", background: "rgba(255,255,255,.97)", WebkitBackdropFilter: "blur(24px)", backdropFilter: "blur(24px)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <strong style={{ font: "600 18px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{"Compartir la tarea"}</strong>
             <span style={{ fontSize: "13px", lineHeight: 1.5, color: "#5C606C" }}>{"Verán en qué está, el plan de Bruno y la PR, y podrán aprobar el plan o pedir cambios. Nunca tu código, tus archivos ni lo que hablas con Bruno. Todo se hace en este ordenador."}</span>
           </span>
           <div role="group" aria-label="Personas" style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             {contacts.length ? contacts.map((c) => {
-              const on = people.some((p) => p.id === c.id);
+              const on = own.some((p) => p.id === c.id);
               return (
                 <button key={c.id} type="button" role="checkbox" aria-checked={on ? "true" : "false"} onClick={() => toggle(c.id)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: 0, borderRadius: "14px", background: on ? "rgba(31,79,209,.07)" : "transparent", cursor: "pointer", textAlign: "left" }}>
                   <PeerAvatar person={c} size={30} dot ring="#FFFFFF" />
@@ -64,6 +72,33 @@ export default function TaskPeople({ taskId }) {
               );
             }) : <span style={{ fontSize: "14px", color: "#5C606C" }}>{"Aún no hablas con nadie. Invita a alguien en Chats › Nueva."}</span>}
           </div>
+          {project && contacts.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
+              <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                <strong style={{ fontSize: "14px", fontWeight: 600 }}>{"Todo el proyecto «" + project.name + "»"}</strong>
+                <span style={{ fontSize: "12px", lineHeight: 1.5, color: "#5C606C" }}>{"Verán todas sus tareas, lo que hace Bruno en directo y los cambios, y podrán comentar líneas. El código lo cogen de vuestro repositorio, no de aquí."}</span>
+              </span>
+              {contacts.map((c) => {
+                const m = members.find((x) => x.id === c.id);
+                return (
+                  <div key={c.id} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "6px 4px" }}>
+                    <button type="button" role="checkbox" aria-checked={m ? "true" : "false"} onClick={() => toggleMember(c.id)} style={{ display: "flex", alignItems: "center", gap: "10px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left" }}>
+                      <span aria-hidden="true" style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "6px", background: m ? "#1F4FD1" : "transparent", boxShadow: m ? "none" : "inset 0 0 0 1.5px #C9CBD1", color: "#FFFFFF" }}>{m ? <Check size={12} strokeWidth={3} /> : null}</span>
+                      <span style={{ flex: 1, fontSize: "14px", fontWeight: 500 }}>{c.name}</span>
+                    </button>
+                    {m ? (
+                      <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginLeft: "30px", fontSize: "12px", color: "#6B6F7A" }}>
+                        {"Sus comentarios a Bruno:"}
+                        <span role="radiogroup" aria-label={"Comentarios de " + c.name} style={{ display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.05)" }}>
+                          {ASKS.map(([v, label]) => <button key={v} type="button" role="radio" aria-checked={m.comments === v ? "true" : "false"} onClick={() => setAsk(c.id, v)} style={{ height: "26px", padding: "0 10px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: 600, background: m.comments === v ? "#FFFFFF" : "transparent", boxShadow: m.comments === v ? "0 1px 2px rgba(18,19,26,.12)" : "none", color: "#12131A" }}>{label}</button>)}
+                        </span>
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
           {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4231A" }}>{error}</span> : null}
         </div>
       ) : null}
@@ -101,6 +136,38 @@ export function PlanVotes({ taskId, item }) {
         );
       })}
       {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4231A" }}>{error}</span> : null}
+    </div>
+  );
+}
+
+/** Comments of the people invited to the project, for you: pass one to Bruno or let it be. */
+export function PeerComments({ taskId }) {
+  const { view } = useTaskPeople(taskId, { looking: false });
+  const [busy, setBusy] = useState(null);
+  const [showKept, setShowKept] = useState(false);
+  const list = (view?.comments || []).filter((c) => c.state === "asked" || c.state === "kept");
+  if (!list.length) return null;
+  const act = async (c, what) => { setBusy(c.id); try { await post("/peers/code/comments/" + encodeURIComponent(c.id) + "/" + what); } catch {} finally { setBusy(null); } };
+  const asked = list.filter((c) => c.state === "asked");
+  const kept = list.filter((c) => c.state === "kept");
+  const row = (c) => (
+    <div key={c.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 12px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05)" }}>
+      <PeerAvatar person={c.person} size={26} />
+      <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px", fontSize: "14px" }}>
+        <span style={{ fontSize: "12px", color: "#6B6F7A" }}><strong style={{ fontWeight: 600, color: "#12131A" }}>{c.person.name.split(" ")[0]}</strong>{c.file ? " · " : ""}{c.file ? <code style={{ fontFamily: "'Geist Mono', monospace", fontSize: "12px" }}>{c.file + (c.line ? ":" + c.line : "")}</code> : null}</span>
+        <span style={{ color: "#2B2E36", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{"«" + c.text + "»"}</span>
+      </span>
+      <span style={{ display: "flex", gap: "6px" }}>
+        <button type="button" disabled={busy === c.id} onClick={() => act(c, "forward")} title="Bruno lo recibe como la opinión de otra persona, no como una orden" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>{"Pasárselo a Bruno"}</button>
+        <button type="button" disabled={busy === c.id} onClick={() => act(c, "drop")} style={{ height: "32px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>{"Descartar"}</button>
+      </span>
+    </div>
+  );
+  return (
+    <div role="region" aria-label="Comentarios de otras personas" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px clamp(18px, 3vw, 32px) 12px", background: "#F4F4F0", borderBottom: "1px solid rgba(18,19,26,.06)", animation: "fade .3s ease-out" }}>
+      {asked.map(row)}
+      {kept.length ? <button type="button" onClick={() => setShowKept((o) => !o)} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: "#5C606C" }}>{(showKept ? "Ocultar" : "Ver") + " comentarios que solo ves tú (" + kept.length + ")"}</button> : null}
+      {showKept ? kept.map(row) : null}
     </div>
   );
 }

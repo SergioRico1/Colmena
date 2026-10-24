@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight, ExternalLink, Eye, GitBranch, GitPullRequest, Lock, UsersRound } from "lucide-react";
+import { ChevronRight, Copy, ExternalLink, Eye, FileDiff, GitBranch, GitPullRequest, Lock, MessageSquare, UsersRound } from "lucide-react";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { names } from "./PeopleMessage.jsx";
 import { navigate } from "../../../lib/router.jsx";
@@ -49,7 +49,9 @@ export function SharedShelf({ current = null }) {
 
 /** One task shared with you. */
 export function SharedTask({ id }) {
-  const { item, error, vote } = useSharedTask(id);
+  const { item, error, vote, askDiff, comment } = useSharedTask(id);
+  const [asked, setAsked] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [asking, setAsking] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -90,6 +92,24 @@ export function SharedTask({ id }) {
           ) : null}
         </header>
         {gone ? <p role="status" style={{ margin: 0, padding: "12px 16px", borderRadius: "16px", background: "#FFF6DE", color: "#6B4E00", fontSize: "14px" }}>{first + " ha dejado de compartirla. Lo de abajo es como estaba."}</p> : null}
+
+        {item.projectInfo ? (
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", padding: "12px 16px", borderRadius: "18px", background: "#F4F4F0", fontSize: "13px", color: "#5C606C" }}>
+            <span style={{ flex: "1 1 260px" }}>{"Del proyecto «" + item.projectInfo.name + "», al que " + first + " te ha invitado." + (item.projectInfo.remote ? " Para tener el código, clónalo de vuestro repositorio:" : "")}</span>
+            {item.projectInfo.remote ? (
+              <button type="button" onClick={() => { navigator.clipboard?.writeText("git clone " + item.projectInfo.remote).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }).catch(() => {}); }} style={{ display: "flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "34px", padding: "0 12px", border: 0, borderRadius: "10px", background: "#FFFFFF", cursor: "pointer", font: "400 12px/1 'Geist Mono', monospace", color: "#12131A", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                {"git clone " + item.projectInfo.remote}<Copy size={13} strokeWidth={2.2} aria-hidden="true" />{copied ? <span style={{ fontFamily: "inherit", color: "#0B6B4A" }}>{"Copiado"}</span> : null}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {s.log?.length ? (
+          <div aria-live="polite" style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 18px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "8px", font: "500 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{s.running ? <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#1E9E6A", animation: "breathe 1.4s ease-in-out infinite" }} /> : null}{s.running ? "Ahora" : "Lo último que hizo"}</span>
+            {s.log.map((l, i) => <span key={i} style={{ fontSize: "14px", lineHeight: 1.45, color: l.kind === "assistant" ? "#12131A" : "#3D404A", opacity: i === s.log.length - 1 ? 1 : 0.72 }}>{(l.kind === "assistant" ? "Bruno: " : "") + l.text}</span>)}
+          </div>
+        ) : null}
 
         {s.pr ? (
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "16px 18px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)" }}>
@@ -141,7 +161,11 @@ export function SharedTask({ id }) {
           <p style={{ margin: 0, fontSize: "15px", color: "#5C606C" }}>{"Aún no hay plan. Te avisamos cuando Bruno proponga uno, y cuando la PR esté lista o falle el CI."}</p>
         )}
 
-        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#6B6F7A" }}><Lock size={13} strokeWidth={2.2} aria-hidden="true" />{"La tarea va en el ordenador de " + first + ". Ves lo que hace, nunca su código ni sus archivos."}</p>
+        {item.projectInfo ? (
+          <Changes item={item} asked={asked} onAsk={async () => { setAsked(true); try { await askDiff(); } catch (e) { setProblem(e.message); setAsked(false); } }} onComment={comment} first={first} />
+        ) : null}
+
+        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#6B6F7A" }}><Lock size={13} strokeWidth={2.2} aria-hidden="true" />{item.projectInfo ? "La tarea va en el ordenador de " + first + ". Los cambios te llegan cifrados; el código está en vuestro repositorio." : "La tarea va en el ordenador de " + first + ". Ves lo que hace, nunca su código ni sus archivos."}</p>
       </div>
     </section>
   );
@@ -149,4 +173,84 @@ export function SharedTask({ id }) {
 
 function Empty({ text }) {
   return <section style={{ flex: 1, display: "grid", placeItems: "center", padding: "40px", fontSize: "15px", color: "#5C606C" }}>{text}</section>;
+}
+
+// ---- the changes of a task of a project you were invited to, with comments on lines ----
+const COMMENT_STATE = { sent: "Enviado", asked: "Lo verá y decidirá si se lo pasa a Bruno", kept: "Lo verá", dropped: "Descartado" };
+/** A file's patch as rows: [{kind, text, line}] (line: the new file's line, for comments). */
+function patchRows(patch) {
+  const rows = [];
+  let n = 0;
+  for (const raw of String(patch || "").split("\n")) {
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)/.exec(raw);
+    if (hunk) { n = Number(hunk[1]); rows.push({ kind: "hunk", text: raw, line: null }); continue; }
+    if (raw.startsWith("diff ") || raw.startsWith("index ") || raw.startsWith("--- ") || raw.startsWith("+++ ")) continue;
+    if (raw.startsWith("+")) rows.push({ kind: "add", text: raw.slice(1), line: n++ });
+    else if (raw.startsWith("-")) rows.push({ kind: "del", text: raw.slice(1), line: null });
+    else if (raw.startsWith("\\")) continue;
+    else rows.push({ kind: "ctx", text: raw.slice(1), line: n++ });
+  }
+  return rows;
+}
+function Changes({ item, asked, onAsk, onComment, first }) {
+  const diff = item.diff;
+  const [at, setAt] = useState(null); // {file, line, text}
+  const [words, setWords] = useState("");
+  const [busy, setBusy] = useState(false);
+  const comments = item.comments || [];
+  const send = async () => {
+    if (!words.trim()) return;
+    setBusy(true);
+    try { await onComment({ file: at.file, line: at.line, text: words.trim(), excerpt: at.text }); setAt(null); setWords(""); } finally { setBusy(false); }
+  };
+  const ROW = { add: ["#E8F5EE", "#0B6B4A", "+"], del: ["#FCEBEA", "#B4231A", "−"], ctx: ["transparent", "#3D404A", " "], hunk: ["#F4F4F0", "#8C8F99", ""] };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
+        <strong style={{ flex: 1, font: "600 18px/1.2 'Bricolage Grotesque', sans-serif" }}>{"Cambios"}{diff ? <span style={{ marginLeft: "10px", font: "500 13px/1 'Geist Mono', monospace" }}><span style={{ color: "#0B8A5F" }}>{"+" + diff.add}</span>{" "}<span style={{ color: "#B4231A" }}>{"−" + diff.del}</span></span> : null}</strong>
+        <button type="button" onClick={onAsk} disabled={asked && !diff} style={{ display: "flex", alignItems: "center", gap: "6px", height: "38px", padding: "0 16px", border: 0, borderRadius: "999px", background: diff ? "rgba(18,19,26,.06)" : "#12131A", color: diff ? "#12131A" : "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}><FileDiff size={14} strokeWidth={2.2} aria-hidden="true" />{asked && !diff ? "Pidiéndoselos a " + first + "…" : diff ? "Actualizar" : "Ver los cambios"}</button>
+      </span>
+      {diff?.tooBig ? <span style={{ fontSize: "13px", color: "#6B4E00" }}>{"Son demasiados para enviarlos aquí: solo la lista de archivos. Míralos en vuestro repositorio."}</span> : null}
+      {diff?.files?.length === 0 ? <span style={{ fontSize: "14px", color: "#5C606C" }}>{"Aún no ha cambiado nada."}</span> : null}
+      {(diff?.files || []).map((file) => (
+        <div key={file.path} style={{ borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderBottom: "1px solid rgba(18,19,26,.06)", font: "500 13px/1.3 'Geist Mono', monospace" }}>
+            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.path}</span>
+            <span style={{ color: "#0B8A5F" }}>{"+" + file.add}</span><span style={{ color: "#B4231A" }}>{"−" + file.del}</span>
+          </div>
+          {file.binary ? <p style={{ margin: 0, padding: "10px 14px", fontSize: "13px", color: "#6B6F7A" }}>{"Archivo binario"}</p> : (
+            <div style={{ overflowX: "auto", font: "400 12px/1.6 'Geist Mono', monospace" }}>
+              {patchRows(file.patch).map((r, i) => {
+                const [bg, fg, sign] = ROW[r.kind];
+                const here = at && at.file === file.path && at.row === i;
+                const said = r.line ? comments.filter((c) => c.file === file.path && c.line === r.line) : [];
+                return (
+                  <div key={i}>
+                    <div className="diff-row" style={{ display: "grid", gridTemplateColumns: "48px 18px 1fr 28px", alignItems: "center", background: bg, color: fg, minWidth: "max-content" }}>
+                      <span style={{ padding: "0 8px", textAlign: "right", color: "#A3A6AE", userSelect: "none" }}>{r.line ?? ""}</span>
+                      <span style={{ userSelect: "none" }}>{sign}</span>
+                      <span style={{ whiteSpace: "pre", paddingRight: "12px" }}>{r.text}</span>
+                      {r.line ? <button type="button" aria-label={"Comentar la línea " + r.line + " de " + file.path} onClick={() => { setAt({ file: file.path, line: r.line, text: r.text, row: i }); setWords(""); }} style={{ width: "24px", height: "20px", display: "grid", placeItems: "center", border: 0, borderRadius: "6px", background: "transparent", cursor: "pointer", color: "#1F4FD1" }}><MessageSquare size={12} strokeWidth={2.2} aria-hidden="true" /></button> : <span />}
+                    </div>
+                    {said.map((c) => <div key={c.id} style={{ margin: "6px 14px 6px 66px", padding: "8px 12px", borderRadius: "12px", background: "#F4F6FD", fontFamily: "'Geist', sans-serif", fontSize: "13px", color: "#2B2E36" }}>{"Tú: " + c.text}<span style={{ display: "block", marginTop: "2px", fontSize: "11px", color: "#6B6F7A" }}>{COMMENT_STATE[c.state] || ""}</span></div>)}
+                    {here ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", margin: "8px 14px 10px 66px", fontFamily: "'Geist', sans-serif" }}>
+                        <textarea autoFocus value={words} onChange={(e) => setWords(e.target.value)} maxLength={2000} placeholder={"Tu comentario sobre la línea " + r.line + ". " + first + " decide si se lo pasa a Bruno."} aria-label="Comentario"
+                          onKeyDown={(e) => { if (e.key === "Escape") setAt(null); if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send(); }}
+                          style={{ minHeight: "64px", padding: "10px 12px", border: 0, borderRadius: "12px", outline: "none", resize: "vertical", background: "#F7F7F4", font: "inherit", fontSize: "14px" }} />
+                        <span style={{ display: "flex", gap: "6px" }}>
+                          <button type="button" disabled={busy || !words.trim()} onClick={send} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: words.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>{"Comentar"}</button>
+                          <button type="button" onClick={() => setAt(null)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>{"Cancelar"}</button>
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }

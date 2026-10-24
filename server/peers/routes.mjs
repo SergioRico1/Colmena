@@ -94,6 +94,16 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
     return codeShare(p).refineWith(id.parse(req.params.task), data.item, data.from);
   }));
   app.post("/api/peers/code/looking", run((req, p) => codeShare(p).looking(check(z.object({ task: id.optional(), mirror: id.optional(), on: z.boolean() }).strict(), req.body))));
+  // A whole project: who is invited and what of their comments reaches Bruno; their comments.
+  const comments = z.enum(["nunca", "pregunta", "siempre"]);
+  const projectId = z.string().trim().min(1).max(80);
+  app.get("/api/peers/code/projects/:project", run((req, p) => codeShare(p).projectView(projectId.parse(req.params.project))));
+  app.put("/api/peers/code/projects/:project/people", run((req, p) => codeShare(p).inviteProject(projectId.parse(req.params.project), check(z.object({ people: z.array(z.object({ id: address, comments: comments.optional() }).strict()).max(16) }).strict(), req.body).people)));
+  app.post("/api/peers/code/comments/:id/forward", run((req, p) => codeShare(p).forwardComment(z.string().max(80).parse(req.params.id))));
+  app.post("/api/peers/code/comments/:id/drop", run((req, p) => codeShare(p).dropComment(z.string().max(80).parse(req.params.id))));
+  app.get("/api/peers/code/invited", run((_req, p) => ({ items: codeShare(p).invitedProjects() })));
+  app.post("/api/peers/code/shared/:id/diff", run((req, p) => codeShare(p).requestDiff(id.parse(req.params.id))));
+  app.post("/api/peers/code/shared/:id/comments", run((req, p) => codeShare(p).comment(id.parse(req.params.id), check(z.object({ file: z.string().max(400), line: z.number().int().min(0).max(10_000_000), text: z.string().trim().min(1).max(2000), excerpt: z.string().max(2000).optional() }).strict(), req.body))));
   app.get("/api/peers/code/shared", run((_req, p) => ({ items: codeShare(p).mirrors() })));
   app.get("/api/peers/code/shared/:id", run((req, p) => codeShare(p).mirror(id.parse(req.params.id))));
   app.post("/api/peers/code/shared/:id/plan", run((req, p) => codeShare(p).planVote(id.parse(req.params.id), check(z.object({ action: z.enum(["approve", "changes"]), text: z.string().max(2000).optional() }).strict(), req.body))));
