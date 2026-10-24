@@ -220,7 +220,7 @@ export default function BackupSettings() {
           ["La copia", "Va entera cifrada con tu contraseña: si alguien la encuentra en la nube o en un disco, no puede leer nada. Si la tocan, Colmena lo nota y no la restaura."],
           ["Qué lleva", "Tus conversaciones y su historial, entregables y archivos de misión, lo que saben tus bots (su SOUL y tu perfil) y tus ajustes. Tu dirección de Personas va aparte, con su propia clave, y solo vuelve si lo eliges."],
           ["Qué no lleva", "Tus sesiones de ChatGPT, Claude y las apps conectadas, las contraseñas de webs y las claves de API. Windows las protege para este ordenador; en otro, vuelves a entrar."],
-          ["En este ordenador", "La carpeta de Colmena no va cifrada: quien entre con tu sesión de Windows o copie esa carpeta puede leer tus datos. Para eso, el cifrado local (próximamente) o el cifrado de Windows."],
+          ["La clave", "Si cifraste la base de datos (justo debajo), su clave va dentro de cada copia, protegida con la contraseña de la copia: así la recuperas aunque reinstales el ordenador."],
         ].map(([title, text], i, all) => (
           <div key={title} style={{ ...rowStyle(i === all.length - 1, "auto"), alignItems: "flex-start", padding: "16px 20px" }}>
             <span style={{ flex: "0 0 150px", fontSize: "15px", fontWeight: 600 }}>{title}</span>

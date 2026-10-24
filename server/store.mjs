@@ -2,6 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { checkKey, eventAad, isMetaField, metaOf, recordAad, recordCipher } from "./db-crypto.mjs";
 
 export const now = () => new Date().toISOString();
 export const id = () => randomUUID();
@@ -100,11 +101,29 @@ const EVENT_RETENTION_DAYS = 30;
 // Tool bodies older than this keep a preview only (pruneReceipts).
 const SLIM_AFTER_DAYS = 7, SLIM_MAX = 32 * 1024, PREVIEW_CHARS = 4000;
 
+/** The database is encrypted and its key is missing or wrong (db-key.mjs, db-crypto.mjs). */
+export class StoreKeyError extends Error {
+  constructor(message) { super(message); this.code = "COLMENA_DB_KEY"; }
+}
+
 export class Store {
-  constructor(directory) {
+  /** `key`: the 32-byte key of an encrypted database (ignored for a plain one). */
+  constructor(directory, { key = null } = {}) {
     mkdirSync(directory, { recursive: true });
     this.directory = directory;
     this.db = new DatabaseSync(path.join(directory, "colmena.sqlite"));
+    // Encrypted (db-crypto.mjs): every record's data and every event is AES-256-GCM; kind, id
+    // and a few index fields (`meta`) stay readable.
+    this.cipher = null;
+    const marked = this.db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='colmena_meta'").get() &&
+      this.db.prepare("SELECT value FROM colmena_meta WHERE key='encryption'").get()?.value;
+    if (marked) {
+      if (!key) { this.db.close(); throw new StoreKeyError("La base de datos de Colmena está cifrada y no encuentro su clave en este ordenador. Restaura una copia de seguridad para recuperar tus datos."); }
+      const cipher = recordCipher(key);
+      if (!checkKey(this.db, cipher)) { this.db.close(); throw new StoreKeyError("La clave guardada no abre la base de datos de Colmena. Restaura una copia de seguridad para recuperar tus datos."); }
+      this.cipher = cipher;
+    }
+    this.encrypted = !!this.cipher;
     // T3 Code's set: WAL with synchronous=NORMAL (FULL waits for the disk on every commit and
     // stalls the event loop; in WAL a crash can lose the last commit, never corrupt the file),
     // the WAL file kept under 32 MB, and space handed back in steps (incremental auto_vacuum,
@@ -209,27 +228,43 @@ export class Store {
       }
     }
   }
+  /** A stored row back to its record (decrypted when the database is encrypted). */
+  decode(kind, id, data) {
+    return JSON.parse(this.cipher ? this.cipher.decrypt(data, recordAad(kind, id)) : data);
+  }
   list(kind) {
-    return this.sql("SELECT data FROM records WHERE kind=? ORDER BY rowid")
+    return this.sql("SELECT id, data FROM records WHERE kind=? ORDER BY rowid")
       .all(kind)
-      .map((r) => JSON.parse(r.data));
+      .map((r) => this.decode(kind, r.id, r.data));
   }
   /** Records of a kind whose top-level `field` equals `value` (indexed for missionId). */
   where(kind, field, value) {
     if (!/^[A-Za-z0-9_]+$/.test(field)) throw Error("Campo no válido.");
-    return this.sql(`SELECT data FROM records WHERE kind=? AND json_extract(data,'$.${field}')=? ORDER BY rowid`)
+    // Encrypted: the index fields are readable in `meta`; any other field is filtered after decrypting.
+    if (this.cipher && !isMetaField(field)) return this.list(kind).filter((r) => r[field] === value);
+    return this.sql(`SELECT id, data FROM records WHERE kind=? AND json_extract(${this.cipher ? "meta" : "data"},'$.${field}')=? ORDER BY rowid`)
       .all(kind, value)
-      .map((r) => JSON.parse(r.data));
+      .map((r) => this.decode(kind, r.id, r.data));
   }
   /** Selected top-level fields of every record of a kind, without parsing the full JSON in JS. */
   columns(kind, fields) {
     if (!fields.every((f) => /^[A-Za-z0-9_]+$/.test(f))) throw Error("Campo no válido.");
+    if (this.cipher) {
+      const pick = (r) => Object.fromEntries(fields.map((f) => [f, r[f] ?? null]));
+      if (fields.every((f) => f === "id" || isMetaField(f)))
+        return this.sql("SELECT id, meta FROM records WHERE kind=? ORDER BY rowid").all(kind).map((r) => pick({ ...JSON.parse(r.meta || "{}"), id: r.id }));
+      return this.list(kind).map(pick);
+    }
     const select = fields.map((f) => `json_extract(data,'$.${f}') AS "${f}"`).join(",");
     return this.sql(`SELECT ${select} FROM records WHERE kind=? ORDER BY rowid`).all(kind);
   }
   /** Every record of a kind without some heavy top-level fields (dropped by SQLite, never parsed in JS). */
   listWithout(kind, fields) {
     if (!fields.length || !fields.every((f) => /^[A-Za-z0-9_]+$/.test(f))) throw Error("Campo no válido.");
+    // Encrypted: the bodies have to be decrypted with the rest, then dropped.
+    if (this.cipher)
+      return this.sql("SELECT id, data FROM records WHERE kind=? ORDER BY rowid").all(kind)
+        .map((r) => { const v = this.decode(kind, r.id, r.data); for (const f of fields) delete v[f]; return v; });
     const paths = fields.map((f) => `'$.${f}'`).join(",");
     return this.sql(`SELECT json_remove(data,${paths}) AS data FROM records WHERE kind=? ORDER BY rowid`)
       .all(kind)
@@ -237,14 +272,17 @@ export class Store {
   }
   get(kind, id) {
     const row = this.sql("SELECT data FROM records WHERE kind=? AND id=?").get(kind, id);
-    return row ? JSON.parse(row.data) : null;
+    return row ? this.decode(kind, id, row.data) : null;
   }
   put(kind, data) {
     if (!data || typeof data.id !== "string" || !data.id) throw Error("Registro sin identificador.");
     const existed = !!this.sql("SELECT 1 AS x FROM records WHERE kind=? AND id=?").get(kind, data.id);
-    this.sql(
-      "INSERT INTO records(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data",
-    ).run(kind, data.id, JSON.stringify(data));
+    if (this.cipher)
+      this.sql("INSERT INTO records(kind,id,data,meta) VALUES(?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data, meta=excluded.meta")
+        .run(kind, data.id, this.cipher.encrypt(JSON.stringify(data), recordAad(kind, data.id)), metaOf(data));
+    else
+      this.sql("INSERT INTO records(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data")
+        .run(kind, data.id, JSON.stringify(data));
     this.notify({ type: "record", kind, id: data.id, op: existed ? "update" : "insert", data });
     return data;
   }
@@ -264,7 +302,9 @@ export class Store {
   }
   event(mission, type, details = {}) {
     const value = { id: id(), mission, type, ...details, at: now() };
-    const result = this.sql("INSERT INTO events(mission,data) VALUES(?,?)").run(mission, JSON.stringify(value));
+    const result = this.cipher
+      ? this.sql("INSERT INTO events(mission,data,at) VALUES(?,?,?)").run(mission, this.cipher.encrypt(JSON.stringify(value), eventAad(mission)), value.at)
+      : this.sql("INSERT INTO events(mission,data) VALUES(?,?)").run(mission, JSON.stringify(value));
     value.seq = Number(result.lastInsertRowid);
     this.notify(value);
     return value;
@@ -272,12 +312,12 @@ export class Store {
   events(mission) {
     return this.sql("SELECT seq,data FROM events WHERE mission=? ORDER BY seq")
       .all(mission)
-      .map((r) => ({ ...JSON.parse(r.data), seq: r.seq }));
+      .map((r) => ({ ...JSON.parse(this.cipher ? this.cipher.decrypt(r.data, eventAad(mission)) : r.data), seq: r.seq }));
   }
   /** Deletes mission events older than the retention window. Returns the number removed. */
   purgeEvents(days = EVENT_RETENTION_DAYS, time = Date.now()) {
     const cutoff = new Date(time - days * 86400000).toISOString();
-    return Number(this.sql("DELETE FROM events WHERE json_extract(data,'$.at') < ?").run(cutoff).changes);
+    return Number(this.sql(this.cipher ? "DELETE FROM events WHERE at < ?" : "DELETE FROM events WHERE json_extract(data,'$.at') < ?").run(cutoff).changes);
   }
   /**
    * What a tool returned stays whole while it can matter (a step resumes from its receipts, the
@@ -294,7 +334,7 @@ export class Store {
     let changed = 0;
     this.tx(() => {
       for (const row of this.sql("SELECT kind, id, data FROM records WHERE kind IN ('receipts','approvals','steps') AND length(data) > ?").all(max)) {
-        const r = JSON.parse(row.data);
+        const r = this.decode(row.kind, row.id, row.data);
         const at = r.at || r.updatedAt || r.completedAt || r.createdAt || "";
         if (!at || at >= cutoff) continue;
         let next = null;
@@ -305,7 +345,8 @@ export class Store {
           if (history.some((x, i) => x !== r.history[i])) next = { ...r, history };
         }
         if (!next) continue;
-        this.sql("UPDATE records SET data=? WHERE kind=? AND id=?").run(JSON.stringify(next), row.kind, row.id);
+        const text = JSON.stringify(next);
+        this.sql("UPDATE records SET data=? WHERE kind=? AND id=?").run(this.cipher ? this.cipher.encrypt(text, recordAad(row.kind, row.id)) : text, row.kind, row.id);
         changed++;
       }
     });

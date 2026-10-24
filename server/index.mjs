@@ -3,7 +3,6 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { Store } from "./store.mjs";
 import { ChatGPTSession } from "./nexo/oauth.mjs";
 import * as providers from "./provider.mjs";
 import { Runtime } from "./runtime.mjs";
@@ -21,6 +20,8 @@ import { lockInstance } from "./instance.mjs";
 import { ComposioHub } from "./nexo/composio.mjs";
 import { windowsVault } from "./nexo/credential-vault.mjs";
 import { applyPendingRestore } from "./backup.mjs";
+import { databaseKeys } from "./db-key.mjs";
+import { applyPendingEncryption, openStore } from "./encryption.mjs";
 import { Connections } from "./connections.mjs";
 import { AppTools } from "./apptools.mjs";
 import { Projects } from "./projects/tools.mjs";
@@ -43,15 +44,23 @@ const directory =
   process.env.COLMENA_DATA_DIR ||
   path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), ".local", "share"), "Colmena");
 const instance = lockInstance(directory);
+// The database key's slots (DPAPI / Keychain, db-key.mjs).
+const dbKeys = databaseKeys(directory);
 // A backup staged in Ajustes › Privacidad y datos goes into place before the store opens.
 try {
-  const restored = await applyPendingRestore(directory, { vault: windowsVault(path.join(directory, "peers")) });
+  const restored = await applyPendingRestore(directory, { vault: windowsVault(path.join(directory, "peers")), keys: dbKeys });
   if (restored?.applied) console.log("Colmena: copia restaurada; lo anterior está en " + path.basename(restored.aside));
 } catch (error) {
   console.warn("No se pudo aplicar la copia restaurada: " + error.message);
 }
-const store = new Store(directory),
-  session = new ChatGPTSession({ directory: path.join(directory, "auth") });
+// «Cifrar este ordenador», when it was prepared: before the store opens, with all its checks.
+const encrypted = await applyPendingEncryption(directory, dbKeys);
+if (encrypted?.done) console.log(`Colmena: base de datos cifrada en ${encrypted.ms} ms.`);
+if (encrypted?.failed) console.warn("No se pudo cifrar la base de datos (sigue como estaba): " + encrypted.error);
+// Encrypted: opened with its key; without one, that database is set aside and Colmena still starts.
+const { store, locked } = await openStore(directory, dbKeys);
+if (locked) console.warn("Colmena: falta la clave de la base de datos cifrada; está apartada en " + locked.folder);
+const session = new ChatGPTSession({ directory: path.join(directory, "auth") });
 await session.init();
 try {
   await session.restore();
@@ -138,7 +147,7 @@ if (typeof process.send === "function") {
   });
   setTimeout(sendPresence, 1500).unref();
 }
-const app = createApp({ store, runtime, session, scheduler, connections, getOrigin: () => origin, computer });
+const app = createApp({ store, runtime, session, scheduler, connections, getOrigin: () => origin, computer, dbKeys });
 // «Personas»: talking to other people's Colmenas through the mailbox (server/peers/). The
 // mailbox address comes from Ajustes › Personas (or COLMENA_RELAY_URL); without one nothing
 // leaves this computer.

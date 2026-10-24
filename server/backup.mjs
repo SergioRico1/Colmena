@@ -150,7 +150,7 @@ const entryHead = (type, rel, size) => {
  * newMasterKey (or the saved key); `identity` is the Personas identity object or null.
  * Returns {file, bytes, files, rows, createdAt}.
  */
-export async function createBackup({ store, target, key, kdf, identity = null, appVersion = null }) {
+export async function createBackup({ store, target, key, kdf, identity = null, appVersion = null, dbKey = null }) {
   const directory = store.directory;
   const createdAt = new Date().toISOString();
   const temp = path.join(directory, "backup-" + process.pid + "-" + Date.now() + ".sqlite");
@@ -173,7 +173,10 @@ export async function createBackup({ store, target, key, kdf, identity = null, a
     len.writeUInt32BE(header.length);
     await handle.write(Buffer.concat([MAGIC, len, header]));
     const writer = new ChunkWriter(handle, subKey(key, fileSalt, "data"), headerHash, BACKUP_FORMAT.chunk);
-    const manifest = { createdAt, appVersion, db, files: [] };
+    // An encrypted database travels with its key, inside the sealed data: without it the copy
+    // could not be opened on another computer (or here, after reinstalling Windows).
+    if (store.encrypted && !dbKey) throw new BackupError("No encuentro la clave de la base de datos cifrada para guardarla en la copia.");
+    const manifest = { createdAt, appVersion, db, files: [], ...(store.encrypted ? { dbKey: dbKey.toString("base64") } : {}) };
     // 2. Each file: its header, then its bytes (hashed on the way).
     const addFile = async (rel, abs, size) => {
       await writer.push(entryHead(1, rel, size));
@@ -340,7 +343,7 @@ const MOVED = ["colmena.sqlite", "colmena.sqlite-wal", "colmena.sqlite-shm", ...
  * before-restore-<time>/ and the staged backup into place; the identity, when it was chosen,
  * goes from the vault's «restore» slot to the real one. Returns a summary or null.
  */
-export async function applyPendingRestore(directory, { vault = null } = {}) {
+export async function applyPendingRestore(directory, { vault = null, keys = null } = {}) {
   const markerFile = path.join(directory, RESTORE_MARKER);
   if (!existsSync(markerFile)) return null;
   let marker;
@@ -363,6 +366,16 @@ export async function applyPendingRestore(directory, { vault = null } = {}) {
         if (existsSync(file)) { renameSync(file, path.join(directory, "peers", "identity.json")); identity = true; }
       }
     } catch {}
+  }
+  // The restored database is encrypted: its key becomes this computer's (the previous one is kept apart).
+  if (marker.dbKey && keys) {
+    const restored = await keys.load("db-key-restore");
+    if (restored) {
+      const current = await keys.load("db-key").catch(() => null);
+      if (current && !current.equals(restored)) await keys.save("db-key-before", current);
+      await keys.save("db-key", restored);
+      await keys.remove("db-key-restore");
+    }
   }
   rmSync(markerFile, { force: true });
   writeFileSync(path.join(directory, "restore-done.json"), JSON.stringify({ at: new Date().toISOString(), from: marker.createdAt || null, aside: path.basename(aside), identity }));

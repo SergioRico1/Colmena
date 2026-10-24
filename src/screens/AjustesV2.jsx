@@ -14,6 +14,7 @@ import UsageSection from "../components/v2/settings/Usage.jsx";
 import DiagnosticsSection, { diagnosticsDot, useDiagnostics } from "../components/v2/settings/Diagnostics.jsx";
 import DictationSettings from "../components/v2/settings/Dictation.jsx";
 import BackupSettings from "../components/v2/settings/Backup.jsx";
+import EncryptionSettings from "../components/v2/settings/Encryption.jsx";
 import PeopleSettings from "../components/v2/settings/People.jsx";
 import { ALIAS, DEFAULT_SECTION, PARENT, SECTION_OF } from "../components/v2/settings/sections.js";
 import { Chevron, FAINT, FieldRow, Group, INK, LINE, LinkRow, MUTED, Segmented, SwitchRow, Text, anchorOf, inputStyle, pill, rowStyle } from "../components/v2/settings/rows.jsx";
@@ -479,6 +480,7 @@ function PrivacySection({ memories, act }) {
         ) : null}
       </Group>
       <BackupSettings />
+      <EncryptionSettings />
       <DictationSettings />
       <div {...anchorOf("boveda")} style={{ scrollMarginTop: "24px", borderRadius: "26px" }}><VaultCard /></div>
       <div {...anchorOf("claves")} style={{ scrollMarginTop: "24px", borderRadius: "26px" }}><ApiKeysCard /></div>

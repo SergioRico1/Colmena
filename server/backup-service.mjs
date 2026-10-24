@@ -19,8 +19,9 @@ export const BACKUP_DEFAULTS = Object.freeze({ id: "backup", folder: null, sched
 
 export class Backups {
   /** `vault(subdir)` gives the system vault for a folder of the data directory (null without one). */
-  constructor({ store, vault = () => null, appVersion = null, clock = () => Date.now(), send = (m) => process.send?.(m) }) {
-    Object.assign(this, { store, vault, appVersion, clock, send });
+  /** `keys`: the database key slots (db-key.mjs), for an encrypted database. */
+  constructor({ store, vault = () => null, keys = null, appVersion = null, clock = () => Date.now(), send = (m) => process.send?.(m) }) {
+    Object.assign(this, { store, vault, keys, appVersion, clock, send });
     this.directory = store.directory;
     this.running = null;
   }
@@ -72,7 +73,8 @@ export class Backups {
       if (!keys) throw new BackupError("Pon una contraseña para la copia.", 409);
       const folder = this.folder();
       const identity = await loadIdentity(this.directory, this.identityVault()).catch(() => null);
-      const result = await createBackup({ store: this.store, target: path.join(folder, backupName(auto, new Date(this.clock()))), ...keys, identity, appVersion: this.appVersion });
+      const dbKey = this.store.encrypted ? await this.keys?.load("db-key").catch(() => null) : null;
+      const result = await createBackup({ store: this.store, target: path.join(folder, backupName(auto, new Date(this.clock()))), ...keys, identity, appVersion: this.appVersion, dbKey });
       const removed = auto ? await pruneBackups(folder, this.config().keep) : [];
       this.save({ lastAt: new Date(this.clock()).toISOString(), lastFile: result.file, lastBytes: result.bytes, lastError: null, ...(auto ? { lastAuto: new Date(this.clock()).toISOString() } : {}) });
       return { ...result, removed };
@@ -119,7 +121,12 @@ export class Backups {
     try {
       const out = await extractBackup(file, password, staging, { withIdentity: identity });
       if (identity && out.identity) await stageIdentity(this.directory, out.identity, this.identityVault());
-      const marker = { staging: path.basename(staging), createdAt: out.manifest.createdAt, identity: !!(identity && out.identity), stagedAt: now(), files: out.manifest.files.length, rows: out.db.rows };
+      // An encrypted database comes with its key: kept apart until the restore is applied.
+      if (out.manifest.dbKey) {
+        if (!this.keys) throw new BackupError("Esta copia tiene la base de datos cifrada y este ordenador no puede guardar su clave.");
+        await this.keys.save("db-key-restore", Buffer.from(out.manifest.dbKey, "base64"));
+      }
+      const marker = { staging: path.basename(staging), createdAt: out.manifest.createdAt, identity: !!(identity && out.identity), dbKey: !!out.manifest.dbKey, stagedAt: now(), files: out.manifest.files.length, rows: out.db.rows };
       writeFileSync(this.markerFile(), JSON.stringify(marker));
       return { ...marker, hasIdentity: out.hasIdentity };
     } catch (error) {
@@ -134,6 +141,7 @@ export class Backups {
     rmSync(path.join(this.directory, "peers", "identity-restore.json"), { force: true });
     const vault = this.identityVault();
     if (marker?.identity && vault) await vault.remove("peer-identity-restore").catch(() => {});
+    if (marker?.dbKey && this.keys) await this.keys.remove("db-key-restore").catch(() => {});
     return { ok: true };
   }
   /** The desktop app starts again (its server applies the restore first); null when it cannot. */

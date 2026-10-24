@@ -573,12 +573,26 @@ function snippetAround(text, tokens) {
   return (start ? "…" : "") + flat.slice(start, start + 240) + (flat.length > start + 240 ? "…" : "");
 }
 
+/** Messages that contain the tokens, best first (no full-text index: the database is encrypted). */
+function scanMessages(store, tokens) {
+  const hits = [];
+  for (const m of store.list("messages")) {
+    if (typeof m.text !== "string" || !m.text.trim()) continue;
+    const plain = m.text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+    const score = tokens.filter((t) => plain.includes(t)).length;
+    if (score) hits.push({ msgId: m.id, missionId: m.missionId, text: m.text, score });
+  }
+  return hits.sort((a, b) => b.score - a.score).slice(0, 200);
+}
+
 /** Searches past missions/messages. Returns [{missionId, room, title, date, who, snippet}]. */
 export function searchHistory(store, query, { excludeMissionId = null, limit = 8 } = {}) {
   const tokens = normalizeQuery(query);
   if (!tokens.length) return [];
   let hits = [];
-  try {
+  // An encrypted database keeps no readable index (db-crypto.mjs): search the decrypted messages.
+  if (store.encrypted) hits = scanMessages(store, tokens);
+  else try {
     syncFts(store.db);
     const match = tokens.map((t) => '"' + t.replace(/"/g, "") + '"*').join(" OR ");
     hits = store.db.prepare(`SELECT msgId, missionId, text FROM ${FTS} WHERE ${FTS} MATCH ? ORDER BY bm25(${FTS}) LIMIT 60`).all(match);
@@ -612,7 +626,7 @@ export function searchHistory(store, query, { excludeMissionId = null, limit = 8
       room: mission.room || null,
       title: mission.title,
       date: String(message.at || mission.createdAt || "").slice(0, 10),
-      who: message.role === "user" ? "persona" : store.get("bots", message.botId)?.name || message.botId || "bot",
+      who: message.role === "user" ? "persona" : (message.botId && store.get("bots", message.botId)?.name) || message.botId || "bot",
       automation: !!mission.automationId,
       snippet: snippetAround(message.text, tokens),
     });

@@ -99,6 +99,9 @@ export const SECTIONS = [
       ["copia-ahora", "Hacer una copia ahora", "copia ahora backup manual"],
       ["copia-restaurar", "Restaurar una copia", "restaurar recuperar ordenador nuevo migrar historial importar"],
       ["copia-que-protege", "Qué protege cada cosa", "seguridad cifrado protege datos privacidad"],
+      ["cifrado", "Cifrado de este ordenador", "cifrar base datos local disco carpeta proteger robo portátil"],
+      ["cifrado-estado", "Cifrar la base de datos", "cifrar ahora encriptar aes clave dpapi llavero"],
+      ["cifrado-que-protege", "Qué protege el cifrado y qué no", "efs bitlocker filevault archivos workspaces clave perdida"],
     ],
   },
   {

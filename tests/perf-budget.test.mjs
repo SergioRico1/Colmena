@@ -15,24 +15,33 @@ import path from "node:path";
 import http from "node:http";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { randomBytes } from "node:crypto";
 import { Store } from "../server/store.mjs";
+import { encryptDatabase } from "../server/db-crypto.mjs";
 import { Runtime } from "../server/runtime.mjs";
 import { createApp } from "../server/app.mjs";
 import { SIZES, seedBigUser } from "./fixtures/perf-data.mjs";
 import { fixture, answer, call, settle } from "./fixtures/runtime-fixture.mjs";
 
 const KB = 1024;
-export const BUDGETS = Object.freeze({ stateBytes: 150 * KB, missionSummaryBytes: 900, chatOpenBytes: 120 * KB, chatPageBytes: 120 * KB, bootMs: 8000 });
+// Encrypted times are generous on purpose (a slow test machine): measured ~50 ms and ~130 ms on the big user.
+export const BUDGETS = Object.freeze({ stateBytes: 150 * KB, missionSummaryBytes: 900, chatOpenBytes: 120 * KB, chatPageBytes: 120 * KB, bootMs: 8000, encryptedStateMs: 1500, encryptedChatMs: 2000 });
 // Kinds read per mission through the missionId index (store.where): listing them all is the
 // regression this guards against (each one grows with every chat, step and tool call).
 const PER_MISSION = new Set(["messages", "steps", "receipts", "thread", "artifacts"]);
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 
-/** The big data set, an app on a free port and a spy on Store#list. */
-async function bigApp(t) {
+/** The big data set (encrypted with `encrypted`: db-crypto.mjs), an app on a free port and a spy on Store#list. */
+async function bigApp(t, { encrypted = false } = {}) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "colmena-perf-"));
-  const store = new Store(directory);
+  let store = new Store(directory);
   const { longChatId } = seedBigUser(store);
+  if (encrypted) {
+    store.close();
+    const key = randomBytes(32);
+    encryptDatabase(path.join(directory, "colmena.sqlite"), key);
+    store = new Store(directory, { key });
+  }
   const runtime = new Runtime(store, { respond: async () => answer("ok") }, null, { seed: false });
   let origin;
   const server = http.createServer(createApp({ store, runtime, session: { status: () => null }, getOrigin: () => origin }));
@@ -85,6 +94,20 @@ test("opening a chat of 800 messages brings its latest page and stays under budg
   assert.equal(older.json.messages.filter((m) => m.kind !== "progress").length, 75);
   assert.ok(older.bytes <= BUDGETS.chatPageBytes, `a page up is ${Math.round(older.bytes / KB)} KB`);
   assert.deepEqual(older.listed.filter((k) => PER_MISSION.has(k)), [], "a page reads its mission only");
+});
+
+test("encrypted database: the same budgets, no per-mission kind listed whole, and still quick", async (t) => {
+  const { get, store, longChatId } = await bigApp(t, { encrypted: true });
+  assert.equal(store.encrypted, true);
+  const timed = async (route) => { const started = performance.now(); const r = await get(route); return { ...r, ms: performance.now() - started }; };
+  const state = await timed("/state");
+  assert.ok(state.bytes <= BUDGETS.stateBytes, `/api/state is ${Math.round(state.bytes / KB)} KB`);
+  assert.deepEqual(state.listed.filter((k) => PER_MISSION.has(k)), [], "encrypted: still read through the readable mission index");
+  assert.ok(state.ms < BUDGETS.encryptedStateMs, `/api/state took ${Math.round(state.ms)} ms (budget ${BUDGETS.encryptedStateMs} ms)`);
+  const open = await timed("/missions/" + longChatId);
+  assert.ok(open.bytes <= BUDGETS.chatOpenBytes, `opening the chat is ${Math.round(open.bytes / KB)} KB`);
+  assert.deepEqual(open.listed.filter((k) => PER_MISSION.has(k)), []);
+  assert.ok(open.ms < BUDGETS.encryptedChatMs, `opening the chat took ${Math.round(open.ms)} ms (budget ${BUDGETS.encryptedChatMs} ms)`);
 });
 
 test("a bot's turn with tools and deliverables never lists a per-mission kind whole", async (t) => {
