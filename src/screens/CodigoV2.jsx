@@ -20,7 +20,7 @@ import Compare from "../components/v2/code/Compare.jsx";
 import { later } from "../lib/undoToast.js";
 import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
 import TaskPeople, { PeerComments } from "../components/v2/people/TaskPeople.jsx";
-import { SharedTask } from "../components/v2/people/SharedTasks.jsx";
+import { HandoffPage, SharedTask } from "../components/v2/people/SharedTasks.jsx";
 
 /** Commands for the open task from shortcuts and the palette (TaskView listens). */
 const command = (name) => window.dispatchEvent(new CustomEvent("colmena:code-command", { detail: name }));
@@ -447,8 +447,8 @@ export default function CodigoV2({ params = {}, query = {} }) {
   return (
     <Shell active="codigo" scroll={false} extraCss={CODE_CSS}>
       <div style={{ display: "flex", height: "100%", minWidth: 0 }}>
-        {taskId && panel && wide ? null : <ProjectList projects={projects} currentTask={taskId} currentShared={params.shared || null} onOpen={addFolder} />}
-        {params.shared ? <SharedTask key={params.shared} id={params.shared} /> : params.group ? <Compare group={params.group} projects={projects} /> : taskId ? (
+        {taskId && panel && wide ? null : <ProjectList projects={projects} currentTask={taskId} currentShared={params.shared || params.handoff || null} onOpen={addFolder} />}
+        {params.handoff ? <HandoffPage key={params.handoff} id={params.handoff} /> : params.shared ? <SharedTask key={params.shared} id={params.shared} /> : params.group ? <Compare group={params.group} projects={projects} /> : taskId ? (
           <>
             <TaskView taskId={taskId} narrow={panel && wide} panelOpen={panel} onTogglePanel={() => setPanel(!panel)} onShowTurn={(n) => { setTurn(n); setTab("cambios"); setPanel(true); }} />
             {panel ? <SidePanel taskId={taskId} turn={turn} onTurn={setTurn} tab={tab} setTab={setTab} wide={wide} onWide={setWide} /> : null}

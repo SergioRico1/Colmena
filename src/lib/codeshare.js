@@ -16,12 +16,21 @@ function useLooking(body) {
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", tick); say(false); };
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 }
-/** Live «code» events of /api/peers/events. */
+// Live «code» events of /api/peers/events: one connection for every component that listens
+// (a browser keeps only a few open per server; each hook opening its own would block requests).
+const listeners = new Set();
+let source = null;
 function useCodeEvents(onEvent) {
   useEffect(() => {
-    const source = new EventSource("/api/peers/events?share=code");
-    source.onmessage = (e) => { let ev; try { ev = JSON.parse(e.data); } catch { return; } if (ev.type === "code") onEvent(ev); };
-    return () => source.close();
+    listeners.add(onEvent);
+    if (!source) {
+      source = new EventSource("/api/peers/events?share=code");
+      source.onmessage = (e) => { let ev; try { ev = JSON.parse(e.data); } catch { return; } if (ev.type === "code") for (const fn of [...listeners]) fn(ev); };
+    }
+    return () => {
+      listeners.delete(onEvent);
+      if (!listeners.size && source) { source.close(); source = null; }
+    };
   }, [onEvent]);
 }
 
@@ -49,6 +58,15 @@ export function useSharedTasks() {
   const load = useCallback(() => get("/peers/code/shared").then((r) => setItems(r.items)).catch(() => setItems([])), []);
   useEffect(() => { void load(); }, [load]);
   useCodeEvents(useCallback((ev) => { if (ev.mirror) void load(); }, [load]));
+  return items;
+}
+
+/** Tasks people handed over to you, waiting for «Seguir en mi Colmena». */
+export function useHandoffs() {
+  const [items, setItems] = useState([]);
+  const load = useCallback(() => get("/peers/code/handoffs").then((r) => setItems((r.items || []).filter((h) => h.state === "offered"))).catch(() => setItems([])), []);
+  useEffect(() => { void load(); }, [load]);
+  useCodeEvents(useCallback((ev) => { if (ev.handoff) void load(); }, [load]));
   return items;
 }
 

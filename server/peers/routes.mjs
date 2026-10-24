@@ -112,6 +112,12 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   app.delete("/api/peers/code/shared/:id/review/draft/:finding", run((req, p) => codeShare(p).draftRemove(id.parse(req.params.id), z.string().max(20).parse(req.params.finding))));
   app.post("/api/peers/code/shared/:id/review/bot", run((req, p) => codeShare(p).botReview(id.parse(req.params.id))));
   app.post("/api/peers/code/shared/:id/review/send", run((req, p) => codeShare(p).submitReview(id.parse(req.params.id), check(z.object({ verdict: z.enum(["approve", "changes"]), summary: z.string().max(1200).optional() }).strict(), req.body))));
+  // «Pasar la tarea a…»: pushed branch + Bruno's handoff summary; the other side goes on there.
+  app.post("/api/peers/code/tasks/:task/handoff", run((req, p) => { const data = check(z.object({ person: address, note: z.string().max(2000).optional() }).strict(), req.body); return codeShare(p).handOff(id.parse(req.params.task), data.person, data.note || ""); }));
+  app.get("/api/peers/code/handoffs", run((_req, p) => ({ items: codeShare(p).handoffs() })));
+  app.get("/api/peers/code/handoffs/:id", run((req, p) => codeShare(p).handoff(id.parse(req.params.id))));
+  app.post("/api/peers/code/handoffs/:id/take", run((req, p) => codeShare(p).takeHandoff(id.parse(req.params.id), check(z.object({ project: projectId }).strict(), req.body).project)));
+  app.post("/api/peers/code/handoffs/:id/dismiss", run((req, p) => codeShare(p).dismissHandoff(id.parse(req.params.id))));
   app.get("/api/peers/code/invited", run((_req, p) => ({ items: codeShare(p).invitedProjects() })));
   app.post("/api/peers/code/shared/:id/diff", run((req, p) => codeShare(p).requestDiff(id.parse(req.params.id))));
   app.post("/api/peers/code/shared/:id/comments", run((req, p) => codeShare(p).comment(id.parse(req.params.id), check(z.object({ file: z.string().max(400), line: z.number().int().min(0).max(10_000_000), text: z.string().trim().min(1).max(2000), excerpt: z.string().max(2000).optional() }).strict(), req.body))));

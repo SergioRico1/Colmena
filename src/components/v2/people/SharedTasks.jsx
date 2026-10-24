@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { ChevronRight, Copy, ExternalLink, Eye, FileDiff, GitBranch, GitPullRequest, Lock, MessageSquare, UsersRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, ChevronRight, Copy, ExternalLink, Eye, FileDiff, GitBranch, GitPullRequest, Lock, MessageSquare, UsersRound } from "lucide-react";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { names } from "./PeopleMessage.jsx";
 import { navigate } from "../../../lib/router.jsx";
-import { useSharedTask, useSharedTasks } from "../../../lib/codeshare.js";
+import { useHandoffs, useSharedTask, useSharedTasks } from "../../../lib/codeshare.js";
+import { get, post } from "../../../lib/api.js";
 
 // Código tasks other people share with you (design/V2Codigo.dc.html, paso compartida): what
 // the task is doing on its owner's computer, Bruno's plan (approve it or ask for changes) and
@@ -20,16 +21,27 @@ const CHECKS = { passing: ["Pasa el CI", "#0B6B4A", "#E8F5EE"], failing: ["Falla
 /** «Compartidas contigo» at the end of the list of projects. */
 export function SharedShelf({ current = null }) {
   const items = useSharedTasks();
+  const handoffs = useHandoffs();
   const [open, setOpen] = useState(true);
-  if (!items?.length) return null;
+  if (!items?.length && !handoffs.length) return null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+      {handoffs.map((h) => (
+        <a key={h.id} href={"/codigo/traspaso/" + h.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/traspaso/" + h.id); }}
+          style={{ display: "flex", alignItems: "center", gap: "11px", margin: "0 0 6px 4px", padding: "10px 12px", borderRadius: "16px", background: current === h.id ? "#FFFFFF" : "#FFF6DE", color: "#12131A", textDecoration: "none", boxShadow: "0 1px 2px rgba(18,19,26,.05)" }}>
+          <PeerAvatar person={h.ownerPerson} size={24} />
+          <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "#6B4E00" }}>{h.ownerPerson.name.split(" ")[0] + " te pasa"}</span>
+            <span style={{ fontSize: "14px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.title}</span>
+          </span>
+        </a>
+      ))}
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
         style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px 4px", border: 0, background: "transparent", cursor: "pointer", font: `500 11px/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: "#8C8F99", textAlign: "left" }}>
         <ChevronRight size={11} strokeWidth={2.6} aria-hidden="true" style={{ transition: "transform .2s ease", transform: open ? "rotate(90deg)" : "none" }} />
-        <UsersRound size={11} strokeWidth={2.4} aria-hidden="true" />{"Compartidas contigo"}<span style={{ color: "#A3A6AE" }}>{items.length}</span>
+        <UsersRound size={11} strokeWidth={2.4} aria-hidden="true" />{"Compartidas contigo"}<span style={{ color: "#A3A6AE" }}>{(items || []).length}</span>
       </button>
-      {open ? items.map((m) => {
+      {open ? (items || []).map((m) => {
         const st = sharedStatus(m.snapshot, m.ownerPerson.name);
         const here = current === m.id;
         return (
@@ -300,5 +312,55 @@ function ReviewPanel({ item, review, first, onError }) {
       </span>
       <span style={{ fontSize: "12px", color: "#8C8F99" }}>{"Tu bot revisa con tu cuenta de IA y solo ve los cambios, como contenido de otra persona."}</span>
     </div>
+  );
+}
+
+/** A task someone handed over to you: their summary, and «Seguir en mi Colmena». */
+export function HandoffPage({ id }) {
+  const [h, setH] = useState(null);
+  const [error, setError] = useState(null);
+  const [project, setProject] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { get("/peers/code/handoffs/" + encodeURIComponent(id)).then((x) => { setH(x); setProject(x.projects.find((p) => p.name === x.project)?.id || x.projects[0]?.id || ""); }).catch((e) => setError(e.message)); }, [id]);
+  if (error && !h) return <Empty text={error} />;
+  if (!h) return <Empty text="Cargando…" />;
+  const first = h.ownerPerson.name.split(" ")[0];
+  const take = async () => { setBusy(true); setError(null); try { const r = await post("/peers/code/handoffs/" + encodeURIComponent(id) + "/take", { project }); navigate("/codigo/" + r.task); } catch (e) { setError(e.message); } finally { setBusy(false); } };
+  return (
+    <section aria-label={"Traspaso: " + h.title} style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto" }}>
+      <div style={{ width: "100%", maxWidth: "760px", margin: "0 auto", padding: "34px clamp(20px, 4vw, 44px) 60px", display: "flex", flexDirection: "column", gap: "20px", boxSizing: "border-box" }}>
+        <header style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <PeerAvatar person={h.ownerPerson} size={46} dot />
+          <span style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{first + " te pasa esta tarea" + (h.project ? " · " + h.project : "")}</span>
+            <h1 style={{ margin: 0, font: "600 28px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{h.title}</h1>
+            <span style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: MONO, fontSize: "12px", color: "#5C606C" }}><GitBranch size={13} strokeWidth={2} aria-hidden="true" />{h.branch + " → " + h.base}</span>
+          </span>
+        </header>
+        {h.note ? <p style={{ margin: 0, padding: "12px 16px", borderRadius: "16px", background: "#FFF6DE", fontSize: "15px", color: "#3D2E00" }}>{"«" + h.note + "»"}</p> : null}
+        <div style={{ padding: "22px 24px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)" }}>
+          <span style={{ display: "block", marginBottom: "10px", fontSize: "13px", fontWeight: 600, color: "#8C8F99" }}>{"El traspaso que escribió su Bruno"}</span>
+          <div style={{ fontSize: "15px", lineHeight: 1.65, color: "#2B2E36", whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }}>{h.summary}</div>
+        </div>
+        {h.state === "taken" ? (
+          <p role="status" style={{ margin: 0, fontSize: "15px", color: "#0B6B4A" }}>{"Ya la seguiste en tu Colmena. "}{h.takenTask ? <a href={"/codigo/" + h.takenTask} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + h.takenTask); }} style={{ fontWeight: 600, color: "#1F4FD1" }}>{"Abrir la tarea"}</a> : null}</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "18px 20px", borderRadius: "22px", background: "#F4F4F0" }}>
+            <strong style={{ fontSize: "15px", fontWeight: 600 }}>{"Seguir en mi Colmena"}</strong>
+            <span style={{ fontSize: "13px", lineHeight: 1.5, color: "#5C606C" }}>{"Elige el proyecto donde tienes ese repositorio" + (h.remote ? " (" + h.remote + ")" : "") + ". Colmena trae la rama y tu Bruno empieza con un plan a partir del traspaso; nada cambia hasta que digas «Implementar»."}</span>
+            {h.projects.length ? (
+              <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
+                <select value={project} onChange={(e) => setProject(e.target.value)} aria-label="Proyecto" style={{ height: "42px", padding: "0 12px", border: 0, borderRadius: "12px", background: "#FFFFFF", font: "inherit", fontSize: "14px" }}>
+                  {h.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <button type="button" disabled={busy || !project} onClick={take} style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>{busy ? "Trayendo la rama…" : "Seguir en mi Colmena"}<ArrowRight size={15} strokeWidth={2.4} aria-hidden="true" /></button>
+              </span>
+            ) : <span style={{ fontSize: "14px", color: "#6B4E00" }}>{"Aún no tienes ese proyecto en Código. Clónalo" + (h.remote ? " (git clone " + h.remote + ")" : "") + " y ábrelo con «Abrir otro proyecto»."}</span>}
+            <button type="button" onClick={() => post("/peers/code/handoffs/" + encodeURIComponent(id) + "/dismiss").then(() => navigate("/codigo"))} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#5C606C" }}>{"Ahora no"}</button>
+          </div>
+        )}
+        {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4231A" }}>{error}</span> : null}
+      </div>
+    </section>
   );
 }

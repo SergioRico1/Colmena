@@ -483,7 +483,7 @@ export class CodeService {
     return this.store.get("bots", "bruno") || { id: "bruno", name: "Bruno", instructions: "" };
   }
 
-  async createTask({ projectId, text, engine = "claude-code", model = null, effort = "high", access = "project", isolated = true, mode = "build", attachments = [], label = null, group = null }) {
+  async createTask({ projectId, text, engine = "claude-code", model = null, effort = "high", access = "project", isolated = true, mode = "build", attachments = [], label = null, group = null, from = null }) {
     const project = this.mustProject(projectId);
     if (!ENGINES.includes(engine)) engine = "claude-code";
     if (engine === "codex" && !this.codexCommand) throw Object.assign(Error("Codex no está instalado en este ordenador."), { status: 409 });
@@ -496,9 +496,11 @@ export class CodeService {
     let cwd = project.root, branch = null, baseRef = null, baseCommit = null;
     const copy = isolated && repo.repo && !!repo.head;
     if (copy) {
-      branch = "colmena/" + slug(title).slice(0, 32) + "-" + id.slice(3, 7);
-      baseRef = repo.branch || repo.head;
-      baseCommit = repo.head;
+      // `from` {branch, commit, base}: a task someone handed over continues on their branch
+      // (server/peers/codeshare.mjs fetched it first).
+      branch = from?.branch || "colmena/" + slug(title).slice(0, 32) + "-" + id.slice(3, 7);
+      baseRef = from?.base || repo.branch || repo.head;
+      baseCommit = from?.commit || repo.head;
       cwd = path.join(this.directory, "code", "worktrees", project.id, id);
       // A sub-folder of a repository keeps its place inside the copy.
       const rel = path.relative(repo.top, project.root);

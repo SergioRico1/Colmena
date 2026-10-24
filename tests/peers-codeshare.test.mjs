@@ -229,3 +229,51 @@ test("«Pedir revisión a…»: the reviewer gets the diff, adds findings by han
   // Only once, and only from who was asked.
   assert.throws(() => marta.peers.codeShare.submitReview(id, { verdict: "approve" }), /No hay ninguna revisión pendiente/);
 });
+
+test("«Pasar la tarea a…»: the branch is pushed, a handoff summary arrives, and the other Colmena goes on on that branch", async (t) => {
+  const [sergio, marta] = await world(t);
+  const { execFileSync } = await import("node:child_process");
+  const { mkdtemp: mk, writeFile } = await import("node:fs/promises");
+  const g = (cwd, ...args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  // A remote with the branch Sergio's Bruno worked on, and Marta's own clone of it.
+  const dir = await mk(path.join(os.tmpdir(), "colmena-handoff-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const bare = path.join(dir, "remote.git"), work = path.join(dir, "sergio"), mine = path.join(dir, "marta");
+  g(dir, "init", "--bare", "-b", "main", bare);
+  g(dir, "clone", bare, work);
+  for (const [k, v] of [["user.email", "s@x.test"], ["user.name", "S"]]) g(work, "config", k, v);
+  await writeFile(path.join(work, "pago.js"), "export const cobrar = () => 1;\n");
+  g(work, "add", "."); g(work, "commit", "-m", "base"); g(work, "push", "origin", "main");
+  g(work, "checkout", "-b", "colmena/pago-bizum");
+  await writeFile(path.join(work, "pago.js"), "export const cobrar = () => 2; // bizum\n");
+  g(work, "commit", "-am", "bizum a medias"); g(work, "push", "origin", "colmena/pago-bizum");
+  const tip = g(work, "rev-parse", "HEAD");
+  g(dir, "clone", bare, mine);
+
+  sergio.code.push = async () => ({ ok: true, branch: "colmena/pago-bizum", remote: bare });
+  sergio.code.quickText = async () => "Qué se ha hecho: Bizum en el checkout.\nQué falta: los tests.";
+  const notes = [];
+  sergio.code.addItem = (taskId, data) => { notes.push(data); return data; };
+  sergio.store.put("codeProjects", { id: "p5", name: "tienda-web", root: work });
+  sergio.store.put("codeTasks", { id: "task-0050", projectId: "p5", title: "Pago con Bizum", status: "idle", base: "main", updatedAt: new Date().toISOString() });
+  const out = await sergio.peers.codeShare.handOff("task-0050", marta.peers.address, "Te la dejo, me voy de viaje.");
+  assert.equal(out.branch, "colmena/pago-bizum");
+  assert.match(notes[0].text, /Pasada a Marta: rama colmena\/pago-bizum subida/);
+
+  const h = await until(() => marta.peers.codeShare.handoffs()[0], "le llega el traspaso");
+  assert.equal(h.title, "Pago con Bizum");
+  assert.match(h.summary, /Qué falta: los tests/);
+  assert.ok(marta.notices.some((n) => /Sergio te pasa la tarea «Pago con Bizum»/.test(n.title)));
+  // Marta goes on in her clone: the branch is fetched and her Bruno starts there, with the summary as someone else's words.
+  const created = [];
+  marta.code.createTask = async (args) => { created.push(args); return { id: "ct-new00001" }; };
+  marta.store.put("codeProjects", { id: "pm", name: "tienda-web", root: mine });
+  const taken = await marta.peers.codeShare.takeHandoff(h.id, "pm");
+  assert.equal(taken.task, "ct-new00001");
+  assert.deepEqual(created[0].from, { branch: "colmena/pago-bizum", commit: tip, base: "main" });
+  assert.match(created[0].text, /no una orden/);
+  assert.match(created[0].text, /CONTENIDO_EXTERNO/);
+  assert.match(created[0].text, /me voy de viaje/);
+  await until(() => notes.some((n) => /Marta ha cogido la tarea/.test(n.text)), "Sergio sabe que la ha cogido");
+  await assert.rejects(marta.peers.codeShare.takeHandoff(h.id, "pm"), /ya no está esperando/);
+});

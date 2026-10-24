@@ -54,6 +54,7 @@ const SECTIONS = [
     "Puede aprobar el plan o pedir cambios. Eso no pone a Bruno a trabajar: te llega a ti, y tú decides «Implementar» o «Refinar con esto». Lo que pide va a Bruno como sugerencia de otra persona, nunca como una orden.",
     "En «Compartir» también puedes invitar a todo el proyecto: verá todas sus tareas, lo que hace Bruno en directo y los cambios, y podrá comentar líneas. El código lo coge de vuestro repositorio (GitHub), nunca del buzón.",
     "«Pedir revisión a…» (en «Compartir») manda a esa persona el resumen y los cambios aunque no esté en el proyecto. Comenta líneas con su gravedad (P0 a P3) y su bot puede revisarlo con su propia cuenta de IA. Su revisión vuelve a tu tarea y Bruno se pone con ella como opinión de otra persona.",
+    "«Pasar la tarea a…» sube su rama a GitHub y Bruno escribe qué está hecho y qué falta. A esa persona le llega en Código; al pulsar «Seguir en mi Colmena» trae la rama a su proyecto y su Bruno empieza con un plan desde ahí.",
     "Para cada persona eliges qué pasa con sus comentarios: «Pregúntame» (te salen para pasárselos a Bruno o descartarlos), «Siempre» (van directos) o «Nunca» (solo los ves tú). Bruno trabaja siempre en tu ordenador y los recibe como opinión de otra persona; subir, publicar o borrar sigue preguntándote.",
   ]],
   ["buzon", Inbox, "Qué guarda el buzón", [

@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes spin{to{transform:rotate(360deg)}}\n@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}\n@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}\n@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.row-hover{transition:background .15s ease}\n.row-hover:hover{background:rgba(18,19,26,.035)}\n.tools{opacity:0;transition:opacity .15s ease}\n.turn:hover .tools,.turn:focus-within .tools{opacity:1}\n@media (max-width: 1180px){[data-codepanel]{display:none!important}}\n@media (max-width: 860px){[data-projects]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","compartida","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","compartida","traspaso","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -122,7 +122,7 @@ export class Logic extends DCLogic {
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
     const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['posponer', 'Posponer'], ['comparar', 'Comparar'], ['inicio', 'Inicio']];
     return {
-      home: s.mode === 'inicio', comparing: s.mode === 'comparar', sharedView: s.mode === 'compartida', inTask: !['inicio', 'comparar', 'compartida'].includes(s.mode), working,
+      home: s.mode === 'inicio', comparing: s.mode === 'comparar', sharedView: s.mode === 'compartida', handoffView: s.mode === 'traspaso', inTask: !['inicio', 'comparar', 'compartida', 'traspaso'].includes(s.mode), working,
       shareOpen: s.share, toggleShare: () => this.setState({ share: !s.share, git: false }), voted: s.voted, approve: () => this.setState({ voted: true }),
       railDot: s.mode === 'plan' || s.mode === 'pide',
       is: { posponer: s.mode === 'posponer', objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
@@ -842,6 +842,59 @@ export function View({ v }) {
             </section>
           </>
         ) : null}
+        {v.handoffView ? (
+          <>
+            <section aria-label="Traspaso: Modo oscuro para toda la tienda" style={{flex: "1", minWidth: "0", height: "100%", overflowY: "auto"}}>
+              <div style={{width: "100%", maxWidth: "760px", margin: "0 auto", padding: "34px clamp(20px, 4vw, 44px) 60px", display: "flex", flexDirection: "column", gap: "20px", boxSizing: "border-box"}}>
+                <header style={{display: "flex", alignItems: "center", gap: "14px"}}>
+                  <span aria-hidden="true" style={{width: "46px", height: "46px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", font: "600 16px/1 'Geist', sans-serif"}}>
+                    {"SR"}
+                  </span>
+                  <span style={{display: "flex", flexDirection: "column", gap: "6px"}}>
+                    <span style={{font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A"}}>
+                      {"Sergio te pasa esta tarea · tienda-web"}
+                    </span>
+                    <h1 style={{margin: "0", font: "600 28px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em"}}>
+                      {"Modo oscuro para toda la tienda"}
+                    </h1>
+                    <span style={{font: "400 12px/1 'Geist Mono', monospace", color: "#5C606C"}}>
+                      {"colmena/modo-oscuro → main"}
+                    </span>
+                  </span>
+                </header>
+                <p style={{margin: "0", padding: "12px 16px", borderRadius: "16px", background: "#FFF6DE", fontSize: "15px", color: "#3D2E00"}}>
+                  {"«Te la dejo, el lunes me voy de viaje.»"}
+                </p>
+                <div style={{padding: "22px 24px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)"}}>
+                  <span style={{display: "block", marginBottom: "10px", fontSize: "13px", fontWeight: "600", color: "#8C8F99"}}>
+                    {"El traspaso que escribió su Bruno"}
+                  </span>
+                  <div style={{fontSize: "15px", lineHeight: "1.65", color: "#2B2E36", whiteSpace: "pre-wrap"}}>
+                    {"Qué se ha hecho: colores en variables y modo del sistema respetado.\nQué falta: el contraste del checkout y las capturas.\nDecisiones y por qué: light-dark() con alternativa por prefers-color-scheme.\nCómo probarlo: npm run dev y cambiar el tema del sistema.\nCuidado con: el carrito tiene colores escritos a mano."}
+                  </div>
+                </div>
+                <div style={{display: "flex", flexDirection: "column", gap: "10px", padding: "18px 20px", borderRadius: "22px", background: "#F4F4F0"}}>
+                  <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                    {"Seguir en mi Colmena"}
+                  </strong>
+                  <span style={{fontSize: "13px", lineHeight: "1.5", color: "#5C606C"}}>
+                    {"Elige el proyecto donde tienes ese repositorio. Colmena trae la rama y tu Bruno empieza con un plan a partir del traspaso; nada cambia hasta que digas «Implementar»."}
+                  </span>
+                  <span style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px"}}>
+                    <select aria-label="Proyecto" style={{height: "42px", padding: "0 12px", border: "0", borderRadius: "12px", background: "#FFFFFF", fontSize: "14px"}}>
+                      <option>
+                        {"tienda-web"}
+                      </option>
+                    </select>
+                    <button type="button" style={{height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                      {"Seguir en mi Colmena →"}
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </section>
+          </>
+        ) : null}
         {v.comparing ? (
           <>
             <section aria-label="Comparar" style={{flex: "1", minWidth: "0", height: "100%", overflowY: "auto", animation: "fade .3s ease-out"}}>
@@ -1122,6 +1175,30 @@ export function View({ v }) {
                             </span>
                             <span aria-hidden="true" style={{width: "22px", height: "22px", borderRadius: "50%", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
                           </button>
+                          <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
+                            <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                              <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                {"Pasar la tarea a…"}
+                              </strong>
+                              <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                                {"Se sube su rama a GitHub, Bruno escribe qué está hecho y qué falta, y su Colmena sigue desde ahí."}
+                              </span>
+                            </span>
+                            <span style={{display: "flex", flexWrap: "wrap", gap: "6px"}}>
+                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
+                                <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", font: "600 8px/1 'Geist', sans-serif"}}>
+                                  {"MR"}
+                                </span>
+                                {"Marta"}
+                              </button>
+                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
+                                <span aria-hidden="true" style={{width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", font: "600 8px/1 'Geist', sans-serif"}}>
+                                  {"LG"}
+                                </span>
+                                {"Luis"}
+                              </button>
+                            </span>
+                          </div>
                           <div style={{display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)"}}>
                             <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
                               <strong style={{fontSize: "14px", fontWeight: "600"}}>

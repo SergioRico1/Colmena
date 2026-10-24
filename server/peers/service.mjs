@@ -703,7 +703,8 @@ export class Peers extends EventEmitter {
       if (!views.has(id)) { const s = this.store.get("peerShares", id); views.set(id, s && !s.removedAt ? this.shareView(s) : null); }
       return views.get(id);
     };
-    const rows = shareId ? this.store.where("peerMessages", "shareId", shareId) : this.store.list("peerMessages");
+    // Newest first; two in the same millisecond keep the order they were stored in (reversed).
+    const rows = (shareId ? this.store.where("peerMessages", "shareId", shareId) : this.store.list("peerMessages")).reverse();
     const hits = rows.filter((m) => !m.deletedAt && m.text && !m.local && words.every((w) => foldText(m.text).includes(w)) && shareOf(m.shareId))
       .sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, limit);
     return {

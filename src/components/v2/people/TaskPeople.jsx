@@ -16,6 +16,7 @@ export default function TaskPeople({ taskId, project = null }) {
   const { view, share, invite, askReview } = useTaskPeople(taskId);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(null);
+  const [handing, setHanding] = useState(null); // {person, busy, done}
   const box = useRef(null);
   useEffect(() => {
     if (!open) return undefined;
@@ -84,6 +85,24 @@ export default function TaskPeople({ taskId, project = null }) {
                   return <button key={c.id} type="button" disabled={!!pending} onClick={async () => { setError(null); try { await askReview(c.id); } catch (e) { setError(e.message); } }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: 0, borderRadius: "999px", background: pending ? "#FFF6DE" : "rgba(18,19,26,.06)", cursor: pending ? "default" : "pointer", fontSize: "12px", fontWeight: 600, color: "#12131A" }}><PeerAvatar person={c} size={24} />{pending ? c.name.split(" ")[0] + " lo está revisando" : c.name.split(" ")[0]}</button>;
                 })}
               </span>
+            </div>
+          ) : null}
+          {contacts.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
+              <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                <strong style={{ fontSize: "14px", fontWeight: 600 }}>{"Pasar la tarea a…"}</strong>
+                <span style={{ fontSize: "12px", lineHeight: 1.5, color: "#5C606C" }}>{"Se sube su rama a GitHub, Bruno escribe qué está hecho y qué falta, y su Colmena sigue desde ahí."}</span>
+              </span>
+              {handing?.done ? <span role="status" style={{ fontSize: "13px", color: "#0B6B4A" }}>{"Pasada a " + handing.name + ". Te avisamos cuando la coja."}</span> : handing ? (
+                <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
+                  <button type="button" disabled={handing.busy} onClick={async () => { setError(null); setHanding({ ...handing, busy: true }); try { await post("/peers/code/tasks/" + encodeURIComponent(taskId) + "/handoff", { person: handing.person }); setHanding({ ...handing, busy: false, done: true }); } catch (e) { setError(e.message); setHanding(null); } }} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>{handing.busy ? "Subiendo y escribiendo el traspaso…" : "Pasársela a " + handing.name}</button>
+                  {handing.busy ? null : <button type="button" onClick={() => setHanding(null)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>{"Cancelar"}</button>}
+                </span>
+              ) : (
+                <span style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {contacts.map((c) => <button key={c.id} type="button" onClick={() => setHanding({ person: c.id, name: c.name.split(" ")[0] })} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: "#12131A" }}><PeerAvatar person={c} size={24} />{c.name.split(" ")[0]}</button>)}
+                </span>
+              )}
             </div>
           ) : null}
           {project && contacts.length ? (
