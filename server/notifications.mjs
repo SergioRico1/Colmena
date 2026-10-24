@@ -100,7 +100,8 @@ export function weeklyText(s) {
 // «Cómo te avisa» (Ajustes › Avisos, T3 Code threadNotifications): a Windows notice, a sound,
 // both or nothing. The sound says which kind it is: «ha terminado» or «te necesita».
 export const NOTIFY_MODES = ["both", "windows", "sound", "off"];
-const SOUND_OF = { done: "done", needs: "needs", permission: "needs", question: "needs", plan: "needs", failed: "needs", blocked: "needs" };
+// «message»: a person writes to you (soft); «mention»: a person names you (its own call).
+const SOUND_OF = { done: "done", needs: "needs", permission: "needs", question: "needs", plan: "needs", failed: "needs", blocked: "needs", message: "message", mention: "mention" };
 /** {toast, sound} for a notice of `kind` that pops, by the person's notifyMode. */
 export function delivery(settings, kind) {
   const mode = NOTIFY_MODES.includes(settings?.notifyMode) ? settings.notifyMode : "both";
@@ -132,11 +133,24 @@ export function pendingCount(store) {
 /** Quiet hours: 19:00–9:00 and weekends (local time). */
 export const isQuietTime = (date) => date.getDay() === 0 || date.getDay() === 6 || date.getHours() >= 19 || date.getHours() < 9;
 // What each «Avísame de» level lets through as a Windows notice (it is always kept in Hoy).
-const POPS = { todo: null, importante: new Set(["needs", "failed", "blocked", "permission", "question", "plan", "digest", "limited"]), tuyo: new Set(["needs", "permission", "question", "plan"]) };
+const POPS = { todo: null, importante: new Set(["needs", "failed", "blocked", "permission", "question", "plan", "digest", "limited", "mention"]), tuyo: new Set(["needs", "permission", "question", "plan", "mention"]) };
+
+/**
+ * Your status for other people (Ajustes › Personas): «available», «dnd» (No molestar) or
+ * «away» (Fuera), until a time or until you change it. An expired one is «available».
+ */
+export function statusNow(settings, time = Date.now()) {
+  const st = settings?.status;
+  if (!st || !["dnd", "away"].includes(st.mode)) return { mode: "available", until: null };
+  if (st.until && Date.parse(st.until) <= time) return { mode: "available", until: null };
+  return { mode: st.mode, until: st.until || null };
+}
 /** Whether a notice of `kind` should pop now; it is stored either way. */
 export function shouldPop(settings, kind, date = new Date()) {
   if (settings?.notifyMode === "off") return false;
   if (settings?.quietHours && isQuietTime(date)) return false;
+  // «No molestar» and «Fuera»: everything is kept in Hoy, nothing pops or sounds.
+  if (statusNow(settings, date.getTime()).mode !== "available") return false;
   const allowed = POPS[settings?.notifyLevel || "todo"];
   return !allowed || allowed.has(kind);
 }

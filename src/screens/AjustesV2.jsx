@@ -434,6 +434,8 @@ function NoticeMode({ value, busy, onPick }) {
           <span style={{ fontSize: "13px", color: FAINT, marginRight: "4px" }}>Escúchalos</span>
           <button type="button" onClick={() => playNoticeSound("done")} style={tryOne}><Volume2 size={14} strokeWidth={2.2} aria-hidden="true" />Ha terminado</button>
           <button type="button" onClick={() => playNoticeSound("needs")} style={tryOne}><Volume2 size={14} strokeWidth={2.2} aria-hidden="true" />Te necesita</button>
+          <button type="button" onClick={() => playNoticeSound("message")} style={tryOne}><Volume2 size={14} strokeWidth={2.2} aria-hidden="true" />Una persona te escribe</button>
+          <button type="button" onClick={() => playNoticeSound("mention")} style={tryOne}><Volume2 size={14} strokeWidth={2.2} aria-hidden="true" />Te mencionan</button>
         </div>
       ) : null}
     </div>

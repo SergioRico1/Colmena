@@ -62,10 +62,11 @@ export const SECTIONS = [
     lead: "Con quién hablas desde Colmena, qué puede pedirte cada uno y por dónde os llegan los mensajes.",
     items: [
       ["tu-identidad", "Tú en otras Colmenas", "nombre identidad"],
+      ["tu-estado", "Tu estado", "no molestar fuera vacaciones ausente disponible silencio hasta"],
       ["invitar", "Invitar a alguien", "invitación código compartir chatear persona amigo compañero"],
       ["contactos", "Personas conectadas", "contactos amigos hablar palabras de seguridad quitar"],
       ["buzon", "Cómo os llegan los mensajes", "buzón relé relay servidor cifrado conexión"],
-      ["como-funciona", "Cómo funciona Personas", "ayuda guía explicación invitar código palabras grupos bots menciones reuniones calendario buzón quitar", "/personas/como-funciona"],
+      ["como-funciona", "Cómo funciona Personas", "ayuda guía explicación invitar código palabras grupos bots menciones estado no molestar fuera reuniones calendario buzón quitar", "/personas/como-funciona"],
     ],
   },
   {

@@ -5,7 +5,7 @@ import ConvList from "../components/v2/chat/ConvList.jsx";
 import { PeerAvatar, PeoplePile } from "../components/v2/people/PeerAvatar.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import MeetingCard from "../components/v2/people/MeetingCard.jsx";
-import { useShareChat, RELAY_LABEL } from "../lib/peers.js";
+import { useShareChat, RELAY_LABEL, statusText, whenText } from "../lib/peers.js";
 import { mentionSegments, resolveMentions } from "../lib/mentions.js";
 import { useStore } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
@@ -83,7 +83,7 @@ export default function PeopleChat({ params = {} }) {
   const other = dm ? others[0] : null;
   const gone = !!(share?.left || share?.removed);
   const status = !share ? "" : dm
-    ? (other?.status === "pending" ? "Esperando a que acepte en su Colmena" : other?.online ? "Conectada" : "No está conectada ahora")
+    ? (other?.status === "pending" ? "Esperando a que acepte en su Colmena" : other?.away ? statusText(other.away) : other?.online ? "Conectada" : "No está conectada ahora")
     : `${others.length + 1} personas`;
   const send = async () => {
     const value = text.trim();
@@ -219,6 +219,13 @@ export default function PeopleChat({ params = {} }) {
                   ))}
                 </div>
               </div>
+            ) : null}
+            {dm && other?.away && !gone ? (
+              <p role="note" style={{ margin: "0 0 10px 18px", fontSize: "13px", color: "#5C606C" }}>
+                {other.away.mode === "dnd"
+                  ? `${other.name.split(" ")[0]} tiene «No molestar»${other.away.until ? " hasta " + whenText(other.away.until) : ""}: le llegará, sin sonarle.`
+                  : `${other.name.split(" ")[0]} está fuera${other.away.until ? " hasta " + whenText(other.away.until) : ""}: lo verá a la vuelta.`}
+              </p>
             ) : null}
             {botsNote && share && !gone ? (
               <p role="note" style={{ margin: "0 0 10px", display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px 10px 16px", borderRadius: "16px", background: "#F2F2EE", fontSize: "14px", color: "#3D404A", animation: "rise .3s ease-out" }}>

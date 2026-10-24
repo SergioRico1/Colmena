@@ -4,6 +4,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { get, post } from "./api.js";
 
 export const shareUrl = (id) => "/con/" + id;
+
+/** «las 18:00», «mañana a las 9:00», «el lunes 27». */
+export function whenText(iso) {
+  const d = new Date(iso), now = new Date();
+  const time = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  if (d.toDateString() === now.toDateString()) return "las " + time;
+  if (new Date(now.getTime() + 864e5).toDateString() === d.toDateString()) return "mañana a las " + time;
+  return "el " + d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric" });
+}
+/** Someone's status in words: «No molestar · hasta las 18:00», «Fuera hasta el lunes 27». */
+export function statusText(away) {
+  if (!away) return null;
+  if (away.mode === "dnd") return "No molestar" + (away.until ? " · hasta " + whenText(away.until) : "");
+  return "Fuera" + (away.until ? " hasta " + whenText(away.until) : "");
+}
 export const RELAY_LABEL = {
   online: "Conectado al buzón",
   connecting: "Conectando con el buzón…",

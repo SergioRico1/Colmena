@@ -15,6 +15,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "n
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { now } from "../store.mjs";
+import { statusNow } from "../notifications.mjs";
 import {
   b64u, formatInviteCode, inviteLookup, inviteProof, isAddress, newIdentity, newInviteCode, open, openInvite,
   parseInviteCode, ProtocolError, safetyWords, sameProof, seal, sealInvite, sha256, validIdentity,
@@ -55,6 +56,13 @@ export function cleanBot(b) {
   if (!name) return null;
   return { id: b.id, name, role: clip(b.role, 60), color: /^#[0-9A-Fa-f]{6}$/.test(b.color || "") ? b.color : "#8C8F99", shape: SHAPES.has(b.shape) ? b.shape : "circle" };
 }
+/** {mode, until} from someone's profile, checked (null: available). */
+const statusOf = (profile) => {
+  const st = profile?.status;
+  if (!st || !["dnd", "away"].includes(st.mode)) return null;
+  const until = st.until && Number.isFinite(Date.parse(st.until)) ? new Date(Date.parse(st.until)).toISOString() : null;
+  return { mode: st.mode, until };
+};
 const botsOf = (profile) => (Array.isArray(profile?.bots) ? profile.bots.slice(0, 24).map(cleanBot).filter(Boolean) : []);
 const cleanMentions = (list) => (Array.isArray(list) ? list : []).slice(0, 8)
   .filter((m) => m && isAddress(m.owner) && typeof m.bot === "string" && /^[a-z0-9-]{1,40}$/.test(m.bot))
@@ -171,7 +179,26 @@ export class Peers extends EventEmitter {
   myBots() {
     return this.store.list("bots").filter((b) => b.enabled !== false).slice(0, 24).map((b) => cleanBot(b)).filter(Boolean);
   }
-  myProfile() { return { name: this.myName(), box: this.identity.box.pub, bots: this.myBots() }; }
+  myProfile() { return { name: this.myName(), box: this.identity.box.pub, bots: this.myBots(), status: this.myStatus() }; }
+  /** Your status for other people: available, «dnd» (No molestar) or «away» (Fuera), until a time. */
+  myStatus() { return statusNow(this.store.get("settings", "main"), this.clock()); }
+  /** Sets your status; your contacts get it with your profile (once per change). */
+  setStatus(mode, until = null) {
+    if (!["available", "dnd", "away"].includes(mode)) throw new PeerError("Estado no válido.");
+    const end = until ? Date.parse(until) : null;
+    if (until && (!Number.isFinite(end) || end <= this.clock())) throw new PeerError("Elige un momento que aún no haya pasado.");
+    if (end && end - this.clock() > 366 * 864e5) throw new PeerError("Como mucho un año.");
+    this.store.patch("settings", "main", { status: mode === "available" ? null : { mode, until: end ? new Date(end).toISOString() : null, at: now() } });
+    this.announceProfile();
+    return this.stateView();
+  }
+  /** Someone's status as they last told us (an expired one is gone). */
+  awayOf(c) {
+    const st = c?.away;
+    if (!st || !["dnd", "away"].includes(st.mode)) return null;
+    if (st.until && Date.parse(st.until) <= this.clock()) return null;
+    return { mode: st.mode, until: st.until || null };
+  }
 
   // ---------------------------------------------------------------- views
   contact(id) { return this.store.get("peerContacts", id); }
@@ -184,14 +211,14 @@ export class Peers extends EventEmitter {
     if (address === this.address) return { id: address, me: true, name: this.myName(), initials: "TÚ", color: "#12131A" };
     const c = this.contact(address);
     const name = c?.name || "Alguien";
-    return { id: address, name, initials: initialsOf(name), color: colorOf(address), online: this.online(address), status: c?.status || "unknown" };
+    return { id: address, name, initials: initialsOf(name), color: colorOf(address), online: this.online(address), status: c?.status || "unknown", away: this.awayOf(c) };
   }
   contactView(c) {
     return {
       id: c.id, name: c.name, initials: initialsOf(c.name), color: colorOf(c.id), status: c.status, via: c.via || null,
       online: this.online(c.id), lastSeenAt: c.lastSeenAt || null, addedAt: c.addedAt || null,
       words: this.address ? safetyWords(this.address, c.id) : [], verifiedAt: c.verifiedAt || null, asks: { ...ASK_DEFAULTS, ...(c.asks || {}) },
-      dm: c.status === "active" ? dmId(this.address, c.id) : null, bots: c.bots || [],
+      dm: c.status === "active" ? dmId(this.address, c.id) : null, bots: c.bots || [], away: this.awayOf(c),
     };
   }
   shareView(s) {
@@ -209,7 +236,7 @@ export class Peers extends EventEmitter {
   stateView() {
     const invites = this.store.list("peerInvites").filter((i) => i.status === "open" && Date.parse(i.expiresAt) > this.clock());
     return {
-      me: this.address ? { address: this.address, name: this.myName() } : null,
+      me: this.address ? { address: this.address, name: this.myName(), status: this.myStatus() } : null,
       relay: { url: this.relayUrl(), status: this.relayStatus.status, error: this.relayStatus.error },
       contacts: this.contacts().filter((c) => ["active", "pending", "known"].includes(c.status)).map((c) => this.contactView(c)).sort((a, b) => a.name.localeCompare(b.name, "es")),
       invites: invites.map((i) => ({ id: i.id, name: i.name, createdAt: i.createdAt, expiresAt: i.expiresAt })),
@@ -472,7 +499,7 @@ export class Peers extends EventEmitter {
    * or someone else's) the message is for; `bot` signs it as one of your bots; `card` is a
    * structured part (the meeting card of phase 3).
    */
-  post(shareId, text, { replyTo = null, mentions = [], bot = null, card = null } = {}) {
+  post(shareId, text, { replyTo = null, mentions = [], people = [], bot = null, card = null } = {}) {
     this.requireRelay();
     const s = this.share(shareId);
     if (s.leftAt || s.removedAt) throw new PeerError("Ya no estás en esta conversación.", 409);
@@ -481,7 +508,9 @@ export class Peers extends EventEmitter {
     if (body.length > PEER_LIMITS.text) throw new PeerError("El mensaje es demasiado largo.");
     const signed = bot ? cleanBot(bot) : null;
     const named = cleanMentions(mentions);
-    const extra = { ...(replyTo ? { replyTo } : {}), ...(signed ? { bot: signed } : {}), ...(named.length ? { mentions: named } : {}), ...(card ? { card } : {}) };
+    const members = new Set(s.members.map((m) => m.id));
+    const persons = [...new Set(people)].filter((a) => isAddress(a) && a !== this.address && members.has(a)).slice(0, 16);
+    const extra = { ...(replyTo ? { replyTo } : {}), ...(signed ? { bot: signed } : {}), ...(named.length ? { mentions: named } : {}), ...(persons.length ? { people: persons } : {}), ...(card ? { card } : {}) };
     const to = this.others(s).filter((id) => ["active", "known", "pending"].includes(this.contact(id)?.status));
     const m = this.store.put("peerMessages", { id: randomUUID(), shareId, from: this.address, text: body, at: now(), status: to.length ? "sending" : "sent", pendingTo: to, ...extra });
     for (const id of to) this.enqueue(id, { type: "msg", share: shareId, id: m.id, at: m.at, text: body, ...extra, ...(s.kind === "group" ? { v: s.version } : {}) }, { messageId: m.id });
@@ -585,7 +614,7 @@ export class Peers extends EventEmitter {
     if (!isAddress(body.profile?.box)) throw Error("perfil incompleto");
     const name = clip(body.profile.name, PEER_LIMITS.name) || inv.name;
     const existing = this.contact(from);
-    this.store.put("peerContacts", { ...(existing || {}), id: from, box: body.profile.box, name, invitedAs: inv.name, status: "active", via: "invitation", addedAt: existing?.addedAt || now(), lastSeenAt: now(), asks: existing?.asks || { ...ASK_DEFAULTS }, bots: botsOf(body.profile) });
+    this.store.put("peerContacts", { ...(existing || {}), id: from, box: body.profile.box, name, invitedAs: inv.name, status: "active", via: "invitation", addedAt: existing?.addedAt || now(), lastSeenAt: now(), asks: existing?.asks || { ...ASK_DEFAULTS }, bots: botsOf(body.profile), away: statusOf(body.profile) });
     this.store.patch("peerInvites", inv.id, { status: "used", usedAt: now(), usedBy: from, code: null });
     void this.client?.deleteInvite(inv.lookup);
     this.enqueue(from, { type: "welcome", profile: this.myProfile() });
@@ -597,12 +626,12 @@ export class Peers extends EventEmitter {
     const from = c.id;
     switch (body.type) {
       case "welcome":
-        if (c.status === "pending") this.store.patch("peerContacts", from, { status: "active", bots: botsOf(body.profile), ...(body.profile?.name ? { name: clip(body.profile.name, PEER_LIMITS.name) } : {}) });
+        if (c.status === "pending") this.store.patch("peerContacts", from, { status: "active", bots: botsOf(body.profile), away: statusOf(body.profile), ...(body.profile?.name ? { name: clip(body.profile.name, PEER_LIMITS.name) } : {}) });
         this.ensureDm(from);
         this.sayOnline(from);
         return;
       case "profile":
-        this.store.patch("peerContacts", from, { ...(body.name ? { name: clip(body.name, PEER_LIMITS.name) } : {}), ...(Array.isArray(body.bots) ? { bots: botsOf(body) } : {}) });
+        this.store.patch("peerContacts", from, { ...(body.name ? { name: clip(body.name, PEER_LIMITS.name) } : {}), ...(Array.isArray(body.bots) ? { bots: botsOf(body) } : {}), ...("status" in body ? { away: statusOf(body) } : {}) });
         return;
       case "bye": {
         this.store.patch("peerContacts", from, { status: "removed", removedAt: now() });
@@ -715,10 +744,11 @@ export class Peers extends EventEmitter {
     const at = typeof body.at === "string" && !Number.isNaN(Date.parse(body.at)) && Date.parse(body.at) < this.clock() + 300000 ? body.at : now();
     const bot = body.bot ? cleanBot(body.bot) : null;
     const mentions = cleanMentions(body.mentions);
+    const people = (Array.isArray(body.people) ? body.people : []).filter((a) => isAddress(a) && s.members.some((m) => m.id === a)).slice(0, 16);
     const card = body.card && typeof body.card === "object" ? body.card : null; // checked by whoever reads it (meetings.mjs)
     const m = this.store.put("peerMessages", {
       id: body.id, shareId: s.id, from: c.id, text, at, receivedAt: now(), status: "received",
-      ...(typeof body.replyTo === "string" ? { replyTo: body.replyTo.slice(0, 64) } : {}), ...(bot ? { bot } : {}), ...(mentions.length ? { mentions } : {}), ...(card ? { card } : {}),
+      ...(typeof body.replyTo === "string" ? { replyTo: body.replyTo.slice(0, 64) } : {}), ...(bot ? { bot } : {}), ...(mentions.length ? { mentions } : {}), ...(people.length ? { people } : {}), ...(card ? { card } : {}),
     });
     this.store.patch("peerShares", s.id, { lastAt: at > (s.lastAt || "") ? at : s.lastAt, lastLine: lastLineOf((bot ? bot.name + ": " : "") + text), lastFrom: c.id, lastFromOther: c.id, unread: (s.unread || 0) + 1 });
     this.typing.get(s.id)?.delete(bot ? c.id + "#" + bot.name : c.id);
@@ -727,14 +757,16 @@ export class Peers extends EventEmitter {
     const share = this.store.get("peerShares", s.id);
     this.emit("posted", { share, message: m, mine: false });
     const who = bot ? bot.name + " (bot de " + c.name.split(" ")[0] + ")" : c.name;
-    this.notify({ title: share.kind === "dm" ? who : who + " en «" + share.title + "»", text: lastLineOf(text), shareId: s.id });
+    const named = people.includes(this.address);
+    this.notify({ title: named ? who + " te ha mencionado" + (share.kind === "dm" ? "" : " en «" + share.title + "»") : share.kind === "dm" ? who : who + " en «" + share.title + "»", text: lastLineOf(text), shareId: s.id, mention: named });
   }
-  notify({ title, text, shareId }) {
+  notify({ title, text, shareId, mention = false }) {
     if (!this.notifier) return;
     // One notice per conversation: the newest replaces the one you did not read.
     for (const n of this.store.list("notifications").filter((n) => n.peerShare === shareId && !n.read)) this.store.remove("notifications", n.id);
     try {
-      this.notifier.notify({ kind: "message", title, text, url: "/con/" + shareId, extra: { peerShare: shareId } });
+      // A mention has its own sound and gets through «Avísame de: lo importante».
+      this.notifier.notify({ kind: mention ? "mention" : "message", title, text, url: "/con/" + shareId, extra: { peerShare: shareId } });
     } catch (error) {
       this.log("No se pudo avisar: " + error.message);
     }
@@ -747,10 +779,11 @@ export class Peers extends EventEmitter {
   announceProfile() {
     const name = this.myName();
     const bots = this.myBots();
-    const signature = JSON.stringify([name, bots]);
+    const status = this.myStatus();
+    const signature = JSON.stringify([name, bots, status]);
     if (this.config().announced === signature) return;
     this.store.put("peerConfig", { ...this.config(), announced: signature });
-    for (const c of this.contacts().filter((x) => x.status === "active")) this.enqueue(c.id, { type: "profile", name, bots });
+    for (const c of this.contacts().filter((x) => x.status === "active")) this.enqueue(c.id, { type: "profile", name, bots, status });
     void this.flushOutbox();
   }
 }

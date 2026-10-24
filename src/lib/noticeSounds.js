@@ -10,6 +10,9 @@ const NOTES = {
   // [frequency Hz, start s, length s, gain]
   done: [[659.25, 0, 0.42, 0.16], [987.77, 0.13, 0.6, 0.13]],
   needs: [[880, 0, 0.2, 0.17], [1174.66, 0.16, 0.26, 0.15], [880, 0.52, 0.2, 0.15], [1174.66, 0.68, 0.34, 0.14]],
+  // «Personas»: someone writes to you (one soft note), someone names you (three rising, brighter).
+  message: [[783.99, 0, 0.32, 0.12]],
+  mention: [[987.77, 0, 0.14, 0.15], [1318.51, 0.11, 0.14, 0.14], [1567.98, 0.22, 0.42, 0.13]],
 };
 
 function audio() {

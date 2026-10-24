@@ -219,10 +219,21 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 <div style="width: 100%; max-width: 760px; margin: 0 auto; padding: 44px clamp(20px, 4vw, 44px) 60px; display: flex; flex-direction: column; gap: 30px">
 <div style="display: flex; flex-direction: column; gap: 8px"><span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Ajustes</span><h1 id="per-t" style="margin: 0; font: 600 36px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Personas</h1><p style="margin: 0; font-size: 15px; line-height: 1.5; color: #5C606C">Con quién hablas desde Colmena y qué puede pedirte cada uno.</p></div>
 
-<div style="display: flex; align-items: center; gap: 18px; padding: 20px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)">
+<div style="display: flex; flex-direction: column; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2); overflow: hidden">
+<div style="display: flex; align-items: center; gap: 18px; padding: 20px">
 <span aria-hidden="true" style="width: 56px; height: 56px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font: 600 16px/1 'Geist', sans-serif">SR</span>
 <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 17px; font-weight: 600">Sergio Rico</strong><span style="font-size: 14px; color: #5C606C">Tus palabras de seguridad: <span style="font-weight: 600; color: #12131A">miel · faro · trébol · nube</span></span></span>
 <button type="button" onClick="{{openInvite}}" style="height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Invitar a alguien</button>
+</div>
+<div id="tu-estado" style="display: flex; flex-direction: column; gap: 12px; padding: 14px 20px 18px; border-top: 1px solid rgba(18,19,26,.06)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px">
+<span style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 16px; font-weight: 600">Tu estado</strong><span style="font-size: 14px; color: #5C606C">{{stNote}}</span></span>
+<div role="radiogroup" aria-label="Tu estado" style="display: flex; gap: 2px; padding: 3px; background: rgba(18,19,26,.05); border-radius: 999px"><sc-for list="{{stModes}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: {{o.bg}}; box-shadow: {{o.sh}}">{{o.label}}</button></sc-for></div>
+</div>
+<sc-if value="{{stPicking}}" hint-placeholder-val="{{ false }}">
+<div role="group" aria-label="Hasta cuándo" style="display: flex; flex-wrap: wrap; gap: 8px; animation: develop .3s ease-out"><sc-for list="{{stOpts}}" as="u" hint-placeholder-count="3"><button type="button" onClick="{{u.pick}}" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 13px; font-weight: 600">{{u.label}}</button></sc-for></div>
+</sc-if>
+</div>
 </div>
 
 <section aria-labelledby="ct-h" style="display: flex; flex-direction: column; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2); overflow: hidden">
@@ -391,14 +402,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"$preview":{"width":1440,"height":1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = this.from(props);
   }
   from(p) {
-    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '', noteClosed: false, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
+    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '', noteClosed: false, st: p.estado || 'available', stUntil: p.estado === 'dnd' ? 'hasta las 18:00' : p.estado === 'away' ? 'hasta el lunes 27' : '', stPick: null, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
   }
   componentDidUpdate(prev) {
     if (prev.paso !== this.props.paso || prev.reunion !== this.props.reunion) this.setState(this.from(this.props));
@@ -494,9 +505,13 @@ class Component extends DCLogic {
       martaSays: () => this.setState({ meet: 'hecha' }),
       undoMeet: () => this.setState({ meet: 'elegir' }),
       isAjustes: s.paso === 'personas',
+      stNote: s.st === 'available' ? 'Disponible. Lo ven las personas con las que hablas.' : (s.st === 'dnd' ? 'No molestar · ' : 'Fuera ') + s.stUntil + '. Mientras tanto no te salta ni te suena ningún aviso.',
+      stModes: [['available', 'Disponible'], ['dnd', 'No molestar'], ['away', 'Fuera']].map(([v, label]) => ({ label, ...pill((s.stPick || s.st) === v), pick: () => this.setState(v === 'available' ? { st: v, stPick: null, stUntil: '' } : { stPick: v }) })),
+      stPicking: !!s.stPick,
+      stOpts: (s.stPick === 'dnd' ? [['1 hora', 'hasta las 13:30'], ['3 horas', 'hasta las 15:30'], ['Hasta mañana', 'hasta mañana a las 9:00'], ['Hasta que lo quite', '']] : [['Hasta mañana', 'hasta mañana a las 9:00'], ['Hasta el lunes', 'hasta el lunes 27'], ['Hasta que lo quite', '']]).map(([label, until]) => ({ label, pick: () => this.setState({ st: s.stPick, stUntil: until, stPick: null }) })),
       contacts: [
         ['marta', 'MR', 'Marta Ruiz', 'Conectada · su bot Leo está en 1 sala contigo', '#EFE2D3', '#1E9E6A', '0'],
-        ['luis', 'LG', 'Luis Gómez', 'Hace 2 horas · su bot Nico está en 1 sala contigo', '#DCE5EE', '#C9CBD1', '0']
+        ['luis', 'LG', 'Luis Gómez', 'Fuera hasta el lunes 27 · su bot Nico está en 1 sala contigo', '#DCE5EE', '#C9CBD1', '0']
       ].map(([id, ini, name, note, bg, dot, border]) => { const open = s.open === id; return {
         ini, name, note, bg, dot, border, first: name.split(' ')[0], open, exp: String(open), rot: open ? 'rotate(180deg)' : 'none',
         toggle: () => this.setState({ open: open ? null : id }),

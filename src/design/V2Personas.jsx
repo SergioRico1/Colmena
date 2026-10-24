@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}\n.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}\n@media (max-width: 760px){[data-convlist]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -13,7 +13,7 @@ export class Logic extends DCLogic {
     this.state = this.from(props);
   }
   from(p) {
-    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '', noteClosed: false, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
+    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '', noteClosed: false, st: p.estado || 'available', stUntil: p.estado === 'dnd' ? 'hasta las 18:00' : p.estado === 'away' ? 'hasta el lunes 27' : '', stPick: null, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
   }
   componentDidUpdate(prev) {
     if (prev.paso !== this.props.paso || prev.reunion !== this.props.reunion) this.setState(this.from(this.props));
@@ -109,9 +109,13 @@ export class Logic extends DCLogic {
       martaSays: () => this.setState({ meet: 'hecha' }),
       undoMeet: () => this.setState({ meet: 'elegir' }),
       isAjustes: s.paso === 'personas',
+      stNote: s.st === 'available' ? 'Disponible. Lo ven las personas con las que hablas.' : (s.st === 'dnd' ? 'No molestar · ' : 'Fuera ') + s.stUntil + '. Mientras tanto no te salta ni te suena ningún aviso.',
+      stModes: [['available', 'Disponible'], ['dnd', 'No molestar'], ['away', 'Fuera']].map(([v, label]) => ({ label, ...pill((s.stPick || s.st) === v), pick: () => this.setState(v === 'available' ? { st: v, stPick: null, stUntil: '' } : { stPick: v }) })),
+      stPicking: !!s.stPick,
+      stOpts: (s.stPick === 'dnd' ? [['1 hora', 'hasta las 13:30'], ['3 horas', 'hasta las 15:30'], ['Hasta mañana', 'hasta mañana a las 9:00'], ['Hasta que lo quite', '']] : [['Hasta mañana', 'hasta mañana a las 9:00'], ['Hasta el lunes', 'hasta el lunes 27'], ['Hasta que lo quite', '']]).map(([label, until]) => ({ label, pick: () => this.setState({ st: s.stPick, stUntil: until, stPick: null }) })),
       contacts: [
         ['marta', 'MR', 'Marta Ruiz', 'Conectada · su bot Leo está en 1 sala contigo', '#EFE2D3', '#1E9E6A', '0'],
-        ['luis', 'LG', 'Luis Gómez', 'Hace 2 horas · su bot Nico está en 1 sala contigo', '#DCE5EE', '#C9CBD1', '0']
+        ['luis', 'LG', 'Luis Gómez', 'Fuera hasta el lunes 27 · su bot Nico está en 1 sala contigo', '#DCE5EE', '#C9CBD1', '0']
       ].map(([id, ini, name, note, bg, dot, border]) => { const open = s.open === id; return {
         ini, name, note, bg, dot, border, first: name.split(' ')[0], open, exp: String(open), rot: open ? 'rotate(180deg)' : 'none',
         toggle: () => this.setState({ open: open ? null : id }),
@@ -870,24 +874,60 @@ export function View({ v }) {
                         {"Con quién hablas desde Colmena y qué puede pedirte cada uno."}
                       </p>
                     </div>
-                    <div style={{display: "flex", alignItems: "center", gap: "18px", padding: "20px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)"}}>
-                      <span aria-hidden="true" style={{width: "56px", height: "56px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 16px/1 'Geist', sans-serif"}}>
-                        {"SR"}
-                      </span>
-                      <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "4px"}}>
-                        <strong style={{fontSize: "17px", fontWeight: "600"}}>
-                          {"Sergio Rico"}
-                        </strong>
-                        <span style={{fontSize: "14px", color: "#5C606C"}}>
-                          {"Tus palabras de seguridad: "}
-                          <span style={{fontWeight: "600", color: "#12131A"}}>
-                            {"miel · faro · trébol · nube"}
+                    <div style={{display: "flex", flexDirection: "column", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)", overflow: "hidden"}}>
+                      <div style={{display: "flex", alignItems: "center", gap: "18px", padding: "20px"}}>
+                        <span aria-hidden="true" style={{width: "56px", height: "56px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 16px/1 'Geist', sans-serif"}}>
+                          {"SR"}
+                        </span>
+                        <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "4px"}}>
+                          <strong style={{fontSize: "17px", fontWeight: "600"}}>
+                            {"Sergio Rico"}
+                          </strong>
+                          <span style={{fontSize: "14px", color: "#5C606C"}}>
+                            {"Tus palabras de seguridad: "}
+                            <span style={{fontWeight: "600", color: "#12131A"}}>
+                              {"miel · faro · trébol · nube"}
+                            </span>
                           </span>
                         </span>
-                      </span>
-                      <button type="button" onClick={v.openInvite} style={{height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
-                        {"Invitar a alguien"}
-                      </button>
+                        <button type="button" onClick={v.openInvite} style={{height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                          {"Invitar a alguien"}
+                        </button>
+                      </div>
+                      <div id="tu-estado" style={{display: "flex", flexDirection: "column", gap: "12px", padding: "14px 20px 18px", borderTop: "1px solid rgba(18,19,26,.06)"}}>
+                        <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px"}}>
+                          <span style={{flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "3px"}}>
+                            <strong style={{fontSize: "16px", fontWeight: "600"}}>
+                              {"Tu estado"}
+                            </strong>
+                            <span style={{fontSize: "14px", color: "#5C606C"}}>
+                              {v.stNote}
+                            </span>
+                          </span>
+                          <div role="radiogroup" aria-label="Tu estado" style={{display: "flex", gap: "2px", padding: "3px", background: "rgba(18,19,26,.05)", borderRadius: "999px"}}>
+                            {(v.stModes || []).map((o, $index) => (
+                              <React.Fragment key={$index}>
+                                <button type="button" role="radio" aria-checked={o?.on} onClick={o?.pick} style={{height: "34px", padding: "0 14px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: "600", background: o?.bg, boxShadow: o?.sh}}>
+                                  {o?.label}
+                                </button>
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </div>
+                        {v.stPicking ? (
+                          <>
+                            <div role="group" aria-label="Hasta cuándo" style={{display: "flex", flexWrap: "wrap", gap: "8px", animation: "develop .3s ease-out"}}>
+                              {(v.stOpts || []).map((u, $index) => (
+                                <React.Fragment key={$index}>
+                                  <button type="button" onClick={u?.pick} style={{height: "36px", padding: "0 14px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                                    {u?.label}
+                                  </button>
+                                </React.Fragment>
+                              ))}
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
                     <section aria-labelledby="ct-h" style={{display: "flex", flexDirection: "column", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)", overflow: "hidden"}}>
                       <h2 id="ct-h" style={{margin: "0", padding: "18px 20px 6px", fontSize: "13px", fontWeight: "500", color: "#6B6F7A"}}>

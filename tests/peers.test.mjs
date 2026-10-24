@@ -24,6 +24,8 @@ const until = async (fn, what = "condición", ms = 8000) => {
   }
 };
 
+const until_ = (...args) => until(...args); // for tests with a local named «until»
+
 async function world(t, names = ["Sergio Rico", "Marta Ruiz", "Luis Gómez"]) {
   const base = await mkdtemp(path.join(os.tmpdir(), "colmena-peers-"));
   // COLMENA_TEST_RELAY=<url> runs the same test against another mailbox (the Cloudflare one).
@@ -271,4 +273,38 @@ test("live notes only go to who is connected (each one costs a request at the ma
   sergio.peers.heartbeat();
   sergio.peers.typingNow(dmId(sergio.peers.address, marta.peers.address));
   assert.equal(sent.length, 0);
+});
+
+test("statuses: «No molestar» and «Fuera hasta…» reach your contacts, expire, and silence your notices", async (t) => {
+  const { people: [sergio, marta] } = await world(t, ["Sergio Rico", "Marta Ruiz"]);
+  await connect(sergio, marta);
+  const until = new Date(Date.now() + 3 * 864e5).toISOString();
+  marta.peers.setStatus("away", until);
+  await until_(() => sergio.peers.contactView(sergio.peers.contact(marta.peers.address)).away?.mode === "away", "Sergio ve que Marta está fuera");
+  assert.equal(sergio.peers.contactView(sergio.peers.contact(marta.peers.address)).away.until, until);
+  assert.equal(marta.peers.stateView().me.status.mode, "away");
+  // While she is away nothing pops for her (it is kept in Hoy); back to available, it does.
+  const { shouldPop, statusNow } = await import("../server/notifications.mjs");
+  assert.equal(shouldPop(marta.store.get("settings", "main"), "mention"), false);
+  marta.peers.setStatus("available");
+  assert.equal(shouldPop(marta.store.get("settings", "main"), "mention"), true);
+  await until_(() => !sergio.peers.contactView(sergio.peers.contact(marta.peers.address)).away, "vuelve a estar disponible");
+  // An expired status is «available» everywhere.
+  assert.equal(statusNow({ status: { mode: "dnd", until: new Date(Date.now() - 1000).toISOString() } }).mode, "available");
+  assert.throws(() => marta.peers.setStatus("dnd", new Date(Date.now() - 1000).toISOString()), /aún no haya pasado/);
+});
+
+test("a message that names you is a «mention» (its own sound); others are «message»", async (t) => {
+  const { people: [sergio, marta] } = await world(t, ["Sergio Rico", "Marta Ruiz"]);
+  await connect(sergio, marta);
+  const dm = dmId(sergio.peers.address, marta.peers.address);
+  sergio.peers.post(dm, "Hola");
+  sergio.peers.post(dm, "Marta, mira esto", { people: [marta.peers.address] });
+  await until_(() => marta.notices.filter((n) => n.url === "/con/" + dm).length >= 2, "llegan los avisos");
+  const kinds = marta.notices.filter((n) => n.url === "/con/" + dm).map((n) => n.kind);
+  assert.deepEqual(kinds.slice(-2), ["message", "mention"]);
+  assert.match(marta.notices.at(-1).title, /te ha mencionado/);
+  const { delivery } = await import("../server/notifications.mjs");
+  assert.equal(delivery({}, "mention").sound, "mention");
+  assert.equal(delivery({}, "message").sound, "message");
 });

@@ -245,7 +245,7 @@ else
     // notice, a sound («done» or «needs», played by the window: each kind its own), or both.
     const playSound = (sound) => {
       const win = mainWin && !mainWin.isDestroyed() ? mainWin : null;
-      if (win && ["done", "needs"].includes(sound)) win.webContents.send("colmena-sound", sound);
+      if (win && ["done", "needs", "message", "mention"].includes(sound)) win.webContents.send("colmena-sound", sound);
     };
     backend.on("message", (message) => {
       if (message?.type === "presence") { presence = message; background?.setPresence?.(message); updater?.workChanged(); return; }

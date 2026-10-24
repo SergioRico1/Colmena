@@ -3,7 +3,7 @@ import { ShieldCheck, Ticket, UserPlus } from "lucide-react";
 import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, patch } from "../../../lib/api.js";
 import { later, isHidden } from "../../../lib/undoToast.js";
-import { RELAY_LABEL } from "../../../lib/peers.js";
+import { RELAY_LABEL, statusText } from "../../../lib/peers.js";
 import { PeerAvatar } from "../people/PeerAvatar.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import PeopleIntro, { HELP_URL } from "../people/PeopleIntro.jsx";
@@ -18,7 +18,7 @@ const ASKS = [
   ["archivos", "Ver tus archivos", "Solo los que compartas tú en una conversación.", [["pregunta", "Pregúntame"], ["nunca", "Nunca"]]],
 ];
 const when = (iso) => new Date(iso).toLocaleString("es-ES", { weekday: "short", hour: "2-digit", minute: "2-digit" });
-const seenText = (c) => (c.online ? "Conectada" : c.status === "pending" ? "Aún no ha abierto Colmena desde que aceptaste" : c.lastSeenAt ? "Vista por última vez el " + when(c.lastSeenAt) : "En su Colmena");
+const seenText = (c) => (c.away ? statusText(c.away) : c.online ? "Conectada" : c.status === "pending" ? "Aún no ha abierto Colmena desde que aceptaste" : c.lastSeenAt ? "Vista por última vez el " + when(c.lastSeenAt) : "En su Colmena");
 
 export default function PeopleSettings() {
   const { peers = null } = useStore();
@@ -49,6 +49,7 @@ export default function PeopleSettings() {
             <button type="button" onClick={() => setSheet("aceptar")} disabled={relay.status === "off"} style={pill(false)}><Ticket size={15} strokeWidth={2.2} aria-hidden="true" />{"Tengo una invitación"}</button>
           </span>
         </div>
+        <StatusRow status={peers.me.status} act={act} />
       </Group>
 
       <Group id="pp-ct" title={`Conectadas · ${contacts.length}`} anchor="contactos" note={contacts.length ? "Enviar, comprar, publicar o pagar por algo que pida otra persona o su bot siempre te pregunta, aunque digas «Siempre» aquí." : null}>
@@ -111,6 +112,45 @@ export default function PeopleSettings() {
       {sheet === "invitar" ? <InviteSheet onClose={() => setSheet(null)} /> : null}
       {sheet === "aceptar" ? <AcceptSheet onClose={() => setSheet(null)} /> : null}
     </>
+  );
+}
+
+// «Tu estado» (design/V2Personas.dc.html, paso estado): what your contacts see, and while it
+// lasts nothing pops or sounds (it is kept in Hoy). Each mode with the usual «until» choices.
+const atHour = (h, addDays = 0) => { const d = new Date(); d.setDate(d.getDate() + addDays); d.setHours(h, 0, 0, 0); return d.toISOString(); };
+const nextMonday = () => { const d = new Date(); d.setHours(9, 0, 0, 0); d.setDate(d.getDate() + (((8 - d.getDay()) % 7) || 7)); return d.toISOString(); };
+const UNTIL = {
+  dnd: [["1 hora", () => new Date(Date.now() + 3600e3).toISOString()], ["3 horas", () => new Date(Date.now() + 3 * 3600e3).toISOString()], ["Hasta mañana", () => atHour(9, 1)], ["Hasta que lo quite", () => null]],
+  away: [["Hasta mañana", () => atHour(9, 1)], ["Hasta el lunes", nextMonday], ["Hasta que lo quite", () => null]],
+};
+function StatusRow({ status, act }) {
+  const mode = status?.mode || "available";
+  const [picking, setPicking] = useState(null);
+  const [day, setDay] = useState("");
+  const set = (m, until = null) => { setPicking(null); act.act(() => patch("/peers/status", { mode: m, until })); };
+  const choose = (m) => (m === "available" ? set("available") : setPicking(m));
+  return (
+    <div id="tu-estado" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px 20px 18px", borderTop: LINE }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px" }}>
+        <span style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "3px" }}>
+          <strong style={{ fontSize: "16px", fontWeight: 600 }}>{"Tu estado"}</strong>
+          <span style={{ fontSize: "14px", color: MUTED }}>{mode === "available" ? "Disponible. Lo ven las personas con las que hablas." : statusText(status) + ". Mientras tanto no te salta ni te suena ningún aviso."}</span>
+        </span>
+        <span style={{ flex: "0 1 360px" }}><Segmented label="Tu estado" items={[["available", "Disponible"], ["dnd", "No molestar"], ["away", "Fuera"]]} value={picking || mode} busy={act.busy} onPick={choose} /></span>
+      </div>
+      {picking ? (
+        <div role="group" aria-label="Hasta cuándo" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", animation: "rise .2s ease-out" }}>
+          {UNTIL[picking].map(([label, at]) => <button key={label} type="button" onClick={() => set(picking, at())} style={{ ...pill(false), height: "36px", fontSize: "13px" }}>{label}</button>)}
+          {picking === "away" ? (
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: MUTED }}>
+              {"Hasta el"}
+              <input type="date" value={day} min={new Date(Date.now() + 864e5).toISOString().slice(0, 10)} onChange={(e) => { setDay(e.target.value); if (e.target.value) set("away", new Date(e.target.value + "T09:00:00").toISOString()); }} style={{ height: "36px", padding: "0 10px", border: 0, borderRadius: "12px", background: "#F4F4F0", font: "inherit", fontSize: "13px" }} />
+            </label>
+          ) : null}
+          <button type="button" onClick={() => setPicking(null)} style={{ ...pill(false), height: "36px", fontSize: "13px", background: "transparent", color: MUTED }}>{"Cancelar"}</button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

@@ -1,11 +1,19 @@
+import { Clock3, Moon } from "lucide-react";
+
 // People of «Personas» (design/V2Personas.dc.html): neutral circles with initials (bots are
-// shapes; people are never shapes), a green dot while connected, a dashed ring while invited.
+// shapes; people are never shapes), a green dot while connected, a dashed ring while invited,
+// a moon for «No molestar» and a clock for «Fuera».
 export function PeerAvatar({ person, size = 38, ring = "#F5F5F2", dashed = false, dot = false }) {
   const me = !!person?.me;
+  const badge = Math.max(9, Math.round(size / 3.4));
+  const away = dot ? person?.away?.mode : null;
+  const Icon = away === "dnd" ? Moon : away === "away" ? Clock3 : null;
   return (
     <span aria-hidden="true" style={{ position: "relative", width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", boxSizing: "border-box", background: me ? "#12131A" : person?.color || "#EEEAE3", color: me ? "#FFFFFF" : "#12131A", font: `600 ${Math.max(8, Math.round(size / 2.9))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em", border: dashed ? "1.5px dashed #8C8F99" : 0 }}>
       {me ? "TÚ" : person?.initials || "?"}
-      {dot ? <span style={{ position: "absolute", right: 0, bottom: 0, width: Math.max(9, Math.round(size / 3.4)) + "px", height: Math.max(9, Math.round(size / 3.4)) + "px", borderRadius: "50%", background: person?.online ? "#1E9E6A" : "#C9CBD1", boxShadow: `0 0 0 2px ${ring}` }} /> : null}
+      {Icon ? (
+        <span style={{ position: "absolute", right: "-2px", bottom: "-2px", width: badge + 4 + "px", height: badge + 4 + "px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#FFFFFF", color: "#5C606C", boxShadow: `0 0 0 2px ${ring}` }}><Icon size={badge} strokeWidth={2.4} /></span>
+      ) : dot ? <span style={{ position: "absolute", right: 0, bottom: 0, width: badge + "px", height: badge + "px", borderRadius: "50%", background: person?.online ? "#1E9E6A" : "#C9CBD1", boxShadow: `0 0 0 2px ${ring}` }} /> : null}
     </span>
   );
 }

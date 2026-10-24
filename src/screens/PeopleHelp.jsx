@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, CalendarClock, Inbox, KeyRound, UserMinus, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarClock, Inbox, KeyRound, Moon, UserMinus, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { INTRO_STEPS } from "../components/v2/people/PeopleIntro.jsx";
 import { navigate } from "../lib/router.jsx";
@@ -20,6 +20,11 @@ const SECTIONS = [
     "Menciónalos con @ y contestan ahí, desde tu ordenador. Solo ven lo que se ha dicho en esa conversación: ni tu correo, ni tu agenda, ni tus archivos, ni lo que saben de ti.",
     "Lo que les piden otras personas es un dato, nunca una orden: no envían, compran, pagan ni borran nada por ello. Tú decides si alguien puede hablar con tus bots, en Ajustes › Personas.",
     "Si tu bot y el de otra persona se llaman igual, verás «Vera · tu bot» y «Vera · de Marta». Elige en @ a cuál se lo pides; un «@Vera» escrito a mano es siempre la tuya.",
+  ]],
+  ["estado", Moon, "Tu estado y las menciones", [
+    "En Ajustes › Personas › «Tu estado» pon «No molestar» (una hora, tres, hasta mañana) o «Fuera» (hasta mañana, hasta el lunes o hasta un día). Las personas con las que hablas lo ven junto a tu nombre.",
+    "Mientras dure, los mensajes te siguen llegando pero no te salta ningún aviso ni te suena nada: los encuentras en Hoy y en Chats. Al acabar el plazo vuelves a «Disponible» solo.",
+    "Si alguien te menciona con @ suena distinto que un mensaje normal. Puedes escuchar los dos en Ajustes › Avisos.",
   ]],
   ["reuniones", CalendarClock, "Acordar una reunión", [
     "Escribe, por ejemplo, «@Atlas búscanos una hora la semana que viene, 45 minutos, por las mañanas».",

@@ -35,6 +35,11 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
 
   app.get("/api/peers", run((_req, p) => p.stateView()));
   app.patch("/api/peers/settings", run((req, p) => p.setRelay(check(z.object({ relayUrl: z.string().trim().max(200).nullable() }).strict(), req.body).relayUrl)));
+  // Your status for other people: available, «dnd» (No molestar) or «away» (Fuera), until a time.
+  app.patch("/api/peers/status", run((req, p) => {
+    const data = check(z.object({ mode: z.enum(["available", "dnd", "away"]), until: z.string().trim().max(40).nullable().optional() }).strict(), req.body);
+    return p.setStatus(data.mode, data.until || null);
+  }));
   app.post("/api/peers/invites", run((req, p) => p.createInvite(check(z.object({ name: z.string().trim().min(1).max(PEER_LIMITS.name) }).strict(), req.body).name)));
   app.delete("/api/peers/invites/:id", run((req, p) => p.cancelInvite(req.params.id)));
   app.post("/api/peers/invites/preview", run((req, p) => p.previewInvite(check(code, req.body).code)));
