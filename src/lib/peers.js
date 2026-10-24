@@ -5,6 +5,14 @@ import { del, get, patch, post } from "./api.js";
 
 export const shareUrl = (id) => "/con/" + id;
 
+/** A picked or dropped file as base64 (the API only takes JSON). */
+export const fileBase64 = (file) => new Promise((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => resolve(String(r.result).slice(String(r.result).indexOf(",") + 1));
+  r.onerror = () => reject(new Error("No se pudo leer el archivo."));
+  r.readAsDataURL(file);
+});
+
 /** «las 18:00», «mañana a las 9:00», «el lunes 27». */
 export function whenText(iso) {
   const d = new Date(iso), now = new Date();
@@ -72,6 +80,7 @@ export function useShareChat(id) {
         thinkingTimer.current = setTimeout(() => setThinking([]), 90000);
       }
       if (event.type === "meeting" && event.meeting) updateMeeting(event.meeting);
+      if (event.type === "file" && event.file) setData((d) => ({ ...d, messages: d.messages.map((m) => (m.file?.id === event.file.id ? { ...m, file: event.file } : m)) }));
       if (event.type === "seen" || event.type === "relay" || event.type === "presence") void load();
     };
     // Statuses («Enviando…» → sent) change without a live event: a light refresh now and then.

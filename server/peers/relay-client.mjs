@@ -59,6 +59,28 @@ export class RelayClient {
     if (!res.ok) throw Object.assign(Error(data.error || "No se encontró la invitación."), { status: res.status });
     return data;
   }
+  /** Part n of a sealed file; part 0 also says how many parts and the read token's hash. */
+  async putBlob(id, n, bytes, { parts = null, read = null } = {}) {
+    const path = "/v1/blobs/" + id + "/" + n;
+    const res = await this.fetch(this.url + path, {
+      method: "PUT",
+      headers: { Authorization: authHeader(this.identity, "PUT", path, bytes), "Content-Type": "application/octet-stream", ...(n === 0 ? { "X-Blob-Parts": String(parts), "X-Blob-Read": read } : {}) },
+      body: bytes,
+      signal: AbortSignal.timeout(120000),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(Error(data.error || "El buzón respondió " + res.status + "."), { status: res.status });
+    return data;
+  }
+  async getBlob(id, n, token) {
+    const res = await this.fetch(this.url + "/v1/blobs/" + id + "/" + n, { headers: { "X-Blob-Token": token }, signal: AbortSignal.timeout(120000) });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw Object.assign(Error(data.error || "El buzón respondió " + res.status + "."), { status: res.status });
+    }
+    return Buffer.from(await res.arrayBuffer());
+  }
+  deleteBlob(id) { return this.request("DELETE", "/v1/blobs/" + id).catch(() => null); }
   async health() {
     const res = await this.fetch(this.url + "/v1/health", { signal: AbortSignal.timeout(8000) });
     return res.ok ? res.json() : null;

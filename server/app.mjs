@@ -51,7 +51,7 @@ import { registerCodeRoutes, codeUploadParser } from "./code/routes.mjs";
 import { registerInteractionRoutes, extendState } from "./interject.mjs";
 import { Watcher, registerWatchRoutes } from "./watch.mjs";
 import { registerVoiceLiveRoutes } from "./voice-live.mjs";
-import { registerPeerRoutes } from "./peers/routes.mjs";
+import { registerPeerRoutes, peerFileParser } from "./peers/routes.mjs";
 import { btwQuestion, registerBtwRoutes } from "./btw.mjs";
 import { botThread, olderChats } from "./threads.mjs";
 import { registerGoalRoutes, acceptGoalSuggestion } from "./goals.mjs";
@@ -288,6 +288,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   });
   app.use(attachmentBodyParser);
   app.use(codeUploadParser); // «Código» attachments (up to 20 MB)
+  app.use(peerFileParser); // a file shared with people (up to 25 MB)
   app.use(express.json({ limit: "1400kb" }));
   app.get("/api/health", (_req, res) => res.json({ application: "Colmena", version: VERSION, pid: process.pid, ...(app.locals.stalls ? { stalls: app.locals.stalls.state } : {}) }));
   app.get("/api/bootstrap", (_req, res) => res.json({ csrf }));

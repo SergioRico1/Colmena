@@ -31,6 +31,7 @@ import { PeerBots } from "./peers/bots.mjs";
 import { Meetings } from "./peers/meetings.mjs";
 import { connectedCalendar } from "./peers/calendar.mjs";
 import { CodeShare } from "./peers/codeshare.mjs";
+import { PeerFiles, artifactSource } from "./peers/files.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 // The installed app runs this server on Electron's Node (desktop/main.cjs); the programs it
@@ -148,6 +149,8 @@ peers.meetings = new Meetings({ peers, store, calendar: connectedCalendar(connec
 new PeerBots({ peers, store, runtime }).start();
 // A Código task shared with people: they see what it is doing; it always runs here.
 peers.codeShare = new CodeShare({ peers, store, code: runtime.code }).start();
+// Files and deliverables shared with people: sealed here, opened only in their Colmenas.
+peers.files = new PeerFiles({ peers, store, artifactFile: artifactSource({ store, rootOf: (id) => runtime.root(id) }) }).start();
 store.listeners.add((event) => {
   // Your name or your bots changed: your contacts learn it (announceProfile does nothing if not).
   if (event?.type === "record" && ["settings", "bots"].includes(event.kind) && peers.identity) setTimeout(() => peers.announceProfile(), 0);

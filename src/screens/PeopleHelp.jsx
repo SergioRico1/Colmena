@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, CalendarClock, CodeXml, Inbox, KeyRound, MessageSquare, Moon, UserMinus, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarClock, CodeXml, Inbox, KeyRound, MessageSquare, Moon, Paperclip, UserMinus, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { INTRO_STEPS } from "../components/v2/people/PeopleIntro.jsx";
 import { navigate } from "../lib/router.jsx";
@@ -20,6 +20,11 @@ const SECTIONS = [
     "Pasa el ratón por un mensaje y pulsa el bocadillo para responder en un hilo. Se abre al lado y solo avisa a quien está en él: quien lo empezó, quien responde y quien mencionas.",
     "Tus mensajes se pueden editar (los demás verán «editado») y borrar para todos (queda «Mensaje borrado»). Solo tu Colmena puede cambiar lo tuyo: el cambio va firmado por ti, y nadie puede tocar tus mensajes ni tú los de otros.",
     "Escribe @ para mencionar a una persona: le llega un aviso con su propio sonido. La lupa busca en la conversación; Ctrl+K busca en todas. La búsqueda se hace en tu ordenador.",
+  ]],
+  ["archivos", Paperclip, "Compartir archivos y entregables", [
+    "Pulsa el clip (o arrastra el archivo a donde escribes): imágenes, PDF, Word, Excel, PowerPoint o texto, hasta 25 MB. También un entregable que te haya hecho un bot: se envía con su PDF para que se vea tal cual.",
+    "Sale cifrado de tu ordenador con una llave que solo va dentro del mensaje. El buzón guarda trozos que no puede leer durante 7 días; cada Colmena lo descarga, comprueba que llegó entero y lo guarda.",
+    "Se ve dentro de Colmena: las páginas del PDF, el texto del Word, los valores del Excel o el texto de cada diapositiva. Nada del archivo se ejecuta. «Guardar» lo deja en tu ordenador; si lo borras para todos, desaparece también del buzón y de las otras Colmenas.",
   ]],
   ["bots", Bot, "Tus bots en conversaciones con personas", [
     "Menciónalos con @ y contestan ahí, desde tu ordenador. Solo ven lo que se ha dicho en esa conversación: ni tu correo, ni tu agenda, ni tus archivos, ni lo que saben de ti.",

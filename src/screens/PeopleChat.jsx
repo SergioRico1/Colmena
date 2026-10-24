@@ -7,11 +7,12 @@ import PeopleMessage, { names } from "../components/v2/people/PeopleMessage.jsx"
 import PeopleComposer from "../components/v2/people/PeopleComposer.jsx";
 import ThreadPanel from "../components/v2/people/ThreadPanel.jsx";
 import ShareSearch from "../components/v2/people/ShareSearch.jsx";
-import { useShareChat, RELAY_LABEL, statusText, unsendMessage, whenText } from "../lib/peers.js";
+import { fileBase64, useShareChat, RELAY_LABEL, statusText, unsendMessage, whenText } from "../lib/peers.js";
 import { useRevealMessage } from "../lib/reveal.js";
 import { isHidden, later, useToasts } from "../lib/undoToast.js";
 import { useStore } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
+import { FileViewer } from "../components/v2/people/PeerFiles.jsx";
 import { navigate } from "../lib/router.jsx";
 import NotFound from "./NotFound.jsx";
 
@@ -30,7 +31,10 @@ const NOTE_KEY = "colmena:personas:nota-bots";
 
 export default function PeopleChat({ params = {}, query = {} }) {
   const id = params.id;
-  const { peers, bots: myBots = [] } = useStore();
+  const { peers, bots: myBots = [], artifacts = [] } = useStore();
+  const [viewing, setViewing] = useState(null); // a shared file open in the viewer
+  const [sending, setSending] = useState([]); // names of files being sealed and sent
+  const closeViewer = useCallback(() => setViewing(null), []);
   useToasts(); // a message being deleted hides until its «Deshacer» runs out
   const chat = useShareChat(id);
   const [error, setError] = useState(null);
@@ -77,6 +81,22 @@ export default function PeopleChat({ params = {}, query = {} }) {
     id: "peermsg:" + m.id, keys: ["peermsg:" + m.id], text: "Mensaje borrado para todos", error: "No se pudo borrar",
     run: async () => { await unsendMessage(m.id); await chat.load(); },
   });
+  // Files: each one sealed here and sent; the message shows it as soon as it is out.
+  const attach = async (files) => {
+    for (const file of files) {
+      setSending((list) => [...list, file.name]);
+      try { await post(`/peers/shares/${encodeURIComponent(id)}/files`, { name: file.name, content: await fileBase64(file) }); await chat.load(); }
+      catch (e) { setError(file.name + ": " + e.message); }
+      finally { setSending((list) => list.filter((n) => n !== file.name)); }
+    }
+  };
+  const shareArtifact = async (artifact) => {
+    const a = artifacts.find((x) => x.id === artifact);
+    setSending((list) => [...list, a?.title || "Entregable"]);
+    try { await post(`/peers/shares/${encodeURIComponent(id)}/files/artifact`, { artifact }); await chat.load(); }
+    catch (e) { setError(e.message); }
+    finally { setSending((list) => list.filter((n) => n !== (a?.title || "Entregable"))); }
+  };
   // My last message that someone saw: «Visto por …» goes only there.
   const lastSeenMine = [...chat.messages].reverse().find((m) => m.from === "me" && m.seenBy?.length)?.id;
   const shown = chat.messages.filter((m) => !isHidden("peermsg:" + m.id));
@@ -127,7 +147,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
                   <div key={m.id}>
                     {showDay ? <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "10px 0 12px", fontSize: "13px", color: "#6B6F7A" }}><span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} />{day}<span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} /></div> : null}
                     <PeopleMessage m={m} dm={dm} botOf={botOf} shared={shared} lastSeen={m.id === lastSeenMine} onMeeting={chat.updateMeeting}
-                      onReact={chat.react} onRetry={chat.retry} onEdit={chat.edit} onDelete={remove} onThread={m.local ? null : openThread} onError={setError} />
+                      onReact={chat.react} onRetry={chat.retry} onEdit={chat.edit} onDelete={remove} onThread={m.local ? null : openThread} onOpenFile={setViewing} onError={setError} />
                   </div>
                 );
               })}
@@ -147,9 +167,10 @@ export default function PeopleChat({ params = {}, query = {} }) {
                   {names(chat.thinking) + (chat.thinking.length > 1 ? " están pensando" : " está pensando")}
                 </span>
               ) : null}
+              {sending.length ? <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#1F4FD1", animation: "breathe 1.4s ease-in-out infinite" }} />{"Cifrando y enviando " + names(sending) + "…"}</span> : null}
               {error ? <span role="alert" style={{ color: "#B4231A" }}>{error}</span> : null}
             </p>
-            <PeopleComposer {...composer} resetKey={id} onError={setError}
+            <PeopleComposer {...composer} resetKey={id} onError={setError} onAttach={gone ? null : attach} artifacts={artifacts} onArtifact={shareArtifact}
               onSend={(text, bots, people) => { setError(null); return chat.send(text, bots, people); }}
               placeholder={gone ? "Ya no estás en esta conversación" : (dm ? `Escribe a ${other?.name.split(" ")[0] || ""}…` : "Escribe a todos…") + " o @ para mencionar"}
               above={<>
@@ -170,6 +191,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
               </>} />
           </div>
         </section>
+        {viewing ? <FileViewer file={viewing} onClose={closeViewer} /> : null}
         {threadId && share ? <ThreadPanel key={threadId} shareId={id} rootId={threadId} dm={dm} botOf={botOf} shared={shared} composer={composer} revealId={query.m || null} onClose={closeThread} onDelete={remove} onError={setError} /> : null}
       </div>
     </Shell>

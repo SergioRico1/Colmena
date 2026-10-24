@@ -33,6 +33,14 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 - Presencia: `code.view` (persona → dueño) y `code.viewers` (dueño → todos), solo en vivo, caducan a los 75 s; la pantalla avisa cada 30 s mientras la ventana se ve.
 - `code.plan`: aprobar o pedir cambios. Solo se acepta de las personas con las que se comparte y sobre el plan abierto de esa tarea. Nunca arranca nada: el dueño recibe un aviso y decide «Implementar» o «Refinar con esto»; lo que pide la otra persona va a Bruno envuelto como contenido externo (no es una orden).
 
+## Archivos y entregables (`server/peers/files.mjs`)
+- Un sobre lleva 48 KB, así que un archivo viaja aparte: se sella aquí con AES-256-GCM y una llave nueva al azar, se corta en partes de 1 MiB y se deja en el buzón (`PUT /v1/blobs/:id/:n`, firmado). El mensaje (cifrado como todos) lleva la llave, un token de lectura y el SHA-256: solo quien está en la conversación puede abrirlo. El buzón ve tamaños y quién lo subió, nunca el contenido.
+- Cada Colmena lo descarga una vez (`GET` con `X-Blob-Token`; el buzón guarda solo el hash del token), comprueba el hash, lo guarda en `<datos>/peer-files/<id>/` y olvida la llave. Si ya caducó, lo dice: «pídeselo otra vez».
+- Tipos: imágenes, PDF, Word, Excel, PowerPoint y texto; 25 MB por archivo; 7 días en el buzón; 200 MB al día por quien sube. Un entregable de Colmena va con su PDF para verse tal cual.
+- El visor nunca ejecuta nada del archivo: páginas de PDF dibujadas aquí, el texto de un Word (mammoth → bloques de texto), los valores de un Excel (exceljs), el texto de cada diapositiva. Imágenes y PDF se sirven con `sandbox` en la CSP; lo demás solo se descarga.
+- Borrado para todos: desaparece del buzón y de cada Colmena.
+- **Coste en el plan gratuito de Cloudflare** (100.000 peticiones al día de Workers y otras tantas de Durable Objects, 5 GB de almacenamiento SQLite): un archivo de 10 MB para 3 personas son unas 40 peticiones de Worker y unas 50 de Durable Objects (subir 10 partes con su cuota, bajar 10 por persona). Da para unos 2.500 archivos así al día entre todos los usuarios, y unos 700 MB al día de media guardados 7 días. Si se queda corto, el plan de 5 $/mes sube a 10 millones de peticiones; o se cambia a R2 (gratis 10 GB, pero pide tarjeta).
+
 ## Buzón (`relay/server.mjs`)
 - `POST /v1/send`, `GET /v1/stream` (SSE con lo que espera y lo que llega), `POST /v1/ack`, `PUT|GET|DELETE /v1/invites/:lookup`, `GET /v1/health`. SQLite propio; guarda 7 días como mucho y borra al confirmar recepción. Comprueba que el remitente del sobre es quien firma la petición.
 - Ve quién escribe a quién, cuándo y cuánto ocupa; nunca el contenido.

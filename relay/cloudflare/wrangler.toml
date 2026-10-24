@@ -15,10 +15,19 @@ class_name = "Mailbox"
 name = "INVITE"
 class_name = "Invite"
 
+[[durable_objects.bindings]]
+name = "BLOB"
+class_name = "Blob"
+
 # SQLite-backed Durable Objects (available on the Workers Free plan).
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Mailbox", "Invite"]
+
+# Sealed file parts (files shared in conversations), one object per file, 7 days.
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Blob"]
 
 [observability]
 enabled = false

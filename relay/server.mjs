@@ -7,18 +7,25 @@
 //   POST /v1/ack {ids}                     received: delete
 //   PUT|DELETE /v1/invites/:lookup         an encrypted invitation card (24 h)
 //   GET  /v1/invites/:lookup               read a card (whoever has the code)
+//   PUT  /v1/blobs/:id/:n                  part n of an encrypted file (signed; part 0 says how
+//                                          many parts and the hash of the read token)
+//   GET  /v1/blobs/:id/:n                  a part, for whoever has the read token (X-Blob-Token)
+//   DELETE /v1/blobs/:id                   the uploader takes it away before it expires
 // Run: node relay/server.mjs [--port 4390] [--host 127.0.0.1] [--data ./.relay-data]
 import http from "node:http";
 import path from "node:path";
 import { mkdirSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { pathToFileURL } from "node:url";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import express from "express";
 import { checkAuth, checkEnvelope, isAddress, MAX_ENVELOPE, ProtocolError } from "../server/peers/protocol.mjs";
 
 export const RELAY_LIMITS = Object.freeze({
   keepDays: 7, perRecipient: 5000, perSenderDay: 3000, livePerMinute: 120, sendsPerMinute: 600, invitesPerMinute: 30, inviteBytes: 4096, inviteHours: 25, streamsPerAddress: 4,
+  // Files (sealed by each Colmena with a key only the recipients get): 1 MiB parts, 25 MiB per
+  // file, 7 days, 200 MiB a day per uploader, 4 GiB in all on this server.
+  blobPart: 1024 * 1024 + 64, blobParts: 26, blobKeepDays: 7, blobBytesDay: 200 * 1024 * 1024, blobTotal: 4 * 1024 * 1024 * 1024, blobReadsPerMinute: 600,
 });
 
 export function createRelay({ directory, now = () => Date.now(), log = () => {}, limits = {} } = {}) {
@@ -31,7 +38,10 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
       "CREATE INDEX IF NOT EXISTS mail_rcpt ON mail(rcpt, at);" +
       "CREATE TABLE IF NOT EXISTS invites (lookup TEXT PRIMARY KEY, owner TEXT NOT NULL, blob TEXT NOT NULL, expires INTEGER NOT NULL);" +
       // How much each sender left in each mailbox per day: nobody can fill yours.
-      "CREATE TABLE IF NOT EXISTS quota (sender TEXT NOT NULL, rcpt TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (sender, rcpt, day));",
+      "CREATE TABLE IF NOT EXISTS quota (sender TEXT NOT NULL, rcpt TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (sender, rcpt, day));" +
+      "CREATE TABLE IF NOT EXISTS blobs (id TEXT PRIMARY KEY, owner TEXT NOT NULL, parts INTEGER NOT NULL, read TEXT NOT NULL, bytes INTEGER NOT NULL, expires INTEGER NOT NULL);" +
+      "CREATE TABLE IF NOT EXISTS blob_parts (id TEXT NOT NULL, n INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY (id, n));" +
+      "CREATE TABLE IF NOT EXISTS blob_quota (owner TEXT NOT NULL, day TEXT NOT NULL, bytes INTEGER NOT NULL, PRIMARY KEY (owner, day));",
   );
   const q = {
     put: db.prepare("INSERT OR IGNORE INTO mail(id, rcpt, sender, env, at) VALUES (?,?,?,?,?)"),
@@ -46,6 +56,18 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
     used: db.prepare("SELECT n FROM quota WHERE sender=? AND rcpt=? AND day=?"),
     count1: db.prepare("INSERT INTO quota(sender, rcpt, day, n) VALUES (?,?,?,1) ON CONFLICT(sender, rcpt, day) DO UPDATE SET n = n + 1"),
     quotaOld: db.prepare("DELETE FROM quota WHERE day < ?"),
+    blobGet: db.prepare("SELECT owner, parts, read, bytes, expires FROM blobs WHERE id=?"),
+    blobNew: db.prepare("INSERT INTO blobs(id, owner, parts, read, bytes, expires) VALUES (?,?,?,?,0,?)"),
+    blobGrow: db.prepare("UPDATE blobs SET bytes = bytes + ? WHERE id=?"),
+    partPut: db.prepare("INSERT OR REPLACE INTO blob_parts(id, n, data) VALUES (?,?,?)"),
+    partGet: db.prepare("SELECT data FROM blob_parts WHERE id=? AND n=?"),
+    blobDel: db.prepare("DELETE FROM blobs WHERE id=?"),
+    partsDel: db.prepare("DELETE FROM blob_parts WHERE id=?"),
+    blobsOld: db.prepare("SELECT id FROM blobs WHERE expires < ?"),
+    blobTotal: db.prepare("SELECT COALESCE(SUM(bytes), 0) AS n FROM blobs"),
+    blobUsed: db.prepare("SELECT bytes FROM blob_quota WHERE owner=? AND day=?"),
+    blobCount: db.prepare("INSERT INTO blob_quota(owner, day, bytes) VALUES (?,?,?) ON CONFLICT(owner, day) DO UPDATE SET bytes = bytes + excluded.bytes"),
+    blobQuotaOld: db.prepare("DELETE FROM blob_quota WHERE day < ?"),
   };
   const streams = new Map(); // address → Set<res>
   const nonces = new Map(); // nonce → expiry
@@ -62,6 +84,8 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
     q.old.run(t - L.keepDays * 864e5);
     q.quotaOld.run(new Date(t - 2 * 864e5).toISOString().slice(0, 10));
     q.invitesOld.run(t);
+    for (const { id } of q.blobsOld.all(t)) { q.partsDel.run(id); q.blobDel.run(id); }
+    q.blobQuotaOld.run(new Date(t - 2 * 864e5).toISOString().slice(0, 10));
     for (const [n, exp] of nonces) if (exp < t) nonces.delete(n);
     for (const [k, list] of windows) if (!list.some((x) => t - x < 60000)) windows.delete(k);
   };
@@ -70,12 +94,14 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
 
   const app = express();
   app.disable("x-powered-by");
+  // File parts are bytes; everything else is JSON text.
+  app.use("/v1/blobs", express.raw({ type: () => true, limit: L.blobPart }));
   app.use(express.text({ type: () => true, limit: MAX_ENVELOPE * 2 }));
   app.use((_req, res, next) => { res.set({ "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }); next(); });
   const fail = (res, status, error) => res.status(status).json({ error });
   /** The signed request's address, or a 401. */
   const who = (req, res) => {
-    const body = typeof req.body === "string" ? req.body : "";
+    const body = typeof req.body === "string" || Buffer.isBuffer(req.body) ? req.body : "";
     const auth = checkAuth(req.headers.authorization, req.method, req.path, body, Math.floor(now() / 1000));
     if (!auth || nonces.has(auth.nonce)) { fail(res, 401, "Firma no válida."); return null; }
     nonces.set(auth.nonce, now() + 11 * 60000);
@@ -87,7 +113,7 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
     return (streams.get(address)?.size || 0) > 0;
   };
 
-  app.get("/v1/health", (_req, res) => res.json({ ok: true, service: "colmena-buzon", version: 1, stream: "sse" }));
+  app.get("/v1/health", (_req, res) => res.json({ ok: true, service: "colmena-buzon", version: 1, stream: "sse", blobs: { part: L.blobPart - 64, parts: L.blobParts, keepDays: L.blobKeepDays } }));
 
   app.post("/v1/send", (req, res) => {
     const from = who(req, res);
@@ -166,6 +192,48 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
     const owner = who(req, res);
     if (!owner) return;
     q.inviteDel.run(req.params.lookup, owner);
+    res.json({ ok: true });
+  });
+  // Files: the mailbox keeps sealed parts it cannot read; the key travels in the envelopes.
+  const blobOk = (s) => /^[A-Za-z0-9_-]{22,43}$/.test(s);
+  const tokenHash = (t) => createHash("sha256").update(String(t || "")).digest("base64url");
+  app.put("/v1/blobs/:id/:n", (req, res) => {
+    const owner = who(req, res);
+    if (!owner) return;
+    const n = Number(req.params.n);
+    const data = Buffer.isBuffer(req.body) ? req.body : null;
+    if (!blobOk(req.params.id) || !Number.isInteger(n) || n < 0 || n >= L.blobParts || !data?.length) return fail(res, 400, "Parte no válida.");
+    let blob = q.blobGet.get(req.params.id);
+    if (!blob) {
+      const parts = Number(req.headers["x-blob-parts"]);
+      const read = String(req.headers["x-blob-read"] || "");
+      if (n !== 0 || !Number.isInteger(parts) || parts < 1 || parts > L.blobParts || !/^[A-Za-z0-9_-]{43}$/.test(read)) return fail(res, 400, "Falta la parte 0.");
+      q.blobNew.run(req.params.id, owner, parts, read, now() + L.blobKeepDays * 864e5);
+      blob = q.blobGet.get(req.params.id);
+    }
+    if (blob.owner !== owner) return fail(res, 403, "Ese archivo no es tuyo.");
+    if (n >= blob.parts) return fail(res, 400, "Parte no válida.");
+    const day = new Date(now()).toISOString().slice(0, 10);
+    if ((q.blobUsed.get(owner, day)?.bytes || 0) + data.length > L.blobBytesDay) return fail(res, 429, "Has compartido demasiado hoy.");
+    if (q.blobTotal.get().n + data.length > L.blobTotal) return fail(res, 507, "El buzón está lleno de archivos.");
+    q.partPut.run(req.params.id, n, data);
+    q.blobGrow.run(data.length, req.params.id);
+    q.blobCount.run(owner, day, data.length);
+    res.json({ ok: true, expiresAt: blob.expires });
+  });
+  app.get("/v1/blobs/:id/:n", (req, res) => {
+    if (limited("blob:" + (req.socket.remoteAddress || "?"), L.blobReadsPerMinute)) return fail(res, 429, "Demasiadas descargas seguidas.");
+    const blob = blobOk(req.params.id) ? q.blobGet.get(req.params.id) : null;
+    if (!blob || blob.expires < now() || blob.read !== tokenHash(req.headers["x-blob-token"])) return fail(res, 404, "Ese archivo no existe o ya caducó.");
+    const part = q.partGet.get(req.params.id, Number(req.params.n));
+    if (!part) return fail(res, 404, "Esa parte aún no está.");
+    res.set({ "Content-Type": "application/octet-stream" }).send(Buffer.from(part.data));
+  });
+  app.delete("/v1/blobs/:id", (req, res) => {
+    const owner = who(req, res);
+    if (!owner) return;
+    const blob = q.blobGet.get(req.params.id);
+    if (blob && blob.owner === owner) { q.partsDel.run(req.params.id); q.blobDel.run(req.params.id); }
     res.json({ ok: true });
   });
   app.use((_req, res) => fail(res, 404, "No existe."));

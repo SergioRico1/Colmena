@@ -545,7 +545,9 @@ export class Peers extends EventEmitter {
       // People named with «@» (their first names are in the text).
       ...(m.people?.length ? { people: m.people.map((id) => { const p = this.person(id); return { id, me: !!p.me, name: p.name, initials: p.initials, color: p.color }; }) } : {}),
       // Written by a bot of `author` (on its owner's computer): «Vera · bot de Sergio».
-      ...(m.bot ? { bot: m.bot } : {}), ...(m.mentions?.length ? { mentions: m.mentions } : {}), ...(m.card ? { card: m.card } : {}), ...(m.local ? { local: true } : {}),
+      ...(m.bot ? { bot: m.bot } : {}), ...(m.mentions?.length ? { mentions: m.mentions } : {}), ...(m.card ? { card: m.card.kind === "file" ? { kind: "file" } : m.card } : {}), ...(m.local ? { local: true } : {}),
+      // A shared file: what this Colmena has of it (files.mjs), never its key.
+      ...(m.card?.kind === "file" ? { file: this.files?.viewOf(m.card.file?.id) || { id: String(m.card.file?.id || ""), name: String(m.card.file?.name || "archivo"), kind: "other", status: "pending" } } : {}),
       // A meeting card shows the meeting as it is now (meetings.mjs), not as it was sent.
       ...(m.card?.kind === "meeting" ? { meeting: this.meetings?.view(String(m.card.id)) || null } : {}),
     };
@@ -612,7 +614,7 @@ export class Peers extends EventEmitter {
   unsend(messageId) {
     const m = this.store.get("peerMessages", messageId);
     if (!m || m.from !== this.address || m.deletedAt) throw new PeerError("Ese mensaje no se puede borrar.", 409);
-    if (m.card) throw new PeerError("Una reunión no se borra: cancélala desde su tarjeta.", 409);
+    if (m.card?.kind === "meeting") throw new PeerError("Una reunión no se borra: cancélala desde su tarjeta.", 409);
     const s = this.share(m.shareId);
     this.store.patch("peerMessages", m.id, tombstone());
     if (!m.local) this.sendChange(s, { type: "unsend", share: s.id, msg: m.id });
@@ -628,6 +630,8 @@ export class Peers extends EventEmitter {
    * an unread notice that still show the old words say the new ones.
    */
   afterChange(s, m, text) {
+    // A shared file deleted for everyone goes from the mailbox and from each Colmena.
+    if (text === null && m.card?.kind === "file") void this.files?.forget(m.card.file?.id);
     // Deleted: the row shows what was said before it.
     const before = text === null ? this.store.where("peerMessages", "shareId", s.id).filter((x) => !x.deletedAt && x.id !== m.id).sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1) : null;
     const line = text === null ? (before ? lastLineOf((before.bot ? before.bot.name + ": " : "") + before.text) : "") : lastLineOf((m.bot ? m.bot.name + ": " : "") + text);

@@ -7,13 +7,17 @@
 //   GET  /v1/ws?auth=<Colmena …>         your mailbox: what waits, then what arrives
 //   POST /v1/ack {ids}                   received: delete (also over the socket: {"ack":[…]})
 //   PUT|GET|DELETE /v1/invites/:lookup   an encrypted invitation card (25 h at most)
+//   PUT /v1/blobs/:id/:n · GET /v1/blobs/:id/:n · DELETE /v1/blobs/:id
+//                                        sealed parts of a shared file (7 days); see relay/server.mjs
 // Signatures are the ones of server/peers/protocol.mjs, checked here with WebCrypto Ed25519.
 import { DurableObject } from "cloudflare:workers";
 
 // perSenderDay: envelopes one sender may leave in one mailbox per day (kept in that mailbox);
 // livePerMinute: typing/presence notes per sender and mailbox; sendsPerMinute: per sender, best
 // effort in each Worker instance (a global count would cost one more request per message).
-const LIMITS = { keepDays: 7, perRecipient: 5000, perSenderDay: 3000, livePerMinute: 120, sendsPerMinute: 600, invitesPerMinute: 30, envelope: 72 * 1024, inviteBytes: 4096, inviteHours: 25, skew: 300, maxAge: 30 * 86400, batch: 300 };
+const LIMITS = { keepDays: 7, perRecipient: 5000, perSenderDay: 3000, livePerMinute: 120, sendsPerMinute: 600, invitesPerMinute: 30, envelope: 72 * 1024, inviteBytes: 4096, inviteHours: 25, skew: 300, maxAge: 30 * 86400, batch: 300,
+  // Files: sealed 1 MiB parts (the key never comes here), 25 MiB a file, 7 days, 200 MiB a day per uploader.
+  blobPart: 1024 * 1024 + 64, blobParts: 26, blobKeepDays: 7, blobBytesDay: 200 * 1024 * 1024, blobReadsPerMinute: 600 };
 const windows = new Map();
 const limited = (key, max) => {
   const t = Date.now(), list = (windows.get(key) || []).filter((x) => t - x < 60000);
@@ -36,7 +40,7 @@ function canonical(value) {
 }
 const fromB64u = (s) => Uint8Array.from(atob(String(s).replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(String(s).length / 4) * 4, "=")), (c) => c.charCodeAt(0));
 const b64u = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-const sha256 = async (text) => b64u(await crypto.subtle.digest("SHA-256", enc.encode(text)));
+const sha256 = async (data) => b64u(await crypto.subtle.digest("SHA-256", typeof data === "string" ? enc.encode(data) : data));
 async function verifyBytes(address, data, sig) {
   try {
     if (!ADDRESS.test(address)) return false;
@@ -75,7 +79,30 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     try {
-      if (path === "/v1/health" && request.method === "GET") return json({ ok: true, service: "colmena-buzon", version: 1, stream: "ws" });
+      if (path === "/v1/health" && request.method === "GET") return json({ ok: true, service: "colmena-buzon", version: 1, stream: "ws", blobs: { part: LIMITS.blobPart - 64, parts: LIMITS.blobParts, keepDays: LIMITS.blobKeepDays } });
+      // A sealed file: parts kept by one Durable Object per file; the uploader's mailbox counts its bytes per day.
+      const blob = /^\/v1\/blobs\/([A-Za-z0-9_-]{22,43})(?:\/(\d{1,2}))?$/.exec(path);
+      if (blob) {
+        const store = env.BLOB.get(env.BLOB.idFromName(blob[1]));
+        if (request.method === "GET" && blob[2] !== undefined) {
+          if (limited("blob:" + (request.headers.get("CF-Connecting-IP") || "?"), LIMITS.blobReadsPerMinute)) return fail(429, "Demasiadas descargas seguidas.");
+          return store.fetch("https://blob/get?n=" + blob[2], { headers: { "X-Blob-Token": request.headers.get("X-Blob-Token") || "" } });
+        }
+        if (request.method === "PUT" && blob[2] !== undefined) {
+          const bytes = new Uint8Array(await request.arrayBuffer());
+          if (!bytes.length || bytes.length > LIMITS.blobPart) return fail(413, "Parte no válida.");
+          const owner = await checkAuth(request.headers.get("Authorization"), "PUT", path, bytes);
+          if (!owner) return fail(401, "Firma no válida.");
+          const quota = await env.MAILBOX.get(env.MAILBOX.idFromName(owner)).fetch("https://box/blob-quota", { method: "POST", body: JSON.stringify({ bytes: bytes.length }) });
+          if (!quota.ok) return quota;
+          return store.fetch("https://blob/put", { method: "POST", body: bytes, headers: { "X-Owner": owner, "X-N": blob[2], "X-Blob-Parts": request.headers.get("X-Blob-Parts") || "", "X-Blob-Read": request.headers.get("X-Blob-Read") || "" } });
+        }
+        if (request.method === "DELETE" && blob[2] === undefined) {
+          const owner = await checkAuth(request.headers.get("Authorization"), "DELETE", path, "");
+          if (!owner) return fail(401, "Firma no válida.");
+          return store.fetch("https://blob/delete", { method: "POST", headers: { "X-Owner": owner } });
+        }
+      }
       if (path === "/v1/send" && request.method === "POST") {
         const body = await request.text();
         if (body.length > LIMITS.envelope * 2) return fail(413, "Demasiado grande.");
@@ -182,6 +209,17 @@ export class Mailbox extends DurableObject {
       const data = await request.json().catch(() => ({}));
       return json({ ok: true, removed: this.ack(data.ids) });
     }
+    // Bytes of files this address left today (asked before each part is kept).
+    if (path === "/blob-quota") {
+      const { bytes = 0 } = await request.json().catch(() => ({}));
+      const day = new Date().toISOString().slice(0, 10);
+      this.sql.exec("CREATE TABLE IF NOT EXISTS blob_quota (day TEXT PRIMARY KEY, bytes INTEGER NOT NULL)");
+      const used = this.sql.exec("SELECT bytes FROM blob_quota WHERE day = ?", day).toArray()[0]?.bytes || 0;
+      if (used + Number(bytes) > LIMITS.blobBytesDay) return fail(429, "Has compartido demasiado hoy.");
+      this.sql.exec("INSERT INTO blob_quota (day, bytes) VALUES (?, ?) ON CONFLICT (day) DO UPDATE SET bytes = bytes + excluded.bytes", day, Number(bytes));
+      this.sql.exec("DELETE FROM blob_quota WHERE day < ?", new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10));
+      return json({ ok: true });
+    }
     return fail(404, "No existe.");
   }
   async webSocketMessage(ws, message) {
@@ -198,6 +236,57 @@ export class Mailbox extends DurableObject {
     this.sql.exec("DELETE FROM quota WHERE day < ?", new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10));
     if (this.sql.exec("SELECT COUNT(*) AS n FROM mail").one().n || this.sql.exec("SELECT COUNT(*) AS n FROM quota").one().n) await this.ctx.storage.setAlarm(Date.now() + 86400000);
   }
+}
+
+// ---- one sealed file --------------------------------------------------------------------
+// Its parts as the uploader sealed them; whoever has the read token (in the envelopes) can
+// download them; everything goes when it expires.
+export class Blob extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.sql = ctx.storage.sql;
+  }
+  // Again on every request: deleteAll() also drops the tables.
+  tables() {
+    this.sql.exec("CREATE TABLE IF NOT EXISTS meta (id INTEGER PRIMARY KEY CHECK (id = 1), owner TEXT NOT NULL, parts INTEGER NOT NULL, read TEXT NOT NULL, expires INTEGER NOT NULL)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS parts (n INTEGER PRIMARY KEY, data BLOB NOT NULL)");
+  }
+  meta() { return this.sql.exec("SELECT owner, parts, read, expires FROM meta WHERE id = 1").toArray()[0] || null; }
+  async fetch(request) {
+    const url = new URL(request.url);
+    this.tables();
+    let meta = this.meta();
+    if (url.pathname === "/get") {
+      const n = Number(url.searchParams.get("n"));
+      if (!meta || meta.expires < Date.now() || meta.read !== (await sha256(request.headers.get("X-Blob-Token") || ""))) return fail(404, "Ese archivo no existe o ya caducó.");
+      const row = this.sql.exec("SELECT data FROM parts WHERE n = ?", n).toArray()[0];
+      if (!row) return fail(404, "Esa parte aún no está.");
+      return new Response(row.data, { headers: { "Content-Type": "application/octet-stream", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+    }
+    const owner = request.headers.get("X-Owner") || "";
+    if (url.pathname === "/put") {
+      const n = Number(request.headers.get("X-N"));
+      if (!meta) {
+        const parts = Number(request.headers.get("X-Blob-Parts"));
+        const read = request.headers.get("X-Blob-Read") || "";
+        if (n !== 0 || !Number.isInteger(parts) || parts < 1 || parts > LIMITS.blobParts || !/^[A-Za-z0-9_-]{43}$/.test(read)) return fail(400, "Falta la parte 0.");
+        const expires = Date.now() + LIMITS.blobKeepDays * 86400000;
+        this.sql.exec("INSERT INTO meta (id, owner, parts, read, expires) VALUES (1, ?, ?, ?, ?)", owner, parts, read, expires);
+        await this.ctx.storage.setAlarm(expires);
+        meta = this.meta();
+      }
+      if (meta.owner !== owner) return fail(403, "Ese archivo no es tuyo.");
+      if (!Number.isInteger(n) || n < 0 || n >= meta.parts) return fail(400, "Parte no válida.");
+      this.sql.exec("INSERT OR REPLACE INTO parts (n, data) VALUES (?, ?)", n, await request.arrayBuffer());
+      return json({ ok: true, expiresAt: meta.expires });
+    }
+    if (url.pathname === "/delete") {
+      if (meta && meta.owner === owner) await this.ctx.storage.deleteAll();
+      return json({ ok: true });
+    }
+    return fail(404, "No existe.");
+  }
+  async alarm() { await this.ctx.storage.deleteAll(); }
 }
 
 // ---- one invitation card ----------------------------------------------------------------

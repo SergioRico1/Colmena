@@ -15,7 +15,18 @@
 // PATCH /api/peers/messages/:id {text} (yours)     DELETE /api/peers/messages/:id (yours, for everyone)
 // GET  /api/peers/search?q=&share=
 // GET  /api/peers/events?share=                SSE: typing, presence, messages of that conversation
+// POST /api/peers/shares/:id/files {name, content (base64), caption?}   sealed and shared
+// POST /api/peers/shares/:id/files/artifact {artifact, caption?}   a deliverable of yours
+// GET  /api/peers/files/:id[?download=1]   GET …/preview   GET …/pages/:n   POST …/retry
+import express from "express";
 import { PEER_LIMITS, PeerError } from "./service.mjs";
+import { FILE_LIMITS } from "./files.mjs";
+
+/** JSON up to 36 MB only for sharing a file (25 MB in base64); mounted before the global parser. */
+export const peerFileParser = (() => {
+  const parse = express.json({ limit: "36mb" });
+  return (req, res, next) => (req.method === "POST" && /^\/api\/peers\/shares\/[^/]+\/files$/.test(req.path) ? parse(req, res, next) : next());
+})();
 
 export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   const peers = () => {
@@ -86,7 +97,48 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   app.get("/api/peers/code/shared", run((_req, p) => ({ items: codeShare(p).mirrors() })));
   app.get("/api/peers/code/shared/:id", run((req, p) => codeShare(p).mirror(id.parse(req.params.id))));
   app.post("/api/peers/code/shared/:id/plan", run((req, p) => codeShare(p).planVote(id.parse(req.params.id), check(z.object({ action: z.enum(["approve", "changes"]), text: z.string().max(2000).optional() }).strict(), req.body))));
-  app.get("/api/peers/search",run((req, p) => p.search(check(z.string().max(200), String(req.query.q ?? "")), { shareId: typeof req.query.share === "string" && req.query.share ? req.query.share : null })));
+  // Files (files.mjs): sealed here, left at the mailbox in parts, opened only by who is in the conversation.
+  const files = (p) => {
+    if (!p.files) throw new PeerError("Los archivos no están disponibles.", 503);
+    return p.files;
+  };
+  app.post("/api/peers/shares/:id/files", run((req, p) => {
+    const data = check(z.object({ name: z.string().trim().min(1).max(200), content: z.string().min(1).max(Math.ceil(FILE_LIMITS.bytes / 3) * 4 + 8), caption: z.string().max(2000).optional() }).strict(), req.body);
+    return files(p).send(req.params.id, { name: data.name, bytes: Buffer.from(data.content, "base64"), caption: data.caption || "" });
+  }));
+  app.post("/api/peers/shares/:id/files/artifact", run((req, p) => {
+    const data = check(z.object({ artifact: z.string().trim().min(1).max(80), caption: z.string().max(2000).optional() }).strict(), req.body);
+    return files(p).sendArtifact(req.params.id, data.artifact, data.caption || "");
+  }));
+  app.get("/api/peers/files/:id/preview", run((req, p) => files(p).preview(id.parse(req.params.id))));
+  app.post("/api/peers/files/:id/retry", run((req, p) => files(p).retry(id.parse(req.params.id))));
+  // The file itself: inline only for images and PDF (shown in a sandbox), anything else downloads.
+  const sendFile = (res, file, target, inline) => {
+    const ascii = file.name.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "");
+    res.set({
+      "Content-Type": inline ? file.mime : "application/octet-stream", "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store",
+      "Content-Security-Policy": "default-src 'none'; img-src 'self' data:; sandbox", "Cross-Origin-Resource-Policy": "same-origin",
+      "Content-Disposition": (inline ? "inline" : "attachment") + `; filename="${ascii}"; filename*=UTF-8''` + encodeURIComponent(file.name),
+    });
+    res.sendFile(target, { dotfiles: "allow" }); // the data folder may sit under a dot folder
+  };
+  const INLINE = /^(image\/(png|jpeg|webp|gif)|application\/pdf)$/;
+  app.get("/api/peers/files/:id", (req, res, next) => {
+    try {
+      const { file, path: target } = files(peers()).pathOf(id.parse(req.params.id));
+      sendFile(res, file, target, req.query.download !== "1" && INLINE.test(file.mime));
+    } catch (error) { next(error instanceof PeerError ? new HttpError(error.status, error.message) : error); }
+  });
+  app.get("/api/peers/files/:id/pages/:n", async (req, res, next) => {
+    try {
+      const n = Number(req.params.n);
+      if (!Number.isInteger(n) || n < 1 || n > 1000) throw new HttpError(400, "Página no válida.");
+      const width = Math.min(1600, Math.max(320, Number(req.query.width) || 900));
+      const { png } = await files(peers()).page(id.parse(req.params.id), n, width);
+      res.set({ "Content-Type": "image/png", "Content-Security-Policy": "default-src 'none'; sandbox", "Cross-Origin-Resource-Policy": "same-origin", "Cache-Control": "private, max-age=3600" }).send(png);
+    } catch (error) { next(error instanceof PeerError ? new HttpError(error.status, error.message) : error); }
+  });
+  app.get("/api/peers/search", run((req, p) => p.search(check(z.string().max(200), String(req.query.q ?? "")), { shareId: typeof req.query.share === "string" && req.query.share ? req.query.share : null })));
   app.post("/api/peers/shares/:id/seen", run((req, p) => p.seen(req.params.id)));
   app.post("/api/peers/shares/:id/typing", run((req, p) => p.typingNow(req.params.id)));
   app.post("/api/peers/messages/:id/reactions", run((req, p) => p.react(req.params.id, check(z.object({ emoji: z.string().trim().min(1).max(16) }).strict(), req.body).emoji)));

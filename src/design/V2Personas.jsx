@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}\n.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}\n@media (max-width: 760px){[data-convlist]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","archivo","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -46,7 +46,7 @@ export class Logic extends DCLogic {
          ['bot', 'Vera', 'ayer', 'Resumen del comité', '#7B4DFF', '50% 12% 50% 12%', null, false, false],
          ['room', 'informe-q3', 'ayer', 'Tomás: devoluciones listas', '', '', null, false, false],
          ['bot', 'Atlas', 'lun', 'Plan de la semana', '#FFC93C', '0', null, false, false]];
-    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
+    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', archivo: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
     const meetStepsBy = {
       buscando: [['Atlas mira tu agenda', 'solo libre u ocupado', true], ['Leo mira la de Marta', 'solo libre u ocupado', true], ['Nico mira la de Luis', 'buscando…', false], ['Os propongo los huecos que van bien a los tres', '', false]],
       elegir: [['Atlas miró tu agenda', 'solo libre u ocupado', true], ['Leo miró la de Marta', 'solo libre u ocupado', true], ['Nico miró la de Luis', 'solo libre u ocupado', true], ['Tres huecos os van bien a los tres', '', true]],
@@ -92,7 +92,13 @@ export class Logic extends DCLogic {
         { person: false, bot: true, fill: F('#7B4DFF'), clip: 'none', radius: '50% 12% 50% 12%', name: 'Vera', meta: '· tu bot · lo veis los dos · 10:01', text: 'Tres días: llegada el jueves por la tarde, visitas el viernes y reunión con la agencia el sábado por la mañana. Falta confirmar el hotel.', seen: '' },
         { person: true, bot: false, ini: 'MR', bg: '#EFE2D3', fg: '#12131A', name: 'Marta Ruiz', meta: '· 10:02', text: 'Perfecto. Lo que falta lo vemos en una sala con nuestros bots.', seen: '' }
       ],
-      isSala: ['sala', 'pide', 'hilo', 'buscar'].includes(s.paso),
+      isSala: ['sala', 'pide', 'hilo', 'buscar', 'archivo'].includes(s.paso),
+      isArchivo: s.paso === 'archivo', toArchivo: go('archivo'),
+      slidesView: [
+        { kicker: 'Viaje · 26–29 de octubre', title: 'Programa de Lisboa', text: 'Tres días con la agencia, visitas y la reunión del sábado.', bg: '#12131A', fg: '#FFFFFF' },
+        { kicker: 'Jueves', title: 'Llegada y cena con la agencia', text: 'Vuelo de las 15:20. Hotel en Alfama. Cena a las 21:00.', bg: '#FFFFFF', fg: '#12131A' },
+        { kicker: 'Viernes', title: 'Visitas', text: 'LX Factory por la mañana, Belém por la tarde.', bg: '#FFF6DE', fg: '#12131A' },
+      ],
       isHilo: s.paso === 'hilo', isBuscar: s.paso === 'buscar',
       toHilo: go('hilo'), toBuscar: go(s.paso === 'buscar' ? 'sala' : 'buscar'),
       searchBg: s.paso === 'buscar' ? '#12131A' : 'rgba(18,19,26,.06)', searchFg: s.paso === 'buscar' ? '#FFFFFF' : '#12131A',
@@ -676,6 +682,40 @@ export function View({ v }) {
                           <p style={{margin: "0", fontSize: "16px", lineHeight: "1.6"}}>
                             {"Tenemos que vernos antes del viaje para cerrar el programa. ¿La semana que viene, 45 minutos?"}
                           </p>
+                          <div style={{width: "min(420px, 100%)", display: "flex", flexDirection: "column", gap: "10px", padding: "10px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 14px 30px -20px rgba(18,19,26,.3)"}}>
+                            <div style={{display: "flex", alignItems: "center", gap: "12px", padding: "2px 4px 0"}}>
+                              <span aria-hidden="true" style={{width: "42px", height: "42px", flex: "none", display: "grid", placeItems: "center", borderRadius: "13px", background: "#FFF1E0", color: "#3D404A"}}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+                                  <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                                  <path d="M10 9H8" />
+                                  <path d="M16 13H8" />
+                                  <path d="M16 17H8" />
+                                </svg>
+                              </span>
+                              <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px"}}>
+                                <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                                  {"Programa de Lisboa.pptx"}
+                                </strong>
+                                <span style={{fontSize: "12px", color: "#6B6F7A"}}>
+                                  {"PowerPoint · 3,4 MB · con su PDF"}
+                                </span>
+                              </span>
+                            </div>
+                            <span style={{display: "flex", gap: "6px", padding: "0 2px 2px"}}>
+                              <button type="button" onClick={v.toArchivo} style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: "600", background: "#12131A", color: "#FFFFFF"}}>
+                                {"Ver"}
+                              </button>
+                              <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: "600", background: "rgba(18,19,26,.06)"}}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                  <path d="m7 10 5 5 5-5" />
+                                  <path d="M12 15V3" />
+                                </svg>
+                                {"Guardar"}
+                              </button>
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="msg" style={{display: "grid", gridTemplateColumns: "40px 1fr", gap: "14px", padding: "10px 0"}}>
@@ -937,6 +977,11 @@ export function View({ v }) {
                           {"Solo yo y un bot"}
                         </button>
                       </div>
+                      <button type="button" aria-label="Adjuntar un archivo" title="Compartir un archivo o un entregable" style={{width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer"}}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                        </svg>
+                      </button>
                       <label style={{flex: "1", display: "flex"}}>
                         <span style={{position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)"}}>
                           {"Mensaje"}
@@ -1687,6 +1732,59 @@ export function View({ v }) {
                   </div>
                 </div>
               </aside>
+            </div>
+          </>
+        ) : null}
+        {v.isArchivo ? (
+          <>
+            <div role="dialog" aria-modal="true" aria-label="Ver Programa de Lisboa.pptx" style={{position: "fixed", inset: "0", zIndex: "80", display: "flex", justifyContent: "center", padding: "28px", background: "rgba(18,19,26,.42)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out"}}>
+              <div style={{width: "min(1040px, 100%)", height: "100%", display: "flex", flexDirection: "column", borderRadius: "30px", background: "#F5F5F2", overflow: "hidden", boxShadow: "0 40px 90px -30px rgba(18,19,26,.6)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)"}}>
+                <header style={{flex: "none", display: "flex", alignItems: "center", gap: "12px", padding: "18px 18px 14px 24px"}}>
+                  <span style={{flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px"}}>
+                    <strong style={{font: "600 19px/1.2 'Bricolage Grotesque', sans-serif"}}>
+                      {"Programa de Lisboa.pptx"}
+                    </strong>
+                    <span style={{display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#6B6F7A"}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                      {"Llegó cifrado; solo está en vuestros ordenadores"}
+                    </span>
+                  </span>
+                  <button type="button" style={{display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: "600", height: "40px", background: "#12131A", color: "#FFFFFF"}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <path d="m7 10 5 5 5-5" />
+                      <path d="M12 15V3" />
+                    </svg>
+                    {"Guardar"}
+                  </button>
+                  <button type="button" onClick={v.toSala} aria-label="Cerrar" style={{width: "40px", height: "40px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer"}}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
+                </header>
+                <div style={{flex: "1", minHeight: "0", overflow: "auto", padding: "4px 24px 28px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px"}}>
+                  {(v.slidesView || []).map((sv, $index) => (
+                    <React.Fragment key={$index}>
+                      <div style={{width: "min(860px, 100%)", aspectRatio: "16 / 9", display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px", padding: "7% 8%", boxSizing: "border-box", borderRadius: "8px", background: sv?.bg, color: sv?.fg, boxShadow: "0 10px 30px -18px rgba(18,19,26,.4)"}}>
+                        <span style={{font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.08em", textTransform: "uppercase", opacity: ".7"}}>
+                          {sv?.kicker}
+                        </span>
+                        <strong style={{font: "600 40px/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em"}}>
+                          {sv?.title}
+                        </strong>
+                        <span style={{fontSize: "17px", lineHeight: "1.5", opacity: ".8"}}>
+                          {sv?.text}
+                        </span>
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
             </div>
           </>
         ) : null}

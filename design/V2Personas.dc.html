@@ -157,7 +157,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 <div class="msg" style="display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 10px 0">
 <span aria-hidden="true" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; font: 600 14px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR</span>
-<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><span style="font-size: 14px"><strong style="font-weight: 600">Marta Ruiz</strong> <span style="color: #6B6F7A">· 10:12</span></span><p style="margin: 0; font-size: 16px; line-height: 1.6">Tenemos que vernos antes del viaje para cerrar el programa. ¿La semana que viene, 45 minutos?</p></div>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><span style="font-size: 14px"><strong style="font-weight: 600">Marta Ruiz</strong> <span style="color: #6B6F7A">· 10:12</span></span><p style="margin: 0; font-size: 16px; line-height: 1.6">Tenemos que vernos antes del viaje para cerrar el programa. ¿La semana que viene, 45 minutos?</p>
+<div style="width: min(420px, 100%); display: flex; flex-direction: column; gap: 10px; padding: 10px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 14px 30px -20px rgba(18,19,26,.3)">
+<div style="display: flex; align-items: center; gap: 12px; padding: 2px 4px 0"><span aria-hidden="true" style="width: 42px; height: 42px; flex: none; display: grid; place-items: center; border-radius: 13px; background: #FFF1E0; color: #3D404A"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 15px; font-weight: 600">Programa de Lisboa.pptx</strong><span style="font-size: 12px; color: #6B6F7A">PowerPoint · 3,4 MB · con su PDF</span></span></div>
+<span style="display: flex; gap: 6px; padding: 0 2px 2px"><button type="button" onClick="{{toArchivo}}" style="display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: #12131A; color: #FFFFFF">Ver</button><button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: rgba(18,19,26,.06)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Guardar</button></span>
+</div></div>
 </div>
 
 <div class="msg" style="display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 10px 0">
@@ -219,6 +223,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 <p role="status" style="margin: 0 0 10px 18px; display: flex; gap: 16px; font-size: 13px; color: #5C606C"><span style="display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 9px; height: 9px; background: #0E7C86; border-radius: 50%; animation: breathe 1.4s ease-in-out infinite"></span>{{leoLine}}</span></p>
 <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #FFFFFF; border-radius: 999px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)">
 <div role="radiogroup" aria-label="Quién lo verá" style="display: flex; gap: 2px; padding: 3px; background: rgba(18,19,26,.05); border-radius: 999px"><button type="button" role="radio" aria-checked="true" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.12)">Toda la sala</button><button type="button" role="radio" aria-checked="false" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; background: transparent">Solo yo y un bot</button></div>
+<button type="button" aria-label="Adjuntar un archivo" title="Compartir un archivo o un entregable" style="width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.05); cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></button>
 <label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Mensaje</span><input type="text" placeholder="Escribe a la sala…" style="flex: 1; min-width: 0; height: 44px; padding: 0 8px; border: 0; outline: none; background: transparent; font-size: 16px"></label>
 <button type="submit" aria-label="Enviar" style="width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
 </div>
@@ -431,11 +436,21 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 </div>
 </sc-if>
 
+<sc-if value="{{isArchivo}}" hint-placeholder-val="{{ false }}">
+<div role="dialog" aria-modal="true" aria-label="Ver Programa de Lisboa.pptx" style="position: fixed; inset: 0; z-index: 80; display: flex; justify-content: center; padding: 28px; background: rgba(18,19,26,.42); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: fade .2s ease-out">
+<div style="width: min(1040px, 100%); height: 100%; display: flex; flex-direction: column; border-radius: 30px; background: #F5F5F2; overflow: hidden; box-shadow: 0 40px 90px -30px rgba(18,19,26,.6); animation: sheet .4s cubic-bezier(.2,.8,.2,1)">
+<header style="flex: none; display: flex; align-items: center; gap: 12px; padding: 18px 18px 14px 24px"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><strong style="font: 600 19px/1.2 'Bricolage Grotesque', sans-serif">Programa de Lisboa.pptx</strong><span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6B6F7A"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Llegó cifrado; solo está en vuestros ordenadores</span></span><button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; height: 40px; background: #12131A; color: #FFFFFF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Guardar</button><button type="button" onClick="{{toSala}}" aria-label="Cerrar" style="width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(18,19,26,.06); cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></header>
+<div style="flex: 1; min-height: 0; overflow: auto; padding: 4px 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 16px">
+<sc-for list="{{slidesView}}" as="sv" hint-placeholder-count="3"><div style="width: min(860px, 100%); aspect-ratio: 16 / 9; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 7% 8%; box-sizing: border-box; border-radius: 8px; background: {{sv.bg}}; color: {{sv.fg}}; box-shadow: 0 10px 30px -18px rgba(18,19,26,.4)"><span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; opacity: .7">{{sv.kicker}}</span><strong style="font: 600 40px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">{{sv.title}}</strong><span style="font-size: 17px; line-height: 1.5; opacity: .8">{{sv.text}}</span></div></sc-for>
+</div>
+</div>
+</div>
+</sc-if>
 <sc-if value="{{toast}}" hint-placeholder-val="{{ false }}"><div role="status" style="position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 70; padding: 12px 18px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14px; font-weight: 500; box-shadow: 0 20px 40px -20px rgba(18,19,26,.6); animation: rise .3s ease-out">{{toast}}</div></sc-if>
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","archivo","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -475,7 +490,7 @@ class Component extends DCLogic {
          ['bot', 'Vera', 'ayer', 'Resumen del comité', '#7B4DFF', '50% 12% 50% 12%', null, false, false],
          ['room', 'informe-q3', 'ayer', 'Tomás: devoluciones listas', '', '', null, false, false],
          ['bot', 'Atlas', 'lun', 'Plan de la semana', '#FFC93C', '0', null, false, false]];
-    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
+    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', archivo: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
     const meetStepsBy = {
       buscando: [['Atlas mira tu agenda', 'solo libre u ocupado', true], ['Leo mira la de Marta', 'solo libre u ocupado', true], ['Nico mira la de Luis', 'buscando…', false], ['Os propongo los huecos que van bien a los tres', '', false]],
       elegir: [['Atlas miró tu agenda', 'solo libre u ocupado', true], ['Leo miró la de Marta', 'solo libre u ocupado', true], ['Nico miró la de Luis', 'solo libre u ocupado', true], ['Tres huecos os van bien a los tres', '', true]],
@@ -521,7 +536,13 @@ class Component extends DCLogic {
         { person: false, bot: true, fill: F('#7B4DFF'), clip: 'none', radius: '50% 12% 50% 12%', name: 'Vera', meta: '· tu bot · lo veis los dos · 10:01', text: 'Tres días: llegada el jueves por la tarde, visitas el viernes y reunión con la agencia el sábado por la mañana. Falta confirmar el hotel.', seen: '' },
         { person: true, bot: false, ini: 'MR', bg: '#EFE2D3', fg: '#12131A', name: 'Marta Ruiz', meta: '· 10:02', text: 'Perfecto. Lo que falta lo vemos en una sala con nuestros bots.', seen: '' }
       ],
-      isSala: ['sala', 'pide', 'hilo', 'buscar'].includes(s.paso),
+      isSala: ['sala', 'pide', 'hilo', 'buscar', 'archivo'].includes(s.paso),
+      isArchivo: s.paso === 'archivo', toArchivo: go('archivo'),
+      slidesView: [
+        { kicker: 'Viaje · 26–29 de octubre', title: 'Programa de Lisboa', text: 'Tres días con la agencia, visitas y la reunión del sábado.', bg: '#12131A', fg: '#FFFFFF' },
+        { kicker: 'Jueves', title: 'Llegada y cena con la agencia', text: 'Vuelo de las 15:20. Hotel en Alfama. Cena a las 21:00.', bg: '#FFFFFF', fg: '#12131A' },
+        { kicker: 'Viernes', title: 'Visitas', text: 'LX Factory por la mañana, Belém por la tarde.', bg: '#FFF6DE', fg: '#12131A' },
+      ],
       isHilo: s.paso === 'hilo', isBuscar: s.paso === 'buscar',
       toHilo: go('hilo'), toBuscar: go(s.paso === 'buscar' ? 'sala' : 'buscar'),
       searchBg: s.paso === 'buscar' ? '#12131A' : 'rgba(18,19,26,.06)', searchFg: s.paso === 'buscar' ? '#FFFFFF' : '#12131A',

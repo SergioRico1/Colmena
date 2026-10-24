@@ -3,6 +3,7 @@ import { MessageSquare, Pencil, RotateCw, SmilePlus, Trash2 } from "lucide-react
 import { PeerAvatar, PeoplePile } from "./PeerAvatar.jsx";
 import { BotPresence } from "../Presence.jsx";
 import MeetingCard from "./MeetingCard.jsx";
+import { FileCard } from "./PeerFiles.jsx";
 import { mentionSegments } from "../../../lib/mentions.js";
 
 // One message of a conversation with people (design/V2Personas.dc.html, pasos sala and hilo):
@@ -46,7 +47,7 @@ export function messageParts(m, botOf) {
   return mentionSegments(m.text, named);
 }
 
-export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread = false, onMeeting = null, onReact, onRetry, onThread, onEdit, onDelete, onError }) {
+export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread = false, onMeeting = null, onOpenFile = null, onReact, onRetry, onThread, onEdit, onDelete, onError }) {
   const [picker, setPicker] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -65,10 +66,10 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
         <div className="msg-tools" role="toolbar" aria-label="Acciones del mensaje" style={{ position: "absolute", top: "-16px", right: "12px", zIndex: 6, display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "#FFFFFF", borderRadius: "14px", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 12px 28px -12px rgba(18,19,26,.35)" }}>
           {QUICK.map((e) => <button key={e} type="button" aria-label={"Reaccionar " + e} onClick={() => react(e)} style={{ ...tool, fontSize: "18px", lineHeight: 1 }}>{e}</button>)}
           <button type="button" aria-label="Otra reacción" title="Otra reacción" onClick={() => setPicker((p) => !p)} style={tool}><SmilePlus size={18} strokeWidth={1.9} aria-hidden="true" /></button>
-          {onThread || (mine && !m.card) ? <span aria-hidden="true" style={{ width: "1px", height: "20px", margin: "0 3px", background: "rgba(18,19,26,.1)" }} /> : null}
+          {onThread || (mine && m.card?.kind !== "meeting") ? <span aria-hidden="true" style={{ width: "1px", height: "20px", margin: "0 3px", background: "rgba(18,19,26,.1)" }} /> : null}
           {onThread ? <button type="button" aria-label="Responder en un hilo" title="Responder en un hilo" onClick={() => onThread(m)} style={tool}><MessageSquare size={17} strokeWidth={1.9} aria-hidden="true" /></button> : null}
           {mine && !m.bot && !m.card && !m.local ? <button type="button" aria-label="Editar" title="Editar" onClick={() => setEditing(m.text)} style={tool}><Pencil size={16} strokeWidth={1.9} aria-hidden="true" /></button> : null}
-          {mine && !m.card ? <button type="button" aria-label="Borrar para todos" title="Borrar para todos" onClick={() => onDelete(m)} style={{ ...tool, color: "#B4231A" }}><Trash2 size={16} strokeWidth={1.9} aria-hidden="true" /></button> : null}
+          {mine && m.card?.kind !== "meeting" ? <button type="button" aria-label="Borrar para todos" title="Borrar para todos" onClick={() => onDelete(m)} style={{ ...tool, color: "#B4231A" }}><Trash2 size={16} strokeWidth={1.9} aria-hidden="true" /></button> : null}
         </div>
       )}
       {m.bot ? (
@@ -99,13 +100,14 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
               {"Intro guarda · Esc cancela · lo verán todos como «editado»"}
             </span>
           </div>
-        ) : (
+        ) : m.file && m.text === m.file.name ? null : (
           <p style={{ margin: 0, fontSize: inThread ? "15px" : "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }}>
             {messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i}>{s.text}</span>
               : s.mention.kind === "person" ? <PersonPill key={i} person={s.mention.person} text={s.text} />
                 : <MentionPill key={i} bot={s.mention} label={shared(s.mention.name) || !s.mention.mine ? s.mention.note : null} />))}
           </p>
         )}
+        {m.file && !m.deleted ? <FileCard file={m.file} onOpen={(f) => onOpenFile?.(f)} /> : null}
         {m.card?.kind === "meeting" && !m.deleted ? <MeetingCard meeting={m.meeting} onChange={onMeeting || (() => {})} /> : null}
         {picker ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35)", alignSelf: "flex-start", animation: "rise .2s ease-out" }}>
