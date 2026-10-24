@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, Pencil, SquareTerminal, Globe, FilePen, FileDiff, History, ChevronRight, Bot, Sparkles, ListChecks, Wrench, Undo2, Check, Target, ShieldAlert, ShieldCheck } from "lucide-react";
 import Markdown from "../../room/Markdown.jsx";
 import { C, MONO, HEAD, CARD, Stat } from "./parts.jsx";
+import { EngineMark } from "./EngineModels.jsx";
 import { PlanVotes } from "../people/TaskPeople.jsx";
 export { buildRows } from "./model.js";
 
@@ -239,7 +240,7 @@ export function TimelineRow({ row, ctx }) {
     const tone = item.tone === "done" ? { bg: C.greenSoft, fg: "#0B5A3E" } : item.tone === "warn" ? { bg: "#FFF4D1", fg: "#5C4300" } : null;
     return (
       <span title={item.detail || undefined} style={{ alignSelf: "center", display: "flex", alignItems: "center", gap: "8px", padding: tone ? "8px 14px" : 0, borderRadius: "999px", background: tone ? tone.bg : "transparent", fontSize: "13px", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
-        {item.tone === "done" ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "50%", border: "2px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
+        {item.tone === "done" ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : item.engineSwitch ? <EngineMark engine={item.engineSwitch.to} size={12} /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "50%", border: "2px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
         {item.url ? <a href={item.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Abrir en GitHub</a> : null}
         {item.undo && ctx.lastNotice === item.id && !ctx.busy ? (
           <button type="button" onClick={() => ctx.onUndoRestore(item)} style={{ display: "flex", alignItems: "center", gap: "5px", height: "26px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: C.ink }}>

@@ -76,7 +76,7 @@ export function registerCodeRoutes(app, { code }) {
   });
   app.get("/api/code/tasks/:id", (req, res) => res.json(code.detail(id.parse(req.params.id))));
   app.patch("/api/code/tasks/:id", (req, res) => {
-    const body = z.object({ title: z.string().trim().min(1).max(120).optional(), model: model.optional(), effort: z.enum(EFFORTS).optional(), access: z.enum(ACCESS).optional(), pinned: z.boolean().optional(), autoArchive: z.boolean().optional() }).strict().parse(req.body || {});
+    const body = z.object({ title: z.string().trim().min(1).max(120).optional(), model: model.optional(), effort: z.enum(EFFORTS).optional(), access: z.enum(ACCESS).optional(), pinned: z.boolean().optional(), autoArchive: z.boolean().optional(), engine: z.enum(ENGINES).optional() }).strict().parse(req.body || {});
     res.json({ task: code.patchTask(id.parse(req.params.id), body) });
   });
   // Archive (T3 Code settle) and snooze: «Archivar», «Desarchivar», «Posponer», «Despertar».

@@ -4,6 +4,7 @@ import Shell from "../components/v2/Shell.jsx";
 import ProjectList, { taskStatus, whenLabel } from "../components/v2/code/ProjectList.jsx";
 import CodeHome, { pickProjectFolder } from "../components/v2/code/CodeHome.jsx";
 import Composer from "../components/v2/code/Composer.jsx";
+import { EngineMark } from "../components/v2/code/EngineModels.jsx";
 import Changes from "../components/v2/code/Changes.jsx";
 import Preview from "../components/v2/code/Preview.jsx";
 import TerminalPanel from "../components/v2/code/Terminal.jsx";
@@ -118,6 +119,19 @@ function SaveButton({ task, project, onDone, compact = false }) {
   );
 }
 
+/** A model of another engine chosen while Bruno works: it goes on with it when the turn ends. */
+function SwitchLine({ task, engines }) {
+  const p = task?.pendingSwitch;
+  if (!p) return null;
+  const e = engines.find((x) => x.id === p.engine);
+  const name = (e?.label || p.engine) + " · " + (e?.models.find((m) => m.id === p.model)?.label || p.model);
+  return (
+    <p role="status" style={{ margin: "0 14px 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: C.faint }}>
+      <EngineMark engine={p.engine} size={12} />Al acabar este turno sigue con {name}, con lo hablado hasta ahora.
+    </p>
+  );
+}
+
 /** The engine's usage limit, when it gets close (T3 Code usage limits). */
 function LimitLine({ task }) {
   const l = task?.limit;
@@ -201,7 +215,7 @@ function useWatch(taskId) {
   }, [taskId]);
 }
 
-function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn }) {
+function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn, engines = [] }) {
   const { task, project, items, live, models, commands, error, reload } = useCodeTask(taskId);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState(null);
@@ -351,8 +365,8 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
           {problem ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: C.red }}>{problem}</p> : null}
         </div>
       </div>
-      <Composer task={task} models={models} busy={busy} running={running} draft={draft} mode={mode} onMode={setMode}
-        projectId={task.projectId} commands={task.engine === "codex" ? [] : commands} status={<><BtwNotes btw={btw} botName="Bruno" /><GoalRow task={task} onGoal={goal} /><LimitLine task={task} /></>}
+      <Composer task={task} models={models} engines={engines} busy={busy} running={running} draft={draft} mode={mode} onMode={setMode}
+        projectId={task.projectId} commands={task.engine === "codex" ? [] : commands} status={<><BtwNotes btw={btw} botName="Bruno" /><GoalRow task={task} onGoal={goal} /><SwitchLine task={task} engines={engines} /><LimitLine task={task} /></>}
         disabled={task.saved?.expired ? "Esta copia se limpió hace más de 30 días: empieza una tarea nueva." : null}
         onCommand={(name) => {
           if (name === "plan") setMode("plan");
@@ -450,7 +464,7 @@ export default function CodigoV2({ params = {}, query = {} }) {
         {taskId && panel && wide ? null : <ProjectList projects={projects} currentTask={taskId} currentShared={params.shared || params.handoff || null} onOpen={addFolder} />}
         {params.handoff ? <HandoffPage key={params.handoff} id={params.handoff} /> : params.shared ? <SharedTask key={params.shared} id={params.shared} /> : params.group ? <Compare group={params.group} projects={projects} /> : taskId ? (
           <>
-            <TaskView taskId={taskId} narrow={panel && wide} panelOpen={panel} onTogglePanel={() => setPanel(!panel)} onShowTurn={(n) => { setTurn(n); setTab("cambios"); setPanel(true); }} />
+            <TaskView taskId={taskId} engines={data?.engines || []} narrow={panel && wide} panelOpen={panel} onTogglePanel={() => setPanel(!panel)} onShowTurn={(n) => { setTurn(n); setTab("cambios"); setPanel(true); }} />
             {panel ? <SidePanel taskId={taskId} turn={turn} onTurn={setTurn} tab={tab} setTab={setTab} wide={wide} onWide={setWide} /> : null}
           </>
         ) : (

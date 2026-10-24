@@ -54,7 +54,11 @@ if (!args.includes("--input-format")) {
       return result();
     }
     out({ type: "stream_event", event: { type: "message_start", message: { usage: { input_tokens: 1200, cache_read_input_tokens: 800 } } }, parent_tool_use_id: null });
-    if (/escribe/.test(text)) {
+    if (/^Contexto de esta tarea/.test(text)) {
+      // After an engine switch: says what history it got (the tests read it back).
+      const persona = (text.match(/^\[Persona\]$/gm) || []).length;
+      assistant([{ type: "text", text: `Claude recibió el contexto: ${persona} mensajes tuyos; nuevo: ${text.split("Mensaje nuevo:\n")[1] || ""}` }]);
+    } else if (/escribe/.test(text)) {
       const t = await tool("Write", { file_path: path.join(process.cwd(), "nota.txt"), content: "hola\n" });
       if (t.allowed) writeFileSync(t.input.file_path, t.input.content);
       out({ type: "user", message: { role: "user", content: [{ type: "tool_result", tool_use_id: t.id, content: t.allowed ? "File created" : "denied", is_error: !t.allowed }] }, parent_tool_use_id: null });

@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUp, Ellipsis, Gauge, ShieldCheck, X } from "lucide-react";
 import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
+import EngineModelMenu, { ENGINE_NAME, EngineMark, modelNote } from "./EngineModels.jsx";
+
+export { ENGINE_NAME, modelNote };
 import { useHidden } from "../../../lib/undoToast.js";
 import { MicButton, appendDictation } from "../../interaction/Voice.jsx";
 
@@ -14,9 +17,8 @@ import { MicButton, appendDictation } from "../../interaction/Voice.jsx";
 const WHEN_KEY = "colmena:code-while-working";
 const readWhen = () => { try { return localStorage.getItem(WHEN_KEY) === "steer" ? "steer" : "queue"; } catch { return "queue"; } };
 
-export const ENGINE_NAME = { "claude-code": "Claude Code", codex: "Codex", opencode: "OpenCode" };
 
-export default function Composer({ task = null, models = [], busy = false, running = false, onSend, onStop, onChange, onUnqueue, placeholder, draft = null, footer = null, autoFocus = false, mode = "build", onMode = null, projectId = null, commands = [], onCommand = null, status = null, disabled = null }) {
+export default function Composer({ task = null, models = [], busy = false, running = false, onSend, onStop, onChange, onUnqueue, placeholder, draft = null, footer = null, autoFocus = false, mode = "build", onMode = null, projectId = null, commands = [], onCommand = null, status = null, disabled = null, engines = [] }) {
   const [text, setText] = useState("");
   const [when, setWhen] = useState(readWhen);
   const area = useRef(null);
@@ -38,6 +40,8 @@ export default function Composer({ task = null, models = [], busy = false, runni
   };
   const hiddenQueued = useHidden("codequeue");
   const queue = (task?.queue || []).filter((q) => !hiddenQueued(q.id));
+  // Right after switching engine, its models come with the engines list (the task's list follows).
+  const shown = task && !models.some((m) => m.id === task.model) ? engines.find((e) => e.id === task.engine)?.models || models : models;
   const ready = !!(text.trim() || extras.files.length || extras.contexts.length);
   if (disabled) return <p style={{ flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "16px clamp(18px, 3vw, 32px) 24px", fontSize: "14px", color: C.faint, textAlign: "center" }}>{disabled}</p>;
   return (
@@ -79,8 +83,12 @@ export default function Composer({ task = null, models = [], busy = false, runni
             {onMode ? <span className={task ? "code-inline-mode" : undefined} style={{ flex: "none" }}><Seg label="Modo" value={mode} onChange={onMode} options={[["build", "Construir"], ["plan", "Plan"]]} /></span> : null}
             {task ? (
               <>
-                <MenuChip title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + modelLabel(models, task.model)} label={<span className="code-model-label">{modelLabel(models, task.model)}</span>}>
-                  {(close) => models.map((m) => <MenuItem key={m.id} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
+                <MenuChip title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + modelLabel(shown, task.model) + " · cambiar de motor o de modelo"} keepLabel icon={<EngineMark engine={task.engine} size={13} />} label={<span className="code-model-label">{modelLabel(shown, task.model)}</span>} width={360}>
+                  {(close) => engines.length ? (
+                    <EngineModelMenu engines={engines} current={{ engine: task.engine, model: task.model }} close={close}
+                      onPick={(engine, model) => onChange(engine === task.engine ? { model } : { engine, model })}
+                      switchNote={running ? "Si eliges otro motor, sigue con él al acabar este turno." : "Otro motor sigue en la misma copia, con lo hablado hasta ahora."} />
+                  ) : models.map((m) => <MenuItem key={m.id} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
                 </MenuChip>
                 <MenuChip className="code-inline-extra" title="Esfuerzo" icon={<Gauge size={14} strokeWidth={2} aria-hidden="true" />} label={EFFORT_LABEL[task.effort] || task.effort} width={220}>
                   {(close) => <EffortItems task={task} onChange={onChange} close={close} />}
@@ -142,21 +150,6 @@ function AccessItems({ task, onChange, close }) {
 const MenuHeading = ({ children }) => <span style={{ display: "block", padding: "10px 12px 4px", font: "500 11px/1.3 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{children}</span>;
 
 export const modelLabel = (models, id) => models.find((m) => m.id === id)?.label || MODEL_LABEL[id] || id;
-export function modelNote(m) {
-  if (m.id === "claude-opus-5-5") return "El más capaz. Recomendado para programar.";
-  if (m.id === "claude-haiku-5-5") return "Rápido y barato, para cambios pequeños.";
-  if (m.id === "claude-sonnet-5-5") return "Equilibrado.";
-  if (m.go) return "Con tu cuenta de OpenCode Go.";
-  if (String(m.id).startsWith("opencode/")) return "Gratis, con los límites de OpenCode.";
-  // Codex's own descriptions come in English: Colmena says it in its words.
-  const name = String(m.label || m.id).toLowerCase();
-  const older = /5\.5|5\.6/.test(name) ? " Generación anterior." : "";
-  if (m.isDefault) return "El que recomienda Codex para programar.";
-  if (name.includes("astra")) return "El más capaz, para lo más difícil." + older;
-  if (name.includes("luna")) return "Rápido y barato, para cambios pequeños." + older;
-  if (name.includes("sol") || name.includes("terra")) return "Equilibrado." + older;
-  return older.trim();
-}
 
 /** How much of the model's context the task uses; a click offers «Compactar» (T3 Code). */
 function ContextRing({ used, max = 200000, onCompact = null, disabled = false }) {

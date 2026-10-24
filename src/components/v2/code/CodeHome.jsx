@@ -3,7 +3,8 @@ import { FolderOpen, GitBranch, Sparkles, Folder, FolderGit2 } from "lucide-reac
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { C, MONO, HEAD, BrunoMark, MenuChip, MenuItem, timeAgo } from "./parts.jsx";
-import Composer, { ENGINE_NAME, modelNote } from "./Composer.jsx";
+import Composer, { ENGINE_NAME } from "./Composer.jsx";
+import EngineModelMenu, { EngineMark } from "./EngineModels.jsx";
 
 // «¿Qué construimos?»: open a folder, clone a repository or start from scratch, then tell
 // Bruno what to do (design/V2Codigo.dc.html, estado «inicio»).
@@ -126,31 +127,16 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
               )}
             </MenuChip>
             {engine ? (
-              <MenuChip title="Motor y modelo" label={multi && picks.length > 1 ? picks.length + " a la vez" : ENGINE_NAME[engine.id] + " · " + (model?.label || "")} width={340}>
+              <MenuChip title="Motor y modelo" keepLabel icon={multi && picks.length > 1 ? null : <EngineMark engine={engine.id} size={13} />} label={multi && picks.length > 1 ? picks.length + " a la vez" : ENGINE_NAME[engine.id] + " · " + (model?.label || "")} width={360}>
                 {(close) => (
                   <>
                     <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px 10px", borderBottom: "1px solid " + C.rule, fontSize: "13px", color: C.text, cursor: "pointer" }}>
                       <input type="checkbox" checked={multi} onChange={(e) => { setMulti(e.target.checked); setPicks(e.target.checked && engine && model ? [{ engine: engine.id, model: model.id }] : []); }} style={{ width: "16px", height: "16px", accentColor: C.ink }} />
                       Probar con varios a la vez (una tarea por modelo, hasta 4)
                     </label>
-                    {engines.filter((e) => e.installable).map((e) => (
-                      <div key={e.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderBottom: "1px solid " + C.rule }}>
-                        <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
-                          <strong style={{ fontSize: "14px" }}>{ENGINE_NAME[e.id]}</strong>
-                          <span style={{ fontSize: "12px", lineHeight: 1.45, color: C.muted }}>{e.installing ? "Instalándolo para Colmena…" : "Con tu OpenCode Go o sus modelos gratis. Se instala solo para Colmena."}</span>
-                        </span>
-                        <button type="button" disabled={e.installing} onClick={() => run(() => post("/code/engines/opencode/install", {}))} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: e.installing ? "rgba(18,19,26,.12)" : C.ink, color: C.white, cursor: e.installing ? "default" : "pointer", fontSize: "12px", fontWeight: 600 }}>{e.installing ? "Instalando…" : "Instalar"}</button>
-                      </div>
-                    ))}
-                    {available.map((e) => (
-                      <div key={e.id} style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "4px 0" }}>
-                        <span style={{ padding: "6px 12px 2px", fontSize: "12px", fontWeight: 600, color: C.faint }}>{ENGINE_NAME[e.id]} · {e.id === "codex" ? "tu cuenta de ChatGPT" : e.id === "opencode" ? "OpenCode Go y modelos gratis" : "tu cuenta de Claude"}</span>
-                        {e.models.map((m) => {
-                          const on = multi ? picks.some((x) => x.engine === e.id && x.model === m.id) : engine.id === e.id && model?.id === m.id;
-                          return <MenuItem key={m.id} title={m.label} text={modelNote(m)} on={on} onClick={() => { if (multi) togglePick({ engine: e.id, model: m.id }); else { setChoice({ engine: e.id, model: m.id }); close(); } }} />;
-                        })}
-                      </div>
-                    ))}
+                    {/* Every engine, the ready ones with their models; the others say how to get them ready. */}
+                    <EngineModelMenu engines={engines} current={{ engine: engine.id, model: model?.id }} close={close} multi={multi ? picks : null}
+                      onPick={(e, m) => { if (multi) togglePick({ engine: e, model: m }); else setChoice({ engine: e, model: m }); }} />
                   </>
                 )}
               </MenuChip>

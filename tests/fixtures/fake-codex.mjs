@@ -27,6 +27,10 @@ async function turn(id, params) {
   notify("thread/tokenUsage/updated", { threadId: thread, turnId, tokenUsage: { last: { inputTokens: 5000 }, total: { inputTokens: 5000 }, modelContextWindow: 272000 } });
   if (plan) {
     notify("item/completed", { threadId: thread, turnId, item: { type: "plan", id: "plan-" + n, text: "# Plan\n\n1. Escribir la nota." } });
+  } else if (/^Contexto de esta tarea/.test(text)) {
+    // After an engine switch: says what history it got (the tests read it back).
+    const persona = (text.match(/^\[Persona\]$/gm) || []).length;
+    notify("item/completed", { threadId: thread, turnId, item: { type: "agentMessage", id: "m" + n, text: `Codex recibió el contexto: ${persona} mensajes tuyos; nuevo: ${text.split("Mensaje nuevo:\n")[1] || ""}`, phase: "final_answer" } });
   } else if (/escribe/.test(text)) {
     const file = path.join(params.cwd || cwd, "nota.txt");
     const item = { type: "fileChange", id: "fc-" + n, status: "inProgress", changes: [{ path: file, kind: { type: "add" }, diff: "+hola" }] };

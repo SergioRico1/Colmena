@@ -17,7 +17,7 @@ import { execFile, spawn } from "node:child_process";
 import { now } from "../store.mjs";
 import { killTree } from "../projects/run.mjs";
 import { ClaudeCodeEngine } from "./claude.mjs";
-import { CodexEngine, codexModels, findCodexCli } from "./codex.mjs";
+import { CodexEngine, codexModels, findCodexCli, probeCodex } from "./codex.mjs";
 import { OpenCodeEngine, OPENCODE_MODELS, findOpenCode, installOpenCode } from "./opencode.mjs";
 import { decide, askTitle, ACCESS, inside } from "./policy.mjs";
 import { Snapshots, repoInfo, addWorktree, removeWorktree, git, slug, copyIncluded, savedRef, keepCommit, dropRef, restoreWorktree } from "./git.mjs";
@@ -254,7 +254,8 @@ export class CodeService {
       if (++n % 20 === 0) void this.sweepArchive().catch((e) => console.warn("Código: archivar: " + e.message));
     }, SWEEP_MS);
     this.sweepTimer.unref?.();
-    setTimeout(() => void this.sweepArchive().catch(() => {}), 20000).unref?.();
+    this.firstSweep = setTimeout(() => void this.sweepArchive().catch(() => {}), 20000);
+    this.firstSweep.unref?.();
   }
   sweepSnoozed(time = Date.now()) {
     for (const t of this.store.list("codeTasks")) if (t.snoozed && Date.parse(t.snoozed.until) <= time) this.wakeTask(t.id, { why: "time" });
@@ -311,10 +312,23 @@ export class CodeService {
       await Promise.race([this.codexLoading, new Promise((r) => setTimeout(r, 8000))]);
     }
     const hasGo = !!(await Promise.resolve(this.goKey?.()).catch(() => null));
+    // Whether Codex has a session, asked in the background (at most every 5 minutes).
+    if (this.codexCommand && (!this.codexAuth || Date.now() - this.codexAuth.at > 300000) && !this.codexProbing) {
+      this.codexProbing = probeCodex({ command: this.codexCommand }).then((r) => { this.codexAuth = { status: r.status, at: Date.now() }; }).catch(() => {}).finally(() => { this.codexProbing = null; });
+    }
+    const codexOut = this.codexAuth?.status === "missing";
+    const oc = !!this.opencodeCommand();
+    // Each engine says why it is not ready and what to do (the model menus show it in place).
     return [
       { id: "claude-code", label: ENGINE_LABEL["claude-code"], available: true, models: CODE_MODELS },
-      { id: "codex", label: ENGINE_LABEL.codex, available: !!this.codexCommand, models: this.codexList || [...CODEX_FALLBACK] },
-      { id: "opencode", label: ENGINE_LABEL.opencode, available: !!this.opencodeCommand(), installable: !this.opencodeCommand(), installing: !!this.opencodeInstall, models: this.opencodeModels(hasGo) },
+      {
+        id: "codex", label: ENGINE_LABEL.codex, available: !!this.codexCommand && !codexOut, models: this.codexList || [...CODEX_FALLBACK],
+        need: !this.codexCommand ? "Codex no está en este ordenador: instálalo («npm i -g @openai/codex») e inicia sesión con «codex login»." : codexOut ? "Inicia sesión en Codex: ejecuta «codex login» en una terminal." : null,
+      },
+      {
+        id: "opencode", label: ENGINE_LABEL.opencode, available: oc, installable: !oc, installing: !!this.opencodeInstall, models: this.opencodeModels(hasGo),
+        need: !oc ? "OpenCode no está instalado para Colmena." : null, note: hasGo ? null : "Los modelos de OpenCode Go salen con tu clave (Ajustes › Inteligencia).",
+      },
     ];
   }
   opencodeCommand() { return this.opencodeFixed !== undefined ? this.opencodeFixed : findOpenCode(this.directory); }
@@ -413,6 +427,7 @@ export class CodeService {
       goal: t.goal || null, saved: t.saved ? { at: t.saved.at, until: t.saved.until, expired: !!t.saved.expired } : null, included: t.included || null,
       merging: t.merging || null, review: t.review || null, previewCheck: t.previewCheck || null,
       archived: t.archived || null, pinned: !!t.pinned, snoozed: t.snoozed || null, autoArchive: t.autoArchive !== false, activeAt: t.activeAt || t.createdAt,
+      pendingSwitch: t.pendingSwitch || null, handoff: t.handoff ? { from: t.handoff.from, pending: !!t.handoff.pending } : null,
       group: t.group || null, label: t.label || null, tests: t.tests ? { status: t.tests.status, code: t.tests.code, durationMs: t.tests.durationMs, at: t.tests.at } : null, pr: t.pr || null, allow: t.allow || [],
     };
   }
@@ -425,7 +440,7 @@ export class CodeService {
     const task = this.mustTask(taskId);
     const project = this.store.get("codeProjects", task.projectId);
     const live = this.engines.get(taskId);
-    if (task.engine === "codex" && !this.codexList) void this.catalog(); // its names, for the next refresh
+    if (!this.codexList) void this.catalog(); // Codex's names, for the next refresh
     return { task: this.taskView(task), project, items: this.items(taskId), live: live?.turn ? { text: live.turn.live || "" } : null, models: this.modelsOf(task.engine), commands: live?.engine?.commands || [] };
   }
 
@@ -532,8 +547,14 @@ export class CodeService {
     return this.taskView(this.mustTask(id));
   }
 
-  patchTask(id, { title, model, effort, access, pinned, autoArchive }) {
-    const task = this.mustTask(id);
+  patchTask(id, { title, model, effort, access, pinned, autoArchive, engine }) {
+    let task = this.mustTask(id);
+    // A model of another engine: the task goes on with that engine (now, or when the turn ends).
+    if (engine && engine !== task.engine) {
+      this.switchEngine(id, { engine, model });
+      task = this.mustTask(id);
+      model = undefined;
+    }
     const changes = {};
     if (title) changes.title = clip(title.trim(), 70);
     if (access && ACCESS.includes(access)) changes.access = access;
@@ -547,6 +568,49 @@ export class CodeService {
     if ((changes.model || changes.effort) && !this.engines.get(id)?.turn) this.closeEngine(id);
     this.emit({ type: "projects" });
     return this.taskView(next);
+  }
+
+  // ------------------------------------------------------------------ switching engine (T3 Code provider switching)
+  /**
+   * Goes on with another engine in the same copy, without losing anything: the next turn starts a
+   * new session of that engine and its first message carries a budgeted selection of the task's
+   * real messages (handoffContext). Restore points and per-turn diffs do not depend on the engine.
+   * While a turn runs, the switch waits for its end (`pendingSwitch`).
+   */
+  switchEngine(taskId, { engine, model = null }) {
+    const task = this.mustTask(taskId);
+    if (!ENGINES.includes(engine)) throw Object.assign(Error("Ese motor no existe."), { status: 400 });
+    if (engine === "codex" && !this.codexCommand) throw Object.assign(Error("Codex no está en este ordenador: instálalo e inicia sesión («codex login»)."), { status: 409 });
+    if (engine === "opencode" && !this.opencodeCommand()) throw Object.assign(Error("OpenCode no está instalado para Colmena: pulsa «Instalar OpenCode»."), { status: 409 });
+    // Codex's own list may not be asked yet: a model named for it is taken as it comes.
+    const listed = engine !== "codex" || this.codexList;
+    if (!model || (listed && !this.modelsOf(engine).some((m) => m.id === model))) model = this.defaultModel(engine);
+    if (this.engines.get(taskId)?.turn || this.starting.has(taskId)) {
+      this.setTask(taskId, { pendingSwitch: { engine, model, at: now() } });
+      return { pending: true };
+    }
+    if (engine === task.engine) {
+      this.setTask(taskId, { pendingSwitch: null, model });
+      return { switched: false };
+    }
+    this.closeEngine(taskId);
+    const label = ENGINE_LABEL[engine] + " · " + (this.modelsOf(engine).find((m) => m.id === model)?.label || model);
+    this.setTask(taskId, {
+      engine, model, pendingSwitch: null, usage: null, limit: null,
+      // A new conversation for that engine, told what happened so far on its first turn.
+      session: { id: randomUUID(), started: false, forkAt: null, rollback: 0 }, sessionFrom: (task.turns || []).length + 1,
+      handoff: { from: task.engine, fromModel: task.model, at: now(), pending: true },
+    });
+    this.addItem(taskId, { kind: "notice", text: "Sigue con " + label, engineSwitch: { from: task.engine, to: engine, model } });
+    this.emit({ type: "projects" });
+    return { switched: true };
+  }
+
+  /** The handoff for the engine's first turn after a switch: the task's real messages, budgeted. */
+  handoffFor(task, beforeSeq = Infinity) {
+    const items = this.items(task.id).filter((i) => i.seq < beforeSeq);
+    const said = (eng, model) => ENGINE_LABEL[eng] + (model ? " · " + (this.modelsOf(eng).find((m) => m.id === model)?.label || model) : "");
+    return handoffContext(items, { from: said(task.handoff?.from || task.engine, task.handoff?.fromModel), bot: this.bot().name });
   }
 
   // ------------------------------------------------------------------ the engine
@@ -706,7 +770,14 @@ export class CodeService {
       entry.turn = { n, mode, compact, startSnap, userItemId: user.id, started: Date.now(), live: "", tools: new Map(), lastAssistant: null };
       try {
         if (compact) await (entry.engine.compact ? entry.engine.compact() : entry.engine.send("/compact", { mode: "build" }));
-        else await entry.engine.send(await this.prepare(task, text, attachments, contexts), { mode });
+        else {
+          let message = await this.prepare(task, text, attachments, contexts);
+          // The first turn after switching engine carries what happened so far (the real messages).
+          const handoff = this.mustTask(task.id).handoff;
+          if (handoff?.pending) message = this.handoffFor(this.mustTask(task.id), user.seq) + "\n\nMensaje nuevo:\n" + message;
+          await entry.engine.send(message, { mode });
+          if (handoff?.pending) this.setTask(task.id, { handoff: { ...handoff, pending: false, sent: now() } });
+        }
       } catch (error) {
         await this.finishTurn(task.id, entry, error);
         return;
@@ -756,7 +827,9 @@ export class CodeService {
     }
     if (e.type === "tool" && !turn.tools.has(e.id)) {
       const line = toolLine(e.name, e.input || {});
-      const item = this.addItem(taskId, { kind: "tool", tool: e.name, verb: line.verb, text: line.text, detail: clip(line.detail, 600), status: "running", toolUseId: e.id, turn: turn.n });
+      // The question about it may have been answered «no» before the engine reported the call.
+      const refused = this.items(taskId).some((i) => i.kind === "ask" && i.toolUseId === e.id && i.status === "denied");
+      const item = this.addItem(taskId, { kind: "tool", tool: e.name, verb: line.verb, text: line.text, detail: clip(line.detail, 600), status: refused ? "denied" : "running", toolUseId: e.id, turn: turn.n });
       turn.tools.set(e.id, item.id);
       return;
     }
@@ -786,7 +859,7 @@ export class CodeService {
       stat = await this.snapsOf(task).diff(turn.startSnap, endSnap);
     } catch {}
     const files = stat.files.map((f) => ({ path: f.path, status: f.status, add: f.add, del: f.del }));
-    const record = { n: turn.n, mode: turn.mode, userItemId: turn.userItemId, startSnap: turn.startSnap, endSnap, add: stat.add, del: stat.del, files, sessionAt: turn.lastAssistant, durationMs: Date.now() - turn.started };
+    const record = { n: turn.n, mode: turn.mode, userItemId: turn.userItemId, startSnap: turn.startSnap, endSnap, add: stat.add, del: stat.del, files, sessionAt: turn.lastAssistant, durationMs: Date.now() - turn.started, engine: task.engine, model: task.model };
     if (files.length) this.addItem(taskId, { kind: "turn", n: turn.n, files: files.slice(0, 200), add: stat.add, del: stat.del, endSnap, turn: turn.n });
     void this.remember(taskId, entry);
     const failed = !!error && !turn.stopped && !interrupted;
@@ -794,8 +867,15 @@ export class CodeService {
     if (turn.stopped) this.addItem(taskId, { kind: "notice", text: "Has parado a Bruno.", turn: turn.n });
     // A plan waits for the person (Implementar · En una tarea nueva · Refinar).
     const next = this.setTask(taskId, { turns: [...(task.turns || []), record], status: failed ? "error" : turn.plan ? "planned" : "idle", error: failed ? "turn" : null, activeAt: now() });
-    entry.idle = setTimeout(() => { if (!entry.turn) this.closeEngine(taskId); }, IDLE_MS);
+    entry.idle = setTimeout(() => { if (!entry.turn && this.engines.get(taskId) === entry) this.closeEngine(taskId); }, IDLE_MS);
     entry.idle.unref?.();
+    // A model of another engine chosen while it worked: the next turn goes with that engine.
+    if (next.pendingSwitch) {
+      try { this.switchEngine(taskId, next.pendingSwitch); } catch (e) {
+        this.setTask(taskId, { pendingSwitch: null });
+        this.addItem(taskId, { kind: "notice", text: "No se pudo cambiar de motor: " + e.message, tone: "warn" });
+      }
+    }
     // Conflicts with the base: closed when Bruno left no marks. The preview: looked at after a change.
     if (next.merging && !failed && !turn.stopped) await this.closeMerge(taskId).catch((e) => console.warn("Código: merge abierto: " + e.message));
     if (files.length && !failed && !turn.stopped) void this.checkAfterTurn(taskId, turn.n);
@@ -1052,11 +1132,16 @@ export class CodeService {
     for (const later of this.items(taskId).filter((i) => i.seq >= item.seq)) this.store.remove("codeItems", later.id);
     this.closeEngine(taskId);
     const prev = turns[idx - 1];
+    // The engine's own session can be cut there only if those turns were its own (no engine
+    // switch in between); otherwise a new session starts with the handoff of what is left.
+    const sameSession = idx > 0 && prev.n >= (task.sessionFrom || 1);
     // Claude Code forks the session at the answer before; Codex rolls its thread back.
-    const session = task.engine === "codex"
-      ? (task.session?.started && idx > 0 ? { ...task.session, rollback: (task.session.rollback || 0) + turns.length - idx } : { id: randomUUID(), started: false, rollback: 0 })
-      : prev?.sessionAt ? { ...task.session, started: true, forkAt: prev.sessionAt } : { id: randomUUID(), started: false, forkAt: null };
-    this.setTask(taskId, { turns: turns.slice(0, idx), session, status: "idle", queue: [] });
+    const session = !sameSession ? { id: randomUUID(), started: false, forkAt: null, rollback: 0 }
+      : task.engine === "codex"
+        ? (task.session?.started ? { ...task.session, rollback: (task.session.rollback || 0) + turns.length - idx } : { id: randomUUID(), started: false, rollback: 0 })
+        : prev?.sessionAt ? { ...task.session, started: true, forkAt: prev.sessionAt } : { id: randomUUID(), started: false, forkAt: null };
+    const handoff = !sameSession && idx > 0 ? { from: prev?.engine || task.engine, fromModel: task.model, at: now(), pending: true } : task.handoff || null;
+    this.setTask(taskId, { turns: turns.slice(0, idx), session, status: "idle", queue: [], handoff, ...(sameSession ? {} : { sessionFrom: idx + 1 }) });
     this.seq.delete(taskId);
     this.emit({ type: "reload", task: taskId });
     return { text: item.text };
@@ -1595,6 +1680,7 @@ export class CodeService {
     clearInterval(this.prTimer);
     this.prTimer = null;
     clearInterval(this.sweepTimer);
+    clearTimeout(this.firstSweep);
     this.sweepTimer = null;
     for (const id of [...this.engines.keys()]) this.closeEngine(id);
     this.terminals.shutdown();
@@ -1623,6 +1709,58 @@ function whichCommand(name) {
 function runCmd(command, args, { cwd, timeout = 60000 } = {}) {
   const [exe, ...lead] = command;
   return new Promise((resolve) => execFile(exe, [...lead, ...args], { cwd, windowsHide: true, timeout, maxBuffer: 16 * 1024 * 1024, env: { ...process.env, GH_PROMPT_DISABLED: "1", NO_COLOR: "1" } }, (error, stdout, stderr) => resolve({ ok: !error, stdout: String(stdout || ""), stderr: String(stderr || "") })));
+}
+
+/** The history a new engine gets after a switch (T3 Code ContextHandoffService): 16 000 bytes. */
+export const HANDOFF_BYTES = 16000;
+
+/**
+ * A budgeted selection of the task's real messages, not a summary (T3 Code portable handoffs):
+ * the original request always, then the most recent entries that fit, whole, in their order,
+ * with how many were left out. Your new message stays apart and is never shortened.
+ */
+export function handoffContext(items, { from = "otro motor", bot = "Bruno", budget = HANDOFF_BYTES } = {}) {
+  const entries = [];
+  const sign = (n) => (n ? n : 0);
+  for (const i of items) {
+    if (i.kind === "user") {
+      const extra = [...(i.contexts || []).map((c) => c.label), ...(i.attachments || []).map((a) => "adjunto " + a.name)];
+      entries.push({ who: "Persona", text: (i.text || "") + (extra.length ? "\n(con: " + extra.join(", ") + ")" : "") });
+    } else if (i.kind === "text") entries.push({ who: bot, text: String(i.text || "").replace(GOAL_MARK, "").trim() });
+    else if (i.kind === "plan") entries.push({ who: bot + " · plan propuesto" + (i.status === "open" ? " (aún sin implementar)" : ""), text: i.text });
+    else if (i.kind === "turn") entries.push({ who: "Colmena", text: "Cambios de ese turno: " + (i.files || []).slice(0, 30).map((f) => `${f.path} (+${sign(f.add)} −${sign(f.del)})`).join(", ") + ((i.files || []).length > 30 ? "…" : "") });
+    else if (i.kind === "tool" && i.verb === "run" && i.detail) entries.push({ who: "Colmena", text: "Orden: " + clip(String(i.detail).split(/\r?\n/)[0], 200) + (i.status === "error" ? " → falló" + (i.output ? ": " + clip(String(i.output).trim().split(/\r?\n/).slice(-2).join(" "), 200) : "") : i.status === "denied" ? " → no permitida" : "") });
+    else if (i.kind === "notice" && (i.goal || i.tone === "done" || i.tone === "warn") && !i.engineSwitch) entries.push({ who: "Colmena", text: i.text });
+    else if (i.kind === "review") entries.push({ who: "Revisión", text: (i.summary || "") + (i.findings || []).map((f) => `\n- [${f.severity}] ${f.title}${f.file ? " (" + f.file + (f.line ? ":" + f.line : "") + ")" : ""}`).join("") });
+    else if (i.kind === "error") entries.push({ who: "Colmena", text: "Error: " + i.text });
+  }
+  const filled = entries.filter((e) => String(e.text || "").trim());
+  const line = (e) => `[${e.who}]\n${e.text}`;
+  const bytes = (s) => Buffer.byteLength(s, "utf8") + 2;
+  let left = budget;
+  const first = filled.findIndex((e) => e.who === "Persona");
+  const keep = new Set();
+  if (first >= 0) {
+    // The original request always goes; if it alone is too long, its start and its end.
+    const text = line(filled[first]);
+    if (bytes(text) > budget / 2) filled[first] = { ...filled[first], text: clip(filled[first].text, Math.floor(budget / 4)) + " [recortado]" };
+    keep.add(first);
+    left -= bytes(line(filled[first]));
+  }
+  for (let k = filled.length - 1; k >= 0; k--) {
+    if (keep.has(k)) continue;
+    const size = bytes(line(filled[k]));
+    if (size > left) break;
+    keep.add(k);
+    left -= size;
+  }
+  const omitted = filled.length - keep.size;
+  const body = filled.map((e, k) => (keep.has(k) ? line(e) : null)).filter(Boolean);
+  if (omitted && first >= 0) body.splice(1, 0, `[… ${omitted === 1 ? "1 entrada intermedia omitida" : omitted + " entradas intermedias omitidas"} …]`);
+  return [
+    `Contexto de esta tarea hasta ahora. La llevaba ${from}; ahora sigues tú en la misma carpeta, que ya tiene todos sus cambios. Son los mensajes reales, en orden${omitted ? ", con algunos intermedios omitidos" : ""}; si necesitas detalles, mira los archivos.`,
+    ...body,
+  ].join("\n\n");
 }
 
 /** Context chips of a message: a terminal excerpt, a comment on diff lines, a preview note. */
