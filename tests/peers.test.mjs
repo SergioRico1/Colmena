@@ -450,3 +450,16 @@ test("an invitation straight into a room: the code connects you and puts you in 
   // Only for rooms of yours.
   await assert.rejects(marta.peers.createInvite("Otra", { room: group.id }), /Solo quien creó/);
 });
+
+test("presence out of order: an «online» older than the «away» that came first changes nothing", async (t) => {
+  const { people: [sergio, marta] } = await world(t, ["Sergio Rico", "Marta Ruiz"]);
+  await connect(sergio, marta);
+  const c = sergio.peers.contact(marta.peers.address);
+  const t0 = Date.now();
+  sergio.peers.dispatch(c, { type: "presence", state: "away", sent: t0 + 1000 });
+  assert.equal(sergio.peers.online(marta.peers.address), false);
+  sergio.peers.dispatch(c, { type: "presence", state: "online", sent: t0 + 500 });
+  assert.equal(sergio.peers.online(marta.peers.address), false);
+  sergio.peers.dispatch(c, { type: "presence", state: "online", sent: t0 + 2000 });
+  assert.equal(sergio.peers.online(marta.peers.address), true);
+});

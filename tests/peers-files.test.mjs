@@ -24,7 +24,8 @@ const until = async (fn, what, ms = 10000) => {
 
 async function world(t) {
   const base = await mkdtemp(path.join(os.tmpdir(), "colmena-files-"));
-  const relay = await startRelay({ port: 0, directory: path.join(base, "relay") });
+  // COLMENA_TEST_RELAY=<url> runs the same test against another mailbox (the Cloudflare one).
+  const relay = process.env.COLMENA_TEST_RELAY ? { url: process.env.COLMENA_TEST_RELAY, close: async () => {} } : await startRelay({ port: 0, directory: path.join(base, "relay") });
   const people = [];
   for (const name of ["Sergio Rico", "Marta Ruiz"]) {
     const store = new Store(path.join(base, name.split(" ")[0]));
@@ -66,12 +67,14 @@ test("a file travels sealed in parts, arrives whole, and the mailbox never had i
   assert.equal(view.text, "El presupuesto");
   assert.equal(view.file.status, "ready");
   assert.equal(view.file.mine, false);
-  // The mailbox: three sealed parts, no trace of the text.
+  // The mailbox: three sealed parts, no trace of the text (only readable on a local mailbox).
+  if (!process.env.COLMENA_TEST_RELAY) {
   const db = new DatabaseSync(path.join(base, "relay", "relay.sqlite"));
   const parts = db.prepare("SELECT data FROM blob_parts WHERE id=?").all(file.id);
   db.close();
   assert.equal(parts.length, 3);
   assert.ok(!Buffer.concat(parts.map((p) => Buffer.from(p.data))).includes("SECRETO-DEL-PRESUPUESTO"));
+  }
   // Without the read token nobody downloads it.
   await assert.rejects(marta.peers.client.getBlob(file.id, 0, "otro"), /no existe/);
   // Deleted for everyone: it goes from the mailbox and from Marta's Colmena.

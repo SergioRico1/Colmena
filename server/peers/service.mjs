@@ -346,7 +346,9 @@ export class Peers extends EventEmitter {
   ephemeral(to, body, { always = false } = {}) {
     const c = this.contact(to);
     if (!this.client || this.client.status !== "online" || !c?.box || (!always && !this.online(to))) return;
-    this.client.send(to, seal(this.identity, { to, toBox: c.box, body }), { ephemeral: true }).catch(() => {});
+    // Presence says when it was sent: one that arrives after a newer one is ignored.
+    const sealed = body.type === "presence" ? { ...body, sent: this.clock() } : body;
+    this.client.send(to, seal(this.identity, { to, toBox: c.box, body: sealed }), { ephemeral: true }).catch(() => {});
   }
   /** «online» when we connect goes to every contact (that is how each one learns); after that, and «away», only to who is connected. */
   broadcastPresence(state, { everyone = state === "online" } = {}) {
@@ -841,7 +843,10 @@ export class Peers extends EventEmitter {
       }
       case "presence": {
         const was = this.online(from);
-        this.presence.set(from, { state: body.state === "online" ? "online" : "away", at: this.clock() });
+        // «online» sent just before an «away» can arrive after it (separate requests).
+        const sent = Number.isSafeInteger(body.sent) ? body.sent : 0;
+        if (sent && sent < (this.presence.get(from)?.sent || 0)) return;
+        this.presence.set(from, { state: body.state === "online" ? "online" : "away", at: this.clock(), sent });
         this.emit("live", { type: "presence", id: from, online: this.online(from) });
         if (was !== this.online(from)) this.changed(); // the green dots in the lists
         // Someone just came online: tell them we are here too (once a minute at most, unless
