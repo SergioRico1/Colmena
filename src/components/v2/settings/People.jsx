@@ -6,7 +6,8 @@ import { later, isHidden } from "../../../lib/undoToast.js";
 import { RELAY_LABEL } from "../../../lib/peers.js";
 import { PeerAvatar } from "../people/PeerAvatar.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
-import { Chevron, FieldRow, Group, LINE, MUTED, Segmented, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
+import PeopleIntro, { HELP_URL } from "../people/PeopleIntro.jsx";
+import { Chevron, FieldRow, Group, LINE, LinkRow, MUTED, Segmented, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
 
 // Ajustes › Personas (design/V2Personas.dc.html, paso personas): who you talk to from
 // Colmena, what each one's bot may ask you, your safety words with each, invitations not yet
@@ -51,7 +52,7 @@ export default function PeopleSettings() {
       </Group>
 
       <Group id="pp-ct" title={`Conectadas · ${contacts.length}`} anchor="contactos" note={contacts.length ? "Enviar, comprar, publicar o pagar por algo que pida otra persona o su bot siempre te pregunta, aunque digas «Siempre» aquí." : null}>
-        {contacts.length === 0 ? <div style={rowStyle(!peers.invites.length)}><Text title="Aún no hablas con nadie" sub="Invita a alguien: le mandas un código y lo pega en su Colmena." /></div> : null}
+        {contacts.length === 0 ? <div style={{ borderBottom: peers.invites.length ? LINE : 0 }}><PeopleIntro onInvite={relay.status === "off" ? null : () => setSheet("invitar")} onCode={relay.status === "off" ? null : () => setSheet("aceptar")} /></div> : null}
         {contacts.map((c, i) => {
           const isOpen = open === c.id;
           return (
@@ -101,6 +102,10 @@ export default function PeopleSettings() {
           ))}
         </Group>
       ) : null}
+
+      <Group id="pp-help" title="Ayuda" anchor="como-funciona">
+        <LinkRow title="Cómo funciona Personas" sub="Invitar, grupos, qué ven tus bots, reuniones, el buzón y cómo quitar a alguien." to={HELP_URL} last />
+      </Group>
 
       <RelayGroup relay={relay} act={act} />
       {sheet === "invitar" ? <InviteSheet onClose={() => setSheet(null)} /> : null}

@@ -9,6 +9,7 @@ import { post } from "../../../lib/api.js";
 import { shareUrl } from "../../../lib/peers.js";
 import { PeerAvatar, ShareFace } from "../people/PeerAvatar.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
+import PeopleIntro from "../people/PeopleIntro.jsx";
 
 // «Chats» column of Colmena 2.0 (the boards call the place «Conversaciones»; the rail fits one line) (design/V2Conversacion.dc.html): rooms (#) and chats
 // with each bot in one list, newest first; the current one as a white piece; a honey dot when
@@ -250,7 +251,10 @@ export function NewConversation({ onClose, preset = [], onPeople = null }) {
                   </button>
                 );
               })}
-              {onPeople && !q.trim() ? (
+              {onPeople && !q.trim() && !contacts.length ? (
+                // Nobody yet: why it is not like Slack, in three lines, and the two ways in.
+                <PeopleIntro compact onInvite={() => onPeople("invitar")} onCode={() => onPeople("aceptar")} />
+              ) : onPeople && !q.trim() ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "6px 10px 14px" }}>
                   <button type="button" onClick={() => onPeople("invitar")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
                   <button type="button" onClick={() => onPeople("aceptar")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}><Ticket size={15} strokeWidth={2.2} aria-hidden="true" />{"Tengo una invitación"}</button>

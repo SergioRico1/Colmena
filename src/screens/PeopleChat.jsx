@@ -6,6 +6,7 @@ import { PeerAvatar, PeoplePile } from "../components/v2/people/PeerAvatar.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import MeetingCard from "../components/v2/people/MeetingCard.jsx";
 import { useShareChat, RELAY_LABEL } from "../lib/peers.js";
+import { mentionSegments, resolveMentions } from "../lib/mentions.js";
 import { useStore } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
@@ -24,6 +25,18 @@ const dayLabel = (iso) => {
 };
 const hhmm = (iso) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 const names = (list) => (list.length <= 1 ? list.join("") : list.slice(0, -1).join(", ") + " y " + list.at(-1));
+const NOTE_KEY = "colmena:personas:nota-bots";
+
+/** A bot named in a message or about to be: its shape, its name and whose it is. */
+function MentionPill({ bot, label, title }) {
+  return (
+    <span title={title || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "1px 8px 1px 5px", borderRadius: "999px", background: `${bot.color || "#8C8F99"}24`, fontWeight: 600, whiteSpace: "nowrap", verticalAlign: "baseline" }}>
+      <BotPresence bot={bot} size={12} state="rest" />
+      {bot.name}
+      {label ? <span style={{ fontWeight: 500, color: "#5C606C" }}>{"· " + label}</span> : null}
+    </span>
+  );
+}
 
 export default function PeopleChat({ params = {} }) {
   const id = params.id;
@@ -39,22 +52,32 @@ export default function PeopleChat({ params = {} }) {
   const share = chat.share;
   const relay = peers?.relay?.status || "off";
   const others = useMemo(() => (share?.members || []).filter((m) => !m.me), [share]);
-  // Bots you can name here: yours, then each person's (what their Colmena announced).
+  // Bots you can name here: yours, then each person's (what their Colmena announced). Each one
+  // carries its owner: two people may both have a «Vera» (src/lib/mentions.js).
+  const me = peers?.me?.address || null;
+  const mineEnabled = useMemo(() => myBots.filter((b) => b.enabled !== false), [myBots]);
   const mentionable = useMemo(() => {
-    const me = peers?.me?.address;
-    const list = myBots.filter((b) => b.enabled !== false).map((b) => ({ owner: me, bot: b.id, name: b.name, color: b.color, shape: b.shape, note: "tu bot" }));
+    const list = mineEnabled.map((b) => ({ owner: me, bot: b.id, name: b.name, color: b.color, shape: b.shape, mine: true, note: "tu bot", ownerFace: { me: true } }));
     for (const o of others) {
       const c = (peers?.contacts || []).find((x) => x.id === o.id);
-      for (const b of c?.bots || []) list.push({ owner: o.id, bot: b.id, name: b.name, color: b.color, shape: b.shape, note: "de " + o.name.split(" ")[0] });
+      for (const b of c?.bots || []) list.push({ owner: o.id, bot: b.id, name: b.name, color: b.color, shape: b.shape, note: "de " + o.name.split(" ")[0], ownerFace: o });
     }
     return list;
-  }, [myBots, others, peers]);
+  }, [mineEnabled, others, peers, me]);
+  const botOf = (owner, bot) => mentionable.find((x) => x.owner === owner && x.bot === bot) || null;
+  // Several bots with this name here (yours and someone else's): say so where it matters.
+  const shared = (name) => mentionable.filter((x) => x.name.toLowerCase() === String(name).toLowerCase()).length > 1;
   const pickMention = (m) => {
     setMentionOpen(false);
     setMentions((all) => (all.some((x) => x.owner === m.owner && x.bot === m.bot) ? all : [...all, m]));
     setText((t) => (t.endsWith("@") ? t.slice(0, -1) : t) + (t && !/\s$/.test(t) && !t.endsWith("@") ? " " : "") + "@" + m.name + " ");
     input.current?.focus();
   };
+  // Who the message goes to, shown before sending: picked bots, and «@Vera» written by hand is yours.
+  const resolved = useMemo(() => resolveMentions(text, mentions, mineEnabled, me).map((m) => botOf(m.owner, m.bot) || { ...m, note: "tu bot", ownerFace: { me: true } }), [text, mentions, mineEnabled, me, mentionable]);
+  // The first time in a conversation with people: what your bots see here (once).
+  const [botsNote, setBotsNote] = useState(() => { try { return !localStorage.getItem(NOTE_KEY); } catch { return false; } });
+  const closeNote = () => { setBotsNote(false); try { localStorage.setItem(NOTE_KEY, "1"); } catch {} };
   if (chat.error === "missing") return <NotFound active="conversaciones" title="Esta conversación ya no está" text="Puede que la otra persona la cerrara. No se ha perdido nada de lo tuyo." />;
   const dm = share?.kind === "dm";
   const other = dm ? others[0] : null;
@@ -65,8 +88,8 @@ export default function PeopleChat({ params = {} }) {
   const send = async () => {
     const value = text.trim();
     if (!value) return;
-    // The bots picked with «@» whose name is still in the text.
-    const named = mentions.filter((m) => value.includes("@" + m.name)).map(({ owner, bot }) => ({ owner, bot }));
+    // Always with their owner (a hand-written «@Vera» goes as yours, as the pill showed).
+    const named = resolved.map(({ owner, bot }) => ({ owner, bot }));
     setText("");
     setMentions([]);
     setError(null);
@@ -135,7 +158,11 @@ export default function PeopleChat({ params = {} }) {
                       ) : <PeerAvatar person={mine ? { me: true } : { initials: m.author.initials, color: m.author.color }} size={40} />}
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
                         <span style={{ fontSize: "14px" }}><strong style={{ fontWeight: 600 }}>{m.bot ? m.bot.name : mine ? "Tú" : m.author.name}</strong> <span style={{ color: "#6B6F7A" }}>{(m.bot ? (mine ? "· tu bot" : "· bot de " + m.author.name.split(" ")[0]) + (m.local ? " · solo lo ves tú" : "") + " " : "") + "· " + hhmm(m.at)}</span></span>
-                        <p style={{ margin: 0, fontSize: "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }}>{m.text}</p>
+                        <p style={{ margin: 0, fontSize: "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }}>
+                          {mentionSegments(m.text, (m.mentions || []).map((x) => botOf(x.owner, x.bot)).filter(Boolean)).map((s, i) => (s.mention
+                            ? <MentionPill key={i} bot={s.mention} label={shared(s.mention.name) || !s.mention.mine ? s.mention.note : null} />
+                            : <span key={i}>{s.text}</span>))}
+                        </p>
                         {m.card?.kind === "meeting" ? <MeetingCard meeting={m.meeting} onChange={chat.updateMeeting} /> : null}
                         {picker === m.id ? (
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35)", alignSelf: "flex-start", animation: "rise .2s ease-out" }}>
@@ -181,13 +208,32 @@ export default function PeopleChat({ params = {} }) {
               <div role="listbox" aria-label="Pedírselo a un bot" style={{ position: "relative" }}>
                 <div style={{ position: "absolute", left: 0, bottom: "10px", width: "min(380px, 100%)", maxHeight: "320px", overflowY: "auto", padding: "8px", background: "rgba(255,255,255,.96)", WebkitBackdropFilter: "blur(20px)", backdropFilter: "blur(20px)", borderRadius: "24px", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "2px", animation: "rise .25s ease-out", zIndex: 10 }}>
                   {mentionable.map((m) => (
-                    <button key={m.owner + m.bot} type="button" role="option" aria-selected="false" onClick={() => pickMention(m)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "46px", padding: "0 12px", border: 0, borderRadius: "14px", background: "transparent", cursor: "pointer", textAlign: "left" }}>
-                      <BotPresence bot={m} size={22} state="rest" />
+                    <button key={m.owner + m.bot} type="button" role="option" aria-selected="false" aria-label={`${m.name}, ${m.note}`} onClick={() => pickMention(m)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "46px", padding: "0 12px", border: 0, borderRadius: "14px", background: shared(m.name) ? "rgba(18,19,26,.03)" : "transparent", cursor: "pointer", textAlign: "left" }}>
+                      <span aria-hidden="true" style={{ position: "relative", width: "26px", height: "26px", display: "grid", placeItems: "center" }}>
+                        <BotPresence bot={m} size={22} state="rest" />
+                        <span style={{ position: "absolute", right: "-5px", bottom: "-5px" }}><PeerAvatar person={m.ownerFace} size={14} ring="#FFFFFF" /></span>
+                      </span>
                       <span style={{ flex: 1, fontSize: "15px", fontWeight: 500 }}>{m.name}</span>
-                      <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{m.note}</span>
+                      <span style={{ fontSize: "12px", fontWeight: shared(m.name) ? 600 : 400, color: shared(m.name) ? "#12131A" : "#6B6F7A" }}>{m.note}</span>
                     </button>
                   ))}
                 </div>
+              </div>
+            ) : null}
+            {botsNote && share && !gone ? (
+              <p role="note" style={{ margin: "0 0 10px", display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px 10px 16px", borderRadius: "16px", background: "#F2F2EE", fontSize: "14px", color: "#3D404A", animation: "rise .3s ease-out" }}>
+                <Lock size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
+                <span style={{ flex: 1 }}>{"Tus bots aquí no ven tu correo ni tu memoria; menciónalos con @."}</span>
+                <button type="button" onClick={closeNote} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>{"Entendido"}</button>
+              </p>
+            ) : null}
+            {resolved.length ? (
+              <div aria-label="Se lo pides a" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", margin: "0 0 8px 14px", fontSize: "13px", color: "#5C606C", animation: "fade .2s ease-out" }}>
+                {"Para"}
+                {resolved.map((m) => {
+                  const typed = !mentions.some((x) => x.owner === m.owner && x.bot === m.bot);
+                  return <MentionPill key={m.owner + m.bot} bot={m} label={m.note} title={typed && shared(m.name) ? `Escrito a mano: es tu ${m.name}. Para otra, elígela con @.` : null} />;
+                })}
               </div>
             ) : null}
             <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "8px", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)" }}>

@@ -77,19 +77,27 @@ export function InviteSheet({ onClose, initialName = "" }) {
               </label>
               <button type="button" onClick={make} disabled={!name.trim() || busy} style={dark(!!name.trim() && !busy)}>{busy ? "Creando…" : "Crear invitación"}</button>
             </div>
-            <span style={{ fontSize: "13px", lineHeight: 1.5, color: "#5C606C" }}>{"Colmena no la envía por ti: tú se la mandas por WhatsApp, correo o como prefieras."}</span>
+            <span style={{ fontSize: "13px", lineHeight: 1.5, color: "#5C606C" }}>{"Te daré un código que sirve una sola vez y caduca en 24 horas, con un mensaje listo para mandárselo tú por WhatsApp o correo. Colmena no escribe a nadie por ti."}</span>
           </>
         ) : (
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "22px", background: "#F4F4F0", animation: "rise .3s ease-out" }}>
-              <span style={{ fontSize: "15px", lineHeight: 1.55, color: "#1E2029", userSelect: "text" }}>{made.text.replace(made.code, "").replace(/\s*\(sirve.*$/, "")}</span>
-              <code style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{made.code}</code>
+              {/* Exactly what is copied: who you are, where to get Colmena, the code. */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", lineHeight: 1.5, color: "#1E2029", userSelect: "text" }}>
+                {made.text.split("\n").map((line, i) => line === made.code
+                  ? <code key={i} style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{line}</code>
+                  : <span key={i} style={{ overflowWrap: "anywhere" }}>{line}</span>)}
+              </div>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
                 <button type="button" onClick={copy} style={dark()}><Copy size={15} strokeWidth={2.2} aria-hidden="true" />{copied ? "Copiada" : "Copiar invitación"}</button>
                 <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{"Sirve una vez · caduca en 24 horas"}</span>
               </div>
             </div>
-            <Steps items={["Se la mandas tú: Colmena no escribe a nadie por ti.", "La pega en su Colmena y os aparece la otra persona.", "Os decís las cuatro palabras de seguridad. Si coinciden, nadie se ha colado."]} />
+            <Steps items={[
+              "Se la mandas tú: Colmena no escribe a nadie por ti.",
+              `Si ${first} no tiene Colmena, el enlace del mensaje la descarga gratis. Después pulsa «Tengo una invitación» y pega el código.`,
+              "Os saldrán las mismas cuatro palabras a los dos. Decíoslas en persona o por teléfono: si coinciden, nadie se ha puesto en medio.",
+            ]} />
           </>
         )}
         {error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4231A" }}>{error}</p> : null}
@@ -136,6 +144,7 @@ export function AcceptSheet({ onClose }) {
               </label>
               <button type="button" onClick={look} disabled={!code.trim() || busy} style={dark(!!code.trim() && !busy)}>{busy ? "Buscando…" : "Continuar"}</button>
             </div>
+            <span style={{ fontSize: "13px", lineHeight: 1.5, color: "#5C606C" }}>{"¿No tienes código? Pídeselo a quien quiera hablar contigo: lo crea en su Colmena con «Invitar a alguien». Puedes pegar el mensaje entero, Colmena encuentra el código."}</span>
           </>
         ) : (
           <>
@@ -150,6 +159,7 @@ export function AcceptSheet({ onClose }) {
                 <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "10px", padding: "18px", borderRadius: "22px", background: "#F4F4F0", boxSizing: "border-box" }}>
                   <span style={{ fontSize: "13px", color: "#5C606C" }}>{`Pídele a ${first} que te diga las suyas. Deben ser estas:`}</span>
                   <span style={{ font: "600 21px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{preview.words.join(" · ")}</span>
+                  <span style={{ fontSize: "13px", lineHeight: 1.45, color: "#5C606C" }}>{`Si coinciden, la invitación es de verdad de ${first} y nadie se ha puesto en medio. Si no, no conectes.`}</span>
                 </div>
                 <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
                   <button type="button" onClick={accept} disabled={busy} style={{ ...dark(!busy), height: "50px", fontSize: "15px" }}>{busy ? "Conectando…" : `Coinciden · conectar con ${first}`}</button>

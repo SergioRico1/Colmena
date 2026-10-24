@@ -124,3 +124,30 @@ test("a bot that cannot answer tells only its owner", async (t) => {
   assert.ok(!marta.store.where("peerMessages", "shareId", dm).some((m) => /No he podido/.test(m.text)));
   assert.ok(sharedInstructions(sergio.store, sergio.store.get("bots", "vera"), sergio.store.get("peerShares", dm), sergio.peers).includes("Marta Ruiz"));
 });
+
+test("two Veras in one conversation: each mention reaches the Vera it names, and each answer says whose it is", async (t) => {
+  const { sergio, marta, dm } = await pair(t);
+  const answers = (who) => who.store.where("peerMessages", "shareId", dm).filter((m) => m.bot?.id === "vera");
+  // Written by hand: Sergio's own Vera, not Marta's.
+  sergio.peers.post(dm, "@Vera ¿qué tenemos?");
+  await sergio.bots.idle();
+  await until(() => answers(marta).length === 1, "llega la respuesta de la Vera de Sergio");
+  assert.equal(marta.calls.length, 0);
+  // Picked from «@»: Marta's Vera, and Sergio's stays quiet.
+  sergio.peers.post(dm, "@Vera ¿y tú qué opinas?", { mentions: [{ owner: marta.peers.address, bot: "vera" }] });
+  await until(() => marta.calls.length === 1, "contesta la Vera de Marta");
+  await marta.bots.idle();
+  assert.equal(sergio.calls.length, 1);
+  // Both picked: both answer.
+  sergio.peers.post(dm, "@Vera y @Vera, poneos de acuerdo", { mentions: [{ owner: marta.peers.address, bot: "vera" }, { owner: sergio.peers.address, bot: "vera" }] });
+  await until(() => sergio.calls.length === 2 && marta.calls.length === 2, "contestan las dos");
+  await sergio.bots.idle();
+  await marta.bots.idle();
+  // Each answer is signed by its owner's Colmena: same bot name, different author.
+  const seen = await until(() => answers(sergio).length === 4 && answers(sergio), "Sergio ve las cuatro respuestas");
+  const owners = seen.map((m) => sergio.peers.messageView(m).author.name);
+  assert.deepEqual(owners.sort(), ["Marta Ruiz", "Marta Ruiz", "Sergio Rico", "Sergio Rico"]);
+  assert.ok(seen.every((m) => m.bot.name === "Vera"));
+  const [mine, hers] = [seen.find((m) => m.from === sergio.peers.address), seen.find((m) => m.from === marta.peers.address)];
+  assert.notEqual(sergio.peers.messageView(mine).author.color, sergio.peers.messageView(hers).author.color, "distinto color de dueño");
+});

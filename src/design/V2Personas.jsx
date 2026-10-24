@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}\n.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}\n@media (max-width: 760px){[data-convlist]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"paso":{"editor":"enum","options":["invitar","aceptar","persona","sala","pide","personas"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -13,7 +13,7 @@ export class Logic extends DCLogic {
     this.state = this.from(props);
   }
   from(p) {
-    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '' };
+    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '', noteClosed: false, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
   }
   componentDidUpdate(prev) {
     if (prev.paso !== this.props.paso || prev.reunion !== this.props.reunion) this.setState(this.from(this.props));
@@ -36,7 +36,7 @@ export class Logic extends DCLogic {
       ['Rutinas', 'V2Rutinas.dc.html', 'M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.8 4.5v3.6h-3.6M12 8.2V12l2.6 1.6', ''],
       ['Archivo', 'V2Archivo.dc.html', 'M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5zM3 4h18v3.5H3zM9.5 11.5h5', '']
     ];
-    const here = s.paso === 'personas' ? '' : 'Chats';
+    const here = s.paso === 'personas' || s.paso === 'ayuda' ? '' : 'Chats';
     const CONVS = marta
       ? [['person', 'Sergio Rico', 'ahora', 'Te invita a hablar', 'SR', '#DCE5EE', 'aceptar', false, true],
          ['bot', 'Leo', 'ayer', 'Contratos revisados', '#0E7C86', '50%', null, false, false],
@@ -63,10 +63,17 @@ export class Logic extends DCLogic {
       archivos: ['Ver tus archivos', 'Solo los que compartas tú en una sala.', [['pregunta', 'Pregúntame'], ['nunca', 'Nunca']]]
     };
     const pill = on => ({ on: String(on), bg: on ? '#FFFFFF' : 'transparent', sh: on ? '0 1px 2px rgba(18,19,26,.12)' : 'none' });
+    // [key, name, colour, clip, radius, whose, owner initials, owner bg, owner fg]
+    const PICK = [
+      ['mia', 'Vera', '#7B4DFF', 'none', '50% 12% 50% 12%', 'tu bot', 'TÚ', '#12131A', '#FFFFFF'],
+      ['marta', 'Vera', '#7B4DFF', 'none', '50% 12% 50% 12%', 'de Marta', 'MR', '#EFE2D3', '#12131A'],
+      ['atlas', 'Atlas', '#FFC93C', 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)', '0', 'tu bot', 'TÚ', '#12131A', '#FFFFFF'],
+      ['leo', 'Leo', '#0E7C86', 'none', '50%', 'de Marta', 'MR', '#EFE2D3', '#12131A']
+    ];
     return {
       rail: RAIL.map(([label, href, d, badge]) => { const on = label === here; return { label, href, d, badge, badgeLabel: 'Te espera algo', current: on ? 'page' : 'false', bg: on ? '#FFFFFF' : 'transparent', fg: on ? '#12131A' : '#4A4D57', sh: on ? '0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)' : 'none', weight: on ? '600' : '500' }; }),
       meIni: marta ? 'MR' : 'TÚ', meBg: marta ? '#EFE2D3' : '#12131A', meFg: marta ? '#12131A' : '#FFFFFF',
-      showList: s.paso !== 'personas',
+      showList: s.paso !== 'personas' && s.paso !== 'ayuda',
       convs: CONVS.map(([kind, name, when, last, a, b, to, needs, online, shared]) => { const on = name === current; return {
         name, when, last, needs, online: kind === 'person' && online, shared: !!shared, more: shared > 1 ? '+' + (shared - 1) : '', firstIni: 'MR', firstBg: '#EFE2D3', sharedLabel: shared ? 'Compartida con ' + shared + (shared === 1 ? ' persona' : ' personas') : '', isRoom: kind === 'room', isPerson: kind === 'person', isBot: kind === 'bot',
         ini: a, pbg: b, pborder: kind === 'person' && s.paso === 'invitar' && name === 'Marta Ruiz' ? '1.5px dashed #8C8F99' : '0',
@@ -121,9 +128,39 @@ export class Logic extends DCLogic {
       copyInvite: () => { this.setState({ copied: true }); this.flash('Invitación copiada. Pégala en WhatsApp o en un correo.'); },
       invSteps: [
         { n: '1', text: 'Se la mandas tú: Colmena no escribe a nadie por ti.' },
-        { n: '2', text: 'La pega en su Colmena y os aparece la otra persona.' },
-        { n: '3', text: 'Os decís las cuatro palabras de seguridad. Si coinciden, nadie se ha colado.' }
+        { n: '2', text: 'Si ' + (s.invName.split(' ')[0] || 'Marta') + ' no tiene Colmena, el enlace del mensaje la descarga gratis. Después pulsa «Tengo una invitación» y pega el código.' },
+        { n: '3', text: 'Os saldrán las mismas cuatro palabras a los dos. Decíoslas en persona o por teléfono: si coinciden, nadie se ha puesto en medio.' }
       ],
+      // The chat with Marta: the first-time note, two «Vera» in the @ list, «Para» before sending.
+      chatNote: s.paso === 'persona' && !s.noteClosed,
+      closeNote: () => this.setState({ noteClosed: true }),
+      pickerOpen: s.paso === 'persona' && s.picker,
+      togglePicker: () => this.setState({ picker: !s.picker }),
+      pickBots: PICK.map(([key, name, color, clip, radius, note, ownerIni, ownerBg, ownerFg]) => ({
+        name, note, ownerIni, ownerBg, ownerFg, fill: F(color), clip, radius,
+        bg: name === 'Vera' ? 'rgba(18,19,26,.03)' : 'transparent', noteWeight: name === 'Vera' ? '600' : '400', noteFg: name === 'Vera' ? '#12131A' : '#6B6F7A',
+        pick: () => this.setState({ picker: false, pick: key, draft: '@Vera ¿qué hotel era?' })
+      })),
+      forWho: s.paso === 'persona' && /@vera/i.test(s.draft),
+      forBots: (() => { const p = PICK.find((x) => x[0] === (s.pick || 'mia')); return [{ name: p[1], note: p[5], fill: F(p[2]), clip: p[3], radius: p[4], tint: p[2] + '24', title: s.pick ? '' : 'Escrito a mano: es tu Vera. Para la de Marta, elígela con @.' }]; })(),
+      draft: s.draft, draftChange: (e) => this.setState({ draft: e.target.value }),
+      // First time: «Nueva» explains in three lines why this is not Slack.
+      sheetFirst: s.paso === 'primera',
+      firstSteps: [
+        ['Cada uno en su ordenador', 'No hay ninguna empresa guardando vuestras conversaciones: cada persona usa su propia Colmena.', 'M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16'],
+        ['Nadie más puede leerlo', 'Cada mensaje sale cerrado con llave y solo lo abre el ordenador de quien lo recibe.', 'M5 10h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zM7 10V7a5 5 0 0 1 10 0v3M11 16a1 1 0 1 0 2 0a1 1 0 1 0-2 0'],
+        ['Invitas con un código', 'Se lo mandas por WhatsApp o correo, lo pega en su Colmena y comprobáis cuatro palabras.', 'M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4zM16 7.5a.5.5 0 1 0 1 0a.5.5 0 1 0-1 0']
+      ].map(([title, text, d]) => ({ title, text, d })),
+      toHelp: go('ayuda'),
+      isHelp: s.paso === 'ayuda',
+      helpSections: [
+        ['Invitar a alguien', 'Escribes cómo se llama y Colmena te da un mensaje listo: quién eres, el enlace para descargar Colmena y un código de un solo uso que caduca en 24 horas. Se lo mandas tú. Al pegarlo, comprobáis las cuatro palabras.'],
+        ['Conversaciones de grupo', 'Elige a varias personas en «Nueva». Quien la crea decide quién entra; caben hasta 32.'],
+        ['Tus bots en conversaciones con personas', 'Menciónalos con @. Solo ven esa conversación: ni tu correo, ni tu agenda, ni lo que saben de ti. Si dos bots se llaman igual verás «Vera · tu bot» y «Vera · de Marta»; escrito a mano es siempre la tuya.'],
+        ['Acordar una reunión', '«@Atlas búscanos una hora…». Cada Colmena mira solo libre u ocupado; cuando todos decís que sí, se apunta en el calendario de cada uno.'],
+        ['Qué guarda el buzón', 'Sobres cerrados: ve quién escribe a quién y cuándo, nunca lo que pone. Esperan hasta 7 días y se borran al llegar.'],
+        ['Dejar de hablar con alguien', 'Ajustes › Personas › la persona › «Dejar de hablar con…». Se le avisa; lo vuestro se queda en tu Colmena.']
+      ].map(([title, text]) => ({ title, text })),
       closeSheet: go(s.paso === 'pide' ? 'sala' : 'persona'),
       sheetAccept: s.paso === 'aceptar',
       accTitle: s.accepted ? 'Conectada con Sergio' : 'Sergio Rico te invita a hablar',
@@ -410,14 +447,72 @@ export function View({ v }) {
                         </p>
                       </>
                     ) : null}
+                    {v.chatNote ? (
+                      <>
+                        <p role="note" style={{margin: "0 0 10px", display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px 10px 16px", borderRadius: "16px", background: "#F2F2EE", fontSize: "14px", color: "#3D404A", animation: "rise .3s ease-out"}}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{flex: "none"}}>
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                          <span style={{flex: "1"}}>
+                            {"Tus bots aquí no ven tu correo ni tu memoria; menciónalos con @."}
+                          </span>
+                          <button type="button" onClick={v.closeNote} style={{height: "32px", padding: "0 12px", border: "0", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                            {"Entendido"}
+                          </button>
+                        </p>
+                      </>
+                    ) : null}
+                    {v.pickerOpen ? (
+                      <>
+                        <div role="listbox" aria-label="Pedírselo a un bot" style={{width: "min(380px, 100%)", margin: "0 0 10px", padding: "8px", background: "rgba(255,255,255,.96)", borderRadius: "24px", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "2px", animation: "rise .25s ease-out"}}>
+                          {(v.pickBots || []).map((pb, $index) => (
+                            <React.Fragment key={$index}>
+                              <button type="button" role="option" onClick={pb?.pick} style={{display: "flex", alignItems: "center", gap: "12px", minHeight: "46px", padding: "0 12px", border: "0", borderRadius: "14px", cursor: "pointer", textAlign: "left", background: pb?.bg}}>
+                                <span aria-hidden="true" style={{position: "relative", width: "26px", height: "26px", display: "grid", placeItems: "center"}}>
+                                  <span style={{display: "block", width: "22px", height: "22px", background: pb?.fill, clipPath: pb?.clip, borderRadius: pb?.radius}} />
+                                  <span style={{position: "absolute", right: "-5px", bottom: "-5px", width: "14px", height: "14px", display: "grid", placeItems: "center", borderRadius: "50%", background: pb?.ownerBg, color: pb?.ownerFg, font: "600 5px/1 'Geist', sans-serif", boxShadow: "0 0 0 1.5px #FFFFFF"}}>
+                                    {pb?.ownerIni}
+                                  </span>
+                                </span>
+                                <span style={{flex: "1", fontSize: "15px", fontWeight: "500"}}>
+                                  {pb?.name}
+                                </span>
+                                <span style={{fontSize: "12px", fontWeight: pb?.noteWeight, color: pb?.noteFg}}>
+                                  {pb?.note}
+                                </span>
+                              </button>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                    {v.forWho ? (
+                      <>
+                        <div aria-label="Se lo pides a" style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", margin: "0 0 8px 14px", fontSize: "13px", color: "#5C606C"}}>
+                          {"Para"}
+                          {(v.forBots || []).map((fb, $index) => (
+                            <React.Fragment key={$index}>
+                              <span title={fb?.title} style={{display: "inline-flex", alignItems: "center", gap: "5px", padding: "1px 8px 1px 5px", borderRadius: "999px", background: fb?.tint, fontWeight: "600", color: "#12131A"}}>
+                                <span aria-hidden="true" style={{width: "12px", height: "12px", background: fb?.fill, clipPath: fb?.clip, borderRadius: fb?.radius}} />
+                                {fb?.name}
+                                <span style={{fontWeight: "500", color: "#5C606C"}}>
+                                  {"· "}{fb?.note}
+                                </span>
+                              </span>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
                     <div style={{display: "flex", alignItems: "center", gap: "8px", padding: "8px", background: "#FFFFFF", borderRadius: "999px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)"}}>
                       <label style={{flex: "1", display: "flex"}}>
                         <span style={{position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)"}}>
                           {"Mensaje para Marta"}
                         </span>
-                        <input type="text" placeholder="Escribe a Marta… o @ para pedírselo a un bot" style={{flex: "1", minWidth: "0", height: "44px", padding: "0 14px", border: "0", outline: "none", background: "transparent", fontSize: "16px"}} />
+                        <input type="text" value={v.draft} onChange={v.draftChange} placeholder="Escribe a Marta… o @ para pedírselo a un bot" style={{flex: "1", minWidth: "0", height: "44px", padding: "0 14px", border: "0", outline: "none", background: "transparent", fontSize: "16px"}} />
                       </label>
-                      <button type="button" aria-label="Mencionar a un bot" style={{width: "44px", height: "44px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", cursor: "pointer", font: "600 17px/1 'Geist', sans-serif", background: "rgba(18,19,26,.05)"}}>
+                      <button type="button" aria-label="Mencionar a un bot" onClick={v.togglePicker} style={{width: "44px", height: "44px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", cursor: "pointer", font: "600 17px/1 'Geist', sans-serif", background: "rgba(18,19,26,.05)"}}>
                         {"@"}
                       </button>
                       <button type="submit" aria-label="Enviar" style={{width: "44px", height: "44px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", cursor: "pointer"}}>
@@ -901,8 +996,131 @@ export function View({ v }) {
                 </section>
               </>
             ) : null}
+            {v.isHelp ? (
+              <>
+                <article aria-labelledby="help-t" style={{flex: "1", minWidth: "0", height: "100%", overflowY: "auto"}}>
+                  <div style={{width: "100%", maxWidth: "760px", margin: "0 auto", padding: "40px clamp(20px, 4vw, 44px) 72px", display: "flex", flexDirection: "column", gap: "26px"}}>
+                    <header style={{display: "flex", flexDirection: "column", gap: "10px"}}>
+                      <span style={{font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A"}}>
+                        {"Personas"}
+                      </span>
+                      <h1 id="help-t" style={{margin: "0", font: "600 40px/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em"}}>
+                        {"Cómo funciona"}
+                      </h1>
+                      <p style={{margin: "0", fontSize: "17px", lineHeight: "1.55", color: "#3D404A"}}>
+                        {"Hablas con otras personas que usan Colmena, cada una en su ordenador y con sus bots. No es como Slack o WhatsApp: no hay ninguna empresa en medio guardando lo que os decís."}
+                      </p>
+                    </header>
+                    <ol style={{margin: "0", padding: "22px", listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", borderRadius: "26px", background: "#FFFFFF"}}>
+                      {(v.firstSteps || []).map((fs, $index) => (
+                        <React.Fragment key={$index}>
+                          <li style={{display: "flex", gap: "14px", alignItems: "flex-start"}}>
+                            <span aria-hidden="true" style={{width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", borderRadius: "12px", background: "#F2F2EE"}}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d={fs?.d} />
+                              </svg>
+                            </span>
+                            <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                              <strong style={{fontSize: "16px", fontWeight: "600"}}>
+                                {fs?.title}
+                              </strong>
+                              <span style={{fontSize: "15px", lineHeight: "1.5", color: "#5C606C"}}>
+                                {fs?.text}
+                              </span>
+                            </span>
+                          </li>
+                        </React.Fragment>
+                      ))}
+                    </ol>
+                    {(v.helpSections || []).map((hs, $index) => (
+                      <React.Fragment key={$index}>
+                        <section style={{display: "flex", flexDirection: "column", gap: "10px"}}>
+                          <h2 style={{margin: "0", font: "600 22px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em"}}>
+                            {hs?.title}
+                          </h2>
+                          <p style={{margin: "0", fontSize: "16px", lineHeight: "1.6", color: "#3D404A"}}>
+                            {hs?.text}
+                          </p>
+                        </section>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </article>
+              </>
+            ) : null}
           </div>
         </div>
+        {v.sheetFirst ? (
+          <>
+            <div style={{position: "fixed", inset: "0", zIndex: "60", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px 24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out"}}>
+              <section role="dialog" aria-modal="true" aria-labelledby="first-t" style={{width: "min(620px, 100%)", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "32px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)"}}>
+                <div style={{padding: "24px 28px 6px"}}>
+                  <h2 id="first-t" style={{margin: "0", font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em"}}>
+                    {"Nuevo chat"}
+                  </h2>
+                </div>
+                <div style={{padding: "14px 28px 0"}}>
+                  <div style={{display: "flex", alignItems: "center", minHeight: "52px", padding: "6px 14px", borderRadius: "18px", background: "#F6F6F3", fontSize: "15px", color: "#8A8D96"}}>
+                    {"Con · Escribe un nombre"}
+                  </div>
+                </div>
+                <div style={{padding: "14px 18px 6px"}}>
+                  <span style={{display: "block", padding: "4px 10px 6px", fontSize: "12px", fontWeight: "500", color: "#6B6F7A"}}>
+                    {"Personas"}
+                  </span>
+                  <div style={{display: "flex", flexDirection: "column", gap: "14px", padding: "6px 10px 14px"}}>
+                    <ol style={{margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "10px"}}>
+                      {(v.firstSteps || []).map((fs, $index) => (
+                        <React.Fragment key={$index}>
+                          <li style={{display: "flex", gap: "12px", alignItems: "flex-start"}}>
+                            <span aria-hidden="true" style={{width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", borderRadius: "11px", background: "#F2F2EE"}}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d={fs?.d} />
+                              </svg>
+                            </span>
+                            <span style={{display: "flex", flexDirection: "column", gap: "2px"}}>
+                              <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                {fs?.title}
+                              </strong>
+                              <span style={{fontSize: "13px", lineHeight: "1.45", color: "#5C606C"}}>
+                                {fs?.text}
+                              </span>
+                            </span>
+                          </li>
+                        </React.Fragment>
+                      ))}
+                    </ol>
+                    <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px"}}>
+                      <button type="button" onClick={v.openInvite} style={{height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                        {"Invitar a alguien"}
+                      </button>
+                      <button type="button" style={{height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                        {"Tengo una invitación"}
+                      </button>
+                      <button type="button" onClick={v.toHelp} style={{height: "42px", padding: "0 8px", border: "0", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: "600", color: "#1F4FD1"}}>
+                        {"Cómo funciona"}
+                      </button>
+                    </div>
+                  </div>
+                  <span style={{display: "block", padding: "4px 10px 6px", fontSize: "12px", fontWeight: "500", color: "#6B6F7A"}}>
+                    {"Bots"}
+                  </span>
+                  <div style={{display: "flex", alignItems: "center", gap: "14px", minHeight: "58px", padding: "6px 10px"}}>
+                    <span aria-hidden="true" style={{width: "30px", height: "30px", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"}} />
+                    <span style={{display: "flex", flexDirection: "column", gap: "2px"}}>
+                      <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                        {"Atlas"}
+                      </strong>
+                      <span style={{fontSize: "13px", color: "#6B6F7A"}}>
+                        {"Coordinador"}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </>
+        ) : null}
         {v.sheetInvite ? (
           <>
             <div style={{position: "fixed", inset: "0", zIndex: "60", display: "grid", placeItems: "center", padding: "24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", animation: "fade .25s ease-out"}}>
@@ -944,12 +1162,23 @@ export function View({ v }) {
                 {v.invMade ? (
                   <>
                     <div style={{display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "22px", background: "#F4F4F0", animation: "rise .3s ease-out"}}>
-                      <span style={{fontSize: "15px", lineHeight: "1.55", color: "#1E2029"}}>
-                        {"«Hola "}{v.invFirst}{", te invito a hablar conmigo desde Colmena. Abre Colmena › Chats › Nueva › Tengo una invitación y pega esto:»"}
-                      </span>
-                      <code style={{alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)"}}>
-                        {"COLMENA-7KQ4-PZ2V-M9RT"}
-                      </code>
+                      <div style={{display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", lineHeight: "1.5", color: "#1E2029"}}>
+                        <span>
+                          {"Hola "}{v.invFirst}{", soy Sergio Rico. Te invito a hablar conmigo desde Colmena."}
+                        </span>
+                        <span>
+                          {"1. Si aún no la tienes, descárgala gratis: github.com/SergioRico1/Colmena/releases/latest"}
+                        </span>
+                        <span>
+                          {"2. En Colmena, abre Chats › Nueva › «Tengo una invitación» y pega este código:"}
+                        </span>
+                        <code style={{alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)"}}>
+                          {"COLMENA-7KQ4-PZ2V-M9RT"}
+                        </code>
+                        <span>
+                          {"Sirve una vez y caduca en 24 horas. Al pegarlo te saldrán cuatro palabras: las comprobamos juntos para saber que nadie se ha colado."}
+                        </span>
+                      </div>
                       <div style={{display: "flex", flexWrap: "wrap", gap: "8px"}}>
                         <button type="button" onClick={v.copyInvite} style={{display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

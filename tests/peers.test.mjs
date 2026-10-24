@@ -84,8 +84,11 @@ test("an invitation connects two Colmenas once, with the same safety words on bo
   const { people: [sergio, marta] } = await world(t, ["Sergio Rico", "Marta Ruiz"]);
   const inv = await sergio.peers.createInvite("Marta Ruiz");
   assert.match(inv.code, /^COLMENA-(?:[0-9A-HJKMNP-TV-Z]{4}-){3}[0-9A-HJKMNP-TV-Z]{4}$/);
-  assert.match(inv.text, /Hola Marta, soy Sergio Rico/);
-  assert.equal(inviteText("Ana", "Yo", "C"), inviteText("Ana", "Yo", "C"));
+  // Ready to paste in WhatsApp or a mail: who, where to get Colmena, the code on its own line.
+  assert.match(inv.text, /^Hola Marta, soy Sergio Rico\./);
+  assert.ok(inv.text.includes("https://github.com/SergioRico1/Colmena/releases/latest"));
+  assert.ok(inv.text.split("\n").includes(inv.code));
+  assert.match(inviteText("Ana Pérez", "Yo", "C"), /^Hola Ana, soy Yo\./);
   const preview = await marta.peers.previewInvite(inv.code);
   assert.equal(preview.name, "Sergio Rico");
   await marta.peers.acceptInvite(inv.code);

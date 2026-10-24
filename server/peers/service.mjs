@@ -24,6 +24,8 @@ import { RelayClient } from "./relay-client.mjs";
 // The mailbox every Colmena uses unless Ajustes › Personas or COLMENA_RELAY_URL say another:
 // Colmena's own on Cloudflare (relay/cloudflare/, deployed 2026-10-24).
 export const DEFAULT_RELAY = "https://colmena.klast-lab-fa693a.workers.dev";
+/** Where someone you invite gets Colmena (the newest release, Windows and Mac). */
+export const DOWNLOAD_URL = "https://github.com/SergioRico1/Colmena/releases/latest";
 export const PEER_LIMITS = Object.freeze({
   text: 8000, title: 60, name: 80, members: 32, perMinute: 120, inviteHours: 24, invitesOpen: 20, page: 60, seenDays: 31,
 });
@@ -317,7 +319,7 @@ export class Peers extends EventEmitter {
     const card = { v: 1, addr: this.address, box: this.identity.box.pub, name: this.myName() };
     await this.client.putInvite(lookup, sealInvite(code, card), expiresAt);
     const record = this.store.put("peerInvites", { id: randomUUID(), code, lookup, name: label, status: "open", createdAt: now(), expiresAt: new Date(expiresAt).toISOString() });
-    return { id: record.id, code: formatInviteCode(code), name: label, expiresAt: record.expiresAt, text: inviteText(label, this.myName(), formatInviteCode(code)) };
+    return { id: record.id, code: formatInviteCode(code), name: label, expiresAt: record.expiresAt, text: inviteText(label, this.myName(), formatInviteCode(code)), download: DOWNLOAD_URL };
   }
   async cancelInvite(id) {
     const inv = this.store.get("peerInvites", id);
@@ -756,5 +758,11 @@ export class Peers extends EventEmitter {
 /** The text you copy and send yourself (WhatsApp, mail…). */
 export function inviteText(to, from, code) {
   const first = String(to).split(/\s+/)[0] || "";
-  return `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena. Abre Colmena › Chats › Nueva › «Tengo una invitación» y pega este código: ${code} (sirve una vez y caduca en 24 horas).`;
+  return [
+    `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena.`,
+    `1. Si aún no la tienes, descárgala gratis: ${DOWNLOAD_URL}`,
+    "2. En Colmena, abre Chats › Nueva › «Tengo una invitación» y pega este código:",
+    code,
+    "Sirve una vez y caduca en 24 horas. Al pegarlo te saldrán cuatro palabras: las comprobamos juntos para saber que nadie se ha colado.",
+  ].join("\n");
 }

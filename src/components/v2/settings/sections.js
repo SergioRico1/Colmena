@@ -65,6 +65,7 @@ export const SECTIONS = [
       ["invitar", "Invitar a alguien", "invitación código compartir chatear persona amigo compañero"],
       ["contactos", "Personas conectadas", "contactos amigos hablar palabras de seguridad quitar"],
       ["buzon", "Cómo os llegan los mensajes", "buzón relé relay servidor cifrado conexión"],
+      ["como-funciona", "Cómo funciona Personas", "ayuda guía explicación invitar código palabras grupos bots menciones reuniones calendario buzón quitar", "/personas/como-funciona"],
     ],
   },
   {
