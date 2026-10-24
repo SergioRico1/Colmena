@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, Pencil, SquareTerminal, Globe, FilePen, FileDiff, History, ChevronRight, Bot, Sparkles, ListChecks, Wrench, Undo2, Check, Target, ShieldAlert, ShieldCheck } from "lucide-react";
 import Markdown from "../../room/Markdown.jsx";
 import { C, MONO, HEAD, CARD, Stat } from "./parts.jsx";
+import { PlanVotes } from "../people/TaskPeople.jsx";
 export { buildRows } from "./model.js";
 
 // The timeline of a «Código» task: your messages, Bruno's answers, a grouped work log with
@@ -187,6 +188,7 @@ function PlanCard({ item, busy, onPlan }) {
         {open ? "Plan · aún no ha tocado nada" : "Plan · " + (done || "")}
       </span>
       <div style={{ color: C.body }}><Markdown text={item.text} size={15} /></div>
+      {open && item.taskId ? <PlanVotes taskId={item.taskId} item={item} /> : null}
       {open ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "4px" }}>
           <button type="button" disabled={busy} onClick={() => onPlan(item, "implement")} style={{ height: "44px", padding: "0 18px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: busy ? "default" : "pointer", fontSize: "14px", fontWeight: 600 }}>Implementar</button>

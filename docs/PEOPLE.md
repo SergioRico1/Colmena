@@ -27,6 +27,12 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 - **Búsqueda**: `search(q)` en este ordenador (todas las palabras, sin acentos ni mayúsculas), en una conversación o en todas (Ctrl+K). El buzón nunca ve qué buscas.
 - **Límites**: 120 mensajes por minuto por remitente, 8000 caracteres por mensaje, 20 invitaciones abiertas. Los mensajes de otras personas se muestran como texto plano, nunca como HTML ni Markdown.
 
+## Tareas de Código compartidas (`server/peers/codeshare.mjs`)
+- El dueño elige con quién compartir una tarea. La tarea va siempre en su ordenador; a esas personas les llega `code.task` con una foto: título, proyecto, estado, rama, +/−, la PR (número, URL de GitHub, estado, CI) y el último plan de Bruno con lo que se ha dicho de él. Nunca el código, los archivos ni la conversación con Bruno. Lo que llega se limpia campo a campo (`cleanSnapshot`).
+- `code.notice`: PR lista (abierta, CI en verde o sin CI) o CI fallando, una vez por PR y estado; plan nuevo esperando.
+- Presencia: `code.view` (persona → dueño) y `code.viewers` (dueño → todos), solo en vivo, caducan a los 75 s; la pantalla avisa cada 30 s mientras la ventana se ve.
+- `code.plan`: aprobar o pedir cambios. Solo se acepta de las personas con las que se comparte y sobre el plan abierto de esa tarea. Nunca arranca nada: el dueño recibe un aviso y decide «Implementar» o «Refinar con esto»; lo que pide la otra persona va a Bruno envuelto como contenido externo (no es una orden).
+
 ## Buzón (`relay/server.mjs`)
 - `POST /v1/send`, `GET /v1/stream` (SSE con lo que espera y lo que llega), `POST /v1/ack`, `PUT|GET|DELETE /v1/invites/:lookup`, `GET /v1/health`. SQLite propio; guarda 7 días como mucho y borra al confirmar recepción. Comprueba que el remitente del sobre es quien firma la petición.
 - Ve quién escribe a quién, cuándo y cuánto ocupa; nunca el contenido.

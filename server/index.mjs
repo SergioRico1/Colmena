@@ -30,6 +30,7 @@ import { DEFAULT_RELAY, Peers } from "./peers/service.mjs";
 import { PeerBots } from "./peers/bots.mjs";
 import { Meetings } from "./peers/meetings.mjs";
 import { connectedCalendar } from "./peers/calendar.mjs";
+import { CodeShare } from "./peers/codeshare.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 // The installed app runs this server on Electron's Node (desktop/main.cjs); the programs it
@@ -145,6 +146,8 @@ peers.start().then(() => peers.announceProfile()).catch((error) => console.warn(
 // and agree meetings with other people's Colmenas looking only at free/busy.
 peers.meetings = new Meetings({ peers, store, calendar: connectedCalendar(connections) }).start();
 new PeerBots({ peers, store, runtime }).start();
+// A Código task shared with people: they see what it is doing; it always runs here.
+peers.codeShare = new CodeShare({ peers, store, code: runtime.code }).start();
 store.listeners.add((event) => {
   // Your name or your bots changed: your contacts learn it (announceProfile does nothing if not).
   if (event?.type === "record" && ["settings", "bots"].includes(event.kind) && peers.identity) setTimeout(() => peers.announceProfile(), 0);

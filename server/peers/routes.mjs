@@ -69,7 +69,24 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   }));
   app.patch("/api/peers/messages/:id", run((req, p) => p.edit(req.params.id, check(z.object({ text: z.string().trim().min(1).max(PEER_LIMITS.text) }).strict(), req.body).text)));
   app.delete("/api/peers/messages/:id", run((req, p) => p.unsend(req.params.id)));
-  app.get("/api/peers/search", run((req, p) => p.search(check(z.string().max(200), String(req.query.q ?? "")), { shareId: typeof req.query.share === "string" && req.query.share ? req.query.share : null })));
+  // A «Código» task shared with people (codeshare.mjs): yours (who sees it, who is looking,
+  // what they said of the plan) and the ones shared with you.
+  const codeShare = (p) => {
+    if (!p.codeShare) throw new PeerError("Código no está disponible.", 503);
+    return p.codeShare;
+  };
+  const address = z.string().trim().min(43).max(43);
+  app.get("/api/peers/code/tasks/:task", run((req, p) => codeShare(p).view(id.parse(req.params.task))));
+  app.put("/api/peers/code/tasks/:task/people", run((req, p) => codeShare(p).share(id.parse(req.params.task), check(z.object({ people: z.array(address).max(16) }).strict(), req.body).people)));
+  app.post("/api/peers/code/tasks/:task/refine", run((req, p) => {
+    const data = check(z.object({ item: id, from: address }).strict(), req.body);
+    return codeShare(p).refineWith(id.parse(req.params.task), data.item, data.from);
+  }));
+  app.post("/api/peers/code/looking", run((req, p) => codeShare(p).looking(check(z.object({ task: id.optional(), mirror: id.optional(), on: z.boolean() }).strict(), req.body))));
+  app.get("/api/peers/code/shared", run((_req, p) => ({ items: codeShare(p).mirrors() })));
+  app.get("/api/peers/code/shared/:id", run((req, p) => codeShare(p).mirror(id.parse(req.params.id))));
+  app.post("/api/peers/code/shared/:id/plan", run((req, p) => codeShare(p).planVote(id.parse(req.params.id), check(z.object({ action: z.enum(["approve", "changes"]), text: z.string().max(2000).optional() }).strict(), req.body))));
+  app.get("/api/peers/search",run((req, p) => p.search(check(z.string().max(200), String(req.query.q ?? "")), { shareId: typeof req.query.share === "string" && req.query.share ? req.query.share : null })));
   app.post("/api/peers/shares/:id/seen", run((req, p) => p.seen(req.params.id)));
   app.post("/api/peers/shares/:id/typing", run((req, p) => p.typingNow(req.params.id)));
   app.post("/api/peers/messages/:id/reactions", run((req, p) => p.react(req.params.id, check(z.object({ emoji: z.string().trim().min(1).max(16) }).strict(), req.body).emoji)));

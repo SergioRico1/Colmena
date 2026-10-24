@@ -137,6 +137,7 @@ export class Peers extends EventEmitter {
     this.stopped = true; // what is still arriving is left at the mailbox for next time
     for (const t of this.timers) clearInterval(t);
     this.timers = [];
+    clearTimeout(this.askTimer);
     if (this.client?.status === "online") this.broadcastPresence("away");
     this.client?.stop();
     this.client = null;
@@ -192,7 +193,13 @@ export class Peers extends EventEmitter {
         this.relayStatus = { status, error: status === "online" ? null : error || this.relayStatus.error };
         this.emit("live", { type: "relay", status });
         this.changed();
-        if (status === "online") { this.broadcastPresence("online"); void this.flushOutbox(); }
+        if (status === "online") {
+          this.broadcastPresence("online");
+          void this.flushOutbox();
+          clearTimeout(this.askTimer);
+          this.askTimer = setTimeout(() => this.askMissing(), 3000);
+          this.askTimer.unref?.();
+        }
       },
     });
     this.client.start();
@@ -351,6 +358,14 @@ export class Peers extends EventEmitter {
     }
   }
   heartbeat() { if (this.client?.status === "online") this.broadcastPresence("online", { everyone: false }); }
+  /**
+   * A moment after connecting, ask again those who have not answered: a reply can cross our
+   * reconnection and get lost. `ask` makes them answer even if they told us a moment ago.
+   */
+  askMissing() {
+    if (this.stopped || this.client?.status !== "online") return;
+    for (const c of this.contacts().filter((x) => x.status === "active" && !this.online(x.id))) this.ephemeral(c.id, { type: "presence", state: "online", ask: true }, { always: true });
+  }
   /** A new contact learns at once that we are here (the next heartbeat may be two minutes away). */
   sayOnline(to) {
     this.lastPresenceTo.set(to, this.clock());
@@ -721,7 +736,7 @@ export class Peers extends EventEmitter {
     } catch (error) {
       this.log("Mensaje de " + (c?.name || "alguien") + " ignorado: " + error.message);
     }
-    if (!["typing", "presence"].includes(body.type)) this.store.put("peerSeen", { id: env.id, at: now() });
+    if (!["typing", "presence", "code.view", "code.viewers"].includes(body.type)) this.store.put("peerSeen", { id: env.id, at: now() });
     if (c) this.touch(from);
     return true;
   }
@@ -773,8 +788,10 @@ export class Peers extends EventEmitter {
         this.presence.set(from, { state: body.state === "online" ? "online" : "away", at: this.clock() });
         this.emit("live", { type: "presence", id: from, online: this.online(from) });
         if (was !== this.online(from)) this.changed(); // the green dots in the lists
-        // Someone just came online: tell them we are here too (once a minute at most).
-        if (body.state === "online" && c.status === "active" && this.clock() - (this.lastPresenceTo.get(from) || 0) > 60000) {
+        // Someone just came online: tell them we are here too (once a minute at most, unless
+        // they were not connected: our own «online» of a moment ago never reached them).
+        const since = this.clock() - (this.lastPresenceTo.get(from) || 0);
+        if (body.state === "online" && c.status === "active" && (!was || since > 60000 || (body.ask === true && since > 2000))) {
           this.lastPresenceTo.set(from, this.clock());
           this.ephemeral(from, { type: "presence", state: "online" });
         }
@@ -846,6 +863,8 @@ export class Peers extends EventEmitter {
         // A meeting being agreed (meetings.mjs checks who may say what); anything else is a
         // newer Colmena's message type: ignored.
         if (/^meet\.[a-z]+$/.test(body.type)) this.emit("meet", { from: c, body });
+        // A Código task shared with you, or one you share (codeshare.mjs checks who may say what).
+        else if (/^code\.[a-z]+$/.test(body.type)) this.emit("code", { from: c, body });
         return;
     }
   }

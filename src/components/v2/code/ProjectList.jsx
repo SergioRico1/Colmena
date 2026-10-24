@@ -6,6 +6,7 @@ import { del, patch, post } from "../../../lib/api.js";
 import { later, reversible, useHidden } from "../../../lib/undoToast.js";
 import { C, MONO, HEAD, SHEET, BrunoMark, Stat, Seg, timeAgo } from "./parts.jsx";
 import { GROUPS, groupOf, snoozePresets } from "./model.js";
+import { SharedShelf } from "../people/SharedTasks.jsx";
 
 // Left column of «Código»: each project with its tasks (design/V2Codigo.dc.html). Each task has
 // a «…» menu (T3 Code thread actions): pin, snooze until a time, archive (settle) or keep it out
@@ -222,7 +223,7 @@ function ProjectHeader({ p }) {
 const SHELF = new Set(["snoozed", "archived"]);
 const groupColor = (key) => (key === "wait" ? C.honeyText : key === "stuck" ? C.red : C.faint);
 
-export default function ProjectList({ projects = [], currentTask = null, onOpen }) {
+export default function ProjectList({ projects = [], currentTask = null, currentShared = null, onOpen }) {
   const [q, setQ] = useState("");
   const [view, setViewState] = useState(readView);
   const [shelves, setShelvesState] = useState(readShelves);
@@ -286,6 +287,7 @@ export default function ProjectList({ projects = [], currentTask = null, onOpen 
           </div>
         );
       })}
+      <SharedShelf current={currentShared} />
       <span style={{ flex: 1 }} />
       <button type="button" onClick={onOpen} style={{ display: "flex", alignItems: "center", gap: "10px", height: "42px", margin: "0 4px", padding: "0 12px", border: "1px dashed rgba(18,19,26,.18)", borderRadius: "14px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: 500, color: C.text }}>
         <FolderOpen size={16} strokeWidth={2} aria-hidden="true" />Abrir otro proyecto

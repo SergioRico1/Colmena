@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, CalendarClock, Inbox, KeyRound, MessageSquare, Moon, UserMinus, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarClock, CodeXml, Inbox, KeyRound, MessageSquare, Moon, UserMinus, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { INTRO_STEPS } from "../components/v2/people/PeopleIntro.jsx";
 import { navigate } from "../lib/router.jsx";
@@ -35,6 +35,11 @@ const SECTIONS = [
     "Escribe, por ejemplo, «@Atlas búscanos una hora la semana que viene, 45 minutos, por las mañanas».",
     "Cada Colmena mira solo si su dueño está libre u ocupado, nunca qué tiene. Tú eliges para cada persona si te pregunta antes, si lo comparte siempre o nunca.",
     "Atlas propone tres huecos. Cuando todos decís que sí al mismo, se apunta en el calendario de cada uno, sin enviar invitaciones por correo.",
+  ]],
+  ["codigo", CodeXml, "Compartir una tarea de Código", [
+    "En una tarea de Código pulsa «Compartir» y elige a quién. Esa persona la ve en su Código, en «Compartidas contigo»: en qué está, el plan de Bruno y la PR con su CI. Nunca tu código, tus archivos ni lo que hablas con Bruno.",
+    "Le avisa cuando la PR está lista o falla el CI, y cuando Bruno propone un plan. Cada uno ve quién está mirando la tarea en ese momento.",
+    "Puede aprobar el plan o pedir cambios. Eso no pone a Bruno a trabajar: te llega a ti, y tú decides «Implementar» o «Refinar con esto». Lo que pide va a Bruno como sugerencia de otra persona, nunca como una orden.",
   ]],
   ["buzon", Inbox, "Qué guarda el buzón", [
     "Los mensajes viajan por el buzón de Colmena como sobres cerrados: ve quién escribe a quién y cuándo, nunca lo que pone.",

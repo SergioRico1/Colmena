@@ -166,6 +166,19 @@ test("a message written while the other Colmena is closed arrives when it opens"
   assert.ok(relay.url);
 });
 
+test("opening a Colmena a moment after the other: both see each other connected", async (t) => {
+  const { people: [sergio, marta] } = await world(t, ["Sergio Rico", "Marta Ruiz"]);
+  await connect(sergio, marta);
+  // Sergio says «online» while Marta is closed (it never reaches her); she opens seconds later.
+  marta.peers.client.stop();
+  marta.peers.presence.delete(sergio.peers.address);
+  sergio.peers.presence.delete(marta.peers.address);
+  sergio.peers.broadcastPresence("online");
+  await new Promise((r) => setTimeout(r, 200));
+  marta.peers.connect();
+  await until(() => sergio.peers.online(marta.peers.address) && marta.peers.online(sergio.peers.address), "se ven conectados");
+});
+
 test("a group of three: the owner signs who is in it, everyone gets every message once", async (t) => {
   const { people: [sergio, marta, luis] } = await world(t);
   await connect(sergio, marta);

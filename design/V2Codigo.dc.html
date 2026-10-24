@@ -134,6 +134,26 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 </section>
 </sc-if>
 
+<sc-if value="{{sharedView}}" hint-placeholder-val="{{ false }}">
+<section aria-label="Tarea compartida: Modo oscuro para toda la tienda" style="flex: 1; min-width: 0; height: 100%; overflow-y: auto">
+<div style="width: 100%; max-width: 820px; margin: 0 auto; padding: 34px clamp(20px, 4vw, 44px) 60px; display: flex; flex-direction: column; gap: 22px; box-sizing: border-box">
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px"><span aria-hidden="true" style="width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #DCE5EE; color: #12131A; font: 600 16px/1 'Geist', sans-serif; letter-spacing: 0.02em">SR</span>
+<div style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><span style="font: 500 12px/1 'Geist Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #6B6F7A">Compartida por Sergio Rico · tienda-web</span><h1 style="margin: 0; font: 600 28px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Modo oscuro para toda la tienda</h1><span style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #FFC93C"></span>Plan para revisar</span></div>
+<span style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 8px; border-radius: 999px; background: #E8F5EE; font-size: 13px; font-weight: 600; color: #0B6B4A"><span style="border-radius: 50%; box-shadow: 0 0 0 2px #E8F5EE"><span aria-hidden="true" style="width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #DCE5EE; color: #12131A; font: 600 9px/1 'Geist', sans-serif; letter-spacing: 0.02em">SR</span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"></path><circle cx="12" cy="12" r="3"></circle></svg>La está mirando</span>
+</header>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 18px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)"><span style="flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 3px"><strong style="font-size: 15px; font-weight: 600">PR #31</strong><span style="font-size: 13px; color: #6B6F7A">Rama colmena/modo-oscuro → main</span></span><span style="padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #B4231A; background: #FCEBEA">Falla el CI</span><button type="button" style="height: 38px; padding: 0 14px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 13px; font-weight: 600; cursor: pointer">Abrir en GitHub ↗</button></div>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 22px 22px 18px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C">
+<span style="font-size: 13px; font-weight: 600; color: #8A6400">El plan de Bruno · aún no ha tocado nada</span>
+<ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.55; color: #3D404A"><sc-for list="{{planSteps}}" as="ps" hint-placeholder-count="4"><li>{{ps.text}}</li></sc-for></ol>
+<sc-if value="{{voted}}" hint-placeholder-val="{{ false }}"><span role="status" style="font-size: 14px; color: #0B6B4A; font-weight: 500">Lo has aprobado. Sergio decide cuándo implementarlo.</span></sc-if>
+<span style="display: flex; flex-wrap: wrap; gap: 8px"><button type="button" onClick="{{approve}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Aprobar el plan</button><button type="button" style="height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">Pedir cambios</button></span>
+<span style="font-size: 12px; color: #8C8F99">Aprobar no pone a Bruno a trabajar: se lo dice a Sergio, que decide.</span>
+</div>
+<p style="margin: 0; font-size: 13px; color: #6B6F7A">La tarea va en el ordenador de Sergio. Ves lo que hace, nunca su código ni sus archivos.</p>
+</div>
+</section>
+</sc-if>
+
 <sc-if value="{{comparing}}" hint-placeholder-val="{{ false }}">
 <section aria-label="Comparar" style="flex: 1; min-width: 0; height: 100%; overflow-y: auto; animation: fade .3s ease-out">
 <div style="max-width: 1180px; margin: 0 auto; padding: 34px clamp(20px, 3vw, 40px) 40px; display: flex; flex-direction: column; gap: 22px">
@@ -174,6 +194,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 <h1 style="margin: 0; font: 600 22px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.025em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Bizum en el checkout</h1>
 <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13px; color: #5C606C"><span role="status" style="font-weight: 500; color: {{aura.text}}">{{label}}</span><span aria-hidden="true">·</span><span style="display: flex; align-items: center; gap: 5px; font-family: 'Geist Mono', monospace; font-size: 12px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>colmena/bizum</span><span title="Bruno trabaja en una copia aparte (git worktree). main no cambia hasta que lo guardes." style="padding: 3px 9px; border-radius: 999px; background: rgba(18,19,26,.05); font-size: 12px">Copia aparte de main</span></span>
 </div>
+<div style="position: relative; flex: none; display: flex; align-items: center; gap: 8px">
+<span title="Marta lo está mirando" style="display: flex; align-items: center"><span style="border-radius: 50%; box-shadow: 0 0 0 2px #1E9E6A"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; color: #12131A; font: 600 8px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR</span></span></span>
+<button type="button" onClick="{{toggleShare}}" aria-expanded="{{shareOpen}}" aria-label="Compartida con Marta Ruiz" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 6px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 13px; font-weight: 600"><span style="border-radius: 50%"><span aria-hidden="true" style="width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; color: #12131A; font: 600 10px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR</span></span></button>
+<sc-if value="{{shareOpen}}" hint-placeholder-val="{{ false }}">
+<div role="dialog" aria-label="Compartir la tarea" style="position: absolute; top: 48px; right: 0; z-index: 40; width: 360px; padding: 18px; border-radius: 24px; background: rgba(255,255,255,.97); box-shadow: 0 30px 60px -20px rgba(18,19,26,.35); display: flex; flex-direction: column; gap: 12px; animation: rise .22s ease-out">
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font: 600 18px/1.2 'Bricolage Grotesque', sans-serif">Compartir la tarea</strong><span style="font-size: 13px; line-height: 1.5; color: #5C606C">Verán en qué está, el plan de Bruno y la PR, y podrán aprobar el plan o pedir cambios. Nunca tu código, tus archivos ni lo que hablas con Bruno. Todo se hace en este ordenador.</span></span>
+<button type="button" role="checkbox" aria-checked="true" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 10px; border: 0; border-radius: 14px; background: rgba(31,79,209,.07); cursor: pointer; text-align: left"><span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; color: #12131A; font: 600 10px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR</span><span style="flex: 1; font-size: 15px; font-weight: 500">Marta Ruiz</span><span aria-hidden="true" style="width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #1F4FD1; color: #FFFFFF; font-size: 12px">✓</span></button>
+<button type="button" role="checkbox" aria-checked="false" style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 10px; border: 0; border-radius: 14px; background: transparent; cursor: pointer; text-align: left"><span aria-hidden="true" style="width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #DCE5EE; color: #12131A; font: 600 10px/1 'Geist', sans-serif; letter-spacing: 0.02em">LG</span><span style="flex: 1; font-size: 15px; font-weight: 500">Luis Gómez</span><span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #C9CBD1"></span></button>
+</div>
+</sc-if>
 <div style="position: relative; display: flex; align-items: center">
 <button type="button" onClick="{{git.primary}}" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 14px; border: 0; border-radius: 999px 0 0 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><line x1="3" x2="9" y1="12" y2="12"></line><line x1="15" x2="21" y1="12" y2="12"></line></svg>{{git.label}}</button>
 <button type="button" onClick="{{git.toggle}}" aria-label="Más formas de guardar" aria-expanded="{{git.open}}" style="width: 34px; height: 40px; display: grid; place-items: center; border: 0; border-left: 1px solid rgba(255,255,255,.18); border-radius: 0 999px 999px 0; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
@@ -185,6 +215,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 <div style="margin: 6px 4px 4px; padding: 12px 14px; border-radius: 14px; background: #F4F4F0; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; color: #6B6F7A">Mensaje que propone Bruno</span><span style="font: 400 13px/1.5 'Geist Mono', monospace; color: #12131A">feat(checkout): add Bizum as a payment method</span></div>
 </div>
 </sc-if>
+</div>
 </div>
 </div>
 <div aria-hidden="true" style="position: relative; height: 2px; overflow: hidden; background: rgba(18,19,26,.06)"><span style="position: absolute; inset: 0; transition: background .4s ease; background: {{aura.line}}"></span><sc-if value="{{working}}" hint-placeholder-val="{{ true }}"><span style="position: absolute; top: 0; bottom: 0; width: 35%; background: linear-gradient(90deg, transparent, #FF7A1A, transparent); animation: sweep 1.8s ease-in-out infinite"></span></sc-if></div>
@@ -243,6 +274,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
 <sc-for list="{{planSteps}}" as="ps" hint-placeholder-count="4"><li style="display: grid; grid-template-columns: 24px 1fr; gap: 10px; font-size: 15px; line-height: 1.5"><span style="width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #F4F4F0; font: 600 11px/1 'Geist Mono', monospace">{{ps.n}}</span><span>{{ps.text}}</span></li></sc-for>
 </ol>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px 14px; border-radius: 18px; background: #F4F4F0; font-size: 14px"><span aria-hidden="true" style="width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #EFE2D3; color: #12131A; font: 600 8px/1 'Geist', sans-serif; letter-spacing: 0.02em">MR</span><span style="flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 2px"><span><strong style="font-weight: 600">Marta</strong> pide cambios:</span><span style="color: #3D404A">«Que el modo oscuro respete el del sistema por defecto.»</span></span><button type="button" title="Bruno rehace el plan con lo que pide Marta (como sugerencia de otra persona, no como orden)" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; cursor: pointer; font-size: 13px; font-weight: 600; box-shadow: 0 1px 2px rgba(18,19,26,.08)">Refinar con esto</button></div>
 <div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px">
 <button type="button" style="height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; cursor: pointer; font-size: 14px; font-weight: 600">Implementar</button>
 <button type="button" style="height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: rgba(18,19,26,.06); cursor: pointer; font-size: 14px; font-weight: 600">En una tarea nueva</button>
@@ -394,11 +426,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","compartida","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { mode: this.mode(props.estado), tab: this.tab(props.panel), scope: 'turno', open: 2, git: false, model: false, access: false, when: 'cola', build: 'construir' };
+    this.state = { mode: this.mode(props.estado), tab: this.tab(props.panel), scope: 'turno', open: 2, git: false, model: false, access: false, when: 'cola', build: 'construir', share: false, voted: false };
   }
   mode(v) { return v === 'pide OK' ? 'pide' : v === 'revisión' ? 'revision' : (v || 'trabajando'); }
   tab(v) { return v === 'vista previa' ? 'vista' : (v || 'cambios'); }
@@ -510,7 +542,8 @@ class Component extends DCLogic {
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
     const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['posponer', 'Posponer'], ['comparar', 'Comparar'], ['inicio', 'Inicio']];
     return {
-      home: s.mode === 'inicio', comparing: s.mode === 'comparar', inTask: s.mode !== 'inicio' && s.mode !== 'comparar', working,
+      home: s.mode === 'inicio', comparing: s.mode === 'comparar', sharedView: s.mode === 'compartida', inTask: !['inicio', 'comparar', 'compartida'].includes(s.mode), working,
+      shareOpen: s.share, toggleShare: () => this.setState({ share: !s.share, git: false }), voted: s.voted, approve: () => this.setState({ voted: true }),
       railDot: s.mode === 'plan' || s.mode === 'pide',
       is: { posponer: s.mode === 'posponer', objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
       label: LABEL[s.mode], aura, groups, log, diff, tabs,

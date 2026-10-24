@@ -5,12 +5,12 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes spin{to{transform:rotate(360deg)}}\n@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}\n@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}\n@keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.row-hover{transition:background .15s ease}\n.row-hover:hover{background:rgba(18,19,26,.035)}\n.tools{opacity:0;transition:opacity .15s ease}\n.turn:hover .tools,.turn:focus-within .tools{opacity:1}\n@media (max-width: 1180px){[data-codepanel]{display:none!important}}\n@media (max-width: 860px){[data-projects]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"estado":{"editor":"enum","options":["trabajando","objetivo","plan","pide OK","listo","revisión","posponer","comparar","compartida","inicio"],"default":"trabajando"},"panel":{"editor":"enum","options":["cambios","vista previa","terminal"],"default":"cambios"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { mode: this.mode(props.estado), tab: this.tab(props.panel), scope: 'turno', open: 2, git: false, model: false, access: false, when: 'cola', build: 'construir' };
+    this.state = { mode: this.mode(props.estado), tab: this.tab(props.panel), scope: 'turno', open: 2, git: false, model: false, access: false, when: 'cola', build: 'construir', share: false, voted: false };
   }
   mode(v) { return v === 'pide OK' ? 'pide' : v === 'revisión' ? 'revision' : (v || 'trabajando'); }
   tab(v) { return v === 'vista previa' ? 'vista' : (v || 'cambios'); }
@@ -122,7 +122,8 @@ export class Logic extends DCLogic {
     ].map(([title, text, d1, d2, cx, cy]) => ({ title, text, d1, d2, cx, cy }));
     const DEMO = [['trabajando', 'Trabajando'], ['objetivo', 'Objetivo'], ['plan', 'Plan'], ['pide', 'Pide OK'], ['listo', 'Listo'], ['revision', 'Revisión'], ['posponer', 'Posponer'], ['comparar', 'Comparar'], ['inicio', 'Inicio']];
     return {
-      home: s.mode === 'inicio', comparing: s.mode === 'comparar', inTask: s.mode !== 'inicio' && s.mode !== 'comparar', working,
+      home: s.mode === 'inicio', comparing: s.mode === 'comparar', sharedView: s.mode === 'compartida', inTask: !['inicio', 'comparar', 'compartida'].includes(s.mode), working,
+      shareOpen: s.share, toggleShare: () => this.setState({ share: !s.share, git: false }), voted: s.voted, approve: () => this.setState({ voted: true }),
       railDot: s.mode === 'plan' || s.mode === 'pide',
       is: { posponer: s.mode === 'posponer', objetivo: s.mode === 'objetivo', trabajando: working, plan: s.mode === 'plan', pide: s.mode === 'pide', listo: ready, revision: s.mode === 'revision' },
       label: LABEL[s.mode], aura, groups, log, diff, tabs,
@@ -595,6 +596,94 @@ export function View({ v }) {
             </section>
           </>
         ) : null}
+        {v.sharedView ? (
+          <>
+            <section aria-label="Tarea compartida: Modo oscuro para toda la tienda" style={{flex: "1", minWidth: "0", height: "100%", overflowY: "auto"}}>
+              <div style={{width: "100%", maxWidth: "820px", margin: "0 auto", padding: "34px clamp(20px, 4vw, 44px) 60px", display: "flex", flexDirection: "column", gap: "22px", boxSizing: "border-box"}}>
+                <header style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 18px"}}>
+                  <span aria-hidden="true" style={{width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", color: "#12131A", font: "600 16px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                    {"SR"}
+                  </span>
+                  <div style={{flex: "1 1 280px", minWidth: "0", display: "flex", flexDirection: "column", gap: "6px"}}>
+                    <span style={{font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A"}}>
+                      {"Compartida por Sergio Rico · tienda-web"}
+                    </span>
+                    <h1 style={{margin: "0", font: "600 28px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em"}}>
+                      {"Modo oscuro para toda la tienda"}
+                    </h1>
+                    <span style={{display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: "600"}}>
+                      <span aria-hidden="true" style={{width: "8px", height: "8px", borderRadius: "50%", background: "#FFC93C"}} />
+                      {"Plan para revisar"}
+                    </span>
+                  </div>
+                  <span style={{display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 8px", borderRadius: "999px", background: "#E8F5EE", fontSize: "13px", fontWeight: "600", color: "#0B6B4A"}}>
+                    <span style={{borderRadius: "50%", boxShadow: "0 0 0 2px #E8F5EE"}}>
+                      <span aria-hidden="true" style={{width: "26px", height: "26px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", color: "#12131A", font: "600 9px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                        {"SR"}
+                      </span>
+                    </span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    {"La está mirando"}
+                  </span>
+                </header>
+                <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "16px 18px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.2)"}}>
+                  <span style={{flex: "1", minWidth: "180px", display: "flex", flexDirection: "column", gap: "3px"}}>
+                    <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                      {"PR #31"}
+                    </strong>
+                    <span style={{fontSize: "13px", color: "#6B6F7A"}}>
+                      {"Rama colmena/modo-oscuro → main"}
+                    </span>
+                  </span>
+                  <span style={{padding: "5px 12px", borderRadius: "999px", fontSize: "13px", fontWeight: "600", color: "#B4231A", background: "#FCEBEA"}}>
+                    {"Falla el CI"}
+                  </span>
+                  <button type="button" style={{height: "38px", padding: "0 14px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13px", fontWeight: "600", cursor: "pointer"}}>
+                    {"Abrir en GitHub ↗"}
+                  </button>
+                </div>
+                <div style={{display: "flex", flexDirection: "column", gap: "14px", padding: "22px 22px 18px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C"}}>
+                  <span style={{fontSize: "13px", fontWeight: "600", color: "#8A6400"}}>
+                    {"El plan de Bruno · aún no ha tocado nada"}
+                  </span>
+                  <ol style={{margin: "0", paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "15px", lineHeight: "1.55", color: "#3D404A"}}>
+                    {(v.planSteps || []).map((ps, $index) => (
+                      <React.Fragment key={$index}>
+                        <li>
+                          {ps?.text}
+                        </li>
+                      </React.Fragment>
+                    ))}
+                  </ol>
+                  {v.voted ? (
+                    <>
+                      <span role="status" style={{fontSize: "14px", color: "#0B6B4A", fontWeight: "500"}}>
+                        {"Lo has aprobado. Sergio decide cuándo implementarlo."}
+                      </span>
+                    </>
+                  ) : null}
+                  <span style={{display: "flex", flexWrap: "wrap", gap: "8px"}}>
+                    <button type="button" onClick={v.approve} style={{height: "44px", padding: "0 20px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                      {"Aprobar el plan"}
+                    </button>
+                    <button type="button" style={{height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                      {"Pedir cambios"}
+                    </button>
+                  </span>
+                  <span style={{fontSize: "12px", color: "#8C8F99"}}>
+                    {"Aprobar no pone a Bruno a trabajar: se lo dice a Sergio, que decide."}
+                  </span>
+                </div>
+                <p style={{margin: "0", fontSize: "13px", color: "#6B6F7A"}}>
+                  {"La tarea va en el ordenador de Sergio. Ves lo que hace, nunca su código ni sus archivos."}
+                </p>
+              </div>
+            </section>
+          </>
+        ) : null}
         {v.comparing ? (
           <>
             <section aria-label="Comparar" style={{flex: "1", minWidth: "0", height: "100%", overflowY: "auto", animation: "fade .3s ease-out"}}>
@@ -829,53 +918,103 @@ export function View({ v }) {
                       </span>
                     </span>
                   </div>
-                  <div style={{position: "relative", display: "flex", alignItems: "center"}}>
-                    <button type="button" onClick={v.git?.primary} style={{display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 14px", border: "0", borderRadius: "999px 0 0 999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <circle cx="12" cy="12" r="3" />
-                        <line x1="3" x2="9" y1="12" y2="12" />
-                        <line x1="15" x2="21" y1="12" y2="12" />
-                      </svg>
-                      {v.git?.label}
+                  <div style={{position: "relative", flex: "none", display: "flex", alignItems: "center", gap: "8px"}}>
+                    <span title="Marta lo está mirando" style={{display: "flex", alignItems: "center"}}>
+                      <span style={{borderRadius: "50%", boxShadow: "0 0 0 2px #1E9E6A"}}>
+                        <span aria-hidden="true" style={{width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 8px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                          {"MR"}
+                        </span>
+                      </span>
+                    </span>
+                    <button type="button" onClick={v.toggleShare} aria-expanded={v.shareOpen} aria-label="Compartida con Marta Ruiz" style={{display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 6px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: "600"}}>
+                      <span style={{borderRadius: "50%"}}>
+                        <span aria-hidden="true" style={{width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                          {"MR"}
+                        </span>
+                      </span>
                     </button>
-                    <button type="button" onClick={v.git?.toggle} aria-label="Más formas de guardar" aria-expanded={v.git?.open} style={{width: "34px", height: "40px", display: "grid", placeItems: "center", border: "0", borderLeft: "1px solid rgba(255,255,255,.18)", borderRadius: "0 999px 999px 0", background: "#12131A", color: "#FFFFFF", cursor: "pointer"}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
-                    </button>
-                    {v.git?.open ? (
+                    {v.shareOpen ? (
                       <>
-                        <div role="menu" style={{position: "absolute", zIndex: "30", top: "48px", right: "0", width: "340px", padding: "8px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45)", animation: "rise .2s ease-out"}}>
-                          {(v.git?.items || []).map((g, $index) => (
-                            <React.Fragment key={$index}>
-                              <button type="button" role="menuitem" onClick={v.git?.toggle} className="row-hover" style={{width: "100%", display: "flex", alignItems: "flex-start", gap: "12px", padding: "11px 12px", border: "0", borderRadius: "14px", background: "transparent", cursor: "pointer", textAlign: "left"}}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{marginTop: "2px", flex: "none"}}>
-                                  <path d={g?.d1} />
-                                  <path d={g?.d2} />
-                                  <circle cx={g?.cx} cy={g?.cy} r="3" />
-                                </svg>
-                                <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
-                                  <strong style={{fontSize: "14px", fontWeight: "600"}}>
-                                    {g?.title}
-                                  </strong>
-                                  <span style={{fontSize: "12px", lineHeight: "1.45", color: "#5C606C"}}>
-                                    {g?.text}
-                                  </span>
-                                </span>
-                              </button>
-                            </React.Fragment>
-                          ))}
-                          <div style={{margin: "6px 4px 4px", padding: "12px 14px", borderRadius: "14px", background: "#F4F4F0", display: "flex", flexDirection: "column", gap: "6px"}}>
-                            <span style={{fontSize: "12px", color: "#6B6F7A"}}>
-                              {"Mensaje que propone Bruno"}
+                        <div role="dialog" aria-label="Compartir la tarea" style={{position: "absolute", top: "48px", right: "0", zIndex: "40", width: "360px", padding: "18px", borderRadius: "24px", background: "rgba(255,255,255,.97)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out"}}>
+                          <span style={{display: "flex", flexDirection: "column", gap: "4px"}}>
+                            <strong style={{font: "600 18px/1.2 'Bricolage Grotesque', sans-serif"}}>
+                              {"Compartir la tarea"}
+                            </strong>
+                            <span style={{fontSize: "13px", lineHeight: "1.5", color: "#5C606C"}}>
+                              {"Verán en qué está, el plan de Bruno y la PR, y podrán aprobar el plan o pedir cambios. Nunca tu código, tus archivos ni lo que hablas con Bruno. Todo se hace en este ordenador."}
                             </span>
-                            <span style={{font: "400 13px/1.5 'Geist Mono', monospace", color: "#12131A"}}>
-                              {"feat(checkout): add Bizum as a payment method"}
+                          </span>
+                          <button type="button" role="checkbox" aria-checked="true" style={{display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: "0", borderRadius: "14px", background: "rgba(31,79,209,.07)", cursor: "pointer", textAlign: "left"}}>
+                            <span aria-hidden="true" style={{width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                              {"MR"}
                             </span>
-                          </div>
+                            <span style={{flex: "1", fontSize: "15px", fontWeight: "500"}}>
+                              {"Marta Ruiz"}
+                            </span>
+                            <span aria-hidden="true" style={{width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#1F4FD1", color: "#FFFFFF", fontSize: "12px"}}>
+                              {"✓"}
+                            </span>
+                          </button>
+                          <button type="button" role="checkbox" aria-checked="false" style={{display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: "0", borderRadius: "14px", background: "transparent", cursor: "pointer", textAlign: "left"}}>
+                            <span aria-hidden="true" style={{width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", color: "#12131A", font: "600 10px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                              {"LG"}
+                            </span>
+                            <span style={{flex: "1", fontSize: "15px", fontWeight: "500"}}>
+                              {"Luis Gómez"}
+                            </span>
+                            <span aria-hidden="true" style={{width: "22px", height: "22px", borderRadius: "50%", boxShadow: "inset 0 0 0 1.5px #C9CBD1"}} />
+                          </button>
                         </div>
                       </>
                     ) : null}
+                    <div style={{position: "relative", display: "flex", alignItems: "center"}}>
+                      <button type="button" onClick={v.git?.primary} style={{display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 14px", border: "0", borderRadius: "999px 0 0 999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="12" r="3" />
+                          <line x1="3" x2="9" y1="12" y2="12" />
+                          <line x1="15" x2="21" y1="12" y2="12" />
+                        </svg>
+                        {v.git?.label}
+                      </button>
+                      <button type="button" onClick={v.git?.toggle} aria-label="Más formas de guardar" aria-expanded={v.git?.open} style={{width: "34px", height: "40px", display: "grid", placeItems: "center", border: "0", borderLeft: "1px solid rgba(255,255,255,.18)", borderRadius: "0 999px 999px 0", background: "#12131A", color: "#FFFFFF", cursor: "pointer"}}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </button>
+                      {v.git?.open ? (
+                        <>
+                          <div role="menu" style={{position: "absolute", zIndex: "30", top: "48px", right: "0", width: "340px", padding: "8px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45)", animation: "rise .2s ease-out"}}>
+                            {(v.git?.items || []).map((g, $index) => (
+                              <React.Fragment key={$index}>
+                                <button type="button" role="menuitem" onClick={v.git?.toggle} className="row-hover" style={{width: "100%", display: "flex", alignItems: "flex-start", gap: "12px", padding: "11px 12px", border: "0", borderRadius: "14px", background: "transparent", cursor: "pointer", textAlign: "left"}}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{marginTop: "2px", flex: "none"}}>
+                                    <path d={g?.d1} />
+                                    <path d={g?.d2} />
+                                    <circle cx={g?.cx} cy={g?.cy} r="3" />
+                                  </svg>
+                                  <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                                    <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                                      {g?.title}
+                                    </strong>
+                                    <span style={{fontSize: "12px", lineHeight: "1.45", color: "#5C606C"}}>
+                                      {g?.text}
+                                    </span>
+                                  </span>
+                                </button>
+                              </React.Fragment>
+                            ))}
+                            <div style={{margin: "6px 4px 4px", padding: "12px 14px", borderRadius: "14px", background: "#F4F4F0", display: "flex", flexDirection: "column", gap: "6px"}}>
+                              <span style={{fontSize: "12px", color: "#6B6F7A"}}>
+                                {"Mensaje que propone Bruno"}
+                              </span>
+                              <span style={{font: "400 13px/1.5 'Geist Mono', monospace", color: "#12131A"}}>
+                                {"feat(checkout): add Bizum as a payment method"}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
                 <div aria-hidden="true" style={{position: "relative", height: "2px", overflow: "hidden", background: "rgba(18,19,26,.06)"}}>
@@ -1037,6 +1176,25 @@ export function View({ v }) {
                             </React.Fragment>
                           ))}
                         </ol>
+                        <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 10px", padding: "12px 14px", borderRadius: "18px", background: "#F4F4F0", fontSize: "14px"}}>
+                          <span aria-hidden="true" style={{width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 8px/1 'Geist', sans-serif", letterSpacing: "0.02em"}}>
+                            {"MR"}
+                          </span>
+                          <span style={{flex: "1", minWidth: "180px", display: "flex", flexDirection: "column", gap: "2px"}}>
+                            <span>
+                              <strong style={{fontWeight: "600"}}>
+                                {"Marta"}
+                              </strong>
+                              {" pide cambios:"}
+                            </span>
+                            <span style={{color: "#3D404A"}}>
+                              {"«Que el modo oscuro respete el del sistema por defecto.»"}
+                            </span>
+                          </span>
+                          <button type="button" title="Bruno rehace el plan con lo que pide Marta (como sugerencia de otra persona, no como orden)" style={{height: "34px", padding: "0 14px", border: "0", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: "600", boxShadow: "0 1px 2px rgba(18,19,26,.08)"}}>
+                            {"Refinar con esto"}
+                          </button>
+                        </div>
                         <div style={{display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "4px"}}>
                           <button type="button" style={{height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: "600"}}>
                             {"Implementar"}

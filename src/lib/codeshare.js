@@ -1,0 +1,65 @@
+// A «Código» task shared with people (server/peers/codeshare.mjs), in the browser: who a task
+// of yours is shared with and who is looking at it; the ones shared with you, kept live.
+import { useCallback, useEffect, useState } from "react";
+import { get, post, put } from "./api.js";
+
+/** «I am looking at it» while the window is visible, every 30 s; «not any more» on leaving. */
+function useLooking(body) {
+  const key = JSON.stringify(body);
+  useEffect(() => {
+    if (!body.task && !body.mirror) return undefined;
+    const say = (on) => post("/peers/code/looking", { ...body, on }).catch(() => {});
+    const tick = () => say(document.visibilityState === "visible");
+    tick();
+    const timer = setInterval(tick, 30000);
+    document.addEventListener("visibilitychange", tick);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", tick); say(false); };
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+/** Live «code» events of /api/peers/events. */
+function useCodeEvents(onEvent) {
+  useEffect(() => {
+    const source = new EventSource("/api/peers/events?share=code");
+    source.onmessage = (e) => { let ev; try { ev = JSON.parse(e.data); } catch { return; } if (ev.type === "code") onEvent(ev); };
+    return () => source.close();
+  }, [onEvent]);
+}
+
+/** A task of yours: who it is shared with, who is looking, what they said of the plan. */
+export function useTaskPeople(taskId, { looking = true } = {}) {
+  const [view, setView] = useState(null);
+  const load = useCallback(() => get("/peers/code/tasks/" + encodeURIComponent(taskId)).then(setView).catch(() => setView(null)), [taskId]);
+  useEffect(() => { setView(null); void load(); }, [load]);
+  useLooking(looking ? { task: taskId } : {});
+  useCodeEvents(useCallback((ev) => {
+    if (ev.task !== taskId) return;
+    if (ev.viewers) setView((v) => (v ? { ...v, viewers: ev.viewers } : v));
+    if (ev.votes) setView((v) => (v ? { ...v, votes: ev.votes } : v));
+  }, [taskId]));
+  const share = useCallback(async (people) => setView(await put("/peers/code/tasks/" + encodeURIComponent(taskId) + "/people", { people })), [taskId]);
+  return { view, load, share };
+}
+
+/** The tasks other people share with you. */
+export function useSharedTasks() {
+  const [items, setItems] = useState(null);
+  const load = useCallback(() => get("/peers/code/shared").then((r) => setItems(r.items)).catch(() => setItems([])), []);
+  useEffect(() => { void load(); }, [load]);
+  useCodeEvents(useCallback((ev) => { if (ev.mirror) void load(); }, [load]));
+  return items;
+}
+
+/** One task shared with you, as its owner's Colmena tells it. */
+export function useSharedTask(id) {
+  const [state, setState] = useState({ item: null, error: null });
+  const load = useCallback(() => get("/peers/code/shared/" + encodeURIComponent(id)).then((item) => setState({ item, error: null })).catch((e) => setState({ item: null, error: e.status === 404 ? "missing" : e.message })), [id]);
+  useEffect(() => { void load(); }, [load]);
+  useLooking({ mirror: id });
+  useCodeEvents(useCallback((ev) => {
+    if (ev.mirror !== id) return;
+    if (ev.viewers) setState((s) => (s.item ? { ...s, item: { ...s.item, viewers: ev.viewers } } : s));
+    else void load();
+  }, [id, load]));
+  const vote = useCallback(async (action, text = "") => setState({ item: await post("/peers/code/shared/" + encodeURIComponent(id) + "/plan", { action, text }), error: null }), [id]);
+  return { ...state, load, vote };
+}

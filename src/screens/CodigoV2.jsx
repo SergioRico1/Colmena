@@ -19,6 +19,8 @@ import ShortcutsSheet, { useCodeKeys } from "../components/v2/code/Shortcuts.jsx
 import Compare from "../components/v2/code/Compare.jsx";
 import { later } from "../lib/undoToast.js";
 import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
+import TaskPeople from "../components/v2/people/TaskPeople.jsx";
+import { SharedTask } from "../components/v2/people/SharedTasks.jsx";
 
 /** Commands for the open task from shortcuts and the palette (TaskView listens). */
 const command = (name) => window.dispatchEvent(new CustomEvent("colmena:code-command", { detail: name }));
@@ -327,6 +329,7 @@ function TaskView({ taskId, narrow = false, panelOpen, onTogglePanel, onShowTurn
               ) : null}
             </span>
           </div>
+          <TaskPeople taskId={task.id} />
           <SaveButton task={task} project={project} onDone={reload} compact={compact} />
           <button type="button" onClick={onTogglePanel} aria-pressed={panelOpen} aria-label="Panel de cambios y vista previa" title="Cambios y vista previa" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: panelOpen ? "rgba(18,19,26,.06)" : "transparent", cursor: "pointer", color: C.text }}>
             <PanelRight size={17} strokeWidth={2} aria-hidden="true" />
@@ -443,8 +446,8 @@ export default function CodigoV2({ params = {}, query = {} }) {
   return (
     <Shell active="codigo" scroll={false} extraCss={CODE_CSS}>
       <div style={{ display: "flex", height: "100%", minWidth: 0 }}>
-        {taskId && panel && wide ? null : <ProjectList projects={projects} currentTask={taskId} onOpen={addFolder} />}
-        {params.group ? <Compare group={params.group} projects={projects} /> : taskId ? (
+        {taskId && panel && wide ? null : <ProjectList projects={projects} currentTask={taskId} currentShared={params.shared || null} onOpen={addFolder} />}
+        {params.shared ? <SharedTask key={params.shared} id={params.shared} /> : params.group ? <Compare group={params.group} projects={projects} /> : taskId ? (
           <>
             <TaskView taskId={taskId} narrow={panel && wide} panelOpen={panel} onTogglePanel={() => setPanel(!panel)} onShowTurn={(n) => { setTurn(n); setTab("cambios"); setPanel(true); }} />
             {panel ? <SidePanel taskId={taskId} turn={turn} onTurn={setTurn} tab={tab} setTab={setTab} wide={wide} onWide={setWide} /> : null}
