@@ -15,6 +15,8 @@ const SECTIONS = [
     "En Chats › Nueva elige a varias personas y ponle nombre. Caben hasta 32.",
     "Quien la crea decide quién entra. Si alguien del grupo no está en tus personas, sale en Ajustes › Personas como «Conoces por una conversación»: puede escribir en el grupo, no a ti a solas.",
     "«Salir» te saca a ti; quien la creó puede «Cerrar para todos».",
+    "Quien la crea, desde «Personas» en la conversación, le cambia el nombre, quita a alguien o elige su papel: «Miembro», o «Invitado» (escribe y lee, pero sus mensajes no despiertan a ningún bot). También puede invitar a alguien nuevo directamente a la conversación con un código.",
+    "Cada cambio es una lista nueva firmada por su Colmena; las demás no aceptan listas de nadie más.",
   ]],
   ["hilos", MessageSquare, "Hilos, editar, borrar y buscar", [
     "Pasa el ratón por un mensaje y pulsa el bocadillo para responder en un hilo. Se abre al lado y solo avisa a quien está en él: quien lo empezó, quien responde y quien mencionas.",

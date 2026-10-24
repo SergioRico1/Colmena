@@ -17,8 +17,7 @@ import { randomUUID } from "node:crypto";
 import { now } from "../store.mjs";
 import { statusNow } from "../notifications.mjs";
 import {
-  b64u, formatInviteCode, inviteLookup, inviteProof, isAddress, newIdentity, newInviteCode, open, openInvite,
-  parseInviteCode, ProtocolError, safetyWords, sameProof, seal, sealInvite, sha256, validIdentity,
+  b64u, formatInviteCode, inviteLookup, inviteProof, isAddress, newIdentity, newInviteCode, open, openInvite, parseInviteCode, ProtocolError, safetyWords, sameProof, seal, sealInvite, sha256, validIdentity, canonical, signBytes, verifyBytes,
 } from "./protocol.mjs";
 import { RelayClient } from "./relay-client.mjs";
 
@@ -373,19 +372,21 @@ export class Peers extends EventEmitter {
   }
 
   // ---------------------------------------------------------------- invitations
-  async createInvite(name) {
+  async createInvite(name, { room = null, role = "member" } = {}) {
     this.requireRelay();
     const label = clip(name, PEER_LIMITS.name);
     if (!label) throw new PeerError("Escribe cómo se llama.");
+    // An invitation can also put them straight into a group of yours, with a role.
+    const group = room ? this.ownGroup(room) : null;
     const open = this.store.list("peerInvites").filter((i) => i.status === "open" && Date.parse(i.expiresAt) > this.clock());
     if (open.length >= PEER_LIMITS.invitesOpen) throw new PeerError("Tienes demasiadas invitaciones sin aceptar. Cancela alguna.");
     const code = newInviteCode();
     const lookup = inviteLookup(code);
     const expiresAt = this.clock() + PEER_LIMITS.inviteHours * 3600000;
-    const card = { v: 1, addr: this.address, box: this.identity.box.pub, name: this.myName() };
+    const card = { v: 1, addr: this.address, box: this.identity.box.pub, name: this.myName(), ...(group ? { room: group.title } : {}) };
     await this.client.putInvite(lookup, sealInvite(code, card), expiresAt);
-    const record = this.store.put("peerInvites", { id: randomUUID(), code, lookup, name: label, status: "open", createdAt: now(), expiresAt: new Date(expiresAt).toISOString() });
-    return { id: record.id, code: formatInviteCode(code), name: label, expiresAt: record.expiresAt, text: inviteText(label, this.myName(), formatInviteCode(code)), download: DOWNLOAD_URL };
+    const record = this.store.put("peerInvites", { id: randomUUID(), code, lookup, name: label, status: "open", createdAt: now(), expiresAt: new Date(expiresAt).toISOString(), ...(group ? { room: group.id, roomTitle: group.title, role: role === "guest" ? "guest" : "member" } : {}) });
+    return { id: record.id, code: formatInviteCode(code), name: label, expiresAt: record.expiresAt, room: group ? group.title : null, text: inviteText(label, this.myName(), formatInviteCode(code), group?.title), download: DOWNLOAD_URL };
   }
   async cancelInvite(id) {
     const inv = this.store.get("peerInvites", id);
@@ -409,7 +410,7 @@ export class Peers extends EventEmitter {
     if (card.addr === this.address) throw new PeerError("Esa invitación la has creado tú: mándasela a la otra persona.");
     this.previews.set(code, card);
     const already = this.contact(card.addr);
-    return { name: clip(card.name, PEER_LIMITS.name), words: safetyWords(this.address, card.addr), expiresAt: new Date(found.expiresAt).toISOString(), already: already?.status === "active" };
+    return { name: clip(card.name, PEER_LIMITS.name), words: safetyWords(this.address, card.addr), expiresAt: new Date(found.expiresAt).toISOString(), already: already?.status === "active", room: card.room ? clip(card.room, PEER_LIMITS.title) : null };
   }
   async acceptInvite(text) {
     const code = parseInviteCode(text);
@@ -468,9 +469,53 @@ export class Peers extends EventEmitter {
     return s;
   }
   others(s) { return s.members.map((m) => m.id).filter((id) => id !== this.address); }
+  /**
+   * Who is in a group as its owner signs it: title, version and members with their role
+   * (owner, member, guest). Signed with the owner's key besides the envelope, so the list
+   * holds wherever it travels.
+   */
   roster(s) {
-    return { id: s.id, kind: "group", title: s.title, owner: s.owner, version: s.version, members: s.members.map((m) => ({ id: m.id, role: m.role, box: m.id === this.address ? this.identity.box.pub : this.contact(m.id)?.box, name: m.id === this.address ? this.myName() : this.contact(m.id)?.name })) };
+    const r = { id: s.id, kind: "group", title: s.title, owner: s.owner, version: s.version, members: s.members.map((m) => ({ id: m.id, role: m.role, box: m.id === this.address ? this.identity.box.pub : this.contact(m.id)?.box, name: m.id === this.address ? this.myName() : this.contact(m.id)?.name })) };
+    return s.owner === this.address ? { ...r, sig: signBytes(this.identity.sign, canonical(r)) } : r;
   }
+  /** Sends the group's new list to everyone in it (and to whoever just left it). */
+  sendRoster(s, extra = []) {
+    for (const id of [...new Set([...this.others(s), ...extra])]) if (id !== this.address) this.enqueue(id, { type: "share", share: this.roster(s) });
+    void this.flushOutbox();
+  }
+  ownGroup(shareId) {
+    const s = this.share(shareId);
+    if (s.kind !== "group" || s.owner !== this.address) throw new PeerError("Solo quien creó la conversación puede cambiar esto.", 403);
+    if (s.leftAt || s.removedAt) throw new PeerError("Esta conversación ya está cerrada.", 409);
+    return s;
+  }
+  /** Changes the name of a group of yours. */
+  renameGroup(shareId, title) {
+    const s = this.ownGroup(shareId);
+    const name = clip(title, PEER_LIMITS.title);
+    if (!name) throw new PeerError("Ponle un nombre a la conversación.");
+    const next = this.store.patch("peerShares", shareId, { title: name, version: s.version + 1 });
+    this.sendRoster(next);
+    return this.shareView(next);
+  }
+  /** «Miembro» or «Invitado» (a guest writes and reads; their messages never wake bots). */
+  setRole(shareId, memberId, role) {
+    const s = this.ownGroup(shareId);
+    if (!["member", "guest"].includes(role)) throw new PeerError("Papel no válido.");
+    if (memberId === this.address || !s.members.some((m) => m.id === memberId)) throw new PeerError("Esa persona no está en la conversación.", 404);
+    const next = this.store.patch("peerShares", shareId, { members: s.members.map((m) => (m.id === memberId ? { ...m, role } : m)), version: s.version + 1 });
+    this.sendRoster(next);
+    return this.shareView(next);
+  }
+  /** Takes someone out of a group of yours: the new list goes to everyone, them included. */
+  removeMember(shareId, memberId) {
+    const s = this.ownGroup(shareId);
+    if (memberId === this.address || !s.members.some((m) => m.id === memberId)) throw new PeerError("Esa persona no está en la conversación.", 404);
+    const next = this.store.patch("peerShares", shareId, { members: s.members.filter((m) => m.id !== memberId), version: s.version + 1 });
+    this.sendRoster(next, [memberId]);
+    return this.shareView(next);
+  }
+  roleOf(s, address) { return s?.members?.find((m) => m.id === address)?.role || null; }
   createGroup(title, memberIds) {
     this.requireRelay();
     const name = clip(title, PEER_LIMITS.title);
@@ -487,16 +532,16 @@ export class Peers extends EventEmitter {
     void this.flushOutbox();
     return this.shareView(s);
   }
-  addMembers(shareId, memberIds) {
+  addMembers(shareId, memberIds, role = "member") {
     const s = this.share(shareId);
     if (s.kind !== "group" || s.owner !== this.address) throw new PeerError("Solo quien creó la conversación puede añadir personas.", 403);
+    const as = role === "guest" ? "guest" : "member";
     const have = new Set(s.members.map((m) => m.id));
     const add = [...new Set(memberIds)].filter((id) => !have.has(id));
     for (const id of add) if (this.contact(id)?.status !== "active") throw new PeerError("Solo puedes añadir a personas con las que ya hablas.");
     if (have.size + add.length > PEER_LIMITS.members) throw new PeerError("Como mucho " + PEER_LIMITS.members + " personas por conversación.");
-    const next = this.store.patch("peerShares", shareId, { members: [...s.members, ...add.map((id) => ({ id, role: "member", addedAt: now() }))], version: s.version + 1 });
-    for (const id of this.others(next)) this.enqueue(id, { type: "share", share: this.roster(next) });
-    void this.flushOutbox();
+    const next = this.store.patch("peerShares", shareId, { members: [...s.members, ...add.map((id) => ({ id, role: as, addedAt: now() }))], version: s.version + 1 });
+    this.sendRoster(next);
     return this.shareView(next);
   }
   leave(shareId) {
@@ -769,7 +814,12 @@ export class Peers extends EventEmitter {
     this.enqueue(from, { type: "welcome", profile: this.myProfile() });
     this.ensureDm(from);
     void this.flushOutbox().then(() => this.sayOnline(from));
-    this.notify({ title: name + " ya está en tus personas", text: "Aceptó tu invitación. Ya podéis escribiros.", shareId: dmId(this.address, from) });
+    // Invited to a room: in it now, with the role chosen.
+    const room = inv.room && this.store.get("peerShares", inv.room);
+    if (room && room.owner === this.address && !room.leftAt && !room.members.some((m) => m.id === from)) {
+      try { this.addMembers(room.id, [from], inv.role); } catch (error) { this.log("No se pudo añadir a la sala: " + error.message); }
+    }
+    this.notify({ title: name + " ya está en tus personas", text: room ? "Aceptó tu invitación y ya está en «" + room.title + "»." : "Aceptó tu invitación. Ya podéis escribiros.", shareId: room ? room.id : dmId(this.address, from) });
   }
   dispatch(c, body) {
     const from = c.id;
@@ -885,12 +935,20 @@ export class Peers extends EventEmitter {
   }
   onRoster(c, roster) {
     if (!roster || typeof roster.id !== "string" || roster.kind !== "group" || roster.owner !== c.id || !Number.isSafeInteger(roster.version)) return;
+    // Signed by its owner (older Colmenas send it unsigned inside their signed envelope).
+    if (roster.sig !== undefined) {
+      const { sig, ...unsigned } = roster;
+      if (typeof sig !== "string" || !verifyBytes(c.id, canonical(unsigned), sig)) return;
+    }
     const current = this.store.get("peerShares", roster.id);
     if (current && (current.owner !== c.id || current.version >= roster.version)) return;
     const members = Array.isArray(roster.members) ? roster.members.slice(0, PEER_LIMITS.members) : [];
     const inIt = members.some((m) => m.id === this.address);
     if (!inIt) {
-      if (current) this.store.patch("peerShares", current.id, { removedAt: now(), version: roster.version });
+      if (current && !current.removedAt) {
+        this.store.patch("peerShares", current.id, { removedAt: now(), version: roster.version });
+        if (!roster.closed && !current.leftAt) this.notify({ title: c.name + " te ha quitado de «" + current.title + "»", text: "Lo que os escribisteis se queda en tu Colmena.", shareId: current.id });
+      }
       return;
     }
     // People we do not talk to directly: known through this group's owner.
@@ -902,7 +960,7 @@ export class Peers extends EventEmitter {
     }
     const record = {
       ...(current || { createdAt: now(), lastAt: now(), unread: 0 }), id: roster.id, kind: "group", title: clip(roster.title, PEER_LIMITS.title) || "Conversación", owner: c.id, version: roster.version,
-      members: members.filter((m) => isAddress(m.id)).map((m) => ({ id: m.id, role: m.id === c.id ? "owner" : "member" })),
+      members: members.filter((m) => isAddress(m.id)).map((m) => ({ id: m.id, role: m.id === c.id ? "owner" : m.role === "guest" ? "guest" : "member" })),
     };
     this.store.put("peerShares", record);
     if (!current) this.notify({ title: c.name + " te ha añadido a «" + record.title + "»", text: "Una conversación con " + (record.members.length - 1) + " personas.", shareId: record.id });
@@ -973,10 +1031,10 @@ export class Peers extends EventEmitter {
 }
 
 /** The text you copy and send yourself (WhatsApp, mail…). */
-export function inviteText(to, from, code) {
+export function inviteText(to, from, code, room = null) {
   const first = String(to).split(/\s+/)[0] || "";
   return [
-    `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena.`,
+    room ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito a la conversación «${room}» en Colmena.` : `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena.`,
     `1. Si aún no la tienes, descárgala gratis: ${DOWNLOAD_URL}`,
     "2. En Colmena, abre Chats › Nueva › «Tengo una invitación» y pega este código:",
     code,

@@ -53,7 +53,7 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
     const data = check(z.object({ mode: z.enum(["available", "dnd", "away"]), until: z.string().trim().max(40).nullable().optional() }).strict(), req.body);
     return p.setStatus(data.mode, data.until || null);
   }));
-  app.post("/api/peers/invites", run((req, p) => p.createInvite(check(z.object({ name: z.string().trim().min(1).max(PEER_LIMITS.name) }).strict(), req.body).name)));
+  app.post("/api/peers/invites", run((req, p) => { const data = check(z.object({ name: z.string().trim().min(1).max(PEER_LIMITS.name), room: id.optional(), role: z.enum(["member", "guest"]).optional() }).strict(), req.body); return p.createInvite(data.name, { room: data.room || null, role: data.role || "member" }); }));
   app.delete("/api/peers/invites/:id", run((req, p) => p.cancelInvite(req.params.id)));
   app.post("/api/peers/invites/preview", run((req, p) => p.previewInvite(check(code, req.body).code)));
   app.post("/api/peers/invites/accept", run((req, p) => p.acceptInvite(check(code, req.body).code)));
@@ -70,8 +70,12 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
     const data = check(z.object({ title: z.string().trim().min(1).max(PEER_LIMITS.title), members: z.array(id).min(1).max(PEER_LIMITS.members - 1) }).strict(), req.body);
     return p.createGroup(data.title, data.members);
   }));
-  app.post("/api/peers/shares/:id/members", run((req, p) => p.addMembers(req.params.id, check(z.object({ members: z.array(id).min(1).max(PEER_LIMITS.members - 1) }).strict(), req.body).members)));
+  app.post("/api/peers/shares/:id/members", run((req, p) => { const data = check(z.object({ members: z.array(id).min(1).max(PEER_LIMITS.members - 1), role: z.enum(["member", "guest"]).optional() }).strict(), req.body); return p.addMembers(req.params.id, data.members, data.role || "member"); }));
   app.post("/api/peers/shares/:id/leave", run((req, p) => p.leave(req.params.id)));
+  // A group of yours: its name, each person's role (member or guest), taking someone out.
+  app.patch("/api/peers/shares/:id", run((req, p) => p.renameGroup(req.params.id, check(z.object({ title: z.string().trim().min(1).max(PEER_LIMITS.title) }).strict(), req.body).title)));
+  app.patch("/api/peers/shares/:id/members/:member", run((req, p) => p.setRole(req.params.id, req.params.member, check(z.object({ role: z.enum(["member", "guest"]) }).strict(), req.body).role)));
+  app.delete("/api/peers/shares/:id/members/:member", run((req, p) => p.removeMember(req.params.id, req.params.member)));
   app.get("/api/peers/shares/:id/messages", run((req, p) => p.messages(req.params.id, { before: typeof req.query.before === "string" ? req.query.before : null, thread: typeof req.query.thread === "string" ? req.query.thread : null })));
   app.post("/api/peers/shares/:id/messages", run((req, p) => {
     const mention = z.object({ owner: z.string().trim().min(43).max(43), bot: z.string().trim().min(1).max(40) }).strict();

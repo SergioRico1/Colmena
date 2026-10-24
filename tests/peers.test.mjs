@@ -404,3 +404,49 @@ test("search: every word, accents and case out, newest first, in one conversatio
   assert.deepEqual(marta.peers.search("a").hits, []);
   assert.match(marta.peers.search("cliente").hits[0].snippet, /cliente de Lisboa/);
 });
+
+test("rooms with roles: the owner renames, makes someone a guest, takes someone out; lists are signed", async (t) => {
+  const { people: [sergio, marta, luis] } = await world(t);
+  await connect(sergio, marta);
+  await connect(sergio, luis);
+  const group = sergio.peers.createGroup("viaje-lisboa", [marta.peers.address, luis.peers.address]);
+  await until(() => marta.store.get("peerShares", group.id) && luis.store.get("peerShares", group.id), "los dos reciben la sala");
+  sergio.peers.renameGroup(group.id, "viaje-oporto");
+  await until(() => marta.store.get("peerShares", group.id).title === "viaje-oporto", "Marta ve el nombre nuevo");
+  sergio.peers.setRole(group.id, luis.peers.address, "guest");
+  await until(() => marta.peers.roleOf(marta.store.get("peerShares", group.id), luis.peers.address) === "guest", "Luis es invitado para Marta");
+  assert.equal(marta.peers.shareView(marta.store.get("peerShares", group.id)).members.find((m) => m.id === luis.peers.address).role, "guest");
+  // Only the owner: Marta cannot, and a list «from Sergio» with a bad signature is ignored.
+  assert.throws(() => marta.peers.removeMember(group.id, luis.peers.address), /Solo quien creó/);
+  const forged = { ...sergio.peers.roster(sergio.store.get("peerShares", group.id)), title: "hackeada", version: 99 };
+  sergio.peers.enqueue(marta.peers.address, { type: "share", share: forged });
+  void sergio.peers.flushOutbox();
+  await new Promise((r) => setTimeout(r, 400));
+  assert.equal(marta.store.get("peerShares", group.id).title, "viaje-oporto");
+  // Luis is taken out: he is told, and gets nothing more.
+  sergio.peers.removeMember(group.id, luis.peers.address);
+  await until(() => luis.store.get("peerShares", group.id).removedAt, "Luis ya no está");
+  assert.ok(luis.notices.some((n) => /te ha quitado de «viaje-oporto»/.test(n.title)));
+  await until(() => marta.store.get("peerShares", group.id).members.length === 2, "Marta recibe la lista nueva");
+  const after = sergio.peers.post(group.id, "Seguimos Marta y yo.");
+  await until(() => marta.store.get("peerMessages", after.id), "Marta lo recibe");
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(luis.store.get("peerMessages", after.id), null);
+});
+
+test("an invitation straight into a room: the code connects you and puts you in it with your role", async (t) => {
+  const { people: [sergio, marta, luis] } = await world(t);
+  await connect(sergio, marta);
+  const group = sergio.peers.createGroup("presupuesto-2027", [marta.peers.address]);
+  const inv = await sergio.peers.createInvite("Luis Gómez", { room: group.id, role: "guest" });
+  assert.equal(inv.room, "presupuesto-2027");
+  assert.match(inv.text, /a la conversación «presupuesto-2027»/);
+  const preview = await luis.peers.previewInvite(inv.code);
+  assert.equal(preview.room, "presupuesto-2027");
+  await luis.peers.acceptInvite(inv.code);
+  await until(() => luis.store.get("peerShares", group.id), "Luis está en la sala");
+  assert.equal(luis.peers.roleOf(luis.store.get("peerShares", group.id), luis.peers.address), "guest");
+  await until(() => marta.store.get("peerShares", group.id).members.some((m) => m.id === luis.peers.address), "Marta lo ve en la lista");
+  // Only for rooms of yours.
+  await assert.rejects(marta.peers.createInvite("Otra", { room: group.id }), /Solo quien creó/);
+});

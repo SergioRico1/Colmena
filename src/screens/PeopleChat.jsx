@@ -13,6 +13,7 @@ import { isHidden, later, useToasts } from "../lib/undoToast.js";
 import { useStore } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
 import { FileViewer } from "../components/v2/people/PeerFiles.jsx";
+import RoomSheet from "../components/v2/people/RoomSheet.jsx";
 import { navigate } from "../lib/router.jsx";
 import NotFound from "./NotFound.jsx";
 
@@ -35,6 +36,8 @@ export default function PeopleChat({ params = {}, query = {} }) {
   const [viewing, setViewing] = useState(null); // a shared file open in the viewer
   const [sending, setSending] = useState([]); // names of files being sealed and sent
   const closeViewer = useCallback(() => setViewing(null), []);
+  const [room, setRoom] = useState(false); // «Personas» of a group: roles, invite, rename
+  const closeRoom = useCallback(() => setRoom(false), []);
   useToasts(); // a message being deleted hides until its «Deshacer» runs out
   const chat = useShareChat(id);
   const [error, setError] = useState(null);
@@ -100,7 +103,9 @@ export default function PeopleChat({ params = {}, query = {} }) {
   // My last message that someone saw: «Visto por …» goes only there.
   const lastSeenMine = [...chat.messages].reverse().find((m) => m.from === "me" && m.seenBy?.length)?.id;
   const shown = chat.messages.filter((m) => !isHidden("peermsg:" + m.id));
-  const composer = { others, mentionable, mineEnabled, me, disabled: gone || !share, onTyping: chat.typingNow };
+  // A guest of the group writes and reads; their messages wake no bot, so no bots to name.
+  const guest = share?.members?.find((m) => m.me)?.role === "guest";
+  const composer = { others, mentionable: guest ? [] : mentionable, mineEnabled: guest ? [] : mineEnabled, me, disabled: gone || !share, onTyping: chat.typingNow };
   let lastDay = null;
   return (
     <Shell active="conversaciones" scroll={false}>
@@ -118,7 +123,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
                 </span>
               </div>
               {share ? <button type="button" aria-label="Buscar en esta conversación" title="Buscar en esta conversación" aria-expanded={searching ? "true" : "false"} onClick={() => setSearching((s) => !s)} style={{ ...pillStyle, width: "48px", padding: 0, justifyContent: "center", background: searching ? "#12131A" : "rgba(18,19,26,.06)", color: searching ? "#FFFFFF" : "#12131A", boxShadow: "none" }}><Search size={17} strokeWidth={2.2} aria-hidden="true" /></button> : null}
-              {!dm && share ? <span title={names(others.map((o) => o.name))} style={{ ...pillStyle, padding: "0 16px 0 8px", cursor: "default" }}><PeoplePile people={share.members} />{share.mine ? null : <span style={{ fontSize: "13px", color: "#5C606C" }}>{"de " + (share.members.find((m) => m.id === share.owner)?.name.split(" ")[0] || "")}</span>}</span> : null}
+              {!dm && share ? <button type="button" onClick={() => setRoom(true)} aria-label={"Personas de " + share.title} title={names(others.map((o) => o.name))} style={{ ...pillStyle, padding: "0 16px 0 8px" }}><PeoplePile people={share.members} />{share.mine ? <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Personas"}</span> : <span style={{ fontSize: "13px", color: "#5C606C" }}>{"de " + (share.members.find((m) => m.id === share.owner)?.name.split(" ")[0] || "")}</span>}</button> : null}
               {dm ? <button type="button" onClick={() => navigate("/ajustes/contactos#" + (other?.id || ""))} style={{ ...pillStyle, background: "rgba(18,19,26,.06)", boxShadow: "none" }}>{"Sobre " + (other?.name.split(" ")[0] || "esta persona")}</button> : null}
               {!dm && share && !gone ? <button type="button" onClick={leave} title={share.mine ? "La cierras para todos" : "Dejas de recibir sus mensajes"} style={{ ...pillStyle, background: "rgba(18,19,26,.06)", boxShadow: "none" }}><LogOut size={15} strokeWidth={2.2} aria-hidden="true" />{share.mine ? "Cerrar para todos" : "Salir"}</button> : null}
             </div>
@@ -192,6 +197,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
           </div>
         </section>
         {viewing ? <FileViewer file={viewing} onClose={closeViewer} /> : null}
+        {room && share && !dm ? <RoomSheet share={share} onClose={closeRoom} onChanged={chat.load} /> : null}
         {threadId && share ? <ThreadPanel key={threadId} shareId={id} rootId={threadId} dm={dm} botOf={botOf} shared={shared} composer={composer} revealId={query.m || null} onClose={closeThread} onDelete={remove} onError={setError} /> : null}
       </div>
     </Shell>

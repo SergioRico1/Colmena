@@ -44,6 +44,8 @@ export class PeerBots {
 
   async handle({ share, message, mine }) {
     if (!share || !message || message.bot || message.card) return; // bots never wake bots
+    // A guest of a group (design/V2Personas.dc.html, paso roles) talks, but wakes no bot.
+    if (share.kind === "group" && this.peers.roleOf?.(share, message.from) === "guest") return;
     const mineBots = this.store.list("bots").filter((b) => b.enabled !== false);
     const named = (message.mentions || []).filter((m) => m.owner === this.peers.address).map((m) => mineBots.find((b) => b.id === m.bot)).filter(Boolean);
     // Bots picked with «@» say exactly whose bot is meant («Vera de Sergio», not your Vera);

@@ -151,7 +151,7 @@ export function AcceptSheet({ onClose }) {
             <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{"Invitación"}</span>
             <span aria-hidden="true" style={{ width: "68px", height: "68px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 20px/1 'Geist', sans-serif", animation: "pop .5s ease-out" }}>{preview.name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}</span>
             <span style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <h2 id="acc-t" style={{ margin: 0, font: "600 26px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{done ? "Conectada con " + first : preview.name + " te invita a hablar"}</h2>
+              <h2 id="acc-t" style={{ margin: 0, font: "600 26px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{done ? "Conectada con " + first : preview.room ? preview.name + " te invita a «" + preview.room + "»" : preview.name + " te invita a hablar"}</h2>
               <span style={{ fontSize: "15px", lineHeight: 1.55, color: "#5C606C" }}>{done ? "Sus mensajes llegan cerrados con llave: solo los abre tu ordenador." : "Os escribiréis desde Colmena, cada uno en su ordenador y con sus bots."}</span>
             </span>
             {!done ? (

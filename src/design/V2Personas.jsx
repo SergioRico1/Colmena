@@ -5,7 +5,7 @@ import { DCLogic, useDCLogic, withDefaults } from "./dc.js";
 
 
 export const css = "*{box-sizing:border-box}\nbody{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}\nbutton,input,textarea,select{font:inherit;color:inherit}\na{color:inherit;text-decoration:none}\nbutton:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #1F4FD1;outline-offset:3px}\n::placeholder{color:#8A8D96}\n@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}\n@keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}\n@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.55)}100%{box-shadow:0 0 0 14px rgba(255,201,60,0)}}\n@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}\n@keyframes fade{from{opacity:0}to{opacity:1}}\n@keyframes sheet{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}\n@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}\n@keyframes dots{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}\n@keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}\n@keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}\n.msg{border-radius:16px;margin-left:-12px!important;margin-right:-12px!important;padding-left:12px!important;padding-right:12px!important;transition:background .15s ease}\n.msg:hover,.msg:focus-within{background:rgba(18,19,26,.028)}\n@media (max-width: 760px){[data-convlist]{display:none!important}}\n@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}";
-export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","archivo","encargo","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}};
+export const meta = {"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","archivo","encargo","roles","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}};
 
 export class Logic extends DCLogic {
   constructor(props) {
@@ -46,7 +46,7 @@ export class Logic extends DCLogic {
          ['bot', 'Vera', 'ayer', 'Resumen del comité', '#7B4DFF', '50% 12% 50% 12%', null, false, false],
          ['room', 'informe-q3', 'ayer', 'Tomás: devoluciones listas', '', '', null, false, false],
          ['bot', 'Atlas', 'lun', 'Plan de la semana', '#FFC93C', '0', null, false, false]];
-    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', archivo: 'viaje-lisboa', encargo: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
+    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', archivo: 'viaje-lisboa', encargo: 'viaje-lisboa', roles: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
     const meetStepsBy = {
       buscando: [['Atlas mira tu agenda', 'solo libre u ocupado', true], ['Leo mira la de Marta', 'solo libre u ocupado', true], ['Nico mira la de Luis', 'buscando…', false], ['Os propongo los huecos que van bien a los tres', '', false]],
       elegir: [['Atlas miró tu agenda', 'solo libre u ocupado', true], ['Leo miró la de Marta', 'solo libre u ocupado', true], ['Nico miró la de Luis', 'solo libre u ocupado', true], ['Tres huecos os van bien a los tres', '', true]],
@@ -93,7 +93,8 @@ export class Logic extends DCLogic {
         { person: false, bot: true, fill: F('#7B4DFF'), clip: 'none', radius: '50% 12% 50% 12%', name: 'Vera', meta: '· tu bot · lo veis los dos · 10:01', text: 'Tres días: llegada el jueves por la tarde, visitas el viernes y reunión con la agencia el sábado por la mañana. Falta confirmar el hotel.', seen: '' },
         { person: true, bot: false, ini: 'MR', bg: '#EFE2D3', fg: '#12131A', name: 'Marta Ruiz', meta: '· 10:02', text: 'Perfecto. Lo que falta lo vemos en una sala con nuestros bots.', seen: '' }
       ],
-      isSala: ['sala', 'pide', 'hilo', 'buscar', 'archivo', 'encargo'].includes(s.paso),
+      isSala: ['sala', 'pide', 'hilo', 'buscar', 'archivo', 'encargo', 'roles'].includes(s.paso),
+      isRoles: s.paso === 'roles',
       isEncargo: s.paso === 'encargo', erAsked: s.errand === 'asked',
       erLine: { working: 'Nora está en ello. Cuando termine, la respuesta le llega a Marta.', done: 'Hecho: Nora se lo ha enviado a Marta.', declined: 'No lo has aprobado; Marta lo sabe.' }[s.errand] || '',
       erColor: s.errand === 'done' ? '#0B6B4A' : '#5C606C', erShadow: s.errand === 'asked' ? '0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C' : '0 1px 2px rgba(18,19,26,.05), 0 14px 30px -20px rgba(18,19,26,.3)',
@@ -1796,6 +1797,124 @@ export function View({ v }) {
                     </button>
                   </div>
                 </div>
+              </aside>
+            </div>
+          </>
+        ) : null}
+        {v.isRoles ? (
+          <>
+            <div role="dialog" aria-modal="true" aria-label="Personas de viaje-lisboa" style={{position: "fixed", inset: "0", zIndex: "70", display: "flex", justifyContent: "flex-end", background: "rgba(18,19,26,.28)", animation: "fade .2s ease-out"}}>
+              <aside style={{width: "min(460px, 100%)", height: "100%", overflowY: "auto", padding: "28px 26px 36px", boxSizing: "border-box", background: "rgba(255,255,255,.96)", WebkitBackdropFilter: "blur(30px) saturate(1.6)", backdropFilter: "blur(30px) saturate(1.6)", borderRadius: "30px 0 0 30px", boxShadow: "-40px 0 80px -30px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "22px", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)"}}>
+                <header style={{display: "flex", alignItems: "flex-start", gap: "12px"}}>
+                  <span style={{flex: "1", display: "flex", flexDirection: "column", gap: "6px"}}>
+                    <span style={{font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A"}}>
+                      {"3 personas"}
+                    </span>
+                    <h2 style={{margin: "0", font: "600 26px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em"}}>
+                      <span style={{color: "#A3A6AE"}}>
+                        {"#"}
+                      </span>
+                      {" viaje-lisboa"}
+                    </h2>
+                  </span>
+                  <button type="button" onClick={v.toSala} aria-label="Cerrar" style={{width: "38px", height: "38px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer"}}>
+                    {"✕"}
+                  </button>
+                </header>
+                <div style={{display: "flex", flexDirection: "column", gap: "2px"}}>
+                  <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 12px", minHeight: "56px", padding: "6px 4px"}}>
+                    <span aria-hidden="true" style={{width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 12px/1 'Geist', sans-serif"}}>
+                      {"TÚ"}
+                    </span>
+                    <span style={{flex: "1 1 140px", display: "flex", flexDirection: "column", gap: "2px"}}>
+                      <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                        {"Tú"}
+                      </strong>
+                      <span style={{fontSize: "12px", color: "#6B6F7A"}}>
+                        {"Creó la conversación"}
+                      </span>
+                    </span>
+                  </div>
+                  <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 12px", minHeight: "56px", padding: "6px 4px"}}>
+                    <span aria-hidden="true" style={{width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#EFE2D3", color: "#12131A", font: "600 12px/1 'Geist', sans-serif"}}>
+                      {"MR"}
+                    </span>
+                    <span style={{flex: "1 1 140px", display: "flex", flexDirection: "column", gap: "2px"}}>
+                      <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                        {"Marta Ruiz"}
+                      </strong>
+                      <span style={{fontSize: "12px", color: "#6B6F7A"}}>
+                        {"Miembro"}
+                      </span>
+                    </span>
+                    <span style={{display: "flex", alignItems: "center", gap: "6px"}}>
+                      <span role="radiogroup" style={{display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.05)"}}>
+                        <button type="button" role="radio" style={{height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.12)"}}>
+                          {"Miembro"}
+                        </button>
+                        <button type="button" role="radio" style={{height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
+                          {"Invitado"}
+                        </button>
+                      </span>
+                      <button type="button" style={{height: "30px", padding: "0 10px", border: "0", borderRadius: "999px", background: "transparent", color: "#B4231A", cursor: "pointer", fontSize: "12px", fontWeight: "600"}}>
+                        {"Quitar"}
+                      </button>
+                    </span>
+                  </div>
+                  <div style={{display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 12px", minHeight: "56px", padding: "6px 4px"}}>
+                    <span aria-hidden="true" style={{width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#DCE5EE", color: "#12131A", font: "600 12px/1 'Geist', sans-serif"}}>
+                      {"LG"}
+                    </span>
+                    <span style={{flex: "1 1 140px", display: "flex", flexDirection: "column", gap: "2px"}}>
+                      <strong style={{fontSize: "15px", fontWeight: "600"}}>
+                        {"Luis Gómez"}
+                      </strong>
+                      <span style={{fontSize: "12px", color: "#6B6F7A"}}>
+                        {"Invitado · no despierta a los bots"}
+                      </span>
+                    </span>
+                    <span style={{display: "flex", alignItems: "center", gap: "6px"}}>
+                      <span role="radiogroup" style={{display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.05)"}}>
+                        <button type="button" role="radio" style={{height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
+                          {"Miembro"}
+                        </button>
+                        <button type="button" role="radio" style={{height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.12)"}}>
+                          {"Invitado"}
+                        </button>
+                      </span>
+                      <button type="button" style={{height: "30px", padding: "0 10px", border: "0", borderRadius: "999px", background: "transparent", color: "#B4231A", cursor: "pointer", fontSize: "12px", fontWeight: "600"}}>
+                        {"Quitar"}
+                      </button>
+                    </span>
+                  </div>
+                </div>
+                <div style={{display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "20px", background: "#F4F4F0"}}>
+                  <span style={{display: "flex", flexDirection: "column", gap: "3px"}}>
+                    <strong style={{fontSize: "14px", fontWeight: "600"}}>
+                      {"Invitar a alguien nuevo"}
+                    </strong>
+                    <span style={{fontSize: "12px", lineHeight: "1.5", color: "#5C606C"}}>
+                      {"Le das un código: al pegarlo queda conectado contigo y dentro de esta conversación. Caduca en 24 horas."}
+                    </span>
+                  </span>
+                  <input placeholder="Cómo se llama" aria-label="Cómo se llama" style={{height: "40px", padding: "0 12px", border: "0", borderRadius: "12px", background: "#FFFFFF", fontSize: "14px"}} />
+                  <span style={{display: "flex", alignItems: "center", gap: "8px"}}>
+                    <span role="radiogroup" style={{display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.06)"}}>
+                      <button type="button" role="radio" style={{height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.12)"}}>
+                        {"Miembro"}
+                      </button>
+                      <button type="button" role="radio" style={{height: "28px", padding: "0 10px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "12px", fontWeight: "600", background: "transparent", boxShadow: "none"}}>
+                        {"Invitado"}
+                      </button>
+                    </span>
+                    <button type="button" style={{height: "36px", padding: "0 14px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13px", fontWeight: "600", cursor: "pointer"}}>
+                      {"Crear invitación"}
+                    </button>
+                  </span>
+                </div>
+                <span style={{fontSize: "12px", color: "#8C8F99"}}>
+                  {"Cada cambio es una lista nueva firmada por tu Colmena; las demás no aceptan listas de nadie más."}
+                </span>
               </aside>
             </div>
           </>
