@@ -38,7 +38,7 @@ const TYPING_MS = 8000;
 const BOT_THINKING_MS = 90000;
 const PRESENCE_EVERY = 10 * 60000;
 const RETRY = [5000, 15000, 60000, 300000];
-const ASK_DEFAULTS = Object.freeze({ libre: "pregunta", bots: "mencion", archivos: "nunca" });
+const ASK_DEFAULTS = Object.freeze({ libre: "pregunta", bots: "mencion", archivos: "nunca", encargos: "pregunta" });
 
 export const initialsOf = (name) => {
   const words = String(name || "").trim().split(/\s+/).filter(Boolean);
@@ -547,6 +547,7 @@ export class Peers extends EventEmitter {
       // Written by a bot of `author` (on its owner's computer): «Vera · bot de Sergio».
       ...(m.bot ? { bot: m.bot } : {}), ...(m.mentions?.length ? { mentions: m.mentions } : {}), ...(m.card ? { card: m.card.kind === "file" ? { kind: "file" } : m.card } : {}), ...(m.local ? { local: true } : {}),
       // A shared file: what this Colmena has of it (files.mjs), never its key.
+      ...(m.card?.kind === "errand" ? { errand: this.errands?.view(m.card.id) || null } : {}),
       ...(m.card?.kind === "file" ? { file: this.files?.viewOf(m.card.file?.id) || { id: String(m.card.file?.id || ""), name: String(m.card.file?.name || "archivo"), kind: "other", status: "pending" } } : {}),
       // A meeting card shows the meeting as it is now (meetings.mjs), not as it was sent.
       ...(m.card?.kind === "meeting" ? { meeting: this.meetings?.view(String(m.card.id)) || null } : {}),
@@ -869,6 +870,8 @@ export class Peers extends EventEmitter {
         if (/^meet\.[a-z]+$/.test(body.type)) this.emit("meet", { from: c, body });
         // A Código task shared with you, or one you share (codeshare.mjs checks who may say what).
         else if (/^code\.[a-z]+$/.test(body.type)) this.emit("code", { from: c, body });
+        // An errand for one of your bots, or the answer to one of theirs (errands.mjs checks who).
+        else if (/^errand\.[a-z]+$/.test(body.type)) this.emit("errand", { from: c, body });
         return;
     }
   }

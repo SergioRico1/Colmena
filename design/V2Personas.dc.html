@@ -217,6 +217,18 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 </div>
 </div>
 
+<sc-if value="{{isEncargo}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; padding: 10px 0 10px 54px"><div style="width: min(520px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; border-radius: 24px; background: #FFFFFF; box-shadow: {{erShadow}}; animation: rise .3s ease-out">
+<span style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 26px; height: 26px; display: block; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #7A5AF8; border-radius: 50%; animation: {{erAnim}}"></span><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><strong style="font: 600 17px/1.25 'Bricolage Grotesque', sans-serif">Marta pide algo a Nora</strong><span style="font-size: 12px; color: #6B6F7A">Lo pide su bot Leo · solo lo ves tú</span></span></span>
+<p style="margin: 0; padding: 12px 14px; border-radius: 16px; background: #F4F4F0; font-size: 15px; line-height: 1.55; color: #2B2E36">«Pásame el resumen del informe de ventas del trimestre, en tres frases.»</p>
+<sc-if value="{{erAsked}}" hint-placeholder-val="{{ true }}">
+<span style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.5; color: #5C606C"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg><span>Nora lo hará en un chat de incógnito (no aprende nada de él) con la web y tus carpetas. Enviar, comprar, publicar o borrar algo te lo seguirá preguntando.</span></span>
+<span style="display: flex; flex-wrap: wrap; gap: 8px"><button type="button" onClick="{{erApprove}}" style="display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: #12131A; color: #FFFFFF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>Aprobar</button><button type="button" onClick="{{erDecline}}" style="display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; background: rgba(18,19,26,.06)">No, gracias</button><button type="button" onClick="{{toAjustes}}" style="display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; padding: 0 6px; background: transparent; color: #1F4FD1">Cambiar herramientas</button></span>
+</sc-if>
+<sc-if value="{{erLine}}" hint-placeholder-val="{{ false }}"><span role="status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 14px; color: {{erColor}}">{{erLine}}<span style="font-weight: 600; color: #1F4FD1">Ver lo que hizo ↗</span></span></sc-if>
+</div></div>
+</sc-if>
+
 </div>
 </div>
 <form style="flex: none; width: 100%; max-width: 880px; margin: 0 auto; padding: 8px clamp(20px, 4vw, 44px) 22px">
@@ -450,14 +462,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","archivo","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"paso":{"editor":"enum","options":["primera","invitar","aceptar","persona","sala","hilo","buscar","archivo","encargo","pide","personas","ayuda"],"default":"sala"},"reunion":{"editor":"enum","options":["buscando","elegir","esperando","hecha"],"default":"elegir"},"estado":{"editor":"enum","options":["available","dnd","away"],"default":"available"},"$preview":{"width":1440,"height":1000}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = this.from(props);
   }
   from(p) {
-    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca' }, toast: '', noteClosed: false, mine: 'edited', st: p.estado || 'available', stUntil: p.estado === 'dnd' ? 'hasta las 18:00' : p.estado === 'away' ? 'hasta el lunes 27' : '', stPick: null, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
+    return { paso: p.paso || 'sala', meet: p.reunion || 'elegir', slot: 'mar', invName: p.paso === 'invitar' ? 'Marta Ruiz' : '', invMade: false, copied: false, accepted: false, pide: null, open: 'marta', asks: { libre: 'pregunta', salas: 'mencion', archivos: 'nunca', encargos: 'pregunta' }, toast: '', noteClosed: false, mine: 'edited', errand: 'asked', st: p.estado || 'available', stUntil: p.estado === 'dnd' ? 'hasta las 18:00' : p.estado === 'away' ? 'hasta el lunes 27' : '', stPick: null, picker: p.paso === 'persona', pick: null, draft: p.paso === 'persona' ? '@Vera ' : '' };
   }
   componentDidUpdate(prev) {
     if (prev.paso !== this.props.paso || prev.reunion !== this.props.reunion) this.setState(this.from(this.props));
@@ -490,7 +502,7 @@ class Component extends DCLogic {
          ['bot', 'Vera', 'ayer', 'Resumen del comité', '#7B4DFF', '50% 12% 50% 12%', null, false, false],
          ['room', 'informe-q3', 'ayer', 'Tomás: devoluciones listas', '', '', null, false, false],
          ['bot', 'Atlas', 'lun', 'Plan de la semana', '#FFC93C', '0', null, false, false]];
-    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', archivo: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
+    const current = { sala: 'viaje-lisboa', pide: 'viaje-lisboa', hilo: 'viaje-lisboa', buscar: 'viaje-lisboa', archivo: 'viaje-lisboa', encargo: 'viaje-lisboa', persona: 'Marta Ruiz', invitar: 'Marta Ruiz', aceptar: 'Sergio Rico' }[s.paso];
     const meetStepsBy = {
       buscando: [['Atlas mira tu agenda', 'solo libre u ocupado', true], ['Leo mira la de Marta', 'solo libre u ocupado', true], ['Nico mira la de Luis', 'buscando…', false], ['Os propongo los huecos que van bien a los tres', '', false]],
       elegir: [['Atlas miró tu agenda', 'solo libre u ocupado', true], ['Leo miró la de Marta', 'solo libre u ocupado', true], ['Nico miró la de Luis', 'solo libre u ocupado', true], ['Tres huecos os van bien a los tres', '', true]],
@@ -504,7 +516,8 @@ class Component extends DCLogic {
     const ASK_OPTS = {
       libre: ['Cuándo estás libre', 'Solo libre u ocupado: nunca títulos, lugares ni personas.', [['pregunta', 'Pregúntame'], ['siempre', 'Siempre'], ['nunca', 'Nunca']]],
       salas: ['Hablar con tus bots', 'En salas que compartís. Tus bots no usan tus cuentas por lo que pida.', [['mencion', 'Si los menciona'], ['nunca', 'Nunca']]],
-      archivos: ['Ver tus archivos', 'Solo los que compartas tú en una sala.', [['pregunta', 'Pregúntame'], ['nunca', 'Nunca']]]
+      archivos: ['Ver tus archivos', 'Solo los que compartas tú en una sala.', [['pregunta', 'Pregúntame'], ['nunca', 'Nunca']]],
+      encargos: ['Encargos a tus bots', 'Su bot pide algo a uno de los tuyos y este lo hace con sus herramientas.', [['pregunta', 'Pregúntame'], ['siempre', 'Siempre'], ['nunca', 'Nunca']]]
     };
     const pill = on => ({ on: String(on), bg: on ? '#FFFFFF' : 'transparent', sh: on ? '0 1px 2px rgba(18,19,26,.12)' : 'none' });
     // [key, name, colour, clip, radius, whose, owner initials, owner bg, owner fg]
@@ -536,7 +549,13 @@ class Component extends DCLogic {
         { person: false, bot: true, fill: F('#7B4DFF'), clip: 'none', radius: '50% 12% 50% 12%', name: 'Vera', meta: '· tu bot · lo veis los dos · 10:01', text: 'Tres días: llegada el jueves por la tarde, visitas el viernes y reunión con la agencia el sábado por la mañana. Falta confirmar el hotel.', seen: '' },
         { person: true, bot: false, ini: 'MR', bg: '#EFE2D3', fg: '#12131A', name: 'Marta Ruiz', meta: '· 10:02', text: 'Perfecto. Lo que falta lo vemos en una sala con nuestros bots.', seen: '' }
       ],
-      isSala: ['sala', 'pide', 'hilo', 'buscar', 'archivo'].includes(s.paso),
+      isSala: ['sala', 'pide', 'hilo', 'buscar', 'archivo', 'encargo'].includes(s.paso),
+      isEncargo: s.paso === 'encargo', erAsked: s.errand === 'asked',
+      erLine: { working: 'Nora está en ello. Cuando termine, la respuesta le llega a Marta.', done: 'Hecho: Nora se lo ha enviado a Marta.', declined: 'No lo has aprobado; Marta lo sabe.' }[s.errand] || '',
+      erColor: s.errand === 'done' ? '#0B6B4A' : '#5C606C', erShadow: s.errand === 'asked' ? '0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C' : '0 1px 2px rgba(18,19,26,.05), 0 14px 30px -20px rgba(18,19,26,.3)',
+      erAnim: s.errand === 'working' ? 'breathe 1.4s ease-in-out infinite' : 'none',
+      erApprove: () => { this.setState({ errand: 'working' }); clearTimeout(this.erT); this.erT = setTimeout(() => this.setState({ errand: 'done' }), 2200); },
+      erDecline: () => this.setState({ errand: 'declined' }),
       isArchivo: s.paso === 'archivo', toArchivo: go('archivo'),
       slidesView: [
         { kicker: 'Viaje · 26–29 de octubre', title: 'Programa de Lisboa', text: 'Tres días con la agencia, visitas y la reunión del sábado.', bg: '#12131A', fg: '#FFFFFF' },

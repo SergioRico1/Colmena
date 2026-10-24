@@ -59,7 +59,7 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   app.post("/api/peers/invites/accept", run((req, p) => p.acceptInvite(check(code, req.body).code)));
   app.patch("/api/peers/contacts/:id", run((req, p) => {
     const ask = z.enum(["pregunta", "siempre", "nunca", "mencion"]);
-    return p.updateContact(req.params.id, check(z.object({ asks: z.object({ libre: ask.optional(), bots: ask.optional(), archivos: ask.optional() }).strict().optional(), verified: z.boolean().optional() }).strict(), req.body));
+    return p.updateContact(req.params.id, check(z.object({ asks: z.object({ libre: ask.optional(), bots: ask.optional(), archivos: ask.optional(), encargos: ask.optional() }).strict().optional(), verified: z.boolean().optional() }).strict(), req.body));
   }));
   app.delete("/api/peers/contacts/:id", run((req, p) => p.removeContact(req.params.id)));
   app.post("/api/peers/dm/:contact", run((req, p) => {
@@ -138,6 +138,15 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
       res.set({ "Content-Type": "image/png", "Content-Security-Policy": "default-src 'none'; sandbox", "Cross-Origin-Resource-Policy": "same-origin", "Cache-Control": "private, max-age=3600" }).send(png);
     } catch (error) { next(error instanceof PeerError ? new HttpError(error.status, error.message) : error); }
   });
+  // Errands for your bots (errands.mjs): approve or decline one; the tools they may use.
+  const errands = (p) => {
+    if (!p.errands) throw new PeerError("Los encargos no están disponibles.", 503);
+    return p.errands;
+  };
+  app.post("/api/peers/errands/:id/approve", run((req, p) => errands(p).approve(id.parse(req.params.id))));
+  app.post("/api/peers/errands/:id/decline", run((req, p) => errands(p).decline(id.parse(req.params.id))));
+  app.get("/api/peers/errand-tools", run((_req, p) => errands(p).settings()));
+  app.put("/api/peers/errand-tools", run((req, p) => errands(p).setTools(check(z.object({ web: z.boolean().optional(), carpetas: z.boolean().optional(), apps: z.boolean().optional(), ordenador: z.boolean().optional() }).strict(), req.body))));
   app.get("/api/peers/search", run((req, p) => p.search(check(z.string().max(200), String(req.query.q ?? "")), { shareId: typeof req.query.share === "string" && req.query.share ? req.query.share : null })));
   app.post("/api/peers/shares/:id/seen", run((req, p) => p.seen(req.params.id)));
   app.post("/api/peers/shares/:id/typing", run((req, p) => p.typingNow(req.params.id)));

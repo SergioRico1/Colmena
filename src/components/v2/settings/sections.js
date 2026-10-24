@@ -65,8 +65,9 @@ export const SECTIONS = [
       ["tu-estado", "Tu estado", "no molestar fuera vacaciones ausente disponible silencio hasta"],
       ["invitar", "Invitar a alguien", "invitación código compartir chatear persona amigo compañero"],
       ["contactos", "Personas conectadas", "contactos amigos hablar palabras de seguridad quitar"],
+      ["encargos", "Encargos de otras personas", "encargos bots herramientas pedir otra persona aprobar incógnito"],
       ["buzon", "Cómo os llegan los mensajes", "buzón relé relay servidor cifrado conexión"],
-      ["como-funciona", "Cómo funciona Personas", "ayuda guía explicación invitar código palabras grupos bots menciones hilos responder editar borrar buscar archivos adjuntar compartir pdf word excel código compartir tarea plan pr estado no molestar fuera reuniones calendario buzón quitar", "/personas/como-funciona"],
+      ["como-funciona", "Cómo funciona Personas", "ayuda guía explicación invitar código palabras grupos bots menciones hilos responder editar borrar buscar encargos pedir otro bot archivos adjuntar compartir pdf word excel código compartir tarea plan pr estado no molestar fuera reuniones calendario buzón quitar", "/personas/como-funciona"],
     ],
   },
   {

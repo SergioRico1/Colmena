@@ -32,6 +32,7 @@ import { Meetings } from "./peers/meetings.mjs";
 import { connectedCalendar } from "./peers/calendar.mjs";
 import { CodeShare } from "./peers/codeshare.mjs";
 import { PeerFiles, artifactSource } from "./peers/files.mjs";
+import { Errands } from "./peers/errands.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 // The installed app runs this server on Electron's Node (desktop/main.cjs); the programs it
@@ -151,6 +152,11 @@ new PeerBots({ peers, store, runtime }).start();
 peers.codeShare = new CodeShare({ peers, store, code: runtime.code }).start();
 // Files and deliverables shared with people: sealed here, opened only in their Colmenas.
 peers.files = new PeerFiles({ peers, store, artifactFile: artifactSource({ store, rootOf: (id) => runtime.root(id) }) }).start();
+// Errands: your bots can ask the bots of people you talk to (their owner approves), and theirs
+// yours. An errand never asks for another errand.
+peers.errands = new Errands({ peers, store, runtime }).start();
+const extraBeforeErrands = runtime.extraTools;
+runtime.extraTools = (bot, mission) => [...extraBeforeErrands(bot, mission), ...(mission?.peerErrand || !peers.contacts?.().some((c) => c.status === "active" && c.bots?.length) ? [] : [peers.errands.tool()])];
 store.listeners.add((event) => {
   // Your name or your bots changed: your contacts learn it (announceProfile does nothing if not).
   if (event?.type === "record" && ["settings", "bots"].includes(event.kind) && peers.identity) setTimeout(() => peers.announceProfile(), 0);

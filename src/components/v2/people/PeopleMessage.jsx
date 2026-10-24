@@ -4,6 +4,7 @@ import { PeerAvatar, PeoplePile } from "./PeerAvatar.jsx";
 import { BotPresence } from "../Presence.jsx";
 import MeetingCard from "./MeetingCard.jsx";
 import { FileCard } from "./PeerFiles.jsx";
+import ErrandCard from "./ErrandCard.jsx";
 import { mentionSegments } from "../../../lib/mentions.js";
 
 // One message of a conversation with people (design/V2Personas.dc.html, pasos sala and hilo):
@@ -60,6 +61,8 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
     setSaving(true);
     try { await onEdit(m.id, value); setEditing(null); } catch (x) { onError(x.message); } finally { setSaving(false); }
   };
+  // An errand for one of your bots: only its card (it is for you, not a message to anyone).
+  if (m.errand) return <div data-message-id={m.id} style={{ display: "flex", padding: "10px 0 10px 54px" }}><ErrandCard errand={m.errand} /></div>;
   return (
     <div className="msg" data-message-id={m.id} style={{ position: "relative", display: "grid", gridTemplateColumns: inThread ? "32px 1fr" : "40px 1fr", gap: inThread ? "12px" : "14px", padding: named ? "10px 12px" : "10px 0", margin: named ? "0 -12px" : 0, borderRadius: "18px", background: named ? "rgba(255,201,60,.13)" : "transparent" }}>
       {m.deleted || editing !== null ? null : (
@@ -100,7 +103,7 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
               {"Intro guarda · Esc cancela · lo verán todos como «editado»"}
             </span>
           </div>
-        ) : m.file && m.text === m.file.name ? null : (
+        ) : (m.file && m.text === m.file.name) || m.errand ? null : (
           <p style={{ margin: 0, fontSize: inThread ? "15px" : "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }}>
             {messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i}>{s.text}</span>
               : s.mention.kind === "person" ? <PersonPill key={i} person={s.mention.person} text={s.text} />

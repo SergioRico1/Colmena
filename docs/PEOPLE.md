@@ -33,6 +33,12 @@ Colmena era de una sola persona y un solo ordenador. «Personas» deja hablar a 
 - Presencia: `code.view` (persona → dueño) y `code.viewers` (dueño → todos), solo en vivo, caducan a los 75 s; la pantalla avisa cada 30 s mientras la ventana se ve.
 - `code.plan`: aprobar o pedir cambios. Solo se acepta de las personas con las que se comparte y sobre el plan abierto de esa tarea. Nunca arranca nada: el dueño recibe un aviso y decide «Implementar» o «Refinar con esto»; lo que pide la otra persona va a Bruno envuelto como contenido externo (no es una orden).
 
+## Encargos entre bots (`server/peers/errands.mjs`)
+- Tus bots tienen la herramienta `ask_peer_bot {person, bot, request}` (si hablas con alguien que tiene bots; nunca dentro de un encargo). Envía `errand.ask` y espera hasta 4 minutos manteniendo vivo el turno; si no llega, la respuesta se escribe después en esa conversación como mensaje de ese bot, envuelta como contenido externo, y avisa.
+- En la Colmena que recibe decide su dueño con el permiso de esa persona («Encargos a tus bots»: Pregúntame por defecto, Siempre, Nunca). «Pregúntame» pone una tarjeta local en vuestra conversación. Como mucho 6 encargos por persona y hora.
+- Al aprobarse, el bot lo hace en un chat de incógnito (no aprende, caduca) cuyo `mission.capabilities` limita las herramientas a las elegidas en Ajustes › Personas › Encargos (web, carpetas, apps, ordenador; nunca más de las que el bot ya tiene: `Runtime#toolsForStep`). El encargo va envuelto como contenido externo y las líneas rojas siguen preguntando. La última respuesta vuelve con `errand.reply`.
+- Quien pidió solo acepta `errand.state`/`errand.reply` de la persona a la que lo pidió; la respuesta pasa por `detectInjection` y, si intenta dar órdenes, llega con un aviso.
+
 ## Archivos y entregables (`server/peers/files.mjs`)
 - Un sobre lleva 48 KB, así que un archivo viaja aparte: se sella aquí con AES-256-GCM y una llave nueva al azar, se corta en partes de 1 MiB y se deja en el buzón (`PUT /v1/blobs/:id/:n`, firmado). El mensaje (cifrado como todos) lleva la llave, un token de lectura y el SHA-256: solo quien está en la conversación puede abrirlo. El buzón ve tamaños y quién lo subió, nunca el contenido.
 - Cada Colmena lo descarga una vez (`GET` con `X-Blob-Token`; el buzón guarda solo el hash del token), comprueba el hash, lo guarda en `<datos>/peer-files/<id>/` y olvida la llave. Si ya caducó, lo dice: «pídeselo otra vez».

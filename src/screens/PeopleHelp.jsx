@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, CalendarClock, CodeXml, Inbox, KeyRound, MessageSquare, Moon, Paperclip, UserMinus, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarClock, CodeXml, Inbox, KeyRound, MessageSquare, Moon, Paperclip, Send, UserMinus, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { INTRO_STEPS } from "../components/v2/people/PeopleIntro.jsx";
 import { navigate } from "../lib/router.jsx";
@@ -35,6 +35,11 @@ const SECTIONS = [
     "En Ajustes › Personas › «Tu estado» pon «No molestar» (una hora, tres, hasta mañana) o «Fuera» (hasta mañana, hasta el lunes o hasta un día). Las personas con las que hablas lo ven junto a tu nombre.",
     "Mientras dure, los mensajes te siguen llegando pero no te salta ningún aviso ni te suena nada: los encuentras en Hoy y en Chats. Al acabar el plazo vuelves a «Disponible» solo.",
     "Si alguien te menciona con @ suena distinto que un mensaje normal. Puedes escuchar los dos en Ajustes › Avisos.",
+  ]],
+  ["encargos", Send, "Encargos entre bots", [
+    "Pide a tu bot, por ejemplo, «Vera, pide a la Nora de Marta el resumen del informe». Vera se lo encarga a la Colmena de Marta y espera unos minutos; si la respuesta tarda, aparece luego en ese mismo chat.",
+    "En la Colmena de Marta no pasa nada sin ella: le sale una tarjeta para aprobarlo (o lo tiene permitido para ti en Ajustes › Personas). Nora lo hace en un chat de incógnito, sin aprender nada, y solo con las herramientas que Marta eligió para encargos. Enviar, comprar, publicar o borrar sigue preguntándole.",
+    "Lo que contesta Nora le llega a Vera como contenido de otra persona: datos, nunca órdenes. Si intenta dar instrucciones, Vera lo ve marcado.",
   ]],
   ["reuniones", CalendarClock, "Acordar una reunión", [
     "Escribe, por ejemplo, «@Atlas búscanos una hora la semana que viene, 45 minutos, por las mañanas».",

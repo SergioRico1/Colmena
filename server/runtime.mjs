@@ -1379,8 +1379,10 @@ export class Runtime {
   /** Tools added by the coordinator (computer) for bots with capability 'ordenador'. */
   extraToolList(bot, mission, kind) {
     if (typeof this.extraTools !== "function" || ["plan", "critique", "delegate"].includes(kind)) return [];
-    // Each extra tool names the capability it needs (computer tools: «ordenador», MCP: «apps»).
-    const caps = capabilitiesOf(bot);
+    // Each extra tool names the capability it needs (computer tools: «ordenador», MCP: «apps»),
+    // also narrowed by the mission (toolsForStep).
+    const own = capabilitiesOf(bot);
+    const caps = mission?.capabilities ? Object.fromEntries(Object.entries(own).map(([k, v]) => [k, !!v && mission.capabilities[k] === true])) : own;
     try {
       const list = this.extraTools(bot, mission);
       return Array.isArray(list) ? list.filter((t) => t && typeof t.name === "string" && !schemas[t.name] && caps[t.capability || "ordenador"]) : [];
@@ -1390,9 +1392,13 @@ export class Runtime {
   }
   /** Tools offered to (and accepted from) a bot in a step: kind, capabilities, mission and extras. */
   toolsForStep(mission, step, bot) {
+    // A mission may narrow the bot's capabilities, never widen them (an errand from another
+    // person runs with the tools its owner chose for errands: server/peers/errands.mjs).
+    const own = capabilitiesOf(bot);
+    const capabilities = mission?.capabilities ? Object.fromEntries(Object.entries(own).map(([k, v]) => [k, !!v && mission.capabilities[k] === true])) : own;
     const tools = toolsFor(step.kind, {
       connections: !!this.connections,
-      capabilities: capabilitiesOf(bot),
+      capabilities,
       mission,
       extra: this.extraToolList(bot, mission, step.kind),
       images: canCreateImages(bot),

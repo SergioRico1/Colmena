@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, Ticket, UserPlus } from "lucide-react";
 import { useAction, useStore } from "../../../lib/store.jsx";
-import { del, patch } from "../../../lib/api.js";
+import { del, get, patch, put } from "../../../lib/api.js";
 import { later, isHidden } from "../../../lib/undoToast.js";
 import { RELAY_LABEL, statusText } from "../../../lib/peers.js";
 import { PeerAvatar } from "../people/PeerAvatar.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import PeopleIntro, { HELP_URL } from "../people/PeopleIntro.jsx";
-import { Chevron, FieldRow, Group, LINE, LinkRow, MUTED, Segmented, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
+import { Chevron, FieldRow, Group, LINE, LinkRow, MUTED, Segmented, SwitchRow, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
 
 // Ajustes › Personas (design/V2Personas.dc.html, paso personas): who you talk to from
 // Colmena, what each one's bot may ask you, your safety words with each, invitations not yet
@@ -16,6 +16,7 @@ const ASKS = [
   ["libre", "Cuándo estás libre", "Solo libre u ocupado: nunca títulos, lugares ni personas.", [["pregunta", "Pregúntame"], ["siempre", "Siempre"], ["nunca", "Nunca"]]],
   ["bots", "Hablar con tus bots", "En conversaciones que compartís. Tus bots no usan tus cuentas por lo que pida.", [["mencion", "Si los menciona"], ["nunca", "Nunca"]]],
   ["archivos", "Ver tus archivos", "Solo los que compartas tú en una conversación.", [["pregunta", "Pregúntame"], ["nunca", "Nunca"]]],
+  ["encargos", "Encargos a tus bots", "Su bot pide algo a uno de los tuyos y este lo hace con sus herramientas.", [["pregunta", "Pregúntame"], ["siempre", "Siempre"], ["nunca", "Nunca"]]],
 ];
 const when = (iso) => new Date(iso).toLocaleString("es-ES", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 const seenText = (c) => (c.away ? statusText(c.away) : c.online ? "Conectada" : c.status === "pending" ? "Aún no ha abierto Colmena desde que aceptaste" : c.lastSeenAt ? "Vista por última vez el " + when(c.lastSeenAt) : "En su Colmena");
@@ -108,6 +109,7 @@ export default function PeopleSettings() {
         <LinkRow title="Cómo funciona Personas" sub="Invitar, grupos, qué ven tus bots, reuniones, el buzón y cómo quitar a alguien." to={HELP_URL} last />
       </Group>
 
+      <ErrandTools act={act} />
       <RelayGroup relay={relay} act={act} />
       {sheet === "invitar" ? <InviteSheet onClose={() => setSheet(null)} /> : null}
       {sheet === "aceptar" ? <AcceptSheet onClose={() => setSheet(null)} /> : null}
@@ -151,6 +153,21 @@ function StatusRow({ status, act }) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+// «Encargos» (design/V2Personas.dc.html, paso encargo): what your bots may use when they do
+// something another person's bot asked. Never more than each bot already has.
+const ERRAND_TOOLS = [["web", "La web", "Buscar y leer páginas."], ["carpetas", "Tus carpetas", "Las que cada bot tiene permitidas."], ["apps", "Tus apps conectadas", "Correo, calendario, documentos… Enviar algo siempre te pregunta."], ["ordenador", "Tu ordenador", "Ver la pantalla y usar programas."]];
+function ErrandTools({ act }) {
+  const [tools, setTools] = useState(null);
+  useEffect(() => { get("/peers/errand-tools").then(setTools).catch(() => setTools(null)); }, []);
+  if (!tools) return null;
+  const flip = (key) => act.act(async () => setTools(await put("/peers/errand-tools", { [key]: !tools[key] })));
+  return (
+    <Group id="pp-er" title="Encargos de otras personas" anchor="encargos" note="Cuando apruebas un encargo, tu bot lo hace en un chat de incógnito: no aprende nada de él y su respuesta va a quien lo pidió. Cada persona: Pregúntame, Siempre o Nunca, arriba.">
+      {ERRAND_TOOLS.map(([key, title, sub], i) => <SwitchRow key={key} title={title} sub={sub} on={!!tools[key]} onChange={() => flip(key)} busy={act.busy} last={i === ERRAND_TOOLS.length - 1} />)}
+    </Group>
   );
 }
 
