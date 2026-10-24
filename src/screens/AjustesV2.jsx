@@ -13,6 +13,7 @@ import SettingsLayout from "../components/v2/settings/Layout.jsx";
 import UsageSection from "../components/v2/settings/Usage.jsx";
 import DiagnosticsSection, { diagnosticsDot, useDiagnostics } from "../components/v2/settings/Diagnostics.jsx";
 import DictationSettings from "../components/v2/settings/Dictation.jsx";
+import BackupSettings from "../components/v2/settings/Backup.jsx";
 import PeopleSettings from "../components/v2/settings/People.jsx";
 import { ALIAS, DEFAULT_SECTION, PARENT, SECTION_OF } from "../components/v2/settings/sections.js";
 import { Chevron, FAINT, FieldRow, Group, INK, LINE, LinkRow, MUTED, Segmented, SwitchRow, Text, anchorOf, inputStyle, pill, rowStyle } from "../components/v2/settings/rows.jsx";
@@ -458,7 +459,7 @@ function NoticesSection({ settings, bots, set, busy }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────── Privacidad y seguridad
+// ─────────────────────────────────────────────────────────────── Privacidad y datos
 function PrivacySection({ memories, act }) {
   const forgetAll = () => {
     const all = memories.map((m) => m.id);
@@ -477,6 +478,7 @@ function PrivacySection({ memories, act }) {
           <button type="button" {...anchorOf("olvidar")} onClick={forgetAll} style={{ ...rowStyle(true), cursor: "pointer", fontSize: "16px", color: "#B4372A" }}>Hacer que los bots lo olviden todo</button>
         ) : null}
       </Group>
+      <BackupSettings />
       <DictationSettings />
       <div {...anchorOf("boveda")} style={{ scrollMarginTop: "24px", borderRadius: "26px" }}><VaultCard /></div>
       <div {...anchorOf("claves")} style={{ scrollMarginTop: "24px", borderRadius: "26px" }}><ApiKeysCard /></div>

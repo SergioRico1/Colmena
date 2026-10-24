@@ -81,8 +81,8 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "privacidad", label: "Privacidad y seguridad", icon: Lock,
-    lead: "Lo que recuerdan de ti, adónde va tu voz, tus contraseñas y el registro de todo lo que hacen.",
+    id: "privacidad", label: "Privacidad y datos", icon: Lock,
+    lead: "Lo que recuerdan de ti, tus copias de seguridad, adónde va tu voz, tus contraseñas y el registro de todo lo que hacen.",
     items: [
       ["privado", "Lo que hablas en privado con un bot", "privacidad privado"],
       ["recuerdos", "Qué recuerda cada bot de ti", "memoria recuerdos datos personales"],
@@ -91,6 +91,14 @@ export const SECTIONS = [
       ["boveda", "Contraseñas de webs", "bóveda vault contraseña login usuario"],
       ["claves", "Claves de API", "api key token secretos"],
       ["registro", "Registro de acciones", "historial auditoría log aprobaciones", "/ajustes/seguridad"],
+      // Backups (Backup.jsx), after the rest so «contraseña» still finds the vault first.
+      ["copias", "Copias de seguridad", "copia seguridad backup guardar exportar cifrada"],
+      ["copia-contrasena", "Contraseña de las copias", "copia cifrado"],
+      ["copia-donde", "Dónde se guardan las copias", "onedrive google drive nube carpeta disco"],
+      ["copia-automatica", "Copias automáticas", "cada día semana programar automática conservar"],
+      ["copia-ahora", "Hacer una copia ahora", "copia ahora backup manual"],
+      ["copia-restaurar", "Restaurar una copia", "restaurar recuperar ordenador nuevo migrar historial importar"],
+      ["copia-que-protege", "Qué protege cada cosa", "seguridad cifrado protege datos privacidad"],
     ],
   },
   {

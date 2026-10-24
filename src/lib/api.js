@@ -41,6 +41,17 @@ export const post = (path, body = {}) => api(path, "POST", body);
 export const patch = (path, body = {}) => api(path, "PATCH", body);
 export const del = (path) => api(path, "DELETE", {});
 export const put = (path, body = {}) => api(path, "PUT", body);
+/** Sends a file as it is (application/octet-stream), for big ones like a backup. */
+export async function postFile(path, file) {
+  const response = await fetch("/api" + path, { method: "POST", headers: { "Content-Type": "application/octet-stream", "X-Colmena-Token": await csrf() }, body: file });
+  let data = null;
+  try { data = await response.json(); } catch {}
+  if (!response.ok) {
+    if (response.status === 403) token = null;
+    throw new ApiError(data?.error || "No se pudo enviar el archivo.", response.status);
+  }
+  return data;
+}
 
 /** Reads small local files as text attachments (max 5 × 200 KB). */
 export function pickTextFiles({ multiple = true, accept = ".txt,.md,.csv,.json,.html,.js,.css,.xml,.yaml,.yml,.py,.ts,.tsx,.jsx,.sql,.log" } = {}) {

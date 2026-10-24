@@ -249,6 +249,8 @@ else
     };
     backend.on("message", (message) => {
       if (message?.type === "presence") { presence = message; background?.setPresence?.(message); updater?.workChanged(); return; }
+      // A restored backup (Ajustes › Privacidad y datos) is applied when the server starts again.
+      if (message?.type === "relaunch") { app.relaunch(); app.quit(); return; }
       if (message?.type !== "notify") return;
       playSound(message.sound);
       if (message.toast === false || !Notification.isSupported()) return;

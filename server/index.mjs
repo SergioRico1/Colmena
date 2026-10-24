@@ -20,6 +20,7 @@ import { computerExtraTools } from "./computer/wire.mjs";
 import { lockInstance } from "./instance.mjs";
 import { ComposioHub } from "./nexo/composio.mjs";
 import { windowsVault } from "./nexo/credential-vault.mjs";
+import { applyPendingRestore } from "./backup.mjs";
 import { Connections } from "./connections.mjs";
 import { AppTools } from "./apptools.mjs";
 import { Projects } from "./projects/tools.mjs";
@@ -42,6 +43,13 @@ const directory =
   process.env.COLMENA_DATA_DIR ||
   path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), ".local", "share"), "Colmena");
 const instance = lockInstance(directory);
+// A backup staged in Ajustes › Privacidad y datos goes into place before the store opens.
+try {
+  const restored = await applyPendingRestore(directory, { vault: windowsVault(path.join(directory, "peers")) });
+  if (restored?.applied) console.log("Colmena: copia restaurada; lo anterior está en " + path.basename(restored.aside));
+} catch (error) {
+  console.warn("No se pudo aplicar la copia restaurada: " + error.message);
+}
 const store = new Store(directory),
   session = new ChatGPTSession({ directory: path.join(directory, "auth") });
 await session.init();
@@ -202,6 +210,7 @@ scheduler.start();
 // Long pauses of the server are written down (and shown in /api/health).
 app.locals.stalls = watchStalls();
 app.locals.watcher?.start();
+app.locals.backups?.start(); // automatic encrypted backups, when you turned them on
 console.log("COLMENA_READY " + origin);
 // Windows ends this process without a clean exit: write the compiled-code cache now that
 // every module is loaded (T3 Code flushes it once the server is ready).

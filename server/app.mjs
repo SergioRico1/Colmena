@@ -53,6 +53,8 @@ import { Watcher, registerWatchRoutes } from "./watch.mjs";
 import { registerVoiceLiveRoutes } from "./voice-live.mjs";
 import { registerPeerRoutes, peerFileParser } from "./peers/routes.mjs";
 import { btwQuestion, registerBtwRoutes } from "./btw.mjs";
+import { Backups, registerBackupRoutes } from "./backup-service.mjs";
+import { windowsVault } from "./nexo/credential-vault.mjs";
 import { botThread, olderChats } from "./threads.mjs";
 import { registerGoalRoutes, acceptGoalSuggestion } from "./goals.mjs";
 
@@ -219,7 +221,7 @@ export function critiqueAbout(text, name) {
   return hit ? hit.replace(/^(?:\*\*)?Sobre\s+[^:\n]{1,40}:(?:\*\*)?\s*/i, "").trim() : text;
 }
 
-export function createApp({ store, runtime, session, scheduler, connections, getOrigin, computer = null }) {
+export function createApp({ store, runtime, session, scheduler, connections, getOrigin, computer = null, backups = null }) {
   const app = express(),
     csrf = randomBytes(32).toString("hex");
   app.disable("x-powered-by");
@@ -249,6 +251,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     addMessage: (missionId, text) => runtime.addMessage(missionId, text),
   });
   app.locals.watcher = watcher;
+  // Encrypted backups (backup-service.mjs): index.mjs starts their schedule; tests pass their own.
+  app.locals.backups = backups || new Backups({ store, vault: (dir) => windowsVault(dir), appVersion: VERSION });
   const need = (name) => {
     if (typeof runtime?.[name] !== "function") throw new HttpError(501, SOON);
     return (...args) => runtime[name](...args);
@@ -1561,6 +1565,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerWatchRoutes(app, { store, watcher, check, z, HttpError });
   registerVoiceLiveRoutes(app, { store, runtime, connections, check, z, HttpError }); // «Hablar»: live voice through Codex
   registerBtwRoutes(app, { store, runtime, check, z }); // «/btw»: side questions, never stored
+  registerBackupRoutes(app, { backups: app.locals.backups, check, z }); // Ajustes › Privacidad y datos
   registerPeerRoutes(app, { getPeers: () => app.locals.peers, check, z, HttpError }); // «Personas»: other people's Colmenas
   registerGoalRoutes(app, { store, runtime });
   registerCoreRoutes(app, { store, runtime });
