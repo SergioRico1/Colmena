@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { QuestionReply } from "../room/QuestionReply.jsx";
 import { Calendar, FileText, Folder, Mail, MessageSquare } from "lucide-react";
 import { post } from "../../lib/api.js";
 import { roomUrl, time } from "../../lib/format.js";
@@ -150,7 +151,7 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
               );
             })}
           </div>
-          {waiting ? <Countdown id={key} onUndo={undo} text="Se decide en" /> : null}
+          {waiting ? <Countdown id={key} onUndo={undo} text="Se decide en" /> : <QuestionReply approval={a} />}
         </>
       ) : waiting ? (
         <Countdown id={key} onUndo={undo} text={isSend ? "Se envía en" : "Se aprueba en"} />

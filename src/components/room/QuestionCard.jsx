@@ -1,9 +1,9 @@
 import { post } from "../../lib/api.js";
 import { useAction } from "../../lib/store.jsx";
-import { time } from "../../lib/format.js";
 import { BotAvatar } from "./common.jsx";
 import ApprovalConflict from "./ApprovalConflict.jsx";
 import Markdown from "./Markdown.jsx";
+import { ClosedChip, QuestionReply } from "./QuestionReply.jsx";
 
 function escapeRe(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -32,7 +32,6 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
   const answer = (option) => act(() => post(`/approvals/${approval.id}/answer`, { optionId: option.id, revision: approval.revision }));
   const mentioned = (label) => bots.find((b) => new RegExp(`\\b${escapeRe(b.name)}\\b`, "i").test(label));
   const helper = chat ? options.map((o) => mentioned(o.label)).find(Boolean) : null;
-  const chosen = approval && !pending ? options.find((o) => o.id === approval.resolution || o.label === approval.resolution) : null;
 
   // Colmena 2.0: honey glow while it waits for you; a calm card once answered (no hard shadows).
   const card = { maxWidth: chat ? "none" : "640px", background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" };
@@ -44,12 +43,8 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
         ? <Markdown text={question} size={chat ? 16 : 15} mentions={(bots || []).map((b) => b.name)} />
         : <p style={{ margin: "0", fontSize: chat ? "16px" : "15px", lineHeight: "1.55" }}><BoldNames text={question} bots={bots} /></p>}
       {answered ? (
-        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "4px 10px", background: "#E1F4EC", border: "1px solid #9ED4BC", borderRadius: "15px", fontSize: "13px", fontWeight: "600", color: "#0B5A3E" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
-          {approval.decidedBy === "regla" ? "Respondió una regla" : "Respondiste"}
-          {chosen ? `: ${chosen.label}` : approval.resolution && typeof approval.resolution === "string" ? `: ${approval.resolution}` : ""}
-          {approval.decidedAt ? ` · ${time(approval.decidedAt)}` : ""}
-        </span>
+        // Closed: its final state (answered, left unanswered, cancelled, expired), no dead buttons.
+        <ClosedChip approval={approval} options={options} />
       ) : options.length ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           {options.map((o, i) => {
@@ -67,9 +62,11 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
             );
           })}
         </div>
-      ) : (
-        <a href={approval ? `/revisar/${encodeURIComponent(approval.id)}` : "/"} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", height: "44px", padding: "0 18px", background: "#12131A", color: "#FFFFFF", borderRadius: "999px", fontWeight: "600", fontSize: "14px" }}>{"Responder"}</a>
-      )}
+      ) : !approval ? (
+        // A question message whose request is gone (an old chat): nothing to answer any more.
+        <span style={{ alignSelf: "flex-start", fontSize: "13px", color: "#6B6F7A" }}>{"Ya no espera respuesta"}</span>
+      ) : null}
+      {pending ? <QuestionReply approval={approval} /> : null}
       {chat && helper && !answered ? (
         <p style={{ margin: "0", fontSize: "13px", color: "#555A68" }}>{`${helper.name} contestará aquí mismo. No hace falta crear una sala.`}</p>
       ) : null}

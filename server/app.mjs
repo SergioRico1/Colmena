@@ -1077,6 +1077,13 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     await need("answer")(req.params.id, answer);
     res.json({ ok: true });
   });
+  // «Descartar» a question: no answer; the bot goes on with the most prudent option.
+  app.post("/api/approvals/:id/dismiss", async (req, res) => {
+    const { revision } = check(z.object({ revision: revisionField }).strict(), req.body);
+    reviewed(mustGet("approvals", req.params.id, "Pregunta"), revision);
+    need("dismissQuestion")(req.params.id);
+    res.json({ ok: true });
+  });
   // «Volver a preparar»: an expired send/permission is withdrawn and the bot is asked for a fresh one.
   app.post("/api/approvals/:id/renew", async (req, res) => {
     const { revision } = check(z.object({ revision: revisionField }).strict(), req.body);

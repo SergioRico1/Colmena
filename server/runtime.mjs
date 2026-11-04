@@ -2815,6 +2815,18 @@ ${made.outline}`,
     this.store.event(a.missionId, "approval_decided", { text: "Pregunta respondida" });
     this.relaunch(a.missionId);
   }
+  /**
+   * «Descartar» a question: it closes without an answer and the bot goes on with the most
+   * prudent option, saying so (ask_user then returns «prefirió no responder»).
+   */
+  dismissQuestion(approvalId) {
+    const a = this.store.get("approvals", approvalId);
+    if (!a || a.kind !== "question") throw Error("Pregunta no encontrada.");
+    if (a.status !== "pending") throw Error("Esta pregunta ya no espera respuesta.");
+    this.store.patch("approvals", a.id, { status: "dismissed", decidedAt: now(), decidedBy: "tú", resolution: "Sin responder" });
+    this.store.event(a.missionId, "approval_decided", { text: "Pregunta descartada" });
+    this.relaunch(a.missionId);
+  }
   /** Bot that `bot` may consult or delegate to (helpers, availability, personal bots). Throws otherwise. */
   helperFor(bot, botId, mission) {
     const target = this.bot(botId) || this.store.list("bots").find((b) => normalizeText(b.name) === normalizeText(botId));
