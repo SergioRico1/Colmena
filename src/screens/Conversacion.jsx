@@ -19,7 +19,8 @@ import StoppedCard from "../components/v2/chat/StoppedCard.jsx";
 import FollowUps from "../components/v2/chat/FollowUps.jsx";
 import { BranchPicker, EditButton, EditMessage } from "../components/v2/chat/Versions.jsx";
 import { forgetOlder } from "../lib/history.js";
-import { rememberPrompt, saveDraft, stashPrompt, unstash, useDraft, useInputHistory, useStash } from "../lib/composer.js";
+import { rememberPrompt, saveDraft, stashPrompt, unstash, useDraftOffer, useInputHistory, useStash } from "../lib/composer.js";
+import DraftOffer from "../components/v2/chat/DraftOffer.jsx";
 import Stash from "../components/v2/chat/Stash.jsx";
 import { markLive } from "../components/room/LiveMarkdown.jsx";
 import { useSlowPhase, verbLabel } from "../components/room/working.js";
@@ -190,7 +191,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const branches = room.branches;
   useEffect(() => { setIncognito(privateNew); setMoreOpen(false); setShowOlder(false); setEditing(null); }, [c, botId, privateNew]);
   const privateChat = c ? !!mission?.incognito : incognito;
-  useDraft(privateChat ? null : "chat:" + (c || botId), text, setText);
+  // A draft left here is offered, not poured into the box (DraftOffer.jsx).
+  const draft = useDraftOffer(privateChat ? null : "chat:" + (c || botId), text, setText, { label: bot?.name ? `Para ${bot.name}` : null });
   // ↑ in the empty box: what you sent here before, even beyond the loaded page (not in private chats).
   const promptKey = privateChat ? null : "chat:" + (c || botId);
   const historyKey = useInputHistory(messages, text, setText, promptKey);
@@ -619,6 +621,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               working={turn} onStop={stopTurn} files={files} onRemoveFile={(i) => setFiles(files.filter((_, j) => j !== i))} onInlinePasted={(i) => { const f = files[i]; setFiles(files.filter((_, j) => j !== i)); setText((t) => (t.trim() ? t.replace(/\s*$/, "\n\n") : "") + f.content); }}
               onAttach={() => setPlusOpen((v) => !v)} drop={drop} busy={send.busy}
               above={<>
+                <DraftOffer offer={draft.offer} onRecover={() => { draft.recover(); requestAnimationFrame(() => focusBox(inputRef.current)); }} onLater={draft.later} onDiscard={draft.discard} />
                 {pending.filter((a) => a.kind === "secret").map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
                 <BtwNotes btw={btw} botName={bot?.name} nameOf={(id) => findBot(bots, id)?.name} />
               </>}

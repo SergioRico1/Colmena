@@ -57,6 +57,67 @@ export function useDraft(key, text, setText) {
   }, [key, text]);
 }
 
+/** The saved draft of `key` with when it was written ({ text, at }), or null. */
+export function readDraftEntry(key) {
+  const text = readDraft(key);
+  return text.trim() ? { text, at: readDrafts()[key]?.at || null } : null;
+}
+
+/** «Guardar para después» on a recovered draft: it goes to the stash (Ctrl+S) and leaves the chat. */
+export function draftForLater(key, label = null) {
+  const entry = readDraftEntry(key);
+  if (!entry) return null;
+  const stashed = stashPrompt(entry.text, { from: key, label });
+  saveDraft(key, "");
+  return stashed;
+}
+
+/**
+ * Like useDraft, but a draft left in a chat is offered, not poured into the box (after
+ * assistant-ui draft-restore): «Tenías un mensaje sin enviar · Recuperar · Guardar para
+ * después · Descartar». Typing something else while it is offered sends the old draft to the
+ * stash, so nothing you wrote is ever lost. Returns { offer, recover, later, discard }.
+ */
+export function useDraftOffer(key, text, setText, { label = null } = {}) {
+  const loaded = useRef(null);
+  const [offer, setOffer] = useState(null);
+  const offerRef = useRef(null);
+  const switched = useRef(false);
+  offerRef.current = offer;
+  useEffect(() => {
+    if (loaded.current === key) return;
+    loaded.current = key;
+    // No key (an incognito chat): nothing is saved, and what you are writing stays.
+    const entry = key ? readDraftEntry(key) : null;
+    offerRef.current = entry; // known now: the save below must not erase it
+    switched.current = true;
+    setOffer(entry);
+    if (key) setText("");
+  }, [key, setText]);
+  useEffect(() => {
+    if (!key || loaded.current !== key) return undefined;
+    // The text of this run still belongs to the chat you came from.
+    if (switched.current) { switched.current = false; return undefined; }
+    // While a draft is offered the empty box does not erase it; writing something else keeps it for later.
+    if (offerRef.current) {
+      if (!String(text || "").trim()) return undefined;
+      stashPrompt(offerRef.current.text, { from: key, label });
+      setOffer(null);
+    }
+    const t = setTimeout(() => saveDraft(key, text), 200);
+    return () => clearTimeout(t);
+  }, [key, text, label]);
+  const recover = useCallback(() => {
+    const o = offerRef.current;
+    if (!o) return;
+    setOffer(null);
+    setText(o.text);
+  }, [setText]);
+  const later = useCallback(() => { if (draftForLater(key, label)) setOffer(null); }, [key, label]);
+  const discard = useCallback(() => { saveDraft(key, ""); setOffer(null); }, [key]);
+  return { offer, recover, later, discard };
+}
+
 // What you sent in each conversation, newest last (T3 Code composerPromptHistory): ↑ finds it
 // even when those messages are not loaded (a long chat opens with its latest page) or were
 // queued. Private chats keep none (no key).
