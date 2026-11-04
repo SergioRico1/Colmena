@@ -134,7 +134,7 @@ export const VIEWS = [["tablero", "Tablero"], ["lista", "Lista"], ["calendario",
 export function ViewSwitch({ current = "objetivos", onPick }) {
   const pick = (id) => {
     if (onPick && id !== "objetivos") return onPick(id);
-    navigate(id === "objetivos" ? "/objetivos" : id === "tablero" ? "/misiones" : `/misiones?vista=${id}`);
+    navigate(id === "objetivos" ? "/trabajo/objetivos" : id === "tablero" ? "/misiones" : `/misiones?vista=${id}`);
   };
   return (
     <div role="group" aria-label="Vista" style={{ display: "flex", gap: "4px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "12px" }}>

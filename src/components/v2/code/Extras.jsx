@@ -33,7 +33,7 @@ const readFile64 = (file) => new Promise((resolve, reject) => {
   r.readAsDataURL(file);
 });
 
-export function useComposerExtras({ text, setText, area, taskId = null, projectId = null, commands = [], onCommand }) {
+export function useComposerExtras({ text, setText, area, taskId = null, projectId = null, commands = [], onCommand, below = false }) {
   const [caret, setCaret] = useState(0);
   const [items, setItems] = useState([]);
   const [active, setActive] = useState(0);
@@ -139,7 +139,7 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
 
   const menu = open && items.length ? (
     <div role="listbox" aria-label={trig.kind === "/" ? "Comandos" : trig.kind === "$" ? "Habilidades" : "Archivos"}
-      style={{ position: "absolute", left: "12px", right: "12px", bottom: "calc(100% + 8px)", zIndex: 40, maxHeight: "320px", overflowY: "auto", padding: "8px", borderRadius: "20px", background: C.white, boxShadow: SHEET, animation: "rise .18s ease-out" }}>
+      style={{ position: "absolute", left: "12px", right: "12px", [below ? "top" : "bottom"]: "calc(100% + 8px)", zIndex: 40, maxHeight: "320px", overflowY: "auto", padding: "8px", borderRadius: "20px", background: C.white, boxShadow: SHEET, animation: "rise .18s ease-out" }}>
       <span style={{ display: "block", padding: "4px 10px 8px", fontSize: "12px", fontWeight: 600, color: C.faint }}>{trig.kind === "/" ? "Comandos" : trig.kind === "$" ? "Habilidades · se añaden a tu mensaje" : "Archivos de la tarea"}</span>
       {items.map((it, i) => {
         const Icon = trig.kind === "/" ? SquareSlash : trig.kind === "$" ? Sparkles : FileCode2;

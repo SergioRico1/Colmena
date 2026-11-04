@@ -68,6 +68,14 @@ async function identity(cwd) {
 const base = (p) => path.basename(String(p || "")) || String(p || "");
 const textOfContent = (c) => (typeof c === "string" ? c : (Array.isArray(c) ? c : []).map((b) => (b?.type === "text" ? b.text : b?.type === "image" ? "[imagen]" : "")).filter(Boolean).join("\n"));
 
+/** TodoWrite's list as Bruno's steps on screen: {text, status: done | now | todo}, at most 30. */
+export function todoList(todos) {
+  if (!Array.isArray(todos)) return null;
+  const status = { completed: "done", in_progress: "now" };
+  const list = todos.filter((t) => t && typeof t === "object" && String(t.content || "").trim()).slice(0, 30).map((t) => ({ text: clip(String(t.content).trim(), 200), status: status[t.status] || "todo" }));
+  return list.length ? list : null;
+}
+
 /** A plain Spanish line for a tool call (the work log groups them). */
 export function toolLine(tool, input = {}) {
   const host = (u) => { try { return new URL(u).host; } catch { return clip(u, 60); } };
@@ -87,7 +95,7 @@ export function toolLine(tool, input = {}) {
     case "WebSearch": return { verb: "web", text: "Buscó en internet «" + clip(input.query, 50) + "»", detail: "" };
     case "Task": case "Agent": return { verb: "agent", text: "Encargó a un ayudante: " + clip(input.description || input.prompt, 70), detail: "" };
     case "Skill": return { verb: "skill", text: "Usó la habilidad " + clip(input.skill || input.name, 40), detail: "" };
-    case "TodoWrite": return { verb: "plan", text: "Actualizó su lista de pasos", detail: "" };
+    case "TodoWrite": return { verb: "plan", text: "Actualizó su lista de pasos", detail: "", todos: todoList(input.todos) };
     case "ToolSearch": return { verb: "search", text: "Buscó una herramienta", detail: "" };
     default: return { verb: "tool", text: "Usó " + tool, detail: "" };
   }
@@ -423,7 +431,7 @@ export class CodeService {
     return {
       id: t.id, projectId: t.projectId, title: t.title, botId: t.botId, status: t.status, engine: t.engine || "claude-code", model: t.model, effort: t.effort, access: t.access,
       isolated: !!t.isolated, branch: t.branch || null, base: t.base || null, cwd: t.cwd, add: turns.reduce((n, x) => n + (x.add || 0), 0), del: turns.reduce((n, x) => n + (x.del || 0), 0),
-      turns: turns.length, lastChanged: [...turns].reverse().find((x) => x.files?.length)?.n || null, queue: t.queue || [], error: t.error || null, merged: t.merged || null, usage: t.usage || null, limit: t.limit || null, running: !!live?.turn, createdAt: t.createdAt, updatedAt: t.updatedAt,
+      turns: turns.length, workMs: turns.reduce((n, x) => n + (x.durationMs || 0), 0), lastChanged: [...turns].reverse().find((x) => x.files?.length)?.n || null, queue: t.queue || [], error: t.error || null, merged: t.merged || null, usage: t.usage || null, limit: t.limit || null, running: !!live?.turn, createdAt: t.createdAt, updatedAt: t.updatedAt,
       goal: t.goal || null, saved: t.saved ? { at: t.saved.at, until: t.saved.until, expired: !!t.saved.expired } : null, included: t.included || null,
       merging: t.merging || null, review: t.review || null, previewCheck: t.previewCheck || null,
       archived: t.archived || null, pinned: !!t.pinned, snoozed: t.snoozed || null, autoArchive: t.autoArchive !== false, activeAt: t.activeAt || t.createdAt,
@@ -829,7 +837,7 @@ export class CodeService {
       const line = toolLine(e.name, e.input || {});
       // The question about it may have been answered «no» before the engine reported the call.
       const refused = this.items(taskId).some((i) => i.kind === "ask" && i.toolUseId === e.id && i.status === "denied");
-      const item = this.addItem(taskId, { kind: "tool", tool: e.name, verb: line.verb, text: line.text, detail: clip(line.detail, 600), status: refused ? "denied" : "running", toolUseId: e.id, turn: turn.n });
+      const item = this.addItem(taskId, { kind: "tool", tool: e.name, verb: line.verb, text: line.text, detail: clip(line.detail, 600), status: refused ? "denied" : "running", toolUseId: e.id, turn: turn.n, ...(line.todos ? { todos: line.todos } : {}) });
       turn.tools.set(e.id, item.id);
       return;
     }
@@ -1305,10 +1313,11 @@ export class CodeService {
     const where = (cmd) => new Promise((resolve) => execFile(process.platform === "win32" ? "where" : "which", [cmd], { windowsHide: true }, (e, out) => resolve(e ? null : String(out).split(/\r?\n/)[0].trim() || null)));
     for (const editor of ["code", "cursor", "windsurf"]) {
       if (!(await where(editor))) continue;
-      const target = full + ":" + Math.max(1, Number(line) || 1);
+      // «.» is the task's own folder (the task's «Abrir en el editor»): opened as a folder.
+      const args = full === path.resolve(task.cwd) ? [full] : ["-g", full + ":" + Math.max(1, Number(line) || 1)];
       const child = process.platform === "win32"
-        ? spawn("cmd.exe", ["/d", "/c", editor, "-g", target], { detached: true, stdio: "ignore", windowsHide: true })
-        : spawn(editor, ["-g", target], { detached: true, stdio: "ignore" });
+        ? spawn("cmd.exe", ["/d", "/c", editor, ...args], { detached: true, stdio: "ignore", windowsHide: true })
+        : spawn(editor, args, { detached: true, stdio: "ignore" });
       child.on("error", () => {});
       child.unref();
       return { editor };
@@ -1328,7 +1337,7 @@ export class CodeService {
     const out = [];
     for (const t of tasks) {
       const d = this.engines.get(t.id)?.turn ? null : await this.diff(t.id).catch(() => null);
-      out.push({ ...this.taskView(t), files: d ? d.files.map((f) => ({ path: f.path, status: f.status, add: f.add, del: f.del })) : null, tests: t.tests || null, said: [...this.items(t.id)].reverse().find((i) => i.kind === "text")?.text?.slice(0, 400) || null });
+      out.push({ ...this.taskView(t), files: d ? d.files.map((f) => ({ path: f.path, status: f.status, add: f.add, del: f.del })) : null, tests: t.tests || null, said: [...this.items(t.id)].reverse().find((i) => i.kind === "text")?.text?.slice(0, 400) || null, asked: this.items(t.id).find((i) => i.kind === "user")?.text?.slice(0, 600) || null });
     }
     const script = this.scriptsOf(tasks[0]).find((s) => s.name === "test");
     return { group, tasks: out, testCommand: script?.command || null };

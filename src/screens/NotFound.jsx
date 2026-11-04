@@ -1,22 +1,20 @@
 import Shell from "../components/v2/Shell.jsx";
-import { BotPresence } from "../components/v2/Presence.jsx";
+import { navigate } from "../lib/router.jsx";
 
-// Colmena 2.0 · 35 «No encontrada» (design/V2Estados.dc.html): calm, says nothing was lost,
-// two ways out. Also for a request that was already resolved or expired.
-export default function NotFound({ title = "Esta pantalla ya no está", text = "Puede que el encargo se haya cerrado o que alguien borrara la sala. No se ha perdido nada de lo tuyo.", active = "hoy" }) {
+// Colmena 3 · «No encontrada» (design/V3Estados.dc.html): calm, says nothing was lost, two
+// ways out — back to Inicio, or «Buscar» (the Ctrl K palette). Also for a request that was
+// already resolved or expired (title and text change, the ways out stay).
+export default function NotFound({ title = "Esta pantalla ya no está", text = "Puede que la tarea se cerrara o que alguien borrara la sala. No se ha perdido nada de lo tuyo.", active = "" }) {
   return (
     <Shell active={active}>
-      <div style={{ minHeight: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px", padding: "0 40px", textAlign: "center" }}>
-        <span style={{ animation: "drift 5s ease-in-out infinite" }}>
-          <BotPresence bot={{ shape: "hex", color: "#FFC93C" }} size={64} state="rest" />
-        </span>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxWidth: "460px" }}>
-          <strong style={{ font: "600 26px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{title}</strong>
-          <span style={{ fontSize: "15px", lineHeight: "1.5", color: "#5C606C" }}>{text}</span>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px" }}>
-          <a href="/" style={{ display: "flex", alignItems: "center", height: "46px", padding: "0 22px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "15px", fontWeight: "600" }}>{"Volver a Hoy"}</a>
-          <a href="/archivo" style={{ display: "flex", alignItems: "center", height: "46px", padding: "0 18px", borderRadius: "999px", background: "rgba(18,19,26,.06)", fontSize: "15px", fontWeight: "600" }}>{"Buscar en el Archivo"}</a>
+      <div style={{ minHeight: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px clamp(20px, 4vw, 56px)" }}>
+        <div role="status" style={{ width: "100%", maxWidth: "480px", display: "flex", flexDirection: "column", gap: "14px", padding: "28px", borderRadius: "24px", background: "#FFFFFF" }}>
+          <h1 style={{ margin: "0", font: "600 26px/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{title}</h1>
+          <span style={{ fontSize: "14px", lineHeight: "1.5", color: "#4A4D57" }}>{text}</span>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} style={{ height: "42px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", fontWeight: "600", textDecoration: "none" }}>{"Volver a Inicio"}</a>
+            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:palette"))} style={{ height: "42px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "transparent", color: "#12131A", fontSize: "14px", fontWeight: "500", cursor: "pointer" }}>{"Buscar"}</button>
+          </div>
         </div>
       </div>
     </Shell>

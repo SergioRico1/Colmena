@@ -35,7 +35,7 @@ function Evidence({ items }) {
 export function SuggestionCard({ s, bots, fallbackCta = "Sí, hazlo" }) {
   const [open, setOpen] = useState(false);
   const { act, busy, error } = useAction();
-  const b = botById(bots, s.botId) || botById(bots, "atlas") || { name: "Atlas", color: "#FFC93C", shape: "hex" };
+  const b = botById(bots, s.botId) || botById(bots, "atlas") || { name: "Atlas", color: "#12131A", shape: "hex" };
   const text = (s.text || "").replace(/^Atlas ha notado\s*(que\s*)?/i, (m, que) => (que ? "que " : ""));
   const evidence = Array.isArray(s.evidence) ? s.evidence : [];
   const decide = (decision) =>
@@ -73,7 +73,7 @@ export function WeeklyDigestCard({ digest, bots }) {
   const { act, busy, error } = useAction();
   if (!digest) return null;
   const s = digest.stats || {};
-  const atlas = botById(bots, "atlas") || { name: "Atlas", color: "#FFC93C", shape: "hex" };
+  const atlas = botById(bots, "atlas") || { name: "Atlas", color: "#12131A", shape: "hex" };
   const tiles = [
     [s.missions || 0, "misión terminada", "misiones terminadas"],
     [s.artifacts || 0, "entregable nuevo", "entregables nuevos"],

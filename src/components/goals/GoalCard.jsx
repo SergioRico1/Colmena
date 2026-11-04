@@ -10,7 +10,7 @@ export default function GoalCard({ goal, bots }) {
   const next = goal.next;
   const allDone = goal.progress.milestonesTotal > 0 && goal.progress.milestonesDone === goal.progress.milestonesTotal;
   return (
-    <a href={`/objetivos/${encodeURIComponent(goal.id)}`} style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", background: "#FFFFFF", border: "0", borderRadius: "26px", ...(paused || done ? { opacity: "0.85" } : {}) }}>
+    <a href={`/trabajo/objetivos/${encodeURIComponent(goal.id)}`} style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", background: "#FFFFFF", border: "0", borderRadius: "26px", ...(paused || done ? { opacity: "0.85" } : {}) }}>
       <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", minHeight: "22px" }}>
         <span style={mono}>{`Objetivo · ${STATUS_LABEL[goal.status] || "En marcha"}`}</span>
         {done ? (

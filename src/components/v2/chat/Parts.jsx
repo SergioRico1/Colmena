@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, Copy, RotateCcw } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { ListenButton } from "../../interaction/Voice.jsx";
 import { trailGroups } from "../../../lib/trail.js";
 import Markdown, { plain } from "../../room/Markdown.jsx";
@@ -8,48 +8,88 @@ import { groupTools, headline } from "../../room/ToolCards.jsx";
 import { artifactMeta } from "../../room/DeliverableCard.jsx";
 import { UserText } from "../../room/SelectionPopup.jsx";
 import { copyText } from "../../room/common.jsx";
+import { useReactions } from "../../room/Reactions.jsx";
 import { BotPresence } from "../Presence.jsx";
-import WorkLog, { CommandOutput } from "./WorkLog.jsx";
+import { BotMark } from "./Mark.jsx";
+import { BranchPicker } from "./Versions.jsx";
+import WorkLog, { CommandOutput, durationText } from "./WorkLog.jsx";
 import { workSummary } from "../../../lib/worklog.js";
+import { useExpert } from "../../../lib/expert.js";
+import { useStore } from "../../../lib/store.jsx";
 
-// Colmena 2.0 conversation pieces (design/V2Conversacion.dc.html): your message as a soft
-// bubble on the right; the bot's answer as plain text at 17 px; the work shown while it
-// happens (thinking, reading, calculating, writing, drawing); the deliverable card.
-const EXT = { PDF: ["#FBE7DF", "#8E2A1F"], XLS: ["#E1F4EC", "#0B6B4A"], CSV: ["#E1F4EC", "#0B6B4A"], DOC: ["#DDE7FF", "#1F3F99"], PPT: ["#FFE6F1", "#9C1F5C"], WEB: ["#EEF0F4", "#3D404A"] };
-export const extTint = (ext) => EXT[ext] || ["#EEF0F4", "#4A4F5C"];
+// Colmena 3 conversation pieces (design/V3Chat.dc.html, V3ChatExperto.dc.html): your message
+// as a soft bubble on the right; the bot's answer under its shape, name and time, in 15.5 px;
+// the work as a white card «Hecho en N pasos»; the actions always under the answer (copy, do
+// it again, edit your request, useful / not useful, versions). Expert mode adds the model,
+// tokens, cache and time under each answer — it never moves anything.
+const EXT = { PDF: ["#FBE9EA", "#B4232A"], XLS: ["#E3F4EC", "#0B6B4A"], CSV: ["#E3F4EC", "#0B6B4A"], DOC: ["#E3EBFF", "#1F4FD1"], PPT: ["#FFE9DC", "#C2410C"], WEB: ["#F1F1EC", "#3D404A"] };
+export const extTint = (ext) => EXT[ext] || ["#F1F1EC", "#4A4D57"];
 export const extOf = (name) => {
   const e = (String(name || "").split(".").pop() || "").toLowerCase();
   return { pdf: "PDF", xlsx: "XLS", xls: "XLS", csv: "CSV", docx: "DOC", doc: "DOC", md: "DOC", txt: "DOC", pptx: "PPT" }[e] || e.slice(0, 3).toUpperCase() || "DOC";
 };
+const clock = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "");
+/** 18.4k, 1.2k, 940. */
+export const kTokens = (n) => (n >= 1000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, "") + "k" : String(Math.round(n || 0)));
 
-/** «Hoy · 09:24» between groups of messages. */
+/** «Hoy · 09:24» between groups of messages, with a hairline on each side. */
 export function TimeMark({ at }) {
   if (!at) return null;
   const d = new Date(at);
   const today = new Date().toDateString() === d.toDateString();
   const yesterday = new Date(Date.now() - 864e5).toDateString() === d.toDateString();
   const day = today ? "Hoy" : yesterday ? "Ayer" : d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
-  return <span style={{ alignSelf: "center", fontSize: "13px", color: "#6B6F7A" }}>{`${day} · ${d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`}</span>;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12.5px", color: "#5C606C" }}>
+      <span style={{ flex: "1", height: "1px", background: "rgba(18,19,26,.08)" }} />
+      {`${day} · ${clock(at)}`}
+      <span style={{ flex: "1", height: "1px", background: "rgba(18,19,26,.08)" }} />
+    </div>
+  );
 }
 
 export function UserBubble({ message, children }) {
   return (
     <div data-message-id={message.optimistic ? undefined : message.id} aria-busy={message.optimistic ? "true" : undefined}
-      style={{ alignSelf: "flex-end", maxWidth: "78%", display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end", opacity: message.optimistic ? 0.65 : 1, transition: "opacity .2s ease" }}>
-      <div style={{ padding: "16px 20px", background: "#E8E8E2", borderRadius: "24px 24px 8px 24px", fontSize: "16px", lineHeight: "1.55", overflowWrap: "anywhere" }}>
-        <UserText text={message.text} size={16} />
+      style={{ alignSelf: "flex-end", maxWidth: "78%", display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-end", opacity: message.optimistic ? 0.65 : 1, transition: "opacity .2s ease" }}>
+      <div style={{ padding: "14px 18px", background: "#EBEBE6", borderRadius: "20px 20px 6px 20px", fontSize: "15.5px", lineHeight: "1.55", overflowWrap: "anywhere" }}>
+        <UserText text={message.text} size={15.5} />
       </div>
       {children}
     </div>
   );
 }
 
-/** What the bot already did for this answer: one plain line that unfolds (WorkLog.jsx). */
-export function DoneSteps({ tools = [], bots = [], stepId = null }) {
-  return <WorkLog tools={tools} bots={bots} stepId={stepId} />;
+/** A file you attached, as the board draws it: a tinted tile with its kind and its name. */
+export function AttachmentChip({ name }) {
+  const ext = extOf(name);
+  const [bg, fg] = extTint(ext);
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "30px", padding: "0 12px 0 6px", borderRadius: "10px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "13px" }}>
+      <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "6px", background: bg, color: fg, fontSize: "9px", fontWeight: 700 }}>{ext}</span>
+      <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+    </span>
+  );
 }
 
-const ANSWER = { fontSize: "17px", lineHeight: "1.65", color: "#1E2029" };
+/** The bot's shape, its name and when it said it, over each answer. */
+export function AnswerHead({ bot, at = null, note = null, state = "rest" }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <BotMark bot={bot} size={20} state={state} />
+      <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{bot?.name || "Bot"}</span>
+      <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[note, at ? clock(at) : null].filter(Boolean).join(" · ") || "ahora"}</span>
+    </div>
+  );
+}
+
+/** What the bot already did for this answer: the «Hecho en N pasos» card (WorkLog.jsx). */
+export function DoneSteps({ tools = [], bots = [], stepId = null, seconds = null }) {
+  return <WorkLog tools={tools} bots={bots} stepId={stepId} seconds={seconds} />;
+}
+
+const ANSWER = { fontSize: "15.5px", lineHeight: "1.6", color: "#12131A" };
+const secondsOf = (message, step) => message?.summary?.seconds ?? (step?.startedAt && step?.completedAt ? (Date.parse(step.completedAt) - Date.parse(step.startedAt)) / 1000 : null);
 
 /**
  * What the bot said while it worked, as Claude Desktop shows it: plain answer text, each
@@ -66,17 +106,18 @@ export function WorkTrail({ step, bots = [], running = false, ticks = true }) {
   const summary = workSummary(step?.tools || []);
   const toggle = !running && lines.length > 3 ? (
     <button type="button" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)}
-      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "5px 12px 5px 10px", border: 0, borderRadius: "16px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#3D404A", textAlign: "left" }}>
-      <ChevronDown size={14} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
-      {open ? "Ocultar cómo lo hizo" : summary ? `Cómo lo hizo · ${summary.text}` : `Cómo lo hizo · ${lines.length} pasos`}
+      style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: "10px", minHeight: "46px", padding: "8px 16px", border: "1px solid rgba(18,19,26,.07)", borderRadius: "16px", background: "#FFFFFF", cursor: "pointer", fontSize: "14px", color: "#12131A", textAlign: "left" }}>
+      <span aria-hidden="true" style={{ color: "#0B6B4A", fontWeight: 600 }}>{"✓"}</span>
+      <span style={{ flex: "1", minWidth: 0 }}><strong style={{ fontWeight: 600 }}>{open ? "Ocultar cómo lo hizo" : "Cómo lo hizo"}</strong><span style={{ color: "#5C606C" }}>{open ? "" : " · " + (summary ? summary.text : `${lines.length} pasos`)}</span></span>
+      <ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#4A4D57", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
     </button>
   ) : null;
   if (folded) return toggle;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       {toggle}
       {groups.map(({ line, tools }, i) => (
-        <div key={line.id || i} style={{ display: "flex", flexDirection: "column", gap: "6px", animation: running ? "rise .4s ease-out" : undefined }}>
+        <div key={line.id || i} style={{ display: "flex", flexDirection: "column", gap: "10px", animation: running ? "rise .4s ease-out" : undefined }}>
           <Markdown text={line.text} size={16} style={ANSWER} />
           {ticks ? <DoneSteps tools={tools} bots={bots} stepId={step?.id} /> : null}
         </div>
@@ -86,68 +127,101 @@ export function WorkTrail({ step, bots = [], running = false, ticks = true }) {
 }
 
 /**
- * The bot's answer: plain text at 17 px. Listen, copy and another answer live in a small
- * toolbar that shows on hover or focus (as Slack's message actions in the rooms).
+ * The bot's answer: its head (shape, name, time), the work it did and the text. What you can
+ * do with it goes under it, in AnswerActions (after the deliverables and the sources).
  */
-export function BotAnswer({ message, bot, step, bots, onRetry, trail = true, children }) {
-  const [copied, setCopied] = useState(false);
+export function BotAnswer({ message, bot, step, bots, trail = true, head = true, children }) {
   return (
-    <div className="msg msg-row" data-message-id={message.id} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "10px", padding: "6px 0" }}>
-      {message.text ? (
-        <span className="msg-actions" role="toolbar" aria-label="Acciones de la respuesta" style={{ top: "-18px", right: "0" }}>
-          <ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "#4A4F5C" }} />
-          <button type="button" className="rm-focus" onClick={async () => { await copyText(plain(message.text)); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-            aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"} style={iconQuiet}>
-            {copied ? <Check size={15} strokeWidth={2.4} aria-hidden="true" style={{ color: "#0B8A5F" }} /> : <Copy size={15} strokeWidth={2.2} aria-hidden="true" />}
-          </button>
-          {onRetry ? (
-            <button type="button" className="rm-focus" onClick={onRetry} aria-label="Otra respuesta" title="Otra respuesta" style={iconQuiet}>
-              <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
-            </button>
-          ) : null}
-        </span>
-      ) : null}
-      {!trail ? null : step?.progress?.length ? <WorkTrail step={step} bots={bots} /> : <DoneSteps tools={step?.tools || []} bots={bots} stepId={step?.id} />}
+    <div data-message-id={message.id} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "14px" }}>
+      {head ? <AnswerHead bot={bot} at={message.at} /> : null}
+      {!trail ? null : step?.progress?.length ? <WorkTrail step={step} bots={bots} /> : <DoneSteps tools={step?.tools || []} bots={bots} stepId={step?.id} seconds={secondsOf(message, step)} />}
       {message.text ? <Markdown text={message.text} size={16} style={ANSWER} /> : null}
       {children}
     </div>
   );
 }
-const iconQuiet = { width: "30px", height: "30px", display: "grid", placeItems: "center", border: "0", borderRadius: "8px", background: "transparent", cursor: "pointer", color: "#4A4F5C" };
 
-/** A deliverable: what it is, its title and «Abrir»; an image shows itself on the right. */
+const ICON = { width: "34px", height: "34px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "9px", background: "transparent", color: "#4A4D57", cursor: "pointer" };
+const Glyph = ({ d }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
+const ACTION_ICONS = {
+  copy: "M8 8h11v12H8zM5 16V4h11",
+  again: "M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.8 4.5v3.6h-3.6",
+  edit: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
+  up: "M7 11v9H4v-9zM7 11l4-7a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 17.3 20H7",
+  down: "M17 13V4h3v9zM17 13l-4 7a2 2 0 0 1-2-2v-4H5.5a2 2 0 0 1-2-2.3l1.2-6A2 2 0 0 1 6.7 4H17",
+};
+
+/**
+ * Under an answer (V3Chat «Acciones del mensaje»): listen, copy, do it again, edit your
+ * request, useful / not useful (a 👍 / 👎 the bots read on their next turn) and the versions.
+ */
+export function AnswerActions({ message, bot, onRetry = null, onEditAsk = null, branch = null, onVersion = null, versionDisabled = false }) {
+  const [copied, setCopied] = useState(false);
+  const [reactions, toggle] = useReactions(message);
+  const mine = (emoji) => reactions.some((r) => r.emoji === emoji && r.by === "user");
+  if (!message?.text) return branch ? <BranchPicker branch={branch} disabled={versionDisabled} onShow={onVersion} /> : null;
+  const pressed = (on) => (on ? { background: "#F1F1EC", color: "#12131A" } : {});
+  return (
+    <div role="toolbar" aria-label="Acciones del mensaje" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "2px", color: "#4A4D57", marginTop: "-4px" }}>
+      <ListenButton text={message.text} bot={bot} compact style={{ ...ICON, width: "34px", height: "34px" }} />
+      <button type="button" className="rm-focus" aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"} onClick={async () => { await copyText(plain(message.text)); setCopied(true); setTimeout(() => setCopied(false), 1500); }} style={{ ...ICON, ...(copied ? { color: "#0B6B4A" } : {}) }}><Glyph d={copied ? "m5 12 5 5 9-10" : ACTION_ICONS.copy} /></button>
+      {onRetry ? <button type="button" className="rm-focus" aria-label="Volver a hacer" title="Volver a hacer" onClick={onRetry} style={ICON}><Glyph d={ACTION_ICONS.again} /></button> : null}
+      {onEditAsk ? <button type="button" className="rm-focus" aria-label="Editar mi petición" title="Editar mi petición" onClick={onEditAsk} style={ICON}><Glyph d={ACTION_ICONS.edit} /></button> : null}
+      <button type="button" className="rm-focus" aria-label="Útil" title="Útil" aria-pressed={mine("👍") ? "true" : "false"} onClick={() => toggle("👍")} style={{ ...ICON, ...pressed(mine("👍")) }}><Glyph d={ACTION_ICONS.up} /></button>
+      <button type="button" className="rm-focus" aria-label="No me sirve" title="No me sirve" aria-pressed={mine("👎") ? "true" : "false"} onClick={() => toggle("👎")} style={{ ...ICON, ...pressed(mine("👎")) }}><Glyph d={ACTION_ICONS.down} /></button>
+      {branch && branch.count > 1 ? <span style={{ marginLeft: "8px" }}><BranchPicker branch={branch} disabled={versionDisabled} onShow={onVersion} /></span> : null}
+    </div>
+  );
+}
+
+/** Expert mode, under each answer: model, tokens, cache and time, and «Ver en Actividad». */
+export function UsageLine({ message, step = null }) {
+  const [expert] = useExpert();
+  const { settings = {} } = useStore() || {};
+  if (!expert || !message?.text) return null;
+  const s = message.summary || {};
+  const time = durationText(secondsOf(message, step));
+  const parts = [settings.model || null, s.tokens ? `${kTokens(s.tokens)} tokens` : null, s.calls ? `${s.calls} llamada${s.calls === 1 ? "" : "s"}` : null, s.cachedPercent != null ? `caché ${s.cachedPercent} %` : null, s.reads ? `${s.reads} lectura${s.reads === 1 ? "" : "s"}` : null, time || null].filter(Boolean);
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", font: "400 12px/1.4 'Geist Mono', monospace", color: "#5C606C" }}>
+      {parts.map((p) => <span key={p}>{p}</span>)}
+      <a href="/actividad" style={{ fontFamily: "'Geist', sans-serif", fontSize: "12.5px" }}>{"Ver en Actividad"}</a>
+    </div>
+  );
+}
+
+/** A deliverable (V3Chat): its kind on a tile, title, «Documento · 1 página · versión 2» and «Abrir»; an image shows itself. */
 export function DeliverableV2({ artifact, onOpen, extra = null }) {
   const isImage = artifact?.format === "png" || artifact?.kind === "design";
   const pages = artifact?.pages ? (artifact.pages === 1 ? "1 página" : `${artifact.pages} páginas`) : null;
+  const ext = isImage ? "IMG" : extOf(artifact?.file || artifact?.path || (artifact?.format ? "x." + artifact.format : "x.docx"));
+  const [bg, fg] = isImage ? ["#FFE6F1", "#9C1F5C"] : extTint(ext);
   return (
-    <article style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) clamp(0px, 32%, 180px)", background: "#FFFFFF", borderRadius: "28px", overflow: "hidden", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)", animation: "rise .5s ease-out" }}>
-      <div style={{ padding: "26px 28px", display: "flex", flexDirection: "column", gap: "14px", minWidth: 0 }}>
-        <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{[artifactMeta(artifact), pages].filter(Boolean).join(" · ")}</span>
-        <strong style={{ font: "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{artifact?.title || "Entregable"}</strong>
-        {artifact?.summary ? <span style={{ fontSize: "15px", lineHeight: "1.5", color: "#3D404A" }}>{artifact.summary}</span> : null}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingTop: "4px" }}>
-          <button type="button" onClick={onOpen} style={{ display: "flex", alignItems: "center", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>{"Abrir"}</button>
-          <a href={`/api/artifacts/${encodeURIComponent(artifact?.id)}/download`} download style={{ display: "flex", alignItems: "center", height: "42px", padding: "0 18px", borderRadius: "999px", background: "rgba(18,19,26,.06)", fontSize: "14px", fontWeight: "600" }}>{"Descargar"}</a>
-          {extra}
+    <article style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 40px -30px rgba(18,19,26,.35)", animation: "rise .5s ease-out" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "10px", background: bg, color: fg, fontSize: "10px", fontWeight: 700 }}>{ext}</span>
+        <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+          <span style={{ fontSize: "15.5px", fontWeight: 600, overflowWrap: "anywhere" }}>{artifact?.title || "Entregable"}</span>
+          <span style={{ fontSize: "13px", color: "#5C606C" }}>{[artifactMeta(artifact), pages].filter(Boolean).join(" · ")}</span>
         </div>
+        {extra}
+        <a href={`/api/artifacts/${encodeURIComponent(artifact?.id)}/download`} download aria-label={"Descargar " + (artifact?.title || "el entregable")} title="Descargar" style={{ fontSize: "14px", fontWeight: 500, color: "#4A4D57" }}>{"Descargar"}</a>
+        <button type="button" onClick={onOpen} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: 500, color: "#1F4FD1" }}>{"Abrir"}</button>
       </div>
-      {isImage && artifact?.id ? (
-        <img src={`/api/artifacts/${encodeURIComponent(artifact.id)}/file`} alt="" data-lightbox="" data-name={(artifact.title || "imagen") + ".png"} style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "zoom-in", animation: "develop 1.2s ease-out both" }} />
-      ) : (
-        <div aria-hidden="true" style={{ background: "radial-gradient(circle at 72% 30%, #FFC93C 0 13%, rgba(255,201,60,0) 13.5%), radial-gradient(120% 70% at 20% 110%, #7B4DFF 0 48%, rgba(123,77,255,0) 48.5%), radial-gradient(120% 80% at 90% 120%, #2F6BFF 0 45%, rgba(47,107,255,0) 45.5%), linear-gradient(180deg, #FFF4D1, #F5E9FF)" }} />
-      )}
+      {artifact?.summary ? <span style={{ fontSize: "14px", lineHeight: "1.5", color: "#4A4D57" }}>{artifact.summary}</span> : null}
+      {isImage && artifact?.id ? <img src={`/api/artifacts/${encodeURIComponent(artifact.id)}/file`} alt="" data-lightbox="" data-name={(artifact.title || "imagen") + ".png"} style={{ width: "100%", maxHeight: "320px", borderRadius: "14px", objectFit: "cover", cursor: "zoom-in", animation: "develop 1.2s ease-out both" }} /> : null}
     </article>
   );
 }
 
-const shimmerText = { alignSelf: "flex-start", fontSize: "17px", fontWeight: "500", background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
+const shimmerText = { alignSelf: "flex-start", fontSize: "14.5px", fontWeight: "500", background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
 
 /**
  * The work while it happens (idea 04: «nada de procesando»): what it reads (each file with a
  * spinner, then its pages), what it runs (a dark terminal), what it writes (the answer itself, with a
  * caret), what it draws (the picture developing); otherwise its own words about what it does.
  */
-export function WorkNow({ step, live, bot, bots, narration }) {
+export function WorkNow({ step, live, bot, bots, narration, onStop = null }) {
   const tools = step?.tools || [];
   const running = tools.filter((t) => t.status === "running");
   const reads = groupTools(tools).filter((t) => ["file", "web", "pdf_fields", "folder"].includes(t.card?.type));
@@ -157,7 +231,8 @@ export function WorkNow({ step, live, bot, bots, narration }) {
   // The answer as it is written looks like the answer it becomes: same text, same place.
   if (live?.text) {
     return (
-      <div aria-live="polite" style={{ display: "flex", flexDirection: "column", padding: "6px 0" }}>
+      <div aria-live="polite" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <AnswerHead bot={bot} state="work" />
         <LiveMarkdown text={live.text} size={16} style={ANSWER} caret streamKey={step?.id || live.stepId} />
       </div>
     );
@@ -195,15 +270,20 @@ export function WorkNow({ step, live, bot, bots, narration }) {
       </div>
     );
   }
+  // Thinking or using a tool (V3Chat «ahora»): the shape breathing, what it does as shimmer
+  // text over a shimmer bar in the bot's colour, and «Parar».
   return (
-    <div role="status" style={{ display: "flex", flexDirection: "column", gap: "14px", animation: "fade .4s ease-out" }}>
-      <span style={shimmerText}>{running.length ? <>{headline(running[running.length - 1], bots)}{"…"}</> : "Pensando cómo hacerlo…"}</span>
-      {narration ? (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          <span style={{ padding: "9px 14px", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", color: "#3D404A", animation: "rise .5s ease-out" }}>{narration}</span>
-        </div>
-      ) : null}
-    </div>
+    <article role="status" style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .4s ease-out" }}>
+      <AnswerHead bot={bot} state="work" />
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 16px", borderRadius: "16px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)" }}>
+        <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+          <span style={shimmerText}>{running.length ? <>{headline(running[running.length - 1], bots)}{"…"}</> : narration || "Pensando cómo hacerlo…"}</span>
+          <span aria-hidden="true" style={{ height: "6px", borderRadius: "3px", background: `linear-gradient(90deg, #EEEEEA 0%, ${color}40 50%, #EEEEEA 100%)`, backgroundSize: "200% 100%", animation: "shimmer 1.6s linear infinite" }} />
+          {narration && running.length ? <span style={{ fontSize: "13px", color: "#5C606C" }}>{narration}</span> : null}
+        </span>
+        {onStop ? <button type="button" onClick={onStop} title="Parar (Esc)" style={{ flex: "none", height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "13.5px", fontWeight: 500, cursor: "pointer" }}>{"Parar"}</button> : null}
+      </div>
+    </article>
   );
 }
 

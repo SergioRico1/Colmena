@@ -23,7 +23,7 @@ const off = { background: "transparent", color: "#4A4D57" };
 
 /** Close · minimise · maximise as the three drawn dots; a glyph shows on hover. */
 /** The window buttons (close, minimise, maximise); `dark` on the dark welcome screens. */
-export function WindowDots({ dark = false }) {
+export function WindowDots({ dark = false, inline = false }) {
   const api = typeof window !== "undefined" ? window.colmenaWindow : null;
   const [hover, setHover] = useState(false);
   const [state, setState] = useState({ focused: true, maximized: false });
@@ -31,7 +31,7 @@ export function WindowDots({ dark = false }) {
   const dot = { width: "11px", height: "11px", borderRadius: "50%", background: dark ? "rgba(255,255,255,.16)" : "rgba(18,19,26,.14)" };
   if (!api) {
     return (
-      <span aria-hidden="true" title="Zona de los botones de la ventana" style={{ display: "flex", gap: "6px", height: "14px", marginBottom: "14px" }}>
+      <span aria-hidden="true" title="Zona de los botones de la ventana" style={{ display: "flex", gap: "6px", height: "14px", marginBottom: inline ? "0" : "14px" }}>
         <span style={dot} /><span style={dot} /><span style={dot} />
       </span>
     );
@@ -44,7 +44,7 @@ export function WindowDots({ dark = false }) {
     </button>
   );
   return (
-    <span role="group" aria-label="Ventana" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ display: "flex", gap: "6px", height: "14px", marginBottom: "14px", WebkitAppRegion: "no-drag" }}>
+    <span role="group" aria-label="Ventana" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ display: "flex", gap: "6px", height: "14px", marginBottom: inline ? "0" : "14px", WebkitAppRegion: "no-drag" }}>
       {button("Cerrar", () => api.close(), "#FFC93C", <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" />)}
       {button("Minimizar", () => api.minimize(), "rgba(18,19,26,.28)", <path d="M2 5h6" />)}
       {button(state.maximized ? "Restaurar" : "Maximizar", () => api.toggleMaximize(), "rgba(18,19,26,.28)", <path d="M2.5 5h5M5 2.5v5" />)}

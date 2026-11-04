@@ -390,7 +390,7 @@ export default function Misiones({ query = {} }) {
                   <button key={id} type="button" aria-pressed={view === id ? "true" : "false"} onClick={() => setView(id)} style={viewBtn(view === id)}>{label}</button>
                 ))}
                 {/* Objetivos con hitos (/objetivos) vive aquí como una vista más de Misiones. */}
-                <button type="button" aria-pressed="false" onClick={() => navigate("/objetivos")} style={viewBtn(false)}>{"Objetivos"}</button>
+                <button type="button" aria-pressed="false" onClick={() => navigate("/trabajo/objetivos")} style={viewBtn(false)}>{"Objetivos"}</button>
               </div>
               <button type="button" onClick={() => navigate("/?modo=equipo")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>

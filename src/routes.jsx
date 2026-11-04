@@ -1,8 +1,18 @@
 // Route table. Each route names a screen in src/screens/<screen>.jsx; while a live
 // screen is missing the generated design (src/design/<screen>.jsx) is shown instead.
 export const routes = [
-  // Colmena 2.0: five places (Hoy, Chats, Colmena, Rutinas, Archivo) and their sheets.
+  // Colmena 3 (design/V3*.dc.html): six places — Inicio, Chats, Trabajo (Tareas, Rutinas,
+  // Objetivos), Código, Equipo, Biblioteca (Archivos, Habilidades, Memoria) — plus Actividad and Ajustes.
   { path: "/", screen: "Hoy" },
+  { path: "/inicio", screen: "Hoy" },
+  { path: "/actividad", screen: "Actividad" },
+  { path: "/trabajo", screen: "Tareas" },
+  { path: "/trabajo/tareas", screen: "Tareas" },
+  { path: "/trabajo/rutinas", screen: "RutinasV2" },
+  { path: "/trabajo/objetivos", screen: "ObjetivosV2" },
+  { path: "/trabajo/objetivos/:id", screen: "ObjetivosV2" },
+  { path: "/biblioteca/:tab", screen: "ArchivoV2" },
+  // Colmena 2.0 addresses, still valid.
   { path: "/inicio-v1", screen: "Main" },
   { path: "/encargo/:id", screen: "Encargo" },
   { path: "/ordenador/:id", screen: "OrdenadorV2" },
@@ -43,7 +53,8 @@ export const routes = [
   { path: "/equipo-v1", screen: "Equipo" },
   { path: "/equipo/nuevo", screen: "ColmenaV2" },
   { path: "/equipo/nuevo/ajusta", screen: "ColmenaV2" },
-  { path: "/equipo/:bot", screen: "Bot" },
+  { path: "/equipo/:bot", screen: "ColmenaV2" },
+  { path: "/equipo-v1/:bot", screen: "Bot" },
   { path: "/biblioteca", screen: "ArchivoV2" },
   { path: "/biblioteca-v1", screen: "Biblioteca" },
   { path: "/ajustes", screen: "AjustesV2" },

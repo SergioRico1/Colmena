@@ -398,7 +398,7 @@ export function goalsDigest(store, nowValue = Date.now()) {
     if (overdue.length) parts.push(overdue.length === 1 ? `el hito «${overdue[0].title}» está vencido` : `${overdue.length} hitos vencidos`);
     if (goalOverdue) parts.push("ha pasado la fecha del objetivo");
     if (stale) parts.push(milestones.length ? `sin avance desde hace ${Math.floor((t - ms(last)) / DAY)} días` : "aún no tiene hitos");
-    out.push({ goalId: goal.id, title: goal.title, ownerBotId: goal.ownerBotId || "atlas", url: "/objetivos/" + goal.id, overdue, goalOverdue, stale, lastProgressAt: last, text: `«${goal.title}»: ${parts.join(" · ")}.` });
+    out.push({ goalId: goal.id, title: goal.title, ownerBotId: goal.ownerBotId || "atlas", url: "/trabajo/objetivos/" + goal.id, overdue, goalOverdue, stale, lastProgressAt: last, text: `«${goal.title}»: ${parts.join(" · ")}.` });
   }
   return out;
 }

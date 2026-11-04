@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; script-src 'self'">
+<title>Colmena</title>
+<!-- Colmena 3 · «Arranque» and «Tarda más de 20 s» (design/V3Estados.dc.html): shown by
+     desktop/main.cjs while the local service starts. The icon breathes; no fake progress bar.
+     After 20 s it says why it may take long and offers «Reintentar» and «Abrir el registro». -->
+<style>
+@font-face{font-family:"Bricolage Grotesque";font-weight:600;font-display:block;src:url("bricolage-grotesque-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Geist";font-weight:400;font-display:block;src:url("geist-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Geist";font-weight:500;font-display:block;src:url("geist-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Geist";font-weight:600;font-display:block;src:url("geist-latin-600-normal.woff2") format("woff2")}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:#12131A;color:#FFFFFF;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;-webkit-app-region:drag;user-select:none;overflow:hidden}
+button{font:inherit;color:inherit;-webkit-app-region:no-drag}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+main{height:100%;display:grid;place-items:center;padding:28px 32px}
+.starting{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;animation:fade .4s ease-out}
+.starting img{display:block;width:56px;height:56px;animation:breathe 2.4s ease-in-out infinite}
+.title{font:600 24px/1 'Bricolage Grotesque',sans-serif;letter-spacing:-0.02em}
+.sub{font-size:14px;line-height:1.5;color:#C9CBD3}
+.slow{width:100%;display:flex;flex-direction:column;justify-content:center;gap:14px;animation:fade .4s ease-out}
+.slow .title{line-height:1.1}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.primary{height:42px;padding:0 18px;border:0;border-radius:999px;background:#FFFFFF;color:#12131A;font-size:14px;font-weight:600;cursor:pointer}
+.secondary{height:42px;padding:0 16px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:transparent;color:#FFFFFF;font-size:14px;font-weight:500;cursor:pointer}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="starting" id="starting" role="status" aria-live="polite">
+    <img src="colmena-icon-128.png" alt="" width="56" height="56">
+    <span class="title">Arrancando Colmena…</span>
+    <span class="sub">Despertando a tu equipo en este ordenador.</span>
+  </div>
+  <div class="slow" id="slow" role="alert" hidden>
+    <span class="title">Colmena está tardando en arrancar</span>
+    <span class="sub">Suele pasar justo después de encender el ordenador o si el antivirus revisa la app. Tus datos están a salvo.</span>
+    <div class="actions">
+      <button type="button" class="primary" id="retry">Reintentar</button>
+      <button type="button" class="secondary" id="log">Abrir el registro</button>
+    </div>
+  </div>
+</main>
+<script src="splash.js"></script>
+</body>
+</html>

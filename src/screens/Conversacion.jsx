@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWarmOnType } from "../lib/warm.js";
-import { AudioLines, FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal } from "lucide-react";
+import { FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal } from "lucide-react";
 import VoiceCall from "../components/v2/chat/VoiceCall.jsx";
 import Shell from "../components/v2/Shell.jsx";
-import ConvList, { NewConversation, whenLabel } from "../components/v2/chat/ConvList.jsx";
+import { NewConversation, whenLabel } from "../components/v2/chat/ConvList.jsx";
+import ChatsHome from "../components/v2/chat/ChatsHome.jsx";
 import Composer from "../components/v2/chat/Composer.jsx";
 import PlusMenu, { chosenChips, turnBody } from "../components/v2/chat/PlusMenu.jsx";
-import { BotAnswer, DeliverableV2, TimeMark, UserBubble, WorkNow, WorkTrail } from "../components/v2/chat/Parts.jsx";
+import { AnswerActions, AnswerHead, AttachmentChip, BotAnswer, DeliverableV2, TimeMark, UsageLine, UserBubble, WorkNow, WorkTrail, kTokens } from "../components/v2/chat/Parts.jsx";
+import { BotMark } from "../components/v2/chat/Mark.jsx";
+import Inspector from "../components/v2/chat/Inspector.jsx";
+import { useExpert } from "../lib/expert.js";
 import { DeckCard, isDeck } from "../components/v2/SlideDeck.jsx";
 import { DocCard, SheetCard, isWordDoc, isWorkbook } from "../components/v2/OfficeFiles.jsx";
-import { BotPresence } from "../components/v2/Presence.jsx";
 import { NeedCard } from "../components/v2/NeedCard.jsx";
 import { InteractiveContext } from "../components/room/Interactive.jsx";
 import { useFileDrop } from "../lib/useFileDrop.js";
@@ -91,6 +94,14 @@ function stepFor(message, steps) {
 // A first guess of each row's height (Timeline measures the real one as it shows it).
 const estimateRow = (row) => ({ head: row?.newChat ? 420 : 40, user: 96, answer: 360, question: 220, note: 30, now: 140, trail: 120, need: 220, error: 90, browser: 320 }[row?.kind] ?? 120);
 const WHILE_WORKING_KEY = "colmena:while-working";
+// «/» in the composer (V3Chat «Comandos»): only what this chat really does.
+const SLASH = [
+  { cmd: "/btw", desc: "Preguntar al margen sin pararle", insert: "/btw " },
+  { cmd: "/aparte", desc: "Preguntar aparte, en el panel" },
+  { cmd: "/archivos", desc: "Ver los archivos de la conversación" },
+  { cmd: "/exportar", desc: "Exportar la conversación a Word" },
+  { cmd: "/privado", desc: "Seguir sin que {bot} aprenda nada" },
+];
 
 /** While the bot works: what Intro does with what you write («Cuando acabe» or «Pasárselo ya»). */
 function WhileWorking({ value, onChange, botName = "el bot", typing }) {
@@ -119,34 +130,13 @@ function FileCard({ artifact, onOpen }) {
 
 export default function Conversacion({ params = {}, query = {} }) {
   const { bots, missions, ready, run } = useStore();
-  const latest = useMemo(() => missions.filter((m) => m.conversation && !m.archived).sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0))[0] || null, [missions]);
-  // «Chats» in the rail: the last one you had, or the list alone.
-  useEffect(() => {
-    if (!params.bot && latest) navigate(`/chat/${latest.botIds?.[0]}?c=${latest.id}`, { replace: true });
-  }, [params.bot, latest]);
-  if (!params.bot) {
-    return (
-      <Shell active="conversaciones" scroll={false}>
-        <div style={{ display: "flex", height: "100%" }}>
-          <ConvList current={null} />
-          <section style={{ flex: "1", display: "grid", placeItems: "center", padding: "40px" }}>
-            {ready && !latest ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", textAlign: "center", maxWidth: "420px" }}>
-                <BotPresence bot={{ shape: "hex", color: "#FFC93C" }} size={56} state="rest" />
-                <strong style={{ font: "600 24px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Aún no hay chats"}</strong>
-                <span style={{ fontSize: "15px", lineHeight: "1.5", color: "#5C606C" }}>{"Habla con un bot a solas o junta a varios en una sala."}</span>
-                <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:new-conversation"))} style={{ height: "46px", padding: "0 22px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "15px", fontWeight: "600", cursor: "pointer" }}>{"Nueva conversación"}</button>
-              </div>
-            ) : null}
-          </section>
-        </div>
-      </Shell>
-    );
-  }
+  // «Chats» (design/V3Chats.dc.html): every conversation, by kind and by time.
+  if (!params.bot) return <Shell active="chats"><ChatsHome /></Shell>;
   return <Chat botId={params.bot} query={query} bots={bots} missions={missions} ready={ready} run={run} />;
 }
 
 function Chat({ botId, query, bots, missions, ready, run }) {
+  const { settings } = useStore();
   const bot = findBot(bots, botId);
   const known = bots.some((b) => b.id === botId);
   // /chat/<bot> is the bot's single chat (threads.js); ?c= opens a private or an older one,
@@ -181,6 +171,13 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const [roomSheet, setRoomSheet] = useState(false);
   const [talking, setTalking] = useState(false); // «Hablar»: the voice panel over this chat
   useEffect(() => setTalking(false), [c]);
+  // Expert mode (design/V3ChatExperto.dc.html): model and context in the header, the Inspector
+  // beside the chat (Ctrl I) and the composer's chips in Geist Mono.
+  const [expert] = useExpert();
+  const [inspector, setInspector] = useState(() => { try { return localStorage.getItem("colmena:inspector") !== "0"; } catch { return true; } });
+  const toggleInspector = () => setInspector((v) => { try { localStorage.setItem("colmena:inspector", v ? "0" : "1"); } catch {} return !v; });
+  usePanelShortcuts([{ combo: "mod+i", run: toggleInspector }], expert);
+  const [slashOpen, setSlashOpen] = useState(false);
   const send = useAction();
   const control = useAction();
   const inputRef = useRef(null);
@@ -295,7 +292,9 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     if (historyKey(e)) return;
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "s" || e.key === "S")) { e.preventDefault(); stashNow(); return; }
     if (e.key === "Tab" && !e.shiftKey && !text && suggestions.length) { e.preventDefault(); setText(suggestions[0]); return; }
+    if (e.key === "Escape" && slashOpen) { e.preventDefault(); setSlashOpen(false); return; }
     if (e.key === "Escape" && turn && !text.trim()) { e.preventDefault(); stopTurn(); return; }
+    if (e.key === "Enter" && !e.shiftKey && SLASH.some((x) => x.cmd === text.trim() && !x.insert)) { e.preventDefault(); runSlash(text.trim()); return; }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (e.repeat) return; submit(e, { now: e.ctrlKey || e.metaKey }); }
   };
   const FILES_TAB = { id: "archivos", kind: "archivos" };
@@ -384,6 +383,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         trail: !step?.progress?.length || firstOfStep,
         // «Otra respuesta» is a sibling version of this answer (branches), «‹ 1/3 ›» under it.
         regenerate: !!prevUser && !!c && !turn && !isOlder && m.kind !== "deliverable",
+        askId: prevUser && !prevUser.optimistic && !prevUser.failed ? prevUser.id : null,
         ...sourcesFor(m, step),
         branch: branches[m.id] || null,
       });
@@ -429,7 +429,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const rows = useStableRows([...(room.olderCount > 0 ? [] : [headRow]), ...messageRows, ...tailRows]);
   // A row repaints only when its record changes: what it calls is read here, always current.
   const acts = useRef(null);
-  acts.current = { resend, retry, toggleDoc, control: (action) => run(() => post(`/missions/${c}/control`, { action })), edit: setEditing, sendEdit: (messageId, text, restore) => versions(`/missions/${c}/edit`, { messageId, text, ...(restore ? { restore: true } : {}) }).then(() => setEditing(null)), regenerate: (messageId) => versions(`/missions/${c}/regenerate`, { messageId }), version: (messageId) => versions(`/missions/${c}/branch`, { messageId }) };
+  acts.current = { resend, retry, toggleDoc, stop: () => stopTurn(), control: (action) => run(() => post(`/missions/${c}/control`, { action })), edit: setEditing, sendEdit: (messageId, text, restore) => versions(`/missions/${c}/edit`, { messageId, text, ...(restore ? { restore: true } : {}) }).then(() => setEditing(null)), regenerate: (messageId) => versions(`/missions/${c}/regenerate`, { messageId }), version: (messageId) => versions(`/missions/${c}/branch`, { messageId }) };
   const renderRow = (row) => {
     const body = rowBody(row);
     return row.mark ? <><TimeMark at={row.mark} />{body}</> : body;
@@ -440,15 +440,15 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "head": return (<>
         {row.newChat ? (
           <div style={{ padding: "40px 0 8px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "16px" }}>
-            <BotPresence bot={bot} size={64} state="rest" />
+            <BotMark bot={bot} size={48} />
             <h2 style={{ margin: "0", font: "600 34px/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{`Habla con ${bot?.name || ""}`}</h2>
-            <p style={{ margin: "0", maxWidth: "560px", fontSize: "17px", lineHeight: "1.6", color: "#3D404A" }}>{bot?.instructions ? bot.instructions.split(/(?<=\.)\s/)[0] : bot?.role}</p>
+            <p style={{ margin: "0", maxWidth: "560px", fontSize: "16px", lineHeight: "1.55", color: "#4A4D57" }}>{bot?.instructions ? bot.instructions.split(/(?<=\.)\s/)[0] : bot?.role}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {startersFor(bot).map((idea) => <button key={idea} type="button" onClick={() => { setText(idea); requestAnimationFrame(() => inputRef.current?.focus()); }} style={{ height: "38px", padding: "0 16px", background: "transparent", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", cursor: "pointer", fontSize: "14px", color: "#3D404A" }}>{idea}</button>)}
+              {startersFor(bot).map((idea) => <button key={idea} type="button" onClick={() => { setText(idea); requestAnimationFrame(() => inputRef.current?.focus()); }} style={{ height: "36px", padding: "0 14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", cursor: "pointer", fontSize: "14px", color: "#12131A" }}>{idea}</button>)}
             </div>
             <button type="button" role="switch" aria-checked={row.incognito ? "true" : "false"} onClick={() => setIncognito((v) => { if (!v) saveDraft("chat:" + botId, ""); return !v; })}
-              style={{ display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px 0 8px", border: 0, borderRadius: "999px", background: row.incognito ? "#12131A" : "rgba(18,19,26,.06)", color: row.incognito ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}>
-              <span aria-hidden="true" style={{ width: "34px", height: "22px", borderRadius: "11px", background: row.incognito ? "#FFC93C" : "#C9CBD1", position: "relative", transition: "background .15s ease" }}><span style={{ position: "absolute", top: "3px", left: row.incognito ? "15px" : "3px", width: "16px", height: "16px", borderRadius: "50%", background: "#FFFFFF", transition: "left .15s ease" }} /></span>
+              style={{ display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px 0 8px", border: 0, borderRadius: "999px", background: row.incognito ? "#12131A" : "#EBEBE6", color: row.incognito ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}>
+              <span aria-hidden="true" style={{ width: "34px", height: "22px", borderRadius: "11px", background: row.incognito ? "#FFFFFF" : "#C9CBD1", position: "relative", transition: "background .15s ease" }}><span style={{ position: "absolute", top: "3px", left: row.incognito ? "15px" : "3px", width: "16px", height: "16px", borderRadius: "50%", background: row.incognito ? "#12131A" : "#FFFFFF", transition: "left .15s ease" }} /></span>
               {"De incógnito: no guarda nada y se borra en 24 horas"}
             </button>
           </div>
@@ -484,7 +484,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         return (
           row.editing ? <EditMessage text={m.text} canRestore={row.canRestore} onCancel={() => acts.current.edit(null)} onSend={(text, restore) => acts.current.sendEdit(m.id, text, restore)} /> : (
           <UserBubble message={m}>
-            {attachments.length ? <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{attachments.map((f) => f.name || f).join(" · ")}</span> : null}
+            {attachments.length ? <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px" }}>{attachments.map((f, i) => <AttachmentChip key={i} name={f.name || String(f)} />)}</span> : null}
             {m.failed ? <FailedLine error={m.failed} onRetry={() => acts.current.resend(m)} onDiscard={() => unshowSent(`/missions/${c}`, m.id)} /> : null}
             {row.editable || row.branch ? (
               <span style={{ display: "flex", alignItems: "center", gap: "2px", color: "#5C606C" }}>
@@ -501,21 +501,23 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         ? <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />
         : <QuestionCard approval={row.a} text={m.text} bots={bots} variant="chat" />;
       case "answer": return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          {row.author && row.author.id !== botId ? <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px" }}><BotPresence bot={row.author} size={18} state="rest" /><strong style={{ fontWeight: 600 }}>{row.author.name}</strong></span> : null}
+        // V3Chat: head, work, text; then the deliverable, the sources, the actions (and the
+        // versions); expert mode adds the usage line. «Deshacer cambios» last.
+        <article style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <CitationContext.Provider value={row.citations}>
-            <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null}>
-              <SourceChips sources={row.sources} />
-            </BotAnswer>
+            <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} />
           </CitationContext.Provider>
           {row.artifact ? <FileCard artifact={row.artifact} onOpen={() => acts.current.toggleDoc(row.artifact.id)} /> : null}
           {(row.more || []).map((a) => <FileCard key={a.id} artifact={a} onOpen={() => acts.current.toggleDoc(a.id)} />)}
-          {row.branch ? <BranchPicker branch={row.branch} disabled={turn} onShow={(id) => acts.current.version(id)} /> : null}
+          <SourceChips sources={row.sources} />
+          <AnswerActions message={m} bot={row.author} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null} onEditAsk={row.regenerate && row.askId ? () => acts.current.edit(row.askId) : null}
+            branch={row.branch} versionDisabled={turn} onVersion={(id) => acts.current.version(id)} />
+          <UsageLine message={m} step={row.step} />
           {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
-        </div>
+        </article>
       );
       case "trail": return <WorkTrail step={row.step} bots={bots} running />;
-      case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} narration={row.narration} />;
+      case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} narration={row.narration} onStop={() => acts.current.stop()} />;
       case "need": return <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />;
       case "follow": return <FollowUps list={row.list} onPick={(t) => { setText(t); requestAnimationFrame(() => focusBox(inputRef.current)); }} />;
       case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={() => acts.current.control(row.status === "blocked" ? "retry" : "resume")} onDiscard={() => acts.current.control("discard")} />;
@@ -540,97 +542,153 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     { key: "terminal", label: "Terminal", icon: <SquareTerminal size={15} strokeWidth={2.2} aria-hidden="true" />, tab: TERMINAL_TAB },
   ].filter((a) => !dock.tabs.some((t) => t.id === a.tab.id));
 
+  const runSlash = (cmd) => {
+    const s = SLASH.find((x) => x.cmd === cmd);
+    setSlashOpen(false);
+    if (!s) return;
+    if (s.insert) { setText(s.insert); requestAnimationFrame(() => focusBox(inputRef.current)); return; }
+    setText("");
+    if (cmd === "/aparte" && c) dock.open(ASIDE_TAB);
+    else if (cmd === "/archivos" && c) dock.open(FILES_TAB);
+    else if (cmd === "/exportar" && c) toastWork(() => exportConversation(c, "word", { bots }), { loading: "Exportando la conversación a Word…", success: "Conversación exportada a Word", error: "No se pudo exportar" }).catch(() => {});
+    else if (cmd === "/privado") navigate(`/chat/${botId}?nuevo=incognito`);
+  };
+
   if (ready && !known) {
     return (
-      <Shell active="conversaciones" scroll={false}>
-        <div style={{ display: "flex", height: "100%" }}>
-          <ConvList current={null} />
-          <section style={{ flex: "1", display: "grid", placeItems: "center", padding: "40px", textAlign: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-              <strong style={{ font: "600 24px/1.1 'Bricolage Grotesque', sans-serif" }}>{"Este bot ya no está en tu colmena"}</strong>
-              <a href="/colmena" style={{ height: "46px", display: "flex", alignItems: "center", padding: "0 22px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontWeight: 600 }}>{"Ver tu colmena"}</a>
-            </div>
-          </section>
-        </div>
+      <Shell active="chats" scroll={false}>
+        <section style={{ height: "100%", display: "grid", placeItems: "center", padding: "40px", textAlign: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+            <strong style={{ font: "600 24px/1.1 'Bricolage Grotesque', sans-serif" }}>{"Este bot ya no está en tu equipo"}</strong>
+            <span style={{ fontSize: "15px", color: "#4A4D57" }}>{"Sus conversaciones siguen en Chats."}</span>
+            <a href="/chats" style={{ height: "44px", display: "flex", alignItems: "center", padding: "0 20px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontWeight: 600 }}>{"Ir a Chats"}</a>
+          </div>
+        </section>
       </Shell>
     );
   }
 
   const state = pending.length ? "wait" : turn ? "work" : "rest";
-  const color = bot?.color || "#7B4DFF";
   // «Tus novedades» (server/watch.mjs) is never «terminado»: it keeps watching.
   const asks = pending.length || (!turn && mission?.watchAsks > 0);
   // A bot's single chat never «ends»: at rest it shows the bot's role.
   const done = mission?.status === "completed" && !mission?.watch && !mission?.thread;
-  const status = asks ? (pending.length ? "Te necesita" : "Espera tu respuesta") : turn ? (runningStep?.narration?.text || (now?.verb ? verbLabel(headPhase) + (now.detail ? " · " + now.detail : "") : "Pensando")) : mission?.watch ? "Atento a lo nuevo en tus apps" : done ? "Terminado" : bot?.role || "";
-  const statusColor = asks ? "#8A5A00" : turn ? "#5C606C" : done ? "#0B6B4A" : "#5C606C";
-  const line = asks ? "#FFC93C" : turn ? color + "1F" : done ? "#0B8A5F" : "rgba(18,19,26,.06)";
+  const status = asks ? (pending.length ? "te necesita" : "espera tu respuesta") : turn ? (runningStep?.narration?.text || (now?.verb ? verbLabel(headPhase) + (now.detail ? " · " + now.detail : "") : "pensando")) : mission?.watch ? "atento a lo nuevo en tus apps" : done ? "terminado" : "";
+  const statusColor = asks ? "#8A5A00" : done ? "#0B6B4A" : "#5C606C";
+  // Expert: the engine and how hard it thinks, what is in its context, the session.
+  const model = settings?.model || null;
+  const thinking = chosen.includes("deep") ? "a fondo" : bot?.thinking || "equilibrado";
+  const contextTokens = messages.reduce((n, m) => n + Math.ceil(String(m.text || "").length / 4), 0);
+  const lastUsage = [...messages].reverse().find((m) => m.summary?.tokens)?.summary || null;
+  const toolCount = Object.values(bot?.tools || {}).filter((v) => v && v !== "none").length;
+  const chip = { height: "30px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", font: "500 12px/1 'Geist Mono', monospace", color: "#12131A", whiteSpace: "nowrap" };
+  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "transparent", color: "#12131A", fontSize: "13.5px", fontWeight: 500, cursor: "pointer" };
+  const tool = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#F6F6F3", cursor: "pointer", whiteSpace: "nowrap", ...(expert ? { height: "30px", padding: "0 9px", font: "500 11.5px/1 'Geist Mono', monospace", color: "#12131A" } : { fontSize: "13px", color: "#3D404A" }) };
+  const ghostKey = (on) => ({ width: "36px", height: "36px", padding: 0, border: 0, borderRadius: "10px", background: on ? "#F1F1EC" : "transparent", color: "#4A4D57", fontSize: "16px", fontWeight: 600, cursor: "pointer" });
+  const caret = <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>;
+  const toggleDeep = () => toggleChosen("deep");
+  const insertMention = () => { setText((t) => t + (t && !/\s$/.test(t) ? " @" : "@")); requestAnimationFrame(() => focusBox(inputRef.current)); };
+  // «/»: what you can ask for in a word (only what this chat really does).
+  const slashShown = (slashOpen || /^\/[a-záéíóú]*$/i.test(text)) && !plusOpen;
+  const slashList = SLASH.filter((s) => !text.startsWith("/") || s.cmd.startsWith(text.trim().toLowerCase()) || text === "/");
+  const slashMenu = slashShown && slashList.length ? (
+    <div role="menu" aria-label="Comandos" style={{ position: "absolute", left: 0, bottom: "calc(100% + 8px)", zIndex: 20, width: "min(360px, 100%)", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" }}>
+      <span style={{ padding: "6px 10px", fontSize: "12px", fontWeight: 600, color: "#5C606C" }}>{"Comandos"}</span>
+      {slashList.map((s) => (
+        <button key={s.cmd} type="button" role="menuitem" onClick={() => runSlash(s.cmd)} style={{ minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "10px", background: "transparent", textAlign: "left", cursor: "pointer" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#F6F6F3"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+          <span style={{ width: "74px", font: "500 13px/1 'Geist Mono', monospace" }}>{s.cmd}</span>
+          <span style={{ fontSize: "13.5px", color: "#4A4D57" }}>{s.desc.replace("{bot}", bot?.name || "el bot")}</span>
+        </button>
+      ))}
+    </div>
+  ) : null;
+  const composerTools = expert ? <>
+    <a href="/ajustes/ia" title="Modelo con el que piensa el equipo" style={{ ...tool, textDecoration: "none" }}>{(model || "modelo") + " ▾"}</a>
+    <button type="button" onClick={toggleDeep} aria-pressed={chosen.includes("deep") ? "true" : "false"} title="Pensar a fondo en el próximo mensaje" style={tool}>{`esfuerzo: ${thinking} ▾`}</button>
+    <button type="button" onClick={() => setPlusOpen((v) => !v)} title="Herramientas y apps para el próximo mensaje" style={tool}>{`herramientas: ${toolCount + chosen.filter((k) => k !== "deep").length} ▾`}</button>
+    {c ? <button type="button" onClick={() => chooseWhileWorking(whileWorking === "steer" ? "after" : "steer")} title="Lo que escribas mientras trabaja" style={tool}>{`mientras trabaja: ${whileWorking === "steer" ? "reorienta" : "a la cola"} ▾`}</button> : null}
+  </> : <>
+    <button type="button" aria-label="Mencionar" title="Mencionar a otro bot (@)" onClick={insertMention} style={ghostKey(false)}>{"@"}</button>
+    <button type="button" aria-label="Comandos" aria-pressed={slashOpen ? "true" : "false"} title="Comandos (/)" onClick={() => setSlashOpen((v) => !v)} style={ghostKey(slashOpen)}>{"/"}</button>
+    <button type="button" onClick={toggleDeep} aria-pressed={chosen.includes("deep") ? "true" : "false"} title={chosen.includes("deep") ? "Pensará a fondo en el próximo mensaje" : "Pensar a fondo en el próximo mensaje"} style={{ ...tool, marginLeft: "4px" }}>{`Piensa: ${thinking}`}{caret}</button>
+  </>;
+  const moreItems = [
+    c && !isOlder ? ["Hablar en voz alta", () => setTalking(true)] : null,
+    [`Sobre ${bot?.name || "el bot"}`, () => navigate(`/equipo/${botId}`)],
+    c ? ["Archivos de la conversación", () => dock.toggle(FILES_TAB)] : null,
+    c ? ["Preguntar aparte", () => dock.toggle(ASIDE_TAB)] : null,
+    c ? ["Exportar a Word", () => toastWork(() => exportConversation(c, "word", { bots }), { loading: "Exportando la conversación a Word…", success: "Conversación exportada a Word", error: "No se pudo exportar" })] : null,
+    c ? ["Exportar a Markdown", () => toastWork(() => exportConversation(c, "markdown", { bots }), { loading: "Exportando la conversación…", success: "Conversación exportada a Markdown", error: "No se pudo exportar" })] : null,
+    c ? ["Copiar como Markdown", () => exportConversation(c, "copy", { bots })] : null,
+    ["Chat de incógnito", () => navigate(`/chat/${botId}?nuevo=incognito`)],
+  ].filter(Boolean);
 
   return (
     <InteractiveContext.Provider value={{ send: c ? (t) => post(`/missions/${c}/messages`, { text: t }) : null }}>
-      <Shell active="conversaciones" scroll={false}>
+      <Shell active="chats" scroll={false}>
         <div style={{ display: "flex", height: "100%", alignItems: "stretch" }}>
-          <ConvList current={c} />
-          <section ref={chatRoot} aria-label={`Conversación con ${bot?.name || ""}`} style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
+          <section ref={chatRoot} aria-label={`Conversación con ${bot?.name || ""}`} style={{ position: "relative", flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
             {talking && c ? <VoiceCall bot={bot} missionId={c} onClose={() => setTalking(false)} /> : null}
-            <header style={{ flex: "none", background: "#F5F5F2" }}>
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px", padding: "22px clamp(20px, 4vw, 44px) 18px" }}>
-                <span style={{ transition: "filter .4s ease" }}><BotPresence bot={bot} size={44} state={state} /></span>
-                <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <h1 style={{ margin: "0", font: "600 24px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em" }}>{bot?.name}</h1>
-                  <span role="status" style={{ fontSize: "14px", color: statusColor, transition: "color .3s ease", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{status}</span>
-                </div>
-                {c && !isOlder ? (
-                  <button type="button" onClick={() => setTalking(true)} title={`Habla con ${bot?.name || "el bot"} y te contesta en voz alta`} style={pill}>
-                    <AudioLines size={17} strokeWidth={2.2} aria-hidden="true" />{"Hablar"}
-                  </button>
-                ) : null}
-                <a href={`/colmena/${botId}`} style={pill}>{`Sobre ${bot?.name || "el bot"}`}</a>
-                <button type="button" onClick={() => setRoomSheet(true)} style={pill}>{"Llevar a una sala"}</button>
-                {c ? (
-                  <span style={{ position: "relative" }}>
-                    <button type="button" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)} style={{ ...pill, width: "40px", padding: 0, justifyContent: "center", fontWeight: 700 }}>{"···"}</button>
-                    {moreOpen ? (
-                      <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", zIndex: 30, width: "250px", padding: "6px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out", display: "flex", flexDirection: "column" }}>
-                        {[["Archivos de la conversación", () => dock.toggle(FILES_TAB)], ["Preguntar aparte", () => dock.toggle(ASIDE_TAB)], ["Exportar a Word", () => toastWork(() => exportConversation(c, "word", { bots }), { loading: "Exportando la conversación a Word…", success: "Conversación exportada a Word", error: "No se pudo exportar" })], ["Exportar a Markdown", () => toastWork(() => exportConversation(c, "markdown", { bots }), { loading: "Exportando la conversación…", success: "Conversación exportada a Markdown", error: "No se pudo exportar" })], ["Copiar como Markdown", () => exportConversation(c, "copy", { bots })], ["Chat de incógnito", () => navigate(`/chat/${botId}?nuevo=incognito`)]].map(([label, fn]) => (
-                          <button key={label} type="button" role="menuitem" onClick={() => { setMoreOpen(false); Promise.resolve(fn()).catch(() => {}); }} style={{ minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "12px", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "14px" }}>{label}</button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </span>
-                ) : null}
+            <header style={{ position: "relative", zIndex: 3, flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: expert ? "10px" : "12px", padding: expert ? "14px 24px" : "16px 28px", background: "rgba(245,245,242,.92)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
+              <BotMark bot={bot} size={expert ? 28 : 30} state={state} />
+              <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", marginRight: "auto" }}>
+                <h1 style={{ margin: 0, fontSize: "16px", fontWeight: 600, lineHeight: 1.2 }}><a href={`/equipo/${botId}`} style={{ color: "#12131A" }}>{bot?.name}</a></h1>
+                {expert ? (
+                  <span style={{ font: "400 12px/1.2 'Geist Mono', monospace", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c ? [`chat ${c.slice(-4)}`, `sesión ${botId}:${c.slice(-4)}`, lastUsage?.cachedPercent != null ? `caché ${lastUsage.cachedPercent} %` : null, status || null].filter(Boolean).join(" · ") : "chat nuevo · sin sesión"}</span>
+                ) : (
+                  <span role="status" style={{ fontSize: "13px", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bot?.role}{status ? <span style={{ color: statusColor, transition: "color .3s ease" }}>{(bot?.role ? " · " : "") + status}</span> : null}</span>
+                )}
               </div>
-              <div aria-hidden="true" style={{ position: "relative", height: "2px", overflow: "hidden", background: "rgba(18,19,26,.06)" }}>
-                <span style={{ position: "absolute", inset: "0", transition: "background .4s ease", background: line }} />
-                {turn ? <span style={{ position: "absolute", top: "0", bottom: "0", width: "35%", background: `linear-gradient(90deg, transparent, ${color}, transparent)`, animation: "sweep 1.8s ease-in-out infinite" }} /> : null}
-              </div>
+              {expert ? <>
+                {model ? <span title="Modelo y esfuerzo" style={chip}>{`${model} · ${thinking}`}</span> : null}
+                <span title="Contexto estimado de esta conversación" style={chip}>
+                  <span aria-hidden="true" style={{ position: "relative", width: "44px", height: "6px", borderRadius: "3px", background: "#EEEEEA", overflow: "hidden" }}><span style={{ position: "absolute", inset: "0 auto 0 0", width: Math.min(100, Math.round((contextTokens / 128000) * 100)) + "%", minWidth: contextTokens ? "3px" : 0, background: "#12131A" }} /></span>
+                  {"≈ " + kTokens(contextTokens)}
+                </span>
+                <button type="button" aria-pressed={inspector ? "true" : "false"} onClick={toggleInspector} style={{ height: "30px", padding: "0 12px", border: inspector ? 0 : "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: inspector ? "#12131A" : "#FFFFFF", color: inspector ? "#FFFFFF" : "#12131A", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>{"Inspector · Ctrl I"}</button>
+              </> : null}
+              <button type="button" onClick={() => setRoomSheet(true)} style={outline}>{"Llevar a una sala"}</button>
+              <span style={{ position: "relative" }}>
+                <button type="button" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "10px", background: moreOpen ? "#EBEBE6" : "transparent", color: "#4A4D57", cursor: "pointer" }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18.5" cy="12" r="1.6" /></svg>
+                </button>
+                {moreOpen ? (
+                  <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "240px", padding: "6px", borderRadius: "14px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out", display: "flex", flexDirection: "column" }}>
+                    {moreItems.map(([label, fn]) => (
+                      <button key={label} type="button" role="menuitem" onClick={() => { setMoreOpen(false); Promise.resolve(fn()).catch(() => {}); }} style={{ height: "38px", padding: "0 12px", border: 0, borderRadius: "9px", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "14px", color: "#12131A" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#F6F6F3"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>{label}</button>
+                    ))}
+                  </div>
+                ) : null}
+              </span>
             </header>
-            {mission?.incognito ? <p role="note" style={{ margin: 0, padding: "10px clamp(20px, 4vw, 44px)", background: "#12131A", color: "#FFFFFF", fontSize: "13px" }}>{`De incógnito: ${bot?.name || "el bot"} no guarda nada de esta conversación y se borra en 24 horas.`}</p> : null}
+            {mission?.incognito ? <p role="note" style={{ flex: "none", margin: 0, padding: "10px 28px", background: "#12131A", color: "#FFFFFF", fontSize: "13px" }}>{`De incógnito: ${bot?.name || "el bot"} no guarda nada de esta conversación y se borra en 24 horas.`}</p> : null}
             <div style={{ flex: "1", minHeight: 0, display: "flex" }}>
               {c ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(c, t)} onAsk={(t) => { askAsideAbout(c, t); dock.open(ASIDE_TAB); }} /> : null}
               <Timeline key={c || "nuevo:" + botId} listKey={c || "nuevo:" + botId} handle={timeline} rows={rows} renderRow={renderRow} estimate={estimateRow}
                 hasOlder={room.olderCount > 0} loadingOlder={room.loadingOlder} olderError={room.olderError} onReachTop={room.showOlder}
-                scrollerRef={scroller} contentRef={scope} style={{ WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 40px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 40px)" }} />
-              {c ? <SideDock dock={dock} tabs={dockTabs} addable={dockAddable} widthKey="chat" label="Panel de la conversación" /> : null}
+                scrollerRef={scroller} contentRef={scope} style={{ WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)" }} />
             </div>
             {c ? <ConversationMap missionId={c} version={messages.length + ":" + (messages[messages.length - 1]?.id || "")} scroller={scroller} ownerOf={ownerOf} onJump={mapJump} /> : null}
             {/* An older chat is read-only: you keep talking in the bot's single chat. */}
             {isOlder ? null : (
-            <Composer value={text} onChange={setText} onKeyDown={onKeyDown} onSubmit={submit} inputRef={inputRef} inputProps={mentions.inputProps} menu={plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={botId} /> : mentions.menu}
-              attachOpen={plusOpen} mentionBots={bots} chips={chosenChips(chosen)} onRemoveChip={(k) => setChosen((list) => list.filter((x) => x !== k))}
-              label={`Responder a ${bot?.name || ""}`} placeholder={turn ? (whileWorking === "steer" ? `Sigue escribiendo: ${bot?.name || "el bot"} lo lee en su siguiente paso` : `Sigue escribiendo: se lo pasas cuando ${bot?.name || "termine"} acabe`) : `${c ? "Responde a" : "Escribe a"} ${bot?.name || ""}…`}
+            <Composer v3 value={text} onChange={(v) => { setText(v); if (slashOpen) setSlashOpen(false); }} onKeyDown={onKeyDown} onSubmit={submit} inputRef={inputRef} inputProps={mentions.inputProps}
+              menu={plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={botId} /> : mentions.menu || slashMenu}
+              attachOpen={plusOpen} mentionBots={bots} chips={chosenChips(chosen).filter((ch) => ch.key !== "deep")} onRemoveChip={(k) => setChosen((list) => list.filter((x) => x !== k))}
+              label={`Responder a ${bot?.name || ""}`} placeholder={turn ? (whileWorking === "steer" ? `Sigue escribiendo: ${bot?.name || "el bot"} lo lee en su siguiente paso` : `Sigue escribiendo: se lo pasas cuando ${bot?.name || "termine"} acabe`) : `${c ? "Responder a" : "Escribe a"} ${bot?.name || ""}…  ${expert ? "@ menciona · / comandos · Mayús Intro nueva línea" : "@ para mencionar · / para comandos"}`}
               working={turn} onStop={stopTurn} files={files} onRemoveFile={(i) => setFiles(files.filter((_, j) => j !== i))} onInlinePasted={(i) => { const f = files[i]; setFiles(files.filter((_, j) => j !== i)); setText((t) => (t.trim() ? t.replace(/\s*$/, "\n\n") : "") + f.content); }}
-              onAttach={() => setPlusOpen((v) => !v)} drop={drop} busy={send.busy}
+              onAttach={() => { setSlashOpen(false); setPlusOpen((v) => !v); }} drop={drop} busy={send.busy} tools={composerTools}
               above={<>
                 <DraftOffer offer={draft.offer} onRecover={() => { draft.recover(); requestAnimationFrame(() => focusBox(inputRef.current)); }} onLater={draft.later} onDiscard={draft.discard} />
                 {pending.filter((a) => a.kind === "secret").map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
                 <BtwNotes btw={btw} botName={bot?.name} nameOf={(id) => findBot(bots, id)?.name} />
               </>}
               below={<>
-                {send.error || fileError || control.error ? <p role="alert" style={{ margin: "8px 18px 0", fontSize: "13px", color: "#B4372A" }}>{send.error || fileError || control.error}</p> : null}
-                {turn || stash.length || stashed ? (
+                {send.error || fileError || control.error ? <p role="alert" style={{ margin: "8px 18px 0", fontSize: "13px", color: "#B4232A" }}>{send.error || fileError || control.error}</p> : null}
+                {(turn && !expert) || stash.length || stashed ? (
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", margin: "10px 6px 0" }}>
-                    {turn ? <WhileWorking value={whileWorking} onChange={chooseWhileWorking} botName={bot?.name} typing={!!text.trim()} /> : null}
+                    {turn && !expert ? <WhileWorking value={whileWorking} onChange={chooseWhileWorking} botName={bot?.name} typing={!!text.trim()} /> : null}
                     <span style={{ flex: "1" }} />
                     <Stash entries={stash} saved={stashed} onRestore={restoreStash} onDelete={(entry) => unstash(entry.id)} />
                   </div>
@@ -639,8 +697,10 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               </>} />
             )}
           </section>
+          {c ? <SideDock dock={dock} tabs={dockTabs} addable={dockAddable} widthKey="chat" label="Panel de la conversación" tone="v3" /> : null}
+          {expert && inspector ? <Inspector bot={bot} mission={mission} messages={messages} steps={steps} approvals={approvals} onClose={toggleInspector} /> : null}
         </div>
-        {roomSheet ? <NewConversation preset={[botId]} onClose={() => setRoomSheet(false)} /> : null}
+        {roomSheet ? <NewConversation mode="sala" preset={[botId]} onClose={() => setRoomSheet(false)} /> : null}
       </Shell>
     </InteractiveContext.Provider>
   );

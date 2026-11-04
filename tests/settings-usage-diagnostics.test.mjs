@@ -6,7 +6,7 @@ import os from "node:os";
 import { Store } from "../server/store.mjs";
 import { cachePercent, usageOverview } from "../server/usage-routes.mjs";
 import { _test, quickCheck, runDiagnostics, sizeText } from "../server/diagnostics.mjs";
-import { SECTIONS, SETTINGS_INDEX, searchSettings } from "../src/components/v2/settings/sections.js";
+import { SECTIONS, SETTINGS_INDEX, searchSettings, sectionId, settingsIndex } from "../src/components/v2/settings/sections.js";
 
 async function tempStore() {
   const dir = await mkdtemp(path.join(os.tmpdir(), "colmena-diag-"));
@@ -143,9 +143,22 @@ test("Ajustes: every setting has a unique address and the search finds it by its
   const anchors = SECTIONS.flatMap((s) => s.items.map((i) => i[0]));
   assert.equal(new Set(anchors).size, anchors.length, "an anchor is unique across sections");
   assert.equal(searchSettings("sonido")[0].href, "/ajustes/avisos#como-avisa");
-  assert.equal(searchSettings("respaldo")[0].href, "/ajustes/inteligencia#respaldo");
+  assert.equal(searchSettings("respaldo")[0].href, "/ajustes/ia#respaldo");
   assert.equal(searchSettings("contrasena")[0].href, "/ajustes/privacidad#boveda", "accents do not matter");
   assert.equal(searchSettings("uso")[0].href, "/ajustes/uso", "the section wins over its settings");
-  assert.equal(searchSettings("Qué usa cada bot")[0].href, "/ajustes/ia", "a setting with its own page links there");
+  assert.equal(searchSettings("Qué usa cada bot")[0].href, "/ajustes/ia#por-bot");
+  assert.equal(searchSettings("Registro de acciones")[0].href, "/ajustes/seguridad", "a setting with its own page links there");
   assert.deepEqual(searchSettings("zzzz"), []);
+});
+
+test("Ajustes (Colmena 3): eight sections, Avanzado only in expert mode, old addresses still land", () => {
+  const listed = SECTIONS.filter((s) => !s.hidden && !s.expert).map((s) => s.id);
+  assert.deepEqual(listed, ["general", "ia", "permisos", "apps", "avisos", "privacidad", "uso", "ayuda"]);
+  assert.ok(SECTIONS.find((s) => s.id === "avanzado").expert);
+  assert.equal(searchSettings("servidores mcp", settingsIndex(false)).length, 0, "simple mode does not find Avanzado");
+  assert.equal(searchSettings("servidores mcp", settingsIndex(true))[0].href, "/ajustes/avanzado#mcp");
+  for (const [old, now] of [["cuenta", "general"], ["inteligencia", "ia"], ["autonomia", "permisos"], ["conexiones", "apps"], ["diagnostico", "ayuda"], ["acerca", "ayuda"], ["limites", "uso"], [null, "general"]]) assert.equal(sectionId(old), now);
+  // Anchors other screens and the server link to (#respaldo from diagnostics, #horario from Hoy…).
+  const anchors = new Set(SECTIONS.flatMap((s) => s.items.map((i) => s.id + "#" + i[0])));
+  for (const a of ["ia#respaldo", "avisos#horario", "uso#limites-plan", "uso#limite-mensual", "apps#apps-conectadas", "ayuda#actualizaciones", "permisos#codigo-archivar", "contactos#encargos"]) assert.ok(anchors.has(a), a);
 });

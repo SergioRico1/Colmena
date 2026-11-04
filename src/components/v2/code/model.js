@@ -109,6 +109,111 @@ export function findingsText(findings) {
   return "Arregla esto que ha encontrado la revisión y comprueba que funciona:\n" + findings.map((f) => `- [${f.severity}] ${f.title}${f.file ? ` (${f.file}${f.line ? ":" + f.line : ""})` : ""}: ${f.detail || ""}`.trim()).join("\n");
 }
 
+/** «mañana 9:00», «hoy 18:00», «lun 9:00», «24 oct 9:00». */
+export function whenLabel(iso, now = new Date()) {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(d) - day(now)) / 86400000);
+  if (diff === 0) return "hoy " + time;
+  if (diff === 1) return "mañana " + time;
+  if (diff > 1 && diff < 7) return d.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "") + " " + time;
+  return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" }).replace(".", "") + " " + time;
+}
+
+// Colmena 3 · Código (design/V3Codigo.dc.html): each task says where it is in words, and the
+// list has three parts: what waits for you, what is moving, and what is put off or done.
+const TONE = {
+  honey: { bg: "#FFC93C", ink: "#12131A" }, run: { bg: "#EEF0F4", ink: "#1F4FD1" }, red: { bg: "#FBE9EA", ink: "#B4232A" },
+  done: { bg: "#E3F4EC", ink: "#0B6B4A" }, quiet: { bg: "#F1F1EC", ink: "#4A4D57" },
+};
+/** The status pill of a task: {text, tone, bg, ink}. Honey only when it needs you. */
+export function pillOf(t, now = new Date()) {
+  const pill = (text, tone) => ({ text, tone, ...TONE[tone] });
+  if (t.archived) return pill("Archivada", "quiet");
+  if (t.snoozed) return pill("Vuelve " + whenLabel(t.snoozed.until, now).replace(/ \d{1,2}:\d{2}$/, ""), "quiet");
+  if (t.running || t.status === "working") return pill("Trabajando", "run");
+  if (t.status === "waiting") return pill("Te espera", "honey");
+  if (t.status === "planned") return pill("Plan para revisar", "honey");
+  if (t.status === "error") return pill("Atascada", "red");
+  if (t.merging) return pill("Conflictos con " + (t.base || "main"), "honey");
+  if (t.goal && ["blocked", "limited"].includes(t.goal.status)) return pill("Te espera", "honey");
+  if (t.pr?.state === "MERGED") return pill("Fusionada", "done");
+  if (t.merged || t.saved) return pill("Guardada", "done");
+  if (t.pr?.state !== "CLOSED" && t.pr?.checks === "failing") return pill("Falla el CI", "red");
+  if (t.pr?.state !== "CLOSED" && t.pr?.mergeable === "CONFLICTING") return pill("Conflictos", "honey");
+  if (t.turns) return pill("Revisar", "honey");
+  return pill("Nueva", "quiet");
+}
+
+/** Which part of the list a task goes in: wait | work | later | archived. */
+export function sectionOf(t) {
+  if (t.archived) return "archived";
+  if (t.snoozed || t.saved || t.merged || t.pr?.state === "MERGED") return "later";
+  const p = pillOf(t);
+  if (p.tone === "run" || p.tone === "quiet") return "work";
+  return "wait";
+}
+
+export const SECTIONS = [["wait", "Te esperan"], ["work", "En marcha"], ["later", "Pospuestas y hechas"], ["archived", "Archivadas"]];
+
+/**
+ * Tasks → the three parts of the list (and the archived shelf). Tasks started together with
+ * several engines become one row that opens the comparison while two or more are still open.
+ * Rows: {kind: 'task', task} | {kind: 'compare', group, title, tasks}. Pinned first, newest next.
+ */
+export function homeSections(tasks) {
+  const open = tasks.filter((t) => t.group && !t.archived);
+  const groups = new Map();
+  for (const t of open) groups.set(t.group, [...(groups.get(t.group) || []), t]);
+  const rows = [];
+  const done = new Set();
+  for (const t of tasks) {
+    const many = t.group && !t.archived && groups.get(t.group).length > 1;
+    if (!many) { rows.push({ kind: "task", task: t, section: sectionOf(t), at: t.updatedAt, pinned: !!t.pinned }); continue; }
+    if (done.has(t.group)) continue;
+    done.add(t.group);
+    const list = groups.get(t.group);
+    const working = list.some((x) => x.running || x.status === "working");
+    rows.push({ kind: "compare", group: t.group, title: String(list[0].title).replace(/ · [^·]+(?: · [^·]+)?$/, ""), tasks: list, section: working ? "work" : "wait",
+      at: list.map((x) => x.updatedAt).sort().at(-1), pinned: list.some((x) => x.pinned) });
+  }
+  return SECTIONS.map(([key, title]) => ({
+    key, title,
+    rows: rows.filter((r) => r.section === key).sort((a, b) => Number(b.pinned) - Number(a.pinned) || String(b.at).localeCompare(String(a.at))),
+  })).filter((s) => s.rows.length);
+}
+
+/** Bruno's steps: the newest TodoWrite list of the task, or null. */
+export function stepsOf(items) {
+  return [...items].reverse().find((i) => i.kind === "tool" && Array.isArray(i.todos) && i.todos.length)?.todos || null;
+}
+
+/** «6 min», «45 s», «1 h 20 min». */
+export function durationLabel(ms) {
+  if (!ms) return null;
+  const s = Math.round(ms / 1000);
+  if (s < 60) return s + " s";
+  const m = Math.round(s / 60);
+  if (m < 60) return m + " min";
+  return Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : "");
+}
+
+/**
+ * Which of the engines compared to keep, by what can be checked: the only one whose tests pass,
+ * or, when several pass, the smallest change. Null while one works or nothing was tested.
+ */
+export function recommendOf(tasks) {
+  if (!tasks.length || tasks.some((t) => t.running || t.status === "working")) return null;
+  if (!tasks.some((t) => t.tests && ["passed", "failed"].includes(t.tests.status))) return null;
+  const passing = tasks.filter((t) => t.tests?.status === "passed" && (t.files?.length ?? 1));
+  if (!passing.length) return null;
+  if (passing.length === 1) return { id: passing[0].id, why: tasks.length === 2 ? "es el que tiene los tests en verde." : "es el único con los tests en verde." };
+  const size = (t) => (t.add || 0) + (t.del || 0);
+  const best = [...passing].sort((a, b) => size(a) - size(b))[0];
+  return { id: best.id, why: "pasan los tests con el cambio más pequeño (" + size(best) + " líneas)." };
+}
+
 /** The «/», «$» or «@» word being typed at the caret, or null. */
 export function triggerAt(text, caret) {
   const before = String(text).slice(0, caret);

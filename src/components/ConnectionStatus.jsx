@@ -1,10 +1,55 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store.jsx";
 
-// What you see when the app cannot reach its local service:
-//  - before the first data arrives: a calm start-up screen (after a while, what to do);
-//  - later, if the live channel drops: a small pill «Sin conexión · reintentando…»,
-//    then «Conectado de nuevo» for a moment. Nothing appears for blips under 2 s.
+// What you see when the app cannot reach its local service (Colmena 3, design/V3Estados.dc.html):
+//  - before the first data arrives: «Arrancando Colmena…» with the breathing mark, no fake
+//    progress bar; after 20 s why it may take long, «Reintentar» and «Abrir el registro»;
+//  - later, if the live channel drops: a small ink pill «Sin conexión · reintentando…» at the
+//    foot of the screen. Nothing blocks: what you write is kept and sent when it is back
+//    (lib/unsent.js). Then «Conectado de nuevo» for a moment. Nothing for blips under 2 s.
+const INK = "#12131A";
+
+/** The start-up face, shared with the desktop splash (desktop/splash.html draws the same). */
+export function StartingUp({ slow = false, onRetry = () => location.reload(), onOpenLog = null }) {
+  return (
+    <div role={slow ? "alert" : "status"} aria-live="polite" style={{ position: "fixed", inset: "0", zIndex: 2147482500, display: "grid", placeItems: "center", padding: "0 40px", background: INK, color: "#FFFFFF", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", animation: "fade .4s ease-out", WebkitAppRegion: "drag" }}>
+      {slow ? (
+        <div style={{ width: "100%", maxWidth: "520px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px" }}>
+          <span style={{ font: "600 24px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Colmena está tardando en arrancar"}</span>
+          <span style={{ fontSize: "14px", lineHeight: "1.5", color: "#C9CBD3" }}>{"Suele pasar justo después de encender el ordenador o si el antivirus revisa la app. Tus datos están a salvo."}</span>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", WebkitAppRegion: "no-drag" }}>
+            <button type="button" onClick={onRetry} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#FFFFFF", color: INK, fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>{"Reintentar"}</button>
+            {onOpenLog ? <button type="button" onClick={onOpenLog} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(255,255,255,.25)", borderRadius: "999px", background: "transparent", color: "#FFFFFF", fontSize: "14px", fontWeight: "500", cursor: "pointer" }}>{"Abrir el registro"}</button> : null}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", textAlign: "center" }}>
+          <img src="/colmena-icon-128.png" alt="" width="56" height="56" style={{ display: "block", width: "56px", height: "56px", animation: "breathe 2.4s ease-in-out infinite" }} />
+          <span style={{ font: "600 24px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Arrancando Colmena…"}</span>
+          <span style={{ fontSize: "14px", color: "#C9CBD3" }}>{"Despertando a tu equipo en este ordenador."}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Horizontal centre of the screen's content (beside the sidebar), so the pill sits under it. */
+function useContentCentre(active) {
+  const [x, setX] = useState(null);
+  useLayoutEffect(() => {
+    if (!active) return undefined;
+    const measure = () => {
+      const el = document.querySelector("[data-v2-content]");
+      const r = el?.getBoundingClientRect();
+      setX(r && r.width ? Math.round(r.left + r.width / 2) : null);
+    };
+    measure();
+    addEventListener("resize", measure);
+    return () => removeEventListener("resize", measure);
+  }, [active]);
+  return x;
+}
+
 export default function ConnectionStatus() {
   const { ready, error, online } = useStore();
   const [slow, setSlow] = useState(false);
@@ -38,44 +83,19 @@ export default function ConnectionStatus() {
     }
   }, [online, ready]);
   useEffect(() => () => { clearTimeout(lostTimer.current); clearTimeout(backTimer.current); }, []);
+  const centre = useContentCentre(lost || back);
 
-  // Colmena 2.0 · 35 (design/V2Estados.dc.html): start-up with the breathing mark; after 20 s
-  // why it may take long and «Reintentar»; a pill at the top while the connection is lost.
   if (!ready && error) {
-    return (
-      <div role={slow ? "alert" : "status"} aria-live="polite" style={{ position: "fixed", inset: "0", zIndex: 2147482500, background: "#F5F5F2", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: slow ? "20px" : "22px", padding: "0 40px", textAlign: "center", animation: "fade .4s ease-out", WebkitAppRegion: "drag" }}>
-        {slow ? (
-          <>
-            <img src="/colmena-icon-128.png" alt="" width="64" height="64" style={{ display: "block", width: "64px", height: "64px", opacity: ".9" }} />
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxWidth: "460px" }}>
-              <strong style={{ font: "600 24px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Colmena está tardando en arrancar"}</strong>
-              <span style={{ fontSize: "15px", lineHeight: "1.5", color: "#5C606C" }}>{"Suele pasar justo después de encender el ordenador o si el antivirus está revisando la app. Tus datos están a salvo."}</span>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px", WebkitAppRegion: "no-drag" }}>
-              <button type="button" onClick={() => location.reload()} style={{ height: "46px", padding: "0 22px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "15px", fontWeight: "600" }}>{"Reintentar"}</button>
-              {window.colmenaWindow?.openLog ? <button type="button" onClick={() => window.colmenaWindow.openLog()} style={{ height: "46px", padding: "0 18px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "15px", fontWeight: "600" }}>{"Abrir el registro"}</button> : null}
-            </div>
-          </>
-        ) : (
-          <>
-            <img src="/colmena-icon.png" alt="" width="96" height="96" style={{ display: "block", width: "96px", height: "96px", filter: "drop-shadow(0 12px 30px rgba(201,120,0,.35))", animation: "breathe 2.6s ease-in-out infinite" }} />
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-              <strong style={{ font: "600 24px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Arrancando Colmena…"}</strong>
-              <span style={{ fontSize: "15px", color: "#5C606C" }}>{"Preparando tu equipo en este ordenador."}</span>
-            </div>
-            <span aria-hidden="true" style={{ position: "relative", width: "180px", height: "3px", borderRadius: "2px", background: "rgba(18,19,26,.08)", overflow: "hidden" }}>
-              <span style={{ position: "absolute", top: "0", bottom: "0", width: "40%", borderRadius: "2px", background: "#12131A", animation: "sweep 1.4s ease-in-out infinite" }} />
-            </span>
-          </>
-        )}
-      </div>
-    );
+    const openLog = typeof window !== "undefined" && window.colmenaWindow?.openLog ? () => window.colmenaWindow.openLog() : null;
+    return <StartingUp slow={slow} onOpenLog={openLog} />;
   }
   if (!lost && !back) return null;
   return (
-    <div role="status" aria-live="polite" style={{ position: "fixed", left: "calc(50% + 42px)", top: "18px", transform: "translateX(-50%)", zIndex: 2147482500, display: "flex", alignItems: "center", gap: "10px", padding: "10px 16px", borderRadius: "999px", fontSize: "14px", fontWeight: "500", whiteSpace: "nowrap", boxShadow: "0 16px 34px -16px rgba(18,19,26,.45)", transition: "background .3s ease, color .3s ease", animation: "rise .35s ease-out", background: lost ? "#12131A" : "#E1F4EC", color: lost ? "#FFFFFF" : "#0B5A3E" }}>
-      <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: lost ? "#FFC93C" : "#0B8A5F", animation: lost ? "halo 1.6s ease-out infinite" : "pop .4s ease-out" }} />
-      {lost ? "Sin conexión con Colmena · reintentando…" : "Conectado de nuevo"}
+    <div role="status" aria-live="polite" title={lost ? "Nada se bloquea: lo que escribas se guarda y se envía al volver." : undefined} style={{ position: "fixed", left: centre != null ? centre + "px" : "50%", bottom: "24px", transform: "translateX(-50%)", zIndex: 2147482500, display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "14px", whiteSpace: "nowrap", boxShadow: "0 16px 34px -16px rgba(18,19,26,.45)", transition: "background .3s ease, color .3s ease", animation: "rise .35s ease-out", background: lost ? INK : "#E1F4EC", color: lost ? "#FFFFFF" : "#0B5A3E" }}>
+      {lost
+        ? <span aria-hidden="true" style={{ width: "14px", height: "14px", flex: "none", border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#FFFFFF", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        : <span aria-hidden="true" style={{ width: "8px", height: "8px", flex: "none", borderRadius: "50%", background: "#0B8A5F", animation: "pop .4s ease-out" }} />}
+      {lost ? "Sin conexión · reintentando…" : "Conectado de nuevo"}
     </div>
   );
 }

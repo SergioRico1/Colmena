@@ -16,7 +16,7 @@ import MemoryImport from "../components/library/MemoryImport.jsx";
 // connected, and nothing is sent anywhere.
 
 export const B = {
-  atlas: { id: "atlas", name: "Atlas", role: "Coordinador", color: "#FFC93C", shape: "hex" },
+  atlas: { id: "atlas", name: "Atlas", role: "Coordinador", color: "#12131A", shape: "hex" },
   nora: { id: "nora", name: "Nora", role: "Investigación", color: "#2F6BFF", shape: "circle" },
   tomas: { id: "tomas", name: "Tomás", role: "Datos y finanzas", color: "#0B8A5F", shape: "square" },
   iris: { id: "iris", name: "Iris", role: "Diseño", color: "#FF5CA8", shape: "diamond" },
@@ -39,8 +39,10 @@ export const ROLES = [
     tasks: ["Revisa este contrato y señala las cláusulas de riesgo", "Haz una lista de los contratos que vencen este trimestre", "Resume la normativa de protección de datos que nos afecta"] },
   { id: "personas", label: "Personas y RR. HH.", team: [["atlas", "Coordina procesos de principio a fin."], ["vera", "Ofertas de empleo y comunicaciones."], ["nora", "Prepara entrevistas y estudios."], ["tomas", "Calendarios, vacaciones y datos."]],
     tasks: ["Redacta una oferta de empleo para un puesto nuevo", "Prepara las preguntas de una entrevista", "Organiza el calendario de vacaciones del equipo"] },
+  { id: "clientes", label: "Atención al cliente", team: [["atlas", "Reparte las consultas y vigila que nadie se quede sin respuesta."], ["vera", "Respuestas claras y correos a clientes."], ["nora", "Busca la información que piden."], ["tomas", "Incidencias, plazos y datos de clientes."]],
+    tasks: ["Prepara respuestas para las cinco preguntas que más nos hacen los clientes", "Resume las quejas de este mes y qué tienen en común", "Redacta una respuesta amable a un cliente que espera su pedido"] },
   { id: "otra", label: "Otra cosa", team: [["atlas", "Reparte el trabajo entre el equipo."], ["nora", "Busca, lee y resume."], ["vera", "Escribe y corrige."], ["tomas", "Números y hojas de cálculo."]],
-    tasks: ["Busca tres planes para este fin de semana", "Resume este documento en cinco puntos", "Prepara mi lista de tareas para esta semana"] },
+    tasks: ["Prepárame la semana: lo que tengo pendiente y por dónde empezar", "Busca tres proveedores de material de oficina y compáralos", "Ordena la carpeta Descargas", "Resume este documento en cinco puntos"] },
 ];
 const APPS = [
   { id: "correo", label: "Correo", Icon: Mail },

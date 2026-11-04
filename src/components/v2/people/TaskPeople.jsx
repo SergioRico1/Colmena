@@ -14,7 +14,7 @@ import { InviteSheet } from "./InviteSheets.jsx";
 // «Invitar a alguien» (the invitation sheet), and you come back here when it is done.
 const ASKS = [["pregunta", "Pregúntame"], ["siempre", "Siempre"], ["nunca", "Nunca"]];
 
-export default function TaskPeople({ taskId, project = null }) {
+export default function TaskPeople({ taskId, project = null, look = null }) {
   const { peers } = useStore();
   const { view, share, invite, askReview } = useTaskPeople(taskId);
   const [open, setOpen] = useState(false);
@@ -63,7 +63,7 @@ export default function TaskPeople({ taskId, project = null }) {
         </span>
       ) : null}
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open ? "true" : "false"} aria-label={people.length ? "Compartida con " + names(people.map((p) => p.name)) : "Compartir con una persona"} title="Compartir con personas"
-        style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: people.length ? "0 14px 0 6px" : "0 14px 0 12px", border: 0, borderRadius: "999px", background: open ? "#12131A" : "rgba(18,19,26,.06)", color: open ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap" }}>
+        style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: people.length ? "0 14px 0 6px" : "0 14px 0 12px", border: 0, borderRadius: "999px", background: open ? "#12131A" : "rgba(18,19,26,.06)", color: open ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", ...(look && !open ? look : null) }}>
         {people.length ? <span style={{ display: "flex" }}>{people.slice(0, 3).map((p, i) => <span key={p.id} style={{ marginLeft: i ? "-8px" : 0, borderRadius: "50%", boxShadow: `0 0 0 2px ${open ? "#12131A" : "#F5F5F2"}` }}><PeerAvatar person={p} size={28} /></span>)}</span> : <UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />}
         {people.length > 3 ? "+" + (people.length - 3) : people.length ? "Compartida" : "Compartir"}
       </button>

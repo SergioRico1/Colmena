@@ -11,7 +11,7 @@ export default function GoalProposals({ suggestions, bots }) {
   if (!suggestions.length) return null;
   const decide = async (s, decision) => {
     const result = await act(() => post(`/goals/proposals/${encodeURIComponent(s.id)}`, { decision }));
-    if (decision === "accept" && result?.goal?.id) navigate(`/objetivos/${encodeURIComponent(result.goal.id)}`);
+    if (decision === "accept" && result?.goal?.id) navigate(`/trabajo/objetivos/${encodeURIComponent(result.goal.id)}`);
   };
   return (
     <section aria-labelledby="propuestas" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>

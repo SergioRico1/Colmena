@@ -1,14 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Check, ChevronDown, CircleAlert, Wrench } from "lucide-react";
 import { workSteps, workSummary } from "../../../lib/worklog.js";
-import { Detail, ICONS, Status, collapseRepeats, groupTools, headline } from "../../room/ToolCards.jsx";
+import { Detail, Status, collapseRepeats, groupTools, headline } from "../../room/ToolCards.jsx";
+import { useExpert } from "../../../lib/expert.js";
 
-// Colmena 2.0 work log (T3 Code WorkLog): what a bot did in a row of tool calls reads as one
-// quiet line in plain words — «Ha leído 5 correos y editado 2 archivos». Unfolding it shows
-// each step; unfolding a step shows its detail, and a command that is still running streams
-// its output there (server/command-output.mjs), only while that row is open.
+// Colmena 3 work log (design/V3Chat.dc.html, V3ChatExperto.dc.html): what a bot did reads as a
+// white card «✓ Hecho en 4 pasos · Ha leído 5 correos · 2 min 14 s» with the steps in plain
+// words under it; in expert mode the same card lists each call with its name and arguments
+// (read_file(…)) and unfolds what it gave back — detail is added, nothing moves. A command
+// still running streams its output there (server/command-output.mjs), only while it is open.
 
-const LINE = { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "28px", padding: "0 10px 0 0", border: 0, borderRadius: "999px", background: "transparent", fontSize: "14px", lineHeight: "1.4", color: "#5C606C", textAlign: "left" };
 const MONO = { font: "400 12.5px/1.55 'Geist Mono', monospace" };
 
 /** The live output of one running command; null (nothing asked) unless it is mounted. */
@@ -46,47 +46,120 @@ export function CommandOutput({ stepId, callId, running, fallback = null }) {
   );
 }
 
+const MONO_ROW = { font: "500 13px/1.3 'Geist Mono', monospace" };
+const TICK = { flex: "none", width: "20px", height: "20px", marginTop: "1px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#E3F4EC", color: "#0B6B4A", fontSize: "11px", fontWeight: 700 };
+
+/** «2 min 14 s» / «40 s». */
+export function durationText(seconds) {
+  const s = Math.round(Number(seconds) || 0);
+  if (s <= 0) return "";
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60);
+  return s % 60 ? `${m} min ${s % 60} s` : `${m} min`;
+}
+// The main argument of a call, as a developer would write it: read_file("informe_q3.docx").
+const ARG_KEYS = ["command", "query", "path", "url", "name", "title", "question", "prompt", "domain", "to", "subject"];
+export function callOf(tool) {
+  const c = tool.card || {};
+  const key = ARG_KEYS.find((k) => c[k] != null && c[k] !== "");
+  const arg = key ? String(c[key]).replace(/\s+/g, " ") : "";
+  const name = tool.name || c.tool || c.type || "tool";
+  return `${name}(${arg ? JSON.stringify(arg.length > 80 ? arg.slice(0, 79) + "…" : arg) : ""})`;
+}
+function metaOf(tool) {
+  const c = tool.card || {};
+  const parts = [];
+  if (tool.times > 1) parts.push("×" + tool.times);
+  if (c.ms != null) parts.push(String((c.ms / 1000).toFixed(1)).replace(".", ",") + " s");
+  if (c.count != null) parts.push(c.count === 1 ? "1 resultado" : `${c.count} resultados`);
+  if (c.pages != null) parts.push(`${c.pages} pág.`);
+  if (c.exitCode != null) parts.push("exit " + c.exitCode);
+  return parts.join(" · ");
+}
+// What the call took and gave back, for the dark box under an expert row.
+function outputOf(tool) {
+  const c = tool.card || {};
+  if (c.output) return String(c.output);
+  const rest = Object.fromEntries(Object.entries(c).filter(([k, v]) => k !== "type" && v != null && v !== ""));
+  return Object.keys(rest).length ? JSON.stringify(rest, null, 2) : "";
+}
+
+/** A step in plain words (simple mode): a green tick, what it did, its detail on click. */
 function WorkStep({ tool, bots, stepId, onOpenArtifact }) {
   const [open, setOpen] = useState(false);
-  const Icon = ICONS[tool.card?.type] || Wrench;
   const command = tool.card?.type === "command";
-  const detail = open ? <Detail tool={tool} bots={bots} onOpenArtifact={onOpenArtifact} liveOutput={command && tool.status === "running" ? <CommandOutput stepId={stepId} callId={tool.id} running /> : null} /> : null;
+  const bad = tool.status === "error";
+  const running = tool.status === "running";
   return (
-    <li data-tool={tool.name} data-status={tool.status} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+    <li data-tool={tool.name} data-status={tool.status} style={{ display: "flex", flexDirection: "column", gap: "6px", paddingTop: "10px" }}>
       <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)}
-        style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "34px", padding: "4px 8px", border: 0, borderRadius: "12px", background: open ? "rgba(18,19,26,.04)" : "transparent", cursor: "pointer", textAlign: "left", fontSize: "14px", color: "#2B2D36", transition: "background .15s ease" }}>
-        <Icon size={15} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: tool.status === "error" ? "#B4372A" : "#5C606C" }} />
-        <span style={{ flex: "1", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {headline(tool, bots)}
-          {tool.times > 1 ? <span style={{ marginLeft: "6px", font: "600 12px/1 'Geist Mono', monospace", color: "#5C606C" }}>{"×" + tool.times}</span> : null}
+        style={{ display: "flex", gap: "12px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "14px", lineHeight: "1.45", color: "#12131A" }}>
+        <span aria-hidden="true" style={{ ...TICK, ...(bad ? { background: "#FBE9EA", color: "#B4232A" } : running ? { background: "#EEF0F4", color: "#1F4FD1" } : {}) }}>{bad ? "!" : running ? "·" : "✓"}</span>
+        <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+          <span>{headline(tool, bots)}{tool.times > 1 ? <span style={{ marginLeft: "6px", font: "600 12px/1 'Geist Mono', monospace", color: "#5C606C" }}>{"×" + tool.times}</span> : null}</span>
+          {running || bad ? <span style={{ fontSize: "12.5px", color: "#5C606C" }}><Status tool={tool} /></span> : null}
         </span>
-        <Status tool={tool} />
-        <ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#8A8D96", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
       </button>
-      {open ? <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 8px 6px 33px", animation: "fade .2s ease-out" }}>{detail}</div> : null}
+      {open ? <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 0 4px 32px", fontSize: "12.5px", color: "#5C606C", animation: "fade .2s ease-out" }}><Detail tool={tool} bots={bots} onOpenArtifact={onOpenArtifact} liveOutput={command && running ? <CommandOutput stepId={stepId} callId={tool.id} running /> : null} /></div> : null}
     </li>
   );
 }
 
+/** A call as a developer reads it (expert mode): name(arguments), what it gave back, unfolding. */
+function ToolRow({ tool, stepId, first }) {
+  const [open, setOpen] = useState(false);
+  const bad = tool.status === "error";
+  const running = tool.status === "running";
+  const out = open ? outputOf(tool) : "";
+  return (
+    <div data-tool={tool.name} data-status={tool.status} style={{ display: "flex", flexDirection: "column", borderTop: first ? "0" : "1px solid rgba(18,19,26,.06)" }}>
+      <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} style={{ minHeight: "42px", display: "flex", alignItems: "center", gap: "10px", padding: "0 14px", border: 0, background: "transparent", textAlign: "left", cursor: "pointer" }}>
+        <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "50%", background: bad ? "#FBE9EA" : running ? "#EEF0F4" : "#E3F4EC", color: bad ? "#B4232A" : running ? "#1F4FD1" : "#0B6B4A", fontSize: "10px", fontWeight: 700 }}>{bad ? "!" : running ? "·" : "✓"}</span>
+        <span style={{ flex: "1", minWidth: 0, ...MONO_ROW, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{callOf(tool)}</span>
+        <span style={{ flex: "none", font: "400 12px/1 'Geist Mono', monospace", color: bad ? "#B4232A" : "#5C606C" }}>{bad ? "error" : running ? "en curso" : metaOf(tool)}</span>
+      </button>
+      {open ? (
+        tool.card?.type === "command" && running
+          ? <div style={{ margin: "0 14px 12px 42px" }}><CommandOutput stepId={stepId} callId={tool.id} running /></div>
+          : <pre style={{ margin: "0 14px 12px 42px", padding: "10px 12px", borderRadius: "10px", background: "#12131A", color: "#E6E7EC", font: "400 12px/1.6 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: "260px", overflow: "auto" }}>{(bad && tool.error ? tool.error + "\n" : "") + (out || "Sin salida.")}</pre>
+      ) : null}
+    </div>
+  );
+}
+
 /**
- * The work of a step (or of one line of its trail) as one line that unfolds. Renders nothing
- * until something is done. `stepId` lets a running command stream its output.
+ * The work of a step (or of one line of its trail) as a card that unfolds. Renders nothing
+ * until something is done. `stepId` lets a running command stream its output; `seconds`
+ * (the turn's time) goes in its title.
  */
-export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenArtifact = null }) {
+export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenArtifact = null, seconds = null }) {
+  const [expert] = useExpert();
   const [open, setOpen] = useState(false);
   const summary = workSummary(tools);
   if (!summary) return null;
   const steps = collapseRepeats(groupTools(workSteps(tools)));
+  if (expert) {
+    return (
+      <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderRadius: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", overflow: "hidden", animation: "fade .4s ease-out", minWidth: 0 }}>
+        {steps.map((t, i) => <ToolRow key={t.id || i} tool={t} stepId={stepId} first={i === 0} />)}
+      </div>
+    );
+  }
   const bad = summary.failed && !summary.steps;
+  const time = durationText(seconds);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px", animation: "fade .4s ease-out", minWidth: 0 }}>
-      <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={open ? "Ocultar los pasos" : `Ver los ${steps.length} pasos`} style={{ ...LINE, cursor: "pointer" }}>
-        {bad ? <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none", color: "#B4372A" }} /> : <Check size={14} strokeWidth={2.8} aria-hidden="true" style={{ flex: "none", color: "#0B8A5F" }} />}
-        <span style={{ minWidth: 0 }}>{summary.text}</span>
-        <ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
+    <div style={{ display: "flex", flexDirection: "column", borderRadius: "16px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", animation: "fade .4s ease-out", minWidth: 0 }}>
+      <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={open ? "Ocultar los pasos" : `Ver los ${steps.length} pasos`}
+        style={{ minHeight: "46px", display: "flex", alignItems: "center", gap: "10px", padding: "8px 16px", border: 0, background: "transparent", textAlign: "left", cursor: "pointer", fontSize: "14px", color: "#12131A" }}>
+        <span aria-hidden="true" style={{ color: bad ? "#B4232A" : "#0B6B4A", fontWeight: 600 }}>{bad ? "!" : "✓"}</span>
+        <span style={{ flex: "1", minWidth: 0 }}>
+          <strong style={{ fontWeight: 600 }}>{bad ? "No salió" : steps.length === 1 ? "Hecho en 1 paso" : `Hecho en ${steps.length} pasos`}</strong>
+          <span style={{ color: "#5C606C" }}>{" · " + summary.text + (time ? " · " + time : "")}</span>
+        </span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="2.2" aria-hidden="true" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}><path d="m6 9 6 6 6-6" /></svg>
       </button>
       {open ? (
-        <ol aria-label="Pasos" style={{ margin: 0, padding: "6px", listStyle: "none", display: "flex", flexDirection: "column", gap: "2px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06)", animation: "rise .25s ease-out" }}>
+        <ol aria-label="Pasos" style={{ margin: 0, padding: "0 16px 14px", listStyle: "none", display: "flex", flexDirection: "column", borderTop: "1px solid rgba(18,19,26,.06)", animation: "rise .25s ease-out" }}>
           {steps.map((t, i) => <WorkStep key={t.id || i} tool={t} bots={bots} stepId={stepId} onOpenArtifact={onOpenArtifact} />)}
         </ol>
       ) : null}

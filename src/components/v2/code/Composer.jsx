@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowUp, Ellipsis, Gauge, ShieldCheck, X } from "lucide-react";
-import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO } from "./parts.jsx";
+import { ArrowUp, Ellipsis, X } from "lucide-react";
+import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO, SR } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
 import EngineModelMenu, { ENGINE_NAME, EngineMark, modelNote } from "./EngineModels.jsx";
+import { useExpert } from "../../../lib/expert.js";
 
 export { ENGINE_NAME, modelNote };
 import { useHidden } from "../../../lib/undoToast.js";
@@ -10,26 +11,29 @@ import { MicButton, appendDictation } from "../../interaction/Voice.jsx";
 
 // The «Código» composer (T3 Code): Enter sends, Shift+Enter breaks the line; «Construir» or
 // «Plan» (a plan first, nothing changes until «Implementar»); engine · model, effort and Bruno's
-// access as quiet chips; while Bruno works a message waits for the end of the turn («Cuando
-// acabe») or reaches him now («Pasárselo ya»). Queued messages show above. «/» commands,
-// «$» skills, «@» files and attachments come from Extras.jsx; the microphone dictates.
+// access; while Bruno works a message waits for the end of the turn («Cuando acabe») or reaches
+// him now («Pasárselo ya»). Queued messages show above. «/» commands, «$» skills, «@» files and
+// attachments come from Extras.jsx; the microphone dictates.
+// Two looks (design/V3Codigo.dc.html, V3CodigoTarea.dc.html): `variant="home"`, the big box with
+// «Empezar» at the top of Código; and the task's, one line to write to Bruno with the rest in «…».
 
 const WHEN_KEY = "colmena:code-while-working";
 const readWhen = () => { try { return localStorage.getItem(WHEN_KEY) === "steer" ? "steer" : "queue"; } catch { return "queue"; } };
 
-
-export default function Composer({ task = null, models = [], busy = false, running = false, onSend, onStop, onChange, onUnqueue, placeholder, draft = null, footer = null, autoFocus = false, mode = "build", onMode = null, projectId = null, commands = [], onCommand = null, status = null, disabled = null, engines = [] }) {
+export default function Composer({ task = null, models = [], busy = false, running = false, onSend, onStop, onChange, onUnqueue, placeholder, draft = null, footer = null, autoFocus = false, mode = "build", onMode = null, projectId = null, commands = [], onCommand = null, status = null, disabled = null, engines = [], variant = "task", label = "Empezar" }) {
+  const home = variant === "home";
+  const [expert] = useExpert();
   const [text, setText] = useState("");
   const [when, setWhen] = useState(readWhen);
   const area = useRef(null);
-  const extras = useComposerExtras({ text, setText, area, taskId: task?.id || null, projectId, commands, onCommand });
+  const extras = useComposerExtras({ text, setText, area, taskId: task?.id || null, projectId, commands, onCommand, below: home });
   useEffect(() => { if (draft != null) { setText(draft.text || ""); area.current?.focus(); } }, [draft]);
   useLayoutEffect(() => {
     const el = area.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = Math.min(260, el.scrollHeight) + "px";
-  }, [text]);
+    el.style.height = Math.min(home ? 320 : 220, el.scrollHeight) + "px";
+  }, [text, home]);
   const pickWhen = (v) => { setWhen(v); try { localStorage.setItem(WHEN_KEY, v); } catch {} };
   const submit = async (e) => {
     e?.preventDefault();
@@ -43,13 +47,48 @@ export default function Composer({ task = null, models = [], busy = false, runni
   // Right after switching engine, its models come with the engines list (the task's list follows).
   const shown = task && !models.some((m) => m.id === task.model) ? engines.find((e) => e.id === task.engine)?.models || models : models;
   const ready = !!(text.trim() || extras.files.length || extras.contexts.length);
-  if (disabled) return <p style={{ flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "16px clamp(18px, 3vw, 32px) 24px", fontSize: "14px", color: C.faint, textAlign: "center" }}>{disabled}</p>;
+  if (disabled) return <p style={{ flex: "none", margin: 0, padding: "14px 4px 4px", fontSize: "14px", lineHeight: 1.5, color: C.faint, textAlign: "center" }}>{disabled}</p>;
+  const field = (
+    <textarea ref={area} data-code-composer="" rows={home ? 2 : 1} value={text} autoFocus={autoFocus} onChange={(e) => { setText(e.target.value); extras.track(); }} placeholder={placeholder}
+      onSelect={extras.track} onPaste={extras.onPaste}
+      onKeyDown={(e) => { if (extras.onKeyDown(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e); }}
+      style={home
+        ? { flex: 1, minWidth: 0, border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "19px", lineHeight: 1.45 }
+        : { flex: 1, minWidth: 0, minHeight: "40px", padding: "9px 0", border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "14.5px", lineHeight: "22px", maxHeight: "220px" }} />
+  );
+  const mic = <MicButton onText={(said) => { appendDictation(setText)(said); extras.track(); }} size={36} style={{ color: C.muted }} />;
+  const drop = { onDragOver: (e) => { if (e.dataTransfer?.types?.includes("Files")) e.preventDefault(); }, onDrop: extras.onDrop };
+
+  if (home) {
+    return (
+      <form onSubmit={submit} className="code-composer" style={{ width: "100%" }}>
+        <section aria-label="Nueva tarea de código" {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", borderRadius: "26px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 28px 60px -34px rgba(18,19,26,.4)" }}>
+          {extras.menu}
+          {extras.chips ? <div style={{ padding: "16px 24px 0" }}>{extras.chips}</div> : null}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: "2px", padding: "22px 14px 8px 24px" }}>
+            <label style={{ flex: 1, minWidth: 0, display: "flex" }}><span style={SR}>Qué quieres construir</span>{field}</label>
+            {extras.clip}
+            {mic}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "10px 14px 14px 20px", borderTop: "1px solid rgba(18,19,26,.06)" }}>
+            {footer}
+            <span style={{ flex: 1 }} />
+            <button type="submit" disabled={!ready || busy} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", border: 0, borderRadius: "999px", background: C.ink, color: C.white, fontSize: "15px", fontWeight: 600, cursor: ready && !busy ? "pointer" : "default", opacity: ready && !busy ? 1 : 0.45, transition: "opacity .15s ease" }}>
+              {busy ? "Empezando…" : label}
+            </button>
+          </div>
+        </section>
+      </form>
+    );
+  }
+
+  const engineLabel = (ENGINE_NAME[task?.engine] || "Claude Code") + " · " + modelLabel(shown, task?.model);
   return (
-    <form onSubmit={submit} className="code-composer" style={{ flex: "none", width: "100%", maxWidth: "800px", margin: "0 auto", padding: "4px clamp(18px, 3vw, 32px) 20px" }}>
+    <form onSubmit={submit} className="code-composer" style={{ flex: "none", width: "100%" }}>
       {queue.length ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px", margin: "0 8px 8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginBottom: "8px" }}>
           {queue.map((q) => (
-            <div key={q.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 8px 8px 14px", borderRadius: "14px", background: "rgba(18,19,26,.045)", fontSize: "13px", color: C.text }}>
+            <div key={q.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 6px 6px 12px", borderRadius: "12px", background: "rgba(18,19,26,.045)", fontSize: "13px", color: C.text }}>
               <span style={{ fontSize: "12px", color: C.faint, whiteSpace: "nowrap" }}>Cuando acabe</span>
               <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{q.text}</span>
               <button type="button" onClick={() => onUnqueue(q.id)} aria-label="Quitar de la cola" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: C.muted }}><X size={13} strokeWidth={2.4} aria-hidden="true" /></button>
@@ -58,78 +97,62 @@ export default function Composer({ task = null, models = [], busy = false, runni
         </div>
       ) : null}
       {running ? (
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "0 0 8px 14px", fontSize: "12px", color: C.faint }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", margin: "0 0 8px 4px", fontSize: "12px", color: C.faint }}>
           <span>Si escribes mientras trabaja:</span>
           <Seg small label="Si escribes mientras trabaja" value={when} onChange={pickWhen} options={[["queue", "Cuando acabe"], ["steer", "Pasárselo ya"]]} />
         </div>
       ) : null}
       {status}
-      <div onDragOver={(e) => { if (e.dataTransfer?.types?.includes("Files")) e.preventDefault(); }} onDrop={extras.onDrop}
-        style={{ position: "relative", display: "flex", flexDirection: "column", gap: "8px", padding: "14px 12px 10px 18px", borderRadius: "26px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 22px 50px -30px rgba(18,19,26,.4)" }}>
+      {mode === "plan" ? <span style={{ display: "block", margin: "0 0 8px 4px", fontSize: "12px", color: C.muted }}><strong style={{ fontWeight: 600, color: C.ink }}>Modo plan</strong> · Bruno propone antes de tocar nada.</span> : null}
+      <div {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "6px", padding: "8px 8px 8px 14px", borderRadius: "16px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.06), 0 14px 30px -20px rgba(18,19,26,.4)" }}>
         {extras.menu}
         {extras.chips}
-        <label style={{ display: "flex" }}>
-          <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{placeholder}</span>
-          <textarea ref={area} data-code-composer="" rows={2} value={text} autoFocus={autoFocus} onChange={(e) => { setText(e.target.value); extras.track(); }} placeholder={placeholder}
-            onSelect={extras.track} onPaste={extras.onPaste}
-            onKeyDown={(e) => { if (extras.onKeyDown(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e); }}
-            style={{ flex: 1, minWidth: 0, border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "15px", lineHeight: 1.55, maxHeight: "260px" }} />
-        </label>
-        {/* One row at any width, as in OpenClaw and T3 Code: density follows the box (a wide side
-            panel narrows it too). First the chips keep only their icon, then effort and access move
-            into «…», then «Construir / Plan» as well; attach, context and send never move. */}
-        <div style={{ display: "flex", flexWrap: "nowrap", alignItems: "center", gap: "4px", minWidth: 0 }}>
-          <div style={{ flex: "1 1 auto", minWidth: 0, display: "flex", alignItems: "center", gap: "4px" }}>
-            {onMode ? <span className={task ? "code-inline-mode" : undefined} style={{ flex: "none" }}><Seg label="Modo" value={mode} onChange={onMode} options={[["build", "Construir"], ["plan", "Plan"]]} /></span> : null}
-            {task ? (
-              <>
-                <MenuChip title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + modelLabel(shown, task.model) + " · cambiar de motor o de modelo"} keepLabel icon={<EngineMark engine={task.engine} size={13} />} label={<span className="code-model-label">{modelLabel(shown, task.model)}</span>} width={360}>
-                  {(close) => engines.length ? (
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "4px" }}>
+          <label style={{ flex: 1, minWidth: 0, display: "flex" }}><span style={SR}>{placeholder}</span>{field}</label>
+          {running ? (
+            <button type="button" onClick={onStop} aria-label="Parar" title="Parar a Bruno" style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.08)", cursor: "pointer" }}>
+              <span aria-hidden="true" style={{ width: "11px", height: "11px", borderRadius: "3px", background: C.ink }} />
+            </button>
+          ) : null}
+          <button type="submit" aria-label="Enviar" disabled={!ready || busy} style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: C.ink, color: C.white, cursor: ready && !busy ? "pointer" : "default", opacity: ready && !busy ? 1 : 0.85, transition: "opacity .15s ease" }}>
+            <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      {/* Beneath the line: attach, dictate and the context used; expert mode adds which engine,
+          model, effort and access this task uses (detail beneath, nothing moves). */}
+      <div style={{ display: "flex", alignItems: "center", gap: "2px", minHeight: "36px", margin: "4px 0 -8px -2px" }}>
+            {/* «Más»: mode, engine · model, effort and access (the board keeps the line to write clean). */}
+            <MenuChip title="Más opciones: modo, motor y modelo, esfuerzo, acceso" icon={<Ellipsis size={17} strokeWidth={2.2} aria-hidden="true" />} label="" chevron={false} width={360} align="left" look={{ width: "36px", height: "36px", color: C.muted }}>
+              {(close) => (
+                <>
+                  {onMode ? (
+                    <>
+                      <MenuHeading>Modo</MenuHeading>
+                      <MenuItem title="Construir" text="Bruno hace los cambios." on={mode === "build"} onClick={() => { onMode("build"); close(); }} />
+                      <MenuItem title="Plan" text="Primero un plan; nada cambia hasta «Implementar»." on={mode === "plan"} onClick={() => { onMode("plan"); close(); }} />
+                    </>
+                  ) : null}
+                  <MenuHeading>{"Motor y modelo · " + engineLabel}</MenuHeading>
+                  {engines.length ? (
                     <EngineModelMenu engines={engines} current={{ engine: task.engine, model: task.model }} close={close}
                       onPick={(engine, model) => onChange(engine === task.engine ? { model } : { engine, model })}
                       switchNote={running ? "Si eliges otro motor, sigue con él al acabar este turno." : "Otro motor sigue en la misma copia, con lo hablado hasta ahora."} />
-                  ) : models.map((m) => <MenuItem key={m.id} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
-                </MenuChip>
-                <MenuChip className="code-inline-extra" title="Esfuerzo" icon={<Gauge size={14} strokeWidth={2} aria-hidden="true" />} label={EFFORT_LABEL[task.effort] || task.effort} width={220}>
-                  {(close) => <EffortItems task={task} onChange={onChange} close={close} />}
-                </MenuChip>
-                <MenuChip className="code-inline-extra" title="Qué puede hacer Bruno" icon={<ShieldCheck size={14} strokeWidth={2} aria-hidden="true" />} label={ACCESS_INFO[task.access]?.label || "Su copia"} width={360}>
-                  {(close) => <AccessItems task={task} onChange={onChange} close={close} />}
-                </MenuChip>
-                <MenuChip className="code-more" title="Más opciones" icon={<Ellipsis size={17} strokeWidth={2.2} aria-hidden="true" />} label="" chevron={false} width={340}>
-                  {(close) => (
-                    <>
-                      {onMode ? (
-                        <div className="code-more-mode">
-                          <MenuHeading>Modo</MenuHeading>
-                          <MenuItem title="Construir" text="Bruno hace los cambios." on={mode === "build"} onClick={() => { onMode("build"); close(); }} />
-                          <MenuItem title="Plan" text="Primero un plan; nada cambia hasta «Implementar»." on={mode === "plan"} onClick={() => { onMode("plan"); close(); }} />
-                        </div>
-                      ) : null}
-                      <MenuHeading>{"Esfuerzo · " + (EFFORT_LABEL[task.effort] || task.effort)}</MenuHeading>
-                      <EffortItems task={task} onChange={onChange} close={close} />
-                      <MenuHeading>{"Qué puede hacer Bruno · " + (ACCESS_INFO[task.access]?.label || "Su copia")}</MenuHeading>
-                      <AccessItems task={task} onChange={onChange} close={close} />
-                    </>
-                  )}
-                </MenuChip>
-              </>
-            ) : footer}
-          </div>
-          <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px" }}>
-            {extras.clip}
-            <MicButton onText={(said) => { appendDictation(setText)(said); extras.track(); }} size={40} style={{ color: C.muted }} />
-            {task?.usage?.used ? <ContextRing used={task.usage.used} max={task.usage.window || 200000} disabled={running} onCompact={onCommand ? () => onCommand("compactar") : null} /> : null}
-            {running ? (
-              <button type="button" onClick={onStop} aria-label="Parar" title="Parar a Bruno" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.08)", cursor: "pointer" }}>
-                <span aria-hidden="true" style={{ width: "11px", height: "11px", borderRadius: "3px", background: C.ink }} />
-              </button>
-            ) : null}
-            <button type="submit" aria-label="Enviar" disabled={!ready || busy} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: ready && !busy ? C.ink : "rgba(18,19,26,.14)", color: C.white, cursor: ready && !busy ? "pointer" : "default", transition: "background .15s ease" }}>
-              <ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
+                  ) : shown.map((m) => <MenuItem key={m.id} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
+                  <MenuHeading>{"Esfuerzo · " + (EFFORT_LABEL[task.effort] || task.effort)}</MenuHeading>
+                  <EffortItems task={task} onChange={onChange} close={close} />
+                  <MenuHeading>{"Qué puede hacer Bruno · " + (ACCESS_INFO[task.access]?.label || "Su copia")}</MenuHeading>
+                  <AccessItems task={task} onChange={onChange} close={close} />
+                </>
+              )}
+            </MenuChip>
+        <span title={expert && task ? engineLabel + " · esfuerzo " + (EFFORT_LABEL[task.effort] || task.effort || "").toLowerCase() + " · " + (ACCESS_INFO[task.access]?.label || "Su copia").toLowerCase() : undefined}
+          style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "6px", font: "400 12px/1.4 'Geist Mono', monospace", color: C.muted, overflow: "hidden", whiteSpace: "nowrap" }}>
+          {expert && task ? <><EngineMark engine={task.engine} size={11} /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{engineLabel} · {(EFFORT_LABEL[task.effort] || task.effort || "").toLowerCase()} · {(ACCESS_INFO[task.access]?.label || "Su copia").toLowerCase()}</span></> : null}
+        </span>
+        {task?.usage?.used ? <ContextRing used={task.usage.used} max={task.usage.window || 200000} disabled={running} onCompact={onCommand ? () => onCommand("compactar") : null} /> : null}
+        {extras.clip}
+        {mic}
       </div>
     </form>
   );
@@ -160,8 +183,7 @@ function ContextRing({ used, max = 200000, onCompact = null, disabled = false })
     <span style={{ position: "relative", display: "flex" }}>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} title={`Contexto usado: ${Math.round(pct * 100)} % (${Math.round(used / 1000)} k de ${Math.round(max / 1000)} k)`}
         style={{ display: "flex", alignItems: "center", gap: "4px", height: "36px", padding: "0 6px", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", whiteSpace: "nowrap", font: "500 11px/1 'Geist Mono', monospace", color: "#8A8D96" }}>
-        <span className="code-ring-text">{Math.round(pct * 100)} %</span>
-        <svg width="22" height="22" viewBox="0 0 36 36" aria-hidden="true" style={{ transform: "rotate(-90deg)" }}>
+        <svg width="20" height="20" viewBox="0 0 36 36" aria-hidden="true" style={{ transform: "rotate(-90deg)" }}>
           <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(18,19,26,.08)" strokeWidth="4" />
           <circle cx="18" cy="18" r={r} fill="none" stroke={pct > 0.85 ? C.honey : C.ink} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${len * pct} ${len}`} />
         </svg>

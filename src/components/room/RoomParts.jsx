@@ -953,7 +953,8 @@ export function typingInfo({ mission, activity, live, bots, steps = [] }) {
 /** What a message sent now does while they work (the send button says it). */
 const SEND_LABEL = { steer: "Reconducir", followup: "En cola", collect: "En cola", interrupt: "Interrumpir" };
 
-export function RoomComposer({ mission, bots, memberIds, variant = "sala", typing, workingCount, onSent = null, messages = [], below = false, onJump = null, secrets = [], approvals = [] }) {
+// `tools` (Colmena 3 Sala: «Toda la sala | Solo yo y un bot») goes first in the toolbar; `placeholder` replaces «Mensaje a #sala».
+export function RoomComposer({ mission, bots, memberIds, variant = "sala", typing, workingCount, onSent = null, messages = [], below = false, onJump = null, secrets = [], approvals = [], tools = null, placeholder = null }) {
   const [text, setText] = useState("");
   useWarmOnType(mission?.id, text);
   // «Nora está preparando el contexto» only when it lasts; her own line when she wrote one.
@@ -1107,7 +1108,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <QueueModeHint mission={mission} />
         </div>
       ) : null}
-      <div style={{ position: "relative", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: "28px" }}>Suelta aquí para adjuntar</div> : null}
+      <div style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "22px" : "28px", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "22px" : "28px" }}>Suelta aquí para adjuntar</div> : null}
         {plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /> : mentions.menu}
         {chosen.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -1130,11 +1131,12 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
           {/* «@Vera» as a pill while you write (MentionMirror behind the textarea). */}
           {pills ? <MentionMirror ref={mirror} value={text} bots={bots} style={{ padding: "8px 0 4px", fontSize: "16px", lineHeight: "1.5" }} /> : null}
-          <textarea ref={inputRef} rows="1" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown}
+          <textarea ref={inputRef} rows={tools ? 2 : 1} placeholder={placeholder || `Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown}
             onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
             style={{ position: "relative", flex: "1", resize: "none", border: "0", outline: "none", fontSize: "16px", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
         </label>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: tools ? "-8px" : 0 }}>
+          {tools}
           <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title="Añadir archivos, herramientas o apps" onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "#12131A" : "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", color: plusOpen ? "#FFFFFF" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
             <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
           </button>

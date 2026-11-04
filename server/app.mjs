@@ -590,6 +590,10 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       notifyLevel: z.enum(["todo", "importante", "tuyo"]),
       // How a notice reaches you: Windows notice and sound, only one of them, or nothing.
       notifyMode: z.enum(["both", "windows", "sound", "off"]),
+      // Colmena 3 sidebar: «Modo experto», the sidebar folded to a rail (Ctrl B) and what you pinned (app addresses).
+      expert: z.boolean(),
+      sidebarFolded: z.boolean(),
+      pinned: z.array(z.string().trim().regex(/^\/[^\s]*$/).max(300)).max(30),
     })
     .partial()
     .strict();

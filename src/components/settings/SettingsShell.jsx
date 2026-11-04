@@ -1,6 +1,6 @@
 import SettingsLayout from "../v2/settings/Layout.jsx";
 import { BotPresence } from "../v2/Presence.jsx";
-import { PARENT } from "../v2/settings/sections.js";
+import { ALIAS, PARENT, SECTION_OF } from "../v2/settings/sections.js";
 
 // Colmena 2.0 chrome for every Ajustes detail page (/ajustes/ia, /ajustes/conexiones,
 // /ajustes/ordenador…): the Ajustes frame with its section list (src/components/v2/settings/
@@ -14,7 +14,7 @@ const MUTED = "#5C606C";
  * @param {{ section: string, gap?: string, extraCss?: string, wide?: boolean, children: any }} props
  */
 export default function SettingsShell({ section, gap = "28px", extraCss = "", wide = false, children }) {
-  const parent = PARENT[section] || "cuenta";
+  const parent = PARENT[section] || ALIAS[section] || (SECTION_OF[section] ? section : "general");
   return (
     <SettingsLayout active={parent} back={parent} title="" lead="" wide={wide} extraCss={formCss + extraCss}>
       <div data-section={section} style={{ display: "flex", flexDirection: "column", gap, marginTop: "-14px" }}>{children}</div>

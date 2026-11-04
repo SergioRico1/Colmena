@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Hourglass } from "lucide-react";
-import { post } from "../../lib/api.js";
-import { useAction } from "../../lib/store.jsx";
+import { patch, post } from "../../lib/api.js";
+import { useAction, useStore } from "../../lib/store.jsx";
 import { navigate } from "../../lib/router.jsx";
 
-// «Limitado» (T3 Code UsageLimitRecoveryBanner, in Colmena's v2 look): an AI ran out of its
-// plan, which limit it was, when it renews, and that the work goes on by itself then.
-// LimitBanner goes in a chat or room (mission.limited); LimitLine on a bot's card.
+// «Límite del plan» (T3 Code UsageLimitRecoveryBanner, in Colmena 3's look, design/V3Estados):
+// an AI ran out of its plan, which limit it was, when it renews, and that the work goes on —
+// with the backup account, or by itself when it renews. Nothing stops without saying so.
+// LimitBanner goes in a chat or room (mission.limited); PlanLimitNotice at app level (Inicio);
+// LimitLine on a bot's card.
 
 const ENGINE = { openai: "ChatGPT", anthropic: "Claude", "opencode-go": "OpenCode Go" };
 export const engineName = (engine) => ENGINE[engine] || "La IA";
@@ -36,9 +38,25 @@ function useMinuteClock() {
   return now;
 }
 
+/** The usage bar at its limit: «100 % usado · vuelve hoy a las 18:40». */
+function FullBar({ when }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <span aria-hidden="true" style={{ height: "8px", borderRadius: "4px", background: "#12131A" }} />
+      <span style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "12.5px", color: "#5C606C" }}>
+        <span>100 % usado</span>
+        {when ? <span>vuelve {when}</span> : null}
+      </span>
+    </div>
+  );
+}
+const card = { display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px", padding: "28px", borderRadius: "24px", background: "#FFFFFF", animation: "fade .3s ease-out" };
+const outline = (busy = false) => ({ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "14px", fontWeight: 500, cursor: busy ? "wait" : "pointer" });
+const link = { height: "42px", padding: "0 12px", display: "inline-flex", alignItems: "center", border: 0, background: "transparent", color: "#1F4FD1", fontSize: "14px", fontWeight: 500, cursor: "pointer", textDecoration: "none" };
+
 /**
  * The chat/room banner for a mission paused by a usage limit. `botName` says who goes on.
- * Actions: choose another AI (Ajustes › Inteligencia) or try now (resume).
+ * Ways out: another AI meanwhile (Ajustes › Cuentas de IA › Si falla, usar) or try now (resume).
  */
 export function LimitBanner({ mission, botName = null }) {
   const now = useMinuteClock();
@@ -49,26 +67,52 @@ export function LimitBanner({ mission, botName = null }) {
   const again = renewText(limited.resumeAt, now);
   const who = botName || "El equipo";
   return (
-    <section role="status" aria-label="Limitado" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px 20px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 18px 40px -28px rgba(18,19,26,.35)", animation: "fade .3s ease-out" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
-        <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", borderRadius: "14px", background: "#FFF4D1", color: "#8A5A00" }}>
-          <Hourglass size={19} strokeWidth={2.1} />
-        </span>
-        <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <strong style={{ fontSize: "15px", fontWeight: 600 }}>Limitado</strong>
-            <span style={{ fontSize: "13px", color: "#8A5A00" }}>{engineName(limited.engine)} · {limited.label || "límite de uso"}</span>
-          </span>
-          <span style={{ fontSize: "15px", lineHeight: 1.5, color: "#3D404A" }}>
-            {when ? `Se renueva ${when} y ${who} seguirá entonces por su cuenta; lo hecho se conserva.` : `${who} lo volverá a intentar por su cuenta ${again || "dentro de un rato"}; lo hecho se conserva.`}
-          </span>
-        </span>
+    <section role="status" aria-label="Límite del plan" style={{ ...card, padding: "22px 24px", boxShadow: "0 0 0 1px rgba(18,19,26,.08)" }}>
+      <span style={{ fontSize: "15.5px", fontWeight: 600 }}>{`${engineName(limited.engine)} ha llegado a su ${limited.label || "límite de uso"}`}</span>
+      <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#4A4D57" }}>
+        {when ? `Se renueva ${when} y ${who} seguirá entonces por su cuenta; lo hecho se conserva.` : `${who} lo volverá a intentar por su cuenta ${again || "dentro de un rato"}; lo hecho se conserva.`}
+      </span>
+      <FullBar when={when} />
+      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <button type="button" onClick={() => navigate("/ajustes/ia#respaldo")} style={outline()}>Usar otra IA mientras</button>
+        <button type="button" disabled={act.busy} onClick={() => act.act(() => post(`/missions/${mission.id}/control`, { action: "resume" }))} style={{ ...link, cursor: act.busy ? "wait" : "pointer" }}>Intentar ahora</button>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", paddingLeft: "54px" }}>
-        <button type="button" onClick={() => navigate("/ajustes/inteligencia#respaldo")} style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#FFFFFF", background: "#12131A" }}>Usar otra IA mientras</button>
-        <button type="button" disabled={act.busy} onClick={() => act.act(() => post(`/missions/${mission.id}/control`, { action: "resume" }))} style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "999px", cursor: act.busy ? "wait" : "pointer", fontSize: "13px", fontWeight: 600, color: "#12131A", background: "rgba(18,19,26,.06)" }}>Intentar ahora</button>
+      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "13px", color: "#B4232A" }}>{act.error}</p> : null}
+    </section>
+  );
+}
+
+/**
+ * App level (Inicio): the team's AI ran out of its plan. With a backup account chosen in
+ * Ajustes nothing stops — the bots go on with it, the card says so and when the first one is
+ * back; «Mejor esperar a …» stops using the backup. Without one, they wait for it.
+ * Null while the team's engine is not limited.
+ */
+export function PlanLimitNotice({ style = null }) {
+  const { ai } = useStore();
+  const now = useMinuteClock();
+  const act = useAction();
+  const engines = ai?.engines || [];
+  const primary = engines.find((e) => e.id === ai?.primary) || engines.find((e) => e.connected) || null;
+  if (!primary?.limit) return null;
+  const when = renewText(primary.limit.resetsAt || primary.limit.until, now);
+  const name = engineName(primary.id);
+  const backup = ai.fallback === "local" && ai.local ? { label: "el modelo de este ordenador", local: true }
+    : engines.find((e) => e.id === ai.fallback && e.id !== primary.id && e.connected && !e.resting) || null;
+  return (
+    <section role="status" aria-label="Límite del plan" style={{ ...card, ...style }}>
+      <span style={{ fontSize: "15.5px", fontWeight: 600 }}>{`${name} ha llegado a su ${primary.limit.label || "límite de uso"}`}</span>
+      <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#4A4D57" }}>
+        {backup
+          ? `Tus bots siguen con ${backup.local ? backup.label : backup.label + ", tu cuenta de respaldo"}, como pediste en Ajustes. ${name} vuelve ${when || "dentro de un rato"}.`
+          : `Tus bots esperan a que vuelva ${when || "dentro de un rato"}; lo hecho se conserva. Con una cuenta de respaldo seguirían con ella.`}
+      </span>
+      <FullBar when={when} />
+      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        {backup ? <button type="button" disabled={act.busy} title="Deja de usar el respaldo; lo puedes volver a elegir en Ajustes" onClick={() => act.act(() => patch("/ai/engines", { fallback: "none" }))} style={outline(act.busy)}>{`Mejor esperar a ${name}`}</button> : null}
+        <a href="/ajustes/ia#respaldo" onClick={(e) => { e.preventDefault(); navigate("/ajustes/ia#respaldo"); }} style={link}>{backup ? "Cambiar el respaldo" : "Elegir un respaldo"}</a>
       </div>
-      {act.error ? <p role="alert" style={{ margin: "0 0 0 54px", fontSize: "13px", color: "#B4372A" }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "13px", color: "#B4232A" }}>{act.error}</p> : null}
     </section>
   );
 }

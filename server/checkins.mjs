@@ -117,7 +117,8 @@ export function linkFor(store, url) {
     const m = store.list("missions").find((x) => x.id === slug || x.room === slug);
     return m ? "/sala/" + m.id : "/misiones";
   }
-  return ["/bandeja", "/objetivos", "/automatizaciones", "/misiones"].includes(text) ? text : "/bandeja";
+  if (text === "/objetivos") return "/trabajo/objetivos";
+  return ["/bandeja", "/trabajo/objetivos", "/automatizaciones", "/misiones"].includes(text) ? text : "/bandeja";
 }
 
 /** Settings + due check: runs when enabled and `everyHours` passed since the last check. */

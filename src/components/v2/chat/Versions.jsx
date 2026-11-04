@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 // Versions of a conversation (server/branches.mjs, after assistant-ui's BranchPicker and
-// ActionBarEdit): «‹ 2/3 ›» under a message that has other versions, and «Editar» on your
+// ActionBarEdit): «‹ Versión 2 de 3 ›» under a message that has other versions, and «Editar» on your
 // own messages, which sends it again as a new version from there on.
 
-const quiet = { width: "28px", height: "28px", display: "grid", placeItems: "center", border: 0, borderRadius: "8px", background: "transparent", color: "#4A4F5C" };
+const quiet = { width: "26px", height: "26px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "7px", background: "transparent", color: "#4A4D57", fontSize: "15px" };
 
-/** «‹ 2/3 ›»: `branch` is { index, count, ids }; `onShow(id)` shows that version. */
+/** «‹ Versión 2 de 3 ›» (design/V3Chat.dc.html): `branch` is { index, count, ids }; `onShow(id)` shows that version. */
 export function BranchPicker({ branch, onShow, disabled = false, align = "flex-start" }) {
   if (!branch || branch.count < 2) return null;
   const go = (step) => {
@@ -16,13 +16,13 @@ export function BranchPicker({ branch, onShow, disabled = false, align = "flex-s
   };
   const off = (edge) => disabled || edge;
   return (
-    <span role="group" aria-label={`Versión ${branch.index} de ${branch.count}`} style={{ alignSelf: align, display: "inline-flex", alignItems: "center", gap: "2px", fontSize: "13px", color: "#5C606C" }}>
+    <span role="group" aria-label={`Versión ${branch.index} de ${branch.count}`} style={{ alignSelf: align, display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "12.5px", color: "#5C606C" }}>
       <button type="button" className="rm-focus" aria-label="Versión anterior" disabled={off(branch.index <= 1)} onClick={() => go(-1)} style={{ ...quiet, cursor: off(branch.index <= 1) ? "default" : "pointer", opacity: off(branch.index <= 1) ? 0.35 : 1 }}>
-        <ChevronLeft size={15} strokeWidth={2.4} aria-hidden="true" />
+        <span aria-hidden="true">{"‹"}</span>
       </button>
-      <span style={{ font: "500 12px/1 'Geist Mono', monospace", minWidth: "28px", textAlign: "center" }}>{`${branch.index}/${branch.count}`}</span>
+      <span>{`Versión ${branch.index} de ${branch.count}`}</span>
       <button type="button" className="rm-focus" aria-label="Versión siguiente" disabled={off(branch.index >= branch.count)} onClick={() => go(1)} style={{ ...quiet, cursor: off(branch.index >= branch.count) ? "default" : "pointer", opacity: off(branch.index >= branch.count) ? 0.35 : 1 }}>
-        <ChevronRight size={15} strokeWidth={2.4} aria-hidden="true" />
+        <span aria-hidden="true">{"›"}</span>
       </button>
     </span>
   );

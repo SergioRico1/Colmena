@@ -60,12 +60,12 @@ const CLAUDE_WAYS = [
 ];
 const PLAN_NOTE = "Con tu suscripción, lo que hacen Claude Code y las apps de terceros descuenta de los límites de tu plan, y Anthropic puede cambiar estas condiciones. Para un uso continuo o compartido, la clave de API es la vía más predecible.";
 
-function ClaudePanel({ onDone }) {
+export function ClaudePanel({ onDone, style = null }) {
   const act = useAction();
   const [way, setWay] = useState("cli");
   const connect = (body) => act.act(() => post("/auth/anthropic", body)).then((r) => { if (r?.ok) onDone(); return !!r?.ok; });
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 20px 20px 76px", borderBottom: LINE, animation: "rise .25s ease-out" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 20px 20px 76px", borderBottom: LINE, animation: "rise .25s ease-out", ...style }}>
       <div role="radiogroup" aria-label="Cómo conectar Claude" style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "18px", background: "#F4F4F0" }}>
         {CLAUDE_WAYS.map((w) => {
           const on = way === w.id;
@@ -117,11 +117,11 @@ function ClaudePanel({ onDone }) {
   );
 }
 
-function OpenCodePanel({ onDone }) {
+export function OpenCodePanel({ onDone, style = null }) {
   const act = useAction();
   const connect = (key) => act.act(() => post("/auth/opencode", { key })).then((r) => { if (r?.ok) onDone(); return !!r?.ok; });
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 20px 20px 76px", borderBottom: LINE, animation: "rise .25s ease-out" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 20px 20px 76px", borderBottom: LINE, animation: "rise .25s ease-out", ...style }}>
       <span style={{ fontSize: "14px", lineHeight: 1.6, color: MUTED }}>
         Pega la clave de <a href="https://opencode.ai/auth" target="_blank" rel="noopener noreferrer" style={{ color: INK, fontWeight: 600 }}>opencode.ai/auth</a>. OpenCode Go es una suscripción aparte; la misma clave sirve para OpenCode Zen.
       </span>

@@ -2,7 +2,7 @@ const { app, BrowserWindow, shell, Notification, ipcMain, dialog } = require("el
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 const os = require("node:os");
-const { existsSync, readFileSync } = require("node:fs");
+const { existsSync, readFileSync, mkdirSync, writeFileSync, appendFile } = require("node:fs");
 const { createBrowserManager, attachBackend, toBackend } = require("./browser.cjs");
 const { render } = require("./render.cjs");
 const { setupBackground } = require("./background.cjs");
@@ -41,12 +41,67 @@ function ensureShortcut() {
     if (!same) shell.writeShortcutLink(link, current ? "replace" : "create", wanted);
   } catch {}
 }
+// «Arrancando Colmena…» (Colmena 3, design/V3Estados.dc.html): a small dark window with the
+// breathing mark while the local service starts (desktop/splash/). After 20 s it says why it
+// may take long, with «Reintentar» (start again) and «Abrir el registro» (this log: what the
+// local service printed since Colmena opened, at most LOG_MAX bytes).
+const LOG_MAX = 2_000_000;
+let splash = null, logFile = null, logged = 0;
+function startLog() {
+  try {
+    const dir = path.join(app.getPath("userData"), "logs");
+    mkdirSync(dir, { recursive: true });
+    logFile = path.join(dir, "colmena.log");
+    writeFileSync(logFile, `Colmena ${app.getVersion()} · ${new Date().toISOString()}\n`);
+  } catch { logFile = null; }
+}
+function log(text) {
+  if (!logFile || logged > LOG_MAX) return;
+  const line = String(text);
+  logged += line.length;
+  appendFile(logFile, logged > LOG_MAX ? line + "\n[El registro sigue en la consola: ha llegado a su tamaño máximo]\n" : line, () => {});
+}
+function showSplash() {
+  if (splash || mainWin) return;
+  splash = new BrowserWindow({
+    width: 560, height: 340, frame: false, resizable: false, maximizable: false, fullscreenable: false, show: false,
+    roundedCorners: true, center: true, title: "Colmena", icon: ICON, backgroundColor: "#12131A",
+    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, preload: path.join(__dirname, "preload-splash.cjs") },
+  });
+  splash.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  splash.webContents.on("will-navigate", (event) => event.preventDefault());
+  splash.once("ready-to-show", () => splash?.show());
+  splash.on("closed", () => { splash = null; });
+  splash.loadFile(path.join(__dirname, "splash", "splash.html"));
+}
+function closeSplash() {
+  if (splash && !splash.isDestroyed()) splash.destroy();
+  splash = null;
+}
+ipcMain.on("colmena-startup", (event, action) => {
+  const from = event.sender;
+  if (from !== splash?.webContents && from !== mainWin?.webContents) return;
+  if (action === "log") {
+    if (logFile && !existsSync(logFile)) try { writeFileSync(logFile, ""); } catch {}
+    if (logFile) shell.openPath(logFile);
+  } else if (action === "retry" && from === splash?.webContents) {
+    try { backend?.kill(); } catch {}
+    app.relaunch();
+    app.exit(0);
+  }
+});
+
 if (!app.requestSingleInstanceLock()) app.quit();
 else
   app.whenReady().then(async () => {
     ensureShortcut();
+    startLog();
     updater = setupUpdater({ isBusy: () => (presence.working || 0) > 0 });
+    // Only when the start takes a moment (an instance already running opens at once).
+    const hidden = process.argv.includes("--hidden");
+    const splashTimer = hidden ? null : setTimeout(showSplash, 350);
     const openWindow = (origin) => {
+      clearTimeout(splashTimer);
       backendOrigin = backendOrigin || origin;
       const win = new BrowserWindow({
         width: 1440,
@@ -56,7 +111,8 @@ else
         title: "Colmena",
         icon: ICON,
         // Started with Windows («Abrir Colmena al iniciar Windows»): next to the clock, not in your face.
-        show: !process.argv.includes("--hidden"),
+        // Shown once it has painted, so the start-up window hands over without a blank frame.
+        show: false,
         backgroundColor: "#EEF0F4",
         autoHideMenuBar: true,
         // Colmena draws its own title bar (minimise / maximise / close), as NEXO does.
@@ -150,6 +206,12 @@ else
       });
       // Hidden bot browser windows must not keep Colmena alive.
       win.on("closed", () => app.quit());
+      win.once("ready-to-show", () => {
+        if (!hidden) win.show();
+        closeSplash();
+      });
+      // A page that never paints must not leave the start-up window up forever.
+      win.webContents.once("did-fail-load", () => { if (!hidden && !win.isDestroyed()) win.show(); closeSplash(); });
       win.loadURL(origin);
       mainWin = win;
       // Tray icon, «Pregunta rápida» shortcut and keep-running-when-closed.
@@ -257,14 +319,14 @@ else
       const quick = message.quick || null;
       const buttons = !quick ? [] : quick.kind === "question" ? quick.options.map((o) => ({ type: "button", text: o.label, choice: o.id }))
         : quick.kind === "plan" ? [{ type: "button", text: "Aprobar el plan" }] : [{ type: "button", text: "Permitir" }];
-      if (buttons.length) buttons.push({ type: "button", text: "Abrir" });
+      if (buttons.length) buttons.push({ type: "button", text: "Ver", open: true });
       // A short hashed tag (Windows drops long ones); the room's newer notice replaces its older one.
       const tag = /^[0-9a-f]{16}$/.test(String(message.tag || "")) ? message.tag : undefined;
       const note = new Notification({ ...(tag ? { id: tag } : {}), title: String(message.title || "Colmena").slice(0, 120), body: String(message.text || "").slice(0, 300), silent: true, icon: noticeFace(message), actions: buttons.map(({ type, text }) => ({ type, text })) });
       note.on("click", () => showIn(message.url));
       note.on("action", (_event, index) => {
         const b = buttons[index];
-        if (!b || b.text === "Abrir") return showIn(message.url);
+        if (!b || b.open) return showIn(message.url);
         decideFromNotice(quick, b.choice, message.url);
       });
       note.show();
@@ -272,6 +334,7 @@ else
     let output = "",
       opened = false;
     backend.stdout.on("data", (chunk) => {
+      log(chunk);
       output += chunk.toString();
       const match = output.match(/COLMENA_READY (http:\/\/127\.0\.0\.1:\d+)/);
       if (!match || opened) return;
@@ -279,7 +342,7 @@ else
       backendOrigin = match[1];
       openWindow(match[1]);
     });
-    backend.stderr.on("data", (chunk) => console.error(String(chunk)));
+    backend.stderr.on("data", (chunk) => { log(chunk); console.error(String(chunk)); });
     backend.on("error", (error) => {
       require("electron").dialog.showErrorBox(
         "No se pudo iniciar Colmena",

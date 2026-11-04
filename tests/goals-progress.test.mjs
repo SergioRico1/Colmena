@@ -69,7 +69,7 @@ test("goalsDigest: overdue milestones or 7 days without progress, active goals o
   assert.equal(l.overdue.length, 1);
   assert.equal(l.overdue[0].title, "Llamar al gestor");
   assert.equal(l.stale, false);
-  assert.equal(l.url, "/objetivos/" + late.id);
+  assert.equal(l.url, "/trabajo/objetivos/" + late.id);
   assert.equal(l.ownerBotId, "atlas");
   assert.match(l.text, /«Llamar al gestor» está vencido/);
   const s = digest.find((d) => d.title === "Parado");

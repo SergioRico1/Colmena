@@ -1,21 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
+import TrabajoHeader, { BotDot, trabajoMain } from "../components/v3/TrabajoHeader.jsx";
 import { useAction, useResource, useStore } from "../lib/store.jsx";
 import { del, patch, post } from "../lib/api.js";
 import { navigate, useRouter } from "../lib/router.jsx";
-import { isRoom } from "../lib/format.js";
+import { ago, isRoom } from "../lib/format.js";
 import { later, useHidden } from "../lib/undoToast.js";
 
-// Colmena 2.0 · Rutinas (design/V2Rutinas.dc.html). Three kinds of standing work, each read
-// as a sentence: routines (automations with a trigger), encargos (standing orders a bot
-// keeps in mind) and recordatorios por tema (intents: «cuando se hable de X, recuérdame Y»).
+// Colmena 3 · Trabajo › Rutinas (design/V3Rutinas.dc.html): what repeats. «Nueva rutina» reads
+// as a sentence you tap to change (?nueva=1 opens it, with ?texto= and ?bot= from a chat).
+// «Tus rutinas» lists, filtered by kind, the three kinds of standing work: routines
+// (automations with a trigger), encargos (standing orders a bot keeps in mind) and
+// recordatorios por tema (intents: «cuando se hable de X, recuérdame Y»).
 
 const INK = "#12131A";
-const MUTED = "#5C606C";
-const FAINT = "#6B6F7A";
+const MUTED = "#4A4D57";
+const FAINT = "#5C606C";
 const SOFT = "#F6F6F3";
-const SHEET = "0 1px 2px rgba(18,19,26,.05), 0 30px 70px -36px rgba(18,19,26,.35)";
 
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 const low = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
@@ -50,125 +53,222 @@ function nextTimes(type, b, n = 3, now = new Date()) {
 }
 const listJoin = (xs) => (xs.length <= 1 ? xs.join("") : xs.slice(0, -1).join(", ") + " y " + xs.at(-1));
 
-const TYPES = {
-  dia: "Cada día", semana: "Cada semana", vez: "Una sola vez",
-  correo: "Llegue un correo", archivo: "Se suba un archivo", evento: "Se acerque una reunión", sala: "Alguien escriba en una sala", hoja: "Cambie una hoja de cálculo",
-};
 const TIME_TYPES = ["dia", "semana", "vez"];
 
 const OUTS = [
-  { id: "hoy", label: "te lo deja en Hoy", title: "Te lo deja en Hoy", desc: "Lo verás al abrir Colmena", glyph: "☀", tint: "#FFF4D1", notify: "resultado", prompt: "" },
+  { id: "hoy", label: "te lo deja en Inicio", title: "Te lo deja en Inicio", desc: "Lo verás al abrir Colmena", glyph: "☀", tint: "#FFF4D1", notify: "resultado", prompt: "" },
   { id: "correo", label: "te lo manda por correo", title: "Te lo manda por correo", desc: "Antes de enviarlo te pide permiso", glyph: "@", tint: "#EAF0FF", notify: "resultado", prompt: "Cuando acabes, mándame el resultado por correo." },
-  { id: "archivo", label: "lo guarda en el Archivo", title: "Lo guarda en el Archivo", desc: "Sin avisarte; lo buscas cuando quieras", glyph: "▤", tint: "#EAF6F0", notify: "fallo", prompt: "Guarda el resultado como un archivo, sin avisarme salvo que algo falle." },
-  { id: "ok", label: "te pide OK antes de hacer nada", title: "Te pide OK antes de nada", desc: "Te llega a Hoy como algo que te toca", glyph: "✓", tint: "#FFF4D1", notify: "siempre", prompt: "Antes de hacer nada que cambie algo, prepáralo y pídeme el OK." },
+  { id: "archivo", label: "lo guarda en la Biblioteca", title: "Lo guarda en la Biblioteca", desc: "Sin avisarte; lo buscas cuando quieras", glyph: "▤", tint: "#EAF6F0", notify: "fallo", prompt: "Guarda el resultado como un archivo, sin avisarme salvo que algo falle." },
+  { id: "ok", label: "te pide OK antes de hacer nada", title: "Te pide OK antes de nada", desc: "Te llega a Inicio como algo que te toca", glyph: "✓", tint: "#FFF4D1", notify: "siempre", prompt: "Antes de hacer nada que cambie algo, prepáralo y pídeme el OK." },
 ];
 
 const GENERIC_IDEAS = [
   ["resume lo importante", "Correos, salas y documentos nuevos, en una página"],
-  ["prepara el plan de la semana", "Repasa encargos y plazos y propone prioridades"],
+  ["prepara el plan de la semana", "Repasa tareas y plazos y propone prioridades"],
   ["revisa lo pendiente y te avisa", "Lo que va con retraso o espera a alguien"],
 ];
+
+// Card labels of the triggers (design/V3Rutinas: «A una hora» · «Cuando pase algo»).
+const TRIGGER_CARDS = {
+  dia: ["Cada día", "a una hora, laborables o todos"], semana: ["Cada semana", "un día y una hora"], vez: ["Una vez", "un día y hora"],
+  correo: ["Llega un correo", "de alguien o de cualquiera"], archivo: ["Se sube un archivo", "en una carpeta"], evento: ["Evento del calendario", "antes de una reunión"],
+  sala: ["Mensaje en una sala", "una mención o cualquier mensaje"], hoja: ["Cambia una hoja", "una fila o una columna"],
+};
+const EVENT_TYPES = ["correo", "archivo", "evento", "sala", "hoja"];
+const FILTERS = [["todas", "Todas"], ["hora", "Por horario"], ["algo", "Cuando pasa algo"], ["recordatorio", "Recordatorios"], ["encargo", "Encargos"]];
+const sel = (on) => (on ? INK : "rgba(18,19,26,.1)");
+const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
+
+/** «hoy 17:00», «mañana 9:00», «lunes 9:00», «12 nov». */
+function when(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const days = Math.round((new Date(d.toDateString()) - new Date(new Date().toDateString())) / 864e5);
+  const t = d.getHours() + ":" + pad(d.getMinutes());
+  if (days === 0) return "hoy " + t;
+  if (days === 1) return "mañana " + t;
+  if (days === -1) return "ayer " + t;
+  if (days > 1 && days < 7) return DAY[d.getDay()] + " " + t;
+  return `${d.getDate()} ${MONTH[d.getMonth()].slice(0, 3)}`;
+}
 
 export default function RutinasV2() {
   const { query } = useRouter();
   const { automations = [], bots = [], missions = [], skills = [], ready } = useStore();
   const orders = useResource("/standing-orders");
   const intents = useResource("/intents");
-  const [tab, setTab] = useState({ encargos: "ord", recordatorios: "rem" }[query.pestana] || "rut");
+  const [filter, setFilter] = useState({ encargos: "encargo", recordatorios: "recordatorio" }[query.pestana] || "todas");
   const [open, setOpen] = useState(query.nueva === "1");
+  useEffect(() => { if (query.nueva === "1") setOpen(true); }, [query.nueva]);
   const [orderForm, setOrderForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const act = useAction();
 
   const team = bots.filter((b) => !b.archived);
   const hiddenOrder = useHidden("order");
   const hiddenIntent = useHidden("intent");
+  const hiddenRule = useHidden("automation");
   const orderList = (orders.data || []).filter((o) => !hiddenOrder(o.id));
   const intentList = (intents.data || []).filter((i) => !hiddenIntent(i.id));
-  const tabs = [["rut", "Rutinas", automations.length], ["ord", "Encargos", orderList.length], ["rem", "Recordatorios por tema", intentList.length]];
-  const desc = {
-    rut: "Lo que tu colmena hace sola, cuando toca. Se leen como una frase.",
-    ord: "Trabajos de fondo que un bot atiende siempre que hace falta, con sus límites claros.",
-    rem: "«Cuando se hable de X, recuérdame Y». Te avisa y lo deja anotado en la sala.",
-  }[tab];
-  const newLabel = { rut: "Nueva rutina", ord: "Nuevo encargo", rem: "Nuevo recordatorio" }[tab];
-  const onNew = () => {
-    if (tab === "rut") setOpen(true);
-    else if (tab === "ord") setOrderForm(true);
-    else document.getElementById("rf-topic")?.focus();
-  };
+  const ruleList = automations.filter((a) => !hiddenRule(a.id));
+  const atlas = team.find((b) => b.id === "atlas") || team.find((b) => /coordin/i.test(b.role || "")) || team[0];
+  const botOf = (id) => team.find((b) => b.id === id) || null;
+  const openNew = () => { setOpen(true); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: "smooth" })); };
+
+  const rows = [
+    ...[...ruleList].sort((a, b) => Number(b.enabled) - Number(a.enabled) || String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).map((a) => ruleRow(a, botOf(a.botId), act)),
+    ...orderList.map((o) => orderRow(o, botOf(o.botId), automations, act, setEditing)),
+    ...intentList.map((r) => intentRow(r, atlas, missions, act)),
+  ];
+  const list = rows.filter((r) => filter === "todas" || r.f === filter);
+  const loading = !ready || (orders.loading && !orders.data) || (intents.loading && !intents.data);
+  const editingOrder = editing ? orderList.find((o) => o.id === editing) : null;
 
   return (
-    <Shell active="rutinas">
-      <main style={{ maxWidth: "1000px", margin: "0 auto", padding: "64px clamp(20px, 4vw, 48px) 40px", display: "flex", flexDirection: "column", gap: "40px" }}>
-        <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "20px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <h1 style={{ margin: 0, font: "600 clamp(48px, 7vw, 84px)/0.95 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.05em" }}>Rutinas</h1>
-            <p style={{ margin: 0, maxWidth: "620px", fontSize: "17px", lineHeight: 1.5, color: MUTED }}>{desc}</p>
+    <Shell active="trabajo">
+      <main style={trabajoMain("1140px")}>
+        <TrabajoHeader tab="rutinas" action={{ label: "Nueva rutina", onClick: openNew }} />
+        {open ? <RoutineBuilder team={team} skills={skills} missions={missions} initialWhat={query.texto || ""} initialWho={query.bot || null} onClose={() => setOpen(false)} /> : null}
+
+        <section aria-labelledby="act-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
+            <h2 id="act-t" style={{ margin: "0 10px 0 0", font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Tus rutinas</h2>
+            {FILTERS.map(([id, label]) => {
+              const on = filter === id;
+              return <button key={id} type="button" aria-pressed={on} onClick={() => setFilter(id)} style={{ height: "34px", padding: "0 13px", border: 0, borderRadius: "999px", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "13.5px", fontWeight: 500, cursor: "pointer" }}>{id === "todas" ? `${label} · ${rows.length}` : label}</button>;
+            })}
           </div>
-          <button type="button" onClick={onNew} style={{ display: "flex", alignItems: "center", gap: "10px", height: "52px", padding: "0 24px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "15px", fontWeight: 600 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-            {newLabel}
-          </button>
-        </header>
-        <div role="tablist" aria-label="Qué ver" style={{ alignSelf: "flex-start", marginTop: "-14px", display: "flex", flexWrap: "wrap", gap: "2px", padding: "4px", borderRadius: "999px", background: "rgba(18,19,26,.05)" }}>
-          {tabs.map(([id, label, n]) => {
-            const on = tab === id;
-            return (
-              <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setTab(id)} style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "15px", fontWeight: 600, transition: "all .2s ease", background: on ? "#FFFFFF" : "transparent", color: INK, boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none" }}>
-                {label}
-                <span style={{ font: "500 12px/1 'Geist Mono', monospace", color: FAINT }}>{ready ? n : "·"}</span>
-              </button>
-            );
-          })}
-        </div>
-        {tab === "rut" ? (
-          <>
-            {open ? <RoutineBuilder team={team} skills={skills} missions={missions} initialWhat={query.texto || ""} initialWho={query.bot || null} onClose={() => setOpen(false)} /> : null}
-            <RoutineList automations={automations} bots={team} ready={ready} onNew={() => setOpen(true)} open={open} />
-          </>
-        ) : null}
-        {tab === "ord" ? <Orders team={team} list={orderList} loading={orders.loading && !orders.data} form={orderForm} setForm={setOrderForm} automations={automations} /> : null}
-        {tab === "rem" ? <Reminders list={intentList} loading={intents.loading && !intents.data} missions={missions} bots={team} /> : null}
+          {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{act.error}</p> : null}
+
+          {filter === "recordatorio" ? <ReminderForm /> : null}
+          {filter === "encargo" && !orderForm && !editingOrder ? (
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 18px", borderRadius: "18px", background: "#F1F1EC", fontSize: "14px", lineHeight: 1.45 }}>
+              <span style={{ flex: "1 1 320px", color: MUTED }}>Un encargo es algo que un bot atiende siempre que haga falta, con sus límites claros, como registrar las facturas que lleguen.</span>
+              <button type="button" onClick={() => setOrderForm(true)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", fontWeight: 500, cursor: "pointer" }}>Nuevo encargo</button>
+            </div>
+          ) : null}
+          {orderForm ? <OrderForm team={team} onClose={() => setOrderForm(false)} /> : null}
+          {editingOrder ? <OrderForm key={editingOrder.id} team={team} initial={editingOrder} onClose={() => setEditing(null)} /> : null}
+
+          {loading && !list.length ? <div style={{ height: "88px", borderRadius: "22px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+          {!loading && !rows.length && !open ? (
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px", padding: "22px", borderRadius: "22px", background: "#FFFFFF" }}>
+              <span style={{ flex: "1 1 300px", fontSize: "15px", lineHeight: 1.5 }}>Aún no hay rutinas. Empieza por algo que repites cada semana.</span>
+              <button type="button" onClick={openNew} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Nueva rutina</button>
+            </div>
+          ) : null}
+          {list.length ? (
+            <div style={{ display: "flex", flexDirection: "column", borderRadius: "22px", background: "#FFFFFF" }}>
+              {list.map((r, i) => <RoutineRow key={r.key} r={r} first={i === 0} busy={act.busy} />)}
+            </div>
+          ) : !loading && rows.length ? <p style={{ margin: 0, padding: "16px 4px", fontSize: "14.5px", color: FAINT }}>{{ hora: "Ninguna rutina por horario.", algo: "Ninguna rutina que salte cuando pasa algo.", recordatorio: "Sin recordatorios por tema.", encargo: "Sin encargos." }[filter]}</p> : null}
+          {filter === "recordatorio" ? <ReminderSample sample={intentList[0]} atlas={atlas} /> : null}
+        </section>
       </main>
     </Shell>
   );
 }
 
-// ───────────────────────────────────────────────────────────── Rutinas
-function Chevron({ open }) {
+// ───────────────────────────────────────────────────────────── one row of «Tus rutinas»
+function ruleRow(a, bot, act) {
+  const type = a.trigger?.type;
+  const blocked = a.state === "blocked";
+  const account = blocked && /cuenta de ia/i.test(a.error || "");
+  const app = blocked && !account && /conect/i.test(a.error || "");
+  const meta = blocked && a.error ? a.error
+    : [a.nextRun && a.enabled ? "Próxima: " + when(a.nextRun) : !TIME_TYPES.includes(type) ? a.trigger?.sentence || a.subtitle : null, a.lastRun ? "última: " + ago(a.lastRun) : null].filter(Boolean).join(" · ") || a.subtitle || "";
+  const status = !a.enabled ? ["En pausa", "#F1F1EC", MUTED] : account ? ["Falta la cuenta de IA", "#FFC93C", INK] : app ? ["Falta una app", "#FFC93C", INK] : blocked ? ["Atascada", "#FBE9EA", "#B4232A"] : a.state === "running" ? ["En marcha", "#EEF0F4", "#1F4FD1"] : null;
+  const id = encodeURIComponent(a.id);
+  return {
+    key: "a:" + a.id, f: TIME_TYPES.includes(type) ? "hora" : "algo", bot, work: a.state === "running", text: a.name, meta, status, on: a.enabled,
+    label: (a.enabled ? "Pausar: " : "Activar: ") + a.name,
+    toggle: () => act.act(() => patch(`/automations/${id}`, { enabled: !a.enabled })),
+    menu: [
+      ["Ver y cambiar los detalles", () => navigate(`/automatizaciones?id=${id}`)],
+      ["Probar ahora", () => act.act(() => post(`/automations/${id}/test`, {}))],
+      a.lastMissionId ? ["Ver la última vez", () => navigate(`/encargo/${encodeURIComponent(a.lastMissionId)}`)] : null,
+      ["Borrar", () => later({ id: "automation:" + a.id, keys: ["automation:" + a.id], text: "Rutina borrada", error: "No se pudo borrar la rutina", run: () => act.act(() => del(`/automations/${id}`)) })],
+    ].filter(Boolean),
+  };
+}
+function orderRow(o, bot, automations, act, setEditing) {
+  const rule = o.automationId ? automations.find((a) => a.id === o.automationId) : null;
+  const id = encodeURIComponent(o.id);
+  const meta = [
+    `Encargo «${o.title}»`,
+    o.stopWhen ? "para y te pregunta: " + low(o.stopWhen).replace(/\.$/, "") : "solo para en las líneas rojas",
+    "avisos como mucho: " + (NOTIFY.find(([k]) => k === o.notifyMax)?.[1] || "cada vez").toLowerCase(),
+    o.until ? (o.expired ? "terminó el " : "hasta el ") + longDate(o.until) : null,
+  ].filter(Boolean).join(" · ");
+  return {
+    key: "o:" + o.id, f: "encargo", bot, text: `${bot?.name || "Un bot"} se encarga: ${low(o.what)}`, meta,
+    status: o.expired ? ["Terminado", "#F1F1EC", MUTED] : !o.active ? ["En pausa", "#F1F1EC", MUTED] : null, on: o.active && !o.expired,
+    label: (o.active ? "Pausar: " : "Reanudar: ") + o.title,
+    toggle: () => act.act(() => patch(`/standing-orders/${id}`, { active: !o.active })),
+    menu: [
+      ["Editar", () => setEditing(o.id)],
+      rule ? ["Ver la rutina que creó", () => navigate(`/automatizaciones?id=${encodeURIComponent(rule.id)}`)] : o.schedule ? ["Crear la rutina", () => act.act(() => post(`/standing-orders/${id}/automation`, {}))] : null,
+      ["Borrar", () => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Encargo «${o.title}» borrado`, error: "No se pudo borrar el encargo", run: () => act.act(() => del(`/standing-orders/${id}`)) })],
+    ].filter(Boolean),
+  };
+}
+function intentRow(r, atlas, missions, act) {
+  const room = r.missionId ? missions.find((m) => m.id === r.missionId)?.title : null;
+  const maxed = r.hits >= r.maxHits;
+  const expired = r.expiresAt && Date.parse(r.expiresAt) <= Date.now();
+  const said = !r.hits ? "aún no ha salido" : `lo recordó ${r.hits} ${r.hits === 1 ? "vez" : "veces"} de ${r.maxHits}`;
+  const id = encodeURIComponent(r.id);
+  return {
+    key: "i:" + r.id, f: "recordatorio", bot: atlas,
+    text: <>{"Cuando se hable de "}<strong style={{ fontWeight: 600 }}>{r.keywords.join(", ")}</strong>{", recuérdame "}{r.remind.replace(/\.$/, "")}{"."}</>,
+    meta: ["Recordatorio", room ? "solo en #" + room : "en cualquier sala o chat", said].join(" · "),
+    status: expired ? ["Caducado", "#F1F1EC", MUTED] : !r.active ? ["En pausa", "#F1F1EC", MUTED] : maxed ? ["Ya lo recordó", "#E3F4EC", "#0B6B4A"] : null,
+    on: r.active && !maxed && !expired, label: (r.active ? "Pausar" : "Reactivar") + " este recordatorio",
+    toggle: () => act.act(() => patch(`/intents/${id}`, { active: !(r.active && !maxed) })),
+    menu: [["Borrar", () => later({ id: "intent:" + r.id, keys: ["intent:" + r.id], text: "Recordatorio borrado", error: "No se pudo borrar el recordatorio", run: () => act.act(() => del(`/intents/${id}`)) })]],
+  };
+}
+
+function RoutineRow({ r, first, busy }) {
+  const [menu, setMenu] = useState(false);
+  const on = r.on;
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", opacity: 0.45, transition: "transform .2s ease", transform: open ? "rotate(180deg)" : "none" }}>
-      <path d="m6 9 6 6 6-6" />
-    </svg>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "16px 20px", borderTop: first ? 0 : "1px solid rgba(18,19,26,.06)", opacity: on ? 1 : 0.6, transition: "opacity .3s ease", animation: "fade .3s ease-out" }}>
+      <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "11px", background: "#F1F1EC" }}>{r.bot ? <BotDot bot={r.bot} size={18} work={r.work} /> : null}</span>
+      <span style={{ flex: "1 1 360px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
+        <span style={{ fontSize: "15px", lineHeight: 1.4 }}>{r.text}</span>
+        <span style={{ fontSize: "13px", color: FAINT }}>{r.meta}</span>
+      </span>
+      {r.status ? <span style={{ flex: "none", height: "26px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: r.status[1], color: r.status[2], fontSize: "12.5px", fontWeight: 600 }}>{r.status[0]}</span> : null}
+      <button type="button" role="switch" aria-checked={on} aria-label={r.label} disabled={busy} onClick={r.toggle} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "12px", background: on ? INK : "#8A8D96", cursor: busy ? "wait" : "pointer", transition: "background .2s ease" }}>
+        <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: on ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s ease" }} />
+      </button>
+      <span style={{ position: "relative", flex: "none" }}>
+        <button type="button" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((v) => !v)} style={{ width: "34px", height: "34px", padding: 0, border: 0, borderRadius: "10px", background: menu ? "#F1F1EC" : "transparent", color: MUTED, cursor: "pointer" }}>···</button>
+        {menu ? (
+          <>
+            <button type="button" aria-label="Cerrar el menú" onClick={() => setMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 15, border: 0, background: "transparent", cursor: "default" }} />
+            <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 22, minWidth: "220px", padding: "6px", display: "flex", flexDirection: "column", gap: "2px", borderRadius: "14px", background: "#FFFFFF", boxShadow: "0 18px 40px rgba(18,19,26,.2)", animation: "rise .2s ease-out" }}>
+              {r.menu.map(([label, fn]) => (
+                <button key={label} type="button" role="menuitem" onClick={() => { setMenu(false); fn(); }} style={{ minHeight: "38px", padding: "0 12px", border: 0, borderRadius: "9px", background: "transparent", textAlign: "left", fontSize: "14px", cursor: "pointer", color: label === "Borrar" ? "#B4232A" : INK }}>{label}</button>
+              ))}
+            </div>
+          </>
+        ) : null}
+      </span>
+    </div>
   );
 }
-function Token({ id, panel, setPanel, popup = "listbox", children }) {
-  const open = panel === id;
-  return (
-    <button type="button" aria-haspopup={popup} aria-expanded={open} onClick={() => setPanel(open ? null : id)} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "0 8px", border: 0, borderRadius: "12px", cursor: "pointer", font: "inherit", letterSpacing: "inherit", color: "inherit", textDecoration: "underline", textDecorationColor: "#FFC93C", textDecorationThickness: "4px", textUnderlineOffset: "8px", background: open ? "rgba(255,201,60,.28)" : "transparent", transition: "background .2s ease" }}>
-      {children}
-      <Chevron open={open} />
-    </button>
-  );
-}
-function Check({ on }) {
-  return (
-    <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? INK : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
-    </span>
-  );
-}
+
+// ───────────────────────────────────────────────────────────── Nueva rutina
 function Pills({ label, items, value, onPick }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .3s ease-out" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px", animation: "fade .3s ease-out" }}>
       <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED }}>{label}</span>
       <div role="radiogroup" aria-label={label} style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {items.map(([v, text]) => {
           const on = value === v;
-          return (
-            <button key={String(v)} type="button" role="radio" aria-checked={on} onClick={() => onPick(v)} style={{ minWidth: "44px", height: "42px", padding: "0 16px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "14px", fontWeight: 500, transition: "all .2s ease", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : INK, boxShadow: on ? "none" : "0 1px 2px rgba(18,19,26,.06)" }}>
-              {text}
-            </button>
-          );
+          return <button key={String(v)} type="button" role="radio" aria-checked={on} onClick={() => onPick(v)} style={{ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "12px", background: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: on ? 600 : 500, color: INK }}>{text}</button>;
         })}
       </div>
     </div>
@@ -176,21 +276,14 @@ function Pills({ label, items, value, onPick }) {
 }
 function Field({ label, value, onChange, placeholder }) {
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .3s ease-out" }}>
+    <label style={{ display: "flex", flexDirection: "column", gap: "8px", animation: "fade .3s ease-out" }}>
       <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED }}>{label}</span>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ height: "50px", padding: "0 18px", border: 0, borderRadius: "16px", outline: "none", background: "#FFFFFF", fontSize: "16px", boxShadow: "0 1px 2px rgba(18,19,26,.06)" }} />
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", outline: "none", background: "#FFFFFF", fontSize: "15px" }} />
     </label>
   );
 }
-function PanelHead({ id, title, hint }) {
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "8px", padding: "0 8px" }}>
-      <h3 id={id} style={{ margin: 0, font: "600 20px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{title}</h3>
-      <span style={{ fontSize: "13px", color: FAINT }}>{hint}</span>
-    </div>
-  );
-}
-const optionStyle = (on, minHeight = "64px") => ({ display: "flex", alignItems: "center", gap: "14px", minHeight, padding: "10px 14px", border: 0, borderRadius: "18px", cursor: "pointer", textAlign: "left", transition: "background .2s ease, box-shadow .2s ease", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? `0 0 0 2px ${INK}` : "none", color: INK });
+const choice = (on) => ({ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "3px", minHeight: "56px", padding: "10px 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "14px", background: "#FFFFFF", textAlign: "left", cursor: "pointer", color: INK });
+const panel = { display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "18px", background: SOFT, animation: "rise .3s ease-out" };
 
 /** One-off dates offered for «Una sola vez»: tomorrow and the next Friday and Monday. */
 function onceDates(now = new Date()) {
@@ -214,13 +307,14 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
     from: "", folder: "", before: "1 hora", meetWord: "", room: rooms[0]?.title || "", roomMode: "mencion", sheet: "", col: "",
     who: firstBot?.id || null, what: initialWhat.trim() ? low(initialWhat.trim().replace(/\.$/, "")) : GENERIC_IDEAS[0][0], custom: "", out: "hoy",
   });
-  const [panel, setPanel] = useState("when");
+  const [open, setOpen] = useState("when");
   const [msg, setMsg] = useState(null);
   const [savedId, setSavedId] = useState(null);
   const act = useAction();
   const set = (p) => { setB((x) => ({ ...x, ...p })); setSavedId(null); };
   const who = team.find((x) => x.id === b.who) || null;
   const out = OUTS.find((o) => o.id === b.out) || OUTS[0];
+  const kind = TIME_TYPES.includes(b.type) ? "hora" : "algo";
 
   const whenText = {
     dia: `${b.workdays ? "Cada día laborable" : "Cada día"} a las ${hourLabel(b.hour)}`,
@@ -293,201 +387,126 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
       .map((s) => [low(s.name), s.description || "Usa lo que ya sabe hacer"]);
     return [...own, ...GENERIC_IDEAS].slice(0, 6);
   }, [skills, who?.id]);
-  const useCustom = () => { const t = b.custom.trim(); if (t) { set({ what: low(t).replace(/\.$/, ""), custom: "" }); setPanel("out"); } };
+  const useCustom = () => { const t = b.custom.trim(); if (t) { set({ what: low(t).replace(/\.$/, ""), custom: "" }); setOpen("out"); } };
+  const tokens = [["", whenText, "when"], [", ", who?.name || "alguien", "who"], [" ", b.what, "what"], [" y ", out.label, "out"]];
 
   return (
-    <section aria-labelledby="new-t" style={{ position: "relative", padding: "34px 34px 28px", background: "#FFFFFF", borderRadius: "34px", boxShadow: SHEET, display: "flex", flexDirection: "column", gap: "22px", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-        <h2 id="new-t" style={{ margin: 0, fontSize: "13px", fontWeight: 500, color: FAINT }}>Nueva rutina · toca cada parte para cambiarla</h2>
-        <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer", color: INK }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-        </button>
+    <section id="nueva" aria-labelledby="new-t" style={{ scrollMarginTop: "24px", display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
+        <h2 id="new-t" style={{ margin: 0, fontSize: "15px", fontWeight: 600 }}>Nueva rutina</h2>
+        <span style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13.5px", color: FAINT }}>
+          Se lee como una frase. Toca cada parte para cambiarla.
+          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "#F1F1EC", cursor: "pointer", color: INK }}><X size={13} aria-hidden="true" /></button>
+        </span>
       </div>
-      <p style={{ margin: 0, font: "600 clamp(26px, 3.2vw, 36px)/1.45 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", color: INK }}>
-        <Token id="when" panel={panel} setPanel={setPanel} popup="dialog">{whenText}</Token>
-        {", "}
-        <Token id="who" panel={panel} setPanel={setPanel}>
-          {who ? <BotPresence bot={who} size={24} /> : null}
-          {who?.name || "alguien"}
-        </Token>
-        {" "}
-        <Token id="what" panel={panel} setPanel={setPanel}>{b.what}</Token>
-        {" y "}
-        <Token id="out" panel={panel} setPanel={setPanel}>{out.label}</Token>
-        {"."}
+      <p style={{ margin: 0, font: "500 clamp(24px, 2.6vw, 32px)/1.45 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
+        {tokens.map(([before, label, k]) => (
+          <span key={k}>
+            <span>{before}</span>
+            <button type="button" onClick={() => setOpen(open === k ? null : k)} aria-expanded={open === k} style={{ padding: "0 8px", margin: "0 2px", border: 0, borderRadius: "10px", background: open === k ? "#E3EBFF" : "#F1F1EC", color: INK, font: "inherit", textDecoration: "underline", textDecorationColor: "rgba(18,19,26,.3)", textUnderlineOffset: "6px", cursor: "pointer" }}>{label}</button>
+          </span>
+        ))}
+        .
       </p>
 
-      {panel === "when" ? (
-        <div role="dialog" aria-label="Cuándo" style={{ display: "flex", flexWrap: "wrap", borderRadius: "26px", background: SOFT, overflow: "hidden", animation: "rise .3s ease-out" }}>
-          <div role="radiogroup" aria-label="Tipo" style={{ flex: "1 1 260px", padding: "14px", display: "flex", flexDirection: "column", gap: "2px", borderRight: "1px solid rgba(18,19,26,.06)" }}>
-            {[["A una hora", TIME_TYPES], ["Cuando pase algo", ["correo", "archivo", "evento", "sala", "hoja"]]].map(([head, ids], gi) => (
-              <div key={head} style={{ display: "contents" }}>
-                <span style={{ padding: gi ? "12px 12px 8px" : "8px 12px", fontSize: "12px", fontWeight: 500, color: FAINT }}>{head}</span>
-                {ids.map((id) => {
-                  const on = b.type === id;
-                  return (
-                    <button key={id} type="button" role="radio" aria-checked={on} onClick={() => { set({ type: id }); setMsg(null); }} style={{ display: "flex", alignItems: "center", minHeight: "44px", padding: "0 14px", border: 0, borderRadius: "14px", cursor: "pointer", textAlign: "left", fontSize: "15px", fontWeight: 500, background: on ? "#FFFFFF" : "transparent", color: INK, boxShadow: on ? "0 1px 2px rgba(18,19,26,.08)" : "none" }}>
-                      {TYPES[id]}
-                    </button>
-                  );
-                })}
-              </div>
+      {open === "when" ? (
+        <div role="group" aria-label="Cuándo" style={panel}>
+          <div role="tablist" aria-label="Tipo de rutina" style={{ display: "inline-flex", alignSelf: "flex-start", padding: "3px", gap: "2px", borderRadius: "999px", background: "#EBEBE6" }}>
+            {[["hora", "A una hora", "semana"], ["algo", "Cuando pase algo", "correo"]].map(([id, label, first]) => {
+              const on = kind === id;
+              return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => { if (!on) { set({ type: first }); setMsg(null); } }} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "13.5px", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+            })}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))", gap: "8px" }}>
+            {(kind === "hora" ? TIME_TYPES : EVENT_TYPES).map((id) => {
+              const on = b.type === id;
+              return (
+                <button key={id} type="button" aria-pressed={on} onClick={() => { set({ type: id }); setMsg(null); }} style={{ ...choice(on), minHeight: "64px" }}>
+                  <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{TRIGGER_CARDS[id][0]}</span>
+                  <span style={{ fontSize: "12.5px", color: FAINT }}>{TRIGGER_CARDS[id][1]}</span>
+                </button>
+              );
+            })}
+          </div>
+          {b.type === "dia" ? <Pills label="Días" value={b.workdays} onPick={(v) => set({ workdays: v })} items={[[true, "Laborables"], [false, "Todos los días"]]} /> : null}
+          {b.type === "semana" ? <Pills label="Día" value={b.dow} onPick={(v) => set({ dow: v })} items={[1, 2, 3, 4, 5, 6, 0].map((d) => [d, DAY[d]])} /> : null}
+          {b.type === "vez" ? <Pills label="Día" value={b.date} onPick={(v) => set({ date: v })} items={dates} /> : null}
+          {timeBased ? <Pills label="Hora" value={b.hour} onPick={(v) => set({ hour: v })} items={HOURS.map((h) => [h, hourLabel(h)])} /> : null}
+          {b.type === "correo" ? <Field label="De quién (vacío: de cualquiera)" value={b.from} onChange={(v) => set({ from: v })} placeholder="facturas@proveedor.es" /> : null}
+          {b.type === "archivo" ? <Field label="A la carpeta" value={b.folder} onChange={(v) => set({ folder: v })} placeholder="Facturas" /> : null}
+          {b.type === "evento" ? (
+            <>
+              <Pills label="Cuánto antes" value={b.before} onPick={(v) => set({ before: v })} items={["15 minutos", "1 hora", "1 día"].map((x) => [x, x])} />
+              <Field label="Qué reuniones (una palabra del título; vacío: todas)" value={b.meetWord} onChange={(v) => set({ meetWord: v })} placeholder="clientes" />
+            </>
+          ) : null}
+          {b.type === "sala" ? (
+            <>
+              <Pills label="Sala" value={b.room} onPick={(v) => set({ room: v })} items={[["", "Cualquier sala"], ...rooms.map((r) => [r.title, "#" + r.title])]} />
+              <Pills label="Cuándo" value={b.roomMode} onPick={(v) => set({ roomMode: v })} items={[["todo", "alguien escriba"], ["mencion", "te mencionen"]]} />
+            </>
+          ) : null}
+          {b.type === "hoja" ? (
+            <>
+              <Field label="Hoja" value={b.sheet} onChange={(v) => set({ sheet: v })} placeholder="Ventas 2026" />
+              <Field label="Columna que vigilar (vacío: cualquier fila nueva)" value={b.col} onChange={(v) => set({ col: v })} placeholder="Importe" />
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {open === "who" ? (
+        <div role="group" aria-label="Quién lo hace" style={{ ...panel, flexDirection: "row", flexWrap: "wrap", gap: "8px" }}>
+          {team.map((x) => {
+            const on = x.id === b.who;
+            return (
+              <button key={x.id} type="button" aria-pressed={on} onClick={() => { set({ who: x.id }); setOpen("what"); }} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "10px", border: `1.5px solid ${sel(on)}`, borderRadius: "12px", background: "#FFFFFF", fontSize: "14px", cursor: "pointer" }}>
+                <BotDot bot={x} size={18} />
+                <span style={{ fontWeight: 600 }}>{x.name}</span>
+                {x.role ? <span style={{ color: FAINT }}>{x.role.toLowerCase()}</span> : null}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {open === "what" ? (
+        <div role="group" aria-label={`Qué hace ${who?.name || ""}`} style={panel}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {ideas.map(([label, d]) => (
+              <button key={label} type="button" aria-pressed={label === b.what} onClick={() => { set({ what: label }); setOpen("out"); }} style={{ ...choice(label === b.what), minHeight: "44px", padding: "8px 14px", gap: "2px" }}>
+                <span style={{ fontSize: "14px", fontWeight: 600 }}>{cap(label)}</span>
+                <span style={{ fontSize: "12.5px", color: FAINT }}>{d}</span>
+              </button>
             ))}
           </div>
-          <div style={{ flex: "2 1 380px", padding: "24px 26px", display: "flex", flexDirection: "column", gap: "20px" }}>
-            {b.type === "dia" ? <Pills label="Días" value={b.workdays} onPick={(v) => set({ workdays: v })} items={[[true, "Laborables"], [false, "Todos los días"]]} /> : null}
-            {b.type === "semana" ? <Pills label="Día" value={b.dow} onPick={(v) => set({ dow: v })} items={[1, 2, 3, 4, 5, 6, 0].map((d) => [d, DAY[d]])} /> : null}
-            {b.type === "vez" ? <Pills label="Día" value={b.date} onPick={(v) => set({ date: v })} items={dates} /> : null}
-            {timeBased ? <Pills label="Hora" value={b.hour} onPick={(v) => set({ hour: v })} items={HOURS.map((h) => [h, hourLabel(h)])} /> : null}
-            {b.type === "correo" ? <Field label="De quién (vacío: de cualquiera)" value={b.from} onChange={(v) => set({ from: v })} placeholder="facturas@proveedor.es" /> : null}
-            {b.type === "archivo" ? <Field label="A la carpeta" value={b.folder} onChange={(v) => set({ folder: v })} placeholder="Facturas" /> : null}
-            {b.type === "evento" ? (
-              <>
-                <Pills label="Cuánto antes" value={b.before} onPick={(v) => set({ before: v })} items={["15 minutos", "1 hora", "1 día"].map((x) => [x, x])} />
-                <Field label="Qué reuniones (una palabra del título; vacío: todas)" value={b.meetWord} onChange={(v) => set({ meetWord: v })} placeholder="clientes" />
-              </>
-            ) : null}
-            {b.type === "sala" ? (
-              <>
-                <Pills label="Sala" value={b.room} onPick={(v) => set({ room: v })} items={[["", "Cualquier sala"], ...rooms.map((r) => [r.title, "#" + r.title])]} />
-                <Pills label="Cuándo" value={b.roomMode} onPick={(v) => set({ roomMode: v })} items={[["todo", "alguien escriba"], ["mencion", "te mencionen"]]} />
-              </>
-            ) : null}
-            {b.type === "hoja" ? (
-              <>
-                <Field label="Hoja" value={b.sheet} onChange={(v) => set({ sheet: v })} placeholder="Ventas 2026" />
-                <Field label="Columna que vigilar (vacío: cualquier fila nueva)" value={b.col} onChange={(v) => set({ col: v })} placeholder="Importe" />
-              </>
-            ) : null}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.1)" }}>
+            <input type="text" aria-label="Otra cosa" value={b.custom} onChange={(e) => setB((x) => ({ ...x, custom: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") useCustom(); }} placeholder="Otra cosa: escríbelo con tus palabras" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, outline: "none", background: "transparent", fontSize: "15px" }} />
+            <button type="button" onClick={useCustom} disabled={!b.custom.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: b.custom.trim() ? INK : "rgba(18,19,26,.08)", color: b.custom.trim() ? "#FFFFFF" : "#8A8D96" }}>Usar</button>
           </div>
         </div>
       ) : null}
 
-      {panel === "who" ? (
-        <div role="dialog" aria-labelledby="who-h" style={{ padding: "18px", borderRadius: "26px", background: SOFT, display: "flex", flexDirection: "column", gap: "12px", animation: "rise .3s ease-out" }}>
-          <PanelHead id="who-h" title="¿Quién lo hace?" hint="Elige el bot que mejor sabe hacerlo" />
-          <div role="listbox" aria-labelledby="who-h" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "6px" }}>
-            {team.map((x) => {
-              const on = x.id === b.who;
-              return (
-                <button key={x.id} type="button" role="option" aria-selected={on} onClick={() => { set({ who: x.id }); setPanel("what"); }} style={optionStyle(on, "68px")}>
-                  <BotPresence bot={x} size={34} />
-                  <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-                    <strong style={{ fontSize: "15px", fontWeight: 600 }}>{x.name}</strong>
-                    <span style={{ fontSize: "13px", color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.role || "Sin papel todavía"}</span>
-                  </span>
-                  <Check on={on} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      {panel === "what" ? (
-        <div role="dialog" aria-labelledby="what-h" style={{ padding: "18px", borderRadius: "26px", background: SOFT, display: "flex", flexDirection: "column", gap: "12px", animation: "rise .3s ease-out" }}>
-          <PanelHead id="what-h" title={`¿Qué hace ${who?.name || ""}?`} hint="Ideas según lo que sabe hacer" />
-          <div role="listbox" aria-labelledby="what-h" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            {ideas.map(([label, d]) => {
-              const on = label === b.what;
-              return (
-                <button key={label} type="button" role="option" aria-selected={on} onClick={() => { set({ what: label }); setPanel("out"); }} style={optionStyle(on, "54px")}>
-                  <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                    <strong style={{ fontSize: "15px", fontWeight: 600 }}>{cap(label)}</strong>
-                    <span style={{ fontSize: "13px", color: MUTED }}>{d}</span>
-                  </span>
-                  <Check on={on} />
-                </button>
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.06)" }}>
-            <input type="text" aria-label="Otra cosa" value={b.custom} onChange={(e) => setB((x) => ({ ...x, custom: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") useCustom(); }} placeholder="Otra cosa: escríbelo con tus palabras" style={{ flex: 1, minWidth: 0, height: "44px", border: 0, outline: "none", background: "transparent", fontSize: "15px" }} />
-            <button type="button" onClick={useCustom} disabled={!b.custom.trim()} style={{ height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: b.custom.trim() ? INK : "rgba(18,19,26,.08)", color: b.custom.trim() ? "#FFFFFF" : "#8A8D96" }}>Usar</button>
-          </div>
-        </div>
-      ) : null}
-
-      {panel === "out" ? (
-        <div role="dialog" aria-labelledby="out-h" style={{ padding: "18px", borderRadius: "26px", background: SOFT, display: "flex", flexDirection: "column", gap: "12px", animation: "rise .3s ease-out" }}>
-          <PanelHead id="out-h" title="¿Qué hace con el resultado?" hint="Dónde lo verás" />
-          <div role="listbox" aria-labelledby="out-h" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "6px" }}>
-            {OUTS.map((o) => {
-              const on = o.id === b.out;
-              return (
-                <button key={o.id} type="button" role="option" aria-selected={on} onClick={() => set({ out: o.id })} style={optionStyle(on)}>
-                  <span aria-hidden="true" style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", borderRadius: "11px", font: "600 15px/1 'Geist', sans-serif", background: o.tint }}>{o.glyph}</span>
-                  <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                    <strong style={{ fontSize: "15px", fontWeight: 600 }}>{o.title}</strong>
-                    <span style={{ fontSize: "13px", color: MUTED }}>{o.desc}</span>
-                  </span>
-                  <Check on={on} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      {panel ? (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-8px" }}>
-          <button type="button" onClick={() => setPanel(null)} style={{ height: "42px", padding: "0 20px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Listo</button>
-        </div>
-      ) : null}
-
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "14px", paddingTop: "6px", borderTop: "1px solid rgba(18,19,26,.06)" }}>
-        <span role="status" style={{ flex: "1 1 320px", paddingTop: "14px", fontSize: "14px", lineHeight: 1.5, color: msg?.error || act.error ? "#B4231A" : MUTED }}>
-          {act.error || preview}
-          {msg?.missionId ? <> <button type="button" onClick={() => navigate(`/encargo/${msg.missionId}`)} style={{ border: 0, padding: 0, background: "none", color: INK, fontWeight: 600, textDecoration: "underline", cursor: "pointer", font: "inherit" }}>Ver cómo va</button></> : null}
-        </span>
-        <span style={{ display: "flex", gap: "8px", paddingTop: "14px" }}>
-          <button type="button" onClick={onTest} disabled={act.busy} style={{ height: "48px", padding: "0 20px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: act.busy ? "wait" : "pointer", fontSize: "15px", fontWeight: 600, color: INK }}>
-            {savedId ? "Probar otra vez" : "Probar ahora"}
-          </button>
-          <button type="button" onClick={onActivate} disabled={act.busy} style={{ height: "48px", padding: "0 24px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: act.busy ? "wait" : "pointer", fontSize: "15px", fontWeight: 600 }}>Activar</button>
-        </span>
-      </div>
-    </section>
-  );
-}
-
-function Switch({ on, label, onClick, busy }) {
-  return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={onClick} disabled={busy} style={{ width: "52px", height: "32px", flex: "none", padding: "3px", border: 0, borderRadius: "16px", cursor: busy ? "wait" : "pointer", transition: "background .25s ease", background: on ? "#0B8A5F" : "rgba(18,19,26,.14)" }}>
-      <span style={{ display: "block", width: "26px", height: "26px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", transform: on ? "translateX(20px)" : "translateX(0)" }} />
-    </button>
-  );
-}
-
-function RoutineList({ automations, bots, ready, onNew, open }) {
-  const act = useAction();
-  const sorted = [...automations].sort((a, b) => Number(b.enabled) - Number(a.enabled) || String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-  return (
-    <section aria-labelledby="list-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      <h2 id="list-t" style={{ margin: "0 0 4px", font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>Activas</h2>
-      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4231A" }}>{act.error}</p> : null}
-      {!ready ? <div style={{ height: "88px", borderRadius: "28px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
-      {ready && !sorted.length && !open ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "14px", padding: "28px", borderRadius: "28px", background: "rgba(255,255,255,.55)" }}>
-          <span style={{ fontSize: "17px", lineHeight: 1.5 }}>Aún no hay rutinas. Empieza por algo que repites cada semana.</span>
-          <button type="button" onClick={onNew} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Nueva rutina</button>
-        </div>
-      ) : null}
-      {sorted.map((a) => {
-        const bot = bots.find((x) => x.id === a.botId);
-        const on = a.enabled;
-        const blocked = a.state === "blocked";
-        return (
-          <article key={a.id} style={{ display: "flex", alignItems: "center", gap: "22px", padding: "24px 26px", background: "#FFFFFF", borderRadius: "28px", transition: "opacity .3s ease", opacity: on ? 1 : 0.55 }}>
-            {bot ? <BotPresence bot={bot} size={40} state={a.state === "running" ? "work" : null} /> : <span style={{ width: 40 }} />}
-            <button type="button" onClick={() => navigate(`/automatizaciones?id=${encodeURIComponent(a.id)}`)} title="Ver y cambiar los detalles" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "6px", padding: 0, border: 0, background: "none", textAlign: "left", cursor: "pointer", color: INK }}>
-              <span style={{ fontSize: "18px", lineHeight: 1.45, letterSpacing: "-0.01em" }}>{a.name}</span>
-              <span style={{ fontSize: "13px", color: blocked ? "#8A5A00" : FAINT }}>{[bot?.name, blocked && a.error ? a.error : a.subtitle].filter(Boolean).join(" · ")}</span>
+      {open === "out" ? (
+        <div role="group" aria-label="Qué hace con el resultado" style={{ ...panel, flexDirection: "row", flexWrap: "wrap", gap: "8px" }}>
+          {OUTS.map((o) => (
+            <button key={o.id} type="button" aria-pressed={o.id === b.out} onClick={() => set({ out: o.id })} style={{ ...choice(o.id === b.out), minHeight: "44px", padding: "8px 14px", gap: "2px" }}>
+              <span style={{ fontSize: "14px", fontWeight: 600 }}>{o.label}</span>
+              <span style={{ fontSize: "12.5px", color: FAINT }}>{o.desc}</span>
             </button>
-            <Switch on={on} busy={act.busy} label={(on ? "Pausar: " : "Activar: ") + a.name} onClick={() => act.act(() => patch(`/automations/${encodeURIComponent(a.id)}`, { enabled: !on }))} />
-          </article>
-        );
-      })}
+          ))}
+        </div>
+      ) : null}
+
+      <span role="status" style={{ fontSize: "13.5px", lineHeight: 1.5, color: msg?.error || act.error ? "#B4232A" : MUTED }}>
+        {act.error || preview}
+        {msg?.missionId ? <> <a href={`/encargo/${msg.missionId}`} onClick={go(`/encargo/${msg.missionId}`)} style={{ color: "#1F4FD1", fontWeight: 600 }}>Ver cómo va</a></> : null}
+      </span>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", paddingTop: "4px" }}>
+        <span style={{ flex: "1 1 260px", fontSize: "13.5px", color: FAINT }}>Aunque la rutina diga otra cosa, enviar fuera, pagar, publicar y borrar siempre te preguntan.</span>
+        <button type="button" onClick={onTest} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "15px", fontWeight: 500, cursor: act.busy ? "wait" : "pointer" }}>{savedId ? "Probar otra vez" : "Probar ahora"}</button>
+        <button type="button" onClick={onActivate} disabled={act.busy} style={{ height: "44px", padding: "0 22px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "15px", fontWeight: 600, cursor: act.busy ? "wait" : "pointer" }}>Activar</button>
+      </div>
     </section>
   );
 }
@@ -500,25 +519,7 @@ function untilOptions(now = new Date()) {
   return [[null, "Sin fecha"], [month.toISOString(), "Fin de mes"], [year.toISOString(), "Fin de año"]];
 }
 const longDate = (iso) => { const d = new Date(iso); return `${d.getDate()} de ${MONTH[d.getMonth()]}`; };
-
-function Segmented({ label, items, value, onPick }) {
-  return (
-    <div style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "8px" }}>
-      <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED }}>{label}</span>
-      <div role="radiogroup" aria-label={label} style={{ display: "flex", gap: "2px", padding: "3px", borderRadius: "999px", background: "rgba(18,19,26,.05)" }}>
-        {items.map(([v, text]) => {
-          const on = value === v;
-          return (
-            <button key={String(v)} type="button" role="radio" aria-checked={on} onClick={() => onPick(v)} style={{ flex: 1, height: "38px", padding: "0 10px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: 600, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none", color: INK }}>
-              {text}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-const inputBox = { padding: "14px 18px", border: 0, borderRadius: "16px", outline: "none", background: "#F4F4F0", fontSize: "16px", lineHeight: 1.5, resize: "vertical", fontFamily: "inherit", color: INK };
+const inputBox = { padding: "12px 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", outline: "none", background: "#FFFFFF", fontSize: "15px", lineHeight: 1.5, resize: "vertical", fontFamily: "inherit", color: INK };
 
 function OrderForm({ team, initial, onClose }) {
   const untils = useMemo(() => untilOptions(), []);
@@ -538,28 +539,13 @@ function OrderForm({ team, initial, onClose }) {
   });
   const label = (text) => <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED }}>{text}</span>;
   return (
-    <section aria-labelledby="of-t" style={{ padding: "30px 32px 26px", background: "#FFFFFF", borderRadius: "34px", boxShadow: SHEET, display: "flex", flexDirection: "column", gap: "20px", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
-      <h2 id="of-t" style={{ margin: 0, font: "600 28px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{initial ? "Cambiar el encargo" : "Nuevo encargo"}</h2>
+    <section aria-labelledby="of-t" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "24px 26px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+      <h2 id="of-t" style={{ margin: 0, fontSize: "15px", fontWeight: 600 }}>{initial ? "Cambiar el encargo" : "Nuevo encargo"}</h2>
       <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {label("Nombre del encargo")}
-        <input type="text" autoFocus value={f.title} maxLength={100} onChange={(e) => set({ title: e.target.value })} placeholder="Facturas de proveedores" style={{ ...inputBox, height: "52px", padding: "0 18px" }} />
+        <input type="text" autoFocus value={f.title} maxLength={100} onChange={(e) => set({ title: e.target.value })} placeholder="Facturas de proveedores" style={{ ...inputBox, height: "44px", padding: "0 14px" }} />
       </label>
-      {!initial ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {label("Quién se encarga")}
-          <div role="radiogroup" aria-label="Quién se encarga" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {team.map((b) => {
-              const on = f.botId === b.id;
-              return (
-                <button key={b.id} type="button" role="radio" aria-checked={on} onClick={() => set({ botId: b.id })} style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 16px 0 12px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "14px", fontWeight: 600, background: on ? INK : "rgba(18,19,26,.05)", color: on ? "#FFFFFF" : INK }}>
-                  <BotPresence bot={b} size={16} />
-                  {b.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
+      {!initial ? <Pills label="Quién se encarga" value={f.botId} onPick={(v) => set({ botId: v })} items={team.map((b) => [b.id, b.name])} /> : null}
       <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {label("Qué hace")}
         <textarea rows="2" value={f.what} onChange={(e) => set({ what: e.target.value })} placeholder="Revisa las facturas que lleguen y apúntalas en la hoja de gastos." style={inputBox} />
@@ -569,173 +555,65 @@ function OrderForm({ team, initial, onClose }) {
         <textarea rows="2" value={f.stopWhen} onChange={(e) => set({ stopWhen: e.target.value })} placeholder="Si el importe pasa de 500 € o falta algún dato." style={inputBox} />
       </label>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-        <Segmented label="Avisos como mucho" items={NOTIFY} value={f.notifyMax} onPick={(v) => set({ notifyMax: v })} />
-        <Segmented label="Hasta (opcional)" items={untilItems} value={f.until} onPick={(v) => set({ until: v })} />
+        <Pills label="Avisos como mucho" items={NOTIFY} value={f.notifyMax} onPick={(v) => set({ notifyMax: v })} />
+        <Pills label="Hasta (opcional)" items={untilItems} value={f.until} onPick={(v) => set({ until: v })} />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "20px", background: SOFT }}>
-        <span style={{ fontSize: "14px", lineHeight: 1.45 }}>Aunque el encargo diga otra cosa, siempre te pide permiso para:</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {["Enviar algo fuera", "Mover dinero", "Borrar archivos", "Instalar programas"].map((t) => (
-            <span key={t} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 12px", borderRadius: "999px", background: "#FFFFFF", fontSize: "13px", fontWeight: 500 }}>{"🔒 " + t}</span>
-          ))}
-        </div>
-      </div>
-      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4231A" }}>{act.error}</p> : null}
+      <span style={{ fontSize: "13.5px", color: FAINT }}>Aunque el encargo diga otra cosa, enviar algo fuera, mover dinero, borrar archivos e instalar programas siempre te preguntan.</span>
+      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{act.error}</p> : null}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-        <button type="button" onClick={onClose} style={{ height: "48px", padding: "0 20px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "15px", fontWeight: 600, color: INK }}>Cancelar</button>
-        <button type="button" onClick={save} disabled={!ready || act.busy} style={{ height: "48px", padding: "0 24px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "15px", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>
-          {initial ? "Guardar cambios" : "Guardar encargo"}
-        </button>
+        <button type="button" onClick={onClose} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "14.5px", fontWeight: 500 }}>Cancelar</button>
+        <button type="button" onClick={save} disabled={!ready || act.busy} style={{ height: "42px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "14.5px", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>{initial ? "Guardar cambios" : "Guardar encargo"}</button>
       </div>
     </section>
   );
 }
 
-function Orders({ team, list, loading, form, setForm, automations }) {
-  const [editing, setEditing] = useState(null);
-  const act = useAction();
-  const toRoutine = (o) => act.act(() => post(`/standing-orders/${encodeURIComponent(o.id)}/automation`, {}));
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "18px", animation: "fade .3s ease-out" }}>
-      {form ? <OrderForm team={team} onClose={() => setForm(false)} /> : null}
-      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4231A" }}>{act.error}</p> : null}
-      {loading ? <div style={{ height: "160px", borderRadius: "30px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
-      {!loading && !list.length && !form ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "14px", padding: "28px", borderRadius: "28px", background: "rgba(255,255,255,.55)" }}>
-          <span style={{ fontSize: "17px", lineHeight: 1.5 }}>Sin encargos. Un encargo es algo que un bot atiende siempre que haga falta, como registrar las facturas que lleguen.</span>
-          <button type="button" onClick={() => setForm(true)} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Nuevo encargo</button>
-        </div>
-      ) : null}
-      {list.map((o) => {
-        if (editing === o.id) return <OrderForm key={o.id} team={team} initial={o} onClose={() => setEditing(null)} />;
-        const bot = team.find((b) => b.id === o.botId);
-        const rule = o.automationId ? automations.find((a) => a.id === o.automationId) : null;
-        const foot = [
-          "Avisos como mucho: " + (NOTIFY.find(([k]) => k === o.notifyMax)?.[1] || "cada vez").toLowerCase(),
-          o.until ? (o.expired ? "terminó el " : "hasta el ") + longDate(o.until) : "sin fecha de fin",
-          o.when ? "cuándo: " + o.when : null,
-          !o.active ? "en pausa" : null,
-        ].filter(Boolean).join(" · ");
-        return (
-          <article key={o.id} style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "26px 28px", background: "#FFFFFF", borderRadius: "30px", opacity: o.active && !o.expired ? 1 : 0.6, transition: "opacity .3s ease" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px" }}>
-              {bot ? <BotPresence bot={bot} size={36} /> : null}
-              <span style={{ flex: "1 1 240px", display: "flex", flexDirection: "column", gap: "3px" }}>
-                <strong style={{ font: "600 22px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{o.title}</strong>
-                <span style={{ fontSize: "14px", color: MUTED }}>{(bot?.name || "Un bot") + " se encarga"}</span>
-              </span>
-              <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-                <button type="button" onClick={() => setEditing(o.id)} style={{ height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: INK }}>Editar</button>
-                {rule ? (
-                  <button type="button" onClick={() => navigate(`/automatizaciones?id=${encodeURIComponent(rule.id)}`)} style={{ height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1.5px rgba(11,138,95,.35)", color: "#0B6B4A", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Automatización creada ✓</button>
-                ) : o.schedule ? (
-                  <button type="button" onClick={() => toRoutine(o)} disabled={act.busy} style={{ height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1.5px rgba(18,19,26,.15)", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: INK }}>Crear la automatización</button>
-                ) : null}
-                <Switch on={o.active} busy={act.busy} label={(o.active ? "Pausar: " : "Reanudar: ") + o.title} onClick={() => act.act(() => patch(`/standing-orders/${encodeURIComponent(o.id)}`, { active: !o.active }))} />
-              </span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", gap: "12px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "16px", borderRadius: "18px", background: SOFT }}>
-                <span style={{ fontSize: "12px", fontWeight: 500, color: FAINT }}>Qué hace</span>
-                <span style={{ fontSize: "15px", lineHeight: 1.5 }}>{o.what}</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "16px", borderRadius: "18px", background: SOFT }}>
-                <span style={{ fontSize: "12px", fontWeight: 500, color: FAINT }}>Para y te pregunta</span>
-                <span style={{ fontSize: "15px", lineHeight: 1.5 }}>{o.stopWhen || "Solo en las líneas rojas."}</span>
-              </div>
-            </div>
-            <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "13px", color: FAINT }}>
-              {foot}
-              <button type="button" onClick={() => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Encargo «${o.title}» borrado`, error: "No se pudo borrar el encargo", run: () => act.act(() => del(`/standing-orders/${encodeURIComponent(o.id)}`)) })} style={{ border: 0, padding: 0, background: "none", cursor: "pointer", fontSize: "13px", color: FAINT, textDecoration: "underline" }}>Borrar</button>
-            </span>
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-
 // ───────────────────────────────────────────────────────────── Recordatorios por tema
-function Reminders({ list, loading, missions, bots }) {
+function ReminderForm() {
   const [topic, setTopic] = useState("");
   const [what, setWhat] = useState("");
-  const [fresh, setFresh] = useState(null);
   const act = useAction();
   const ready = topic.trim().length >= 2 && what.trim().length >= 3;
   const touched = topic || what;
   const add = () => act.act(async () => {
     if (!ready) return;
     const keywords = topic.split(/[,;]/).map((x) => x.trim()).filter((x) => x.length >= 2);
-    const r = await post("/intents", { keywords, remind: what.trim() });
-    setFresh(r?.id || null);
+    await post("/intents", { keywords, remind: what.trim() });
     setTopic(""); setWhat("");
   });
-  const roomName = (id) => missions.find((m) => m.id === id)?.title;
-  const meta = (r) => {
-    if (!r.active) return "En pausa";
-    if (r.expiresAt && Date.parse(r.expiresAt) <= Date.now()) return "Caducado";
-    if (r.hits >= r.maxHits) return `Ya lo recordó ${r.hits} ${r.hits === 1 ? "vez" : "veces"}`;
-    if (!r.hits) return fresh === r.id ? "Recién añadido" : "Aún no ha salido";
-    return `Lo recordó ${r.hits} ${r.hits === 1 ? "vez" : "veces"} de ${r.maxHits}`;
-  };
-  const sample = list[0];
-  const atlas = bots.find((b) => /coordin/i.test(b.role || "")) || bots[0];
-  const input = { flex: 1, minWidth: 0, height: "50px", padding: "0 16px", border: 0, borderRadius: "14px", outline: "none", background: "#F4F4F0", font: "500 17px/1 'Geist', sans-serif", letterSpacing: "normal", color: INK };
+  const input = { flex: 1, minWidth: 0, height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", outline: "none", background: "#FFFFFF", font: "500 16px/1 'Geist', sans-serif", color: INK };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "18px", animation: "fade .3s ease-out" }}>
-      <section aria-labelledby="rf-t" style={{ padding: "26px 28px", background: "#FFFFFF", borderRadius: "30px", display: "flex", flexDirection: "column", gap: "16px" }}>
-        <h2 id="rf-t" style={{ margin: 0, fontSize: "13px", fontWeight: 500, color: FAINT }}>Nuevo recordatorio · vale en cualquier sala o chat</h2>
-        <p style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", font: "600 clamp(22px, 2.6vw, 28px)/1.4 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
-          Cuando se hable de
-          <label style={{ flex: "1 1 260px", display: "flex" }}>
-            <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Cuando se hable de</span>
-            <input id="rf-topic" type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="contrato de limpieza, limpieza" style={input} />
-          </label>
-          , recuérdame
-          <label style={{ flex: "2 1 320px", display: "flex" }}>
-            <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Recuérdame</span>
-            <input type="text" value={what} onChange={(e) => setWhat(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} placeholder="que el preaviso es de 30 días" style={input} />
-          </label>
-          .
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-          <span role="status" style={{ fontSize: "13px", color: act.error ? "#B4231A" : touched && !ready ? "#8A5A00" : FAINT }}>
-            {act.error || (touched && !ready ? "Escribe al menos una palabra o frase en cada lado." : "Palabras o frases separadas por comas.")}
-          </span>
-          <button type="button" onClick={add} disabled={!ready || act.busy} style={{ height: "46px", padding: "0 22px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "15px", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
-        </div>
-      </section>
-      {loading ? <div style={{ height: "80px", borderRadius: "24px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
-      {list.map((r) => (
-        <div key={r.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 18px", padding: "20px 24px", background: "#FFFFFF", borderRadius: "24px", animation: fresh === r.id ? "pop .45s ease-out" : "none", opacity: r.active ? 1 : 0.6 }}>
-          <span style={{ flex: "1 1 360px", fontSize: "18px", lineHeight: 1.5 }}>
-            {"Cuando se hable de "}
-            <strong style={{ fontWeight: 600, boxShadow: "inset 0 -0.38em 0 rgba(255,201,60,.45)" }}>{r.keywords.join(", ")}</strong>
-            {", recuérdame "}
-            <strong style={{ fontWeight: 600 }}>{r.remind.replace(/\.$/, "")}</strong>
-            {"."}
-          </span>
-          <span style={{ fontSize: "13px", color: FAINT }}>{[meta(r), r.missionId && roomName(r.missionId) ? "solo en #" + roomName(r.missionId) : null].filter(Boolean).join(" · ")}</span>
-          {!r.active || r.hits >= r.maxHits ? (
-            <button type="button" onClick={() => act.act(() => patch(`/intents/${encodeURIComponent(r.id)}`, { active: true }))} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: INK }}>Reactivar</button>
-          ) : null}
-          <button type="button" onClick={() => later({ id: "intent:" + r.id, keys: ["intent:" + r.id], text: "Recordatorio borrado", error: "No se pudo borrar el recordatorio", run: () => act.act(() => del(`/intents/${encodeURIComponent(r.id)}`)) })} aria-label="Borrar este recordatorio" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer", color: INK }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-          </button>
-        </div>
-      ))}
-      {!loading && !list.length ? <p style={{ margin: 0, padding: "20px", textAlign: "center", fontSize: "15px", color: FAINT }}>Sin recordatorios por tema.</p> : null}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "20px 24px", borderRadius: "24px", background: "rgba(255,255,255,.55)" }}>
-        <span style={{ fontSize: "13px", fontWeight: 500, color: FAINT }}>Así aparece en una sala</span>
-        <div style={{ display: "grid", gridTemplateColumns: "30px 1fr", gap: "12px", alignItems: "start" }}>
-          <span style={{ display: "grid", placeItems: "center", width: "30px", height: "30px" }}>{atlas ? <BotPresence bot={atlas} size={24} /> : null}</span>
-          <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <span style={{ fontSize: "13px", color: FAINT }}><strong style={{ color: INK, fontWeight: 600 }}>{atlas?.name || "Colmena"}</strong>{" · recordatorio para ti"}</span>
-            <span style={{ fontSize: "15px", lineHeight: 1.5 }}>
-              {"Se está hablando de "}<strong style={{ fontWeight: 600 }}>{sample?.keywords[0] || "contrato de limpieza"}</strong>{". Me pediste que te recordara " + (sample?.remind.replace(/\.$/, "") || "que el preaviso es de 30 días") + "."}
-            </span>
-          </span>
-        </div>
+    <section aria-labelledby="rf-t" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "22px", background: SOFT }}>
+      <h3 id="rf-t" style={{ margin: 0, fontSize: "14px", fontWeight: 600 }}>Nuevo recordatorio <span style={{ fontWeight: 400, color: FAINT }}>· vale en cualquier sala o chat</span></h3>
+      <p style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", font: "500 clamp(19px, 2vw, 22px)/1.4 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>
+        Cuando se hable de
+        <label style={{ flex: "1 1 220px", display: "flex" }}>
+          <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Cuando se hable de</span>
+          <input id="rf-topic" type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="contrato de limpieza, limpieza" style={input} />
+        </label>
+        , recuérdame
+        <label style={{ flex: "2 1 280px", display: "flex" }}>
+          <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Recuérdame</span>
+          <input type="text" value={what} onChange={(e) => setWhat(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} placeholder="que el preaviso es de 30 días" style={input} />
+        </label>
+      </p>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+        <span role="status" style={{ fontSize: "13px", color: act.error ? "#B4232A" : touched && !ready ? "#8A5A00" : FAINT }}>{act.error || (touched && !ready ? "Escribe al menos una palabra o frase en cada lado." : "Palabras o frases separadas por comas.")}</span>
+        <button type="button" onClick={add} disabled={!ready || act.busy} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
+      </div>
+    </section>
+  );
+}
+function ReminderSample({ sample, atlas }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 20px", borderRadius: "20px", background: "rgba(255,255,255,.55)" }}>
+      <span style={{ fontSize: "13px", fontWeight: 500, color: FAINT }}>Así aparece en una sala</span>
+      <div style={{ display: "grid", gridTemplateColumns: "24px 1fr", gap: "12px", alignItems: "start" }}>
+        {atlas ? <BotPresence bot={atlas} size={22} /> : <span />}
+        <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span style={{ fontSize: "13px", color: FAINT }}><strong style={{ color: INK, fontWeight: 600 }}>{atlas?.name || "Colmena"}</strong>{" · recordatorio para ti"}</span>
+          <span style={{ fontSize: "14.5px", lineHeight: 1.5 }}>{"Se está hablando de "}<strong style={{ fontWeight: 600 }}>{sample?.keywords[0] || "contrato de limpieza"}</strong>{". Me pediste que te recordara " + (sample?.remind.replace(/\.$/, "") || "que el preaviso es de 30 días") + "."}</span>
+        </span>
       </div>
     </div>
   );

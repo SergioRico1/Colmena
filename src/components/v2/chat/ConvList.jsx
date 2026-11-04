@@ -34,11 +34,10 @@ export default function ConvList({ current = null }) {
   const [sheet, setSheet] = useState(false);
   const [peerSheet, setPeerSheet] = useState(null); // "invitar" | "aceptar"
   useEffect(() => {
-    const onKey = (e) => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "n") { e.preventDefault(); setSheet(true); } };
-    const onOpen = () => setSheet(true);
-    window.addEventListener("keydown", onKey);
+    // Ctrl N is the sidebar's «Nuevo» menu now; its «Chat con un bot» and «Sala» open this sheet.
+    const onOpen = (e) => setSheet(e?.detail?.kind === "sala" ? "sala" : "chat");
     window.addEventListener("colmena:new-conversation", onOpen);
-    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("colmena:new-conversation", onOpen); };
+    return () => window.removeEventListener("colmena:new-conversation", onOpen);
   }, []);
   const botOf = (id) => bots.find((b) => b.id === id) || null;
   // One row per bot (its single chat, threads.js) and rooms; a private chat only while open.
@@ -100,7 +99,7 @@ export default function ConvList({ current = null }) {
           );
         })}
       </div>
-      {sheet ? <NewConversation onClose={() => setSheet(false)} onPeople={(which) => { setSheet(false); setPeerSheet(which); }} /> : null}
+      {sheet ? <NewConversation mode={sheet === "sala" ? "sala" : "chat"} onClose={() => setSheet(false)} onPeople={(which) => { setSheet(false); setPeerSheet(which); }} /> : null}
       {peerSheet === "invitar" ? <InviteSheet onClose={() => setPeerSheet(null)} /> : null}
       {peerSheet === "aceptar" ? <AcceptSheet onClose={() => setPeerSheet(null)} /> : null}
     </aside>
@@ -131,8 +130,11 @@ function ShareRow({ share, on }) {
   );
 }
 
-/** «Nuevo chat»: one bot → a private chat; two or more → a room with a name. */
-export function NewConversation({ onClose, preset = [], onPeople = null }) {
+/**
+ * «Nuevo chat»: one bot → a private chat; two or more → a room with a name. With mode «sala»
+ * (Ctrl N › Sala, «Crear una sala», «Llevar a una sala») even one bot makes a room.
+ */
+export function NewConversation({ onClose, preset = [], onPeople = null, mode = "chat" }) {
   const { bots, peers = null } = useStore();
   const [sel, setSel] = useState(preset);
   const [q, setQ] = useState("");
@@ -154,7 +156,8 @@ export function NewConversation({ onClose, preset = [], onPeople = null }) {
   const chosen = sel.map((id) => team.find((b) => b.id === id)).filter(Boolean);
   const chosenPeople = people.map((id) => contacts.find((c) => c.id === id)).filter(Boolean);
   const withPeople = chosenPeople.length > 0;
-  const isRoom = chosen.length >= 2 || chosenPeople.length >= 2;
+  const salaMode = mode === "sala";
+  const isRoom = chosen.length >= (salaMode ? 1 : 2) || chosenPeople.length >= 2;
   const first = (n) => fold(String(n).split(/\s+/)[0]);
   const auto = withPeople ? chosenPeople.slice(0, 2).map((c) => first(c.name)).join("-y-") : chosen.slice(0, 2).map((b) => fold(b.name)).join("-y-");
   const match = (text) => !q.trim() || fold(text).includes(fold(q.trim()));
@@ -162,9 +165,9 @@ export function NewConversation({ onClose, preset = [], onPeople = null }) {
   const peopleItems = contacts.filter((c) => match(c.name));
   const hint = withPeople
     ? (chosenPeople.length === 1 ? `Conversación con ${chosenPeople[0].name}. Solo la leéis vosotros dos.` : `Una conversación con ${chosenPeople.length} personas y tú. Solo la leéis quienes estéis en ella.`)
-    : !chosen.length ? "Elige un bot o una persona. Si añades otro más, se convertirá en una sala."
-      : chosen.length === 1 ? `Conversación privada con ${chosen[0].name}. Solo la veréis tú y ${chosen[0].name}.`
-        : `Será una sala con ${chosen.length} bots${chosen.some((b) => b.id === "atlas") ? "" : " (Atlas coordina)"}. Escribe tu primer mensaje y empiezan.`;
+    : !chosen.length ? (salaMode ? "Elige los bots de la sala. Atlas coordina y todos lo veis aquí." : "Elige un bot o una persona. Si añades otro más, se convertirá en una sala.")
+      : chosen.length === 1 && !salaMode ? `Conversación privada con ${chosen[0].name}. Solo la veréis tú y ${chosen[0].name}.`
+        : `Será una sala con ${chosen.length === 1 ? "1 bot" : chosen.length + " bots"}${chosen.some((b) => b.id === "atlas") ? "" : " (Atlas coordina)"}. Escribe tu primer mensaje y empiezan.`;
   const go = async () => {
     if (withPeople) {
       if (busy) return;
@@ -185,14 +188,14 @@ export function NewConversation({ onClose, preset = [], onPeople = null }) {
     }
     if (!chosen.length) return;
     onClose();
-    if (chosen.length === 1) navigate(`/chat/${chosen[0].id}`);
+    if (chosen.length === 1 && !salaMode) navigate(`/chat/${chosen[0].id}`);
     else navigate(`/sala/nueva?bots=${chosen.map((b) => b.id).join(",")}&nombre=${encodeURIComponent((name || auto).slice(0, 60))}`);
   };
   return (
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: "0", zIndex: "70", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px 24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
       <div role="dialog" aria-modal="true" aria-labelledby="nc-t" style={{ width: "min(620px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "32px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "24px 24px 6px 28px" }}>
-          <h2 id="nc-t" style={{ margin: "0", font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{withPeople ? (isRoom ? "Nueva conversación" : "Nuevo chat") : isRoom ? "Nueva sala" : "Nuevo chat"}</h2>
+          <h2 id="nc-t" style={{ margin: "0", font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{withPeople ? (isRoom ? "Nueva conversación" : "Nuevo chat") : isRoom || (salaMode && !chosen.length) ? "Nueva sala" : "Nuevo chat"}</h2>
           <button type="button" aria-label="Cerrar" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>

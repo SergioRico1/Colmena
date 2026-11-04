@@ -84,8 +84,8 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
       {
         title: "Convertir en",
         items: [
-          { key: "goal", label: "Objetivo", hint: "Que siga avanzando hasta lograrlo", Icon: Target, run: () => navigate("/objetivos?nuevo=" + encodeURIComponent(draft)) },
-          { key: "routine", label: "Rutina", hint: "Que se repita sola", Icon: Repeat, run: () => navigate("/rutinas?nueva=1" + (draft ? "&texto=" + encodeURIComponent(draft) : "") + (botId ? "&bot=" + encodeURIComponent(botId) : "")) },
+          { key: "goal", label: "Objetivo", hint: "Que siga avanzando hasta lograrlo", Icon: Target, run: () => navigate("/trabajo/objetivos?nuevo=" + encodeURIComponent(draft)) },
+          { key: "routine", label: "Rutina", hint: "Que se repita sola", Icon: Repeat, run: () => navigate("/trabajo/rutinas?nueva=1" + (draft ? "&texto=" + encodeURIComponent(draft) : "") + (botId ? "&bot=" + encodeURIComponent(botId) : "")) },
         ],
       },
       {

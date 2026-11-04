@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
+import { SHAPES } from "../Presence.jsx";
 
 // Small pieces shared by the «Código» screen (design/V2Codigo.dc.html).
 
 export const C = {
   ink: "#12131A", body: "#1E2029", text: "#3D404A", muted: "#5C606C", faint: "#6B6F7A", quiet: "#8A8D96", rule: "rgba(18,19,26,.07)",
   paper: "#F5F5F2", soft: "#F4F4F0", white: "#FFFFFF", honey: "#FFC93C", honeyText: "#8A5A00", green: "#0B8A5F", greenText: "#0B6B4A",
-  greenSoft: "#E1F4EC", red: "#A33A2C", bruno: "#FF7A1A", blue: "#1F4FD1",
+  greenSoft: "#E1F4EC", red: "#B4232A", redSoft: "#FBE9EA", bruno: "#FF7A1A", blue: "#1F4FD1", text2: "#4A4D57", card: "#F6F6F3", track: "#F1F1EC",
 };
 export const MONO = "'Geist Mono', ui-monospace, monospace";
 export const HEAD = "'Bricolage Grotesque', sans-serif";
@@ -40,7 +41,7 @@ export function Seg({ options, value, onChange, small = false, label }) {
 }
 
 /** A quiet chip that opens a menu above it (composer) or below it. */
-export function MenuChip({ label, icon = null, title, children, up = true, width = 320, align = "left", chevron = true, className = "", keepLabel = false }) {
+export function MenuChip({ label, icon = null, title, children, up = true, width = 320, align = "left", chevron = true, className = "", keepLabel = false, look = null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -54,7 +55,7 @@ export function MenuChip({ label, icon = null, title, children, up = true, width
   return (
     <div ref={ref} className={className} style={{ position: "relative", minWidth: 0 }}>
       <button type="button" title={title} aria-label={label ? undefined : title} aria-expanded={open} onClick={() => setOpen(!open)}
-        style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "34px", padding: label ? "0 10px" : "0", width: label ? undefined : "34px", justifyContent: "center", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: C.text, whiteSpace: "nowrap" }}>
+        style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "34px", padding: label ? "0 10px" : "0", width: label ? undefined : "34px", justifyContent: "center", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: C.text, whiteSpace: "nowrap", ...look }}>
         {icon}{label ? <span className={icon && !keepLabel ? "code-chip-label code-chip-label--icon" : "code-chip-label"}>{label}</span> : null}{chevron ? <ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} /> : null}
       </button>
       {open ? (
@@ -103,6 +104,38 @@ export function BrunoMark({ size = 18, state = "rest", bot = null }) {
   );
 }
 
+/**
+ * A bot as Colmena 3 draws it (design/V3Sistema.dc.html): a flat shape in its colour, breathing
+ * while it works, a honey ring when it waits for you. `bot` comes from the store (Bruno by default).
+ */
+export function BotShape({ bot = null, size = 16, state = "rest" }) {
+  const color = bot?.color || C.bruno;
+  const shape = SHAPES[bot?.shape] || (bot ? SHAPES.circle : SHAPES.arch);
+  const mark = <span aria-hidden="true" style={{ flex: "none", display: "block", width: size + "px", height: size + "px", background: color, clipPath: shape.clip, borderRadius: shape.radius, animation: state === "work" ? "breathe 2.4s ease-in-out infinite" : "none" }} />;
+  if (state !== "wait") return mark;
+  const ring = Math.round(size * 1.6);
+  return <span aria-hidden="true" style={{ flex: "none", width: ring + "px", height: ring + "px", display: "grid", placeItems: "center", borderRadius: "50%", boxShadow: "inset 0 0 0 2px #FFC93C" }}>{mark}</span>;
+}
+
+/** The bot of a task, from the store (tasks say botId; Bruno codes). */
+export const botOf = (bots, task) => (bots || []).find((b) => b.id === (task?.botId || "bruno")) || null;
+
+/** A state in words (design/V3Sistema.dc.html «Estados en palabras»), from model.js pillOf. */
+export function Pill({ pill, size = "sm" }) {
+  return <span style={{ flex: "none", height: size === "sm" ? "24px" : "28px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: pill.bg, color: pill.ink, fontSize: size === "sm" ? "12px" : "13px", fontWeight: 600, whiteSpace: "nowrap" }}>{pill.text}</span>;
+}
+
+/** Buttons of Colmena 3: one ink action per screen, the others outlined, the rare ones quiet. */
+export const BTN = {
+  primary: { height: "40px", padding: "0 18px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
+  outline: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "14px", fontWeight: 400, cursor: "pointer", whiteSpace: "nowrap" },
+  blocked: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px dashed rgba(18,19,26,.2)", borderRadius: "999px", background: "transparent", color: "#5C606C", fontSize: "14px", cursor: "not-allowed", whiteSpace: "nowrap" },
+  quiet: { height: "40px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "999px", background: "transparent", color: "#4A4D57", fontSize: "14px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
+};
+/** The soft chips of the composers (project, engine): #F6F6F3 with a hairline. */
+export const CHIP = { height: "34px", padding: "0 12px", gap: "8px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#F6F6F3", fontSize: "13.5px", fontWeight: 400, color: "#12131A" };
+export const SR = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
+
 export const CODE_CSS = `
 .code-hover{transition:background .15s ease}
 .code-hover:hover{background:rgba(18,19,26,.035)}
@@ -110,15 +143,9 @@ export const CODE_CSS = `
 .code-turn:hover .code-tools,.code-turn:focus-within .code-tools{opacity:1}
 .code-task .code-x{opacity:0}
 .code-task:hover .code-x,.code-task:focus-within .code-x{opacity:1}
-.code-task:hover .code-stat,.code-task:focus-within .code-stat{opacity:0}
-@media (max-width: 1180px){[data-codepanel]{display:none!important}}
-.code-composer{container-type:inline-size}
-.code-more,.code-more-mode{display:none}
-.code-model-label{display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
-@container (max-width: 760px){.code-ring-text{display:none}.code-chip-label--icon{display:none}}
-@container (max-width: 600px){.code-inline-extra{display:none}.code-more{display:block}}
-@container (max-width: 480px){.code-inline-mode{display:none}.code-more-mode{display:block}.code-model-label{max-width:110px}}
-@media (max-width: 860px){[data-projects]{display:none!important}}
+.code-task:hover .code-stat,.code-task:focus-within .code-stat,.code-task:hover .code-pill,.code-task:focus-within .code-pill{opacity:0}
+.code-chip-label{overflow:hidden;text-overflow:ellipsis}
+@media (max-width: 1100px){[data-codepanel]{display:none!important}.code-chat{flex:1 1 auto!important;width:auto!important;max-width:none!important;border-right:0!important}}
 `;
 
 export const timeAgo = (iso) => {

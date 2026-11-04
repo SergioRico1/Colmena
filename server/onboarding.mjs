@@ -9,6 +9,7 @@ export const ROLES = {
   operaciones: { label: "Operaciones", team: ["atlas", "tomas", "bruno", "vera"] },
   legal: { label: "Legal", team: ["atlas", "leo", "nora", "vera"] },
   personas: { label: "Personas y RR. HH.", team: ["atlas", "vera", "nora", "tomas"] },
+  clientes: { label: "Atención al cliente", team: ["atlas", "vera", "nora", "tomas"] },
   otra: { label: "Otra cosa", team: ["atlas", "nora", "vera", "tomas"] },
 };
 

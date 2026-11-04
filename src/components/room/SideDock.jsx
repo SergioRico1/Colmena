@@ -42,7 +42,11 @@ function MenuItem({ icon, label, hint, onClick, disabled }) {
  * dock: useDock(...) state. tabs: [{id, label, icon, render()}] in dock order (resolved by
  * the screen). addable: [{key, label, icon, combo, tab}] for «+». width: usePanelWidth key.
  */
-export default function SideDock({ dock, tabs, addable = [], widthKey = "room", label = "Panel lateral" }) {
+// tone «v3» (Colmena 3 chat and rooms): white panel with the boards hairlines.
+export default function SideDock({ dock, tabs, addable = [], widthKey = "room", label = "Panel lateral", tone = null }) {
+  const v3 = tone === "v3";
+  const paper = v3 ? "#FFFFFF" : "#F7F8FA";
+  const hair = v3 ? "rgba(18,19,26,.07)" : "#DCE0E8";
   const resize = usePanelWidth(widthKey, { min: 340, side: dock.dock });
   const [mounted, setMounted] = useState(() => new Set(dock.active ? [dock.active] : []));
   const [drag, setDrag] = useState(null);
@@ -76,9 +80,9 @@ export default function SideDock({ dock, tabs, addable = [], widthKey = "room", 
     : { flex: "1 1 400px", minWidth: "0", ...resize.style };
 
   return (
-    <aside aria-label={label} className="c-panel" style={{ background: "#F7F8FA", [left ? "borderRight" : "borderLeft"]: "1px solid #DCE0E8", display: "flex", flexDirection: "column", order: left ? -1 : 2, ...asideStyle }}>
+    <aside aria-label={label} className="c-panel" style={{ background: paper, [left ? "borderRight" : "borderLeft"]: "1px solid " + hair, display: "flex", flexDirection: "column", order: left ? -1 : 2, ...asideStyle }}>
       {dock.expanded ? null : resize.handle}
-      <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px", minHeight: "52px", padding: "8px 8px 8px 10px", borderBottom: "1px solid #E6E8EE", background: "#F7F8FA" }}>
+      <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px", minHeight: "52px", padding: "8px 8px 8px 10px", borderBottom: "1px solid " + (v3 ? "rgba(18,19,26,.06)" : "#E6E8EE"), background: paper }}>
         <div ref={strip} role="tablist" aria-label={label} style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "4px", overflowX: "auto", scrollbarWidth: "none" }}>
           {tabs.map((t, i) => {
             const on = t.id === active.id;
@@ -97,7 +101,7 @@ export default function SideDock({ dock, tabs, addable = [], widthKey = "room", 
                 }}
                 onDrop={(e) => { e.preventDefault(); if (drag && drop) dock.reorder(drag, drop.id, drop.after); setDrag(null); setDrop(null); }}
                 onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); dock.close(t.id); } }}
-                style={{ display: "flex", alignItems: "center", flex: "none", maxWidth: "200px", height: "34px", borderRadius: "9px", border: on ? "1px solid #DCE0E8" : "1px solid transparent", opacity: drag === t.id ? 0.5 : 1, ...dropLine }}>
+                style={{ display: "flex", alignItems: "center", flex: "none", maxWidth: "200px", height: "34px", borderRadius: v3 ? "999px" : "9px", border: on ? "1px solid " + hair : "1px solid transparent", background: on && v3 ? "#F1F1EC" : undefined, opacity: drag === t.id ? 0.5 : 1, ...dropLine }}>
                 <button type="button" role="tab" data-tab={t.id} aria-selected={on ? "true" : "false"} tabIndex={on ? 0 : -1} className="rm-focus" title={t.title || t.label}
                   onClick={() => (on && t.onActivate ? t.onActivate() : dock.select(t.id))} onKeyDown={(e) => onTabKey(e, i)}
                   style={{ display: "flex", alignItems: "center", gap: "7px", minWidth: 0, height: "32px", padding: "0 4px 0 10px", background: "transparent", border: "0", cursor: "pointer", fontSize: "13px", fontWeight: on ? "600" : "500", color: on ? "#12131A" : "#4A4F5C" }}>

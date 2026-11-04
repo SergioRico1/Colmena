@@ -1,33 +1,41 @@
 import { useEffect, useMemo, useState } from "react";
-import { FlaskConical, ArrowUpRight, GitMerge, Trash2, Check, X } from "lucide-react";
-import { get, post, del } from "../../../lib/api.js";
+import { get, post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
-import { C, HEAD, MONO, CARD, BrunoMark, Stat } from "./parts.jsx";
-import { taskStatus } from "./ProjectList.jsx";
-import { later } from "../../../lib/undoToast.js";
+import { useStore } from "../../../lib/store.jsx";
+import { reversible } from "../../../lib/undoToast.js";
+import { C, HEAD, MONO, BTN, EFFORT_LABEL } from "./parts.jsx";
+import { ENGINE_NAME } from "./EngineModels.jsx";
+import { recommendOf, durationLabel } from "./model.js";
 
-// «Comparar» (Colmena's own; T3 Code does not have it): the same request done by several engines
-// at once, side by side: what each one changed, what it said and whether the project's tests
-// pass in its copy. You pick the best one and save it into the base; the others can go.
+// «Comparar motores» (design/V3CodigoComparar.dc.html; T3 Code does not have it): the same
+// request done by several engines at once, each in its copy, side by side: whether the project's
+// tests pass, what it changed, how long it took and what it said. Choosing one keeps its branch
+// as the task; the others are archived (not deleted) and come back with «Deshacer».
 
-const TESTS = {
-  passed: { text: "Pasan los tests", bg: C.greenSoft, fg: "#0B5A3E" },
-  failed: { text: "Fallan los tests", bg: "#FCEEEB", fg: "#7A2A1F" },
-  running: { text: "Probando…", bg: "rgba(255,122,26,.1)", fg: "#9A4A0A" },
-  queued: { text: "En cola…", bg: C.soft, fg: C.muted },
-};
-
+const WORDS = ["", "un", "dos", "tres", "cuatro"];
 /** Bruno's last words without Markdown marks, for a short preview. */
 const plain = (text) => String(text || "").replace(/[*_`#>]+/g, "").replace(/^\s*[-•]\s+/gm, "").replace(/\s+/g, " ").trim();
+const TESTS = { passed: ["Pasan", "#E3F4EC", C.greenText], failed: ["Fallan", C.redSoft, C.red], running: ["Probando…", C.card, C.text2], queued: ["En cola…", C.card, C.text2] };
+const tokens = (n) => (n >= 1000 ? Math.round(n / 1000) + " k" : String(n));
+
+function Stat({ label, value, bg = C.card, ink = C.ink, mono = false }) {
+  return (
+    <div style={{ padding: "10px 12px", borderRadius: "12px", background: bg }}>
+      <span style={{ display: "block", fontSize: "12px", color: C.text2 }}>{label}</span>
+      <span style={mono ? { font: `600 14px/1.4 ${MONO}` } : { fontSize: "14px", fontWeight: 600, color: ink }}>{value}</span>
+    </div>
+  );
+}
 
 export default function Compare({ group, projects = [] }) {
+  const { bots } = useStore();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
-  const [chosen, setChosen] = useState(null);
+  const [picked, setPicked] = useState(null);
   // The tasks' records come live with the project list: refetch what each changed when they move.
   const live = useMemo(() => projects.flatMap((p) => p.tasks).filter((t) => t.group === group), [projects, group]);
-  const key = live.map((t) => t.id + t.updatedAt + t.status + (t.tests?.status || "")).join("|");
+  const key = live.map((t) => t.id + t.updatedAt + t.status + (t.tests?.status || "") + (t.archived ? "a" : "")).join("|");
   useEffect(() => {
     let alive = true;
     get("/code/compare/" + group).then((d) => alive && setData(d), (e) => alive && setError(e.message));
@@ -35,91 +43,116 @@ export default function Compare({ group, projects = [] }) {
   }, [group, key]);
   if (error && !data) return <section style={{ flex: 1, display: "grid", placeItems: "center", color: C.faint }}>{error}</section>;
   if (!data) return <section style={{ flex: 1 }} />;
-  const tasks = data.tasks.map((t) => ({ ...t, ...(live.find((x) => x.id === t.id) || {}), files: t.files, said: t.said }));
-  const title = tasks[0]?.title.replace(/ · [^·]+ · [^·]+$/, "") || "Comparar";
+  const tasks = data.tasks.map((t) => ({ ...t, ...(live.find((x) => x.id === t.id) || {}), files: t.files, said: t.said, asked: t.asked }));
+  const project = projects.find((p) => p.id === tasks[0]?.projectId) || null;
+  const title = tasks[0]?.title.replace(/ · [^·]+(?: · [^·]+)?$/, "") || "Comparar";
+  const asked = tasks[0]?.asked || title;
+  const open = tasks.filter((t) => !t.archived);
+  // Chosen: the one you picked here, or the only one left open after choosing.
+  const chosen = picked || (tasks.length > 1 && open.length === 1 ? open[0].id : null);
+  const working = tasks.some((t) => t.running || t.status === "working");
+  const testing = tasks.some((t) => ["running", "queued"].includes(t.tests?.status));
+  const tested = tasks.some((t) => ["passed", "failed"].includes(t.tests?.status));
+  const rec = recommendOf(tasks);
+  const recTask = rec ? tasks.find((t) => t.id === rec.id) : null;
+  const engineOf = (t) => ENGINE_NAME[t.engine] || t.engine;
+  const atlas = (bots || []).find((b) => b.id === "atlas");
   const act = async (name, fn) => { setBusy(name); setError(null); try { await fn(); } catch (e) { setError(e.message); } finally { setBusy(null); } };
   const testAll = () => act("tests", () => post("/code/compare/" + group + "/tests", {}));
-  const choose = (t) => act("save:" + t.id, async () => {
-    const r = await post("/code/tasks/" + t.id + "/save", { to: "base" });
-    if (r?.resolving) throw Error("Hay cambios que chocan con " + (t.base || "main") + ": Bruno los está resolviendo en esa tarea. Guarda cuando acabe.");
-    setChosen(t.id);
+  const choose = (t) => act("pick:" + t.id, async () => {
+    const others = tasks.filter((x) => x.id !== t.id && !x.archived);
+    if (t.archived) await post("/code/tasks/" + t.id + "/archive", { archived: false });
+    for (const x of others) await post("/code/tasks/" + x.id + "/archive", { archived: true });
+    setPicked(t.id);
+    reversible({ id: "compare:" + group, text: others.length === 1 ? "La otra propuesta está archivada" : `Las otras ${others.length} propuestas están archivadas`,
+      undo: async () => { for (const x of others) await post("/code/tasks/" + x.id + "/archive", { archived: false }); setPicked(null); } });
   });
-  const dropOthers = () => {
-    const others = tasks.filter((x) => x.id !== chosen);
-    later({ id: "compare:" + group, keys: others.map((t) => "codetask:" + t.id), text: others.length === 1 ? "La otra versión se descarta" : `Las otras ${others.length} versiones se descartan`, error: "No se pudo descartar",
-      run: async () => { for (const t of others) await del("/code/tasks/" + t.id); } });
-    navigate("/codigo/" + chosen);
-  };
-  const working = tasks.some((t) => t.running || t.status === "working");
+  const n = tasks.length;
+  const band = working ? { text: `Los ${WORDS[n] || n} trabajan a la vez, cada uno en su copia. Cuando acaben, pruébalos y elige uno.` }
+    : testing ? { text: "Probando cada copia con «" + data.testCommand + "»…" }
+      : rec ? { strong: (atlas?.name || "Colmena") + " recomienda " + engineOf(recTask) + ":", text: " " + rec.why, button: chosen === rec.id ? null : ["Seguir su consejo", () => choose(recTask)] }
+        : tested ? { text: "Ninguno pasa los tests todavía. Abre el que esté más cerca y pide a Bruno que lo arregle.", button: data.testCommand ? ["Volver a probar", testAll] : null }
+          : data.testCommand ? { text: `Antes de elegir, prueba los ${WORDS[n] || n} con «${data.testCommand}», cada uno en su copia.`, button: ["Probar todos", testAll] }
+            : { text: "Este proyecto no tiene un script «test» (en package.json o colmena.json): compara los cambios y elige." };
+  const chosenTask = tasks.find((t) => t.id === chosen);
+  const rest = n - 1;
+  const bar = chosenTask ? `Elegiste ${chosenTask.label || engineOf(chosenTask)}. Su rama pasa a ser la tarea; ${rest === 1 ? "la otra queda archivada" : "las otras " + (WORDS[rest] || rest) + " quedan archivadas"}, por si cambias de idea.`
+    : `Al elegir uno, su rama pasa a ser la tarea. ${rest === 1 ? "El otro se archiva; no se borra." : "Los otros " + (WORDS[rest] || rest) + " se archivan; no se borran."}`;
   return (
-    <section aria-label="Comparar" style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", overscrollBehavior: "contain", animation: "fade .3s ease-out" }}>
-      <div style={{ maxWidth: "1180px", margin: "0 auto", padding: "34px clamp(20px, 3vw, 40px) 40px", display: "flex", flexDirection: "column", gap: "22px" }}>
-        <header style={{ display: "flex", alignItems: "flex-end", gap: "16px", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 360px", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ font: `500 11px/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>Comparar · {tasks.length} motores con la misma petición</span>
-            <h1 style={{ margin: 0, font: `600 28px/1.1 ${HEAD}`, letterSpacing: "-0.025em" }}>{title}</h1>
-          </div>
-          <button type="button" onClick={testAll} disabled={!data.testCommand || !!busy || working} title={data.testCommand ? "Ejecuta «" + data.testCommand + "» en la copia de cada uno" : "Este proyecto no tiene un script «test»"}
-            style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: !data.testCommand || busy || working ? "default" : "pointer", fontSize: "14px", fontWeight: 600, opacity: !data.testCommand || busy || working ? 0.5 : 1 }}>
-            <FlaskConical size={15} strokeWidth={2.2} aria-hidden="true" />{busy === "tests" ? "Lanzando…" : "Probar todos"}
-          </button>
+    <section aria-label="Comparar motores" style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", overscrollBehavior: "contain", animation: "fade .3s ease-out" }}>
+      <main style={{ maxWidth: "1180px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 44px) 56px", display: "flex", flexDirection: "column", gap: "24px" }}>
+        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: C.muted }}>
+          <a href="/codigo" style={{ color: C.muted }}>Código</a><span aria-hidden="true">›</span>
+          {project ? <><a href={"/codigo?proyecto=" + project.id} style={{ fontFamily: MONO, color: C.muted }}>{project.name}</a><span aria-hidden="true">›</span></> : null}
+          <span style={{ color: C.ink, fontWeight: 500 }}>Comparar</span>
+        </nav>
+        <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <h1 style={{ margin: 0, font: `600 44px/1 ${HEAD}`, letterSpacing: "-0.04em" }}>{title}</h1>
+          <p style={{ margin: 0, fontSize: "16px", color: C.text2 }}>La misma petición a {WORDS[n] || n} motores, cada uno en su copia del proyecto. Elige el que se queda; los otros se archivan, no se borran.</p>
+          <p style={{ margin: "4px 0 0", padding: "14px 18px", borderRadius: "16px", background: C.white, fontSize: "15px", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>«{asked.trim()}»</p>
         </header>
-        {!data.testCommand ? <p style={{ margin: 0, fontSize: "13px", color: C.faint }}>Este proyecto no tiene un script «test» (en package.json o colmena.json): se comparan solo los cambios.</p> : null}
+
+        <section aria-label="Recomendación" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 22px", padding: "18px 22px", borderRadius: "22px", background: C.ink, color: C.white }}>
+          <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", background: C.white, clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
+          <p style={{ flex: "1 1 420px", margin: 0, fontSize: "15.5px", lineHeight: 1.55, color: "#E6E7EC" }}>{band.strong ? <strong style={{ color: C.white, fontWeight: 600 }}>{band.strong}</strong> : null}{band.text}</p>
+          {band.button ? <button type="button" onClick={band.button[1]} disabled={!!busy} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: C.white, color: C.ink, fontSize: "14.5px", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{busy === "tests" ? "Lanzando…" : band.button[0]}</button> : null}
+        </section>
         {error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: C.red }}>{error}</p> : null}
-        {chosen ? (
-          <div role="status" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 16px", borderRadius: "18px", background: C.greenSoft, color: "#0B5A3E", fontSize: "14px", animation: "rise .25s ease-out" }}>
-            <Check size={16} strokeWidth={2.6} aria-hidden="true" />
-            <span style={{ flex: 1 }}>Guardado en {tasks.find((t) => t.id === chosen)?.base || "main"} el de {tasks.find((t) => t.id === chosen)?.label}. ¿Borramos las demás copias?</span>
-            <button type="button" onClick={dropOthers} disabled={!!busy} style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: "pointer", fontSize: "13px", fontWeight: 600 }}><Trash2 size={13} strokeWidth={2.2} aria-hidden="true" />Borrar las demás</button>
-          </div>
-        ) : null}
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${tasks.length > 3 ? 250 : 300}px, 1fr))`, gap: "16px", alignItems: "start" }}>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "14px" }}>
           {tasks.map((t) => {
-            const s = taskStatus(t);
-            const test = t.tests ? TESTS[t.tests.status] : null;
+            const on = chosen === t.id;
             const files = t.files || [];
-            const isChosen = chosen === t.id;
+            const test = t.tests ? TESTS[t.tests.status] : null;
+            const effort = EFFORT_LABEL[t.effort] ? " · esfuerzo " + EFFORT_LABEL[t.effort].toLowerCase() : "";
+            const label = t.label ? t.label.split(" · ")[0] : engineOf(t);
             return (
-              <article key={t.id} style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "24px", background: C.white, boxShadow: isChosen ? `0 0 0 2px ${C.green}, ${CARD}` : CARD }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <BrunoMark size={26} state={t.running ? "work" : s.state} />
-                  <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-                    <strong style={{ fontSize: "15px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.label || t.engine}</strong>
-                    <span style={{ fontSize: "12px", color: s.fg }}>{t.running ? "Trabajando" : s.text}</span>
-                  </span>
-                  <Stat add={t.add} del={t.del} />
+              <article key={t.id} style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "22px", background: C.white, boxShadow: "0 0 0 2px " + (on ? C.ink : "transparent"), opacity: t.archived && !on ? 0.7 : 1 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                  <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <span style={{ fontSize: "16px", fontWeight: 600 }}>{label}</span>
+                    <span style={{ font: `400 12.5px/1.3 ${MONO}`, color: C.muted }}>{t.model}{effort}</span>
+                  </div>
+                  {rec?.id === t.id ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.ink, color: C.white, fontSize: "12px", fontWeight: 600 }}>Recomendado</span>
+                    : t.running || t.status === "working" ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#EEF0F4", color: C.blue, fontSize: "12px", fontWeight: 600 }}>Trabajando</span>
+                      : t.archived && !on ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.track, color: C.text2, fontSize: "12px", fontWeight: 600 }}>Archivada</span> : null}
                 </div>
-                {test ? (
-                  <span title={t.tests.status === "failed" ? "Mira la terminal de esa tarea para ver el error" : undefined} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", padding: "5px 11px", borderRadius: "999px", background: test.bg, color: test.fg, fontSize: "12px", fontWeight: 600 }}>
-                    {t.tests.status === "passed" ? <Check size={12} strokeWidth={2.8} aria-hidden="true" /> : t.tests.status === "failed" ? <X size={12} strokeWidth={2.8} aria-hidden="true" /> : null}
-                    {test.text}{t.tests.durationMs ? " · " + Math.max(1, Math.round(t.tests.durationMs / 1000)) + " s" : ""}
-                  </span>
-                ) : <span style={{ fontSize: "12px", color: C.quiet }}>Tests sin probar</span>}
-                <div style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "8px", borderRadius: "14px", background: "#FAFAF8", minHeight: "60px" }}>
-                  {files === null ? <span style={{ padding: "6px", fontSize: "12px", color: C.faint }}>Aún trabajando…</span>
-                    : files.length ? files.slice(0, 6).map((f) => (
-                      <span key={f.path} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 6px", font: `400 12px/1.3 ${MONO}` }}>
-                        <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><span style={{ color: C.quiet }}>{f.path.includes("/") ? f.path.slice(0, f.path.lastIndexOf("/") + 1) : ""}</span>{f.path.split("/").pop()}</span>
-                        <Stat add={f.add} del={f.del} size={11} />
-                      </span>
-                    )) : <span style={{ padding: "6px", fontSize: "12px", color: C.faint }}>No cambió archivos.</span>}
-                  {files && files.length > 6 ? <span style={{ padding: "2px 6px", fontSize: "12px", color: C.faint }}>y {files.length - 6} más</span> : null}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px" }}>
+                  <Stat label="Tests" value={test ? test[0] : "Sin probar"} bg={test ? test[1] : C.card} ink={test ? test[2] : C.text2} />
+                  <div style={{ padding: "10px 12px", borderRadius: "12px", background: C.card }}><span style={{ display: "block", fontSize: "12px", color: C.text2 }}>Cambios</span><span style={{ font: `600 14px/1.4 ${MONO}` }}>{t.add || t.del ? <><span style={{ color: C.greenText }}>+{t.add || 0}</span> <span style={{ color: C.red }}>−{t.del || 0}</span></> : "—"}</span></div>
+                  <Stat label="Tiempo" value={durationLabel(t.workMs) || "—"} />
+                  <Stat label="Contexto" value={t.usage?.used ? tokens(t.usage.used) + " tokens" : "—"} />
                 </div>
-                {t.said ? <p style={{ margin: 0, fontSize: "13px", lineHeight: 1.55, color: C.text, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{plain(t.said)}</p> : null}
-                <div style={{ display: "flex", gap: "6px", marginTop: "auto" }}>
-                  <button type="button" onClick={() => navigate("/codigo/" + t.id)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}><ArrowUpRight size={13} strokeWidth={2.2} aria-hidden="true" />Abrir</button>
-                  {t.isolated && !t.saved ? (
-                    <button type="button" onClick={() => choose(t)} disabled={!!busy || !!chosen || t.running || !files?.length} title={"Guarda esta versión en " + (t.base || "main")}
-                      style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: busy || chosen || t.running || !files?.length ? "default" : "pointer", fontSize: "13px", fontWeight: 600, opacity: busy || chosen || t.running || !files?.length ? 0.45 : 1 }}>
-                      <GitMerge size={13} strokeWidth={2.2} aria-hidden="true" />{busy === "save:" + t.id ? "Guardando…" : "Elegir este"}
-                    </button>
-                  ) : null}
+                <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.5, color: C.text, minHeight: "63px", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{t.said ? plain(t.said) : t.running ? "Aún trabajando…" : "Sin resumen."}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", paddingTop: "10px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
+                  {files.slice(0, 6).map((f) => (
+                    <div key={f.path} style={{ display: "flex", justifyContent: "space-between", gap: "10px", font: `400 12.5px/1.8 ${MONO}` }}>
+                      <span title={f.path} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.path.split("/").pop()}</span>
+                      <span style={{ flex: "none", color: C.greenText }}>{[f.add ? "+" + f.add : "", f.del ? "−" + f.del : ""].filter(Boolean).join(" ")}</span>
+                    </div>
+                  ))}
+                  {files.length > 6 ? <span style={{ fontSize: "12px", color: C.faint }}>y {files.length - 6} más</span> : null}
+                  {t.files === null ? <span style={{ fontSize: "12.5px", color: C.faint }}>Aún trabajando…</span> : !files.length ? <span style={{ fontSize: "12.5px", color: C.faint }}>No cambió archivos.</span> : null}
+                </div>
+                <span style={{ flex: 1 }} />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <a href={"/codigo/" + t.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + t.id); }} style={{ ...BTN.outline, height: "42px", padding: "0 16px", fontWeight: 500 }}>Ver cambios</a>
+                  <button type="button" onClick={() => !on && choose(t)} disabled={!!busy || t.running || !files.length}
+                    style={{ flex: 1, height: "42px", border: 0, borderRadius: "999px", background: on ? "#0B6B4A" : C.ink, color: C.white, fontSize: "14px", fontWeight: 600, cursor: busy || t.running || !files.length || on ? "default" : "pointer", opacity: !on && (t.running || !files.length) ? 0.45 : 1 }}>
+                    {busy === "pick:" + t.id ? "Eligiendo…" : on ? "Elegido ✓" : "Elegir este"}
+                  </button>
                 </div>
               </article>
             );
           })}
         </div>
-      </div>
+
+        <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 18px", borderRadius: "18px", background: C.white, fontSize: "14.5px" }}>
+          <span style={{ flex: "1 1 300px", color: C.text }}>{bar}</span>
+          {chosenTask ? <a href={"/codigo/" + chosenTask.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + chosenTask.id); }} style={{ fontSize: "13.5px", fontWeight: 500, color: C.blue }}>Abrir la tarea</a> : null}
+          <a href="/ajustes/ia" onClick={(e) => { e.preventDefault(); navigate("/ajustes/ia"); }} style={{ fontSize: "13.5px", color: C.blue }}>Motores y modelos por defecto</a>
+        </div>
+      </main>
     </section>
   );
 }

@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AppWindow, ArrowUp, ArrowUpRight, ClipboardPaste, Crop, FileText, History, LayoutGrid, LoaderCircle, Paperclip, Plus, X } from "lucide-react";
+import { AppWindow, ArrowUpRight, ClipboardPaste, Crop, FileText, History, LayoutGrid, LoaderCircle, Plus, X } from "lucide-react";
 import { pickFiles, post } from "../lib/api.js";
 import { useStore } from "../lib/store.jsx";
 import { useRoom } from "../components/room/useRoom.js";
 import LiveMarkdown from "../components/room/LiveMarkdown.jsx";
 import Markdown from "../components/room/Markdown.jsx";
 import { ago, roomUrl } from "../lib/format.js";
-import { BotPresence } from "../components/v2/Presence.jsx";
+import { BotPresence, shapeOf } from "../components/v2/Presence.jsx";
 import { toPlainText } from "../lib/exporting.js";
 import WindowPicker from "../components/interaction/WindowPicker.jsx";
 
-// «Pregunta rápida» (Alt+Espacio), after OpenClaw Quick Chat: a Colmena card over whatever
-// you are doing. It knows the window you came from: «+» brings that app's text or a
-// screenshot of it (or of another window, or of an area); the answer streams right here and
-// «Pegar en Excel» puts it back where you were. ⏱ continues one of your last conversations.
+// Colmena 3 · «Pregunta rápida» (design/V3Rapida.dc.html; Alt+Espacio), after OpenClaw Quick
+// Chat: a Colmena card over whatever you are doing. It knows the window you came from: «Con:»
+// adds a screenshot of it (or of another window, or of an area), its text («+ Selección») or a
+// file; «Para …» picks the team or one bot; the answer streams right here and «Pegar en Excel»
+// puts it back where you were. «O sigue una conversación» continues one of your last ones.
 // Enter sends · Mayús+Enter, new line · Ctrl+Enter sends and opens it in Colmena · Esc closes.
 const api = typeof window !== "undefined" ? window.colmenaWindow?.quick : null;
 const DONE = ["completed", "waiting", "awaiting_plan", "awaiting_choice", "failed", "paused", "blocked"];
@@ -26,31 +27,24 @@ const NO_SCROLL = "html,body,#root{overflow:hidden!important;height:auto;backgro
 const ICON = { size: 16, strokeWidth: 2.2, "aria-hidden": "true" };
 const loadWindows = () => api?.windows();
 
-function Chip({ on, onClick, children, label }) {
-  return (
-    <button type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={label} onClick={onClick} className="rm-focus"
-      style={{ display: "flex", alignItems: "center", gap: "7px", height: "34px", padding: "0 12px 0 9px", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap", background: on ? "#12131A" : "rgba(18,19,26,.05)", color: on ? "#FFFFFF" : "#2B2D36"}}>
-      {children}
-    </button>
-  );
-}
-
-/** One thing attached to the question: a screenshot, an app's text or a file. */
+/** One thing attached to the question (a screenshot, an app's text or a file), as the board's dark «Con:» pill. */
 function Attached({ item, onRemove }) {
   const busy = item.status === "busy";
+  const ext = item.kind === "file" ? (String(item.label).split(".").pop() || "").slice(0, 3).toUpperCase() : null;
   return (
-    <span className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "38px", padding: "0 6px 0 8px", background: "#F2F2EE", borderRadius: "12px", fontSize: "13px", color: "#2B2D36" }}>
-      {busy ? <LoaderCircle {...ICON} size={15} className="c-spin" style={{ flex: "none", color: "#555A68" }} />
-        : item.thumb ? <img src={item.thumb} alt="" style={{ width: "30px", height: "22px", objectFit: "cover", borderRadius: "4px", border: "1px solid #DCE0E8", flex: "none" }} />
-          : item.kind === "text" ? <FileText {...ICON} size={15} style={{ flex: "none", color: "#555A68" }} /> : <Paperclip {...ICON} size={15} style={{ flex: "none", color: "#555A68" }} />}
+    <span className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "32px", padding: busy ? "0 12px" : "0 4px 0 12px", background: "#12131A", borderRadius: "999px", fontSize: "13px", color: "#FFFFFF" }}>
+      {busy ? <LoaderCircle {...ICON} size={14} className="c-spin" style={{ flex: "none" }} />
+        : item.thumb ? <img src={item.thumb} alt="" style={{ width: "24px", height: "18px", objectFit: "cover", borderRadius: "4px", flex: "none" }} />
+          : ext ? <span aria-hidden="true" style={{ fontSize: "10px", fontWeight: "700" }}>{ext}</span>
+            : <FileText {...ICON} size={14} style={{ flex: "none" }} />}
       <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        <strong style={{ fontWeight: "600" }}>{item.label}</strong>
-        {item.detail ? <span style={{ color: "#555A68" }}>{" · " + item.detail}</span> : null}
+        {item.label}
+        {item.detail ? <span style={{ opacity: ".7" }}>{" · " + item.detail}</span> : null}
       </span>
       {busy ? null : (
         <button type="button" className="rm-focus" onClick={onRemove} aria-label={"Quitar " + item.label} title="Quitar"
-          style={{ width: "26px", height: "26px", flex: "none", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "7px", cursor: "pointer", color: "#555A68" }}>
-          <X {...ICON} size={14} />
+          style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "50%", cursor: "pointer", color: "#FFFFFF" }}>
+          <X {...ICON} size={13} />
         </button>
       )}
     </span>
@@ -268,84 +262,76 @@ export default function QuickAsk() {
   };
 
   const who = replyIn ? null : target === "equipo" ? "tu equipo" : team.find((b) => b.id === target)?.name || "tu bot";
-  const placeholder = replyIn ? `Responder en ${recentName(replyIn)}…` : target === "equipo" ? "Pídele algo a tu equipo…" : `Pregúntale a ${who}…`;
-  const addItems = [
-    ...(source ? [
-      { id: "text", icon: <FileText {...ICON} />, label: `Traer el texto de ${source.app}`, hint: source.title || "La ventana en la que estabas", run: bringText },
-      { id: "win", icon: <AppWindow {...ICON} />, label: `Captura de ${source.app}`, hint: "Una imagen de esa ventana", run: () => shot("win", "Captura de " + source.app, () => api.captureWindow()) },
-    ] : []),
+  const placeholder = replyIn ? `Responder en ${recentName(replyIn)}…` : target === "equipo" ? "Pídele algo a tu equipo" : `Pregúntale a ${who}`;
+  const atlas = bots.find((b) => b.id === "atlas") || null;
+  const targetBot = target === "equipo" ? atlas : team.find((b) => b.id === target) || null;
+  // «+ Captura»: the window you came from, another window or an area of the screen.
+  const shotItems = [
+    ...(source ? [{ id: "win", icon: <AppWindow {...ICON} />, label: `Captura de ${source.app}`, hint: "Una imagen de esa ventana", run: () => shot("win", "Captura de " + source.app, () => api.captureWindow()) }] : []),
     { id: "other", icon: <LayoutGrid {...ICON} />, label: "Captura de otra ventana…", run: () => setMenu("windows") },
     { id: "area", icon: <Crop {...ICON} />, label: "Captura de una zona de la pantalla", hint: "Arrastra para elegirla · Esc cancela", run: () => shot("area", "Zona de la pantalla", () => api.captureArea()) },
-    { separator: true },
-    { id: "file", icon: <Paperclip {...ICON} />, label: "Adjuntar archivo…", run: attachFiles },
   ];
-  const recentItems = [
-    { id: "new", icon: <Plus {...ICON} />, label: "Pregunta nueva", checked: !replyIn, run: () => setReplyIn(null) },
-    ...(recents.length ? [{ separator: true }] : []),
-    ...recents.map((m) => ({ id: m.id, icon: <History {...ICON} />, label: recentName(m), hint: ago(m.updatedAt || m.createdAt) || undefined, checked: replyIn?.id === m.id, run: () => setReplyIn(m) })),
+  // «Para …»: the team (Atlas coordinates) or one bot.
+  const targetItems = [
+    { id: "equipo", icon: atlas ? <BotPresence bot={atlas} size={14} /> : <Plus {...ICON} />, label: "Tu equipo", hint: "Atlas decide quién lo hace", checked: target === "equipo" && !replyIn, run: () => { setTarget("equipo"); setReplyIn(null); } },
+    ...team.map((b) => ({ id: b.id, icon: <BotPresence bot={b} size={14} />, label: b.name, hint: b.role, checked: target === b.id && !replyIn, run: () => { setTarget(b.id); setReplyIn(null); } })),
   ];
-  const iconBtn = (pressed) => ({ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: pressed ? "#EEF0F4" : "transparent", border: "1px solid " + (pressed ? "#C9CED8" : "transparent"), borderRadius: "10px", cursor: "pointer", color: "#2B2D36", WebkitAppRegion: "no-drag" });
+  const pill = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "#FFFFFF", color: "#3D404A", fontSize: "13px", cursor: "pointer", whiteSpace: "nowrap" };
   const canSend = (text.trim() || attached.some((a) => a.file)) && !busy && !attached.some((a) => a.status === "busy");
+  const recentWhen = (m) => { const at = m.updatedAt || m.createdAt; return at && new Date(at).toDateString() === new Date().toDateString() ? new Date(at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ago(at); };
+  const dot = (b, size) => <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", background: b?.color || "#C9CBD3", clipPath: shapeOf(b).clip, borderRadius: b ? shapeOf(b).radius : "4px" }} />;
 
   return (
     <div style={{ padding: `${PAD_TOP}px 18px ${PAD_BOTTOM}px 18px`, boxSizing: "border-box" }}>
       <style>{NO_SCROLL}</style>
-      <section ref={card} key={shown} className="c-quick" aria-label="Pregunta rápida" style={{ boxSizing: "border-box", maxHeight: `calc(100vh - ${PAD_TOP + PAD_BOTTOM}px)`, overflowY: "auto", scrollbarWidth: "none", background: "rgba(255,255,255,.96)", borderRadius: "28px", boxShadow: "0 30px 60px -28px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", display: "flex", flexDirection: "column", color: "#12131A" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "16px 18px 0", WebkitAppRegion: "drag" }}>
-          <img src="/colmena-icon-128.png" alt="" width="24" height="24" style={{ display: "block", width: "24px", height: "24px" }} />
-          <h2 style={{ flex: "1", margin: "0", fontSize: "14px", fontWeight: "600" }}>Pregunta rápida</h2>
-          <span style={{ fontSize: "12px", color: "#6B6F7A" }}>Esc para cerrar</span>
-        </div>
-        <form onSubmit={send} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "12px 18px 16px" }}>
-          <textarea ref={input} rows="2" value={text} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} disabled={busy}
-            placeholder={placeholder} aria-label="Pregunta rápida"
-            style={{ minWidth: "0", minHeight: "58px", maxHeight: "150px", padding: "6px 2px", border: "0", outline: "none", resize: "none", fontSize: "21px", lineHeight: "1.4", letterSpacing: "-0.01em", background: "transparent", fieldSizing: "content", color: "#12131A" }} />
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-            {attached.map((a) => <Attached key={a.id} item={a} onRemove={() => drop(a.id)} />)}
-            <button type="button" className="rm-focus" aria-haspopup="menu" aria-expanded={menu === "add" || menu === "windows" ? "true" : "false"} onClick={() => setMenu(menu === "add" ? null : "add")}
-              style={{ display: "flex", alignItems: "center", gap: "6px", height: "38px", padding: "0 12px", border: "0", borderRadius: "12px", background: menu === "add" || menu === "windows" ? "#F2F2EE" : "transparent", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", cursor: "pointer", fontSize: "13px", fontWeight: "500", color: "#12131A" }}>
-              <Plus {...ICON} size={13} strokeWidth={2.6} />Añadir contexto
+      <section ref={card} key={shown} className="c-quick" role="dialog" aria-label="Pregunta rápida" style={{ boxSizing: "border-box", maxHeight: `calc(100vh - ${PAD_TOP + PAD_BOTTOM}px)`, overflowY: "auto", scrollbarWidth: "none", display: "flex", flexDirection: "column", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.55)", color: "#12131A", animation: "sheet .25s ease-out" }}>
+        <form onSubmit={send} style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 10px 10px 18px" }}>
+            <img src="/colmena-icon-128.png" alt="" width="28" height="28" style={{ display: "block", width: "28px", height: "28px", flex: "none", WebkitAppRegion: "drag" }} />
+            <label style={{ flex: "1", display: "flex", minWidth: 0 }}>
+              <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Pídele algo a tu equipo"}</span>
+              <textarea ref={input} rows="1" value={text} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} disabled={busy} placeholder={placeholder}
+                style={{ flex: "1", minWidth: "0", minHeight: "52px", maxHeight: "150px", padding: "14px 0", border: "0", outline: "none", resize: "none", fontSize: "19px", lineHeight: "1.3", background: "transparent", fieldSizing: "content", color: "#12131A" }} />
+            </label>
+            <button type="submit" aria-label="Enviar" title="Enviar (Intro) · Ctrl+Intro: enviar y abrir en Colmena" disabled={!canSend} style={{ width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", cursor: canSend ? "pointer" : "default", background: "#12131A", color: "#FFFFFF", opacity: canSend || busy ? 1 : 0.35, transition: "opacity .2s ease" }}>
+              {busy ? <LoaderCircle {...ICON} size={18} className="c-spin" /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>}
             </button>
-            {source && !attached.length && !sent && !menu ? <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{"Vienes de "}<strong style={{ color: "#3D404A", fontWeight: "600" }}>{source.app}</strong></span> : null}
           </div>
-          {menu === "add" ? <Menu label="Añadir contexto" items={addItems} onClose={() => setMenu((m) => (m === "add" ? null : m))} /> : null}
-          {menu === "windows" ? <WindowPicker load={loadWindows} onClose={() => setMenu(null)} onPick={(w) => { setMenu(null); shot("w:" + w.id, "Captura de " + w.name.split(" - ").pop(), () => api.captureWindow(w.id)); }} /> : null}
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", paddingTop: "10px", borderTop: "1px solid rgba(18,19,26,.06)" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "0 18px 14px" }}>
+            <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Con:"}</span>
+            {attached.map((a) => <Attached key={a.id} item={a} onRemove={() => drop(a.id)} />)}
+            <button type="button" aria-haspopup="menu" aria-expanded={menu === "shot" || menu === "windows" ? "true" : "false"} onClick={() => setMenu(menu === "shot" ? null : "shot")} style={pill}>{"+ Captura"}</button>
+            {source ? <button type="button" onClick={bringText} title={`El texto de ${source.app}${source.title ? " — " + source.title : ""}`} style={pill}>{"+ Selección"}</button> : null}
+            <button type="button" onClick={attachFiles} style={pill}>{"+ Archivo"}</button>
+            <span style={{ flex: "1" }} />
             {replyIn ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 4px 0 12px", background: "#F2F2EE", borderRadius: "999px", fontSize: "13px", minWidth: 0 }}>
-                <History {...ICON} size={14} />
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"Respondiendo en "}<strong style={{ fontWeight: "600" }}>{recentName(replyIn)}</strong></span>
-                <button type="button" className="rm-focus" onClick={() => setReplyIn(null)} aria-label="Volver a una pregunta nueva" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "50%", cursor: "pointer" }}><X {...ICON} size={13} /></button>
+              <span style={{ ...pill, padding: "0 4px 0 12px", background: "#F6F6F3", maxWidth: "100%", minWidth: 0, cursor: "default" }}>
+                <History {...ICON} size={13} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{"En "}<strong style={{ fontWeight: "600" }}>{recentName(replyIn)}</strong></span>
+                <button type="button" onClick={() => setReplyIn(null)} aria-label="Volver a una pregunta nueva" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "50%", cursor: "pointer", color: "#3D404A" }}><X {...ICON} size={12} /></button>
               </span>
             ) : (
-              <>
-                <span style={{ fontSize: "13px", color: "#6B6F7A" }}>Para</span>
-                <div role="radiogroup" aria-label="Para quién" style={{ display: "flex", flexWrap: "wrap", gap: "4px", minWidth: 0 }}>
-                  <Chip on={target === "equipo"} onClick={() => setTarget("equipo")} label="Para el equipo (coordina Atlas)">
-                    {bots.find((b) => b.id === "atlas") ? <BotPresence bot={bots.find((b) => b.id === "atlas")} size={14} /> : null}Equipo · coordina Atlas
-                  </Chip>
-                  {team.slice(0, 3).map((b) => <Chip key={b.id} on={target === b.id} onClick={() => setTarget(b.id)} label={`Para ${b.name}`}><BotPresence bot={b} size={14} />{b.name}</Chip>)}
-                </div>
-              </>
+              <button type="button" aria-haspopup="menu" aria-expanded={menu === "to" ? "true" : "false"} onClick={() => setMenu(menu === "to" ? null : "to")} style={{ ...pill, background: "#F6F6F3" }}>
+                {dot(targetBot, 12)}{target === "equipo" ? "Para tu equipo" : `Para ${who}`}
+              </button>
             )}
-            <button type="submit" aria-label="Enviar" title="Enviar (Intro) · Ctrl+Intro: enviar y abrir en Colmena" disabled={!canSend} style={{ marginLeft: "auto", width: "44px", height: "44px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", cursor: canSend ? "pointer" : "default", transition: "background .2s ease", background: canSend || busy ? "#12131A" : "#C9CBD1", color: "#FFFFFF" }}>
-              {busy ? <LoaderCircle {...ICON} size={18} className="c-spin" /> : <ArrowUp {...ICON} size={18} strokeWidth={2.4} />}
-            </button>
           </div>
-          {error ? <p role="alert" style={{ margin: "0", fontSize: "13px", fontWeight: "600", color: "#B4372A" }}>{error}</p> : null}
-          {!sent ? <span style={{ fontSize: "12px", color: "#8A8D96" }}>Intro envía · Ctrl+Intro envía y abre Colmena</span> : null}
+          {menu === "shot" ? <div style={{ padding: "0 18px 14px" }}><Menu label="Captura" items={shotItems} onClose={() => setMenu((m) => (m === "shot" ? null : m))} /></div> : null}
+          {menu === "to" ? <div style={{ padding: "0 18px 14px" }}><Menu label="Para quién" items={targetItems} onClose={() => setMenu((m) => (m === "to" ? null : m))} /></div> : null}
+          {menu === "windows" ? <div style={{ padding: "0 18px 14px" }}><WindowPicker load={loadWindows} onClose={() => setMenu(null)} onPick={(w) => { setMenu(null); shot("w:" + w.id, "Captura de " + w.name.split(" - ").pop(), () => api.captureWindow(w.id)); }} /></div> : null}
+          {error ? <p role="alert" style={{ margin: "0", padding: "0 18px 14px", fontSize: "13px", fontWeight: "600", color: "#B4232A" }}>{error}</p> : null}
         </form>
 
         {!sent && !replyIn && recents.length ? (
-          <div style={{ padding: "10px 10px 12px", background: "rgba(18,19,26,.03)", borderTop: "1px solid rgba(18,19,26,.05)" }}>
-            <span style={{ display: "block", padding: "4px 10px 6px", fontSize: "12px", fontWeight: "500", color: "#6B6F7A" }}>Seguir una conversación reciente</span>
+          <div style={{ display: "flex", flexDirection: "column", padding: "8px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
+            <span style={{ padding: "8px 10px 4px", fontSize: "12px", fontWeight: "600", color: "#5C606C" }}>{"O sigue una conversación"}</span>
             {recents.slice(0, 3).map((m) => {
               const b = m.conversation ? bots.find((x) => x.id === m.botIds?.[0]) : null;
               return (
-                <button key={m.id} type="button" className="rm-focus rm-item" onClick={() => { setReplyIn(m); requestAnimationFrame(() => input.current?.focus()); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 10px", border: "0", borderRadius: "12px", background: "transparent", cursor: "pointer", textAlign: "left", color: "#12131A" }}>
-                  {b ? <BotPresence bot={b} size={18} /> : <span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", font: "600 12px/1 'Geist', sans-serif", color: "#5C606C" }}>#</span>}
-                  <span style={{ flex: "1", minWidth: 0, fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{recentName(m).replace(/^#/, "")}</span>
-                  <span style={{ fontSize: "12px", color: "#8A8D96" }}>{ago(m.updatedAt || m.createdAt)}</span>
+                <button key={m.id} type="button" className="rm-item" onClick={() => { setReplyIn(m); requestAnimationFrame(() => input.current?.focus()); }} style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 10px", border: "0", borderRadius: "12px", background: "transparent", cursor: "pointer", textAlign: "left", color: "#12131A" }}>
+                  {dot(b, 16)}
+                  <span style={{ flex: "1", minWidth: 0, fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.conversation ? recentName(m) : "# " + (m.room || m.title || "sala")}</span>
+                  <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{recentWhen(m)}</span>
                 </button>
               );
             })}
@@ -353,34 +339,41 @@ export default function QuickAsk() {
         ) : null}
 
         {sent ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "4px 22px 20px", animation: "fade .3s ease-out" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-              {bot ? <BotPresence bot={bot} size={34} state={done ? null : "work"} /> : null}
-              <span style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
-                <strong style={{ fontSize: "16px", fontWeight: "600" }}>{done ? `${bot?.name || "Tu equipo"} ha terminado` : sent.conversation ? `${bot?.name || "El bot"} está pensando…` : "Atlas está repartiendo el trabajo…"}</strong>
-                <span role="status" style={{ fontSize: "14px", color: pasted ? "#0B6B4A" : "#5C606C" }}>{pasted ? `Pegado en ${pasted}.` : done ? "Listo." : "Sigue trabajando; puedes cerrar esto, te avisará."}</span>
-              </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderTop: "1px solid rgba(18,19,26,.07)", animation: "fade .3s ease-out" }}>
+            <div role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "14.5px" }}>
+              {bot ? <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", background: bot.color, clipPath: shapeOf(bot).clip, borderRadius: shapeOf(bot).radius, animation: done ? "none" : "breathe 2.4s ease-in-out infinite" }} /> : null}
+              <span><strong style={{ fontWeight: "600" }}>{bot?.name || "Tu equipo"}</strong>{pasted ? ` · pegado en ${pasted}.` : done ? " ha terminado." : sent.conversation ? " está en ello" : " está repartiendo el trabajo"}</span>
+              {done ? null : (
+                <span aria-hidden="true" style={{ display: "inline-flex", gap: "3px" }}>
+                  {[0, 0.2, 0.4].map((d) => <span key={d} style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#12131A", animation: `dots 1.2s ${d}s infinite` }} />)}
+                </span>
+              )}
             </div>
-            <div style={{ maxHeight: "300px", overflowY: "auto", padding: "14px 16px", borderRadius: "16px", background: "#F2F2EE", fontSize: "15px", lineHeight: "1.5" }}>
-              {!reply && room.mission?.error ? <p role="alert" style={{ margin: "0", fontWeight: "600", color: "#B4372A" }}>{room.mission.error}</p>
-                : streaming ? <LiveMarkdown text={streaming} size={15} caret streamKey={sent?.id} />
-                  : reply ? <Markdown text={reply} size={15} />
-                    : <span style={{ color: "#3D404A" }}>{`«${sent.prompt}»`}{sent.files ? ` · con ${sent.files === 1 ? "1 adjunto" : sent.files + " adjuntos"}` : ""}</span>}
-              {!sent.conversation && room.mission?.status === "awaiting_plan" ? <p style={{ margin: "8px 0 0", fontWeight: "600" }}>El plan espera tu OK en la sala.</p> : null}
-            </div>
+            {!done && !reply ? <span style={{ fontSize: "14px", color: "#4A4D57" }}>{"Puedes cerrar esto: te avisará cuando lo tenga."}</span> : null}
+            {reply || room.mission?.error ? (
+              <div style={{ maxHeight: "300px", overflowY: "auto", padding: "14px 16px", borderRadius: "16px", background: "#F6F6F3", fontSize: "15px", lineHeight: "1.5" }}>
+                {!reply && room.mission?.error ? <p role="alert" style={{ margin: "0", fontWeight: "600", color: "#B4232A" }}>{room.mission.error}</p>
+                  : streaming ? <LiveMarkdown text={streaming} size={15} caret streamKey={sent?.id} />
+                    : <Markdown text={reply} size={15} />}
+              </div>
+            ) : null}
+            {!sent.conversation && room.mission?.status === "awaiting_plan" ? <span style={{ fontSize: "14px", fontWeight: "600" }}>{"El plan espera tu OK en la sala."}</span> : null}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              <button type="button" className="rm-focus" onClick={() => api?.open(openUrl)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "42px", padding: "0 18px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}>
-                Abrir en Colmena<ArrowUpRight {...ICON} size={14} />
-              </button>
+              <button type="button" onClick={() => api?.open(openUrl)} style={{ height: "38px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13.5px", fontWeight: "600", cursor: "pointer" }}>{"Abrir en Colmena"}<ArrowUpRight {...ICON} size={14} /></button>
               {done && reply && source ? (
-                <button type="button" className="rm-focus" onClick={paste} title={`Copia la respuesta y la pega en ${source.app}`} style={{ display: "flex", alignItems: "center", gap: "6px", height: "42px", padding: "0 16px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "14px", color: "#12131A" }}>
-                  <ClipboardPaste {...ICON} size={15} />{`Pegar en ${source.app}`}
+                <button type="button" onClick={paste} title={`Copia la respuesta y la pega en ${source.app}`} style={{ height: "38px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "13.5px", cursor: "pointer", color: "#12131A" }}>
+                  <ClipboardPaste {...ICON} size={14} />{`Pegar en ${source.app}`}
                 </button>
               ) : null}
-              <button type="button" className="rm-focus" onClick={() => { setSent(null); setPasted(null); input.current?.focus(); }} style={{ height: "42px", padding: "0 16px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "14px", fontWeight: "600", color: "#12131A" }}>Nueva pregunta</button>
+              <button type="button" onClick={() => { setSent(null); setPasted(null); input.current?.focus(); }} style={{ height: "38px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "13.5px", cursor: "pointer", color: "#12131A" }}>{"Otra pregunta"}</button>
             </div>
           </div>
         ) : null}
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", padding: "10px 18px", background: "#F6F6F3", fontSize: "12.5px", color: "#5C606C", WebkitAppRegion: "drag" }}>
+          <span>{"Alt Espacio desde cualquier app"}</span><span>{"Intro envía"}</span><span>{"Ctrl Intro envía y abre Colmena"}</span><span>{"Esc cierra"}</span>
+          {source && !attached.length && !sent ? <span>{"Vienes de "}<strong style={{ color: "#3D404A", fontWeight: "600" }}>{source.app}</strong></span> : null}
+        </div>
       </section>
     </div>
   );

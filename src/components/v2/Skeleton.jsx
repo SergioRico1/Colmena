@@ -1,22 +1,21 @@
-// Colmena 2.0 · 35 «Cargando»: grey shapes with a soft shimmer, never a lone «Cargando…».
-const bar = { background: "linear-gradient(90deg, #EFEFEA 0%, #F7F7F3 50%, #EFEFEA 100%)", backgroundSize: "200% 100%", animation: "shimmer 1.6s linear infinite" };
-const WIDTHS = [["62%", "38%"], ["48%", "30%"], ["70%", "44%"], ["55%", "26%"]];
+// Colmena 3 · «Cargando» (design/V3Estados.dc.html): grey shapes with a soft shimmer, never a
+// lone «Cargando…». A tile and two lines per row; the first line shimmers, the second rests.
+// `surface` (default) draws the white card around the rows; pass false inside a card already.
+const shine = { background: "linear-gradient(90deg,#ECECE7 0%,#F6F6F3 40%,#ECECE7 80%)", backgroundSize: "300% 100%", animation: "shimmer 1.6s ease-in-out infinite" };
+const WIDTHS = ["72%", "58%", "80%", "46%"];
 
-export default function SkeletonList({ rows = 4 }) {
+export default function SkeletonList({ rows = 4, surface = true, style = null }) {
   return (
-    <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      {Array.from({ length: rows }, (_, i) => {
-        const [w1, w2] = WIDTHS[i % WIDTHS.length];
-        return (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF" }}>
-            <span style={{ width: "36px", height: "36px", flex: "none", borderRadius: "12px", ...bar }} />
-            <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "8px" }}>
-              <span style={{ height: "12px", borderRadius: "6px", width: w1, ...bar }} />
-              <span style={{ height: "10px", borderRadius: "5px", width: w2, ...bar }} />
-            </span>
-          </div>
-        );
-      })}
+    <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "12px", ...(surface ? { padding: "28px", borderRadius: "24px", background: "#FFFFFF" } : {}), ...style }}>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <span style={{ flex: "none", width: "34px", height: "34px", borderRadius: "10px", ...shine }} />
+          <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "7px" }}>
+            <span style={{ height: "11px", width: WIDTHS[i % WIDTHS.length], borderRadius: "6px", ...shine }} />
+            <span style={{ height: "9px", width: "40%", borderRadius: "6px", background: "#F1F1EC" }} />
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

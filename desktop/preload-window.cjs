@@ -56,6 +56,8 @@ contextBridge.exposeInMainWorld("colmenaWindow", {
       return () => ipcRenderer.removeListener("colmena-update", listener);
     },
   },
+  // «Abrir el registro» (start-up screen): what the local service printed since Colmena opened.
+  openLog: () => ipcRenderer.send("colmena-startup", "log"),
   edit: (action) => ["cut", "copy", "paste", "selectAll"].includes(action) && ipcRenderer.send("colmena-window", "edit:" + action),
   onState: (callback) => {
     const listener = (_event, state) => callback(state);
