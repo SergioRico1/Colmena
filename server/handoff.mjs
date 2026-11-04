@@ -4,6 +4,7 @@
 // the real messages — whole, in order, with their roles — never a summary, plus a note that
 // says what was left out and how to read it (read_thread). Native items of the old engine
 // (signed thinking, encrypted reasoning, tool state) are never carried over.
+import { visibleMessages } from "./branches.mjs";
 
 /** Upper bound of imported history, in estimated tokens. */
 export const HANDOFF_TOKEN_CAP = 24_000;
@@ -77,7 +78,8 @@ export function handoffNote({ from, to, total, selected, omitted }) {
 
 /** The conversation as numbered messages: [{position, messageId, role, botId, at, text}]. */
 export function threadMessages(store, missionId) {
-  return store.where("messages", "missionId", missionId)
+  // Only the active branch of the conversation (branches.mjs): another version is not «said».
+  return visibleMessages(store.get("missions", missionId), store.where("messages", "missionId", missionId))
     .filter((m) => ["user", "assistant"].includes(m.role) && (!m.kind || m.kind === "message") && typeof m.text === "string" && m.text.trim())
     .sort((a, b) => String(a.at || "").localeCompare(String(b.at || "")))
     .map((m, i) => ({ position: i + 1, messageId: m.id, role: m.role, botId: m.botId || null, at: m.at || null, text: m.text }));

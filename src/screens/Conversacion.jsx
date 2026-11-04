@@ -16,6 +16,8 @@ import { useFileDrop } from "../lib/useFileDrop.js";
 import { focusBox, shouldRefocus } from "../lib/composition.js";
 import Timeline, { useStableRows } from "../components/v2/chat/Timeline.jsx";
 import StoppedCard from "../components/v2/chat/StoppedCard.jsx";
+import { BranchPicker, EditButton, EditMessage } from "../components/v2/chat/Versions.jsx";
+import { forgetOlder } from "../lib/history.js";
 import { rememberPrompt, saveDraft, stashPrompt, unstash, useDraft, useInputHistory, useStash } from "../lib/composer.js";
 import Stash from "../components/v2/chat/Stash.jsx";
 import { markLive } from "../components/room/LiveMarkdown.jsx";
@@ -167,7 +169,10 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const mentions = useMentions({ value: text, setValue: setText, bots: bots.filter((b) => b.enabled !== false && b.id !== botId), inputRef });
   const [incognito, setIncognito] = useState(privateNew);
   const [showOlder, setShowOlder] = useState(false);
-  useEffect(() => { setIncognito(privateNew); setMoreOpen(false); setShowOlder(false); }, [c, botId, privateNew]);
+  // The message of yours being written again (Versions.jsx), and the spots with versions.
+  const [editing, setEditing] = useState(null);
+  const branches = room.branches;
+  useEffect(() => { setIncognito(privateNew); setMoreOpen(false); setShowOlder(false); setEditing(null); }, [c, botId, privateNew]);
   const privateChat = c ? !!mission?.incognito : incognito;
   useDraft(privateChat ? null : "chat:" + (c || botId), text, setText);
   // ↑ in the empty box: what you sent here before, even beyond the loaded page (not in private chats).
@@ -316,7 +321,13 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       const prev = messages[i - 1];
       const key = m.id || "i" + i;
       const mark = !prev || (m.at && prev.at && Date.parse(m.at) - Date.parse(prev.at) > 30 * 60e3) ? m.at || null : null;
-      if (m.role === "user") { rows.push({ key, kind: "user", m, mark }); prevUser = m; continue; }
+      if (m.role === "user") {
+        // Your message: «Editar» opens another version from here (branches), «‹ 1/3 ›» moves between them.
+        const editable = !!c && !turn && !isOlder && !m.optimistic && !m.failed;
+        rows.push({ key, kind: "user", m, mark, branch: branches[m.id] || null, editable, editing: editing === m.id, canRestore: editing === m.id && checkpoints.some((cp) => String(cp.at || "") >= String(m.at || "")) });
+        prevUser = m;
+        continue;
+      }
       if (m.kind === "secret") { rows.push({ key, kind: "secret", m, mark, approval: approvals.find((a) => a.id === m.approvalId) || null }); continue; }
       if (m.role === "system" || m.kind === "activity") { rows.push({ key, kind: "note", m, mark }); continue; }
       if (m.kind === "question") {
@@ -337,7 +348,9 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         artifact: m.artifactId ? artifacts.find((a) => a.id === m.artifactId) || { id: m.artifactId, title: "Entregable" } : null,
         more: more.length ? more.map((d) => artifacts.find((x) => x.id === d.artifactId) || { id: d.artifactId, title: d.text || "Entregable" }) : undefined,
         trail: !step?.progress?.length || firstOfStep,
-        retryText: prevUser && i === lastAssistant && !turn ? prevUser.text : null,
+        // «Otra respuesta» is a sibling version of this answer (branches), «‹ 1/3 ›» under it.
+        regenerate: !!prevUser && !!c && !turn && !isOlder && m.kind !== "deliverable",
+        branch: branches[m.id] || null,
       });
     }
     // «Deshacer cambios» goes under the last answer of each turn that changed files.
@@ -351,7 +364,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       }
     }
     return rows;
-  }, [messages, steps, artifacts, approvals, bots, botId, lastAssistant, turn, missionCard, checkpoints]);
+  }, [messages, steps, artifacts, approvals, bots, botId, lastAssistant, turn, missionCard, checkpoints, branches, editing, isOlder]); // eslint-disable-line react-hooks/exhaustive-deps
   const showBrowser = !!mission && !!now && !dock.isVisible("navegador") && ["navegando", "rellenando un formulario", "usando el ordenador", "ejecutando una tarea"].includes(now.verb);
   const tailRows = useMemo(() => {
     const rows = [];
@@ -374,10 +387,13 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, mission?.stopped?.at, turn, showBrowser, mission?.status, bot?.name]); // eslint-disable-line react-hooks/exhaustive-deps
   // What comes before the chat (older chats, «Conversación anterior») shows once you reach its
   // start: while pages remain, the oldest message is the first row (the anchor when one loads).
+  // Versions of the conversation (server/branches.mjs): another version brings other messages,
+  // so the older pages cached for this chat go and the timeline follows the new end.
+  const versions = (url, body) => run(async () => { const r = await post(url, body); forgetOlder(c); return r; }).then((r) => { follow.toEnd(); return r; });
   const rows = useStableRows([...(room.olderCount > 0 ? [] : [headRow]), ...messageRows, ...tailRows]);
   // A row repaints only when its record changes: what it calls is read here, always current.
   const acts = useRef(null);
-  acts.current = { resend, retry, toggleDoc, control: (action) => run(() => post(`/missions/${c}/control`, { action })) };
+  acts.current = { resend, retry, toggleDoc, control: (action) => run(() => post(`/missions/${c}/control`, { action })), edit: setEditing, sendEdit: (messageId, text, restore) => versions(`/missions/${c}/edit`, { messageId, text, ...(restore ? { restore: true } : {}) }).then(() => setEditing(null)), regenerate: (messageId) => versions(`/missions/${c}/regenerate`, { messageId }), version: (messageId) => versions(`/missions/${c}/branch`, { messageId }) };
   const renderRow = (row) => {
     const body = rowBody(row);
     return row.mark ? <><TimeMark at={row.mark} />{body}</> : body;
@@ -430,10 +446,17 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         // What you attached (never the files the bots made in the mission folder).
         const attachments = m.attachments || [];
         return (
+          row.editing ? <EditMessage text={m.text} canRestore={row.canRestore} onCancel={() => acts.current.edit(null)} onSend={(text, restore) => acts.current.sendEdit(m.id, text, restore)} /> : (
           <UserBubble message={m}>
             {attachments.length ? <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{attachments.map((f) => f.name || f).join(" · ")}</span> : null}
             {m.failed ? <FailedLine error={m.failed} onRetry={() => acts.current.resend(m)} onDiscard={() => unshowSent(`/missions/${c}`, m.id)} /> : null}
-          </UserBubble>
+            {row.editable || row.branch ? (
+              <span style={{ display: "flex", alignItems: "center", gap: "2px", color: "#5C606C" }}>
+                <BranchPicker branch={row.branch} disabled={!row.editable} onShow={(id) => acts.current.version(id)} align="flex-end" />
+                {row.editable ? <EditButton onClick={() => acts.current.edit(m.id)} /> : null}
+              </span>
+            ) : null}
+          </UserBubble>)
         );
       }
       case "secret": return <SecretLine message={m} approval={row.approval} bots={bots} />;
@@ -444,11 +467,12 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "answer": return (
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           {row.author && row.author.id !== botId ? <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px" }}><BotPresence bot={row.author} size={18} state="rest" /><strong style={{ fontWeight: 600 }}>{row.author.name}</strong></span> : null}
-          <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} onRetry={row.retryText ? () => acts.current.retry(row.retryText) : null}>
+          <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null}>
             {m.text && row.step?.tools?.length ? <Sources text={m.text} tools={row.step.tools} /> : null}
           </BotAnswer>
           {row.artifact ? <FileCard artifact={row.artifact} onOpen={() => acts.current.toggleDoc(row.artifact.id)} /> : null}
           {(row.more || []).map((a) => <FileCard key={a.id} artifact={a} onOpen={() => acts.current.toggleDoc(a.id)} />)}
+          {row.branch ? <BranchPicker branch={row.branch} disabled={turn} onShow={(id) => acts.current.version(id)} /> : null}
           {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
         </div>
       );

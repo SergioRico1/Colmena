@@ -5,6 +5,7 @@ import { carryOver, joinPages, loadOlder, useOlderPages } from "../../lib/histor
 
 const RECENT_MS = 3 * 60 * 1000;
 const EMPTY = [];
+const NO_BRANCHES = {};
 
 /** Mission detail (/api/missions/:id, refreshed by SSE) merged with its summary from /api/state. */
 export function useRoom(id) {
@@ -73,7 +74,7 @@ export function useRoom(id) {
       .map(([botId, v]) => ({ botId, ...v }));
     const memberIds = [...new Set([...(mission?.botIds || []), ...steps.map((s) => s.botId).filter(Boolean)])];
     // Rooms show those lines as messages of the bot (as OpenClaw does in channels): spoken.
-    return { mission, messages, spoken: all, steps, thread, proposals, artifacts, approvals, pending, live, activity, memberIds, error, loading: loading && !mission, notFound: !loading && !mission, olderCount, showOlder, loadingOlder: !!older?.loading, olderError: older?.error || null };
+    return { mission, messages, spoken: all, steps, thread, proposals, artifacts, approvals, pending, live, activity, memberIds, error, loading: loading && !mission, notFound: !loading && !mission, olderCount, showOlder, loadingOlder: !!older?.loading, branches: data?.branches || NO_BRANCHES, olderError: older?.error || null };
   }, [data, summary, error, loading, records, store.live, store.activity, id, showOlder, timeline, olderCount, older]);
 }
 

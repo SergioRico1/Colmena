@@ -54,6 +54,7 @@ import {
 } from "./learning.mjs";
 import { decideRevert } from "./verdicts.mjs";
 import { stopReason, stoppedRecord } from "./stopped.mjs";
+import { visibleMessages } from "./branches.mjs";
 import { applyMemoryOps, normalizeMemoryOp, guessTarget, MEMORY_LABELS, TARGET_OF } from "./memory.mjs";
 
 export { TOOLS, CONNECTION_TOOLS };
@@ -547,7 +548,8 @@ export class Runtime {
    * once per cut, off the critical path (T3 Code compacts at a cache boundary, not per turn).
    */
   conversationTurns(missionId, { skipLastUser = false } = {}) {
-    const turns = this.store.where("messages", "missionId", missionId)
+    // The bot sees the active branch only (branches.mjs): edited-away versions are not said.
+    const turns = visibleMessages(this.store.get("missions", missionId), this.store.where("messages", "missionId", missionId))
       .filter((m) => ["user", "assistant"].includes(m.role) && (!m.kind || m.kind === "message") && m.text)
       .map((m) => ({ role: m.role, content: String(m.text).slice(0, 12000) + watchSourcesNote(m) }));
     if (skipLastUser && turns.at(-1)?.role === "user") turns.pop();
@@ -688,6 +690,20 @@ export class Runtime {
       void Promise.resolve(this.missionJobs.get(missionId)).then(() => this.launch(missionId));
     } else if (!this.active.has(missionId) && !["paused", "waiting"].includes(m.status)) this.launch(missionId);
     return message;
+  }
+  /**
+   * «Otra respuesta»: the bot answers `userMessage` again, without a new message of yours (the
+   * answer it replaces stays as a sibling version, branches.mjs).
+   */
+  rerun(missionId, userMessage, botId = null) {
+    const m = this.store.get("missions", missionId);
+    if (!m) throw Error("La misión no existe.");
+    if (this.active.has(missionId) || ["running", "queued", "planning"].includes(m.status)) throw Object.assign(Error("Espera a que termine de responder."), { status: 409 });
+    const bot = botId && this.bot(botId) ? botId : m.mode === "solo" ? m.botIds[0] : "atlas";
+    this.countTurn(bot);
+    const keys = this.queueTurns(missionId, [bot], this.steps(missionId).map((s) => s.key), { request: String(userMessage.text || ""), ackOn: userMessage.id });
+    this.store.patch("missions", missionId, { steps: [...(m.steps || []), ...keys], status: "queued", error: null, stopped: null });
+    this.launch(missionId);
   }
   /**
    * A step that stopped at its round limit or in a loop waits for the person. Any message

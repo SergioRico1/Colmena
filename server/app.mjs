@@ -4,6 +4,7 @@ import { isYes, isNo } from "./appactions.mjs";
 import { CHAT_PAGE, MAX_PAGE, ROOM_PAGE, historyPage, stepsForPage, withoutSaidText } from "./history.mjs";
 import { createLiveCoalescer } from "./live-coalescer.mjs";
 import { commandOutput } from "./command-output.mjs";
+import { branchPoints, openBranch, switchTo, visibleMessages } from "./branches.mjs";
 import { QUEUE_TEXT_MAX, deliverNext, editQueued, enqueue, moveQueued, queueOf, queueView, takeQueued, watchQueues } from "./queue.mjs";
 import { SiteVault, registerVaultRoutes } from "./vault.mjs";
 import { McpHub } from "./mcp/hub.mjs";
@@ -706,7 +707,9 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     // Long chats open with their latest 75 messages and only the steps those need (T3 Code
     // history paging); rooms with their latest 120 and every step (the plan, the team's work).
     // Older pages: GET /api/missions/:id/history; ?mensajes=todos brings everything (exports).
-    const all = store.where("messages", "missionId", m.id);
+    // The active branch of the conversation only (branches.mjs), with its «1/3» spots.
+    const every = store.where("messages", "missionId", m.id);
+    const all = visibleMessages(m, every);
     const page = req.query.mensajes === "todos" ? null : historyPage(all, { limit: m.conversation ? CHAT_PAGE : ROOM_PAGE });
     const records = store.where("steps", "missionId", m.id);
     // A chat page leaves out the answer text its messages already carry (history.mjs).
@@ -735,6 +738,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       steps,
       messages: (page ? page.messages : all).map(messageView),
       olderCount: page?.olderCount || 0,
+      branches: branchPoints(m, every),
       cursor: page?.cursor ?? null,
       thread: store.where("thread", "missionId", m.id).map((t) => ({ id: t.id, from: t.from, to: t.to ?? null, text: t.text, at: t.at ?? t.createdAt ?? null })),
       threadSummary: m.threadSummary ?? null,
@@ -751,7 +755,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.get("/api/missions/:id/history", (req, res) => {
     const { antes, limite } = check(z.object({ antes: z.string().trim().min(1).max(200), limite: z.coerce.number().int().min(1).max(MAX_PAGE).optional() }), { ...req.query });
     const m = mustGet("missions", req.params.id, "Misión");
-    const page = historyPage(store.where("messages", "missionId", m.id), { before: antes, limit: limite ?? (m.conversation ? CHAT_PAGE : ROOM_PAGE) });
+    const page = historyPage(visibleMessages(m, store.where("messages", "missionId", m.id)), { before: antes, limit: limite ?? (m.conversation ? CHAT_PAGE : ROOM_PAGE) });
     if (!page) throw notFound("Mensaje");
     // Only the bots: the whole context (every mission, approval…) is not needed for a page.
     const bots = new Map(store.list("bots").map((b) => [b.id, b]));
@@ -918,6 +922,56 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     store.patch("missions", m.id, { queuePaused: null });
     void deliverNext(store, runtime, m.id, sendQueued).catch(() => {});
     queueReply(res, m.id);
+  });
+  // Versions of a conversation (branches.mjs, after assistant-ui's branch picker). None of them
+  // while the bot answers: a version changes what it is answering to.
+  const branchable = (req) => {
+    const m = mustGet("missions", req.params.id, "Misión");
+    if (runtime.active?.has?.(m.id) || ["running", "queued", "planning"].includes(m.status)) throw new HttpError(409, "Espera a que termine de responder.");
+    return { m, every: store.where("messages", "missionId", m.id) };
+  };
+  // «Editar»: your message, written again, opens a new version from there; with `restore`
+  // the files the bot changed since then go back as they were (checkpoints «Volver a este punto»).
+  app.post("/api/missions/:id/edit", async (req, res) => {
+    const { messageId, text, restore } = check(z.object({ messageId: z.string().trim().min(1).max(200), text: z.string().trim().min(1).max(20000), restore: z.boolean().optional() }).strict(), req.body);
+    const { m, every } = branchable(req);
+    const target = visibleMessages(m, every).find((x) => x.id === messageId);
+    if (!target || target.role !== "user") throw notFound("Mensaje");
+    let restored = null;
+    if (restore) {
+      const points = checkpointsOf();
+      await points.idle(m.id);
+      const first = points.views(m.id).find((cp) => String(cp.at || "") >= String(target.at || ""));
+      if (first) restored = await points.restore(m.id, first.id, "point", { busy: (plan) => restoreBusy(m.id, plan) });
+    }
+    const opened = openBranch(m, every, messageId, now());
+    store.patch("missions", m.id, opened.changes);
+    const message = await need("addMessage")(m.id, text, []);
+    res.json({ ok: true, branch: opened.branch.id, messageId: message?.id ?? null, restored: !!restored });
+  });
+  // «Otra respuesta»: the bot answers the same message again; the old answer stays as a version.
+  app.post("/api/missions/:id/regenerate", (req, res) => {
+    const { messageId } = check(z.object({ messageId: z.string().trim().min(1).max(200) }).strict(), req.body);
+    const { m, every } = branchable(req);
+    const path = visibleMessages(m, every);
+    const at = path.findIndex((x) => x.id === messageId);
+    if (at < 0 || path[at].role !== "assistant") throw notFound("Respuesta");
+    let u = at - 1;
+    while (u >= 0 && path[u].role !== "user") u--;
+    if (u < 0) throw new HttpError(422, "No hay un mensaje tuyo al que volver a responder.");
+    const opened = openBranch(m, every, path[u + 1].id, now());
+    store.patch("missions", m.id, opened.changes);
+    need("rerun")(m.id, path[u], path[at].botId || null);
+    res.json({ ok: true, branch: opened.branch.id });
+  });
+  // «‹ 1/3 ›»: shows another version of one spot (and what followed it).
+  app.post("/api/missions/:id/branch", (req, res) => {
+    const { messageId } = check(z.object({ messageId: z.string().trim().min(1).max(200) }).strict(), req.body);
+    const { m, every } = branchable(req);
+    const changes = switchTo(m, every, messageId, now());
+    if (!changes) throw notFound("Versión");
+    if (Object.keys(changes).length) store.patch("missions", m.id, changes);
+    res.json({ ok: true, branch: store.get("missions", m.id).branch || "main" });
   });
   // «Deshacer» on an «Aprendido: …» line in the room.
   app.post("/api/messages/:id/undo", (req, res) => {

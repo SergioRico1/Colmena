@@ -73,6 +73,12 @@ export function joinPages(older, recent = { messages: [], steps: [] }) {
   return { messages: [...older.messages.filter((m) => !shown.has(m.id)), ...recent.messages], steps: [...before, ...recent.steps] };
 }
 
+/** Another version of the conversation shows (branches): its older pages are other ones. */
+export function forgetOlder(missionId) {
+  if (!pages.delete(missionId)) return;
+  emit();
+}
+
 /** For tests. */
 export function resetPages() {
   pages.clear();
