@@ -35,7 +35,7 @@ import PositionRail, { railItems } from "../components/room/PositionRail.jsx";
 import FilesPanel, { FileView, fileIcon } from "../components/room/FilesPanel.jsx";
 import { comboLabel, useDock, usePanelShortcuts } from "../lib/useDock.js";
 import { useRevealMessage } from "../lib/reveal.js";
-import { FailedLine, NewBelow, Suggestions } from "../components/room/RoomParts.jsx";
+import { FailedLine, Suggestions } from "../components/room/RoomParts.jsx";
 import MessageQueue, { useConversationQueue } from "../components/room/MessageQueue.jsx";
 import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
 import AsidePanel, { askAsideAbout } from "../components/room/AsidePanel.jsx";
@@ -135,10 +135,9 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const older = c && thread && c === thread.id ? olderOf(missions, botId, thread.id) : [];
   const isOlder = !!c && !!thread && c !== thread.id && !missions.find((m) => m.id === c)?.incognito;
   const room = useRoom(c);
-  // The messages are a virtual list (Timeline.jsx): it follows the end, and says when
-  // something new arrived below while you read further up.
+  // The messages are a virtual list (Timeline.jsx): it follows the end while you are there
+  // and offers «Ir al final» when you are not.
   const timeline = useRef(null);
-  const [below, setBelow] = useState(false);
   const follow = useMemo(() => ({ toEnd: () => timeline.current?.toEnd() }), []);
   const locate = useCallback((id) => timeline.current?.locate(id) ?? false, []);
   const railLocate = useMemo(() => ({ at: (id) => timeline.current?.rail.at(id) ?? null, jump: (id) => timeline.current?.rail.jump(id) }), []);
@@ -166,7 +165,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const mentions = useMentions({ value: text, setValue: setText, bots: bots.filter((b) => b.enabled !== false && b.id !== botId), inputRef });
   const [incognito, setIncognito] = useState(privateNew);
   const [showOlder, setShowOlder] = useState(false);
-  useEffect(() => { setIncognito(privateNew); setMoreOpen(false); setShowOlder(false); setBelow(false); }, [c, botId, privateNew]);
+  useEffect(() => { setIncognito(privateNew); setMoreOpen(false); setShowOlder(false); }, [c, botId, privateNew]);
   const privateChat = c ? !!mission?.incognito : incognito;
   useDraft(privateChat ? null : "chat:" + (c || botId), text, setText);
   // ↑ in the empty box: what you sent here before, even beyond the loaded page (not in private chats).
@@ -528,7 +527,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
             <div style={{ flex: "1", minHeight: 0, display: "flex" }}>
               {c ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(c, t)} onAsk={(t) => { askAsideAbout(c, t); dock.open(ASIDE_TAB); }} /> : null}
               <Timeline key={c || "nuevo:" + botId} listKey={c || "nuevo:" + botId} handle={timeline} rows={rows} renderRow={renderRow} estimate={estimateRow}
-                hasOlder={room.olderCount > 0} loadingOlder={room.loadingOlder} olderError={room.olderError} onReachTop={room.showOlder} onBelow={setBelow}
+                hasOlder={room.olderCount > 0} loadingOlder={room.loadingOlder} olderError={room.olderError} onReachTop={room.showOlder}
                 scrollerRef={scroller} contentRef={scope} style={{ WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 40px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 40px)" }} />
               {c ? <SideDock dock={dock} tabs={dockTabs} addable={dockAddable} widthKey="chat" label="Panel de la conversación" /> : null}
             </div>
@@ -541,7 +540,6 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               working={turn} onStop={stopTurn} files={files} onRemoveFile={(i) => setFiles(files.filter((_, j) => j !== i))} onInlinePasted={(i) => { const f = files[i]; setFiles(files.filter((_, j) => j !== i)); setText((t) => (t.trim() ? t.replace(/\s*$/, "\n\n") : "") + f.content); }}
               onAttach={() => setPlusOpen((v) => !v)} drop={drop} busy={send.busy}
               above={<>
-                <NewBelow show={below} onClick={follow.toEnd} />
                 {pending.filter((a) => a.kind === "secret").map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
                 <BtwNotes btw={btw} botName={bot?.name} nameOf={(id) => findBot(bots, id)?.name} />
                 <Suggestions list={suggestions} onPick={(t) => { setText(t); requestAnimationFrame(() => inputRef.current?.focus()); }} />

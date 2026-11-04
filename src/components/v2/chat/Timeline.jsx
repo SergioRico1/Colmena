@@ -1,6 +1,8 @@
-import { memo, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { ArrowDown } from "lucide-react";
 import { flash } from "../../../lib/reveal.js";
+import { createFollowScroll } from "../../../lib/followScroll.js";
 
 // The messages of a conversation as a virtual list (T3 Code MessagesTimeline): only the rows
 // on screen (and a few around them) are in the page, so a chat of thousands of messages opens
@@ -8,7 +10,8 @@ import { flash } from "../../../lib/reveal.js";
 // there (OpenClaw chat scroll); scrolling up stops following and, near the top, asks for the
 // page before (onReachTop). Prepending a page keeps the first row you see exactly where it
 // was (anchorTo «end», as T3's timelineScrollAnchoring). Each chat remembers where you left
-// it and the real height of every row it measured.
+// it and the real height of every row it measured. Following the end is not the list's job:
+// src/lib/followScroll.js decides it from what the reader does (assistant-ui auto-scroll).
 const AT_END_PX = 24; // within this of the end it keeps following
 const places = new Map(); // listKey → { key, offset, atEnd }
 const heights = new Map(); // listKey → Map(rowKey → px)
@@ -63,22 +66,37 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
     paddingStart: 36,
     paddingEnd: 28,
     anchorTo: "end",
-    followOnAppend: true,
-    scrollEndThreshold: AT_END_PX,
+    // Following is followScroll's: the list never pulls the reader to the end on its own.
+    followOnAppend: false,
+    scrollEndThreshold: -1,
   });
   const v = useRef(virtualizer);
   v.current = virtualizer;
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
 
+  // «Ir al final» shows whenever the end is out of view.
+  const [atBottom, setAtBottom] = useState(true);
+  const follow = useMemo(() => createFollowScroll({ onAtBottomChange: setAtBottom }), []);
+  // Hidden until it has taken its place, so the first paint never jumps.
+  const [placed, setPlaced] = useState(false);
   // Opens where you left this chat, or at its latest message.
   useLayoutEffect(() => {
+    const el = scroller.current;
+    const detach = el ? follow.attach(el) : null;
     const place = places.get(listKey);
     const list = v.current;
     const at = place && !place.atEnd ? rowsRef.current.findIndex((r) => r.key === place.key) : -1;
-    if (at >= 0) list.scrollToOffset((list.getOffsetForIndex(at, "start")?.[0] ?? 0) + place.offset);
-    else list.scrollToEnd();
-  }, [listKey]);
+    const put = () => {
+      if (at >= 0) { list.scrollToOffset((list.getOffsetForIndex(at, "start")?.[0] ?? 0) + place.offset); follow.hold(); }
+      else follow.scrollToBottom("instant");
+    };
+    put();
+    // The rows measure themselves in the next frames: settle there, then show.
+    let f2 = 0;
+    const f1 = requestAnimationFrame(() => { put(); f2 = requestAnimationFrame(() => { put(); setPlaced(true); }); });
+    return () => { cancelAnimationFrame(f1); cancelAnimationFrame(f2); detach?.(); };
+  }, [listKey, follow]);
 
   // Where you are, and the measured heights, for the next time this chat opens.
   useEffect(() => () => {
@@ -98,11 +116,12 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
   const lastKey = rows[rows.length - 1]?.key ?? null;
   const prevLast = useRef(lastKey);
   const below = useRef(false);
-  const setBelow = useCallback((value) => { if (below.current !== value) { below.current = value; onBelow?.(value); } }, [onBelow]);
+  const [freshBelow, setFreshBelow] = useState(false);
+  const setBelow = useCallback((value) => { if (below.current !== value) { below.current = value; setFreshBelow(value); onBelow?.(value); } }, [onBelow]);
   useEffect(() => {
-    if (prevLast.current !== lastKey && !v.current.isAtEnd(AT_END_PX * 2)) setBelow(true);
+    if (prevLast.current !== lastKey && !follow.isAtBottom) setBelow(true);
     prevLast.current = lastKey;
-  }, [lastKey, setBelow]);
+  }, [lastKey, setBelow, follow]);
 
   const items = virtualizer.getVirtualItems();
   // The page before loads when you scroll near the top (never while the chat is still taking
@@ -115,22 +134,11 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
     if (paging.current.can && rows.length > 1 && viewport && total <= viewport) paging.current.reach?.();
   }, [total, viewport, rows.length, hasOlder, loadingOlder, olderError]);
 
-  // At the end when the composer grows (an attachment, a long draft) or the window changes:
-  // stay at the end, as the composer pushes the list up.
-  const atEnd = useRef(true);
-  useEffect(() => {
-    const el = scroller.current;
-    if (!el || typeof ResizeObserver !== "function") return undefined;
-    const ro = new ResizeObserver(() => { if (atEnd.current) el.scrollTop = el.scrollHeight; });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
   // React's scroll event comes before the list updates itself: read the element, not the list.
   const onScroll = useCallback(() => {
     remember();
     const el = scroller.current;
     if (!el) return;
-    atEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight <= AT_END_PX;
     if (el.scrollHeight - el.scrollTop - el.clientHeight <= AT_END_PX * 2) setBelow(false);
     else if (paging.current.can && el.scrollTop < el.clientHeight * 1.5) paging.current.reach?.();
   }, [remember, setBelow]);
@@ -139,13 +147,12 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
   const nodeOf = (id) => scroller.current?.querySelector(`[data-message-id="${CSS.escape(id)}"]`) || null;
   const api = useMemo(() => ({
     toEnd() {
-      const list = v.current;
       setBelow(false);
       places.delete(listKey);
       const el = scroller.current;
-      const far = el && list.getTotalSize() - list.scrollOffset > el.clientHeight * 3;
+      const far = el && el.scrollHeight - el.scrollTop > el.clientHeight * 3;
       const calm = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-      list.scrollToEnd({ behavior: far || calm ? "auto" : "smooth" });
+      follow.scrollToBottom(far || calm ? "auto" : "smooth");
     },
     // Brings a loaded message into the page; false when it is not loaded.
     locate(id) {
@@ -175,15 +182,16 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
         }));
       },
     },
-  }), [indexOf, listKey, setBelow]);
+  }), [indexOf, listKey, setBelow, follow]);
   useImperativeHandle(handle, () => api, [api]);
 
   // A short chat sits at the bottom, by the composer (as before).
   const lift = Math.max(0, viewport - total);
   return (
-    <div ref={(el) => { scroller.current = el; if (typeof scrollerRef === "function") scrollerRef(el); else if (scrollerRef) scrollerRef.current = el; }} onScroll={onScroll}
-      style={{ flex: "1", minWidth: 0, minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", overflowAnchor: "none", ...style }}>
-      <div ref={contentRef} role="log" aria-live="off" style={{ position: "relative", width: "100%", height: total + lift + "px" }}>
+    <div style={{ flex: "1", minWidth: 0, minHeight: "0", position: "relative", display: "flex" }}>
+    <div ref={(el) => { scroller.current = el; if (typeof scrollerRef === "function") scrollerRef(el); else if (scrollerRef) scrollerRef.current = el; }} onScroll={onScroll} tabIndex={-1}
+      style={{ flex: "1", minWidth: 0, minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", overflowAnchor: "none", outline: "none", ...style }}>
+      <div ref={contentRef} role="log" aria-live="off" style={{ position: "relative", width: "100%", height: total + lift + "px", visibility: placed ? "visible" : "hidden" }}>
         {loadingOlder || olderError ? (
           <div style={{ position: "absolute", top: lift + 8 + "px", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 1 }}>
             {olderError
@@ -203,5 +211,18 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
         ))}
       </div>
     </div>
+    {placed && !atBottom ? <ToEnd fresh={freshBelow} onClick={() => api.toEnd()} /> : null}
+    </div>
+  );
+}
+
+/** «Ir al final» over the bottom of the list; «Mensajes nuevos» when something arrived there. */
+function ToEnd({ fresh, onClick }) {
+  return (
+    <button type="button" className="rm-focus" onClick={onClick} aria-label={fresh ? "Ir a los mensajes nuevos" : "Ir al final de la conversación"}
+      style={{ position: "absolute", left: "50%", bottom: "14px", transform: "translateX(-50%)", zIndex: 5, display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: fresh ? "0 14px 0 12px" : "0", width: fresh ? "auto" : "36px", justifyContent: "center", border: 0, borderRadius: "999px", background: "#FFFFFF", color: "#12131A", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 10px 24px -12px rgba(18,19,26,.45)", cursor: "pointer", fontSize: "13px", fontWeight: 600, animation: "rise .2s ease-out" }}>
+      <ArrowDown size={16} strokeWidth={2.4} aria-hidden="true" />
+      {fresh ? "Mensajes nuevos" : null}
+    </button>
   );
 }
