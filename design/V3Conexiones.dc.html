@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ajustes · Apps y carpetas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+::placeholder{color:#6B6F7A}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="ajustes" experto="{{ true }}" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start">
+
+<nav aria-label="Secciones de Ajustes" style="flex: 0 0 264px; position: sticky; top: 0; display: flex; flex-direction: column; gap: 4px; min-height: 100vh; padding: 40px 14px 24px 22px">
+<h1 style="margin: 0 0 14px 8px; font: 600 34px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Ajustes</h1>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; margin-bottom: 10px; padding: 0 12px; border-radius: 12px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(18,19,26,.08)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar un ajuste</span><input type="text" placeholder="Buscar un ajuste" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"></label>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="9"><a href="{{n.href}}" aria-current="{{n.current}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 11px; background: {{n.bg}}; box-shadow: {{n.shadow}}; font-size: 14.5px; font-weight: {{n.weight}}; color: #12131A"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: #4A4D57"><path d="{{n.icon}}"></path></svg><span style="flex: 1">{{n.label}}</span><span style="font-size: 11px; font-weight: 600; color: #5C606C">{{n.tag}}</span></a></sc-for>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; max-width: 860px; padding: 40px clamp(20px, 3vw, 40px) 64px; display: flex; flex-direction: column; gap: 18px">
+<header style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px"><h2 style="margin: 0; font: 600 30px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Apps y carpetas</h2><p style="margin: 0; font-size: 15px; line-height: 1.5; color: #4A4D57">Las apps, carpetas y webs con las que trabajan tus bots. Qué puede tocar cada uno se decide en <a href="Permisos.dc.html">Permisos</a>.</p></header>
+
+<section aria-labelledby="con-t" style="display: flex; flex-direction: column; gap: 10px">
+<h3 id="con-t" style="margin: 0; font-size: 15px; font-weight: 600">Conectadas · 5</h3>
+<ul role="list" style="margin: 0; padding: 0; list-style: none; border-radius: 20px; background: #FFFFFF; overflow: hidden">
+<sc-for list="{{connected}}" as="a" hint-placeholder-count="5">
+<li style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 68px; padding: 12px 18px; background: {{a.rowBg}}; border-top: {{a.line}}">
+<span aria-hidden="true" style="flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: {{a.tile}}; font-size: 14px; font-weight: 700">{{a.mark}}</span>
+<span style="flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 600">{{a.name}}</span><span style="font-size: 13px; line-height: 1.4; color: {{a.noteInk}}">{{a.note}}</span></span>
+<span title="{{a.users}}" style="display: flex; align-items: center; gap: 4px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{a.users}}</span><sc-for list="{{a.bots}}" as="b" hint-placeholder-count="3"><span aria-hidden="true" style="width: 16px; height: 16px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}"></span></sc-for></span>
+<button type="button" style="height: 34px; padding: 0 14px; border: {{a.btnBorder}}; border-radius: 999px; background: {{a.btnBg}}; color: {{a.btnInk}}; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer">{{a.btn}}</button>
+</li>
+</sc-for>
+</ul>
+</section>
+
+<section aria-labelledby="add-t" style="display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px"><h3 id="add-t" style="flex: 1 1 180px; margin: 0; font-size: 15px; font-weight: 600">Conectar otra app</h3><label style="flex: 0 1 260px; display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(18,19,26,.12)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar una app</span><input type="text" placeholder="Buscar entre 250 apps" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"></label></div>
+<div role="group" aria-label="Filtrar por tipo" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="6"><button type="button" aria-pressed="{{c.on}}" onClick="{{c.pick}}" style="height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: {{c.bg}}; color: {{c.ink}}; font-size: 13px; font-weight: 500; cursor: pointer">{{c.label}}</button></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(172px, 100%), 1fr)); gap: 8px">
+<sc-for list="{{available}}" as="a" hint-placeholder-count="8"><button type="button" aria-label="Conectar {{a.name}}" style="display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 8px 12px 8px 10px; border: 0; border-radius: 14px; background: #F6F6F3; text-align: left; cursor: pointer"><span aria-hidden="true" style="flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #FFFFFF; font-size: 12px; font-weight: 700">{{a.mark}}</span><span style="flex: 1; min-width: 0; font-size: 14px; font-weight: 500">{{a.name}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none"><path d="M12 5.5v13M5.5 12h13"></path></svg></button></sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; font-size: 13px"><a href="#" style="font-weight: 600">Ver las 250 apps</a><span style="color: #5C606C">¿Una herramienta propia o un servidor MCP? Va en <a href="Ajustes.dc.html">Avanzado</a>.</span></div>
+</section>
+
+<section aria-labelledby="fold-t" style="display: flex; flex-direction: column; gap: 6px; padding: 20px 22px 10px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px"><span style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 2px"><h3 id="fold-t" style="margin: 0; font-size: 15px; font-weight: 600">Carpetas de este ordenador</h3><span style="font-size: 13px; color: #5C606C">Fuera de estas, tus bots no ven nada de tu disco.</span></span><button type="button" style="height: 36px; padding: 0 14px; border: 1px solid rgba(18,19,26,.14); border-radius: 999px; background: #FFFFFF; font-size: 13.5px; font-weight: 500; cursor: pointer">Añadir carpeta…</button></div>
+<sc-for list="{{folders}}" as="f" hint-placeholder-count="3"><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 62px; padding: 8px 0; border-top: 1px solid rgba(18,19,26,.06)">
+<span aria-hidden="true" style="flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #F1F1EC"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"></path></svg></span>
+<span style="flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14.5px; font-weight: 500">{{f.name}}</span><span style="font: 400 12.5px/1.3 'Geist Mono', monospace; color: #5C606C; overflow-wrap: anywhere">{{f.path}}</span></span>
+<button type="button" aria-label="Qué pueden hacer en {{f.name}}: {{f.access}}" style="height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px 0 12px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(18,19,26,.14); font-size: 13px; white-space: nowrap; cursor: pointer">{{f.access}}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button>
+<button type="button" aria-label="Quitar {{f.name}}" style="height: 32px; padding: 0 8px; border: 0; background: transparent; font-size: 13px; color: #4A4D57; cursor: pointer">Quitar</button>
+</div></sc-for>
+</section>
+
+<section aria-labelledby="nav-t" style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; align-items: flex-start; gap: 16px"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><h3 id="nav-t" style="margin: 0; font-size: 15px; font-weight: 600">Navegador propio para cada bot</h3><span style="font-size: 13px; line-height: 1.5; color: #5C606C">Navegan en una ventana de Colmena, no en tu Chrome. Nunca escriben contraseñas: te las piden a ti.</span></span><button type="button" role="switch" aria-checked="true" aria-labelledby="nav-t" style="flex: none; position: relative; width: 40px; height: 24px; margin-top: 2px; padding: 0; border: 0; border-radius: 12px; background: #12131A; cursor: pointer"><span aria-hidden="true" style="position: absolute; top: 3px; left: 19px; width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><span style="margin-right: 2px; font-size: 13px; color: #5C606C">Sesión iniciada en</span><sc-for list="{{sessions}}" as="s" hint-placeholder-count="3"><span style="height: 30px; padding: 0 3px 0 12px; display: inline-flex; align-items: center; gap: 2px; border-radius: 999px; background: #F1F1EC; font-size: 12.5px">{{s.host}}<button type="button" aria-label="Cerrar la sesión en {{s.host}}" style="width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></span></sc-for></div>
+</section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { cat: 'todas' }; }
+  renderVals() {
+    const navDefs = [['General', 'Ajustes.dc.html', '', 'M4 7h10M18 7h2M4 17h4M12 17h8M16 4.5v5M10 14.5v5'], ['Cuentas de IA', 'AjustesIA.dc.html', '', 'M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z'], ['Permisos y autonomía', 'Permisos.dc.html', '', 'M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z'], ['Apps y carpetas', 'Conexiones.dc.html', '', 'M9 3.5v4M15 3.5v4M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0zM12 16v4.5'], ['Avisos', 'Ajustes.dc.html', '', 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0'], ['Privacidad y datos', 'Privacidad.dc.html', '', 'M6.5 10.5h11v9.5h-11zM8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5'], ['Uso y límites', 'Uso.dc.html', '', 'M5 19.5V11M10 19.5V5.5M15 19.5v-6M20 19.5V9'], ['Ayuda y diagnóstico', 'Ajustes.dc.html', '1', 'M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.5M12 16.8v.2'], ['Avanzado', 'Ajustes.dc.html', 'EXPERTO', 'M4.5 5.5h15v13h-15zM8 10l2.5 2L8 14M12.5 14.5H16']];
+    const act = 'Apps y carpetas';
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const B = { atlas: { color: '#12131A', clip: HEX, radius: '0' }, tomas: { color: '#0B8A5F', clip: 'none', radius: '24%' }, iris: { color: '#FF5CA8', clip: DIA, radius: '0' }, vera: { color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%' }, nora: { color: '#2F6BFF', clip: 'none', radius: '50%' }, bruno: { color: '#FF7A1A', clip: 'none', radius: '50% 50% 14% 14%' } };
+    const names = { atlas: 'Atlas', tomas: 'Tomás', iris: 'Iris', vera: 'Vera', nora: 'Nora', bruno: 'Bruno' };
+    const list = (ids) => ids.length === 1 ? names[ids[0]] : ids.slice(0, -1).map((i) => names[i]).join(', ') + ' y ' + names[ids[ids.length - 1]];
+    const app = (mark, name, note, tile, ids, extra) => ({ mark, name, note, tile, bots: ids.map((i) => B[i]), users: 'La usan ' + list(ids), noteInk: '#5C606C', rowBg: '#FFFFFF', btn: 'Ajustar', btnBorder: '1px solid rgba(18,19,26,.14)', btnBg: '#FFFFFF', btnInk: '#12131A', ...extra });
+    const connected = [
+      app('#', 'Slack', 'La sesión caducó ayer. Iris no puede avisar en #marketing hasta que vuelvas a entrar.', '#EDE7FF', ['iris', 'atlas'], { noteInk: '#8A5A00', rowBg: '#FFF6DC', btn: 'Volver a entrar', btnBg: '#12131A', btnInk: '#FFFFFF' }),
+      app('@', 'Gmail', 'sergio@tuempresa.com', '#FBE9EA', ['tomas', 'nora', 'atlas']),
+      app('31', 'Google Calendar', 'sergio@tuempresa.com · solo tu calendario', '#E3EBFF', ['atlas', 'tomas']),
+      app('▤', 'Google Drive', 'Carpeta «Colmena» y lo que te compartan', '#E3F4EC', ['tomas', 'vera', 'iris', 'atlas']),
+      app('GH', 'GitHub', 'Por MCP · 18 herramientas · tuempresa/web', '#F1F1EC', ['bruno'])
+    ].map((a, i) => ({ ...a, line: i === 0 ? '0' : '1px solid rgba(18,19,26,.06)' }));
+    const all = [['correo', 'O', 'Outlook'], ['docs', 'N', 'Notion'], ['ventas', 'H', 'HubSpot'], ['ventas', 'Ho', 'Holded'], ['chat', 'W', 'WhatsApp Business'], ['chat', 'Te', 'Teams'], ['dev', 'Li', 'Linear'], ['archivos', 'D', 'Dropbox'], ['docs', 'T', 'Trello'], ['correo', 'Ca', 'Calendly'], ['archivos', '1D', 'OneDrive'], ['dev', 'Vc', 'Vercel']];
+    return {
+      nav: navDefs.map(([label, href, tag, icon]) => ({ label, href, tag, icon, current: label === act ? 'page' : undefined, bg: label === act ? '#FFFFFF' : 'transparent', shadow: label === act ? '0 1px 2px rgba(18,19,26,.08)' : 'none', weight: label === act ? '600' : '500' })),
+      connected,
+      cats: [['todas', 'Todas'], ['correo', 'Correo y agenda'], ['archivos', 'Archivos'], ['chat', 'Mensajería'], ['ventas', 'Ventas y facturas'], ['dev', 'Desarrollo']].map(([id, label]) => ({ label, on: this.state.cat === id, bg: this.state.cat === id ? '#12131A' : '#F1F1EC', ink: this.state.cat === id ? '#FFFFFF' : '#3D404A', pick: () => this.setState({ cat: id }) })),
+      available: all.filter((a) => this.state.cat === 'todas' || a[0] === this.state.cat).slice(0, 8).map(([c, mark, name]) => ({ mark, name })),
+      folders: [
+        { name: 'Colmena', path: 'C:\\Users\\Sergio\\Documents\\Colmena', access: 'Leer y escribir' },
+        { name: 'Descargas', path: 'C:\\Users\\Sergio\\Downloads', access: 'Leer y ordenar' },
+        { name: 'Proyectos', path: 'D:\\proyectos', access: 'Solo Código' }
+      ],
+      sessions: [{ host: 'redes.tuempresa.com' }, { host: 'tienda.tuempresa.com' }, { host: 'proveedores.telasnorte.es' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

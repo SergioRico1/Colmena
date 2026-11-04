@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Comparar motores · Bizum en el checkout</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="codigo" experto="{{ true }}" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1180px; margin: 0 auto; padding: 36px clamp(20px, 4vw, 44px) 56px; display: flex; flex-direction: column; gap: 24px">
+
+<nav aria-label="Miga" style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5C606C"><a href="Codigo.dc.html" style="color: #5C606C">Código</a><span aria-hidden="true">›</span><span style="font-family: 'Geist Mono', monospace">tienda-web</span><span aria-hidden="true">›</span><span style="color: #12131A; font-weight: 500">Comparar</span></nav>
+
+<header style="display: flex; flex-direction: column; gap: 10px">
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Bizum en el checkout</h1>
+<p style="margin: 0; font-size: 16px; color: #4A4D57">La misma petición a tres motores, cada uno en su copia del proyecto. Elige el que se queda; los otros se archivan, no se borran.</p>
+<p style="margin: 4px 0 0; padding: 14px 18px; border-radius: 16px; background: #FFFFFF; font-size: 15px; line-height: 1.5">«Añade Bizum como método de pago en el checkout, con sus tests.»</p>
+</header>
+
+<section aria-label="Recomendación de Atlas" style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; padding: 18px 22px; border-radius: 22px; background: #12131A; color: #FFFFFF">
+<span aria-hidden="true" style="flex: none; width: 28px; height: 28px; background: #FFFFFF; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"></span>
+<p style="flex: 1 1 420px; margin: 0; font-size: 15.5px; line-height: 1.55; color: #E6E7EC"><strong style="color: #FFFFFF; font-weight: 600">Atlas recomienda Claude Code:</strong> es el único que añade tests para Bizum y lo ha probado con un pago de prueba. OpenCode es el más barato si solo quieres el botón.</p>
+<button type="button" onClick="{{follow}}" style="height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: #FFFFFF; color: #12131A; font-size: 14.5px; font-weight: 600; cursor: pointer">Seguir su consejo</button>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 14px">
+<sc-for list="{{runs}}" as="r" hint-placeholder-count="3">
+<article style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 0 0 2px {{r.ring}}">
+<div style="display: flex; align-items: flex-start; gap: 10px"><div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 16px; font-weight: 600">{{r.engine}}</span><span style="font: 400 12.5px/1 'Geist Mono', monospace; color: #5C606C">{{r.model}}</span></div><sc-if value="{{r.rec}}" hint-placeholder-val="{{ false }}"><span style="height: 24px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 12px; font-weight: 600">Recomendado</span></sc-if></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div style="padding: 10px 12px; border-radius: 12px; background: {{r.testBg}}"><span style="display: block; font-size: 12px; color: #4A4D57">Tests</span><span style="font-size: 14px; font-weight: 600; color: {{r.testInk}}">{{r.tests}}</span></div>
+<div style="padding: 10px 12px; border-radius: 12px; background: #F6F6F3"><span style="display: block; font-size: 12px; color: #4A4D57">Cambios</span><span style="font: 600 14px/1.4 'Geist Mono', monospace"><span style="color: #0B6B4A">{{r.add}}</span> <span style="color: #B4232A">{{r.del}}</span></span></div>
+<div style="padding: 10px 12px; border-radius: 12px; background: #F6F6F3"><span style="display: block; font-size: 12px; color: #4A4D57">Tiempo</span><span style="font-size: 14px; font-weight: 600">{{r.time}}</span></div>
+<div style="padding: 10px 12px; border-radius: 12px; background: #F6F6F3"><span style="display: block; font-size: 12px; color: #4A4D57">Coste</span><span style="font-size: 14px; font-weight: 600">{{r.cost}}</span></div>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3D404A; min-height: 63px">{{r.summary}}</p>
+<div style="display: flex; flex-direction: column; gap: 4px; padding-top: 10px; border-top: 1px solid rgba(18,19,26,.07)">
+<sc-for list="{{r.files}}" as="f" hint-placeholder-count="3"><div style="display: flex; justify-content: space-between; gap: 10px; font: 400 12.5px/1.8 'Geist Mono', monospace"><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{f.n}}</span><span style="color: #0B6B4A">{{f.d}}</span></div></sc-for>
+</div>
+<span style="flex: 1"></span>
+<div style="display: flex; gap: 8px"><a href="CodigoTarea.dc.html" style="height: 42px; padding: 0 16px; display: inline-flex; align-items: center; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; color: #12131A; font-size: 14px; font-weight: 500">Ver cambios</a><button type="button" onClick="{{r.pick}}" style="flex: 1; height: 42px; border: 0; border-radius: 999px; background: {{r.btnBg}}; color: {{r.btnInk}}; font-size: 14px; font-weight: 600; cursor: pointer">{{r.btn}}</button></div>
+</article>
+</sc-for>
+</div>
+
+<div role="status" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 18px; background: #FFFFFF; font-size: 14.5px"><span style="flex: 1 1 300px; color: #3D404A">{{bar}}</span><a href="Ajustes.dc.html" style="font-size: 13.5px">Motores y modelos por defecto</a></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { pick: null }; }
+  renderVals() {
+    const defs = [
+      { id: 'claude', engine: 'Claude Code', model: 'claude-opus-5-5 · esfuerzo alto', tests: '24 pasan', ok: true, add: '+128', del: '−14', time: '6 min', cost: '0,41 €', summary: 'Bizum aparece junto a la tarjeta y los 24 tests pasan. Probado con un pago de prueba en el entorno de pruebas.', files: [{ n: 'PaymentMethods.jsx', d: '+86 −9' }, { n: 'payments.js', d: '+38 −5' }, { n: 'payments.test.js', d: '+4' }] },
+      { id: 'codex', engine: 'Codex', model: 'gpt-6.1-sol · razonamiento medio', tests: '1 falla', ok: false, add: '+96', del: '−11', time: '5 min', cost: '0,22 €', summary: 'Ha añadido Bizum; un test de la cesta falla porque cambió el orden de los métodos de pago.', files: [{ n: 'PaymentMethods.jsx', d: '+71 −8' }, { n: 'payments.js', d: '+25 −3' }] },
+      { id: 'opencode', engine: 'OpenCode', model: 'deepseek-v4.1-flash', tests: '24 pasan', ok: true, add: '+64', del: '−6', time: '7 min', cost: '0,03 €', summary: 'Lo mínimo: un botón y su llamada. Sin tests nuevos para Bizum.', files: [{ n: 'PaymentMethods.jsx', d: '+64 −6' }] }
+    ];
+    const pick = this.state.pick;
+    const runs = defs.map((d) => ({ ...d, rec: d.id === 'claude', testBg: d.ok ? '#E3F4EC' : '#FBE9EA', testInk: d.ok ? '#0B6B4A' : '#B4232A', ring: pick === d.id ? '#12131A' : 'transparent', btn: pick === d.id ? 'Elegido ✓' : 'Elegir este', btnBg: pick === d.id ? '#0B6B4A' : '#12131A', btnInk: '#FFFFFF', pick: () => this.setState({ pick: d.id }) }));
+    const chosen = defs.find((d) => d.id === pick);
+    return { runs, follow: () => this.setState({ pick: 'claude' }), bar: chosen ? 'Elegiste ' + chosen.engine + '. Su rama pasa a ser la tarea; las otras dos quedan archivadas 30 días, por si cambias de idea.' : 'Al elegir uno, su rama pasa a ser la tarea. Los otros dos se archivan 30 días; no se borran.' };
+  }
+}
+</script>
+</body>
+</html>

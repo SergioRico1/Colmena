@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ajustes · Cuentas de IA</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="ajustes" experto="{{ true }}" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start">
+
+<nav aria-label="Secciones de Ajustes" style="flex: 0 0 264px; position: sticky; top: 0; display: flex; flex-direction: column; gap: 4px; min-height: 100vh; padding: 40px 14px 24px 22px">
+<h1 style="margin: 0 0 14px 8px; font: 600 34px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Ajustes</h1>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; margin-bottom: 10px; padding: 0 12px; border-radius: 12px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(18,19,26,.08)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar un ajuste</span><input type="text" placeholder="Buscar un ajuste" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"></label>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="9"><a href="{{n.href}}" aria-current="{{n.current}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 11px; background: {{n.bg}}; box-shadow: {{n.shadow}}; font-size: 14.5px; font-weight: {{n.weight}}; color: #12131A"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: #4A4D57"><path d="{{n.icon}}"></path></svg><span style="flex: 1">{{n.label}}</span><span style="font-size: 11px; font-weight: 600; color: #5C606C">{{n.tag}}</span></a></sc-for>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; max-width: 840px; padding: 40px clamp(20px, 3vw, 40px) 64px; display: flex; flex-direction: column; gap: 18px">
+<header style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px"><h2 style="margin: 0; font: 600 30px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Cuentas de IA</h2><p style="margin: 0; font-size: 15px; color: #4A4D57">Con qué IA piensan tus bots, cuánto piensan y quién les cubre si una falla.</p></header>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{providers}}" as="p" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 18px 20px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 0 0 2px {{p.ring}}">
+<span aria-hidden="true" style="flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; background: #F1F1EC; font-size: 16px; font-weight: 700">{{p.mark}}</span>
+<span style="flex: 1 1 260px; display: flex; flex-direction: column; gap: 3px"><span style="display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600">{{p.name}}<span style="height: 22px; padding: 0 8px; display: inline-flex; align-items: center; border-radius: 999px; background: {{p.tagBg}}; color: {{p.tagInk}}; font-size: 11.5px; font-weight: 600">{{p.tag}}</span></span><span style="font-size: 13.5px; color: #4A4D57">{{p.note}}</span></span>
+<sc-if value="{{p.hasMeter}}" hint-placeholder-val="{{ false }}"><span style="flex: 0 1 180px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #5C606C"><span>{{p.meterLabel}}</span><span aria-hidden="true" style="position: relative; height: 6px; border-radius: 3px; background: #EEEEEA; overflow: hidden"><span style="position: absolute; inset: 0 auto 0 0; width: {{p.meter}}; background: #12131A"></span></span></span></sc-if>
+<button type="button" style="height: 38px; padding: 0 16px; border: {{p.btnBorder}}; border-radius: 999px; background: {{p.btnBg}}; color: {{p.btnInk}}; font-size: 14px; font-weight: 600; cursor: pointer">{{p.btn}}</button>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-direction: column; border-radius: 20px; background: #FFFFFF; overflow: hidden">
+<label style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; min-height: 68px; padding: 12px 22px"><span style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 500">Piensan con</span><span style="font-size: 13px; color: #5C606C">La cuenta que usan por defecto.</span></span><select style="width: 220px; height: 40px; padding: 0 10px; border: 1px solid rgba(18,19,26,.14); border-radius: 10px; background: #FFFFFF; font-size: 14.5px"><option>ChatGPT</option><option>Claude</option></select></label>
+<label style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; min-height: 68px; padding: 12px 22px; border-top: 1px solid rgba(18,19,26,.06)"><span style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 500">Si falla o llega al límite, usar</span><span style="font-size: 13px; color: #5C606C">Siguen trabajando sin que tengas que hacer nada.</span></span><select style="width: 220px; height: 40px; padding: 0 10px; border: 1px solid rgba(18,19,26,.14); border-radius: 10px; background: #FFFFFF; font-size: 14.5px"><option>Claude</option><option>Nada: esperar</option></select></label>
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 22px; border-top: 1px solid rgba(18,19,26,.06)">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 500">Cuánto piensan</span><span style="font-size: 13px; color: #5C606C">Más a fondo es más lento y gasta más de tu plan.</span></span>
+<div role="radiogroup" aria-label="Cuánto piensan" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 8px">
+<sc-for list="{{efforts}}" as="e" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{e.on}}" onClick="{{e.pick}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 14px; border: 2px solid {{e.border}}; border-radius: 14px; background: #FFFFFF; text-align: left; cursor: pointer"><span style="font-size: 14.5px; font-weight: 600">{{e.label}}</span><span style="font-size: 12.5px; color: #5C606C">{{e.desc}}</span></button></sc-for>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 18px 22px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-bottom: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Qué usa cada bot</h3><span style="font-size: 13px; color: #5C606C">Cambia uno solo si lo necesita.</span></div>
+<div style="display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, .9fr); gap: 12px; padding: 8px 0; font-size: 12.5px; font-weight: 600; color: #5C606C"><span>Bot</span><span>Cuenta</span><span>Modelo</span><span>Piensa</span></div>
+<sc-for list="{{perBot}}" as="b" hint-placeholder-count="6"><div style="display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, .9fr); gap: 12px; align-items: center; min-height: 44px; border-top: 1px solid rgba(18,19,26,.05); font-size: 14px"><span style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 16px; height: 16px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}"></span>{{b.name}}</span><span>{{b.acc}}</span><span style="font: 400 12.5px/1.2 'Geist Mono', monospace; color: #3D404A">{{b.model}}</span><span style="color: #4A4D57">{{b.effort}}</span></div></sc-for>
+</div>
+
+<p style="margin: 0; font-size: 13.5px; color: #5C606C">¿Clave de API de OpenAI o un modelo en este ordenador (Ollama, LM Studio)? Está en <a href="Ajustes.dc.html">Ajustes › Avanzado</a>.</p>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { effort: 'eq' }; }
+  renderVals() {
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const navDefs = [['General', 'Ajustes.dc.html', '', 'M4 7h10M18 7h2M4 17h4M12 17h8M16 4.5v5M10 14.5v5'], ['Cuentas de IA', 'AjustesIA.dc.html', '', 'M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z'], ['Permisos y autonomía', 'Permisos.dc.html', '', 'M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z'], ['Apps y carpetas', 'Conexiones.dc.html', '', 'M9 3.5v4M15 3.5v4M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0zM12 16v4.5'], ['Avisos', 'Ajustes.dc.html', '', 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0'], ['Privacidad y datos', 'Privacidad.dc.html', '', 'M6.5 10.5h11v9.5h-11zM8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5'], ['Uso y límites', 'Uso.dc.html', '', 'M5 19.5V11M10 19.5V5.5M15 19.5v-6M20 19.5V9'], ['Ayuda y diagnóstico', 'Ajustes.dc.html', '1', 'M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.5M12 16.8v.2'], ['Avanzado', 'Ajustes.dc.html', 'EXPERTO', 'M4.5 5.5h15v13h-15zM8 10l2.5 2L8 14M12.5 14.5H16']];
+    const act = 'Cuentas de IA';
+    const P = (o) => ({ hasMeter: false, meter: '0%', meterLabel: '', ring: 'transparent', btnBorder: '1px solid rgba(18,19,26,.16)', btnBg: '#FFFFFF', btnInk: '#12131A', ...o });
+    return {
+      nav: navDefs.map(([label, href, tag, icon]) => ({ label, href, tag, icon, current: label === act ? 'page' : undefined, bg: label === act ? '#FFFFFF' : 'transparent', shadow: label === act ? '0 1px 2px rgba(18,19,26,.08)' : 'none', weight: label === act ? '600' : '500' })),
+      providers: [
+        P({ mark: 'G', name: 'ChatGPT', tag: 'Principal', tagBg: '#12131A', tagInk: '#FFFFFF', note: 'sergio@tuempresa.com · plan Plus', hasMeter: true, meter: '38%', meterLabel: 'Usado 38 % de 5 h · renueva 18:40', btn: 'Gestionar' }),
+        P({ mark: 'C', name: 'Claude', tag: 'Respaldo', tagBg: '#F1F1EC', tagInk: '#3D404A', note: 'Con tu suscripción vía Claude Code · también para Código', hasMeter: true, meter: '12%', meterLabel: 'Usado 12 % esta semana', btn: 'Gestionar' }),
+        P({ mark: 'O', name: 'OpenCode Go', tag: 'Sin conectar', tagBg: '#F1F1EC', tagInk: '#5C606C', note: 'Modelos abiertos a precio fijo. Útil como tercer respaldo.', btn: 'Conectar', btnBorder: '0', btnBg: '#12131A', btnInk: '#FFFFFF' })
+      ],
+      efforts: [['rap', 'Rápido', 'Respuestas cortas y tareas simples'], ['eq', 'Equilibrado', 'Lo normal para casi todo'], ['fondo', 'A fondo', 'Análisis largos y código difícil']].map(([id, label, desc]) => ({ label, desc, on: this.state.effort === id, border: this.state.effort === id ? '#12131A' : 'rgba(18,19,26,.1)', pick: () => this.setState({ effort: id }) })),
+      perBot: [
+        { name: 'Atlas', acc: 'ChatGPT', model: 'gpt-5.1', effort: 'A fondo', color: '#12131A', clip: HEX, radius: '0' },
+        { name: 'Tomás', acc: 'ChatGPT', model: 'gpt-5.1', effort: 'Equilibrado', color: '#0B8A5F', clip: 'none', radius: '24%' },
+        { name: 'Iris', acc: 'ChatGPT', model: 'gpt-image-2', effort: 'Equilibrado', color: '#FF5CA8', clip: DIA, radius: '0' },
+        { name: 'Vera', acc: 'ChatGPT', model: 'gpt-5.1', effort: 'Equilibrado', color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%' },
+        { name: 'Nora', acc: 'ChatGPT', model: 'gpt-5.1-mini', effort: 'Rápido', color: '#2F6BFF', clip: 'none', radius: '50%' },
+        { name: 'Bruno', acc: 'Claude', model: 'claude-opus-5-5', effort: 'A fondo', color: '#FF7A1A', clip: 'none', radius: '50% 50% 14% 14%' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

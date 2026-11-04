@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Actividad</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="actividad" experto="{{ true }}" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1120px; margin: 0 auto; padding: 44px clamp(20px, 4vw, 52px) 72px; display: flex; flex-direction: column; gap: 32px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Actividad</h1>
+<p style="margin: 0; font-size: 16px; color: #4A4D57">Qué hace cada bot ahora, qué ha hecho y lo que ha costado. Todo queda registrado.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 42px; padding: 0 16px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14.5px; font-weight: 500; cursor: pointer">Exportar registro</button>
+<button type="button" style="height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14.5px; font-weight: 600; cursor: pointer">Pausar a todo el equipo</button>
+</div>
+</header>
+
+<section aria-labelledby="now-t" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="now-t" style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Ahora</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 10px">
+<sc-for list="{{live}}" as="b" hint-placeholder-count="4">
+<article style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF; box-shadow: {{b.ring}}">
+<div style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 20px; height: 20px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}; animation: {{b.anim}}"></span><span style="flex: 1; font-size: 15px; font-weight: 600">{{b.name}}</span><span style="font-size: 12.5px; color: #5C606C; font-variant-numeric: tabular-nums">{{b.time}}</span></div>
+<span style="font-size: 14px; line-height: 1.4; color: #3D404A; min-height: 40px">{{b.doing}}</span>
+<span aria-hidden="true" style="position: relative; height: 2px; border-radius: 1px; background: #EEEEEA; overflow: hidden"><span style="position: absolute; top: 0; bottom: 0; width: 40%; background: {{b.color}}; animation: {{b.sweep}}"></span></span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px"><a href="Tarea.dc.html">{{b.task}}</a><button type="button" style="height: 30px; padding: 0 10px; border: 1px solid rgba(18,19,26,.12); border-radius: 999px; background: transparent; font-size: 12.5px; cursor: pointer">Pausar</button></div>
+</article>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Resumen de hoy" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 10px">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="4"><div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 18px; background: {{s.bg}}; color: {{s.ink}}"><span style="font-size: 13px; opacity: .8">{{s.label}}</span><span style="font: 600 28px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">{{s.value}}</span><span style="font-size: 12.5px; opacity: .8">{{s.note}}</span></div></sc-for>
+</section>
+
+<section aria-labelledby="log-t" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<h2 id="log-t" style="margin: 0 12px 0 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Registro</h2>
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="5"><button type="button" aria-pressed="{{f.on}}" onClick="{{f.pick}}" style="height: 34px; padding: 0 13px; border: 0; border-radius: 999px; background: {{f.bg}}; color: {{f.ink}}; font-size: 13.5px; font-weight: 500; cursor: pointer">{{f.label}}</button></sc-for>
+<span style="flex: 1"></span>
+<button type="button" role="switch" aria-checked="{{tech}}" onClick="{{toggleTech}}" title="El mismo interruptor que el de la barra lateral" style="height: 36px; display: inline-flex; align-items: center; gap: 10px; padding: 0 4px 0 10px; border: 0; border-radius: 999px; background: transparent; font-size: 13.5px; font-weight: 500; color: #3D404A; cursor: pointer">Modo experto<span aria-hidden="true" style="position: relative; width: 34px; height: 20px; border-radius: 10px; background: {{techBg}}"><span style="position: absolute; top: 2px; left: {{techLeft}}; width: 16px; height: 16px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></span></button>
+</div>
+
+<div style="display: flex; flex-direction: column; border-radius: 22px; background: #FFFFFF; overflow: hidden">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="9">
+<div style="display: flex; align-items: flex-start; gap: 14px; padding: 12px 20px; border-top: 1px solid rgba(18,19,26,.06)">
+<span style="flex: none; width: 44px; padding-top: 1px; font-size: 13px; color: #5C606C; font-variant-numeric: tabular-nums">{{r.time}}</span>
+<span aria-hidden="true" style="flex: none; width: 16px; height: 16px; margin-top: 2px; background: {{r.color}}; clip-path: {{r.clip}}; border-radius: {{r.radius}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14.5px; line-height: 1.4"><strong style="font-weight: 600">{{r.bot}}</strong> {{r.text}} <span style="color: #5C606C">· {{r.where}}</span></span><sc-if value="{{tech}}" hint-placeholder-val="{{ true }}"><span style="font: 400 12px/1.5 'Geist Mono', monospace; color: #4A4D57">{{r.tool}}</span></sc-if></span>
+<span style="flex: none; height: 24px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: {{r.sBg}}; color: {{r.sInk}}; font-size: 12px; font-weight: 600">{{r.status}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tech: true, filter: 'todo' }; }
+  renderVals() {
+    const st = this.state;
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const B = {
+      Atlas: { color: '#12131A', clip: HEX, radius: '0' }, Tomás: { color: '#0B8A5F', clip: 'none', radius: '24%' },
+      Iris: { color: '#FF5CA8', clip: DIA, radius: '0' }, Vera: { color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%' },
+      Nora: { color: '#2F6BFF', clip: 'none', radius: '50%' }, Bruno: { color: '#FF7A1A', clip: 'none', radius: '50% 50% 14% 14%' }
+    };
+    const S = {
+      ok: { status: 'Hecho', sBg: '#E3F4EC', sInk: '#0B6B4A' },
+      wait: { status: 'Espera tu OK', sBg: '#FFC93C', sInk: '#12131A' },
+      run: { status: 'En curso', sBg: '#EEF0F4', sInk: '#1F4FD1' },
+      unk: { status: 'Sin confirmar', sBg: '#F1F1EC', sInk: '#4A4D57' },
+      err: { status: 'Error', sBg: '#FBE9EA', sInk: '#B4232A' }
+    };
+    const all = [
+      { k: 'leer', time: '16:42', bot: 'Tomás', text: 'calcula la tasa de devoluciones por tienda', where: 'Informe Q3', tool: 'python.run devoluciones.py · 3,4 s · 1.8k tk', ...S.run },
+      { k: 'permiso', time: '16:40', bot: 'Tomás', text: 'quiere enviar el resumen al comité', where: 'Informe Q3', tool: 'gmail.send → 5 destinatarios · recibo 7f3a:2', ...S.wait },
+      { k: 'escribir', time: '16:31', bot: 'Vera', text: 'escribió el borrador del resumen semanal', where: 'Resumen de la semana', tool: 'deliverable.write resumen.md · 6.2k tk · 0,04 €', ...S.ok },
+      { k: 'leer', time: '16:20', bot: 'Nora', text: 'leyó 4 estudios sobre el mercado textil', where: 'Estudio de mercado', tool: 'web_fetch ×4 · caché 2/4 · 22.0k tk', ...S.ok },
+      { k: 'error', time: '16:02', bot: 'Nora', text: 'no pudo abrir la web del INE (no responde)', where: 'Estudio de mercado', tool: 'web_fetch ine.es → 503 · 3 reintentos', ...S.err },
+      { k: 'escribir', time: '15:48', bot: 'Iris', text: 'dibujó tres portadas para la campaña', where: 'Campaña de primavera', tool: 'image.generate ×3 · 1024² · 0,12 €', ...S.ok },
+      { k: 'enviar', time: '15:10', bot: 'Bruno', text: 'publicó el informe en el canal #ventas de Slack', where: 'Rutina del lunes', tool: 'slack.chat_postMessage · cortado al cerrar', ...S.unk },
+      { k: 'leer', time: '14:55', bot: 'Atlas', text: 'repartió el informe Q3 entre cuatro bots', where: '#informe-q3', tool: 'plan.create 4 partes · razonamiento alto · 9.1k tk', ...S.ok },
+      { k: 'permiso', time: '14:30', bot: 'Bruno', text: 'pagó la factura de Limpiezas Sol (aprobado por ti)', where: 'Pagos', tool: 'bank.transfer 312,40 € · regla: preguntar siempre', ...S.ok }
+    ];
+    const fl = [['todo', 'Todo'], ['permiso', 'Pidió permiso'], ['leer', 'Leyó y calculó'], ['escribir', 'Escribió'], ['enviar', 'Envió fuera'], ['error', 'Errores']];
+    return {
+      tech: st.tech,
+      techBg: st.tech ? '#12131A' : '#8A8D96', techLeft: st.tech ? '16px' : '2px',
+      toggleTech: () => this.setState({ tech: !st.tech }),
+      filters: fl.map(([id, label]) => ({ label, on: st.filter === id, bg: st.filter === id ? '#12131A' : '#FFFFFF', ink: st.filter === id ? '#FFFFFF' : '#3D404A', pick: () => this.setState({ filter: id }) })),
+      rows: all.filter((r) => st.filter === 'todo' || r.k === st.filter).map((r) => ({ ...r, ...B[r.bot] })),
+      live: [
+        { name: 'Tomás', ...B['Tomás'], time: '12 min', doing: 'Calculando la tasa de devoluciones por tienda', task: 'Informe Q3', ring: 'none', anim: 'breathe 2.4s ease-in-out infinite', sweep: 'sweep 1.8s ease-in-out infinite' },
+        { name: 'Vera', ...B.Vera, time: '4 min', doing: 'Repasando el tono del resumen semanal', task: 'Resumen de la semana', ring: 'none', anim: 'breathe 2.4s ease-in-out infinite', sweep: 'sweep 1.8s ease-in-out infinite' },
+        { name: 'Atlas', ...B.Atlas, time: '1 min', doing: 'Comprobando el plazo del comité', task: 'Informe Q3', ring: 'none', anim: 'breathe 2.4s ease-in-out infinite', sweep: 'sweep 1.8s ease-in-out infinite' },
+        { name: 'Iris', ...B.Iris, time: 'te espera', doing: 'Espera a que elijas portada', task: 'Campaña de primavera', ring: '0 0 0 1.5px #FFC93C', anim: 'none', sweep: 'none' }
+      ],
+      stats: st.tech ? [
+        { label: 'Pasos hoy', value: '138', note: '9 errores · 1 sin confirmar', bg: '#FFFFFF', ink: '#12131A' },
+        { label: 'Gasto hoy', value: '1,84 €', note: '212 k tokens · caché 58 %', bg: '#FFFFFF', ink: '#12131A' },
+        { label: 'Este mes', value: '18,20 €', note: 'de 30 € de límite', bg: '#FFFFFF', ink: '#12131A' },
+        { label: 'Esperan tu OK', value: '1', note: 'caduca mañana 09:10', bg: '#FFC93C', ink: '#12131A' }
+      ] : [
+        { label: 'Hecho hoy', value: '23 cosas', note: 'en 5 tareas', bg: '#FFFFFF', ink: '#12131A' },
+        { label: 'Este mes', value: '18,20 €', note: 'de 30 € de límite', bg: '#FFFFFF', ink: '#12131A' },
+        { label: 'Esperan tu OK', value: '1', note: 'caduca mañana', bg: '#FFC93C', ink: '#12131A' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ajustes · Permisos y autonomía</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="ajustes" experto="{{ true }}" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start">
+
+<nav aria-label="Secciones de Ajustes" style="flex: 0 0 264px; position: sticky; top: 0; display: flex; flex-direction: column; gap: 4px; min-height: 100vh; padding: 40px 14px 24px 22px">
+<h1 style="margin: 0 0 14px 8px; font: 600 34px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Ajustes</h1>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; margin-bottom: 10px; padding: 0 12px; border-radius: 12px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(18,19,26,.08)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar un ajuste</span><input type="text" placeholder="Buscar un ajuste" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"></label>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="9"><a href="{{n.href}}" aria-current="{{n.current}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 11px; background: {{n.bg}}; box-shadow: {{n.shadow}}; font-size: 14.5px; font-weight: {{n.weight}}; color: #12131A"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: #4A4D57"><path d="{{n.icon}}"></path></svg><span style="flex: 1">{{n.label}}</span><span style="font-size: 11px; font-weight: 600; color: #5C606C">{{n.tag}}</span></a></sc-for>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; max-width: 860px; padding: 40px clamp(20px, 3vw, 40px) 64px; display: flex; flex-direction: column; gap: 18px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 6px"><div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font: 600 30px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Permisos y autonomía</h2><p style="margin: 0; font-size: 15px; color: #4A4D57">Qué hacen solos tus bots, qué te preguntan siempre y qué pueden tocar.</p></div><button type="button" style="height: 40px; padding: 0 16px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14px; cursor: pointer">Pausar a todo el equipo</button></header>
+
+<section aria-labelledby="red-t" style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 20px; background: #12131A; color: #FFFFFF">
+<div style="display: flex; flex-direction: column; gap: 4px"><h3 id="red-t" style="margin: 0; font-size: 16px; font-weight: 600">Siempre te preguntan antes de…</h3><span style="font-size: 13.5px; color: #C9CBD3">Las líneas rojas. Ningún ajuste, rutina ni bot puede saltárselas.</span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 8px">
+<sc-for list="{{red}}" as="r" hint-placeholder-count="6"><div style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border-radius: 12px; background: rgba(255,255,255,.08); font-size: 14px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></svg>{{r}}</div></sc-for>
+</div>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #E6E7EC"><input type="checkbox" checked="{{ true }}" style="width: 16px; height: 16px; accent-color: #FFFFFF">Si pides tú «envíalo», sale solo tras 10 segundos para que puedas deshacer.</label>
+</section>
+
+<section aria-labelledby="auto-t" style="display: flex; flex-direction: column; gap: 6px; padding: 20px 22px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px"><h3 id="auto-t" style="margin: 0; font-size: 16px; font-weight: 600">Cuánto hace solo cada bot</h3><span style="font-size: 13.5px; color: #5C606C">Fuera de las líneas rojas.</span></div>
+<sc-for list="{{autos}}" as="b" hint-placeholder-count="6">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-height: 52px; border-top: 1px solid rgba(18,19,26,.05)">
+<span style="flex: 1 1 140px; display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 500"><span aria-hidden="true" style="width: 18px; height: 18px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}"></span>{{b.name}}</span>
+<div role="radiogroup" aria-label="Autonomía de {{b.name}}" style="display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: #F1F1EC">
+<sc-for list="{{b.opts}}" as="o" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{o.on}}" onClick="{{o.pick}}" style="height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: {{o.bg}}; color: {{o.ink}}; font-size: 13px; font-weight: 500; cursor: pointer">{{o.label}}</button></sc-for>
+</div>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="mat-t" style="display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; flex-direction: column; gap: 4px"><h3 id="mat-t" style="margin: 0; font-size: 16px; font-weight: 600">Qué app usa cada bot</h3><span style="font-size: 13.5px; color: #5C606C">Toca una casilla para cambiarla: No → Lee → Escribe.</span></div>
+<div role="table" aria-label="Qué app usa cada bot" style="display: flex; flex-direction: column; overflow-x: auto">
+<div role="row" style="display: grid; grid-template-columns: minmax(120px, 1.3fr) repeat(5, minmax(84px, 1fr)); gap: 6px; align-items: center; min-width: 560px; padding: 4px 0 8px; font-size: 12.5px; font-weight: 600; color: #5C606C"><span role="columnheader">Bot</span><sc-for list="{{apps}}" as="a" hint-placeholder-count="5"><span role="columnheader" style="text-align: center">{{a}}</span></sc-for></div>
+<sc-for list="{{matrix}}" as="r" hint-placeholder-count="6"><div role="row" style="display: grid; grid-template-columns: minmax(120px, 1.3fr) repeat(5, minmax(84px, 1fr)); gap: 6px; align-items: center; min-width: 560px; min-height: 50px; border-top: 1px solid rgba(18,19,26,.06)"><span role="rowheader" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500"><span aria-hidden="true" style="width: 14px; height: 14px; background: {{r.color}}; clip-path: {{r.clip}}; border-radius: {{r.radius}}"></span>{{r.name}}</span><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="5"><span role="cell" style="display: grid; place-items: center"><button type="button" onClick="{{c.cycle}}" aria-label="{{c.aria}}" style="width: 100%; max-width: 92px; height: 32px; padding: 0 10px; border: 0; border-radius: 999px; background: {{c.bg}}; color: {{c.ink}}; font-size: 12.5px; font-weight: 600; cursor: pointer">{{c.label}}</button></span></sc-for></div></sc-for>
+</div>
+</section>
+
+<section aria-labelledby="grant-t" style="display: flex; flex-direction: column; gap: 6px; padding: 20px 22px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px"><h3 id="grant-t" style="margin: 0; font-size: 16px; font-weight: 600">Permisos que diste para siempre</h3><span style="font-size: 13.5px; color: #5C606C">Cuando pulsaste «Permitir siempre». Retíralos cuando quieras. Las líneas rojas nunca entran aquí.</span></div>
+<sc-for list="{{grants}}" as="g" hint-placeholder-count="3"><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-height: 54px; border-top: 1px solid rgba(18,19,26,.05)"><span style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14.5px">{{g.text}}</span><span style="font-size: 12.5px; color: #5C606C">{{g.meta}}</span></span><button type="button" style="height: 34px; padding: 0 12px; border: 1px solid rgba(18,19,26,.14); border-radius: 999px; background: #FFFFFF; color: #12131A; font-size: 13px; cursor: pointer">Retirar</button></div></sc-for>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 18px 22px; border-radius: 20px; background: #FFFFFF"><span style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 500">Revisor automático</span><span style="font-size: 13px; line-height: 1.45; color: #5C606C">Aprueba solo lo rutinario y de bajo riesgo que ya aprobaste antes. Nunca las líneas rojas ni nada tras leer contenido de fuera.</span></span><button type="button" role="switch" aria-checked="false" aria-label="Revisor automático" style="flex: none; position: relative; width: 40px; height: 24px; padding: 0; border: 0; border-radius: 12px; background: #8A8D96; cursor: pointer"><span aria-hidden="true" style="position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button></div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { auto: { atlas: 1, tomas: 1, iris: 0, vera: 1, nora: 2, bruno: 1 }, m: { atlas: [1, 1, 1, 0, 1], tomas: [0, 0, 2, 0, 0], iris: [0, 0, 2, 0, 1], vera: [2, 1, 2, 0, 0], nora: [1, 0, 1, 0, 0], bruno: [1, 0, 2, 1, 0] } }; }
+  renderVals() {
+    const st = this.state;
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const bots = [['atlas', 'Atlas', '#12131A', HEX, '0'], ['tomas', 'Tomás', '#0B8A5F', 'none', '24%'], ['iris', 'Iris', '#FF5CA8', DIA, '0'], ['vera', 'Vera', '#7B4DFF', 'none', '50% 12% 50% 12%'], ['nora', 'Nora', '#2F6BFF', 'none', '50%'], ['bruno', 'Bruno', '#FF7A1A', 'none', '50% 50% 14% 14%']];
+    const navDefs = [['General', 'Ajustes.dc.html', '', 'M4 7h10M18 7h2M4 17h4M12 17h8M16 4.5v5M10 14.5v5'], ['Cuentas de IA', 'AjustesIA.dc.html', '', 'M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z'], ['Permisos y autonomía', 'Permisos.dc.html', '', 'M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z'], ['Apps y carpetas', 'Conexiones.dc.html', '', 'M9 3.5v4M15 3.5v4M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0zM12 16v4.5'], ['Avisos', 'Ajustes.dc.html', '', 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0'], ['Privacidad y datos', 'Privacidad.dc.html', '', 'M6.5 10.5h11v9.5h-11zM8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5'], ['Uso y límites', 'Uso.dc.html', '', 'M5 19.5V11M10 19.5V5.5M15 19.5v-6M20 19.5V9'], ['Ayuda y diagnóstico', 'Ajustes.dc.html', '1', 'M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.5M12 16.8v.2'], ['Avanzado', 'Ajustes.dc.html', 'EXPERTO', 'M4.5 5.5h15v13h-15zM8 10l2.5 2L8 14M12.5 14.5H16']];
+    const act = 'Permisos y autonomía';
+    const apps = ['Correo', 'Calendario', 'Drive', 'Banco', 'Slack'];
+    const LV = [['No', '#F1F1EC', '#5C606C'], ['Lee', '#EEF0F4', '#1F4FD1'], ['Escribe', '#12131A', '#FFFFFF']];
+    const AU = ['Solo sugiere', 'Hace y avisa', 'Hace solo'];
+    return {
+      nav: navDefs.map(([label, href, tag, icon]) => ({ label, href, tag, icon, current: label === act ? 'page' : undefined, bg: label === act ? '#FFFFFF' : 'transparent', shadow: label === act ? '0 1px 2px rgba(18,19,26,.08)' : 'none', weight: label === act ? '600' : '500' })),
+      red: ['Enviar algo fuera', 'Mover dinero o pagar', 'Publicar en público', 'Borrar de verdad', 'Escribir contraseñas', 'Instalar programas'],
+      autos: bots.map(([id, name, color, clip, radius]) => ({ name, color, clip, radius, opts: AU.map((label, i) => ({ label, on: st.auto[id] === i, bg: st.auto[id] === i ? '#12131A' : 'transparent', ink: st.auto[id] === i ? '#FFFFFF' : '#3D404A', pick: () => this.setState({ auto: { ...st.auto, [id]: i } }) })) })),
+      apps,
+      matrix: bots.map(([id, name, color, clip, radius]) => ({ name, color, clip, radius, cells: st.m[id].map((v, j) => ({ label: LV[v][0], bg: LV[v][1], ink: LV[v][2], aria: name + ' en ' + apps[j] + ': ' + LV[v][0], cycle: () => { const row = st.m[id].slice(); row[j] = (row[j] + 1) % 3; this.setState({ m: { ...st.m, [id]: row } }); } })) })),
+      grants: [
+        { text: 'Nora puede leer la web de Telas Norte con tu sesión iniciada', meta: 'Desde el 20 oct · usado 14 veces' },
+        { text: 'Vera puede crear eventos sin invitados en tu calendario', meta: 'Desde el 2 oct · usado 11 veces' },
+        { text: 'Bruno puede ejecutar «npm test» en tienda-web', meta: 'Desde ayer · usado 8 veces' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

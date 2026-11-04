@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Equipo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="equipo" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1160px; margin: 0 auto; padding: 44px clamp(20px, 4vw, 48px) 64px; display: flex; flex-direction: column; gap: 36px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Equipo</h1>
+<p style="margin: 0; font-size: 16px; color: #4A4D57">Quién trabaja contigo: tus bots y las personas con las que te conectas.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 44px; padding: 0 18px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 15px; font-weight: 500; cursor: pointer">Invitar a una persona</button>
+<a href="NuevoBot.dc.html" style="height: 44px; padding: 0 20px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nuevo bot</a>
+</div>
+</header>
+
+<section aria-labelledby="bots-t" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; gap: 12px"><h2 id="bots-t" style="margin: 0; font: 600 24px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Bots</h2><span style="font-size: 14px; color: #5C606C">6 · 3 trabajando · 1 te espera</span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 12px">
+<sc-for list="{{bots}}" as="b" hint-placeholder-count="6">
+<article style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 22px; background: #FFFFFF; box-shadow: {{b.ring}}">
+<div style="display: flex; align-items: flex-start; justify-content: space-between"><span aria-hidden="true" style="width: 48px; height: 48px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}; opacity: {{b.op}}; animation: {{b.anim}}"></span><span style="height: 24px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #F1F1EC; font-size: 12px; font-weight: 500; color: #3D404A">{{b.auto}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 3px"><h3 style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">{{b.name}}</h3><span style="font-size: 14px; color: #4A4D57">{{b.role}}</span></div>
+<span style="font-size: 13.5px; color: {{b.stInk}}">{{b.state}}</span>
+<div style="display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid rgba(18,19,26,.06)"><a href="Chat.dc.html" style="flex: 1; height: 38px; display: grid; place-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 13.5px; font-weight: 600">Hablar</a><a href="Bot.dc.html" style="flex: 1; height: 38px; display: grid; place-items: center; border: 1px solid rgba(18,19,26,.14); border-radius: 999px; color: #12131A; font-size: 13.5px; font-weight: 500">Ficha</a></div>
+</article>
+</sc-for>
+<a href="NuevoBot.dc.html" style="display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 20px; border-radius: 22px; border: 1.5px dashed rgba(18,19,26,.2); color: #12131A; min-height: 220px">
+<span style="font: 600 20px/1.1 'Bricolage Grotesque', sans-serif">Un bot nuevo</span>
+<span style="font-size: 14px; line-height: 1.45; color: #4A4D57">Descríbelo como a un compañero nuevo, o empieza de una plantilla: contable, atención al cliente, investigador…</span>
+<span style="font-size: 14px; font-weight: 600; color: #1F4FD1">Crear →</span>
+</a>
+</div>
+</section>
+
+<section aria-labelledby="ppl-t" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px"><h2 id="ppl-t" style="margin: 0; font: 600 24px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Personas</h2><span style="font-size: 14px; color: #5C606C">Gente con su propia Colmena. Chateáis cifrado y vuestros bots pueden colaborar.</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start">
+<div style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; border-radius: 22px; background: #FFFFFF; overflow: hidden">
+<sc-for list="{{people}}" as="p" hint-placeholder-count="5">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 64px; padding: 10px 18px; border-top: 1px solid rgba(18,19,26,.05)">
+<span aria-hidden="true" style="position: relative; flex: none; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: #E6E7EC; font-size: 12px; font-weight: 600">{{p.ini}}<span style="position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%; background: {{p.dot}}; box-shadow: 0 0 0 2px #FFFFFF"></span></span>
+<span style="flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{p.name}}</span><span style="font-size: 13px; color: #5C606C">{{p.note}}</span></span>
+<span style="font-size: 13px; color: #4A4D57">{{p.status}}</span>
+<a href="{{p.href}}" style="height: 36px; padding: 0 14px; display: inline-flex; align-items: center; border: 1px solid rgba(18,19,26,.14); border-radius: 999px; color: #12131A; font-size: 13.5px; font-weight: 500">{{p.cta}}</a>
+</div>
+</sc-for>
+</div>
+<aside style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 18px 20px; border-radius: 20px; background: #12131A; color: #FFFFFF">
+<h3 style="margin: 0; font-size: 15px; font-weight: 600">Invitar con un código</h3>
+<p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #C9CBD3">Le mandas un código de un solo uso. Al aceptarlo, los dos veréis las mismas cuatro palabras: así sabéis que sois vosotros.</p>
+<span style="padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.08); font: 500 14px/1 'Geist Mono', monospace; letter-spacing: .04em">COL-7KQ2-M9XA</span>
+<button type="button" style="height: 40px; border: 0; border-radius: 999px; background: #FFFFFF; color: #12131A; font-size: 14px; font-weight: 600; cursor: pointer">Copiar invitación</button>
+</div>
+<label style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF; font-size: 14px; font-weight: 600">Tu estado para los demás<select style="height: 40px; padding: 0 12px; border: 1px solid rgba(18,19,26,.14); border-radius: 12px; background: #FFFFFF; font-size: 14px; font-weight: 400"><option>Disponible</option><option>No molestar hasta las 18:00</option><option>Fuera hasta el lunes</option></select></label>
+</aside>
+</div>
+</section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1350}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const busy = { op: '1', anim: 'breathe 2.6s ease-in-out infinite', stInk: '#3D404A', ring: '0 1px 2px rgba(18,19,26,.04)' };
+    const idle = { op: '.55', anim: 'none', stInk: '#5C606C', ring: '0 1px 2px rgba(18,19,26,.04)' };
+    return {
+      bots: [
+        { name: 'Atlas', role: 'Coordina y reparte el trabajo', color: '#12131A', clip: HEX, radius: '0', auto: 'Hace y te avisa', state: 'Coordinando el informe Q3', ...busy },
+        { name: 'Tomás', role: 'Datos y hojas de cálculo', color: '#0B8A5F', clip: 'none', radius: '24%', auto: 'Hace y te avisa', state: 'Analizando devoluciones', ...busy },
+        { name: 'Iris', role: 'Diseño y diapositivas', color: '#FF5CA8', clip: DIA, radius: '0', auto: 'Solo sugiere', state: 'Te espera: elegir portada', ...busy, anim: 'none', stInk: '#8A5A00', ring: '0 0 0 1.5px #FFC93C' },
+        { name: 'Vera', role: 'Escribe correos y resúmenes', color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%', auto: 'Hace y te avisa', state: 'Escribiendo un resumen', ...busy },
+        { name: 'Nora', role: 'Investiga y compara fuentes', color: '#2F6BFF', clip: 'none', radius: '50%', auto: 'Hace solo', state: 'Libre', ...idle },
+        { name: 'Bruno', role: 'Facturas, pagos y código', color: '#FF7A1A', clip: 'none', radius: '50% 50% 14% 14%', auto: 'Hace y te avisa', state: 'Libre', ...idle }
+      ],
+      people: [
+        { ini: 'MR', name: 'Marta Ruiz', note: 'Directora comercial · 3 salas en común', status: 'En línea', dot: '#3DDC97', cta: 'Chatear', href: 'Personas.dc.html' },
+        { ini: 'LG', name: 'Luis Gómez', note: 'Finanzas · 2 salas', status: 'Hace 10 min', dot: '#C9CBD3', cta: 'Chatear', href: 'Personas.dc.html' },
+        { ini: 'AP', name: 'Ana Pérez', note: 'Marketing · 1 sala', status: 'Fuera hasta el lunes', dot: '#FFC93C', cta: 'Chatear', href: 'Personas.dc.html' },
+        { ini: 'JR', name: 'Jorge Ríos', note: 'Invitado · agencia externa', status: 'Ayer', dot: '#C9CBD3', cta: 'Chatear', href: 'Personas.dc.html' },
+        { ini: 'NC', name: 'nico@estudio.es', note: 'Invitación enviada hace 2 días', status: 'Esperando', dot: 'transparent', cta: 'Reenviar', href: 'Equipo.dc.html' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

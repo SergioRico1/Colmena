@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ajustes · Uso y límites</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="ajustes" experto="{{ true }}" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start">
+
+<nav aria-label="Secciones de Ajustes" style="flex: 0 0 264px; position: sticky; top: 0; display: flex; flex-direction: column; gap: 4px; min-height: 100vh; padding: 40px 14px 24px 22px">
+<h1 style="margin: 0 0 14px 8px; font: 600 34px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Ajustes</h1>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; margin-bottom: 10px; padding: 0 12px; border-radius: 12px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(18,19,26,.08)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar un ajuste</span><input type="text" placeholder="Buscar un ajuste" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14px"></label>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="9"><a href="{{n.href}}" aria-current="{{n.current}}" style="min-height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 11px; background: {{n.bg}}; box-shadow: {{n.shadow}}; font-size: 14.5px; font-weight: {{n.weight}}; color: #12131A"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: #4A4D57"><path d="{{n.icon}}"></path></svg><span style="flex: 1">{{n.label}}</span><span style="font-size: 11px; font-weight: 600; color: #5C606C">{{n.tag}}</span></a></sc-for>
+</nav>
+
+<main style="flex: 999 1 480px; min-width: 0; max-width: 860px; padding: 40px clamp(20px, 3vw, 40px) 64px; display: flex; flex-direction: column; gap: 18px">
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 6px">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font: 600 30px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Uso y límites</h2><p style="margin: 0; font-size: 15px; color: #4A4D57">Lo que gasta cada bot y cada chat, y hasta dónde dejas que lleguen.</p></div>
+<div role="radiogroup" aria-label="Unidad" style="display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: #EBEBE6"><sc-for list="{{units}}" as="u" hint-placeholder-count="3"><button type="button" role="radio" aria-checked="{{u.on}}" onClick="{{u.pick}}" style="height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: {{u.bg}}; box-shadow: {{u.shadow}}; font-size: 13.5px; font-weight: 500; cursor: pointer">{{u.label}}</button></sc-for></div>
+</header>
+
+<section aria-labelledby="mes-t" style="display: flex; flex-direction: column; gap: 16px; padding: 22px 24px; border-radius: 22px; background: #FFFFFF">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px"><h3 id="mes-t" style="margin: 0; font-size: 15px; font-weight: 600">Noviembre</h3><span style="font: 600 40px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">{{total}}</span><span style="font-size: 14px; color: #5C606C">{{totalNote}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span aria-hidden="true" style="position: relative; height: 10px; border-radius: 5px; background: #EEEEEA; overflow: hidden"><span style="position: absolute; inset: 0 auto 0 0; width: 61%; background: #12131A"></span><span style="position: absolute; top: 0; bottom: 0; left: 80%; width: 2px; background: #8A5A00"></span></span><span style="display: flex; justify-content: space-between; font-size: 12.5px; color: #5C606C"><span>61 % del límite de 30 €</span><span>aviso al 80 %</span></span></div>
+<figure style="margin: 0; display: flex; flex-direction: column; gap: 8px">
+<figcaption style="font-size: 13px; color: #5C606C">Por día, últimos 30 días</figcaption>
+<div style="position: relative; padding-top: 24px">
+<span aria-hidden="true" style="position: absolute; top: 0; left: 71.7%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; font-weight: 600; color: #8A5A00">27 oct · estudio de mercado · {{spike}}</span>
+<div role="img" aria-label="Gasto diario de los últimos 30 días, con un pico el 27 de octubre por el estudio de mercado" style="display: flex; align-items: flex-end; gap: 4px; height: 120px; padding-bottom: 2px; border-bottom: 1px solid rgba(18,19,26,.12)">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="30"><span style="flex: 1; height: {{d.h}}; border-radius: 3px 3px 1px 1px; background: {{d.c}}; transform-origin: bottom; animation: growY .6s ease-out"></span></sc-for>
+</div>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #5C606C"><span>6 oct</span><span style="color: #12131A; font-weight: 600">Hoy · {{today}}</span></div>
+</figure>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 14px">
+<section aria-labelledby="bot-t" style="display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; border-radius: 20px; background: #FFFFFF">
+<h3 id="bot-t" style="margin: 0; font-size: 15px; font-weight: 600">Por bot</h3>
+<sc-for list="{{bots}}" as="b" hint-placeholder-count="6"><div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px"><span style="width: 64px; display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 12px; height: 12px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}"></span>{{b.name}}</span><span aria-hidden="true" style="flex: 1; height: 8px; border-radius: 4px; background: #F1F1EC; overflow: hidden"><span style="display: block; width: {{b.w}}; height: 100%; border-radius: 4px; background: {{b.color}}"></span></span><span style="width: 64px; text-align: right; font-variant-numeric: tabular-nums">{{b.v}}</span></div></sc-for>
+</section>
+<section aria-labelledby="plan-t" style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 20px; background: #FFFFFF">
+<h3 id="plan-t" style="margin: 0; font-size: 15px; font-weight: 600">Límites de tus planes</h3>
+<sc-for list="{{plans}}" as="p" hint-placeholder-count="3"><div style="display: flex; flex-direction: column; gap: 6px"><span style="display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px"><span>{{p.label}}</span><span style="color: #5C606C">{{p.note}}</span></span><span aria-hidden="true" style="height: 8px; border-radius: 4px; background: #F1F1EC; overflow: hidden"><span style="display: block; width: {{p.w}}; height: 100%; background: #12131A"></span></span></div></sc-for>
+<span style="font-size: 12.5px; color: #5C606C">Caché aprovechada: 58 %. Cuanto más alta, más barato y rápido.</span>
+</section>
+</div>
+
+<section aria-labelledby="chat-t" style="display: flex; flex-direction: column; gap: 4px; padding: 20px 22px; border-radius: 20px; background: #FFFFFF">
+<h3 id="chat-t" style="margin: 0 0 6px; font-size: 15px; font-weight: 600">Lo que más ha gastado</h3>
+<sc-for list="{{top}}" as="t" hint-placeholder-count="4"><div style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-top: 1px solid rgba(18,19,26,.05); font-size: 14px"><span style="flex: 1">{{t.name}}</span><span style="font-size: 12.5px; color: #5C606C">{{t.kind}}</span><span style="width: 70px; text-align: right; font-variant-numeric: tabular-nums">{{t.v}}</span></div></sc-for>
+</section>
+
+<section aria-label="Límites" style="display: flex; flex-direction: column; border-radius: 20px; background: #FFFFFF; overflow: hidden">
+<label style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; min-height: 64px; padding: 10px 22px"><span style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 500">Límite al mes</span><span style="font-size: 13px; color: #5C606C">Si usas tu plan de ChatGPT, cuenta lo que costaría por API.</span></span><input type="text" value="30 €" style="width: 110px; height: 40px; padding: 0 12px; border: 1px solid rgba(18,19,26,.14); border-radius: 10px; font-size: 14.5px"></label>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; min-height: 64px; padding: 10px 22px; border-top: 1px solid rgba(18,19,26,.06)"><span style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 500">Pausar al llegar al límite</span><span style="font-size: 13px; color: #5C606C">Terminan el paso en curso y te preguntan.</span></span><button type="button" role="switch" aria-checked="true" aria-label="Pausar al llegar al límite" style="flex: none; position: relative; width: 40px; height: 24px; padding: 0; border: 0; border-radius: 12px; background: #12131A; cursor: pointer"><span aria-hidden="true" style="position: absolute; top: 3px; left: 19px; width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; min-height: 64px; padding: 10px 22px; border-top: 1px solid rgba(18,19,26,.06)"><span style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 500">Avisarme al 80 %</span><span style="font-size: 13px; color: #5C606C">Un aviso en Inicio, sin parar nada.</span></span><button type="button" role="switch" aria-checked="true" aria-label="Avisarme al 80 por ciento" style="flex: none; position: relative; width: 40px; height: 24px; padding: 0; border: 0; border-radius: 12px; background: #12131A; cursor: pointer"><span aria-hidden="true" style="position: absolute; top: 3px; left: 19px; width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; min-height: 64px; padding: 10px 22px; border-top: 1px solid rgba(18,19,26,.06)"><span style="flex: 1 1 220px; font-size: 15px; font-weight: 500">Descargar el uso en CSV</span><button type="button" style="height: 36px; padding: 0 14px; border: 1px solid rgba(18,19,26,.14); border-radius: 999px; background: #FFFFFF; font-size: 13.5px; cursor: pointer">Descargar</button></div>
+</section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1200}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { unit: 'eur' }; }
+  renderVals() {
+    const u = this.state.unit;
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const navDefs = [['General', 'Ajustes.dc.html', '', 'M4 7h10M18 7h2M4 17h4M12 17h8M16 4.5v5M10 14.5v5'], ['Cuentas de IA', 'AjustesIA.dc.html', '', 'M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z'], ['Permisos y autonomía', 'Permisos.dc.html', '', 'M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z'], ['Apps y carpetas', 'Conexiones.dc.html', '', 'M9 3.5v4M15 3.5v4M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0zM12 16v4.5'], ['Avisos', 'Ajustes.dc.html', '', 'M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0'], ['Privacidad y datos', 'Privacidad.dc.html', '', 'M6.5 10.5h11v9.5h-11zM8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5'], ['Uso y límites', 'Uso.dc.html', '', 'M5 19.5V11M10 19.5V5.5M15 19.5v-6M20 19.5V9'], ['Ayuda y diagnóstico', 'Ajustes.dc.html', '1', 'M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.5M12 16.8v.2'], ['Avanzado', 'Ajustes.dc.html', 'EXPERTO', 'M4.5 5.5h15v13h-15zM8 10l2.5 2L8 14M12.5 14.5H16']];
+    const act = 'Uso y límites';
+    const raw = [0.4, 0.5, 0.3, 0.6, 0.7, 0.2, 0.1, 0.5, 0.6, 0.8, 0.5, 0.4, 0.2, 0.1, 0.6, 0.7, 0.9, 0.6, 0.5, 0.3, 0.2, 2.1, 0.8, 0.7, 0.6, 0.4, 0.3, 0.9, 1.1, 1.8];
+    const max = 2.1;
+    const f = { eur: (v) => v.toFixed(2).replace('.', ',') + ' €', pag: (v) => Math.round(v * 1500).toLocaleString('es-ES') + ' pág.', tok: (v) => Math.round(v * 320) + 'k' };
+    const botV = [['Tomás', '#0B8A5F', 'none', '24%', 4.6], ['Atlas', '#12131A', HEX, '0', 3.9], ['Vera', '#7B4DFF', 'none', '50% 12% 50% 12%', 3.1], ['Iris', '#FF5CA8', DIA, '0', 2.8], ['Nora', '#2F6BFF', 'none', '50%', 2.4], ['Bruno', '#FF7A1A', 'none', '50% 50% 14% 14%', 1.4]];
+    return {
+      nav: navDefs.map(([label, href, tag, icon]) => ({ label, href, tag, icon, current: label === act ? 'page' : undefined, bg: label === act ? '#FFFFFF' : 'transparent', shadow: label === act ? '0 1px 2px rgba(18,19,26,.08)' : 'none', weight: label === act ? '600' : '500' })),
+      units: [['eur', 'Euros'], ['pag', 'Páginas'], ['tok', 'Tokens']].map(([id, label]) => ({ label, on: u === id, bg: u === id ? '#FFFFFF' : 'transparent', shadow: u === id ? '0 1px 2px rgba(18,19,26,.1)' : 'none', pick: () => this.setState({ unit: id }) })),
+      total: f[u](18.2),
+      totalNote: u === 'pag' ? 'un millón de tokens da para unas 1.500 páginas' : u === 'tok' ? '5,8 M de entrada · 0,4 M de salida' : 'quedan 11,80 € hasta el límite',
+      days: raw.map((v, i) => ({ h: Math.round((v / max) * 112) + 'px', c: i === 21 ? '#B07800' : i === raw.length - 1 ? '#12131A' : '#C3C6CF' })),
+      spike: f[u](raw[21]), today: f[u](raw[raw.length - 1]),
+      bots: botV.map(([name, color, clip, radius, v]) => ({ name, color, clip, radius, w: Math.round((v / 4.6) * 100) + '%', v: f[u](v) })),
+      plans: [{ label: 'ChatGPT · 5 horas', note: '38 % · renueva 18:40', w: '38%' }, { label: 'ChatGPT · semana', note: '21 % · renueva lunes', w: '21%' }, { label: 'Claude · semana', note: '12 %', w: '12%' }],
+      top: [{ name: 'Estudio de mercado textil', kind: 'Tarea', v: f[u](3.4) }, { name: '# informe-q3', kind: 'Sala', v: f[u](2.9) }, { name: 'Bizum en el checkout', kind: 'Código', v: f[u](0.66) }, { name: 'Resumen del día', kind: 'Rutina', v: f[u](0.62) }]
+    };
+  }
+}
+</script>
+</body>
+</html>

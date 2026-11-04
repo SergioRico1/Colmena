@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Nuevo bot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+::placeholder{color:#6B6F7A}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="equipo" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1120px; margin: 0 auto; padding: 36px clamp(20px, 4vw, 48px) 48px; display: flex; flex-direction: column; gap: 24px">
+
+<nav aria-label="Miga" style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5C606C"><a href="Equipo.dc.html" style="color: #5C606C">Equipo</a><span aria-hidden="true">›</span><span style="color: #12131A; font-weight: 500">Nuevo bot</span></nav>
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Un compañero nuevo</h1>
+<ol aria-label="Pasos" style="margin: 0; padding: 4px; list-style: none; display: inline-flex; gap: 2px; border-radius: 999px; background: #EBEBE6">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="3"><li><button type="button" aria-current="{{s.current}}" onClick="{{s.pick}}" style="height: 36px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: {{s.bg}}; box-shadow: {{s.shadow}}; font-size: 14px; font-weight: {{s.weight}}; cursor: pointer"><span style="font-size: 12px; color: #5C606C">{{s.n}}</span>{{s.label}}</button></li></sc-for>
+</ol>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start">
+<section aria-label="Formulario" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 20px; padding: 26px 28px; border-radius: 26px; background: #FFFFFF">
+
+<sc-if value="{{is0}}" hint-placeholder-val="{{ true }}">
+<label style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 17px; font-weight: 600">¿Qué hará?</span><span style="font-size: 14px; color: #5C606C">Cuéntaselo como a un compañero nuevo. Con una o dos frases basta; luego lo afinas.</span><textarea rows="4" style="padding: 14px 16px; border: 1px solid rgba(18,19,26,.14); border-radius: 16px; background: #FFFFFF; font-size: 16px; line-height: 1.5; resize: vertical">Lee las facturas de proveedores que llegan al correo, apúntalas en la hoja de gastos y avísame si alguna pasa de 500 € o vence esta semana.</textarea></label>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 600">O empieza con un ejemplo</span><div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{examples}}" as="e" hint-placeholder-count="5"><button type="button" style="height: 36px; padding: 0 14px; border: 1px solid rgba(18,19,26,.12); border-radius: 999px; background: #FFFFFF; font-size: 14px; color: #3D404A; cursor: pointer">{{e}}</button></sc-for></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 600">Para quién trabaja</span><div role="radiogroup" aria-label="Para quién" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 8px"><button type="button" role="radio" aria-checked="true" style="padding: 12px 14px; border: 2px solid #12131A; border-radius: 14px; background: #FFFFFF; text-align: left; cursor: pointer"><span style="display: block; font-size: 14.5px; font-weight: 600">Solo para mí</span><span style="font-size: 13px; color: #5C606C">Usa tus cuentas y tu memoria</span></button><button type="button" role="radio" aria-checked="false" style="padding: 12px 14px; border: 2px solid rgba(18,19,26,.1); border-radius: 14px; background: #FFFFFF; text-align: left; cursor: pointer"><span style="display: block; font-size: 14.5px; font-weight: 600">Para salas de equipo</span><span style="font-size: 13px; color: #5C606C">Responde a quien le escriba</span></button></div></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px; border-radius: 18px; border: 1.5px dashed rgba(18,19,26,.2); text-align: center"><span style="font-size: 14.5px; font-weight: 600">Dale ejemplos de su trabajo (opcional)</span><span style="font-size: 13.5px; color: #5C606C">Arrastra facturas, correos o una hoja. Máximo cinco.</span></div>
+</sc-if>
+
+<sc-if value="{{is1}}" hint-placeholder-val="{{ false }}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; color: #3D404A">Nombre<input type="text" value="Leo" style="height: 44px; padding: 0 14px; border: 1px solid rgba(18,19,26,.14); border-radius: 12px; font-size: 15px; font-weight: 400; color: #12131A"></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; color: #3D404A">Puesto<input type="text" value="Facturas de proveedores" style="height: 44px; padding: 0 14px; border: 1px solid rgba(18,19,26,.14); border-radius: 12px; font-size: 15px; font-weight: 400; color: #12131A"></label>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 13.5px; font-weight: 600; color: #3D404A">Forma</span><div role="radiogroup" aria-label="Forma" style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{shapes}}" as="s" hint-placeholder-count="6"><button type="button" role="radio" aria-checked="{{s.on}}" aria-label="{{s.label}}" onClick="{{s.pick}}" style="width: 52px; height: 52px; display: grid; place-items: center; border: 2px solid {{s.border}}; border-radius: 14px; background: #FFFFFF; cursor: pointer"><span style="width: 26px; height: 26px; background: {{color}}; clip-path: {{s.clip}}; border-radius: {{s.radius}}"></span></button></sc-for></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px"><span style="font-size: 13.5px; font-weight: 600; color: #3D404A">Color <span style="font-weight: 400; color: #5C606C">· la miel es para «te necesita» y la tinta, para Atlas</span></span><div role="radiogroup" aria-label="Color" style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{colors}}" as="c" hint-placeholder-count="7"><button type="button" role="radio" aria-checked="{{c.on}}" aria-label="{{c.label}}" onClick="{{c.pick}}" style="width: 38px; height: 38px; padding: 0; border: 3px solid {{c.ring}}; border-radius: 50%; background: {{c.hex}}; cursor: pointer"></button></sc-for></div></div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; font-weight: 600; color: #3D404A">Instrucciones · Colmena las ha preparado<textarea rows="5" style="padding: 12px 14px; border: 1px solid rgba(18,19,26,.14); border-radius: 14px; font-size: 14.5px; font-weight: 400; line-height: 1.55; color: #12131A">Cada mañana revisa el correo y busca facturas de proveedores. Apunta fecha, proveedor, importe, IVA y vencimiento en la hoja «Gastos 2026». Si una pasa de 500 € o vence en menos de 7 días, avísame en Inicio. No pagues nunca: prepara el pago y espera mi OK.</textarea></label>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 13.5px; font-weight: 600; color: #3D404A">Puede usar</span><div style="display: flex; flex-wrap: wrap; gap: 8px"><label style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: #F6F6F3; font-size: 14px"><input type="checkbox" checked="{{ true }}" style="accent-color: #12131A">Correo (leer)</label><label style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: #F6F6F3; font-size: 14px"><input type="checkbox" checked="{{ true }}" style="accent-color: #12131A">Hojas de cálculo</label><label style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: #F6F6F3; font-size: 14px"><input type="checkbox" style="accent-color: #12131A">Banco</label><label style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: #F6F6F3; font-size: 14px"><input type="checkbox" style="accent-color: #12131A">Navegador</label></div></div>
+</sc-if>
+
+<sc-if value="{{is2}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 17px; font-weight: 600">Hazle una pregunta de prueba</span><span style="font-size: 14px; color: #5C606C">Responde con las instrucciones que acabas de escribir. Nada se guarda ni se envía.</span></div>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 18px; background: #F6F6F3">
+<div style="align-self: flex-end; max-width: 80%; padding: 12px 16px; border-radius: 18px 18px 6px 18px; background: #EBEBE6; font-size: 15px">Me ha llegado una factura de Limpiezas Sol de 640 €. ¿Qué haces?</div>
+<div style="display: flex; gap: 10px"><span aria-hidden="true" style="flex: none; width: 22px; height: 22px; background: {{color}}; clip-path: {{clip}}; border-radius: {{radius}}"></span><span style="font-size: 15px; line-height: 1.55">La apunto en «Gastos 2026» con su IVA y vencimiento. Como pasa de 500 €, te dejo un aviso en Inicio con el PDF y preparo el pago, pero no lo hago hasta que me des el OK.</span></div>
+</div>
+<label style="display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-radius: 16px; border: 1px solid rgba(18,19,26,.14)"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Otra pregunta de prueba</span><input type="text" placeholder="Otra pregunta de prueba…" style="flex: 1; min-width: 0; height: 40px; border: 0; outline: none; font-size: 15px"><span aria-hidden="true" style="width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF">↑</span></label>
+</sc-if>
+
+<div style="display: flex; align-items: center; gap: 10px; padding-top: 6px; border-top: 1px solid rgba(18,19,26,.07)">
+<sc-if value="{{showBack}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{back}}" style="height: 46px; padding: 0 16px; border: 0; background: transparent; font-size: 15px; color: #4A4D57; cursor: pointer">Atrás</button></sc-if>
+<span style="flex: 1"></span>
+<sc-if value="{{notLast}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{next}}" style="height: 46px; padding: 0 22px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">{{nextLabel}}</button></sc-if>
+<sc-if value="{{isLast}}" hint-placeholder-val="{{ false }}"><a href="Bot.dc.html" style="height: 46px; padding: 0 22px; display: inline-flex; align-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600">Contratar a Leo</a></sc-if>
+</div>
+</section>
+
+<aside aria-label="Así se verá" style="flex: 1 1 280px; min-width: 0; position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px; padding: 24px; border-radius: 26px; background: #12131A; color: #FFFFFF">
+<span style="font-size: 13px; color: #A9ACB6">Así se verá</span>
+<span aria-hidden="true" style="width: 72px; height: 72px; background: {{color}}; clip-path: {{clip}}; border-radius: {{radius}}; animation: breathe 2.8s ease-in-out infinite"></span>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font: 600 30px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Leo</span><span style="font-size: 14.5px; color: #C9CBD3">Facturas de proveedores · solo para ti</span></div>
+<p style="margin: 0; font-size: 14.5px; line-height: 1.5; color: #E6E7EC">«Hola. Me encargo de tus facturas: las apunto y te aviso de lo importante. Nunca pago sin tu OK.»</p>
+<div style="display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.12); font-size: 13.5px; color: #C9CBD3"><span>Autonomía: hace y te avisa</span><span>3 habilidades preparadas</span><span>Correo (leer) · Hojas de cálculo</span></div>
+</aside>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { step: 1, shape: 'leaf', color: '#0E7C86' }; }
+  renderVals() {
+    const st = this.state;
+    const SH = { hex: ['hexágono', 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)', '0'], circle: ['círculo', 'none', '50%'], square: ['cuadrado', 'none', '24%'], diamond: ['rombo', 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)', '0'], arch: ['arco', 'none', '50% 50% 14% 14%'], leaf: ['hoja', 'none', '50% 16% 50% 16%'] };
+    const cur = SH[st.shape];
+    const colorList = [['#0E7C86', 'verde azulado'], ['#2F6BFF', 'azul'], ['#7B4DFF', 'violeta'], ['#FF5CA8', 'rosa'], ['#FF7A1A', 'naranja'], ['#0B8A5F', 'verde'], ['#B4236E', 'frambuesa']];
+    const labels = ['Describe', 'Ajusta', 'Prueba'];
+    return {
+      color: st.color, clip: cur[1], radius: cur[2],
+      steps: labels.map((label, i) => ({ label, n: String(i + 1), current: st.step === i ? 'step' : undefined, bg: st.step === i ? '#FFFFFF' : 'transparent', shadow: st.step === i ? '0 1px 2px rgba(18,19,26,.1)' : 'none', weight: st.step === i ? '600' : '500', pick: () => this.setState({ step: i }) })),
+      is0: st.step === 0, is1: st.step === 1, is2: st.step === 2,
+      examples: ['Contable', 'Atención al cliente', 'Investigador de mercado', 'Community manager', 'Asistente de agenda'],
+      shapes: Object.keys(SH).map((id) => ({ label: SH[id][0], clip: SH[id][1], radius: SH[id][2], on: st.shape === id, border: st.shape === id ? '#12131A' : 'rgba(18,19,26,.1)', pick: () => this.setState({ shape: id }) })),
+      colors: colorList.map(([hex, label]) => ({ hex, label, on: st.color === hex, ring: st.color === hex ? '#FFFFFF' : 'transparent', pick: () => this.setState({ color: hex }) })).map((c) => ({ ...c, ring: c.on ? '#12131A' : '#FFFFFF' })),
+      showBack: st.step > 0, notLast: st.step < 2, isLast: st.step === 2,
+      nextLabel: st.step === 0 ? 'Preparar el bot' : 'Probarlo',
+      next: () => this.setState({ step: Math.min(2, st.step + 1) }),
+      back: () => this.setState({ step: Math.max(0, st.step - 1) })
+    };
+  }
+}
+</script>
+</body>
+</html>

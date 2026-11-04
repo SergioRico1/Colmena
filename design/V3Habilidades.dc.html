@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Biblioteca · Habilidades</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="biblioteca" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1120px; margin: 0 auto; padding: 44px clamp(20px, 4vw, 48px) 64px; display: flex; flex-direction: column; gap: 22px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Biblioteca</h1>
+<p style="margin: 0; font-size: 16px; color: #4A4D57">Lo que producen tus bots y lo que saben: archivos, habilidades y memoria.</p>
+</div>
+<button type="button" style="height: 44px; padding: 0 18px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 15px; font-weight: 500; cursor: pointer">Importar una habilidad</button>
+</header>
+
+<nav aria-label="Partes de la Biblioteca" style="display: flex; gap: 4px; border-bottom: 1px solid rgba(18,19,26,.1)">
+<a href="Archivos.dc.html" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; color: #4A4D57; font-size: 15px; font-weight: 500">Archivos<span style="font-size: 12.5px; color: #5C606C">lo que entregan</span></a>
+<a href="Habilidades.dc.html" aria-current="page" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-bottom: 2px solid #12131A; margin-bottom: -1px; color: #12131A; font-size: 15px; font-weight: 600">Habilidades<span style="min-width: 20px; height: 20px; padding: 0 6px; display: grid; place-items: center; border-radius: 10px; background: #FFC93C; font-size: 11.5px; font-weight: 600">2</span></a>
+<a href="Memoria.dc.html" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; color: #4A4D57; font-size: 15px; font-weight: 500">Memoria<span style="font-size: 12.5px; color: #5C606C">lo que saben de ti</span></a>
+</nav>
+
+<p style="margin: 0; max-width: 760px; font-size: 15px; line-height: 1.5; color: #4A4D57">Una habilidad es una receta paso a paso que un bot aprende al repetir un trabajo. <strong style="color: #12131A; font-weight: 600">Ninguna se usa hasta que revisas sus pasos.</strong></p>
+
+<section aria-labelledby="rev-t" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="rev-t" style="margin: 0; display: flex; align-items: center; gap: 10px; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Por revisar<span style="min-width: 24px; height: 24px; padding: 0 8px; display: grid; place-items: center; border-radius: 12px; background: #FFC93C; font: 600 12.5px/1 'Geist', sans-serif">2</span></h2>
+
+<article style="display: flex; flex-direction: column; gap: 16px; padding: 22px 24px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 0 0 2px #FFC93C">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 22px; height: 22px; background: #7B4DFF; border-radius: 50% 12% 50% 12%"></span><div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><h3 style="margin: 0; font-size: 17px; font-weight: 600">Notas de prensa</h3><span style="font-size: 13.5px; color: #5C606C">Vera la aprendió tras escribir 3 notas de prensa esta semana · nueva</span></div></div>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="5"><li style="display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: {{s.bg}}"><span style="flex: none; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #FFFFFF; font-size: 12px; font-weight: 600">{{s.n}}</span><span style="flex: 1; font-size: 14.5px; line-height: 1.5">{{s.text}}<span style="display: block; font-size: 12.5px; color: {{s.noteInk}}">{{s.note}}</span></span><button type="button" style="height: 30px; padding: 0 10px; border: 0; background: transparent; font-size: 13px; color: #4A4D57; cursor: pointer">Editar</button></li></sc-for>
+</ol>
+<sc-if value="{{pending}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><button type="button" onClick="{{approve}}" style="height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14.5px; font-weight: 600; cursor: pointer">Aprobar y activar</button><button type="button" style="height: 42px; padding: 0 16px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14.5px; cursor: pointer">Probar con un ejemplo</button><button type="button" style="height: 42px; padding: 0 12px; border: 0; background: transparent; font-size: 14.5px; color: #4A4D57; cursor: pointer">Descartar</button></div>
+</sc-if>
+<sc-if value="{{approved}}" hint-placeholder-val="{{ false }}"><span role="status" style="font-size: 14.5px; font-weight: 500; color: #0B6B4A">✓ Activada. Vera la usará la próxima vez que le pidas una nota de prensa.</span></sc-if>
+</article>
+
+<article style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 18px 22px; border-radius: 22px; background: #FFFFFF; box-shadow: 0 0 0 2px #FFC93C">
+<span aria-hidden="true" style="width: 22px; height: 22px; background: #0B8A5F; border-radius: 24%"></span>
+<div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 2px"><h3 style="margin: 0; font-size: 16px; font-weight: 600">Limpiar hojas de devoluciones · versión mejorada</h3><span style="font-size: 13.5px; color: #5C606C">Tomás propone un paso nuevo: quitar duplicados antes de calcular. 2 cambios.</span></div>
+<button type="button" style="height: 40px; padding: 0 16px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14px; cursor: pointer">Ver los cambios</button>
+</article>
+</section>
+
+<section aria-labelledby="act-t" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="act-t" style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Activas · 14</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 10px">
+<sc-for list="{{active}}" as="k" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; background: #FFFFFF">
+<span aria-hidden="true" style="flex: none; width: 18px; height: 18px; background: {{k.color}}; clip-path: {{k.clip}}; border-radius: {{k.radius}}"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14.5px; font-weight: 600">{{k.name}}</span><span style="font-size: 12.5px; color: #5C606C">{{k.meta}}</span></span>
+<button type="button" aria-label="Más opciones de {{k.name}}" style="width: 32px; height: 32px; padding: 0; border: 0; border-radius: 9px; background: transparent; color: #4A4D57; cursor: pointer">···</button>
+</div>
+</sc-for>
+</div>
+</section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { ok: false }; }
+  renderVals() {
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const S = (n, text, note, warn) => ({ n: String(n), text, note, bg: warn ? '#FFF6DC' : '#F6F6F3', noteInk: warn ? '#8A5A00' : '#5C606C' });
+    const k = (name, meta, color, clip, radius) => ({ name, meta, color, clip, radius });
+    return {
+      pending: !this.state.ok, approved: this.state.ok, approve: () => this.setState({ ok: true }),
+      steps: [
+        S(1, 'Pide el dato clave y la fecha de publicación si no están en el encargo.', ''),
+        S(2, 'Busca en la Biblioteca notas anteriores para copiar el tono.', ''),
+        S(3, 'Escribe titular, entradilla y tres párrafos; cita a Sergio Rico como portavoz.', 'Revisa: ¿siempre eres tú el portavoz?', true),
+        S(4, 'Añade los datos de contacto de prensa del pie de la web.', ''),
+        S(5, 'Deja la nota como borrador y te avisa. Nunca la envía a medios.', '')
+      ],
+      active: [
+        k('Resumen para el comité', 'Vera · usada 12 veces', '#7B4DFF', 'none', '50% 12% 50% 12%'),
+        k('Respuestas a clientes en tu tono', 'Vera · usada 48 veces', '#7B4DFF', 'none', '50% 12% 50% 12%'),
+        k('Registrar facturas del correo', 'Bruno · usada 58 veces', '#FF7A1A', 'none', '50% 50% 14% 14%'),
+        k('Comparar fuentes y fiabilidad', 'Nora · usada 9 veces', '#2F6BFF', 'none', '50%'),
+        k('Portadas con la paleta de la empresa', 'Iris · usada 6 veces', '#FF5CA8', DIA, '0'),
+        k('Repartir un encargo entre el equipo', 'Atlas · usada 31 veces', '#12131A', HEX, '0')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

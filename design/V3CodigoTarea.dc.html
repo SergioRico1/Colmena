@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Tarea de código · Modo oscuro</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+::placeholder{color:#6B6F7A}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="codigo" experto="{{ true }}" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 18px 28px; border-bottom: 1px solid rgba(18,19,26,.07)">
+<div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<nav aria-label="Miga" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5C606C"><a href="Codigo.dc.html" style="color: #5C606C">Código</a><span aria-hidden="true">›</span><span style="font-family: 'Geist Mono', monospace">tienda-web</span></nav>
+<h1 style="margin: 0; font: 600 28px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.025em">Modo oscuro para toda la tienda</h1>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 400 12.5px/1 'Geist Mono', monospace; color: #4A4D57"><span style="height: 24px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 7px; background: #FFFFFF; border: 1px solid rgba(18,19,26,.08)">colmena/modo-oscuro → main</span><span style="height: 24px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 7px; background: #FFFFFF; border: 1px solid rgba(18,19,26,.08)">PR #31</span><span style="height: 24px; padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; border-radius: 7px; background: #FBE9EA; color: #B4232A; font-family: 'Geist', sans-serif; font-weight: 600">✕ CI: 1 test falla</span></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 40px; padding: 0 14px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14px; cursor: pointer">Compartir</button>
+<button type="button" style="height: 40px; padding: 0 14px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14px; cursor: pointer">Abrir en el editor</button>
+<button type="button" disabled title="Falla 1 test: arréglalo antes de fusionar" style="height: 40px; padding: 0 14px; border: 1px dashed rgba(18,19,26,.2); border-radius: 999px; background: transparent; color: #5C606C; font-size: 14px; cursor: not-allowed">Fusionar en main</button>
+<button type="button" style="height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Que Bruno lo arregle</button>
+</div>
+</header>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; align-items: stretch">
+<section aria-label="Conversación con Bruno" style="flex: 1 1 340px; max-width: 440px; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; border-right: 1px solid rgba(18,19,26,.07)">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 18px; background: #FFFFFF">
+<span style="font-size: 13px; font-weight: 600; color: #5C606C">El plan de Bruno · aprobado</span>
+<sc-for list="{{plan}}" as="p" hint-placeholder-count="4"><div style="display: flex; gap: 10px; font-size: 14px; line-height: 1.4"><span aria-hidden="true" style="flex: none; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: {{p.bg}}; color: {{p.ink}}; font-size: 10px; font-weight: 700">{{p.mark}}</span><span style="color: {{p.text}}">{{p.label}}</span></div></sc-for>
+</div>
+<div style="display: flex; gap: 10px"><span aria-hidden="true" style="flex: none; width: 22px; height: 22px; background: #FF7A1A; border-radius: 50% 50% 14% 14%; animation: breathe 2.4s ease-in-out infinite"></span><div style="display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; line-height: 1.5"><strong style="font-weight: 600">Bruno</strong><span>He pasado los colores a variables y respetado el modo del sistema. Ahora reviso el contraste del checkout: el enlace del carrito no llega a 4,5:1.</span><span style="font: 400 12px/1.5 'Geist Mono', monospace; color: #5C606C">Leyendo src/theme/tokens.css<br>Editando src/theme/dark.css</span></div></div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 0 0 2px #FFC93C">
+<span style="font-size: 14px; font-weight: 600">Tu bot revisó los cambios</span>
+<sc-for list="{{findings}}" as="f" hint-placeholder-count="2"><div style="display: flex; gap: 10px; font-size: 13.5px; line-height: 1.45"><span style="flex: none; height: 20px; padding: 0 7px; display: inline-flex; align-items: center; border-radius: 6px; background: {{f.bg}}; color: {{f.ink}}; font: 600 11px/1 'Geist Mono', monospace">{{f.p}}</span><span>{{f.text}} <span style="font: 400 12px/1 'Geist Mono', monospace; color: #5C606C">{{f.where}}</span></span></div></sc-for>
+<span style="font-size: 12.5px; line-height: 1.45; color: #5C606C">Antes de fusionar: 1 test falla y hay 2 avisos. «Que Bruno lo arregle» le pasa los tres.</span>
+</div>
+<span style="flex: 1"></span>
+<label style="display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-radius: 16px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.06), 0 14px 30px -20px rgba(18,19,26,.4)"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Escribir a Bruno</span><input type="text" placeholder="Escribe a Bruno… / para comandos" style="flex: 1; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; font-size: 14.5px"><span aria-hidden="true" style="width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font-size: 15px">↑</span></label>
+</section>
+
+<section aria-label="Espacio de trabajo" style="flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column">
+<div role="tablist" aria-label="Vista" style="display: flex; gap: 2px; padding: 10px 20px 0; border-bottom: 1px solid rgba(18,19,26,.07)">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="height: 42px; padding: 0 14px; border: 0; border-bottom: 2px solid {{t.line}}; margin-bottom: -1px; background: transparent; font-size: 14px; font-weight: {{t.weight}}; color: {{t.ink}}; cursor: pointer">{{t.label}}</button></sc-for>
+</div>
+
+<sc-if value="{{isDiff}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-wrap: wrap; flex: 1">
+<div style="flex: 0 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 14px 10px; border-right: 1px solid rgba(18,19,26,.06)">
+<sc-for list="{{files}}" as="f" hint-placeholder-count="4"><button type="button" style="min-height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 0; border-radius: 9px; background: {{f.bg}}; text-align: left; cursor: pointer"><span style="flex: 1; min-width: 0; font: 400 12.5px/1.2 'Geist Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{f.name}}</span><span style="font: 500 11.5px/1 'Geist Mono', monospace; color: #0B6B4A">{{f.add}}</span></button></sc-for>
+</div>
+<div style="flex: 999 1 380px; min-width: 0; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; font: 500 13px/1 'Geist Mono', monospace"><span>src/theme/dark.css</span><span><span style="color: #0B6B4A">+42</span> <span style="color: #B4232A">−3</span></span></div>
+<div style="border-radius: 14px; background: #FFFFFF; border: 1px solid rgba(18,19,26,.08); overflow-x: auto; font: 400 12.5px/1.75 'Geist Mono', monospace">
+<sc-for list="{{lines}}" as="l" hint-placeholder-count="10"><div style="display: flex; background: {{l.bg}}; white-space: pre"><span style="flex: none; width: 44px; padding-right: 10px; text-align: right; color: #6B6F7A; user-select: none">{{l.n}}</span><span style="flex: none; width: 16px; color: {{l.ink}}">{{l.sign}}</span><span style="color: {{l.ink}}">{{l.code}}</span></div></sc-for>
+<div style="display: flex; gap: 10px; margin: 6px 12px 10px 60px; padding: 10px 12px; border-radius: 10px; background: #F6F6F3; font-family: 'Geist', sans-serif; font-size: 13px; line-height: 1.45"><span aria-hidden="true" style="flex: none; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: #12131A; color: #FFFFFF; font-size: 8px; font-weight: 600">TÚ</span><span>¿Y los navegadores sin light-dark()? Mejor con prefers-color-scheme. <span style="color: #5C606C">· Bruno lo verá en su siguiente paso</span></span></div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isTerm}}" hint-placeholder-val="{{ false }}">
+<pre style="flex: 1; margin: 16px 20px 20px; padding: 16px 18px; border-radius: 14px; background: #12131A; color: #E6E7EC; font: 400 12.5px/1.7 'Geist Mono', monospace; white-space: pre-wrap">$ npm test
+ PASS  src/cart/cart.test.js (24 tests)
+ PASS  src/theme/tokens.test.js (6 tests)
+ FAIL  src/checkout/contrast.test.js
+   ✕ el enlace del carrito cumple 4,5:1 en oscuro
+     esperado ≥ 4.5 · recibido 3.9
+
+Tests: 1 falla, 30 pasan · 6,1 s
+$ <span style="animation: blink 1s step-end infinite">▍</span></pre>
+</sc-if>
+
+<sc-if value="{{isPrev}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; display: flex; flex-direction: column; margin: 16px 20px 20px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(18,19,26,.1)">
+<div style="height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: #EDEEF0; font: 400 12.5px/1 'Geist Mono', monospace; color: #3D404A">localhost:5173/checkout<span style="flex: 1"></span><span style="font-family: 'Geist', sans-serif">Claro · <strong>Oscuro</strong></span></div>
+<div style="flex: 1; min-height: 360px; display: flex; flex-direction: column; gap: 14px; padding: 28px; background: #12131A; color: #F5F5F2"><span style="font: 600 22px/1 'Geist', sans-serif">Tu cesta</span><span style="height: 54px; border-radius: 12px; background: #1E2029"></span><span style="height: 54px; border-radius: 12px; background: #1E2029"></span><span style="align-self: flex-start; font-size: 14px; color: #6F7EA8; text-decoration: underline; outline: 2px dashed #FFC93C; outline-offset: 4px">Seguir comprando (3,9:1)</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{isPlan}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; margin: 16px 20px 20px; padding: 20px; border-radius: 14px; background: #FFFFFF; display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; line-height: 1.55"><strong>Qué voy a hacer</strong><span>1. Mover los colores escritos a mano a variables en tokens.css.</span><span>2. Crear dark.css con light-dark() y alternativa por prefers-color-scheme.</span><span>3. Revisar contraste en checkout y carrito (objetivo 4,5:1).</span><span>4. Capturas en claro y oscuro para la PR.</span><span style="color: #5C606C">No toca: textos, pagos ni la API.</span></div>
+</sc-if>
+</section>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'diff' }; }
+  renderVals() {
+    const st = this.state;
+    const L = (n, sign, code) => ({ n, sign, code, bg: sign === '+' ? '#EAF7F0' : sign === '−' ? '#FBEDEE' : 'transparent', ink: sign === '+' ? '#0B6B4A' : sign === '−' ? '#B4232A' : '#3D404A' });
+    const P = (label, s) => ({ label, mark: s === 'ok' ? '✓' : s === 'now' ? '•' : '', bg: s === 'ok' ? '#E3F4EC' : s === 'now' ? '#EEF0F4' : '#F1F1EC', ink: s === 'ok' ? '#0B6B4A' : '#1F4FD1', text: s === 'todo' ? '#5C606C' : '#12131A' });
+    return {
+      tabs: [['plan', 'Plan'], ['diff', 'Cambios · 4'], ['term', 'Terminal'], ['prev', 'Vista previa']].map(([id, label]) => ({ label, on: st.tab === id, line: st.tab === id ? '#12131A' : 'transparent', weight: st.tab === id ? '600' : '500', ink: st.tab === id ? '#12131A' : '#4A4D57', pick: () => this.setState({ tab: id }) })),
+      isDiff: st.tab === 'diff', isTerm: st.tab === 'term', isPrev: st.tab === 'prev', isPlan: st.tab === 'plan',
+      plan: [P('Colores a variables', 'ok'), P('dark.css con light-dark()', 'ok'), P('Contraste del checkout', 'now'), P('Capturas para la PR', 'todo')],
+      findings: [{ p: 'P1', text: 'Sin alternativa para navegadores sin light-dark()', where: 'dark.css:11', bg: '#FBE9EA', ink: '#B4232A' }, { p: 'P2', text: 'El enlace del carrito no llega a 4,5:1', where: 'dark.css:24', bg: '#FFF1C7', ink: '#8A5A00' }],
+      files: [{ name: 'src/theme/dark.css', add: '+42', bg: '#F1F1EC' }, { name: 'src/theme/tokens.css', add: '+31', bg: 'transparent' }, { name: 'src/checkout/Cart.jsx', add: '+9', bg: 'transparent' }, { name: 'src/app.css', add: '+46', bg: 'transparent' }],
+      lines: [L('9', ' ', ':root {'), L('10', ' ', '  --radius: 14px;'), L('11', '−', '  --ink: #12131A;'), L('11', '+', '  --ink: light-dark(#12131A, #F5F5F2);'), L('12', '+', '  --paper: light-dark(#F5F5F2, #12131A);'), L('13', ' ', '  --honey: #FFC93C;'), L('14', '+', '  color-scheme: light dark;'), L('15', ' ', '}'), L('24', '−', '.cart-link { color: #4B5A85; }'), L('24', '+', '.cart-link { color: var(--link); }')]
+    };
+  }
+}
+</script>
+</body>
+</html>

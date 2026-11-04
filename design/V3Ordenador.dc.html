@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Iris usando el navegador</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="trabajo" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1180px; margin: 0 auto; padding: 32px clamp(20px, 4vw, 44px) 48px; display: flex; flex-direction: column; gap: 20px">
+
+<nav aria-label="Miga" style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5C606C"><a href="Tareas.dc.html" style="color: #5C606C">Trabajo</a><span aria-hidden="true">›</span><a href="Tarea.dc.html" style="color: #5C606C">Campaña de primavera</a><span aria-hidden="true">›</span><span style="color: #12131A; font-weight: 500">Navegador de Iris</span></nav>
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px">
+<span aria-hidden="true" style="width: 34px; height: 34px; background: #FF5CA8; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); animation: breathe 2.4s ease-in-out infinite"></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font: 600 34px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Iris está usando su navegador</h1><span style="font-size: 14.5px; color: #4A4D57">{{status}}</span></div>
+<button type="button" onClick="{{toggleCtrl}}" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: {{ctrlBg}}; color: {{ctrlInk}}; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(18,19,26,.16)">{{ctrlLabel}}</button>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section aria-label="Vista en vivo" style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; border-radius: 20px; background: #FFFFFF; overflow: hidden; box-shadow: 0 0 0 3px {{frame}}, 0 30px 60px -34px rgba(18,19,26,.5)">
+<div style="display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; background: #EDEEF0">
+<span aria-hidden="true" style="display: flex; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #C9CBD3"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: #C9CBD3"></span><span style="width: 10px; height: 10px; border-radius: 50%; background: #C9CBD3"></span></span>
+<span style="flex: 1; height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 8px; background: #FFFFFF; font: 400 13px/1 'Geist Mono', monospace; color: #3D404A"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0B6B4A" stroke-width="2.4" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></svg>redes.tuempresa.com/publicar</span>
+<span style="height: 24px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; background: {{liveBg}}; color: {{liveInk}}; font-size: 12px; font-weight: 600"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.4s ease-in-out infinite"></span>{{liveLabel}}</span>
+</div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 18px; padding: 34px 40px 40px; min-height: 440px; background: #FBFBFA">
+<span style="font: 600 22px/1 'Geist', sans-serif">Nueva publicación</span>
+<div style="display: flex; gap: 16px">
+<span aria-hidden="true" style="flex: none; width: 44px; height: 44px; border-radius: 50%; background: #12131A"></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 14px">
+<p style="margin: 0; padding: 16px; border-radius: 12px; border: 1px solid rgba(18,19,26,.12); background: #FFFFFF; font-size: 16px; line-height: 1.55">La primavera llega a la tienda: colores nuevos y envío gratis hasta el domingo. Abre la ventana →</p>
+<div aria-hidden="true" style="height: 170px; border-radius: 12px; background: #DCE8F7; position: relative; overflow: hidden"><span style="position: absolute; left: 22%; top: 26px; width: 120px; height: 120px; border-radius: 18px; background: #FFFFFF"></span><span style="position: absolute; right: 26px; bottom: 20px; width: 64px; height: 64px; border-radius: 50%; background: #FF7A1A"></span></div>
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 13px; color: #5C606C">143 / 280</span><span style="position: relative; height: 40px; padding: 0 22px; display: inline-flex; align-items: center; border-radius: 999px; background: #1F4FD1; color: #FFFFFF; font-size: 14px; font-weight: 600; box-shadow: 0 0 0 4px #FFC93C">Publicar<span aria-hidden="true" style="position: absolute; right: -18px; bottom: -22px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 18px solid #FF5CA8; transform: rotate(-30deg)"></span></span></div>
+</div>
+</div>
+<sc-if value="{{mine}}" hint-placeholder-val="{{ false }}"><div style="position: absolute; left: 16px; bottom: 16px; padding: 8px 14px; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 13px">Tienes el control. Iris espera y mira lo que haces.</div></sc-if>
+</div>
+</section>
+
+<aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{pending}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 0 0 2px #FFC93C">
+<span style="align-self: flex-start; height: 26px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #FFC93C; font-size: 12.5px; font-weight: 600">Línea roja · necesita tu OK</span>
+<h2 style="margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3">Iris quiere pulsar «Publicar»</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #4A4D57">Se publicará en la cuenta de la empresa y lo verá el público. No se puede deshacer desde Colmena.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><button type="button" onClick="{{approve}}" style="height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14.5px; font-weight: 600; cursor: pointer">Publicar</button><button type="button" onClick="{{toggleCtrl}}" style="height: 42px; padding: 0 16px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14.5px; cursor: pointer">Lo hago yo</button><button type="button" style="height: 42px; padding: 0 12px; border: 0; background: transparent; font-size: 14.5px; color: #4A4D57; cursor: pointer">Ahora no</button></div>
+</div>
+</sc-if>
+<sc-if value="{{done}}" hint-placeholder-val="{{ false }}"><div role="status" style="padding: 18px 20px; border-radius: 20px; background: #E3F4EC; color: #0B6B4A; font-size: 14.5px; font-weight: 500">Publicado a las 16:52. Iris guarda el enlace en la tarea.</div></sc-if>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF">
+<h2 style="margin: 0 0 6px; font-size: 14px; font-weight: 600">Lo que ha hecho</h2>
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="4"><div style="display: flex; gap: 10px; padding: 5px 0; font-size: 14px; line-height: 1.4"><span style="flex: none; width: 42px; color: #5C606C; font-variant-numeric: tabular-nums">{{s.time}}</span><span>{{s.text}}</span></div></sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF">
+<h2 style="margin: 0; font-size: 14px; font-weight: 600">Lo que puede tocar</h2>
+<p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #4A4D57">Solo su propio navegador, dentro de Colmena. Nunca escribe contraseñas: si una página la pide, te la pasa a ti.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><span style="height: 28px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #F1F1EC; font-size: 12.5px">redes.tuempresa.com</span><span style="height: 28px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #F1F1EC; font-size: 12.5px">tienda.tuempresa.com</span><span style="height: 28px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #F1F1EC; font-size: 12.5px">Carpeta Diseño</span></div>
+<a href="Permisos.dc.html" style="font-size: 13.5px">Cambiar en Permisos</a>
+</div>
+</aside>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { mine: false, done: false }; }
+  renderVals() {
+    const st = this.state;
+    return {
+      mine: st.mine, pending: !st.done, done: st.done,
+      status: st.done ? 'Terminado · ha publicado la campaña' : st.mine ? 'Tienes el control · Iris mira' : 'En Campaña de primavera · espera tu OK para publicar',
+      ctrlLabel: st.mine ? 'Devolver el control' : 'Tomar el control',
+      ctrlBg: st.mine ? '#12131A' : '#FFFFFF', ctrlInk: st.mine ? '#FFFFFF' : '#12131A',
+      frame: st.mine ? '#1F4FD1' : 'transparent',
+      liveLabel: st.mine ? 'TÚ' : 'EN VIVO', liveBg: st.mine ? '#E3EBFF' : '#FBE9EA', liveInk: st.mine ? '#1F4FD1' : '#B4232A',
+      toggleCtrl: () => this.setState({ mine: !st.mine }),
+      approve: () => this.setState({ done: true, mine: false }),
+      steps: [
+        { time: '16:44', text: 'Abrió redes.tuempresa.com con la sesión que ya tenías' },
+        { time: '16:46', text: 'Escribió el texto de la campaña (143 caracteres)' },
+        { time: '16:48', text: 'Subió la portada B desde la carpeta Diseño' },
+        { time: '16:49', text: 'Se paró antes de «Publicar» y te avisó' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

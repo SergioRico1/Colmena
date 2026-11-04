@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Trabajo · Tareas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+::placeholder{color:#6B6F7A}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="trabajo" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1180px; margin: 0 auto; padding: 44px clamp(20px, 4vw, 48px) 64px; display: flex; flex-direction: column; gap: 24px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Trabajo</h1>
+<p style="margin: 0; font-size: 16px; color: #4A4D57">Todo lo que hacen tus bots: una vez, cada cierto tiempo o a largo plazo.</p>
+</div>
+<button type="button" style="height: 44px; padding: 0 20px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nueva tarea</button>
+</header>
+
+<nav aria-label="Partes de Trabajo" style="display: flex; gap: 4px; border-bottom: 1px solid rgba(18,19,26,.1)">
+<a href="Tareas.dc.html" aria-current="page" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-bottom: 2px solid #12131A; margin-bottom: -1px; color: #12131A; font-size: 15px; font-weight: 600">Tareas<span style="font-size: 12.5px; color: #5C606C">una vez</span></a>
+<a href="Rutinas.dc.html" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; color: #4A4D57; font-size: 15px; font-weight: 500">Rutinas<span style="font-size: 12.5px; color: #5C606C">se repiten</span></a>
+<a href="Objetivos.dc.html" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; color: #4A4D57; font-size: 15px; font-weight: 500">Objetivos<span style="font-size: 12.5px; color: #5C606C">a largo plazo</span></a>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<label style="flex: 1 1 260px; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; border-radius: 12px; background: #FFFFFF; border: 1px solid rgba(18,19,26,.08)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2"></path></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Buscar tareas</span><input type="text" placeholder="Buscar tareas" style="flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 14.5px"></label>
+<button type="button" style="height: 40px; padding: 0 14px; border: 1px solid rgba(18,19,26,.12); border-radius: 999px; background: #FFFFFF; font-size: 14px; cursor: pointer">Todos los bots ▾</button>
+<div role="radiogroup" aria-label="Vista" style="display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; background: #EBEBE6">
+<sc-for list="{{views}}" as="v" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{v.on}}" onClick="{{v.pick}}" style="height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: {{v.bg}}; box-shadow: {{v.shadow}}; font-size: 13.5px; font-weight: 500; cursor: pointer">{{v.label}}</button></sc-for>
+</div>
+</div>
+
+<sc-if value="{{isBoard}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 14px; align-items: start">
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="4">
+<section style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 22px; background: {{c.bg}}">
+<h2 style="margin: 0; padding: 4px 6px; display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600">{{c.title}}<span style="min-width: 22px; height: 22px; padding: 0 7px; display: grid; place-items: center; border-radius: 11px; background: {{c.badgeBg}}; font-size: 12px; font-weight: 600">{{c.n}}</span></h2>
+<sc-for list="{{c.items}}" as="t" hint-placeholder-count="2">
+<a href="Tarea.dc.html" style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 16px; background: #FFFFFF; color: #12131A; box-shadow: 0 1px 2px rgba(18,19,26,.05)">
+<span style="font-size: 15px; font-weight: 600; line-height: 1.3">{{t.title}}</span>
+<span style="font-size: 13.5px; line-height: 1.4; color: #4A4D57">{{t.now}}</span>
+<sc-if value="{{t.showBar}}" hint-placeholder-val="{{ true }}"><span style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="position: relative; flex: 1; height: 4px; border-radius: 2px; background: #ECECE7; overflow: hidden"><span style="position: absolute; inset: 0 auto 0 0; width: {{t.pct}}; border-radius: 2px; background: #12131A"></span></span><span style="font-size: 12px; color: #5C606C; font-variant-numeric: tabular-nums">{{t.pct}}</span></span></sc-if>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #5C606C">
+<sc-for list="{{t.bots}}" as="b" hint-placeholder-count="2"><span aria-hidden="true" style="width: 14px; height: 14px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}"></span></sc-for>
+<span style="margin-left: 4px">{{t.meta}}</span>
+</span>
+</a>
+</sc-for>
+</section>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isList}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; border-radius: 22px; background: #FFFFFF; overflow: hidden">
+<div style="display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 12px 20px; background: #F6F6F3; font-size: 12.5px; font-weight: 600; color: #4A4D57"><span>Tarea</span><span>Estado</span><span>Quién</span><span>Entrega</span></div>
+<sc-for list="{{flat}}" as="t" hint-placeholder-count="8">
+<a href="Tarea.dc.html" style="display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: center; min-height: 56px; padding: 8px 20px; border-top: 1px solid rgba(18,19,26,.06); color: #12131A; font-size: 14.5px">
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: 600">{{t.title}}</span><span style="font-size: 13px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{t.now}}</span></span>
+<span><span style="height: 24px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: {{t.sBg}}; color: {{t.sInk}}; font-size: 12px; font-weight: 600">{{t.status}}</span></span>
+<span style="display: flex; gap: 4px"><sc-for list="{{t.bots}}" as="b" hint-placeholder-count="2"><span aria-hidden="true" style="width: 16px; height: 16px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}"></span></sc-for></span>
+<span style="color: #4A4D57">{{t.due}}</span>
+</a>
+</sc-for>
+</div>
+</sc-if>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { view: 'board' }; }
+  renderVals() {
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const B = { atlas: { color: '#12131A', clip: HEX, radius: '0' }, tomas: { color: '#0B8A5F', clip: 'none', radius: '24%' }, iris: { color: '#FF5CA8', clip: DIA, radius: '0' }, vera: { color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%' }, nora: { color: '#2F6BFF', clip: 'none', radius: '50%' }, bruno: { color: '#FF7A1A', clip: 'none', radius: '50% 50% 14% 14%' } };
+    const S = { wait: { status: 'Te necesita', sBg: '#FFC93C', sInk: '#12131A' }, run: { status: 'En marcha', sBg: '#EEF0F4', sInk: '#1F4FD1' }, stuck: { status: 'Atascada', sBg: '#FBE9EA', sInk: '#B4232A' }, done: { status: 'Hecha', sBg: '#E3F4EC', sInk: '#0B6B4A' } };
+    const t = (o) => ({ showBar: true, pct: '0%', ...o });
+    const cols = [
+      { title: 'Te necesitan', bg: '#FFF1C7', badgeBg: '#FFC93C', items: [
+        t({ title: 'Campaña de primavera', now: 'Tres portadas listas: elige una', pct: '30%', bots: [B.iris, B.vera, B.nora], meta: 'viernes · #campaña-primavera', due: 'viernes', ...S.wait }) ] },
+      { title: 'En marcha', bg: '#EBEBE6', badgeBg: '#FFFFFF', items: [
+        t({ title: 'Informe Q3', now: 'Tomás analiza las devoluciones', pct: '64%', bots: [B.atlas, B.tomas, B.iris, B.vera], meta: 'martes 18:00', due: 'martes 18:00', ...S.run }),
+        t({ title: 'Resumen de la semana', now: 'Vera lo está terminando', pct: '85%', bots: [B.vera], meta: 'hoy 17:00 · rutina', due: 'hoy 17:00', ...S.run }),
+        t({ title: 'Ordenar la carpeta Descargas', now: '312 de 480 archivos movidos', pct: '65%', bots: [B.bruno], meta: 'sin fecha', due: '—', ...S.run }) ] },
+      { title: 'Atascadas', bg: '#EBEBE6', badgeBg: '#FFFFFF', items: [
+        t({ title: 'Estudio de mercado textil', now: 'La web del INE no responde. Reintenta a las 18:00.', pct: '40%', bots: [B.nora], meta: 'jueves', due: 'jueves', ...S.stuck }) ] },
+      { title: 'Hechas esta semana', bg: '#EBEBE6', badgeBg: '#FFFFFF', items: [
+        t({ title: 'Registrar facturas de octubre', now: '58 facturas en la hoja de gastos', showBar: false, bots: [B.bruno], meta: 'ayer · 14 min', due: 'ayer', ...S.done }),
+        t({ title: 'Respuestas a clientes', now: '6 borradores en tu correo', showBar: false, bots: [B.vera], meta: 'hoy 09:00', due: 'hoy', ...S.done }) ] }
+    ].map((c) => ({ ...c, n: String(c.items.length) }));
+    const flat = [];
+    cols.forEach((c) => c.items.forEach((i) => flat.push(i)));
+    return {
+      cols, flat,
+      isBoard: this.state.view === 'board', isList: this.state.view === 'list',
+      views: [['board', 'Tablero'], ['list', 'Lista']].map(([id, label]) => ({ label, on: this.state.view === id, bg: this.state.view === id ? '#FFFFFF' : 'transparent', shadow: this.state.view === id ? '0 1px 2px rgba(18,19,26,.1)' : 'none', pick: () => this.setState({ view: id }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

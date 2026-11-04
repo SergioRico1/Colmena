@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Código</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+::placeholder{color:#6B6F7A}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="codigo" experto="{{ true }}" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1160px; margin: 0 auto; padding: 44px clamp(20px, 4vw, 48px) 64px; display: flex; flex-direction: column; gap: 28px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Código</h1>
+<p style="margin: 0; max-width: 680px; font-size: 16px; line-height: 1.5; color: #4A4D57">Tus bots programan en una copia aparte de tu proyecto. Ves cada cambio, lo pruebas en la vista previa y decides qué se queda.</p>
+</div>
+<button type="button" style="height: 44px; padding: 0 18px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 15px; font-weight: 500; cursor: pointer">Abrir un proyecto</button>
+</header>
+
+<section aria-label="Nueva tarea de código" style="display: flex; flex-direction: column; border-radius: 26px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 28px 60px -34px rgba(18,19,26,.4)">
+<label style="display: flex; padding: 22px 24px 8px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Qué quieres construir</span><textarea rows="2" placeholder="¿Qué construimos? Describe el cambio como se lo contarías a un compañero…" style="flex: 1; border: 0; outline: none; resize: none; background: transparent; font-size: 19px; line-height: 1.45">Añade Bizum como método de pago en el checkout, con sus tests</textarea></label>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px 14px 20px; border-top: 1px solid rgba(18,19,26,.06)">
+<button type="button" style="height: 34px; padding: 0 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(18,19,26,.1); border-radius: 999px; background: #F6F6F3; font-size: 13.5px; cursor: pointer"><span style="font: 500 12px/1 'Geist Mono', monospace">tienda-web</span><span style="color: #5C606C">main ▾</span></button>
+<button type="button" style="height: 34px; padding: 0 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(18,19,26,.1); border-radius: 999px; background: #F6F6F3; font-size: 13.5px; cursor: pointer"><span aria-hidden="true" style="width: 14px; height: 14px; background: #FF7A1A; border-radius: 50% 50% 14% 14%"></span>Bruno · Claude Code · Opus 5.5 ▾</button>
+<div role="radiogroup" aria-label="Cómo empieza" style="display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: #F1F1EC">
+<sc-for list="{{modes}}" as="m" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{m.on}}" onClick="{{m.pick}}" style="height: 28px; padding: 0 12px; border: 0; border-radius: 999px; background: {{m.bg}}; box-shadow: {{m.shadow}}; font-size: 13px; font-weight: 500; cursor: pointer">{{m.label}}</button></sc-for>
+</div>
+<label style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px; font-size: 13.5px; cursor: pointer"><input type="checkbox" style="width: 16px; height: 16px; accent-color: #12131A">Probar con 3 motores y comparar</label>
+<span style="flex: 1"></span>
+<a href="CodigoTarea.dc.html" style="height: 44px; padding: 0 20px; display: inline-flex; align-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600">Empezar</a>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start">
+<section aria-labelledby="tasks-t" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<h2 id="tasks-t" style="margin: 0; font: 600 22px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Tareas</h2>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h3 style="margin: 0; padding: 0 4px; font-size: 13px; font-weight: 600; color: #5C606C">{{g.title}}</h3>
+<div style="display: flex; flex-direction: column; border-radius: 18px; background: #FFFFFF; overflow: hidden">
+<sc-for list="{{g.items}}" as="t" hint-placeholder-count="2">
+<a href="{{t.href}}" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-height: 64px; padding: 10px 18px; border-top: 1px solid rgba(18,19,26,.05); color: #12131A">
+<span aria-hidden="true" style="flex: none; width: 16px; height: 16px; background: {{t.color}}; border-radius: {{t.radius}}; animation: {{t.anim}}"></span>
+<span style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 600">{{t.title}}</span><span style="font: 400 12.5px/1.3 'Geist Mono', monospace; color: #5C606C">{{t.meta}}</span></span>
+<span style="font: 500 12.5px/1 'Geist Mono', monospace"><span style="color: #0B6B4A">{{t.add}}</span> <span style="color: #B4232A">{{t.del}}</span></span>
+<span style="height: 24px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: {{t.sBg}}; color: {{t.sInk}}; font-size: 12px; font-weight: 600">{{t.status}}</span>
+</a>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</section>
+
+<aside style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF">
+<h2 style="margin: 0 0 6px; font-size: 14px; font-weight: 600">Proyectos</h2>
+<sc-for list="{{projects}}" as="p" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 10px; min-height: 48px"><span aria-hidden="true" style="width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: #F1F1EC; font: 600 11px/1 'Geist Mono', monospace">&lt;/&gt;</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font: 500 14px/1.2 'Geist Mono', monospace">{{p.name}}</span><span style="font-size: 12.5px; color: #5C606C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{p.path}}</span></span><span style="font-size: 12.5px; color: #5C606C">{{p.n}}</span></div></sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF">
+<h2 style="margin: 0 0 6px; font-size: 14px; font-weight: 600">Motores en este ordenador</h2>
+<sc-for list="{{engines}}" as="e" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 10px; min-height: 42px; font-size: 14px"><span style="flex: 1"><span style="font-weight: 500">{{e.name}}</span> <span style="font: 400 12px/1 'Geist Mono', monospace; color: #5C606C">{{e.ver}}</span></span><sc-if value="{{e.ok}}" hint-placeholder-val="{{ true }}"><span style="font-size: 12.5px; font-weight: 600; color: #0B6B4A">✓ listo</span></sc-if><sc-if value="{{e.missing}}" hint-placeholder-val="{{ false }}"><button type="button" style="height: 30px; padding: 0 12px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 12.5px; cursor: pointer">Instalar</button></sc-if></div></sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF; box-shadow: 0 0 0 2px #FFC93C">
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5C606C"><span aria-hidden="true" style="width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #E6E7EC; color: #12131A; font-size: 9px; font-weight: 600">MR</span>Marta te pasa una tarea</span>
+<span style="font-size: 15px; font-weight: 600">Modo oscuro para toda la tienda</span>
+<span style="font-size: 13.5px; line-height: 1.45; color: #4A4D57">«Te la dejo, el lunes me voy de viaje.» Su Bruno escribió qué está hecho y qué falta.</span>
+<a href="CodigoTarea.dc.html" style="align-self: flex-start; height: 38px; padding: 0 16px; display: inline-flex; align-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 13.5px; font-weight: 600">Seguir en mi Colmena</a>
+</div>
+</aside>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { mode: 'plan' }; }
+  renderVals() {
+    const S = { rev: { status: 'Revisar', sBg: '#FFC93C', sInk: '#12131A' }, run: { status: 'Trabajando', sBg: '#EEF0F4', sInk: '#1F4FD1' }, ci: { status: 'Falla el CI', sBg: '#FBE9EA', sInk: '#B4232A' }, done: { status: 'Fusionada', sBg: '#E3F4EC', sInk: '#0B6B4A' }, later: { status: 'Vuelve mañana', sBg: '#F1F1EC', sInk: '#4A4D57' } };
+    const bruno = { color: '#FF7A1A', radius: '50% 50% 14% 14%' };
+    const T = (o) => ({ ...bruno, anim: 'none', href: 'CodigoTarea.dc.html', add: '', del: '', ...o });
+    return {
+      modes: [['plan', 'Plan primero'], ['directo', 'Directo']].map(([id, label]) => ({ label, on: this.state.mode === id, bg: this.state.mode === id ? '#FFFFFF' : 'transparent', shadow: this.state.mode === id ? '0 1px 2px rgba(18,19,26,.1)' : 'none', pick: () => this.setState({ mode: id }) })),
+      groups: [
+        { title: 'Te esperan', items: [
+          T({ title: 'Modo oscuro para toda la tienda', meta: 'tienda-web · colmena/modo-oscuro · PR #31', add: '+128', del: '−14', ...S.ci }),
+          T({ title: 'Bizum en el checkout', meta: 'tienda-web · 3 propuestas para comparar', href: 'CodigoComparar.dc.html', ...S.rev }) ] },
+        { title: 'En marcha', items: [
+          T({ title: 'Exportar pedidos a CSV', meta: 'scripts-finanzas · colmena/export-csv', add: '+42', del: '−3', anim: 'breathe 2.4s ease-in-out infinite', ...S.run }) ] },
+        { title: 'Pospuestas y hechas', items: [
+          T({ title: 'Revisar textos legales', meta: 'tienda-web · vuelve mañana 09:00', ...S.later }),
+          T({ title: 'Arreglar el cálculo del IVA', meta: 'tienda-web · PR #29 · hace 2 días', add: '+18', del: '−9', ...S.done }) ] }
+      ],
+      projects: [
+        { name: 'tienda-web', path: 'D:\\proyectos\\tienda-web', n: '4 tareas' },
+        { name: 'scripts-finanzas', path: 'D:\\proyectos\\scripts-finanzas', n: '1' },
+        { name: 'colmena-docs', path: 'E:\\NexoBot\\docs', n: '0' }
+      ],
+      engines: [
+        { name: 'Claude Code', ver: '2.4.1', ok: true, missing: false },
+        { name: 'Codex', ver: '0.98', ok: true, missing: false },
+        { name: 'OpenCode', ver: '—', ok: false, missing: true }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

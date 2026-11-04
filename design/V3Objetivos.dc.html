@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Trabajo · Objetivos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+::placeholder{color:#6B6F7A}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="trabajo" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1160px; margin: 0 auto; padding: 44px clamp(20px, 4vw, 48px) 64px; display: flex; flex-direction: column; gap: 24px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Trabajo</h1>
+<p style="margin: 0; font-size: 16px; color: #4A4D57">Todo lo que hacen tus bots: una vez, cada cierto tiempo o a largo plazo.</p>
+</div>
+<button type="button" style="height: 44px; padding: 0 20px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nuevo objetivo</button>
+</header>
+
+<nav aria-label="Partes de Trabajo" style="display: flex; gap: 4px; border-bottom: 1px solid rgba(18,19,26,.1)">
+<a href="Tareas.dc.html" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; color: #4A4D57; font-size: 15px; font-weight: 500">Tareas<span style="font-size: 12.5px; color: #5C606C">una vez</span></a>
+<a href="Rutinas.dc.html" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; color: #4A4D57; font-size: 15px; font-weight: 500">Rutinas<span style="font-size: 12.5px; color: #5C606C">se repiten</span></a>
+<a href="Objetivos.dc.html" aria-current="page" style="height: 44px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-bottom: 2px solid #12131A; margin-bottom: -1px; color: #12131A; font-size: 15px; font-weight: 600">Objetivos<span style="font-size: 12.5px; color: #5C606C">a largo plazo</span></a>
+</nav>
+
+<p style="margin: 0; max-width: 760px; font-size: 15px; line-height: 1.5; color: #4A4D57">Lo que quieres conseguir en semanas o meses. Atlas lo parte en hitos, engancha las tareas que lo empujan y te avisa si algo se atasca.</p>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div role="listbox" aria-label="Objetivos" style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{goals}}" as="g" hint-placeholder-count="3">
+<button type="button" role="option" aria-selected="{{g.on}}" onClick="{{g.pick}}" style="display: flex; align-items: center; gap: 14px; padding: 16px; border: 2px solid {{g.border}}; border-radius: 20px; background: #FFFFFF; text-align: left; cursor: pointer">
+<span aria-hidden="true" style="flex: none; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#12131A {{g.deg}}, #EEEEEA 0)"><span style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #FFFFFF; font-size: 12.5px; font-weight: 600">{{g.pct}}</span></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 600">{{g.title}}</span><span style="font-size: 13px; color: {{g.metaInk}}">{{g.meta}}</span></span>
+</button>
+</sc-for>
+</div>
+
+<section aria-label="Detalle del objetivo" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 18px; padding: 26px 28px; border-radius: 26px; background: #FFFFFF">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 13.5px; color: #5C606C"><span aria-hidden="true" style="width: 16px; height: 16px; background: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"></span>Coordina Atlas · {{cur.due}}</div>
+<h2 style="margin: 0; font: 600 34px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">{{cur.title}}</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #4A4D57"><strong style="color: #12131A; font-weight: 600">Por qué:</strong> {{cur.why}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<span style="height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; background: #F1F1EC; font-size: 13.5px">Gasto: {{cur.spent}}</span>
+<span style="height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; background: #F1F1EC; font-size: 13.5px">{{cur.tasks}}</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h3 style="margin: 0; font-size: 14px; font-weight: 600">Hitos</h3>
+<sc-for list="{{cur.miles}}" as="m" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 14px; min-height: 52px; padding: 8px 14px; border-radius: 14px; background: #F6F6F3">
+<span aria-hidden="true" style="flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 2px solid {{m.ring}}; background: {{m.fill}}; color: #FFFFFF; font-size: 11px; font-weight: 700">{{m.mark}}</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14.5px; font-weight: 500">{{m.title}}</span><span style="font-size: 12.5px; color: #5C606C">{{m.note}}</span></span>
+<span style="font-size: 13px; color: #4A4D57">{{m.date}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 18px; border: 1.5px dashed rgba(18,19,26,.18)">
+<span style="font-size: 14px; font-weight: 600">Atlas propone dos hitos más. ¿Se quedan?</span>
+<sc-for list="{{props}}" as="p" hint-placeholder-count="2"><label style="display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.45; cursor: pointer"><input type="checkbox" checked="{{ true }}" style="width: 18px; height: 18px; margin: 2px 0 0; accent-color: #12131A"><span><strong style="font-weight: 600">{{p.title}}</strong> · {{p.date}}<br><span style="color: #5C606C">{{p.why}}</span></span></label></sc-for>
+<div style="display: flex; gap: 8px"><button type="button" style="height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 13.5px; font-weight: 600; cursor: pointer">Añadir los marcados</button><button type="button" style="height: 38px; padding: 0 12px; border: 0; background: transparent; font-size: 13.5px; color: #4A4D57; cursor: pointer">Ninguno</button></div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 6px; border-top: 1px solid rgba(18,19,26,.07)">
+<span style="flex: 1 1 240px; font-size: 13px; color: #5C606C">Atlas te avisa si un hito vence o si pasan 7 días sin avance.</span>
+<button type="button" style="height: 40px; padding: 0 16px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14px; cursor: pointer">Pausar</button>
+<button type="button" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Marcar como conseguido</button>
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1200}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 'tienda' }; }
+  renderVals() {
+    const M = (title, note, date, s) => ({ title, note, date, mark: s === 'ok' ? '✓' : '', ring: s === 'ok' ? '#0B6B4A' : s === 'now' ? '#1F4FD1' : 'rgba(18,19,26,.25)', fill: s === 'ok' ? '#0B6B4A' : 'transparent' });
+    const G = {
+      tienda: { title: 'Tienda online antes de Navidad', due: 'hasta el 30 de noviembre', pct: '58%', deg: '209deg', meta: '3 de 5 hitos · va bien', metaInk: '#5C606C', why: 'En diciembre se vende el 30 % del año y la web actual no admite pagos.', spent: '12,40 € de 60 €', tasks: '4 tareas en marcha · 7 hechas', miles: [M('Catálogo con fotos', 'Iris · 214 productos', '20 oct', 'ok'), M('Pagos con tarjeta y Bizum', 'Bruno · en Código', '6 nov', 'ok'), M('Textos legales', 'Vera · revisados por Marta', '10 nov', 'ok'), M('Pruebas con 10 clientes', 'Nora · 4 de 10', '20 nov', 'now'), M('Abrir al público', 'Tú decides el día', '30 nov', '')] },
+      comite: { title: 'Comité de octubre', due: 'miércoles 13', pct: '64%', deg: '230deg', meta: 'informe Q3 en marcha', metaInk: '#5C606C', why: 'El comité decide el presupuesto del primer trimestre.', spent: '4,20 € de 30 €', tasks: '1 tarea en marcha', miles: [M('Datos reunidos', 'Nora', 'lun', 'ok'), M('Análisis', 'Tomás', 'lun', 'now'), M('Diapositivas y resumen', 'Iris y Vera', 'mar', '')] },
+      clientes: { title: 'Responder a clientes en menos de 4 h', due: 'cada semana', pct: '82%', deg: '295deg', meta: 'sin avance en 6 días', metaInk: '#8A5A00', why: 'Las reseñas bajan cuando tardamos más de un día.', spent: '6,10 € al mes', tasks: '1 rutina · 3 tareas hechas', miles: [M('Borradores automáticos', 'Vera', 'sep', 'ok'), M('Plantillas aprobadas por ti', 'Vera', 'oct', 'ok'), M('Medir tiempo de respuesta', 'Tomás', 'nov', 'now')] }
+    };
+    const goals = Object.keys(G).map((id) => ({ ...G[id], on: this.state.sel === id, border: this.state.sel === id ? '#12131A' : 'transparent', pick: () => this.setState({ sel: id }) }));
+    return {
+      goals, cur: G[this.state.sel],
+      props: [{ title: 'Probar la web en móvil', date: '24 nov', why: 'El 70 % de tus clientes compra desde el móvil.' }, { title: 'Preparar el correo de lanzamiento', date: '28 nov', why: 'Vera puede tenerlo listo para que lo apruebes.' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

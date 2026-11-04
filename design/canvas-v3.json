@@ -1,0 +1,73 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-04T16:53:28Z"},
+  "title": "Colmena 3 — toda la app reimaginada",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "designSystems": [],
+  "notes": {
+    "fila0": {"x": 0, "y": -300, "text": "Colmena 3 · Cómo se organiza", "kind": "title1", "maxW": 3288},
+    "fila1": {"x": 0, "y": 4480, "text": "1 · Empezar", "kind": "title1", "maxW": 2960},
+    "fila2": {"x": 0, "y": 6940, "text": "2 · Tu día", "kind": "title1", "maxW": 7520},
+    "fila3": {"x": 0, "y": 8740, "text": "3 · Conversaciones", "kind": "title1", "maxW": 9040},
+    "fila4": {"x": 0, "y": 10630, "text": "4 · Trabajo: tareas, rutinas y objetivos", "kind": "title1", "maxW": 7520},
+    "fila5": {"x": 0, "y": 12350, "text": "5 · Código", "kind": "title1", "maxW": 4480},
+    "fila6": {"x": 0, "y": 13830, "text": "6 · Equipo y Biblioteca", "kind": "title1", "maxW": 9040},
+    "fila7": {"x": 0, "y": 16020, "text": "7 · Ajustes", "kind": "title1", "maxW": 9040}
+  },
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 4300, "title": "00 · Mapa: cómo se organiza Colmena 3", "expand": "fill", "is_interactive": true},
+    "Sistema.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 3330, "title": "01 · Sistema visual y modo experto", "expand": "fill"},
+    "Barra.dc.html": {"x": 3040, "y": 0, "w": 248, "h": 900, "title": "Componente · Barra lateral", "is_interactive": true},
+
+    "Bienvenida.dc.html": {"x": 0, "y": 4740, "w": 1440, "h": 900, "title": "02 · Bienvenida", "expand": "fill", "is_interactive": true},
+    "Estados.dc.html": {"x": 1520, "y": 4740, "w": 1440, "h": 2020, "title": "03 · Estados de la app", "expand": "fill"},
+
+    "Inicio.dc.html": {"x": 0, "y": 7200, "w": 1440, "h": 1360, "title": "04 · Inicio", "expand": "fill", "is_interactive": true},
+    "Buscar.dc.html": {"x": 1520, "y": 7200, "w": 1440, "h": 900, "title": "05 · Buscar o pedir (Ctrl K)", "expand": "fill", "is_interactive": true},
+    "Revisar.dc.html": {"x": 3040, "y": 7200, "w": 1440, "h": 1000, "title": "06 · Revisar antes de enviar", "expand": "fill", "is_interactive": true},
+    "Rapida.dc.html": {"x": 4560, "y": 7200, "w": 1440, "h": 900, "title": "07 · Pregunta rápida y avisos", "expand": "fill", "is_interactive": true},
+    "Actividad.dc.html": {"x": 6080, "y": 7200, "w": 1440, "h": 1230, "title": "08 · Actividad", "expand": "fill", "is_interactive": true},
+
+    "Chats.dc.html": {"x": 0, "y": 9000, "w": 1440, "h": 1010, "title": "09 · Chats", "expand": "fill", "is_interactive": true},
+    "Chat.dc.html": {"x": 1520, "y": 9000, "w": 1440, "h": 1410, "title": "10 · Chat con un bot", "expand": "fill", "is_interactive": true},
+    "ChatExperto.dc.html": {"x": 3040, "y": 9000, "w": 1440, "h": 1150, "title": "11 · El mismo chat en modo experto", "expand": "fill", "is_interactive": true},
+    "Sala.dc.html": {"x": 4560, "y": 9000, "w": 1440, "h": 1450, "title": "12 · Sala con personas y bots", "expand": "fill", "is_interactive": true},
+    "Personas.dc.html": {"x": 6080, "y": 9000, "w": 1440, "h": 960, "title": "13 · Chat con otra persona", "expand": "fill", "is_interactive": true},
+    "Propuestas.dc.html": {"x": 7600, "y": 9000, "w": 1440, "h": 970, "title": "14 · Elegir entre propuestas", "expand": "fill", "is_interactive": true},
+
+    "Tareas.dc.html": {"x": 0, "y": 10890, "w": 1440, "h": 900, "title": "15 · Trabajo › Tareas", "expand": "fill", "is_interactive": true},
+    "Tarea.dc.html": {"x": 1520, "y": 10890, "w": 1440, "h": 1230, "title": "16 · Una tarea en marcha", "expand": "fill", "is_interactive": true},
+    "Ordenador.dc.html": {"x": 3040, "y": 10890, "w": 1440, "h": 980, "title": "17 · Un bot usando el ordenador", "expand": "fill", "is_interactive": true},
+    "Rutinas.dc.html": {"x": 4560, "y": 10890, "w": 1440, "h": 1280, "title": "18 · Trabajo › Rutinas", "expand": "fill", "is_interactive": true},
+    "Objetivos.dc.html": {"x": 6080, "y": 10890, "w": 1440, "h": 1180, "title": "19 · Trabajo › Objetivos", "expand": "fill", "is_interactive": true},
+
+    "Codigo.dc.html": {"x": 0, "y": 12610, "w": 1440, "h": 1040, "title": "20 · Código", "expand": "fill", "is_interactive": true},
+    "CodigoTarea.dc.html": {"x": 1520, "y": 12610, "w": 1440, "h": 900, "title": "21 · Tarea de código", "expand": "fill", "is_interactive": true},
+    "CodigoComparar.dc.html": {"x": 3040, "y": 12610, "w": 1440, "h": 950, "title": "22 · Comparar motores", "expand": "fill", "is_interactive": true},
+
+    "Equipo.dc.html": {"x": 0, "y": 14090, "w": 1440, "h": 1170, "title": "23 · Equipo: bots y personas", "expand": "fill", "is_interactive": true},
+    "Bot.dc.html": {"x": 1520, "y": 14090, "w": 1440, "h": 1750, "title": "24 · Ficha de un bot", "expand": "fill", "is_interactive": true},
+    "NuevoBot.dc.html": {"x": 3040, "y": 14090, "w": 1440, "h": 900, "title": "25 · Nuevo bot", "expand": "fill", "is_interactive": true},
+    "Archivos.dc.html": {"x": 4560, "y": 14090, "w": 1440, "h": 900, "title": "26 · Biblioteca › Archivos", "expand": "fill", "is_interactive": true},
+    "Habilidades.dc.html": {"x": 6080, "y": 14090, "w": 1440, "h": 1130, "title": "27 · Biblioteca › Habilidades", "expand": "fill", "is_interactive": true},
+    "Memoria.dc.html": {"x": 7600, "y": 14090, "w": 1440, "h": 1290, "title": "28 · Biblioteca › Memoria", "expand": "fill", "is_interactive": true},
+
+    "Ajustes.dc.html": {"x": 0, "y": 16280, "w": 1440, "h": 900, "title": "29 · Ajustes: General, Avisos, Ayuda y Avanzado", "expand": "fill", "is_interactive": true},
+    "AjustesIA.dc.html": {"x": 1520, "y": 16280, "w": 1440, "h": 1210, "title": "30 · Ajustes › Cuentas de IA", "expand": "fill", "is_interactive": true},
+    "Permisos.dc.html": {"x": 3040, "y": 16280, "w": 1440, "h": 1710, "title": "31 · Ajustes › Permisos y autonomía", "expand": "fill", "is_interactive": true},
+    "Conexiones.dc.html": {"x": 4560, "y": 16280, "w": 1440, "h": 1320, "title": "32 · Ajustes › Apps y carpetas", "expand": "fill", "is_interactive": true},
+    "Privacidad.dc.html": {"x": 6080, "y": 16280, "w": 1440, "h": 1260, "title": "33 · Ajustes › Privacidad y datos", "expand": "fill", "is_interactive": true},
+    "Uso.dc.html": {"x": 7600, "y": 16280, "w": 1440, "h": 1320, "title": "34 · Ajustes › Uso y límites", "expand": "fill", "is_interactive": true}
+  },
+  "order": [
+    "Main.dc.html", "Sistema.dc.html", "Barra.dc.html",
+    "Bienvenida.dc.html", "Estados.dc.html",
+    "Inicio.dc.html", "Buscar.dc.html", "Revisar.dc.html", "Rapida.dc.html", "Actividad.dc.html",
+    "Chats.dc.html", "Chat.dc.html", "ChatExperto.dc.html", "Sala.dc.html", "Personas.dc.html", "Propuestas.dc.html",
+    "Tareas.dc.html", "Tarea.dc.html", "Ordenador.dc.html", "Rutinas.dc.html", "Objetivos.dc.html",
+    "Codigo.dc.html", "CodigoTarea.dc.html", "CodigoComparar.dc.html",
+    "Equipo.dc.html", "Bot.dc.html", "NuevoBot.dc.html", "Archivos.dc.html", "Habilidades.dc.html", "Memoria.dc.html",
+    "Ajustes.dc.html", "AjustesIA.dc.html", "Permisos.dc.html", "Conexiones.dc.html", "Privacidad.dc.html", "Uso.dc.html"
+  ]
+}

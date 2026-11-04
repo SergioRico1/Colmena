@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Inicio</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+::placeholder{color:#6B6F7A}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="inicio" hint-size="248px,100vh"></dc-import></div></div>
+
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1040px; margin: 0 auto; padding: 40px clamp(20px, 4vw, 52px) 72px; display: flex; flex-direction: column; gap: 44px">
+
+<header style="display: flex; flex-direction: column; gap: 16px; animation: rise .5s ease-out">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<span style="font-size: 15px; color: #5C606C">Miércoles, 4 de noviembre</span>
+<button type="button" style="height: 36px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1px rgba(18,19,26,.14); font-size: 13.5px; font-weight: 500; color: #3D404A; cursor: pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg>Pausar a todo el equipo</button>
+</div>
+<h1 style="margin: 0; max-width: 900px; font: 600 clamp(40px, 4.8vw, 64px)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em; text-wrap: balance">Buenas tardes, Sergio. <span style="color: #8A8D96">Tres cosas te necesitan; lo demás va solo.</span></h1>
+</header>
+
+<section aria-label="Pedir algo" style="display: flex; flex-direction: column; gap: 12px">
+<div style="background: #FFFFFF; border-radius: 24px; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 28px 64px -34px rgba(18,19,26,.35); padding: 8px 8px 0 22px">
+<div style="display: flex; align-items: center; gap: 12px">
+<label style="flex: 1; display: flex"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pide algo a tu equipo</span><input type="text" placeholder="Pide algo a tu equipo…" style="flex: 1; min-width: 0; height: 60px; border: 0; outline: none; background: transparent; font-size: 19px; letter-spacing: -0.01em"></label>
+<button type="button" aria-label="Enviar" style="width: 46px; height: 46px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: #12131A; color: #FFFFFF; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 8px 12px 0; border-top: 1px solid rgba(18,19,26,.06); font-size: 13px; color: #5C606C">
+<button type="button" style="height: 32px; padding: 0 12px 0 10px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #F3F3EF; font-size: 13.5px; color: #3D404A; cursor: pointer"><span aria-hidden="true" style="width: 14px; height: 14px; background: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"></span>Atlas decide quién lo hace<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<button type="button" style="height: 32px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; background: transparent; font-size: 13.5px; color: #3D404A; cursor: pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7-7l8.5-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.4 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8"></path></svg>Adjuntar</button>
+<span style="margin-left: auto">Intro para enviar</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 0 6px">
+<sc-for list="{{ideas}}" as="i" hint-placeholder-count="4"><button type="button" style="height: 34px; padding: 0 14px; background: transparent; border: 0; box-shadow: inset 0 0 0 1px rgba(18,19,26,.12); border-radius: 999px; cursor: pointer; font-size: 13.5px; color: #3D404A">{{i}}</button></sc-for>
+</div>
+</section>
+
+<section aria-labelledby="need-t" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 10px">
+<h2 id="need-t" style="margin: 0; font: 600 22px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Te necesitan</h2>
+<span style="min-width: 24px; height: 24px; padding: 0 7px; display: grid; place-items: center; border-radius: 12px; background: #FFC93C; font-size: 12.5px; font-weight: 600">3</span>
+<span style="margin-left: auto; font-size: 13.5px; color: #5C606C">Lo más antiguo, primero</span>
+</div>
+
+<article style="display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 0 0 1.5px #FFC93C, 0 18px 40px -28px rgba(138,90,0,.45)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<span aria-hidden="true" style="width: 20px; height: 20px; background: #0B8A5F; border-radius: 24%"></span>
+<span style="font-size: 13.5px; color: #5C606C"><strong style="color: #12131A; font-weight: 600">Tomás</strong> · en Informe Q3 · 09:10</span>
+<span style="margin-left: auto; height: 24px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #FFF1C7; color: #8A5A00; font-size: 12px; font-weight: 600">Aprobar un envío</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h3 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em">Enviar el resumen del Q3 al comité</h3>
+<p style="margin: 0; font-size: 14.5px; line-height: 1.5; color: #4A4D57">Para <strong style="font-weight: 600; color: #12131A">comite@tuempresa.com</strong> con <strong style="font-weight: 600; color: #12131A">resumen_q3.pdf</strong>: «Os adjunto el resumen del tercer trimestre. Las devoluciones bajan al −2,4 %…»</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<sc-if value="{{notSent}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{approve}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14.5px; font-weight: 600; cursor: pointer">Aprobar y enviar</button>
+<a href="Revisar.dc.html" style="height: 40px; padding: 0 16px; display: inline-flex; align-items: center; border-radius: 999px; box-shadow: inset 0 0 0 1px rgba(18,19,26,.16); color: #12131A; font-size: 14.5px; font-weight: 500">Revisar y editar</a>
+<button type="button" style="height: 40px; padding: 0 10px; border: 0; background: transparent; font-size: 14.5px; font-weight: 500; color: #4A4D57; cursor: pointer">No enviar</button>
+<span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #5C606C"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"></rect><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"></path></svg>Sale de tu empresa: siempre te pregunta</span>
+</sc-if>
+<sc-if value="{{sent}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="flex: 1; display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 18px; border-radius: 14px; background: #12131A; color: #FFFFFF; font-size: 14.5px"><span style="flex: 1">Se envía en 9 s</span><button type="button" onClick="{{undo}}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; color: #12131A; font-size: 14px; font-weight: 600; cursor: pointer">Deshacer</button></div>
+</sc-if>
+</div>
+</article>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 14px">
+<article style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 0 0 1.5px #FFC93C">
+<div style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 20px; height: 20px; background: #12131A; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)"></span><span style="font-size: 13.5px; color: #5C606C"><strong style="color: #12131A; font-weight: 600">Atlas</strong> · en #campaña-primavera</span><span style="margin-left: auto; height: 24px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #FFF1C7; color: #8A5A00; font-size: 12px; font-weight: 600">Decidir</span></div>
+<h3 style="margin: 0; font-size: 16.5px; font-weight: 600; line-height: 1.35">Tres ideas para la portada de primavera. Atlas recomienda la B.</h3>
+<a href="Propuestas.dc.html" style="align-self: flex-start; height: 40px; padding: 0 18px; display: inline-flex; align-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14.5px; font-weight: 600">Ver y elegir</a>
+</article>
+<article style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; background: #FFFFFF; border-radius: 20px; box-shadow: 0 0 0 1.5px #FFC93C">
+<div style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 20px; height: 20px; background: #2F6BFF; border-radius: 50%"></span><span style="font-size: 13.5px; color: #5C606C"><strong style="color: #12131A; font-weight: 600">Nora</strong> · en Estudio de mercado</span><span style="margin-left: auto; height: 24px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 999px; background: #FFF1C7; color: #8A5A00; font-size: 12px; font-weight: 600">Responder</span></div>
+<h3 style="margin: 0; font-size: 16.5px; font-weight: 600; line-height: 1.35">¿Busco también estudios en inglés? Hay pocos en español sobre textil.</h3>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><button type="button" style="height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14.5px; font-weight: 600; cursor: pointer">Sí, también en inglés</button><button type="button" style="height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: inset 0 0 0 1px rgba(18,19,26,.16); font-size: 14.5px; font-weight: 500; cursor: pointer">Solo en español</button></div>
+</article>
+</div>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 40px 28px; align-items: start">
+<section aria-labelledby="run-t" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px"><h2 id="run-t" style="margin: 0; font: 600 22px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">En marcha</h2><a href="Tareas.dc.html" style="font-size: 14px; font-weight: 500">Todo el trabajo</a></div>
+<div style="display: flex; flex-direction: column; border-radius: 20px; background: #FFFFFF">
+<sc-for list="{{running}}" as="t" hint-placeholder-count="3">
+<a href="Tarea.dc.html" style="display: flex; gap: 14px; padding: 16px 18px; border-top: {{t.line}}; color: #12131A">
+<span aria-hidden="true" style="flex: none; width: 24px; height: 24px; margin: -2px -4px 0; display: grid; place-items: center; border-radius: 50%; box-shadow: {{t.halo}}"><span style="width: 14px; height: 14px; background: {{t.color}}; clip-path: {{t.clip}}; border-radius: {{t.radius}}; animation: {{t.anim}}"></span></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<span style="display: flex; align-items: baseline; gap: 10px"><span style="flex: 1; font-size: 15px; font-weight: 600">{{t.title}}</span><span style="font-size: 12.5px; color: #5C606C">{{t.due}}</span></span>
+<span style="font-size: 13.5px; color: {{t.nowInk}}">{{t.now}}</span>
+<span style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="position: relative; flex: 1; height: 4px; border-radius: 2px; background: #ECECE7; overflow: hidden"><span style="position: absolute; inset: 0 auto 0 0; width: {{t.pct}}; border-radius: 2px; background: #12131A"></span></span><span style="width: 34px; text-align: right; font-size: 12.5px; color: #5C606C; font-variant-numeric: tabular-nums">{{t.pct}}</span></span>
+</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="today-t" style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px"><h2 id="today-t" style="margin: 0; font: 600 22px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Hoy</h2><a href="Actividad.dc.html" style="font-size: 14px; font-weight: 500">Toda la actividad</a></div>
+<ol style="margin: 0; padding: 8px 0; list-style: none; display: flex; flex-direction: column; border-radius: 20px; background: #FFFFFF">
+<sc-for list="{{today}}" as="d" hint-placeholder-count="7">
+<sc-if value="{{d.isNow}}" hint-placeholder-val="{{ false }}"><li aria-label="Ahora, 16:45" style="display: flex; align-items: center; gap: 10px; padding: 6px 18px"><span style="height: 22px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums">Ahora · 16:45</span><span style="flex: 1; height: 1px; background: rgba(18,19,26,.14)"></span></li></sc-if>
+<sc-if value="{{d.isItem}}" hint-placeholder-val="{{ true }}"><li style="display: flex; align-items: baseline; gap: 12px; padding: 9px 18px; font-size: 14px; line-height: 1.45"><span style="flex: none; width: 66px; white-space: nowrap; font-variant-numeric: tabular-nums; color: #5C606C">{{d.time}}</span><span aria-hidden="true" style="flex: none; width: 14px; color: {{d.markInk}}; font-weight: 700">{{d.mark}}</span><span style="color: {{d.ink}}">{{d.text}}</span></li></sc-if>
+</sc-for>
+</ol>
+</section>
+</div>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sent: false }; }
+  renderVals() {
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const run = (o, i) => ({ line: i ? '1px solid rgba(18,19,26,.06)' : '0', halo: 'none', anim: 'breathe 2.4s ease-in-out infinite', nowInk: '#4A4D57', ...o });
+    const done = (time, text) => ({ isItem: true, isNow: false, time, text, mark: '✓', markInk: '#0B6B4A', ink: '#3D404A' });
+    const later = (time, text) => ({ isItem: true, isNow: false, time, text, mark: '○', markInk: '#8A8D96', ink: '#12131A' });
+    return {
+      sent: this.state.sent, notSent: !this.state.sent,
+      approve: () => this.setState({ sent: true }), undo: () => this.setState({ sent: false }),
+      ideas: ['Prepárame la reunión de mañana', 'Resume mis correos de hoy', 'Busca vuelos a Lisboa', 'Compara las ventas con octubre'],
+      running: [
+        { color: '#0B8A5F', clip: 'none', radius: '24%', title: 'Informe Q3', due: 'martes 18:00', now: 'Tomás analiza las devoluciones de septiembre', pct: '64%' },
+        { color: '#FF5CA8', clip: DIA, radius: '0', title: 'Campaña de primavera', due: 'viernes', now: 'Espera a que elijas portada', pct: '30%', halo: 'inset 0 0 0 2px #FFC93C', anim: 'none', nowInk: '#8A5A00' },
+        { color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%', title: 'Resumen de la semana', due: 'hoy 17:00', now: 'Vera lo está terminando', pct: '85%' }
+      ].map(run),
+      today: [
+        done('08:02', 'Bruno registró 12 facturas en la hoja de gastos'),
+        done('08:40', 'Nora encontró 4 estudios sobre el mercado textil'),
+        done('09:00', 'Vera dejó 6 respuestas de correo en borradores'),
+        { isNow: true, isItem: false },
+        later('17:00', 'Vera te prepara el resumen del día'),
+        later('18:30', 'Bruno revisa los pagos que vencen esta semana'),
+        later('jue 10:00', 'Comité de dirección: Atlas lo deja preparado')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

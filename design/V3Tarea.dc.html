@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Tarea · Informe Q3</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+@keyframes growY{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F5F2; color: #12131A">
+<div style="flex: 0 0 248px; position: relative"><div style="position: sticky; top: 0; height: 100vh"><dc-import name="V3Barra" active="trabajo" hint-size="248px,100vh"></dc-import></div></div>
+<div style="flex: 999 1 560px; min-width: 0">
+<main style="max-width: 1160px; margin: 0 auto; padding: 36px clamp(20px, 4vw, 48px) 64px; display: flex; flex-direction: column; gap: 26px">
+
+<nav aria-label="Miga" style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #5C606C"><a href="Tareas.dc.html" style="color: #5C606C">Trabajo</a><span aria-hidden="true">›</span><a href="Tareas.dc.html" style="color: #5C606C">Tareas</a><span aria-hidden="true">›</span><span style="color: #12131A; font-weight: 500">Informe Q3</span></nav>
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 10px"><span style="height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; background: #EEF0F4; font-size: 13px; font-weight: 600; color: #1F4FD1"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #1F4FD1"></span>En marcha · va según lo previsto</span><span style="font-size: 13.5px; color: #5C606C">Objetivo: <a href="Objetivos.dc.html">Comité de octubre</a></span></div>
+<h1 style="margin: 0; font: 600 44px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.04em">Informe Q3</h1>
+<p style="margin: 0; font-size: 16px; color: #4A4D57">Lo pidió Marta para el comité del miércoles · entrega el martes a las 18:00 · en <a href="Sala.dc.html">#informe-q3</a></p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" onClick="{{togglePause}}" style="height: 42px; padding: 0 16px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 14.5px; font-weight: 500; cursor: pointer">{{pauseLabel}}</button>
+<a href="Sala.dc.html" style="height: 42px; padding: 0 18px; display: inline-flex; align-items: center; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 14.5px; font-weight: 600">Hablar con el equipo</a>
+</div>
+</header>
+
+<section aria-label="Plan" style="display: flex; flex-direction: column; gap: 16px; padding: 22px 24px; border-radius: 24px; background: #FFFFFF">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px"><h2 style="margin: 0; font-size: 15px; font-weight: 600">El plan de Atlas</h2><span style="font: 600 30px/1 'Bricolage Grotesque', sans-serif">64 %</span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 10px">
+<sc-for list="{{plan}}" as="p" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span aria-hidden="true" style="height: 6px; border-radius: 3px; background: {{p.bar}}"></span>
+<div style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="flex: none; width: 18px; height: 18px; display: grid; place-items: center; background: {{p.color}}; clip-path: {{p.clip}}; border-radius: {{p.radius}}; color: #FFFFFF; font-size: 8px; font-weight: 600; animation: {{p.anim}}">{{p.ini}}</span><span style="font-size: 14px; font-weight: 600">{{p.part}}</span></div>
+<span style="font-size: 13px; color: {{p.ink}}">{{p.state}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="now-t" style="display: flex; flex-direction: column; gap: 16px; padding: 22px 24px; border-radius: 24px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.05), 0 24px 50px -34px rgba(18,19,26,.4)">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="width: 26px; height: 26px; background: #0B8A5F; border-radius: 24%; animation: breathe 2.4s ease-in-out infinite"></span><div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><h2 id="now-t" style="margin: 0; font-size: 16px; font-weight: 600">Ahora mismo, Tomás está analizando las devoluciones</h2><span style="font-size: 13px; color: #5C606C">lleva 12 min · le quedan unos 20</span></div><a href="Chat.dc.html" style="font-size: 14px; font-weight: 500">Hablar con Tomás</a></div>
+<span aria-hidden="true" style="position: relative; height: 2px; border-radius: 1px; background: #EEEEEA; overflow: hidden"><span style="position: absolute; top: 0; bottom: 0; width: 35%; background: #0B8A5F; animation: sweep 1.8s ease-in-out infinite"></span></span>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{log}}" as="l" hint-placeholder-count="4"><li style="display: flex; gap: 12px; font-size: 14px; line-height: 1.45"><span style="flex: none; width: 42px; color: #5C606C; font-variant-numeric: tabular-nums">{{l.time}}</span><span style="color: {{l.ink}}">{{l.text}}</span></li></sc-for>
+</ol>
+<figure style="margin: 0; display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 18px; background: #F6F6F3">
+<figcaption style="font-size: 13.5px; font-weight: 600">Tasa de devoluciones, abril – septiembre</figcaption>
+<div role="img" aria-label="La tasa de devoluciones baja de 3,4 % en abril a 2,4 % en septiembre" style="display: flex; align-items: flex-end; gap: 14px; height: 150px">
+<sc-for list="{{bars}}" as="b" hint-placeholder-count="6"><div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end"><span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums">{{b.v}}</span><span style="width: 100%; max-width: 46px; height: {{b.h}}; border-radius: 8px 8px 3px 3px; background: {{b.c}}; transform-origin: bottom; animation: growY .7s ease-out"></span><span style="font-size: 12px; color: #5C606C">{{b.m}}</span></div></sc-for>
+</div>
+<span style="font-size: 13.5px; line-height: 1.5; color: #4A4D57">Septiembre es el mejor mes del año. Tomás está comprobando si es por el cambio de proveedor de envíos de agosto.</span>
+</figure>
+</section>
+
+<section aria-labelledby="his-t" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="his-t" style="margin: 0; font: 600 20px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">Historia</h2>
+<div style="display: flex; flex-direction: column; border-radius: 20px; background: #FFFFFF; padding: 6px 0">
+<sc-for list="{{history}}" as="h" hint-placeholder-count="5"><div style="display: flex; gap: 14px; padding: 10px 20px; font-size: 14px; line-height: 1.45"><span style="flex: none; width: 92px; color: #5C606C">{{h.when}}</span><span>{{h.text}}</span></div></sc-for>
+</div>
+</section>
+</div>
+
+<aside style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF">
+<h2 style="margin: 0 0 6px; font-size: 14px; font-weight: 600">Mientras tanto</h2>
+<sc-for list="{{others}}" as="o" hint-placeholder-count="3"><div style="display: flex; gap: 10px; padding: 6px 0; font-size: 14px; line-height: 1.4"><span aria-hidden="true" style="flex: none; width: 16px; height: 16px; margin-top: 2px; background: {{o.color}}; clip-path: {{o.clip}}; border-radius: {{o.radius}}"></span><span><strong style="font-weight: 600">{{o.name}}</strong> <span style="color: #4A4D57">{{o.text}}</span></span></div></sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; justify-content: space-between; gap: 10px"><h2 style="margin: 0; font-size: 14px; font-weight: 600">Gasto de esta tarea</h2><span style="font-size: 14px; font-weight: 600">4,20 € <span style="font-weight: 400; color: #5C606C">de 30 €</span></span></div>
+<span aria-hidden="true" style="position: relative; height: 6px; border-radius: 3px; background: #EEEEEA; overflow: hidden"><span style="position: absolute; inset: 0 auto 0 0; width: 14%; background: #12131A"></span></span>
+<span style="font-size: 12.5px; color: #5C606C">Si llega a 30 €, se pausa y te pregunta.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 20px; background: #FFFFFF">
+<div style="display: flex; justify-content: space-between; margin-bottom: 6px"><h2 style="margin: 0; font-size: 14px; font-weight: 600">Lo que ya hay</h2><a href="Archivos.dc.html" style="font-size: 13px">Ver en Biblioteca</a></div>
+<sc-for list="{{files}}" as="f" hint-placeholder-count="3"><a href="Archivos.dc.html" style="display: flex; align-items: center; gap: 10px; min-height: 48px; color: #12131A"><span aria-hidden="true" style="width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: {{f.bg}}; color: {{f.ink}}; font-size: 9px; font-weight: 700">{{f.ext}}</span><span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 14px; font-weight: 500">{{f.name}}</span><span style="font-size: 12.5px; color: #5C606C">{{f.meta}}</span></span></a></sc-for>
+</div>
+<div style="display: flex; gap: 10px; padding: 14px 16px; border-radius: 18px; background: #F1F1EC; font-size: 13.5px; line-height: 1.45"><span aria-hidden="true" style="color: #0B6B4A; font-weight: 700">↻</span><span>El paso «Reunir datos» se cortó al cerrar Colmena el lunes. <strong style="font-weight: 600">Se reanudó solo</strong> en el punto donde quedó; nada se repitió.</span></div>
+</aside>
+</div>
+
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1450}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { paused: false }; }
+  renderVals() {
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    const p = this.state.paused;
+    return {
+      pauseLabel: p ? 'Reanudar' : 'Pausar la tarea',
+      togglePause: () => this.setState({ paused: !p }),
+      plan: [
+        { part: 'Reunir datos', state: 'Nora · hecho', bar: '#12131A', color: '#2F6BFF', clip: 'none', radius: '50%', ini: '', ink: '#0B6B4A', anim: 'none' },
+        { part: 'Analizar', state: 'Tomás · ahora', bar: 'linear-gradient(90deg, #12131A 60%, #E6E6E0 60%)', color: '#0B8A5F', clip: 'none', radius: '24%', ini: '', ink: '#1F4FD1', anim: p ? 'none' : 'breathe 2.4s ease-in-out infinite' },
+        { part: 'Diapositivas', state: 'Iris · después', bar: '#E6E6E0', color: '#FF5CA8', clip: DIA, radius: '0', ini: '', ink: '#5C606C', anim: 'none' },
+        { part: 'Resumen', state: 'Vera · después', bar: '#E6E6E0', color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%', ini: '', ink: '#5C606C', anim: 'none' },
+        { part: 'Tu revisión', state: 'Tú · martes por la tarde', bar: '#E6E6E0', color: '#12131A', clip: 'none', radius: '50%', ini: 'TÚ', ink: '#5C606C', anim: 'none' }
+      ],
+      log: [
+        { time: '16:30', text: 'Ha juntado las devoluciones de Luis con las de agosto', ink: '#3D404A' },
+        { time: '16:34', text: 'Ha apartado 12 filas duplicadas', ink: '#3D404A' },
+        { time: '16:39', text: 'Tasa de septiembre: −2,4 %', ink: '#3D404A' },
+        { time: '16:42', text: p ? 'En pausa. Seguirá donde lo dejó.' : 'Calculando la tasa por tienda…', ink: '#12131A' }
+      ],
+      bars: [
+        { m: 'abr', v: '3,4', h: '110px', c: '#C9CCD6' }, { m: 'may', v: '3,1', h: '100px', c: '#C9CCD6' }, { m: 'jun', v: '3,0', h: '97px', c: '#C9CCD6' },
+        { m: 'jul', v: '2,9', h: '93px', c: '#C9CCD6' }, { m: 'ago', v: '2,7', h: '87px', c: '#C9CCD6' }, { m: 'sep', v: '2,4', h: '77px', c: '#0B8A5F' }
+      ],
+      others: [
+        { name: 'Vera', text: 'prepara la estructura del resumen', color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%' },
+        { name: 'Iris', text: 'espera los datos de Tomás · unos 20 min', color: '#FF5CA8', clip: DIA, radius: '0' },
+        { name: 'Atlas', text: 'vigila el plazo del martes', color: '#12131A', clip: HEX, radius: '0' }
+      ],
+      files: [
+        { ext: 'XLS', name: 'Devoluciones, limpia', meta: 'Hoja · Tomás · hace 10 min', bg: '#E3F4EC', ink: '#0B6B4A' },
+        { ext: 'PDF', name: 'Fuentes del mercado', meta: '4 estudios · Nora · ayer', bg: '#FBE9EA', ink: '#B4232A' },
+        { ext: 'PPT', name: 'Estructura de diapositivas', meta: '12 diapositivas · Iris · ayer', bg: '#FFE9DC', ink: '#C2410C' }
+      ],
+      history: [
+        { when: 'Hoy 09:21', text: 'Luis pasó las devoluciones de septiembre a Tomás.' },
+        { when: 'Hoy 09:06', text: 'Atlas adelantó la entrega al martes porque el comité pasa al miércoles.' },
+        { when: 'Ayer 17:40', text: 'Nora terminó de reunir los datos y las fuentes.' },
+        { when: 'Lunes 18:02', text: 'Colmena se cerró a mitad del paso de Nora; se reanudó al abrir.' },
+        { when: 'Lunes', text: 'Marta pidió el informe en #informe-q3.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

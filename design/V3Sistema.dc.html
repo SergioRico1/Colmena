@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Colmena 3 · Sistema visual</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F5F5F2;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+a{color:#1F4FD1;text-decoration:none}a:hover{color:#12131A}
+:focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
+::placeholder{color:#6B6F7A}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+@keyframes halo{0%{box-shadow:0 0 0 0 rgba(255,201,60,.6)}100%{box-shadow:0 0 0 12px rgba(255,201,60,0)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F5F5F2; color: #12131A">
+<main style="max-width: 1240px; margin: 0 auto; padding: 72px clamp(20px, 4vw, 56px) 110px; display: flex; flex-direction: column; gap: 72px">
+
+<header style="display: flex; flex-direction: column; gap: 18px">
+<span style="font-size: 15px; font-weight: 500; color: #5C606C">Sistema visual · Colmena 3</span>
+<h1 style="margin: 0; font: 600 clamp(40px, 5.6vw, 72px)/0.98 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">El ADN de siempre,<br><span style="color: #8A8D96">con reglas más claras.</span></h1>
+<p style="margin: 0; max-width: 700px; font-size: 18px; line-height: 1.5; color: #4A4D57">Mantenemos papel, tinta, miel y bots con forma. Añadimos una barra lateral, una anatomía de página que se repite y un modo experto que revela detalle sin cambiar la estructura.</p>
+</header>
+
+<section aria-labelledby="col-t" style="display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 id="col-t" style="margin: 0; font: 600 30px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Color</h2><p style="margin: 0; font-size: 15px; color: #4A4D57">Casi todo es papel y tinta. El color aparece solo para decir algo.</p></div>
+<div style="display: flex; flex-wrap: wrap; gap: 26px 14px">
+<sc-for list="{{colorGroups}}" as="g" hint-placeholder-count="3">
+<div style="flex: {{g.flex}}; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+<h3 style="margin: 0; font-size: 13px; font-weight: 600; color: #5C606C">{{g.title}}</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 12px">
+<sc-for list="{{g.items}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; background: #FFFFFF; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 2px rgba(18,19,26,.05)">
+<div style="height: 76px; background: {{c.hex}}; border-bottom: 1px solid rgba(18,19,26,.06)"></div>
+<div style="display: flex; flex-direction: column; gap: 3px; padding: 12px 14px 14px"><span style="font-size: 14px; font-weight: 600">{{c.name}}</span><span style="font: 500 12px/1.2 'Geist Mono', monospace; color: #5C606C">{{c.hex}}</span><span style="font-size: 12.5px; line-height: 1.4; color: #4A4D57">{{c.use}}</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="typ-t" style="display: flex; flex-direction: column; gap: 22px">
+<h2 id="typ-t" style="margin: 0; font: 600 30px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Letra</h2>
+<div style="display: flex; flex-direction: column; background: #FFFFFF; border-radius: 26px; overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; padding: 22px 28px; border-bottom: 1px solid rgba(18,19,26,.06)"><span style="width: 150px; font-size: 13px; color: #5C606C">Portada · 64–84</span><span style="font: 600 64px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.045em">Buenos días.</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; padding: 20px 28px; border-bottom: 1px solid rgba(18,19,26,.06)"><span style="width: 150px; font-size: 13px; color: #5C606C">Título de página · 40</span><span style="font: 600 40px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.035em">Trabajo</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; padding: 20px 28px; border-bottom: 1px solid rgba(18,19,26,.06)"><span style="width: 150px; font-size: 13px; color: #5C606C">Sección · 22</span><span style="font: 600 22px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em">En marcha</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; padding: 20px 28px; border-bottom: 1px solid rgba(18,19,26,.06)"><span style="width: 150px; font-size: 13px; color: #5C606C">Texto · Geist 15</span><span style="font-size: 15px; line-height: 1.5; max-width: 640px">Tomás está analizando las devoluciones de septiembre. Te avisa si algo no cuadra.</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; padding: 20px 28px"><span style="width: 150px; font-size: 13px; color: #5C606C">Código · Geist Mono 13</span><span style="font: 400 13px/1.5 'Geist Mono', monospace; color: #3D404A">read_file("informe_q3.docx") · 1,2 s · 4.120 tokens</span></div>
+</div>
+</section>
+
+<section aria-labelledby="bots-t" style="display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 id="bots-t" style="margin: 0; font: 600 30px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Presencias</h2><p style="margin: 0; font-size: 15px; color: #4A4D57">Cada bot es una forma y un color, sin letras. El nombre siempre va al lado, nunca solo el color.</p></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(168px, 100%), 1fr)); gap: 12px">
+<sc-for list="{{bots}}" as="b" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 14px; padding: 16px; background: #FFFFFF; border-radius: 20px">
+<span aria-hidden="true" style="flex: none; width: 40px; height: 40px; background: {{b.color}}; clip-path: {{b.clip}}; border-radius: {{b.radius}}"></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{b.name}}</span><span style="font-size: 13px; color: #5C606C">{{b.role}}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #FFFFFF; border-radius: 20px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; display: grid; place-items: center"><span style="width: 26px; height: 26px; background: #7B4DFF; border-radius: 50% 12% 50% 12%; animation: breathe 2.4s ease-in-out infinite"></span></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Trabaja</span><span style="font-size: 13px; color: #5C606C">Respira despacio</span></span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #FFFFFF; border-radius: 20px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; display: grid; place-items: center"><span style="width: 26px; height: 26px; background: #2F6BFF; border-radius: 50%; opacity: .45"></span></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Libre</span><span style="font-size: 13px; color: #5C606C">Quieto y atenuado</span></span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #FFFFFF; border-radius: 20px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; box-shadow: inset 0 0 0 2.5px #FFC93C"><span style="width: 22px; height: 22px; background: #FF5CA8; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%)"></span></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Te espera</span><span style="font-size: 13px; color: #5C606C">Anillo de miel, sin moverse</span></span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #FFFFFF; border-radius: 20px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; box-shadow: inset 0 0 0 2.5px #B4232A"><span style="width: 22px; height: 22px; background: #FF7A1A; border-radius: 50% 50% 14% 14%"></span></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Atascado</span><span style="font-size: 13px; color: #5C606C">Anillo rojo y el motivo</span></span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #FFFFFF; border-radius: 20px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; display: grid; place-items: center"><span style="width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #E6E7EC; font-size: 11px; font-weight: 600; color: #12131A">MR</span></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Persona</span><span style="font-size: 13px; color: #5C606C">Círculo con iniciales</span></span></div>
+</div>
+</section>
+
+<section aria-labelledby="comp-t" style="display: flex; flex-direction: column; gap: 22px">
+<h2 id="comp-t" style="margin: 0; font: 600 30px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Piezas</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 14px">
+
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 24px; background: #FFFFFF; border-radius: 24px">
+<h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #5C606C">Botones · uno principal por pantalla</h3>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<button type="button" style="height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #12131A; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Aprobar y enviar</button>
+<button type="button" style="height: 44px; padding: 0 18px; border: 1px solid rgba(18,19,26,.16); border-radius: 999px; background: #FFFFFF; font-size: 15px; font-weight: 500; cursor: pointer">Revisar</button>
+<button type="button" style="height: 44px; padding: 0 12px; border: 0; background: transparent; font-size: 15px; font-weight: 500; color: #4A4D57; cursor: pointer">Ahora no</button>
+<button type="button" style="height: 44px; padding: 0 18px; border: 1px solid rgba(180,35,42,.35); border-radius: 999px; background: #FFFFFF; color: #B4232A; font-size: 15px; font-weight: 500; cursor: pointer">Borrar</button>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 24px; background: #FFFFFF; border-radius: 24px">
+<h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #5C606C">Estados en palabras</h3>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<span style="height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; background: #FFC93C; font-size: 13px; font-weight: 600">Te necesita</span>
+<span style="height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; background: #EEF0F4; font-size: 13px; font-weight: 500"><span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: #1F4FD1"></span>En marcha</span>
+<span style="height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; background: #E3F4EC; font-size: 13px; font-weight: 500; color: #0B6B4A"><span aria-hidden="true">✓</span>Hecho</span>
+<span style="height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; background: #F1F1EC; font-size: 13px; font-weight: 500; color: #4A4D57">En pausa</span>
+<span style="height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; background: #FBE9EA; font-size: 13px; font-weight: 500; color: #B4232A">Atascada</span>
+<span style="height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; background: #F1F1EC; font-size: 13px; font-weight: 500; color: #4A4D57">Programada · lun 9:00</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 24px; background: #FFFFFF; border-radius: 24px">
+<h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #5C606C">Campos, interruptores y pestañas</h3>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: #4A4D57">Nombre de la rutina<input type="text" value="Plan de la semana" style="height: 44px; padding: 0 14px; border: 1px solid rgba(18,19,26,.14); border-radius: 12px; background: #FFFFFF; font-size: 15px; color: #12131A"></label>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<div role="tablist" aria-label="Ejemplo de pestañas" style="display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; background: #F1F1EC">
+<button type="button" role="tab" aria-selected="true" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.1); font-size: 14px; font-weight: 600; cursor: pointer">Tareas</button>
+<button type="button" role="tab" aria-selected="false" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; font-size: 14px; font-weight: 500; color: #4A4D57; cursor: pointer">Rutinas</button>
+<button type="button" role="tab" aria-selected="false" style="height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; font-size: 14px; font-weight: 500; color: #4A4D57; cursor: pointer">Objetivos</button>
+</div>
+<span style="display: inline-flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500"><span id="sw-demo">Modo experto</span><button type="button" role="switch" aria-checked="true" aria-labelledby="sw-demo" style="flex: none; position: relative; width: 40px; height: 24px; padding: 0; border: 0; border-radius: 12px; background: #12131A; cursor: pointer"><span aria-hidden="true" style="position: absolute; top: 3px; left: 19px; width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button><button type="button" role="switch" aria-checked="false" aria-label="Ejemplo apagado" style="flex: none; position: relative; width: 40px; height: 24px; padding: 0; border: 0; border-radius: 12px; background: #8A8D96; cursor: pointer"><span aria-hidden="true" style="position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 1px 2px rgba(18,19,26,.3)"></span></button></span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 24px; background: #FFFFFF; border-radius: 24px">
+<h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #5C606C">Deshacer y atajos</h3>
+<div role="status" style="display: flex; align-items: center; gap: 14px; padding: 12px 12px 12px 18px; border-radius: 16px; background: #12131A; color: #FFFFFF; font-size: 14.5px"><span style="flex: 1">Se envía en 8 s</span><button type="button" style="height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; color: #12131A; font-size: 14px; font-weight: 600; cursor: pointer">Deshacer</button></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #4A4D57; align-items: center">
+<kbd style="padding: 4px 8px; border-radius: 7px; background: #F1F1EC; border: 1px solid rgba(18,19,26,.1); font: 500 12px/1 'Geist Mono', monospace; color: #12131A">Ctrl K</kbd>buscar o pedir
+<kbd style="padding: 4px 8px; border-radius: 7px; background: #F1F1EC; border: 1px solid rgba(18,19,26,.1); font: 500 12px/1 'Geist Mono', monospace; color: #12131A">Ctrl N</kbd>nuevo
+<kbd style="padding: 4px 8px; border-radius: 7px; background: #F1F1EC; border: 1px solid rgba(18,19,26,.1); font: 500 12px/1 'Geist Mono', monospace; color: #12131A">Ctrl B</kbd>plegar barra
+</div>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="ana-t" style="display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 id="ana-t" style="margin: 0; font: 600 30px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">Anatomía de una pantalla</h2><p style="margin: 0; font-size: 15px; color: #4A4D57">Siempre en el mismo orden. Quien aprende una pantalla, sabe usarlas todas.</p></div>
+<div style="display: flex; gap: 10px; min-height: 340px; padding: 10px; background: #E6E6E0; border-radius: 26px">
+<div style="flex: none; width: 190px; display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 18px; background: #ECECE7; border: 1px dashed rgba(18,19,26,.2)"><span style="font-size: 13px; font-weight: 600">1 · Barra lateral</span><span style="font-size: 12.5px; line-height: 1.45; color: #4A4D57">Nuevo, Buscar, seis lugares, Fijados, Recientes, pulso del equipo y tú.</span></div>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 18px; background: #FFFFFF; border: 1px dashed rgba(18,19,26,.2)"><span style="font-size: 13px; font-weight: 600">2 · Cabecera</span><span style="font-size: 12.5px; line-height: 1.45; color: #4A4D57">Miga («Trabajo › Rutinas»), título, una frase que explica el lugar y la acción principal a la derecha.</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 18px; background: #FFFFFF; border: 1px dashed rgba(18,19,26,.2)"><span style="font-size: 13px; font-weight: 600">3 · Pestañas y filtros</span><span style="font-size: 12.5px; line-height: 1.45; color: #4A4D57">Solo si el lugar tiene partes. Con contador.</span></div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 18px; background: #FFFFFF; border: 1px dashed rgba(18,19,26,.2)"><span style="font-size: 13px; font-weight: 600">4 · Contenido</span><span style="font-size: 12.5px; line-height: 1.45; color: #4A4D57">Lo que te necesita primero; luego lo que está en marcha; lo terminado al final.</span></div>
+</div>
+<div style="flex: none; width: 220px; display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 18px; background: #12131A; color: #FFFFFF"><span style="font-size: 13px; font-weight: 600">5 · Inspector</span><span style="font-size: 12.5px; line-height: 1.45; color: #C9CBD3">Opcional (Ctrl I). Detalles del elemento: miembros, archivos, contexto. En modo experto, herramientas, tokens y registro.</span></div>
+</div>
+</section>
+
+<section aria-labelledby="exp-t" style="display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px"><h2 id="exp-t" style="margin: 0; font: 600 30px/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em">El mismo paso, dos niveles</h2><p style="margin: 0; font-size: 15px; color: #4A4D57">El modo experto añade detalle debajo; nunca cambia el sitio de las cosas.</p></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 24px; background: #FFFFFF; border-radius: 24px">
+<span style="font-size: 13px; font-weight: 600; color: #5C606C">Sencillo</span>
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="flex: none; width: 22px; height: 22px; background: #7B4DFF; border-radius: 50% 12% 50% 12%"></span><span style="font-size: 15px"><strong style="font-weight: 600">Vera</strong> ha leído el informe Q3 y la hoja de Tomás</span></div>
+<button type="button" style="align-self: flex-start; height: 32px; padding: 0 12px; border: 1px solid rgba(18,19,26,.12); border-radius: 999px; background: transparent; font-size: 13px; color: #4A4D57; cursor: pointer">Ver los 2 pasos</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 24px; background: #FFFFFF; border-radius: 24px">
+<span style="font-size: 13px; font-weight: 600; color: #5C606C">Experto</span>
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="flex: none; width: 22px; height: 22px; background: #7B4DFF; border-radius: 50% 12% 50% 12%"></span><span style="font-size: 15px"><strong style="font-weight: 600">Vera</strong> ha leído el informe Q3 y la hoja de Tomás</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 14px; background: #F6F6F3; font: 400 12.5px/1.6 'Geist Mono', monospace; color: #3D404A">
+<span>read_file  informe_q3.docx            1,2 s · 4.120 tk</span>
+<span>sheets.get  devoluciones!A1:F240        0,8 s · 2.904 tk</span>
+<span style="color: #5C606C">gpt-5.1 · razonamiento medio · caché 61 % · 0,02 €</span>
+</div>
+</div>
+</div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)';
+    const DIA = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+    return {
+      colorGroups: [
+        { title: 'Superficies', flex: '1 1 420px', items: [
+          { name: 'Papel', hex: '#F5F5F2', use: 'Fondo de todas las pantallas.' },
+          { name: 'Barra', hex: '#ECECE7', use: 'Barra lateral y zonas de apoyo.' },
+          { name: 'Superficie', hex: '#FFFFFF', use: 'Lo que se toca: tarjetas, campos.' } ] },
+        { title: 'Tinta y texto', flex: '1 1 420px', items: [
+          { name: 'Tinta', hex: '#12131A', use: 'Texto, acción principal y Atlas.' },
+          { name: 'Texto 2', hex: '#4A4D57', use: 'Descripciones y frases de ayuda.' },
+          { name: 'Texto 3', hex: '#5C606C', use: 'Metadatos: horas, quién, dónde.' } ] },
+        { title: 'Señales · cada color dice una sola cosa', flex: '1 1 100%', items: [
+          { name: 'Miel', hex: '#FFC93C', use: 'Solo «te necesita». Nunca decora.' },
+          { name: 'Miel clara', hex: '#FFF1C7', use: 'Etiquetas y grupos que esperan.' },
+          { name: 'Miel suave', hex: '#FFF6DC', use: 'Fondo de tarjetas y filas que esperan.' },
+          { name: 'Miel texto', hex: '#8A5A00', use: 'Texto cuando algo espera.' },
+          { name: 'Hecho', hex: '#0B6B4A', use: 'Terminado, conectado, comprobado.' },
+          { name: 'Enlace y foco', hex: '#1F4FD1', use: 'Enlaces, foco de teclado, en marcha.' },
+          { name: 'Alerta', hex: '#B4232A', use: 'Atascado, error, borrar de verdad.' } ] }
+      ],
+      bots: [
+        { name: 'Atlas', role: 'Coordina y reparte', color: '#12131A', clip: HEX, radius: '0' },
+        { name: 'Tomás', role: 'Datos y hojas', color: '#0B8A5F', clip: 'none', radius: '24%' },
+        { name: 'Iris', role: 'Diseño', color: '#FF5CA8', clip: DIA, radius: '0' },
+        { name: 'Vera', role: 'Escribe y resume', color: '#7B4DFF', clip: 'none', radius: '50% 12% 50% 12%' },
+        { name: 'Nora', role: 'Investiga', color: '#2F6BFF', clip: 'none', radius: '50%' },
+        { name: 'Bruno', role: 'Facturas y código', color: '#FF7A1A', clip: 'none', radius: '50% 50% 14% 14%' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
