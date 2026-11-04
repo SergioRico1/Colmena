@@ -16,6 +16,7 @@ import { useFileDrop } from "../lib/useFileDrop.js";
 import { focusBox, shouldRefocus } from "../lib/composition.js";
 import Timeline, { useStableRows } from "../components/v2/chat/Timeline.jsx";
 import StoppedCard from "../components/v2/chat/StoppedCard.jsx";
+import FollowUps from "../components/v2/chat/FollowUps.jsx";
 import { BranchPicker, EditButton, EditMessage } from "../components/v2/chat/Versions.jsx";
 import { forgetOlder } from "../lib/history.js";
 import { rememberPrompt, saveDraft, stashPrompt, unstash, useDraft, useInputHistory, useStash } from "../lib/composer.js";
@@ -39,7 +40,7 @@ import PositionRail, { railItems } from "../components/room/PositionRail.jsx";
 import FilesPanel, { FileView, fileIcon } from "../components/room/FilesPanel.jsx";
 import { comboLabel, useDock, usePanelShortcuts } from "../lib/useDock.js";
 import { useRevealMessage } from "../lib/reveal.js";
-import { FailedLine, Suggestions } from "../components/room/RoomParts.jsx";
+import { FailedLine } from "../components/room/RoomParts.jsx";
 import MessageQueue, { useConversationQueue } from "../components/room/MessageQueue.jsx";
 import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
 import AsidePanel, { askAsideAbout } from "../components/room/AsidePanel.jsx";
@@ -263,7 +264,11 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const addFiles = useCallback((picked) => { setFileError(null); setFiles((prev) => [...prev, ...picked].slice(0, 5)); }, []);
   const drop = useFileDrop(addFiles, setFileError, { pasteCards: true });
   const attach = async () => { setFileError(null); try { addFiles(await pickFiles()); } catch (err) { setFileError(err.message); } };
-  const suggestions = c && !text.trim() && !turn ? mission?.suggestions || [] : [];
+  // Follow-up suggestions (runtime suggestNext): 2 or 3 under the latest answer, only for that
+  // answer of the version you see; Tab in the empty box takes the first.
+  const lastAnswerId = (() => { for (let i = messages.length - 1; i >= 0; i--) if (messages[i].role === "assistant" && (!messages[i].kind || messages[i].kind === "message") && messages[i].text) return messages[i].id; return null; })();
+  const followUps = c && !turn && !isOlder && mission?.suggestionsFor && mission.suggestionsFor === lastAnswerId ? mission?.suggestions || [] : [];
+  const suggestions = text.trim() ? [] : followUps;
   const onKeyDown = (e) => {
     // Keys of an input method composing a word (accents, kana…) are the IME's, Enter included.
     if (mentions.composing(e)) return;
@@ -382,9 +387,10 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     if (mission?.limited) rows.push({ key: "error", kind: "error", limited: true, error: null, mission, name: bot?.name });
     else if (mission?.stopped && !turn) rows.push({ key: "stopped", kind: "stopped", stopped: mission.stopped, status: mission.status, name: bot?.name });
     else if (mission?.error) rows.push({ key: "error", kind: "error", limited: false, error: mission.error, mission: null, name: bot?.name });
+    if (followUps.length) rows.push({ key: "follow", kind: "follow", list: followUps });
     if (showBrowser) rows.push({ key: "browser", kind: "browser", missionId: mission.id, bot: findBot(bots, now.botId), verb: now.verb, active: mission.status === "running" });
     return rows;
-  }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, mission?.stopped?.at, turn, showBrowser, mission?.status, bot?.name]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, mission?.stopped?.at, turn, showBrowser, mission?.status, bot?.name, followUps.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
   // What comes before the chat (older chats, «Conversación anterior») shows once you reach its
   // start: while pages remain, the oldest message is the first row (the anchor when one loads).
   // Versions of the conversation (server/branches.mjs): another version brings other messages,
@@ -479,6 +485,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "trail": return <WorkTrail step={row.step} bots={bots} running />;
       case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} narration={row.narration} />;
       case "need": return <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />;
+      case "follow": return <FollowUps list={row.list} onPick={(t) => { setText(t); requestAnimationFrame(() => focusBox(inputRef.current)); }} />;
       case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={() => acts.current.control(row.status === "blocked" ? "retry" : "resume")} onDiscard={() => acts.current.control("discard")} />;
       case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "16px 18px", background: "#FBE7DF", borderRadius: "20px", fontSize: "15px", lineHeight: "1.5" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;
       case "browser": return <BrowserLive missionId={row.missionId} bot={row.bot} verb={row.verb} missionActive={row.active} />;
@@ -585,7 +592,6 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               above={<>
                 {pending.filter((a) => a.kind === "secret").map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
                 <BtwNotes btw={btw} botName={bot?.name} nameOf={(id) => findBot(bots, id)?.name} />
-                <Suggestions list={suggestions} onPick={(t) => { setText(t); requestAnimationFrame(() => inputRef.current?.focus()); }} />
               </>}
               below={<>
                 {send.error || fileError || control.error ? <p role="alert" style={{ margin: "8px 18px 0", fontSize: "13px", color: "#B4372A" }}>{send.error || fileError || control.error}</p> : null}

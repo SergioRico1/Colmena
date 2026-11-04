@@ -2,11 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, answer } from "./fixtures/runtime-fixture.mjs";
 
-test("after a bot answers, the cheapest model proposes up to three replies; a new message clears them", async (t) => {
+test("after a bot answers, the cheapest model proposes two or three replies; a new message clears them", async (t) => {
   const seen = [];
   const { store, runtime } = await fixture(t, async ({ model, instructions }) => {
     seen.push(model);
-    if (/^Propón hasta 3 respuestas/.test(instructions)) return answer('{"sugerencias": ["Hazlo para tres personas", "¿Cuánto cuesta en total?", "Añade un plan B si llueve", "una cuarta que sobra"]}');
+    if (/^Propón 2 o 3 respuestas/.test(instructions)) return answer('{"sugerencias": ["Hazlo para tres personas", "¿Cuánto cuesta en total?", "Añade un plan B si llueve", "una cuarta que sobra"]}');
     return answer("Tres planes para el domingo en Valladolid.");
   }, { suggest: true });
   runtime.provider.session = { models: [{ slug: "gpt-6.1-sol" }, { slug: "gpt-5.6-luna" }] };

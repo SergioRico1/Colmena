@@ -248,7 +248,7 @@ export function missionSummary(m, ctx) {
     pendingCount: pending.length, questionCount: pending.filter((a) => a.kind === "question").length,
     // What you wrote while it worked, waiting for its turn (queue.mjs).
     queue: Array.isArray(m.queue) ? m.queue.map((q) => ({ id: q.id, text: q.text, at: q.at ?? null })) : [], queuePaused: m.queue?.length ? m.queuePaused ?? null : null,
-    safety: m.safety || "avisar", queueMode: m.queueMode || "steer", quiet: m.quiet ?? null, suggestions: m.suggestions?.list || [], dueAt: m.dueAt ?? null, automationId: m.automationId ?? null,
+    safety: m.safety || "avisar", queueMode: m.queueMode || "steer", quiet: m.quiet ?? null, suggestions: m.suggestions?.list || [], suggestionsFor: m.suggestions?.forMessageId ?? null, dueAt: m.dueAt ?? null, automationId: m.automationId ?? null,
     createdAt: m.createdAt ?? null, updatedAt: m.updatedAt ?? null, completedAt: m.completedAt ?? null,
     error: m.error ?? null, chosenBotIds: m.chosenBotIds || (m.chosenBotId ? [m.chosenBotId] : []),
     snoozedUntil: m.snoozedUntil ?? null, archived: !!m.archived, forkOf: m.forkOf ?? null, nothingNew: !!m.nothingNew,
