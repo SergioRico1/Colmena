@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { createComposition } from "../../lib/composition.js";
 import { BotAvatar, popoverItem, popoverStyle } from "./common.jsx";
 
 const TRIGGER = /(^|\s)@([\p{L}\d_-]*)$/u;
@@ -9,6 +10,8 @@ const TRIGGER = /(^|\s)@([\p{L}\d_-]*)$/u;
  */
 export function useMentions({ value, setValue, bots, inputRef }) {
   const [query, setQuery] = useState(null);
+  // While an input method composes («é», kana…) the text is not final: no list opens with it.
+  const [ime] = useState(createComposition);
   const [index, setIndex] = useState(0);
   const matches = query == null ? [] : bots.filter((b) => b.name.toLowerCase().startsWith(query.toLowerCase())).slice(0, 6);
   const open = query != null && matches.length > 0;
@@ -52,8 +55,11 @@ export function useMentions({ value, setValue, bots, inputRef }) {
     value,
     onChange: (e) => {
       setValue(e.target.value);
+      if (ime.change(e.nativeEvent)) return;
       detect(e.target.value, e.target.selectionStart ?? e.target.value.length);
     },
+    onCompositionStart: () => ime.start(),
+    onCompositionEnd: (e) => { ime.end(); detect(e.target.value, e.target.selectionStart ?? e.target.value.length); },
     onClick: (e) => detect(e.target.value, e.target.selectionStart ?? 0),
     onBlur: () => setTimeout(() => setQuery(null), 150),
     "aria-autocomplete": "list",
@@ -63,7 +69,7 @@ export function useMentions({ value, setValue, bots, inputRef }) {
 
   /** Call first in onKeyDown; returns true when the key was consumed by the menu. */
   const handleKey = (e) => {
-    if (!open) return false;
+    if (!open || ime.key(e.nativeEvent || e)) return false;
     if (e.key === "ArrowDown") { e.preventDefault(); setIndex((index + 1) % matches.length); return true; }
     if (e.key === "ArrowUp") { e.preventDefault(); setIndex((index - 1 + matches.length) % matches.length); return true; }
     if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); choose(matches[index]); return true; }
@@ -93,5 +99,5 @@ export function useMentions({ value, setValue, bots, inputRef }) {
     </div>
   ) : null;
 
-  return { inputProps, handleKey, menu, start };
+  return { inputProps, handleKey, menu, start, composing: (e) => ime.key(e?.nativeEvent || e) };
 }

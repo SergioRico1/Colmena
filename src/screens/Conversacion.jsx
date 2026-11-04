@@ -13,6 +13,7 @@ import { BotPresence } from "../components/v2/Presence.jsx";
 import { NeedCard } from "../components/v2/NeedCard.jsx";
 import { InteractiveContext } from "../components/room/Interactive.jsx";
 import { useFileDrop } from "../lib/useFileDrop.js";
+import { focusBox, shouldRefocus } from "../lib/composition.js";
 import Timeline, { useStableRows } from "../components/v2/chat/Timeline.jsx";
 import { rememberPrompt, saveDraft, stashPrompt, unstash, useDraft, useInputHistory, useStash } from "../lib/composer.js";
 import Stash from "../components/v2/chat/Stash.jsx";
@@ -186,6 +187,14 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const memberIds = c ? (mission?.botIds || [botId]) : [botId];
   const mentionedIds = (body) => bots.filter((b) => b.id !== botId && new RegExp(`(^|\\s)@${b.name}(?![\\p{L}\\d])`, "u").test(body)).map((b) => b.id);
   const turn = !!c && !!mission && (["running", "planning", "queued"].includes(mission.status) || live.length > 0);
+  // A turn starts: back to the box only if you were still in this chat (assistant-ui
+  // focusOnRunStart), never pulling focus from another panel or window.
+  const chatRoot = useRef(null);
+  const wasTurn = useRef(turn);
+  useEffect(() => {
+    if (turn && !wasTurn.current && shouldRefocus(document.activeElement, chatRoot.current, inputRef.current, document.body) && document.hasFocus()) focusBox(inputRef.current);
+    wasTurn.current = turn;
+  }, [turn]);
   // What you write while it works waits in the queue (server/queue.mjs) or goes to it at once:
   // you choose which («Cuando acabe» · «Pasárselo ya»); Ctrl+Intro does the other one.
   const queue = useConversationQueue({ key: c });
@@ -208,10 +217,13 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const resend = (m) => { unshowSent(`/missions/${c}`, m.id); send.act(() => deliver(m.text)); };
   // «/btw …»: a side question while it works; never a message nor a queued one (BtwNotes.jsx).
   const btw = useBtw(c ? `/missions/${c}/btw` : null);
+  // After sending, the box keeps the focus without moving the page (preventScroll).
+  const refocus = () => requestAnimationFrame(() => focusBox(inputRef.current));
   const submit = (e, { now: sayNow = false } = {}) => {
     e?.preventDefault();
     const body = text.trim();
     if (!body || (send.busy && !c)) return;
+    refocus();
     if (btw.intercept(body)) { setText(""); return; }
     const steer = c && turn && (whileWorking === "steer") !== !!sayNow;
     rememberPrompt(promptKey, body);
@@ -247,13 +259,15 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const attach = async () => { setFileError(null); try { addFiles(await pickFiles()); } catch (err) { setFileError(err.message); } };
   const suggestions = c && !text.trim() && !turn ? mission?.suggestions || [] : [];
   const onKeyDown = (e) => {
+    // Keys of an input method composing a word (accents, kana…) are the IME's, Enter included.
+    if (mentions.composing(e)) return;
     if (mentions.handleKey(e)) return;
     if (!text.trim() && btw.handleKey(e)) return;
     if (historyKey(e)) return;
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "s" || e.key === "S")) { e.preventDefault(); stashNow(); return; }
     if (e.key === "Tab" && !e.shiftKey && !text && suggestions.length) { e.preventDefault(); setText(suggestions[0]); return; }
     if (e.key === "Escape" && turn && !text.trim()) { e.preventDefault(); stopTurn(); return; }
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (e.repeat) return; submit(e, { now: e.ctrlKey || e.metaKey }); }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (e.repeat) return; submit(e, { now: e.ctrlKey || e.metaKey }); }
   };
   const FILES_TAB = { id: "archivos", kind: "archivos" };
   const ASIDE_TAB = { id: "aparte", kind: "aparte" };
@@ -489,7 +503,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       <Shell active="conversaciones" scroll={false}>
         <div style={{ display: "flex", height: "100%", alignItems: "stretch" }}>
           <ConvList current={c} />
-          <section aria-label={`Conversación con ${bot?.name || ""}`} style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
+          <section ref={chatRoot} aria-label={`Conversación con ${bot?.name || ""}`} style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
             {talking && c ? <VoiceCall bot={bot} missionId={c} onClose={() => setTalking(false)} /> : null}
             <header style={{ flex: "none", background: "#F5F5F2" }}>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px", padding: "22px clamp(20px, 4vw, 44px) 18px" }}>
