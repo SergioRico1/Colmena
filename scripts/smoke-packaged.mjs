@@ -42,6 +42,23 @@ if (natives.status !== 0) {
   process.exit(1);
 }
 
+// The desktop shell (desktop/main.cjs) is not started here, but what it loads must be in the
+// package and parse: the start-up splash, its preload, the window's preload and the icons.
+const shell = ["main.cjs", "preload-splash.cjs", "preload-window.cjs", "splash/splash.html", "splash/splash.js", "splash/colmena-icon-128.png", process.platform === "win32" ? "icons/colmena.ico" : "icons/colmena.png"];
+const missing = shell.filter((f) => !existsSync(path.join(app, "desktop", f)));
+if (missing.length) {
+  console.error("The package lacks desktop/" + missing.join(", desktop/"));
+  process.exit(1);
+}
+for (const f of ["main.cjs", "preload-splash.cjs", "preload-window.cjs", "splash/splash.js"]) {
+  const check = spawnSync(exe, ["--check", path.join(app, "desktop", f)], { env, encoding: "utf8", timeout: SLOW_MS });
+  if (check.status !== 0) {
+    console.error("desktop/" + f + " does not parse: " + (check.stderr || check.error));
+    process.exit(1);
+  }
+}
+console.log("desktop shell ok (" + shell.length + " files)");
+
 const server = spawn(exe, [path.join(app, "server", "index.mjs"), "--production"], { cwd: app, env, stdio: ["ignore", "pipe", "pipe", "ipc"] });
 let output = "";
 const finish = (code, message) => {
