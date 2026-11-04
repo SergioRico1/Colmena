@@ -270,18 +270,17 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null }) {
       </div>
     );
   }
-  // Thinking or using a tool (V3Chat «ahora»): the shape breathing, what it does as shimmer
-  // text over a shimmer bar in the bot's colour, and «Parar».
+  // Thinking or using a tool: the shape breathing and one quiet shimmer line — «Pensando…», or
+  // the tool at work — with the narration (if any) under it; «Parar» stays small at the side.
   return (
-    <article role="status" style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .4s ease-out" }}>
+    <article role="status" style={{ display: "flex", flexDirection: "column", gap: "6px", animation: "fade .4s ease-out" }}>
       <AnswerHead bot={bot} state="work" />
-      <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 16px", borderRadius: "16px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)" }}>
-        <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
-          <span style={shimmerText}>{running.length ? <>{headline(running[running.length - 1], bots)}{"…"}</> : narration || "Pensando cómo hacerlo…"}</span>
-          <span aria-hidden="true" style={{ height: "6px", borderRadius: "3px", background: `linear-gradient(90deg, #EEEEEA 0%, ${color}40 50%, #EEEEEA 100%)`, backgroundSize: "200% 100%", animation: "shimmer 1.6s linear infinite" }} />
-          {narration && running.length ? <span style={{ fontSize: "13px", color: "#5C606C" }}>{narration}</span> : null}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "30px" }}>
+        <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span style={shimmerText}>{running.length ? <>{headline(running[running.length - 1], bots)}{"…"}</> : "Pensando…"}</span>
+          {narration ? <span style={{ fontSize: "13px", color: "#5C606C" }}>{narration}</span> : null}
         </span>
-        {onStop ? <button type="button" onClick={onStop} title="Parar (Esc)" style={{ flex: "none", height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "13.5px", fontWeight: 500, cursor: "pointer" }}>{"Parar"}</button> : null}
+        {onStop ? <button type="button" className="chat-stop" onClick={onStop} title="Parar (Esc)" style={{ flex: "none", height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "transparent", color: "#5C606C", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>{"Parar"}</button> : null}
       </div>
     </article>
   );
