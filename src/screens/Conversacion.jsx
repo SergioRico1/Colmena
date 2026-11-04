@@ -37,7 +37,7 @@ import SecretPrompt, { SecretLine } from "../components/room/SecretPrompt.jsx";
 import SourceChips, { CitationContext } from "../components/v2/chat/SourceChips.jsx";
 import { citationMap, collectSources } from "../lib/citations.js";
 import SideDock from "../components/room/SideDock.jsx";
-import PositionRail, { railItems } from "../components/room/PositionRail.jsx";
+import ConversationMap from "../components/v2/chat/ConversationMap.jsx";
 import FilesPanel, { FileView, fileIcon } from "../components/room/FilesPanel.jsx";
 import { comboLabel, useDock, usePanelShortcuts } from "../lib/useDock.js";
 import { useRevealMessage } from "../lib/reveal.js";
@@ -312,7 +312,17 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   }, [c]);
   const scope = useRef(null);
   const scroller = useRef(null);
-  useRevealMessage(query?.m || null, { ready: !!c && !room.loading && !!mission, olderCount: room.olderCount, showOlder: room.showOlder, locate });
+  // The map of the conversation goes to any message of yours, loading earlier pages if needed.
+  const [jumpTo, setJumpTo] = useState(null);
+  useRevealMessage(jumpTo || query?.m || null, { ready: !!c && !room.loading && !!mission, olderCount: room.olderCount, showOlder: room.showOlder, locate });
+  const turnOf = useMemo(() => {
+    const owner = new Map();
+    let turn = null;
+    for (const m of messages) { if (m.role === "user" && !m.replyTo) turn = m.id; if (turn) owner.set(m.id, turn); }
+    return owner;
+  }, [messages]);
+  const ownerOf = useCallback((id) => turnOf.get(id) || null, [turnOf]);
+  const mapJump = useCallback((id) => { if (turnOf.has(id)) railLocate.jump(id); else setJumpTo(id); }, [turnOf, railLocate]);
   const headPhase = useSlowPhase(activity.find((a) => a.botId)?.verb || null);
   const workVersion = steps.reduce((n, s) => n + (s.activity?.length || 0), 0) + artifacts.length + messages.length;
   // A web page a bot just made opens in «Vista previa» beside the chat (OpenClaw's Canvas).
@@ -600,7 +610,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
                 scrollerRef={scroller} contentRef={scope} style={{ WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 40px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 40px)" }} />
               {c ? <SideDock dock={dock} tabs={dockTabs} addable={dockAddable} widthKey="chat" label="Panel de la conversación" /> : null}
             </div>
-            {c ? <PositionRail scroller={scroller} items={railItems(messages, (b) => findBot(bots, b || botId).name)} version={messages.length} locate={railLocate} /> : null}
+            {c ? <ConversationMap missionId={c} version={messages.length + ":" + (messages[messages.length - 1]?.id || "")} scroller={scroller} ownerOf={ownerOf} onJump={mapJump} /> : null}
             {/* An older chat is read-only: you keep talking in the bot's single chat. */}
             {isOlder ? null : (
             <Composer value={text} onChange={setText} onKeyDown={onKeyDown} onSubmit={submit} inputRef={inputRef} inputProps={mentions.inputProps} menu={plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={botId} /> : mentions.menu}

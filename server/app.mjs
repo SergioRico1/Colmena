@@ -1,7 +1,7 @@
 import { DENY_REASON_MAX } from "./denial.mjs";
 import { isYes, isNo } from "./appactions.mjs";
 
-import { CHAT_PAGE, MAX_PAGE, ROOM_PAGE, historyPage, stepsForPage, withoutSaidText } from "./history.mjs";
+import { CHAT_PAGE, MAX_PAGE, ROOM_PAGE, conversationMap, historyPage, stepsForPage, withoutSaidText } from "./history.mjs";
 import { createLiveCoalescer } from "./live-coalescer.mjs";
 import { commandOutput } from "./command-output.mjs";
 import { branchPoints, openBranch, switchTo, visibleMessages } from "./branches.mjs";
@@ -751,6 +751,12 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       approvals: ctx.approvals.filter((a) => a.missionId === m.id),
       checkpoints: runtime.checkpoints ? runtime.checkpoints.views(m.id) : [],
     });
+  });
+  // The map of the whole conversation (the version you see), every page: one entry per
+  // message of yours, with the start of the answer (ConversationMap.jsx).
+  app.get("/api/missions/:id/map", (req, res) => {
+    const m = mustGet("missions", req.params.id, "Misión");
+    res.json({ turns: conversationMap(visibleMessages(m, store.where("messages", "missionId", m.id))) });
   });
   // The page of messages before `antes` (the oldest one the conversation shows), with the
   // steps those messages need. `cursor` asks for the next page up; null at the very start.

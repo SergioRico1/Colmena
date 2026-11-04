@@ -62,3 +62,22 @@ export function stepsForPage(steps = [], page) {
     return !!at && at >= page.from && (page.until === null || at < page.until);
   });
 }
+
+// The map of a whole conversation (after assistant-ui conversation-map): one entry per message
+// of yours, titled by it and previewed by the answer that followed, for every page, loaded or not.
+const plainText = (t, n) => {
+  const s = String(t || "").replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`#>|]+/g, "").replace(/\s+/g, " ").trim();
+  return s.length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, "") + "…" : s;
+};
+const said = (m) => (!m.kind || m.kind === "message") && String(m.text || "").trim();
+
+/** [{ id, at, title, preview }] of `messages` (a conversation's path, oldest first). */
+export function conversationMap(messages = []) {
+  const turns = [];
+  for (const m of messages) {
+    if (m.replyTo || !said(m)) continue;
+    if (m.role === "user") turns.push({ id: m.id, at: m.at ?? null, title: plainText(m.text, 72), preview: null });
+    else if (m.role === "assistant" && turns.length && !turns.at(-1).preview) turns.at(-1).preview = plainText(m.text, 240);
+  }
+  return turns;
+}
