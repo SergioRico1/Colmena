@@ -672,7 +672,7 @@ export default function Chat({ params, query }) {
                     <article key={l.stepId} aria-live="polite" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                       <BotHead bot={author} />
                       {liveStep?.tools?.length ? <ActivityLog activity={liveStep.activity || []} tools={liveStep.tools} bots={bots} onOpenArtifact={openDoc} /> : null}
-                      <LiveMarkdown text={l.text} caret />
+                      <LiveMarkdown text={l.text} caret streamKey={l.stepId} />
                     </article>
                   );
                 })}

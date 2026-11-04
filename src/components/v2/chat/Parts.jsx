@@ -158,7 +158,7 @@ export function WorkNow({ step, live, bot, bots, narration }) {
   if (live?.text) {
     return (
       <div aria-live="polite" style={{ display: "flex", flexDirection: "column", padding: "6px 0" }}>
-        <LiveMarkdown text={live.text} size={16} style={ANSWER} caret />
+        <LiveMarkdown text={live.text} size={16} style={ANSWER} caret streamKey={step?.id || live.stepId} />
       </div>
     );
   }

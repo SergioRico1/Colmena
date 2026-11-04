@@ -604,7 +604,7 @@ function LiveTurnCard({ step, bot }) {
           <span style={TAG}>{"BOT"}</span>
           <span style={{ fontSize: "12px", color: "#555A68" }}>{"escribiendo…"}</span>
         </div>
-        <div aria-live="polite"><LiveMarkdown text={text} size={15} caret /></div>
+        <div aria-live="polite"><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div>
       </MessageRow>
     );
   }
@@ -637,7 +637,7 @@ function LiveTurnCard({ step, bot }) {
           </span>
         ))}
       </div>
-      {text.trim() ? <div aria-live="polite"><LiveMarkdown text={text} size={15} caret /></div> : null}
+      {text.trim() ? <div aria-live="polite"><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div> : null}
     </MessageRow>
   );
 }

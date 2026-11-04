@@ -1,21 +1,25 @@
 import { memo } from "react";
 import Markdown from "./Markdown.jsx";
 import { repairTail, splitStable } from "../../lib/streaming.js";
+import { useSmoothText } from "../../lib/smoothText.js";
 
 export { repairTail, splitStable };
 
 // Text that is still being written (OpenClaw streaming markdown): the finished part (up to
 // the last blank line outside a code block) is parsed once and kept; only the short tail is
 // parsed again on each frame, after closing what is half written (**, `, ``` and links), so
-// nothing flashes as raw Markdown and the cost does not grow with the answer.
+// nothing flashes as raw Markdown and the cost does not grow with the answer. The text itself
+// flows in (src/lib/smoothText.js): each burst is revealed over ~250 ms; `streamKey` (the
+// step) starts another answer from scratch.
 
 const Stable = memo(function Stable({ text, size, mentions, style }) {
   return <Markdown text={text} size={size} mentions={mentions} style={style} />;
 });
 
 const NONE = [];
-export default function LiveMarkdown({ text, size = 16, mentions = NONE, caret = false, style }) {
-  const [stable, tail] = splitStable(text);
+export default function LiveMarkdown({ text, size = 16, mentions = NONE, caret = false, style, streamKey = null, smooth = true }) {
+  const flowing = useSmoothText(text, { running: smooth, streamKey });
+  const [stable, tail] = splitStable(flowing);
   const repaired = repairTail(tail);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: size <= 14 ? "8px" : "12px" }}>

@@ -363,7 +363,7 @@ export default function QuickAsk() {
             </div>
             <div style={{ maxHeight: "300px", overflowY: "auto", padding: "14px 16px", borderRadius: "16px", background: "#F2F2EE", fontSize: "15px", lineHeight: "1.5" }}>
               {!reply && room.mission?.error ? <p role="alert" style={{ margin: "0", fontWeight: "600", color: "#B4372A" }}>{room.mission.error}</p>
-                : streaming ? <LiveMarkdown text={streaming} size={15} caret />
+                : streaming ? <LiveMarkdown text={streaming} size={15} caret streamKey={sent?.id} />
                   : reply ? <Markdown text={reply} size={15} />
                     : <span style={{ color: "#3D404A" }}>{`«${sent.prompt}»`}{sent.files ? ` · con ${sent.files === 1 ? "1 adjunto" : sent.files + " adjuntos"}` : ""}</span>}
               {!sent.conversation && room.mission?.status === "awaiting_plan" ? <p style={{ margin: "8px 0 0", fontWeight: "600" }}>El plan espera tu OK en la sala.</p> : null}
