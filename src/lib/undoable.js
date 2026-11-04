@@ -22,7 +22,7 @@ async function fire(id) {
   pending.delete(id);
   clearTimeout(entry.timer);
   notify();
-  try { await entry.run(); } catch (e) { window.dispatchEvent(new CustomEvent("colmena:undo-failed", { detail: { id, message: e?.message } })); }
+  try { await entry.run(); } catch (e) { if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("colmena:undo-failed", { detail: { id, message: e?.message } })); }
 }
 export function cancel(id) {
   const entry = pending.get(id);
@@ -33,6 +33,24 @@ export function cancel(id) {
   return true;
 }
 export const isPending = (id) => pending.has(id);
+
+/** Holds a wait where it is (the window is hidden, you are reading its notice). */
+export function pause(id) {
+  const e = pending.get(id);
+  if (!e || e.paused) return;
+  clearTimeout(e.timer);
+  e.left = Math.max(0, e.at - Date.now());
+  e.paused = true;
+  notify();
+}
+export function resume(id) {
+  const e = pending.get(id);
+  if (!e || !e.paused) return;
+  e.paused = false;
+  e.at = Date.now() + e.left;
+  e.timer = setTimeout(() => fire(id), e.left);
+  notify();
+}
 
 if (typeof window !== "undefined") window.addEventListener("beforeunload", () => { for (const id of [...pending.keys()]) fire(id); });
 
@@ -47,6 +65,6 @@ export function useUndoable(id) {
     return () => clearInterval(t);
   }, [entry]);
   if (!entry) return { waiting: false, secs: 0, fraction: 0 };
-  const left = Math.max(0, entry.at - Date.now());
+  const left = entry.paused ? entry.left : Math.max(0, entry.at - Date.now());
   return { waiting: true, secs: Math.ceil(left / 1000), fraction: left / UNDO_MS };
 }

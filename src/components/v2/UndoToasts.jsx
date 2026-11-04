@@ -1,32 +1,73 @@
-import { useEffect, useState } from "react";
-import { Undo2, X } from "lucide-react";
-import { dismiss, undoLast, useToasts } from "../../lib/undoToast.js";
+import { useEffect, useRef, useState } from "react";
+import { Check, CircleAlert, Undo2, X } from "lucide-react";
+import { dismiss, setPaused, undoLast, useToasts } from "../../lib/undoToast.js";
 
-// The quiet «Deshacer» notice (src/lib/undoToast.js), the v2 «Todo se puede deshacer» pill
-// (design/V2Principios.dc.html, idea 05): white, one line, the dark «Deshacer» on the right
-// and a thin line that runs out in five seconds. Bottom centre, above everything; at most
-// three stacked. Ctrl+Z outside a text field undoes the newest one.
+// The quiet notices (src/lib/undoToast.js), the v2 «Todo se puede deshacer» pill
+// (design/V2Principios.dc.html, idea 05), stacked like sonner: the newest in front and the
+// older ones peeking behind; the pointer on them spreads the stack and stops every
+// countdown, as a hidden window does. A notice changes in place: waiting with «Deshacer» and
+// a line that runs out, then on its way, then done or failed. Swipe one aside to let it go.
+// Ctrl+Z outside a text field undoes the newest one.
 const INK = "#12131A";
+const STEP = 62; // height of a notice plus the gap, when the stack is spread
+const SWIPE_PX = 90;
 
-function Toast({ toast }) {
-  const [run, setRun] = useState(false);
-  useEffect(() => { const f = requestAnimationFrame(() => setRun(true)); return () => cancelAnimationFrame(f); }, []);
+function Lead({ kind }) {
+  if (kind === "working") return <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", borderRadius: "50%", border: "2px solid rgba(18,19,26,.15)", borderTopColor: INK, animation: "spin .8s linear infinite" }} />;
+  if (kind === "success") return <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#0B8A5F", color: "#FFFFFF", animation: "pop .35s ease-out" }}><Check size={12} strokeWidth={3.2} /></span>;
+  if (kind === "error") return <CircleAlert size={18} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none", color: "#B4372A", animation: "pop .35s ease-out" }} />;
+  return null;
+}
+
+function Toast({ toast, depth, spread, paused }) {
+  const [dx, setDx] = useState(0);
+  const drag = useRef(null);
   const error = toast.kind === "error";
+  const front = depth === 0;
+  // The stack: the newest in front; older ones lifted a little and smaller, or spread out.
+  const y = spread ? -depth * STEP : -depth * 10;
+  const scale = spread ? 1 : 1 - depth * 0.05;
+  const onPointerDown = (e) => {
+    if (e.button !== 0 || e.target.closest("button")) return;
+    drag.current = { x: e.clientX, id: e.pointerId };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const onPointerMove = (e) => { if (drag.current?.id === e.pointerId) setDx(e.clientX - drag.current.x); };
+  const onPointerUp = (e) => {
+    if (drag.current?.id !== e.pointerId) return;
+    drag.current = null;
+    if (Math.abs(dx) > SWIPE_PX) dismiss(toast.id);
+    else setDx(0);
+  };
   return (
-    <div role={error ? "alert" : "status"} style={{ pointerEvents: "auto", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "12px", maxWidth: "min(560px, calc(100vw - 32px))", minHeight: "52px", padding: toast.undo ? "6px 6px 6px 20px" : "6px 8px 6px 20px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "0 12px 32px -12px rgba(18,19,26,.28), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .25s ease-out", color: error ? "#B4372A" : INK }}>
-      <span style={{ flex: 1, minWidth: 0, fontSize: "15px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={toast.text}>{toast.text}</span>
+    <div role={error ? "alert" : "status"} data-toast={toast.kind}
+      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={() => { drag.current = null; setDx(0); }}
+      style={{
+        // Centred by margins, so the entrance animation (which sets transform) never moves it aside.
+        pointerEvents: "auto", position: "absolute", bottom: 0, left: 0, right: 0, margin: "0 auto", width: "fit-content", maxWidth: "min(560px, calc(100vw - 32px))",
+        transform: `translateX(${dx}px) translateY(${y}px) scale(${scale})`, transformOrigin: "bottom center",
+        opacity: Math.max(0, 1 - Math.abs(dx) / 220) * (spread || depth < 3 ? 1 : 0), zIndex: 10 - depth,
+        transition: drag.current ? "none" : "transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s ease",
+        overflow: "hidden", display: "flex", alignItems: "center", gap: "12px", minHeight: "52px",
+        padding: toast.undo ? "6px 6px 6px 20px" : "6px 8px 6px 18px", borderRadius: "999px", background: "#FFFFFF",
+        boxShadow: "0 12px 32px -12px rgba(18,19,26,.28), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .25s ease-out",
+        color: error ? "#B4372A" : INK, touchAction: "pan-y", cursor: "grab",
+      }}>
+      <Lead kind={toast.kind} />
+      <span aria-hidden={!front && !spread ? "true" : undefined} style={{ flex: 1, minWidth: 0, fontSize: "15px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={toast.text}>{toast.text}</span>
       {toast.undo ? (
         <button type="button" onClick={toast.undo} style={{ flex: "none", display: "flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>
           <Undo2 size={15} strokeWidth={2.2} aria-hidden="true" />Deshacer
         </button>
-      ) : (
+      ) : toast.kind !== "working" ? (
         <button type="button" aria-label="Cerrar el aviso" onClick={() => dismiss(toast.id)} style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#6B6F7A" }}>
           <X size={16} strokeWidth={2.2} aria-hidden="true" />
         </button>
-      )}
-      {toast.undo ? (
+      ) : null}
+      {toast.kind === "later" ? (
+        // The line that runs out with the five seconds, stopped while the countdowns are.
         <span aria-hidden="true" style={{ position: "absolute", left: "20px", right: "20px", bottom: 0, height: "2px", borderRadius: "1px", background: "rgba(18,19,26,.08)", overflow: "hidden" }}>
-          <span style={{ display: "block", height: "100%", background: INK, transformOrigin: "left", transform: run ? "scaleX(0)" : "scaleX(1)", transition: `transform ${Math.max(0, toast.at + toast.ms - Date.now())}ms linear` }} />
+          <span key={toast.at} style={{ display: "block", height: "100%", background: INK, transformOrigin: "left", animation: `grow ${toast.ms}ms linear reverse both`, animationPlayState: paused ? "paused" : "running" }} />
         </span>
       ) : null}
     </div>
@@ -35,6 +76,8 @@ function Toast({ toast }) {
 
 export default function UndoToasts() {
   const toasts = useToasts();
+  const [over, setOver] = useState(false);
+  const [hiddenWindow, setHiddenWindow] = useState(() => typeof document !== "undefined" && document.visibilityState === "hidden");
   useEffect(() => {
     const onKey = (e) => {
       if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || e.key.toLowerCase() !== "z") return;
@@ -42,14 +85,24 @@ export default function UndoToasts() {
       if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
       if (undoLast()) e.preventDefault();
     };
+    const onVisible = () => setHiddenWindow(document.visibilityState === "hidden");
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("blur", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => { window.removeEventListener("keydown", onKey); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("blur", onVisible); window.removeEventListener("focus", onVisible); };
   }, []);
+  // Nothing runs out while the window is hidden or you are reading the notices.
+  const paused = hiddenWindow || over;
+  useEffect(() => { setPaused(paused); }, [paused]);
+  useEffect(() => { if (!toasts.length) setOver(false); }, [toasts.length]);
   if (!toasts.length) return null;
+  const spread = over && toasts.length > 1;
+  const height = spread ? 52 + (toasts.length - 1) * STEP : 52 + Math.min(2, toasts.length - 1) * 10;
   return (
-    <div aria-live="polite" style={{ position: "fixed", left: 0, right: 0, bottom: "24px", zIndex: 90, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", padding: "0 16px", pointerEvents: "none" }}>
-      <style>{"@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}"}</style>
-      {toasts.map((t) => <Toast key={t.id} toast={t} />)}
+    <div aria-live="polite" onMouseEnter={() => setOver(true)} onMouseLeave={() => setOver(false)} onFocus={() => setOver(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver(false); }}
+      style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: "24px", zIndex: 90, width: "min(560px, calc(100vw - 32px))", height: height + "px", transition: "height .3s cubic-bezier(.2,.8,.2,1)", pointerEvents: "auto" }}>
+      {toasts.map((t, i) => <Toast key={t.id} toast={t} depth={toasts.length - 1 - i} spread={spread} paused={paused} />)}
     </div>
   );
 }

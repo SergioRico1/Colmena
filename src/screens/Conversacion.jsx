@@ -15,6 +15,7 @@ import { InteractiveContext } from "../components/room/Interactive.jsx";
 import { useFileDrop } from "../lib/useFileDrop.js";
 import { focusBox, shouldRefocus } from "../lib/composition.js";
 import Timeline, { useStableRows } from "../components/v2/chat/Timeline.jsx";
+import { promise as toastWork } from "../lib/undoToast.js";
 import StoppedCard from "../components/v2/chat/StoppedCard.jsx";
 import FollowUps from "../components/v2/chat/FollowUps.jsx";
 import { BranchPicker, EditButton, EditMessage } from "../components/v2/chat/Versions.jsx";
@@ -591,7 +592,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
                     <button type="button" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)} style={{ ...pill, width: "40px", padding: 0, justifyContent: "center", fontWeight: 700 }}>{"···"}</button>
                     {moreOpen ? (
                       <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", zIndex: 30, width: "250px", padding: "6px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out", display: "flex", flexDirection: "column" }}>
-                        {[["Archivos de la conversación", () => dock.toggle(FILES_TAB)], ["Preguntar aparte", () => dock.toggle(ASIDE_TAB)], ["Exportar a Word", () => exportConversation(c, "word", { bots })], ["Exportar a Markdown", () => exportConversation(c, "markdown", { bots })], ["Copiar como Markdown", () => exportConversation(c, "copy", { bots })], ["Chat de incógnito", () => navigate(`/chat/${botId}?nuevo=incognito`)]].map(([label, fn]) => (
+                        {[["Archivos de la conversación", () => dock.toggle(FILES_TAB)], ["Preguntar aparte", () => dock.toggle(ASIDE_TAB)], ["Exportar a Word", () => toastWork(() => exportConversation(c, "word", { bots }), { loading: "Exportando la conversación a Word…", success: "Conversación exportada a Word", error: "No se pudo exportar" })], ["Exportar a Markdown", () => toastWork(() => exportConversation(c, "markdown", { bots }), { loading: "Exportando la conversación…", success: "Conversación exportada a Markdown", error: "No se pudo exportar" })], ["Copiar como Markdown", () => exportConversation(c, "copy", { bots })], ["Chat de incógnito", () => navigate(`/chat/${botId}?nuevo=incognito`)]].map(([label, fn]) => (
                           <button key={label} type="button" role="menuitem" onClick={() => { setMoreOpen(false); Promise.resolve(fn()).catch(() => {}); }} style={{ minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "12px", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "14px" }}>{label}</button>
                         ))}
                       </div>
