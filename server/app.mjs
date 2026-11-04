@@ -1123,7 +1123,11 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   });
   app.post("/api/approvals/:id/answer", async (req, res) => {
     const data = check(
-      z.object({ optionId: short.optional(), text: z.string().trim().min(1).max(4000).optional(), revision: revisionField }).strict().refine((d) => d.optionId || d.text, { message: "Elige una opción o escribe una respuesta." }),
+      z.object({
+        optionId: short.optional(), text: z.string().trim().min(1).max(4000).optional(), revision: revisionField,
+        // Several questions answered by steps (questions.mjs): one entry per question.
+        answers: z.array(z.object({ id: short, optionId: short.optional(), text: z.string().trim().max(4000).optional(), skipped: z.boolean().optional() }).strict()).min(1).max(5).optional(),
+      }).strict().refine((d) => d.optionId || d.text || d.answers, { message: "Elige una opción o escribe una respuesta." }),
       req.body,
     );
     const { revision, ...answer } = data;

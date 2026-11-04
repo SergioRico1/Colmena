@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import QuestionFlow from "./chat/QuestionFlow.jsx";
 import { QuestionReply } from "../room/QuestionReply.jsx";
 import { Calendar, FileText, Folder, Mail, MessageSquare } from "lucide-react";
 import { post } from "../../lib/api.js";
@@ -117,7 +118,7 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
   return (
     <article style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
       {inline ? tag("Te necesita") : <Header bot={bot} who={a.external ? "fuera de tu empresa" : null} mission={mission} at={a.createdAt} label={label} />}
-      <h3 style={{ margin: "0", font: inline ? "600 22px/1.25 'Bricolage Grotesque', sans-serif" : "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{isSend && email?.subject ? `Enviar «${email.subject}»` : a.title}</h3>
+      <h3 style={{ margin: "0", font: inline ? "600 22px/1.25 'Bricolage Grotesque', sans-serif" : "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{isSend && email?.subject ? `Enviar «${email.subject}»` : isQuestion && a.questions?.length > 1 ? `${bot?.name || "El bot"} tiene ${a.questions.length} preguntas` : a.title}</h3>
       {isSend && email ? (
         <div style={{ padding: "18px", background: "#F6F6F3", borderRadius: "20px", display: "flex", flexDirection: "column", gap: "10px", fontSize: "15px", lineHeight: "1.55" }}>
           <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{"Para " + (email.to || []).join(", ")}</span>
@@ -136,7 +137,10 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
       ) : !isQuestion && a.summary ? (
         <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{a.summary}</p>
       ) : null}
-      {isQuestion ? (
+      {isQuestion && a.questions?.length > 1 ? (
+        // Several questions: one at a time (QuestionFlow.jsx).
+        <QuestionFlow approval={a} />
+      ) : isQuestion ? (
         <>
           {a.summary && a.summary !== a.title ? <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{a.summary}</p> : null}
           <div role="radiogroup" aria-label={a.title} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

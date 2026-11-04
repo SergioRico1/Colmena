@@ -76,6 +76,8 @@ export const schemas = {
     blocks: z.number().int().min(0).max(20).default(1),
     // Optional evidence per option (same order as options): {url, quote} read with web_fetch.
     sources: z.array(z.object({ url: z.string().max(2000).default(""), quote: z.string().max(600).default("") }).strict()).max(3).default([]),
+    // More questions at once, answered one at a time (questions.mjs): options or a free answer.
+    more: z.array(z.object({ question: z.string().trim().min(3).max(600), options: z.array(z.string().trim().min(1).max(120)).max(3).default([]), optional: z.boolean().default(false) }).strict()).max(4).default([]),
   }).strict(),
   ask_bot: z.object({
     botId: z.string().max(240).default(""),
@@ -301,11 +303,12 @@ const DEFS = {
     format: text,
     content: text,
   }),
-  ask_user: fn("ask_user", "Pregunta a la persona algo que solo ella sabe y que cambia el resultado, con 2 o 3 opciones concretas. Si hay una opción razonable, no preguntes: elígela, sigue y di qué supusiste. No la uses para pedir permiso: Colmena ya pide OK donde hace falta. blocks: cuántos pasos quedan bloqueados por la respuesta. sources (opcional, mismo orden que options): {url, quote} con una cita LITERAL de una página que leíste con web_fetch en esta misión; url y quote vacios si una opcion no tiene fuente. Úsala una vez, no como interrogatorio.", {
+  ask_user: fn("ask_user", "Pregunta a la persona algo que solo ella sabe y que cambia el resultado, con 2 o 3 opciones concretas. Si hay una opción razonable, no preguntes: elígela, sigue y di qué supusiste. No la uses para pedir permiso: Colmena ya pide OK donde hace falta. blocks: cuántos pasos quedan bloqueados por la respuesta. sources (opcional, mismo orden que options): {url, quote} con una cita LITERAL de una página que leíste con web_fetch en esta misión; url y quote vacios si una opcion no tiene fuente. Úsala una vez, no como interrogatorio. Si de verdad necesitas varias cosas a la vez, pon la primera en question y el resto en more (máx. 4; vacío si no): cada una con 0 a 3 opciones (sin opciones = respuesta libre) y optional true si puede quedarse sin respuesta; la persona las contesta por pasos.", {
     question: text,
     options: { type: "array", items: text },
     blocks: int,
     sources: { type: "array", items: { type: "object", properties: { url: text, quote: text }, required: ["url", "quote"], additionalProperties: false } },
+    more: { type: "array", items: { type: "object", properties: { question: text, options: { type: "array", items: text }, optional: { type: "boolean" } }, required: ["question", "options", "optional"], additionalProperties: false } },
   }),
   ask_bot: fn("ask_bot", "Consulta a otro bot del equipo. Una pregunta: botId + question (tasks vacío). Varias partes en paralelo: tasks [{botId, task, context}] (botId y question vacios); cada bot trabaja con herramientas de lectura y te devuelve su resultado. Pide su especialidad, no delegues todo el trabajo. Sus herramientas son solo de lectura y no incluyen tus apps conectadas: lo que tú puedes hacer con tus herramientas, hazlo tú.", {
     botId: text,

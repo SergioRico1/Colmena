@@ -55,6 +55,7 @@ import {
 import { decideRevert } from "./verdicts.mjs";
 import { stopReason, stoppedRecord } from "./stopped.mjs";
 import { visibleMessages } from "./branches.mjs";
+import { answersForBot, answersText, buildQuestions, checkAnswers } from "./questions.mjs";
 import { applyMemoryOps, normalizeMemoryOp, guessTarget, MEMORY_LABELS, TARGET_OF } from "./memory.mjs";
 
 export { TOOLS, CONNECTION_TOOLS };
@@ -2797,11 +2798,13 @@ ${made.outline}`,
         id: "o" + (i + 1), label, primary: i === 0,
         ...(sources[i]?.url ? { source: { url: sources[i].url, quote: sources[i].quote } } : {}),
       }));
+      // Several at once: answered one at a time in the chat (questions.mjs).
+      const questions = args.more?.length ? buildQuestions(args).map((q, i) => (i === 0 ? { ...q, options } : q)) : null;
       this.store.put("approvals", {
         id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id, tool: "ask_user",
         kind: "question", title: args.question.slice(0, 140), summary: args.question, context: this.approvalContext(mission, bot),
         blocks: args.blocks, options, email: null, canAlways: false, status: "pending", createdAt: now(),
-        decidedAt: null, decidedBy: null, resolution: null,
+        decidedAt: null, decidedBy: null, resolution: null, ...(questions ? { questions } : {}),
       });
       this.store.put("messages", {
         id: "question:" + approvalId, missionId: mission.id, botId: bot.id, role: "assistant", kind: "question",
@@ -2811,14 +2814,29 @@ ${made.outline}`,
       return { waiting: true };
     }
     if (a.status === "pending") return { waiting: true };
+    if (a.status === "answered" && a.answers) return answersForBot(a.answers);
     if (a.status === "answered") return { answer: a.answer.text || a.answer.label, optionId: a.answer.optionId || null };
     return { answer: null, message: "La persona prefirio no responder. Sigue con la opcion mas prudente y dilo." };
   }
-  answer(approvalId, { optionId = null, text = "" } = {}) {
+  answer(approvalId, { optionId = null, text = "", answers = null } = {}) {
     const a = this.store.get("approvals", approvalId);
     if (!a || a.kind !== "question") throw Error("Pregunta no encontrada.");
     if (a.status !== "pending") throw Error("Esta pregunta ya está respondida.");
     if (this.store.get("missions", a.missionId)?.status === "cancelled") throw Error("La misión está cancelada.");
+    // Several questions, answered by steps: all of them together, once.
+    if (a.questions?.length) {
+      const normalized = checkAnswers(a.questions, answers || [{ id: a.questions[0].id, optionId, text }]);
+      const said = answersText(normalized);
+      const answered = normalized.filter((x) => !x.skipped).length;
+      this.store.patch("approvals", a.id, {
+        status: "answered", answers: normalized, answer: { optionId: null, label: null, text: said },
+        decidedAt: now(), decidedBy: "tú", resolution: answered === normalized.length ? `${answered} respuestas` : `${answered} de ${normalized.length} respuestas`,
+      });
+      this.store.put("messages", { id: id(), missionId: a.missionId, role: "user", kind: "message", text: said, approvalId: a.id, at: now() });
+      this.store.event(a.missionId, "approval_decided", { text: "Preguntas respondidas" });
+      this.relaunch(a.missionId);
+      return;
+    }
     const option = optionId ? a.options.find((o) => o.id === optionId) : null;
     if (optionId && !option) throw Error("Opcion no valida.");
     const written = String(text || "").trim().slice(0, 4000);

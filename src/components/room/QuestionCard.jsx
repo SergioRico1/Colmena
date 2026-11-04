@@ -1,4 +1,5 @@
 import { post } from "../../lib/api.js";
+import QuestionFlow, { AnswerList } from "../v2/chat/QuestionFlow.jsx";
 import { useAction } from "../../lib/store.jsx";
 import { BotAvatar } from "./common.jsx";
 import ApprovalConflict from "./ApprovalConflict.jsx";
@@ -44,7 +45,12 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
         : <p style={{ margin: "0", fontSize: chat ? "16px" : "15px", lineHeight: "1.55" }}><BoldNames text={question} bots={bots} /></p>}
       {answered ? (
         // Closed: its final state (answered, left unanswered, cancelled, expired), no dead buttons.
-        <ClosedChip approval={approval} options={options} />
+        <>
+          <ClosedChip approval={approval} options={options} />
+          <AnswerList answers={approval.answers} />
+        </>
+      ) : approval?.questions?.length > 1 ? (
+        <QuestionFlow approval={approval} />
       ) : options.length ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           {options.map((o, i) => {
@@ -66,7 +72,7 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
         // A question message whose request is gone (an old chat): nothing to answer any more.
         <span style={{ alignSelf: "flex-start", fontSize: "13px", color: "#6B6F7A" }}>{"Ya no espera respuesta"}</span>
       ) : null}
-      {pending ? <QuestionReply approval={approval} /> : null}
+      {pending && !(approval.questions?.length > 1) ? <QuestionReply approval={approval} /> : null}
       {chat && helper && !answered ? (
         <p style={{ margin: "0", fontSize: "13px", color: "#555A68" }}>{`${helper.name} contestará aquí mismo. No hace falta crear una sala.`}</p>
       ) : null}

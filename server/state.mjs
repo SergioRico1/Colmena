@@ -174,6 +174,9 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     autoSendAt: pending ? a.autoSendAt ?? null : null, askedByYou: !!a.askedByYou,
     blocks: a.blocks ?? (pending ? Math.max(1, blocked) : 0),
     options: kind === "question" ? a.options || [] : [],
+    // Several questions answered by steps (questions.mjs), and what you said to each.
+    questions: kind === "question" && a.questions?.length ? a.questions : null,
+    answers: kind === "question" && a.answers?.length ? a.answers : null,
     // A key request: its name, why, for which sites and whether it replaces one (never a value).
     secret: kind === "secret" && a.secret ? { name: a.secret.name, reason: a.secret.reason, allowedHosts: a.secret.allowedHosts || [], existing: a.secret.existing || null } : null,
     email: kind === "send" ? email : null,
