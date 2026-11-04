@@ -234,6 +234,8 @@ export function missionSummary(m, ctx) {
     incognito: !!m.incognito, expiresAt: m.incognito ? m.expiresAt ?? null : null,
     status: m.status, statusLabel: m.status === "paused" && m.limited ? "Limitado" : MISSION_LABELS[m.status] || m.status, activityLine: activityLine(m, ctx),
     // Paused by an AI's usage limit: which one, when it renews, when the work goes on alone.
+    // Why the turn stopped before its answer (stopped.mjs): the «Se paró» card.
+    stopped: ["paused", "blocked"].includes(m.status) && m.stopped && !m.limited ? { reason: m.stopped.reason, detail: m.stopped.detail ?? null, at: m.stopped.at ?? null } : null,
     limited: m.status === "paused" && m.limited ? { engine: m.limited.engine, label: m.limited.label, window: m.limited.window ?? null, resetsAt: m.limited.resetsAt ?? null, resumeAt: m.limited.resumeAt ?? null, botIds: m.limited.botIds || [] } : null,
     // The working bot's own line («Ya tengo dos tarifas…»), for the sidebar.
     narration: (() => { const s = steps.find((x) => x.status === "running" && x.narration?.text); return s ? { botId: s.botId, text: s.narration.text } : null; })(),

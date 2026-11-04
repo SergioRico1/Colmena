@@ -15,6 +15,7 @@ import { InteractiveContext } from "../components/room/Interactive.jsx";
 import { useFileDrop } from "../lib/useFileDrop.js";
 import { focusBox, shouldRefocus } from "../lib/composition.js";
 import Timeline, { useStableRows } from "../components/v2/chat/Timeline.jsx";
+import StoppedCard from "../components/v2/chat/StoppedCard.jsx";
 import { rememberPrompt, saveDraft, stashPrompt, unstash, useDraft, useInputHistory, useStash } from "../lib/composer.js";
 import Stash from "../components/v2/chat/Stash.jsx";
 import { markLive } from "../components/room/LiveMarkdown.jsx";
@@ -364,16 +365,19 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       rows.push({ key: "await", kind: "now", step: runningStep, bot: findBot(bots, now?.botId || botId), narration: runningStep?.progress?.length ? null : runningStep?.narration?.text || null });
     }
     for (const a of needs) if (a.kind !== "question") rows.push({ key: "need-" + a.id, kind: "need", a, bot: findBot(bots, a.botId), mission: missionCard });
-    if (mission?.limited || mission?.error) rows.push({ key: "error", kind: "error", limited: !!mission.limited, error: mission.error || null, mission, name: bot?.name });
+    // Paused by a usage limit: its banner; a turn that stopped before its answer: «Se paró».
+    if (mission?.limited) rows.push({ key: "error", kind: "error", limited: true, error: null, mission, name: bot?.name });
+    else if (mission?.stopped && !turn) rows.push({ key: "stopped", kind: "stopped", stopped: mission.stopped, status: mission.status, name: bot?.name });
+    else if (mission?.error) rows.push({ key: "error", kind: "error", limited: false, error: mission.error, mission: null, name: bot?.name });
     if (showBrowser) rows.push({ key: "browser", kind: "browser", missionId: mission.id, bot: findBot(bots, now.botId), verb: now.verb, active: mission.status === "running" });
     return rows;
-  }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, showBrowser, mission?.status, bot?.name]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, mission?.stopped?.at, turn, showBrowser, mission?.status, bot?.name]); // eslint-disable-line react-hooks/exhaustive-deps
   // What comes before the chat (older chats, «Conversación anterior») shows once you reach its
   // start: while pages remain, the oldest message is the first row (the anchor when one loads).
   const rows = useStableRows([...(room.olderCount > 0 ? [] : [headRow]), ...messageRows, ...tailRows]);
   // A row repaints only when its record changes: what it calls is read here, always current.
   const acts = useRef(null);
-  acts.current = { resend, retry, toggleDoc };
+  acts.current = { resend, retry, toggleDoc, control: (action) => run(() => post(`/missions/${c}/control`, { action })) };
   const renderRow = (row) => {
     const body = rowBody(row);
     return row.mark ? <><TimeMark at={row.mark} />{body}</> : body;
@@ -451,6 +455,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "trail": return <WorkTrail step={row.step} bots={bots} running />;
       case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} narration={row.narration} />;
       case "need": return <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />;
+      case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={() => acts.current.control(row.status === "blocked" ? "retry" : "resume")} onDiscard={() => acts.current.control("discard")} />;
       case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "16px 18px", background: "#FBE7DF", borderRadius: "20px", fontSize: "15px", lineHeight: "1.5" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;
       case "browser": return <BrowserLive missionId={row.missionId} bot={row.bot} verb={row.verb} missionActive={row.active} />;
       default: return null;
@@ -567,7 +572,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
                     <Stash entries={stash} saved={stashed} onRestore={restoreStash} onDelete={(entry) => unstash(entry.id)} />
                   </div>
                 ) : null}
-                {c ? <MessageQueue queue={queue} botName={bot?.name} missionPaused={mission?.status === "paused" && !mission?.limited} onResumeMission={resumeMission} resumeBusy={control.busy} working={turn} /> : null}
+                {c ? <MessageQueue queue={queue} botName={bot?.name} missionPaused={mission?.status === "paused" && !mission?.limited && !mission?.stopped} onResumeMission={resumeMission} resumeBusy={control.busy} working={turn} /> : null}
               </>} />
             )}
           </section>

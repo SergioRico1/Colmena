@@ -177,7 +177,7 @@ export class AnthropicProvider {
           throw Object.assign(Error(this.names.name + " ha declinado esta petición por sus normas de seguridad."), { own: true, providerCode: "refusal" });
         const output = fromMessage(message, { model: id, nameOf, engine: this.engine });
         if (message.stop_reason === "max_tokens" && output.some((x) => x.type === "function_call"))
-          throw Object.assign(Error(this.names.name + " cortó la respuesta antes de terminar una herramienta."), { own: true, transient: true });
+          throw Object.assign(Error(this.names.name + " cortó la respuesta antes de terminar una herramienta."), { own: true, transient: true, incomplete: "max_tokens" });
         const text = output.filter((x) => x.type === "message").flatMap((x) => x.content).map((c) => c.text).join("\n");
         return { output, text, usage: usageOf(message.usage), responseId: message.id, transport: "sse", model: ref, webSearch: search ? "native" : webSearch ? "unavailable" : null, timing: { firstEventMs, firstTokenMs } };
       } catch (raw) {

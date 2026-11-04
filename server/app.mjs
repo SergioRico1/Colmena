@@ -931,9 +931,11 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     res.json({ id: updated.id, reactions: reactionsOf(updated).map((r) => ({ emoji: r.emoji, by: r.by })) });
   });
   app.post("/api/missions/:id/control", async (req, res) => {
-    const { action } = check(z.object({ action: z.enum(["pause", "resume", "cancel", "retry"]) }).strict(), req.body);
+    const { action } = check(z.object({ action: z.enum(["pause", "resume", "cancel", "retry", "discard"]) }).strict(), req.body);
     mustGet("missions", req.params.id, "Misión");
-    if (action === "retry") need("retry")(req.params.id);
+    // «Descartar» on the «Se paró» card: what was left half done goes; the chat is ready again.
+    if (action === "discard") need("discardStopped")(req.params.id);
+    else if (action === "retry") need("retry")(req.params.id);
     else if (action === "resume") {
       if (runtime.active?.has?.(req.params.id)) throw Error("Espera a que termine la pausa en curso.");
       if (typeof runtime.resume === "function") await runtime.resume(req.params.id);

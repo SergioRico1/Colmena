@@ -53,6 +53,7 @@ import {
   rejectSoulProposal, rememberWhy,
 } from "./learning.mjs";
 import { decideRevert } from "./verdicts.mjs";
+import { stopReason, stoppedRecord } from "./stopped.mjs";
 import { applyMemoryOps, normalizeMemoryOp, guessTarget, MEMORY_LABELS, TARGET_OF } from "./memory.mjs";
 
 export { TOOLS, CONNECTION_TOOLS };
@@ -379,6 +380,7 @@ export class Runtime {
           status: "paused",
           interrupted: { at: now() },
           error: "Colmena se cerró. Puedes continuar desde el último paso guardado.",
+          stopped: stoppedRecord({ reason: "other", detail: "Colmena se cerró mientras trabajaba." }),
         });
   }
   root(missionId) {
@@ -895,7 +897,7 @@ export class Runtime {
       else if (quietFor > this.quietMs && !this.quiet.has(missionId)) this.markQuiet(missionId);
     }, Math.max(20, Math.min(30000, this.quietMs / 4, this.idleAbortMs / 4)));
     timer.unref();
-    this.store.patch("missions", missionId, { status: this.runningStatus(missionId), error: null, pausedBy: null, interrupted: null, limited: null });
+    this.store.patch("missions", missionId, { status: this.runningStatus(missionId), error: null, pausedBy: null, interrupted: null, limited: null, stopped: null });
     this.store.event(missionId, "started", { text: "Equipo en marcha" });
     try {
       const model = this.settings().model || this.provider?.config?.()?.local?.model || this.availableModels()[0]?.slug;
@@ -948,11 +950,15 @@ export class Runtime {
       // The AI's plan ran out and no substitute could answer: «Limitado» until it renews, then
       // resumeLimited() goes on by itself (T3 Code UsageLimitRecoveryWorker).
       const providerLimited = error?.code === PROVIDER_LIMIT_CODE && !controller.signal.aborted;
+      // Why it stopped, for the «Se paró» card (stopped.mjs): you, length, a filter, an error…
+      const why = controller.signal.aborted
+        ? (/por el usuario/.test(String(controller.signal.reason?.message || "")) ? { reason: "cancelled" } : { reason: "other", detail: controller.signal.reason?.message || error.message })
+        : stopReason(error);
       if (current.status !== "cancelled" && current.status !== "completed")
         this.store.patch("missions", missionId, {
           status: limited || unavailable || providerLimited || controller.signal.aborted ? "paused" : "blocked",
           error: error.message,
-          ...(providerLimited ? { limited: this.limitRecord(missionId, error) } : {}),
+          ...(providerLimited ? { limited: this.limitRecord(missionId, error), stopped: null } : { stopped: stoppedRecord(why) }),
         });
       this.store.event(missionId, limited ? "limit" : providerLimited ? "provider_limit" : unavailable ? "unavailable" : controller.signal.aborted ? "stopped" : "error", { text: error.message });
       // A failed mission is reviewed too: what went wrong in the method (learning.mjs).
@@ -3108,13 +3114,32 @@ ${made.outline}`,
   stop(missionId, cancel = false) {
     const m = this.store.get("missions", missionId);
     if (!m || ["completed", "cancelled"].includes(m.status)) throw Error("La misión ya ha terminado.");
-    this.store.patch("missions", missionId, { status: cancel ? "cancelled" : "paused" });
+    this.store.patch("missions", missionId, { status: cancel ? "cancelled" : "paused", stopped: cancel ? null : stoppedRecord({ reason: "cancelled" }) });
     this.active.get(missionId)?.abort(Error(cancel ? "Misión cancelada por el usuario." : "Misión pausada por el usuario."));
     if (cancel)
       for (const a of this.store.where("approvals", "missionId", missionId).filter((a) => a.status === "pending" && !["skill", "soul"].includes(a.kind)))
         this.store.patch("approvals", a.id, { status: "denied", decidedAt: now(), decidedBy: "tú", resolution: "Misión cancelada" });
     this.store.event(missionId, cancel ? "cancelled" : "paused", { text: cancel ? "Misión cancelada" : "Misión pausada" });
     if (cancel) this.learnSoon(missionId);
+  }
+  /**
+   * «Descartar» on a stopped turn: what it left half done is dropped (its pending steps end
+   * as skipped, their pending approvals denied) and the conversation is ready for your next
+   * message; what was already said and done stays.
+   */
+  discardStopped(missionId) {
+    const m = this.store.get("missions", missionId);
+    if (!m) throw Error("La misión no existe.");
+    if (this.active.has(missionId)) throw Error("Espera a que termine de parar.");
+    if (!["paused", "blocked"].includes(m.status)) throw Error("No hay nada parado que descartar.");
+    const open = this.steps(missionId).filter((s) => s.status !== "completed");
+    for (const s of open) this.store.patch("steps", s.id, { status: "completed", skipped: true, stalled: null, pending: [], completedAt: now() });
+    const ids = new Set(open.map((s) => s.id));
+    for (const a of this.store.where("approvals", "missionId", missionId).filter((a) => a.status === "pending" && ids.has(a.stepId)))
+      this.store.patch("approvals", a.id, { status: "denied", decidedAt: now(), decidedBy: "tú", resolution: "Descartado" });
+    this.store.patch("missions", missionId, { status: "completed", error: null, stopped: null, interrupted: null, pausedBy: null, completedAt: now() });
+    this.store.event(missionId, "discarded", { text: "Descartaste lo que quedó a medias" });
+    return this.store.get("missions", missionId);
   }
   /** «Pausar a todo el equipo»: pauses every active mission; work done is kept. */
   pauseAll() {

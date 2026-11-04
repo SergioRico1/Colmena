@@ -120,6 +120,8 @@ export function responseCollector({ onDelta = () => {}, onEvent = () => {}, erro
       // Server-side failures are retried; invalid requests, policy and context errors are not.
       error.transient = event.type !== "response.incomplete" && !/invalid|policy|content|context|length|billing|quota|usage_limit/i.test(code);
       error.providerCode = code || null;
+      // «max_output_tokens» or «content_filter»: why the «Se paró» card says it stopped.
+      error.incomplete = event.response?.incomplete_details?.reason || null;
       // The plan ran out mid-stream (WebSocket or SSE error event): a 429 with its renewal time.
       if (/usage_limit|rate_limit|quota/i.test(code) || Number(event.status ?? event.error?.status) === 429) {
         error.status = 429;
