@@ -405,12 +405,15 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     const rows = [];
     for (const l of live) {
       const s = steps.find((x) => x.id === l.stepId);
-      if (s?.progress?.length) rows.push({ key: "trail-" + l.stepId, kind: "trail", step: s });
-      rows.push({ key: "live-" + l.stepId, kind: "now", step: s, live: l, bot: findBot(bots, l.botId || botId) });
+      // The bot's name heads its turn: over what it said while working, else over «ahora».
+      const bot = findBot(bots, l.botId || botId);
+      if (s?.progress?.length) rows.push({ key: "trail-" + l.stepId, kind: "trail", step: s, bot });
+      rows.push({ key: "live-" + l.stepId, kind: "now", step: s, live: l, bot, head: !s?.progress?.length });
     }
     if (awaitingReply && !live.length) {
-      if (runningStep?.progress?.length) rows.push({ key: "trail-" + runningStep.id, kind: "trail", step: runningStep });
-      rows.push({ key: "await", kind: "now", step: runningStep, bot: findBot(bots, now?.botId || botId), narration: runningStep?.progress?.length ? null : runningStep?.narration?.text || null });
+      const bot = findBot(bots, now?.botId || botId);
+      if (runningStep?.progress?.length) rows.push({ key: "trail-" + runningStep.id, kind: "trail", step: runningStep, bot });
+      rows.push({ key: "await", kind: "now", step: runningStep, bot, head: !runningStep?.progress?.length, narration: runningStep?.progress?.length ? null : runningStep?.narration?.text || null });
     }
     for (const a of needs) if (a.kind !== "question") rows.push({ key: "need-" + a.id, kind: "need", a, bot: findBot(bots, a.botId), mission: missionCard });
     // Paused by a usage limit: its banner; a turn that stopped before its answer: «Se paró».
@@ -516,8 +519,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
         </article>
       );
-      case "trail": return <WorkTrail step={row.step} bots={bots} running />;
-      case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} narration={row.narration} onStop={() => acts.current.stop()} />;
+      case "trail": return <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}><AnswerHead bot={row.bot} state="work" /><WorkTrail step={row.step} bots={bots} running /></div>;
+      case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} head={row.head} narration={row.narration} onStop={() => acts.current.stop()} />;
       case "need": return <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />;
       case "follow": return <FollowUps list={row.list} onPick={(t) => { setText(t); requestAnimationFrame(() => focusBox(inputRef.current)); }} />;
       case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={() => acts.current.control(row.status === "blocked" ? "retry" : "resume")} onDiscard={() => acts.current.control("discard")} />;

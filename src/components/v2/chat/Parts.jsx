@@ -221,7 +221,7 @@ const shimmerText = { alignSelf: "flex-start", fontSize: "14.5px", fontWeight: "
  * spinner, then its pages), what it runs (a dark terminal), what it writes (the answer itself, with a
  * caret), what it draws (the picture developing); otherwise its own words about what it does.
  */
-export function WorkNow({ step, live, bot, bots, narration, onStop = null }) {
+export function WorkNow({ step, live, bot, bots, narration, onStop = null, head = true }) {
   const tools = step?.tools || [];
   const running = tools.filter((t) => t.status === "running");
   const reads = groupTools(tools).filter((t) => ["file", "web", "pdf_fields", "folder"].includes(t.card?.type));
@@ -232,7 +232,7 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null }) {
   if (live?.text) {
     return (
       <div aria-live="polite" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        <AnswerHead bot={bot} state="work" />
+        {head ? <AnswerHead bot={bot} state="work" /> : null}
         <LiveMarkdown text={live.text} size={16} style={ANSWER} caret streamKey={step?.id || live.stepId} />
       </div>
     );
@@ -274,7 +274,7 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null }) {
   // the tool at work — with the narration (if any) under it; «Parar» stays small at the side.
   return (
     <article role="status" style={{ display: "flex", flexDirection: "column", gap: "6px", animation: "fade .4s ease-out" }}>
-      <AnswerHead bot={bot} state="work" />
+      {head ? <AnswerHead bot={bot} state="work" /> : null}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "30px" }}>
         <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
           <span style={shimmerText}>{running.length ? <>{headline(running[running.length - 1], bots)}{"…"}</> : "Pensando…"}</span>
