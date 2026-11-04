@@ -34,7 +34,8 @@ import { plain } from "../components/room/Markdown.jsx";
 import QuestionCard from "../components/room/QuestionCard.jsx";
 import ArtifactPanel from "../components/room/ArtifactPanel.jsx";
 import SecretPrompt, { SecretLine } from "../components/room/SecretPrompt.jsx";
-import Sources from "../components/room/Sources.jsx";
+import SourceChips, { CitationContext } from "../components/v2/chat/SourceChips.jsx";
+import { citationMap, collectSources } from "../lib/citations.js";
 import SideDock from "../components/room/SideDock.jsx";
 import PositionRail, { railItems } from "../components/room/PositionRail.jsx";
 import FilesPanel, { FileView, fileIcon } from "../components/room/FilesPanel.jsx";
@@ -65,6 +66,20 @@ const STARTERS = [
   [/c[oó]dig|program|desarroll/i, ["Revisa este script", "Automatiza esta tarea repetitiva", "Explícame este código"]],
 ];
 const startersFor = (bot) => (STARTERS.find(([re]) => re.test(`${bot?.role || ""} ${bot?.instructions || ""}`))?.[1]) || ["Ayúdame con una tarea de hoy", "Resume este documento", "Prepara un borrador"];
+// Where an answer comes from (citations.js): chips under it and its links as inline citations.
+// The same objects while the message and its step do not change, so the row does not repaint.
+const NO_SOURCES = { sources: undefined, citations: undefined };
+const sourceCache = new WeakMap();
+function sourcesFor(m, step) {
+  if (!m.text) return NO_SOURCES;
+  const hit = sourceCache.get(m);
+  if (hit && hit.step === step) return hit.value;
+  // A notice (watch.mjs) is about its own mails only, never a step that happened before it.
+  const sources = collectSources({ text: m.text, tools: m.watch || m.sources?.length ? [] : step?.tools || [], mails: m.sources || [] });
+  const value = sources.length ? { sources, citations: citationMap(sources) } : NO_SOURCES;
+  sourceCache.set(m, { step, value });
+  return value;
+}
 function stepFor(message, steps) {
   if (message.stepId) return steps.find((s) => s.id === message.stepId) || null;
   const at = Date.parse(message.at || 0);
@@ -343,7 +358,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       if (m.kind === "deliverable" && prev && prev.role === "assistant" && prev.botId === m.botId && prev.kind !== "question") continue;
       const more = [];
       for (let j = i + 1; j < messages.length && messages[j].kind === "deliverable" && messages[j].botId === m.botId; j++) more.push(messages[j]);
-      const step = stepFor(m, steps);
+      // A notice of what arrived (it carries its sources) is not the answer of any step.
+      const step = m.sources?.length && !m.stepId ? null : stepFor(m, steps);
       // The trail of what it said while working goes once, above the step's first answer
       // (while the step still runs it is shown above its live work instead).
       const firstOfStep = !!step && firstAnswer.get(step.id) === i && step.status !== "running";
@@ -355,6 +371,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         trail: !step?.progress?.length || firstOfStep,
         // «Otra respuesta» is a sibling version of this answer (branches), «‹ 1/3 ›» under it.
         regenerate: !!prevUser && !!c && !turn && !isOlder && m.kind !== "deliverable",
+        ...sourcesFor(m, step),
         branch: branches[m.id] || null,
       });
     }
@@ -473,9 +490,11 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "answer": return (
         <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           {row.author && row.author.id !== botId ? <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px" }}><BotPresence bot={row.author} size={18} state="rest" /><strong style={{ fontWeight: 600 }}>{row.author.name}</strong></span> : null}
-          <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null}>
-            {m.text && row.step?.tools?.length ? <Sources text={m.text} tools={row.step.tools} /> : null}
-          </BotAnswer>
+          <CitationContext.Provider value={row.citations}>
+            <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null}>
+              <SourceChips sources={row.sources} />
+            </BotAnswer>
+          </CitationContext.Provider>
           {row.artifact ? <FileCard artifact={row.artifact} onOpen={() => acts.current.toggleDoc(row.artifact.id)} /> : null}
           {(row.more || []).map((a) => <FileCard key={a.id} artifact={a} onOpen={() => acts.current.toggleDoc(a.id)} />)}
           {row.branch ? <BranchPicker branch={row.branch} disabled={turn} onShow={(id) => acts.current.version(id)} /> : null}

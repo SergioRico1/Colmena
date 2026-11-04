@@ -690,6 +690,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       artifactId: m.artifactId ?? null, approvalId: m.approvalId ?? null, plan: m.plan ?? null, summary: m.summary ?? null,
       stepId: m.stepId ?? null, options: m.options ?? null, replyTo: m.replyTo ?? null, part: m.part ?? null, to: m.to ?? null,
       ...(m.kind === "progress" ? { callIds: m.callIds || [] } : {}),
+      // What a notice is about (watch.mjs): the mails, events or messages, for its «Fuentes».
+      ...(Array.isArray(m.sources) && m.sources.length ? { sources: m.sources.slice(0, 6).map((s) => ({ id: s.id ?? null, hilo: s.hilo ?? null, fuente: s.fuente ?? null, de: s.de ?? null, titulo: s.titulo ?? null, asunto: s.asunto ?? null, fecha: s.fecha ?? null, cuenta: s.cuenta ?? null, url: s.url ?? null })) } : {}),
       ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}), ...(m.voice ? { voice: true } : {}),
       reactions: reactionsOf(m).map((r) => ({ emoji: r.emoji, by: r.by })),
       learned: m.learned ? {

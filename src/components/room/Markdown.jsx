@@ -6,7 +6,15 @@ import { tableToTSV } from "../../lib/exporting.js";
 import { AnswerLayout, splitInteractive } from "./Interactive.jsx";
 import Diagram from "./Diagram.jsx";
 import { MentionLink } from "../v2/MentionPill.jsx";
+import { InlineCitation, useCitation } from "../v2/chat/SourceChips.jsx";
 import { useStore } from "../../lib/store.jsx";
+
+/** A link that is one of the answer's sources shows as an inline citation (SourceChips.jsx). */
+function CitedLink({ href, ...props }) {
+  const source = useCitation(href);
+  if (source) return <InlineCitation source={source}>{props.children}</InlineCitation>;
+  return <a href={href} target="_blank" rel="noreferrer noopener" data-preview="" {...props} />;
+}
 
 /** Text of a hast node (the code inside a fenced block). */
 const textOf = (n) => (n?.type === "text" ? n.value : (n?.children || []).map(textOf).join(""));
@@ -26,7 +34,7 @@ const make = (size) => ({
   a: ({ node, href, ...props }) =>
     String(href || "").startsWith("#@")
       ? <MentionLink href={href}>{props.children}</MentionLink>
-      : <a href={href} target="_blank" rel="noreferrer noopener" data-preview="" {...props} />,
+      : <CitedLink href={href} {...props} />,
   pre: ({ node, ...props }) => {
     // ```mermaid blocks are drawn as diagrams.
     const code = node?.children?.find((c) => c.tagName === "code");
