@@ -1763,8 +1763,9 @@ export class CodeService {
 
   /** What the «Más» menu says before you push: gh's sign-in, when it is already known (never waits). */
   githubHint() {
-    if (!this.ghCache) { void this.ghStatus().catch(() => {}); return null; }
-    return { installed: this.ghCache.installed, authed: this.ghCache.authed };
+    const known = this.ghCache;
+    if ((!known || Date.now() - known.at > 60000) && !this.ghAsking) this.ghAsking = this.ghStatus().catch(() => {}).finally(() => { this.ghAsking = null; }); // for the next look
+    return known ? { installed: known.installed, authed: known.authed } : null;
   }
 
   /** «Guardar y subir»: commit, then `git push -u origin <branch>` (the button is the person's OK). */
