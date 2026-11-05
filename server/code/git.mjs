@@ -193,6 +193,12 @@ export class Snapshots {
     for (const f of files) f.patch = chunks.get(f.path) || "";
     return { files, add: files.reduce((n, f) => n + f.add, 0), del: files.reduce((n, f) => n + f.del, 0), truncated };
   }
+  /** Only the paths that differ from point `a` to point `b` (a rename counts as both paths). */
+  async changedFiles(a, b) {
+    await this.init();
+    if (!a || !b || a === b) return [];
+    return (await this.g(["diff", "--name-only", "-z", "--no-renames", "--no-ext-diff", a, b])).stdout.toString("utf8").split("\0").filter(Boolean);
+  }
   /** Puts the folder back as it was at point `target`; files made later are removed. */
   async restore(target) {
     await this.init();

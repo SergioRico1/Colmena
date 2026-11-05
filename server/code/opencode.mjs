@@ -256,6 +256,8 @@ export class OpenCodeEngine extends EventEmitter {
         } else if (part.type === "step-finish" && part.tokens) {
           const t = part.tokens;
           out({ type: "usage", used: (t.input || 0) + (t.cache?.read || 0), window: 128000 });
+          // Each step's tokens (and its cost, for paid models): the turn adds them up.
+          out({ type: "tokens", n: (t.input || 0) + (t.output || 0) + (t.reasoning || 0) + (t.cache?.read || 0) + (t.cache?.write || 0), cost: Number(part.cost) || 0 });
         }
         return;
       }

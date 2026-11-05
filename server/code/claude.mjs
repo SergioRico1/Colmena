@@ -204,7 +204,11 @@ export class ClaudeCodeEngine extends EventEmitter {
     if (m.type === "result") {
       const sub = String(m.subtype || "");
       const failed = m.is_error || sub.startsWith("error");
-      out({ type: "done", interrupted: /interrupt/i.test(sub), error: failed ? ((Array.isArray(m.errors) ? m.errors.join(" ") : "") || m.result || "Bruno no pudo terminar este turno.") : null });
+      // The turn's tokens (cached reads included) and Claude Code's estimate of its cost.
+      const u = m.usage || null;
+      const tokens = u ? (u.input_tokens || 0) + (u.output_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) : 0;
+      const usage = tokens || typeof m.total_cost_usd === "number" ? { tokens: tokens || null, cost: typeof m.total_cost_usd === "number" ? m.total_cost_usd : null } : null;
+      out({ type: "done", interrupted: /interrupt/i.test(sub), error: failed ? ((Array.isArray(m.errors) ? m.errors.join(" ") : "") || m.result || "Bruno no pudo terminar este turno.") : null, usage });
     }
   }
 

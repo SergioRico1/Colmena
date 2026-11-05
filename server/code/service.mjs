@@ -25,6 +25,7 @@ import { taskPorts, descendants, stopFamily } from "./ports.mjs";
 import { Terminals, projectScripts } from "./terminal.mjs";
 import { expandSkills } from "./context.mjs";
 import { BLOCKED_ROUNDS, blockingKey, mayDeclareBlocked, onlyHard, trackBlocking } from "../guards.mjs";
+import { searchTasks } from "./search.mjs";
 
 export const CODE_MODELS = Object.freeze([
   { id: "claude-opus-5-5", label: "Opus 5.5" },
@@ -51,6 +52,8 @@ const SWEEP_MS = 30 * 1000;
 /** How often a followed pull request is looked at (gh pr view). */
 export const PR_POLL_MS = 2 * 60 * 1000;
 const MAX_OUTPUT = 12000;
+/** At most this many changed paths are kept per task to compare copies (tasks touching the same files). */
+const OVERLAP_FILES = 2000;
 /** A copy saved into its base is cleaned up; its last commit stays this long under a hidden ref. */
 export const KEEP_SAVED_MS = 30 * 86400000;
 /** `/goal`: turns Bruno may take on his own before he stops and asks (OpenClaw goal budget). */
@@ -207,6 +210,7 @@ export class CodeService {
     const next = this.setTask(taskId, { archived: { at: now(), by }, pinned: false, snoozed: null, status: ["waiting", "planned"].includes(task.status) ? "idle" : task.status, queue: [] });
     const why = { manual: "Archivada.", saved: "Archivada al guardarla en " + (task.base || "main") + ".", pr: "Archivada al cerrarse su PR.", idle: "Archivada tras " + this.rulesFor(task).idleDays + " días sin actividad." }[by] || "Archivada.";
     this.addItem(taskId, { kind: "notice", text: why });
+    void this.checkOverlaps(taskId); // an archived task no longer counts for the others
     await this.runSettleScripts(next);
     this.emit({ type: "projects" });
     return this.taskView(this.mustTask(taskId));
@@ -218,6 +222,7 @@ export class CodeService {
     if (!task.archived) return this.taskView(task);
     this.setTask(taskId, { archived: null, holdAuto: true });
     this.addItem(taskId, { kind: "notice", text: "Vuelve a tus tareas." });
+    void this.checkOverlaps(taskId);
     this.emit({ type: "projects" });
     return this.taskView(this.mustTask(taskId));
   }
@@ -438,6 +443,7 @@ export class CodeService {
       archived: t.archived || null, pinned: !!t.pinned, snoozed: t.snoozed || null, autoArchive: t.autoArchive !== false, activeAt: t.activeAt || t.createdAt,
       pendingSwitch: t.pendingSwitch || null, handoff: t.handoff ? { from: t.handoff.from, pending: !!t.handoff.pending } : null,
       group: t.group || null, label: t.label || null, tests: t.tests ? { status: t.tests.status, code: t.tests.code, durationMs: t.tests.durationMs, at: t.tests.at } : null, pr: t.pr || null, allow: t.allow || [],
+      overlaps: t.overlaps?.length ? t.overlaps : null,
     };
   }
 
@@ -708,7 +714,7 @@ export class CodeService {
       const back = !!task.archived;
       if (task.snoozed) this.wakeTask(taskId, { why: "message" });
       task = this.setTask(taskId, { activeAt: now(), holdAuto: false, ...(back ? { archived: null } : {}) });
-      if (back) this.emit({ type: "projects" });
+      if (back) { this.emit({ type: "projects" }); void this.checkOverlaps(taskId); }
     }
     const live = this.engines.get(taskId);
     if (live?.turn || this.starting.has(taskId)) {
@@ -848,6 +854,9 @@ export class CodeService {
       this.patchItem(row, { status: e.error ? "error" : "done", output: clip(e.output, MAX_OUTPUT) });
       return;
     }
+    // What the turn cost, when the engine says it: per model call (tokens) or once at the end (done.usage).
+    if (e.type === "tokens") { turn.tokens = (turn.tokens || 0) + (Number(e.n) || 0); if (Number(e.cost) > 0) turn.cost = (turn.cost || 0) + Number(e.cost); return; }
+    if (e.type === "done" && e.usage) turn.reported = e.usage;
     if (e.type === "done") void this.finishTurn(taskId, entry, e.error && !e.interrupted ? Error(e.error) : null, { interrupted: !!e.interrupted, soft: !!e.error });
   }
 
@@ -868,8 +877,17 @@ export class CodeService {
       stat = await this.snapsOf(task).diff(turn.startSnap, endSnap);
     } catch {}
     const files = stat.files.map((f) => ({ path: f.path, status: f.status, add: f.add, del: f.del }));
-    const record = { n: turn.n, mode: turn.mode, userItemId: turn.userItemId, startSnap: turn.startSnap, endSnap, add: stat.add, del: stat.del, files, sessionAt: turn.lastAssistant, durationMs: Date.now() - turn.started, engine: task.engine, model: task.model };
-    if (files.length) this.addItem(taskId, { kind: "turn", n: turn.n, files: files.slice(0, 200), add: stat.add, del: stat.del, endSnap, turn: turn.n });
+    const usage = turnUsage(turn);
+    const record = { n: turn.n, mode: turn.mode, userItemId: turn.userItemId, startSnap: turn.startSnap, endSnap, add: stat.add, del: stat.del, files, sessionAt: turn.lastAssistant, durationMs: Date.now() - turn.started, engine: task.engine, model: task.model, ...usage };
+    // The quiet line under the turn (duration, files, tokens): on its changes card, or on its last answer.
+    const stats = { durationMs: record.durationMs, files: files.length, add: stat.add, del: stat.del, ...usage };
+    if (files.length) this.addItem(taskId, { kind: "turn", n: turn.n, files: files.slice(0, 200), add: stat.add, del: stat.del, endSnap, turn: turn.n, stats });
+    else {
+      const answer = [...this.items(taskId)].reverse().find((i) => i.kind === "text" && i.turn === turn.n);
+      if (answer) this.patchItem(answer.id, { stats });
+    }
+    // Two tasks changing the same files: both say so (checked against the other copies).
+    if (files.length && endSnap) void this.checkOverlaps(taskId, endSnap);
     void this.remember(taskId, entry);
     const failed = !!error && !turn.stopped && !interrupted;
     if (failed) this.addItem(taskId, { kind: "error", text: clip(error.message || "Bruno no pudo terminar este turno.", 600), turn: turn.n });
@@ -1099,6 +1117,88 @@ export class CodeService {
     return { ok: true };
   }
 
+  // ------------------------------------------------------------------ «Buscar en las tareas»
+  /** Words in task titles and conversations, every project, archived tasks too (search.mjs). */
+  search(q, { limit = 30 } = {}) {
+    // Only the small fields: tool outputs, diffs and file lists are never read for this.
+    const tasks = this.store.columns("codeTasks", ["id", "projectId", "title", "archived", "updatedAt", "createdAt"]);
+    const projects = this.store.columns("codeProjects", ["id", "name"]);
+    const items = this.store.columns("codeItems", ["id", "taskId", "kind", "text", "at"]);
+    return searchTasks({ tasks, projects, items }, q, { limit: Math.max(1, Math.min(60, Number(limit) || 30)), bot: this.bot().name });
+  }
+
+  // ------------------------------------------------------------------ tasks changing the same files
+  /** Copies whose changes can collide when both are merged: their own, not archived, not saved. */
+  overlapCandidate(t) {
+    return !!(t && t.isolated && t.worktree && t.baseSnap && !t.archived && !t.saved && !t.merged);
+  }
+
+  /** The files the task's copy differs in from its start (its base point → `snap`), kept on it. */
+  async refreshChanged(taskId, snap) {
+    const task = this.store.get("codeTasks", taskId);
+    if (!this.overlapCandidate(task)) return null;
+    const snaps = this.snapsOf(task);
+    const point = snap === "now" ? await snaps.capture("overlap-" + Date.now()) : snap || (task.turns || []).at(-1)?.endSnap || null;
+    const changed = point ? (await snaps.changedFiles(task.baseSnap, point)).slice(0, OVERLAP_FILES) : [];
+    this.quietPut(taskId, { changed });
+    return changed;
+  }
+  /** Overlap bookkeeping without touching updatedAt (the list's order stays the person's work). */
+  quietPut(taskId, changes) {
+    const now_ = this.store.get("codeTasks", taskId);
+    return now_ ? this.store.put("codeTasks", { ...now_, ...changes }) : null;
+  }
+
+  /**
+   * After a task's files changed (a turn, «Volver aquí», «Deshacer este archivo») or it left or
+   * came back to the active ones: refreshes its changed files (`snap`: the point it is at now,
+   * «now» to capture it, null to keep them) and the overlaps of its whole project. One check per
+   * project at a time.
+   */
+  checkOverlaps(taskId, snap = null, projectId = this.store.get("codeTasks", taskId)?.projectId) {
+    if (!projectId) return Promise.resolve(null);
+    this.overlapRuns ||= new Map();
+    const run = (this.overlapRuns.get(projectId) || Promise.resolve()).then(async () => {
+      if (snap !== null) await this.refreshChanged(taskId, snap);
+      // Tasks from before this check have no list yet: worked out once, from their last turn.
+      for (const t of this.store.list("codeTasks")) if (t.projectId === projectId && !Array.isArray(t.changed) && this.overlapCandidate(t) && (t.turns || []).some((x) => x.files?.length)) await this.refreshChanged(t.id);
+      return this.overlapsIn(projectId);
+    }).catch((e) => { console.warn("Código: archivos en común: " + e.message); return null; });
+    this.overlapRuns.set(projectId, run);
+    return run;
+  }
+
+  /**
+   * Which active tasks of a project change the same files (their `changed` lists). Each task
+   * keeps `overlaps` [{task, title, files, count}] for its header and list row; a notice goes to
+   * its timeline only when an overlap is new or gains files (`overlapSeen`), and both clear when
+   * the overlap is gone (or the other task is archived, saved or deleted).
+   */
+  overlapsIn(projectId) {
+    const tasks = this.store.list("codeTasks").filter((t) => t.projectId === projectId);
+    const active = tasks.filter((t) => this.overlapCandidate(t) && t.changed?.length);
+    const name = this.bot().name;
+    const short = (files) => files.slice(0, 3).map((f) => f.split("/").pop()).join(", ") + (files.length > 3 ? " y " + (files.length - 3 === 1 ? "1 más" : files.length - 3 + " más") : "");
+    for (const t of tasks) {
+      const mine = active.includes(t) ? new Set(t.changed) : null;
+      const overlaps = [];
+      const seen = {};
+      for (const other of mine ? active : []) {
+        if (other.id === t.id) continue;
+        const shared = other.changed.filter((f) => mine.has(f));
+        if (!shared.length) continue;
+        overlaps.push({ task: other.id, title: other.title, files: shared.slice(0, 20), count: shared.length });
+        seen[other.id] = shared.slice(0, 200);
+        const before = new Set(t.overlapSeen?.[other.id] || []);
+        if (shared.some((f) => !before.has(f))) this.addItem(t.id, { kind: "notice", tone: "warn", overlap: other.id, text: `${name} y la tarea «${clip(other.title, 60)}» están cambiando los mismos archivos: ${short(shared)}. Al fusionar pueden chocar.` });
+      }
+      if (JSON.stringify(overlaps) === JSON.stringify(t.overlaps || []) && JSON.stringify(seen) === JSON.stringify(t.overlapSeen || {})) continue;
+      const next = this.quietPut(t.id, { overlaps, overlapSeen: seen });
+      if (next) this.emit({ type: "task", task: this.taskView(next) });
+    }
+    return tasks.filter((t) => active.includes(t)).map((t) => ({ id: t.id, overlaps: this.store.get("codeTasks", t.id)?.overlaps || [] }));
+  }
+
   // ------------------------------------------------------------------ changes and restore points
   async diff(taskId, { turn = null } = {}) {
     const task = this.mustTask(taskId);
@@ -1127,6 +1227,7 @@ export class CodeService {
       const notice = this.items(taskId).find((i) => i.kind === "notice" && i.undo === undo);
       if (!notice) throw Object.assign(Error("Ya no se puede deshacer."), { status: 409 });
       await this.snapsOf(task).restore(undo);
+      void this.checkOverlaps(taskId, undo);
       this.patchItem(notice.id, { undo: null });
       this.addItem(taskId, { kind: "notice", text: "Deshecho: la carpeta vuelve a estar como antes." });
       return { ok: true };
@@ -1135,6 +1236,7 @@ export class CodeService {
     const target = n === 0 ? task.baseSnap : (task.turns || []).find((t) => t.n === n)?.endSnap;
     if (!target) throw Object.assign(Error("No hay punto de restauración para ese turno."), { status: 404 });
     const result = await this.snapsOf(task).restore(target);
+    void this.checkOverlaps(taskId, target);
     this.addItem(taskId, { kind: "notice", text: n === 0 ? "Has vuelto al principio: la carpeta está como antes de la tarea." : `Has vuelto al punto ${n}: la carpeta está como justo después de ese turno.`, undo: result.before });
     return { ok: true, ...result };
   }
@@ -1151,6 +1253,7 @@ export class CodeService {
     if (idx < 0) throw Object.assign(Error("Ese mensaje aún no tiene un turno terminado."), { status: 409 });
     const target = turns[idx].startSnap || (idx === 0 ? task.baseSnap : turns[idx - 1].endSnap);
     if (target) await this.snapsOf(task).restore(target);
+    if (target) void this.checkOverlaps(taskId, target);
     for (const later of this.items(taskId).filter((i) => i.seq >= item.seq)) this.store.remove("codeItems", later.id);
     this.closeEngine(taskId);
     const prev = turns[idx - 1];
@@ -1199,6 +1302,7 @@ export class CodeService {
     this.snaps.delete(taskId);
     for (const item of this.items(taskId)) this.store.remove("codeItems", item.id);
     this.store.remove("codeTasks", taskId);
+    void this.checkOverlaps(taskId, null, task.projectId);
     this.emit({ type: "projects" });
     return { ok: true, branchKept, branch: task.branch };
   }
@@ -1315,6 +1419,7 @@ export class CodeService {
     const snaps = this.snapsOf(task);
     const before = await snaps.capture("file-" + Date.now());
     await snaps.restoreFiles(target, [file]);
+    void this.checkOverlaps(taskId, "now");
     this.addItem(taskId, { kind: "notice", text: `Has deshecho los cambios de ${file}${t ? " en el punto " + t.n : ""}.`, undo: before });
     return { ok: true };
   }
@@ -1575,6 +1680,7 @@ export class CodeService {
     }
     this.addItem(taskId, { kind: "notice", text: "Guardado en " + task.base + ". Ya está en tu carpeta " + project.root + ".", tone: "done" });
     this.setTask(taskId, { merged: now() });
+    void this.checkOverlaps(taskId); // merged: its changes are in the base now, not a copy to collide with
     // Its copy is no longer needed: cleaned up, its last commit kept 30 days under a hidden ref.
     await this.cleanUpCopy(taskId).catch((e) => console.warn("Código: la copia sigue: " + e.message));
     if (this.rulesFor(this.mustTask(taskId)).onSave) await this.archiveTask(taskId, { by: "saved" }).catch(() => null);
@@ -1611,7 +1717,9 @@ export class CodeService {
     this.store.remove("codeSaved", taskId);
     this.snaps.delete(taskId);
     this.addItem(taskId, { kind: "notice", text: "Copia recuperada en la rama " + task.branch + "." });
-    return this.setTask(taskId, { saved: null, merged: null });
+    const back = this.setTask(taskId, { saved: null, merged: null });
+    void this.checkOverlaps(taskId);
+    return back;
   }
 
   /** Hidden refs of cleaned-up copies older than 30 days go (their task can no longer recover). */
@@ -1722,6 +1830,16 @@ function redTitle(rule) {
     remote: "Bruno quiere conectarse a otro equipo",
     kill: "Bruno quiere cerrar programas",
   }[rule] || "Bruno necesita tu OK";
+}
+
+/**
+ * What a turn used, as the engine reported it: Claude Code once at the end (tokens and its
+ * estimated cost), Codex and OpenCode per model call. Null where the engine said nothing.
+ */
+export function turnUsage(turn) {
+  const tokens = Number(turn?.reported?.tokens) || Number(turn?.tokens) || 0;
+  const cost = typeof turn?.reported?.cost === "number" ? turn.reported.cost : Number(turn?.cost) || 0;
+  return { tokens: tokens > 0 ? tokens : null, cost: cost > 0 ? Math.round(cost * 10000) / 10000 : null };
 }
 
 /** A program on the PATH (where / which), or null. */

@@ -275,6 +275,9 @@ export class CodexEngine extends EventEmitter {
         const u = p.tokenUsage || {};
         const used = u.last?.inputTokens || 0;
         if (used) out({ type: "usage", used, window: u.modelContextWindow || 272000 });
+        // `last` is the model call that just ended: the turn adds them up (its stats line).
+        const spent = u.last?.totalTokens || (u.last?.inputTokens || 0) + (u.last?.outputTokens || 0);
+        if (spent) out({ type: "tokens", n: spent });
         return;
       }
       case "account/rateLimits/updated": {

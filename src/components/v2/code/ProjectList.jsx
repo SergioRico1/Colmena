@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Ellipsis, Pin, PinOff, AlarmClock, Archive, ArchiveRestore, Trash2, ChevronRight, Sun, CalendarClock, Search, X } from "lucide-react";
+import { Ellipsis, Pin, PinOff, AlarmClock, Archive, ArchiveRestore, Trash2, ChevronRight, Sun, CalendarClock, Search, X, Files, MessageSquareText } from "lucide-react";
 import { navigate } from "../../../lib/router.jsx";
-import { del, patch, post } from "../../../lib/api.js";
+import { del, get, patch, post } from "../../../lib/api.js";
+import { withMessage } from "../../../lib/reveal.js";
+import { Highlight } from "../../home/shared.jsx";
 import { later, reversible, useHidden } from "../../../lib/undoToast.js";
 import { useStore } from "../../../lib/store.jsx";
 import { C, MONO, SHEET, BotShape, botOf, Pill, SR, timeAgo } from "./parts.jsx";
@@ -192,7 +194,10 @@ function TaskRow({ task, project, bots }) {
           {task.pinned ? <Pin size={12} strokeWidth={2.4} color={C.faint} aria-label="Fijada" style={{ flex: "none" }} /> : null}
           <span style={TITLE}>{task.title}</span>
         </span>
-        <span style={META}>{metaOf(task, project)}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+          <span style={META}>{metaOf(task, project)}</span>
+          {task.overlaps?.length ? <OverlapChip overlap={task.overlaps[0]} more={task.overlaps.length - 1} /> : null}
+        </span>
       </span>
       {task.add || task.del ? <span style={{ font: `500 12.5px/1 ${MONO}`, whiteSpace: "nowrap" }}><span style={{ color: C.greenText }}>{task.add ? "+" + task.add : ""}</span> <span style={{ color: C.red }}>{task.del ? "−" + task.del : ""}</span></span> : null}
       <span className="code-pill" style={{ display: "flex" }}><Pill pill={pill} /></span>
@@ -201,6 +206,57 @@ function TaskRow({ task, project, bots }) {
         <Ellipsis size={15} strokeWidth={2.4} aria-hidden="true" />
       </button>
       <TaskMenu task={task} current={false} menu={menu} />
+    </a>
+  );
+}
+
+/** «Mismos archivos que «X»»: another active task of the project changes the same files (opens it). */
+function OverlapChip({ overlap, more = 0 }) {
+  const open = (e) => { e.preventDefault(); e.stopPropagation(); navigate("/codigo/" + overlap.task); };
+  return (
+    <button type="button" onClick={open} title={`También los cambia «${overlap.title}»: ${overlap.files.join(", ")}${overlap.count > overlap.files.length ? "…" : ""}. Al fusionar pueden chocar.`}
+      style={{ flex: "0 1 auto", minWidth: 0, display: "inline-flex", alignItems: "center", gap: "5px", height: "20px", padding: "0 8px", border: 0, borderRadius: "999px", background: "#FFF1C7", color: C.honeyText, cursor: "pointer", font: `500 11.5px/1 ${MONO}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <Files size={11} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>mismos archivos que «{overlap.title}»{more > 0 ? " y " + (more === 1 ? "otra" : more + " más") : ""}</span>
+    </button>
+  );
+}
+
+const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/** What was said in the tasks (GET /api/code/search), asked 250 ms after you stop typing. */
+function useConversationHits(q) {
+  const [hits, setHits] = useState({ q: "", list: [] });
+  const query = q.trim();
+  const short = fold(query).length < 2;
+  useEffect(() => {
+    if (short) { setHits({ q: query, list: [] }); return undefined; }
+    let alive = true;
+    const timer = setTimeout(() => {
+      const done = (list) => alive && setHits({ q: query, list });
+      get("/code/search?q=" + encodeURIComponent(query)).then((r) => done((r.hits || []).filter((h) => h.itemId)), () => done([]));
+    }, 250);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [query, short]);
+  // The last answer stays on screen while the next one comes (no flicker as you type).
+  return { list: short ? [] : hits.list, answered: short || hits.q === query };
+}
+
+/** A match inside a task's conversation: the task, its project, the words around the match and when. */
+function HitRow({ hit, query }) {
+  return (
+    <a href={withMessage("/codigo/" + hit.taskId, hit.itemId)} className="code-hover" style={{ ...ROW, minHeight: "58px", alignItems: "flex-start", flexWrap: "nowrap", opacity: hit.archived ? 0.8 : 1 }}>
+      <MessageSquareText size={15} strokeWidth={2.1} color={C.faint} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
+      <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+          <span style={{ ...TITLE, fontSize: "14px" }}>{hit.title}</span>
+          {hit.archived ? <span style={{ flex: "none", height: "18px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.track, font: `500 11px/1 ${MONO}`, color: C.muted }}>archivada</span> : null}
+        </span>
+        <span style={{ fontSize: "13.5px", lineHeight: 1.45, color: C.text2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
+          {hit.who ? <span style={{ fontWeight: 600, color: C.ink }}>{hit.who}: </span> : null}<Highlight text={hit.snippet} query={query} />
+        </span>
+        <span style={META}>{[hit.project, timeAgo(hit.at)].filter(Boolean).join(" · ")}</span>
+      </span>
     </a>
   );
 }
@@ -231,12 +287,15 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
   const [shelves, setShelvesState] = useState(readShelves);
   const toggleShelf = (key) => setShelvesState((s) => { const next = { ...s, [key]: !s[key] }; try { localStorage.setItem(SHELF_KEY, JSON.stringify(next)); } catch {} return next; });
   const hiddenTask = useHidden("codetask");
-  const query = q.trim().toLowerCase();
+  const query = fold(q).replace(/\s+/g, " ").trim();
   const byId = new Map(projects.map((p) => [p.id, p]));
-  const all = projects.flatMap((p) => p.tasks).filter((t) => !hiddenTask(t.id) && (!filter || t.projectId === filter) && (!query || t.title.toLowerCase().includes(query)));
+  const all = projects.flatMap((p) => p.tasks).filter((t) => !hiddenTask(t.id) && (!filter || t.projectId === filter) && (!query || fold(t.title).includes(query)));
   const total = projects.reduce((n, p) => n + p.tasks.length, 0);
   const sections = homeSections(all);
   const filtered = filter ? byId.get(filter) : null;
+  // «Buscar en las tareas» also finds what was said in them (archived tasks too).
+  const found = useConversationHits(q);
+  const said = found.list.filter((h) => !hiddenTask(h.taskId) && (!filter || h.projectId === filter));
   return (
     <section aria-labelledby="tasks-t" style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", minHeight: "22px" }}>
@@ -247,15 +306,15 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
           </button>
         ) : null}
         <span style={{ flex: 1 }} />
-        {total > 8 || query ? (
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "220px", padding: "0 12px", borderRadius: "999px", background: C.white, border: "1px solid rgba(18,19,26,.1)", color: C.muted }}>
+        {total || query ? (
+          <label title="Busca en los títulos y en lo que se ha dicho en cada tarea, también en las archivadas" style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "240px", padding: "0 12px", borderRadius: "999px", background: C.white, border: "1px solid rgba(18,19,26,.1)", color: C.muted }}>
             <Search size={14} strokeWidth={2.2} aria-hidden="true" />
-            <span style={SR}>Buscar tareas</span>
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tareas" style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "13.5px" }} />
+            <span style={SR}>Buscar en las tareas</span>
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "13.5px" }} />
           </label>
         ) : null}
       </div>
-      {!sections.length ? (
+      {!sections.length && !said.length && found.answered ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "20px", borderRadius: "18px", background: C.white }}>
           <span style={{ fontSize: "15px", fontWeight: 600 }}>{query ? "Ninguna tarea coincide" : filtered ? "Este proyecto aún no tiene tareas" : "Aún no hay tareas"}</span>
           <span style={{ fontSize: "14px", lineHeight: 1.5, color: C.text2 }}>{query ? "Prueba con otras palabras." : "Cuenta arriba qué quieres construir y pulsa «Empezar». Bruno trabaja en una copia aparte y aquí verás cómo va."}</span>
@@ -281,6 +340,14 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
           </div>
         );
       })}
+      {said.length ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <h3 style={{ margin: 0, padding: "0 4px", fontSize: "13px", fontWeight: 600, color: C.muted }}>En las conversaciones · {said.length}</h3>
+          <div style={{ display: "flex", flexDirection: "column", borderRadius: "18px", background: C.white, overflow: "hidden" }}>
+            {said.map((h) => <HitRow key={h.itemId} hit={h} query={q.trim()} />)}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
