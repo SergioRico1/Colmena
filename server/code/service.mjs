@@ -24,6 +24,7 @@ import { Snapshots, repoInfo, addWorktree, removeWorktree, git, slug, copyInclud
 import { taskPorts, descendants, stopFamily } from "./ports.mjs";
 import { Terminals, projectScripts } from "./terminal.mjs";
 import { expandSkills } from "./context.mjs";
+import { AUTH_FAIL, mergeRefusal, prRepo, reviewPayload, rightLines, signInHint } from "./pr.mjs";
 import { BLOCKED_ROUNDS, blockingKey, mayDeclareBlocked, onlyHard, trackBlocking } from "../guards.mjs";
 
 export const CODE_MODELS = Object.freeze([
@@ -1242,32 +1243,32 @@ export class CodeService {
     for (const t of tasks) await this.checkPr(t.id, gh.cmd).catch((e) => console.warn("Código: PR " + t.id + ": " + e.message));
   }
 
+  /** Where gh runs for a task: its copy, or the repository once the copy is cleaned up. */
+  prCwd(task) { return existsSync(task.cwd) ? task.cwd : task.repoTop; }
+
   async checkPr(taskId, cmd) {
     const task = this.mustTask(taskId);
-    const cwd = existsSync(task.cwd) ? task.cwd : task.repoTop;
-    const r = await runCmd(cmd, ["pr", "view", task.pr.branch, "--json", "number,url,state,mergeable,headRefOid,statusCheckRollup,comments,reviews"], { cwd, timeout: 60000 });
+    const cwd = this.prCwd(task);
+    const r = await runCmd(cmd, ["pr", "view", task.pr.branch, "--json", "number,url,state,mergeable,headRefOid,isDraft,reviewDecision,statusCheckRollup,comments,reviews"], { cwd, timeout: 60000 });
     if (!r.ok) return null; // no PR for this branch yet
     const pr = JSON.parse(r.stdout);
     const checks = (pr.statusCheckRollup || []).map((c) => ({ name: c.name || c.context || "check", state: String(c.conclusion || c.state || c.status || "").toUpperCase(), url: c.detailsUrl || c.targetUrl || "" }));
     const failing = checks.filter((c) => ["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED"].includes(c.state));
     const pending = checks.some((c) => ["PENDING", "QUEUED", "IN_PROGRESS", "EXPECTED", "WAITING"].includes(c.state));
-    const view = { number: pr.number, url: pr.url, state: pr.state, mergeable: pr.mergeable, checks: failing.length ? "failing" : pending ? "pending" : checks.length ? "passing" : "none" };
+    const view = {
+      number: pr.number, url: pr.url, state: pr.state, mergeable: pr.mergeable, headRefOid: pr.headRefOid || null, isDraft: !!pr.isDraft, reviewDecision: pr.reviewDecision || null,
+      checks: failing.length ? "failing" : pending ? "pending" : checks.length ? "passing" : "none",
+    };
     const prev = task.pr;
     const seen = new Set(prev.seen || []);
     const since = Date.parse(prev.since || 0);
     const said = [...(pr.comments || []), ...(pr.reviews || []).filter((x) => x.body?.trim())]
       .filter((c) => !seen.has(c.id || c.url) && Date.parse(c.createdAt || c.submittedAt || 0) >= since && !c.viewerDidAuthor);
     for (const c of said) seen.add(c.id || c.url);
-    let next = { ...prev, ...view, seen: [...seen].slice(-200), checkedAt: now() };
-    if (pr.state !== "OPEN") {
-      next.watching = false;
-      this.setTask(taskId, { pr: next });
-      this.addItem(taskId, { kind: "notice", text: `La PR #${pr.number} ${pr.state === "MERGED" ? "se ha fusionado" : "se ha cerrado"}.`, url: pr.url, tone: pr.state === "MERGED" ? "done" : undefined });
-      this.notifyTask(taskId, "done", `La PR #${pr.number} ${pr.state === "MERGED" ? "se ha fusionado" : "se ha cerrado"}.`);
-      // Merged or closed, the task's work is over: it goes to the archived shelf (if it may).
-      if (this.rulesFor(this.mustTask(taskId)).onPr) await this.archiveTask(taskId, { by: "pr" }).catch(() => null);
-      return next;
-    }
+    const onLines = pr.state === "OPEN" ? await this.lineComments(cmd, cwd, pr, { seen, since }) : [];
+    for (const c of onLines) seen.add("lc:" + c.id);
+    const next = { ...prev, ...view, seen: [...seen].slice(-200), checkedAt: now() };
+    if (pr.state !== "OPEN") return this.prClosed(taskId, { ...next, watching: false });
     // Something for Bruno: each one wakes him once (signature), never twice for the same thing.
     const wake = [];
     const ciKey = failing.length ? pr.headRefOid + ":" + failing.map((c) => c.name).sort().join(",") : null;
@@ -1283,13 +1284,134 @@ export class CodeService {
       wake.push(`Falla el CI de la PR #${pr.number}: ${failing.map((c) => c.name).join(", ")}.` + (logs.length ? "\n\nLo que dice:\n```\n" + clip(logs.join("\n"), 9000) + "\n```" : ""));
     }
     if (pr.mergeable === "CONFLICTING" && prev.mergeable !== "CONFLICTING") wake.push(`La PR #${pr.number} tiene conflictos con ${task.base || "main"}.`);
+    const decided = view.reviewDecision !== (prev.reviewDecision ?? null) ? view.reviewDecision : null;
+    if (decided === "CHANGES_REQUESTED") wake.push(`Piden cambios en la PR #${pr.number}.`);
     if (said.length) wake.push(`Han comentado en la PR #${pr.number}:\n` + said.slice(0, 10).map((c) => `- ${c.author?.login || "alguien"}: ${clip(String(c.body || "").replace(/\s+/g, " "), 600)}`).join("\n"));
+    if (onLines.length) wake.push(`Han comentado líneas de la PR #${pr.number}:\n` + onLines.slice(0, 15).map((c) => `- ${c.user?.login || "alguien"} en ${c.path}${c.line || c.original_line ? ":" + (c.line || c.original_line) : ""}: ${clip(String(c.body || "").replace(/\s+/g, " "), 600)}`).join("\n"));
     this.setTask(taskId, { pr: next });
+    if (decided === "APPROVED") {
+      // Good news only: a notice, never a turn for Bruno.
+      this.addItem(taskId, { kind: "notice", text: `La PR #${pr.number} está aprobada.`, url: pr.url, tone: "done" });
+      this.notifyTask(taskId, "done", `La PR #${pr.number} está aprobada.`);
+    }
     if (!wake.length) return next;
     this.addItem(taskId, { kind: "notice", text: wake.map((w) => w.split("\n")[0]).join(" "), url: pr.url, tone: "warn" });
     this.notifyTask(taskId, "needs", wake.map((w) => w.split("\n")[0]).join(" "));
     await this.send(taskId, { line: "Bruno se pone con la PR #" + pr.number + ": " + wake.map((w) => w.split("\n")[0]).join(" "), text: wake.join("\n\n") + "\n\nArréglalo en tu copia y comprueba que funciona. Para subirlo de nuevo, pide permiso: subir sigue necesitando el OK de la persona." }).catch((e) => console.warn("Código: PR: " + e.message));
     return next;
+  }
+
+  /** Merged or closed: a notice, a Windows notice, and the archived shelf (if it may). */
+  async prClosed(taskId, next) {
+    const merged = next.state === "MERGED";
+    const text = `La PR #${next.number} ${merged ? "se ha fusionado" : "se ha cerrado"}.`;
+    this.setTask(taskId, { pr: next });
+    this.addItem(taskId, { kind: "notice", text, url: next.url, tone: merged ? "done" : undefined });
+    this.notifyTask(taskId, "done", text);
+    if (this.rulesFor(this.mustTask(taskId)).onPr) await this.archiveTask(taskId, { by: "pr" }).catch(() => null);
+    return next;
+  }
+
+  /** Inline review comments not seen yet (newest 100), without the person's own or Colmena's review. */
+  async lineComments(cmd, cwd, pr, { seen, since }) {
+    const repo = prRepo(pr.url);
+    if (!repo) return [];
+    const r = await runCmd(cmd, ["api", `repos/${repo}/pulls/${pr.number}/comments?sort=created&direction=desc&per_page=100`], { cwd, timeout: 60000 });
+    let list = [];
+    try { list = r.ok ? JSON.parse(r.stdout) : []; } catch { return []; }
+    const me = await this.ghLogin(cmd);
+    return (Array.isArray(list) ? list : [])
+      .filter((c) => c?.id && !seen.has("lc:" + c.id) && !seen.has("review:" + c.pull_request_review_id) && Date.parse(c.created_at || 0) >= since && !(me && c.user?.login === me))
+      .reverse();
+  }
+
+  /** The signed-in GitHub login (asked once; null while gh cannot say). */
+  async ghLogin(cmd) {
+    if (this.ghUser) return this.ghUser;
+    const r = await runCmd(cmd, ["api", "user", "--jq", ".login"], { timeout: 20000 });
+    return (this.ghUser = r.ok ? r.stdout.trim() || null : null);
+  }
+
+  // ------------------------------------------------------------------ acting on the PR (the person's buttons)
+  // Merging, marking ready and publishing a review go out to GitHub: only from the person's
+  // click (HTTP routes with the app token). Bruno's own «gh pr merge» stays a red line (policy.mjs).
+  /** The task's open PR and a signed-in gh, or a clear 409. */
+  async openPr(taskId) {
+    const task = this.mustTask(taskId);
+    const pr = task.pr;
+    if (!pr?.number || pr.state !== "OPEN") throw Object.assign(Error("Esta tarea no tiene una PR abierta en GitHub."), { status: 409 });
+    const repo = prRepo(pr.url);
+    if (!repo) throw Object.assign(Error("No sé en qué repositorio de GitHub está la PR #" + pr.number + "."), { status: 409 });
+    const gh = await this.ghStatus();
+    if (!gh.installed || !gh.authed) throw Object.assign(Error(gh.installed ? "Inicia sesión en GitHub con «gh auth login» en una terminal y vuelve a intentarlo." : "Para esto hace falta GitHub CLI (gh): instálalo e inicia sesión con «gh auth login»."), { status: 409 });
+    return { task, pr, repo, gh, cwd: this.prCwd(task) };
+  }
+
+  /**
+   * «Fusionar la PR #N en GitHub»: merges only the commit the person saw (--match-head-commit),
+   * so a push after they looked makes GitHub refuse. Then the usual «merged» path.
+   */
+  async mergePr(taskId) {
+    const { task, pr, repo, gh, cwd } = await this.openPr(taskId);
+    const base = task.base || "main";
+    const refuse = (text) => Object.assign(Error(text), { status: 409 });
+    if (pr.isDraft) throw refuse(mergeRefusal("draft", { number: pr.number, base }));
+    if (pr.mergeable === "CONFLICTING") throw refuse(mergeRefusal("conflict", { number: pr.number, base }));
+    if (pr.checks === "failing") throw refuse(`Falla el CI de la PR #${pr.number}: arréglalo antes de fusionarla.`);
+    if (!pr.headRefOid) throw refuse(`Colmena aún no ha visto el último commit de la PR #${pr.number}: espera un momento y vuelve a intentarlo.`);
+    const r = await runCmd(gh.cmd, ["pr", "merge", String(pr.number), "--repo", repo, "--merge", "--match-head-commit", pr.headRefOid], { cwd, timeout: 120000 });
+    if (!r.ok) {
+      await this.checkPr(taskId, gh.cmd).catch(() => null); // what changed shows on screen
+      throw refuse(mergeRefusal(r.stderr + "\n" + r.stdout, { number: pr.number, base }));
+    }
+    const after = await this.checkPr(taskId, gh.cmd).catch(() => null);
+    if (after?.state !== "MERGED" && this.mustTask(taskId).pr?.state === "OPEN") {
+      // A merge queue (or GitHub being slow): the watch says when it is in.
+      this.addItem(taskId, { kind: "notice", text: `GitHub ha recibido la orden de fusionar la PR #${pr.number}. Colmena te avisa cuando esté fusionada.`, url: pr.url });
+      if (!this.mustTask(taskId).pr.watching) await this.followPr(taskId, pr.branch || task.branch).catch(() => false);
+    }
+    return { ok: true, task: this.taskView(this.mustTask(taskId)) };
+  }
+
+  /** «Marcar la PR como lista»: a draft PR goes up for review (gh pr ready). */
+  async readyPr(taskId) {
+    const { pr, repo, gh, cwd } = await this.openPr(taskId);
+    if (!pr.isDraft) return { ok: true, task: this.taskView(this.mustTask(taskId)) };
+    const r = await runCmd(gh.cmd, ["pr", "ready", String(pr.number), "--repo", repo], { cwd, timeout: 60000 });
+    if (!r.ok) throw Object.assign(Error(`GitHub no ha marcado la PR #${pr.number} como lista: ` + clip(lastLine(r.stderr || r.stdout), 300)), { status: 409 });
+    this.setTask(taskId, { pr: { ...this.mustTask(taskId).pr, isDraft: false } });
+    this.addItem(taskId, { kind: "notice", text: `La PR #${pr.number} ya está lista para revisar.`, url: pr.url });
+    return { ok: true, task: this.taskView(this.mustTask(taskId)) };
+  }
+
+  /**
+   * «Publicar en la PR #N»: Código's P0–P3 review as one GitHub review on the head commit,
+   * findings on a line of the PR diff inline, the rest in its body. Once per review item.
+   */
+  async publishReview(taskId, { item: itemId }) {
+    const item = this.store.get("codeItems", itemId);
+    if (!item || item.taskId !== taskId || item.kind !== "review") throw Object.assign(Error("No encuentro esa revisión."), { status: 404 });
+    if (item.published) throw Object.assign(Error(`Esta revisión ya está publicada en la PR #${item.published.number}.`), { status: 409 });
+    this.publishing ||= new Set();
+    if (this.publishing.has(itemId)) throw Object.assign(Error("Ya se está publicando esta revisión."), { status: 409 });
+    this.publishing.add(itemId);
+    try {
+      const { pr, repo, gh, cwd } = await this.openPr(taskId);
+      if (!pr.headRefOid) throw Object.assign(Error(`Colmena aún no ha visto el último commit de la PR #${pr.number}: espera un momento y vuelve a intentarlo.`), { status: 409 });
+      const diff = await runCmd(gh.cmd, ["pr", "diff", String(pr.number), "--repo", repo], { cwd, timeout: 60000 });
+      const payload = reviewPayload(item, { commit: pr.headRefOid, lines: rightLines(diff.ok ? diff.stdout : "") });
+      const file = path.join(this.directory, "code", "tmp", "review-" + randomUUID() + ".json");
+      await mkdir(path.dirname(file), { recursive: true });
+      await writeFile(file, JSON.stringify(payload));
+      const r = await runCmd(gh.cmd, ["api", `repos/${repo}/pulls/${pr.number}/reviews`, "-X", "POST", "--input", file], { cwd, timeout: 60000 }).finally(() => rm(file, { force: true }).catch(() => {}));
+      if (!r.ok) throw Object.assign(Error("GitHub no ha aceptado la revisión: " + clip(ghMessage(r.stderr + "\n" + r.stdout), 300)), { status: 409 });
+      let res = {};
+      try { res = JSON.parse(r.stdout || "{}"); } catch {}
+      const published = { number: pr.number, url: res.html_url || pr.url, id: res.id || null, inline: payload.comments.length, at: now() };
+      // Its own inline comments never come back to Bruno as somebody else's.
+      if (res.id) { const t = this.mustTask(taskId); this.setTask(taskId, { pr: { ...t.pr, seen: [...(t.pr.seen || []), "review:" + res.id].slice(-200) } }); }
+      return { item: this.patchItem(itemId, { published }), published };
+    } finally { this.publishing.delete(itemId); }
   }
 
   /** «Dejar de seguir» / «Seguir la PR». */
@@ -1625,19 +1747,43 @@ export class CodeService {
     }
   }
 
+  /**
+   * A cheap look at the remote before pushing (git ls-remote, no prompts, 15 s): when it fails
+   * because nobody is signed in, a 409 that says how. Any other failure leaves it to the push.
+   */
+  async checkSignIn(cwd, remote) {
+    try {
+      await git(["ls-remote", "--heads", "origin"], { cwd, timeout: 15000 });
+    } catch (error) {
+      if (!AUTH_FAIL.test(String(error.stderr || error.message))) return;
+      const why = githubRepo(remote) ? signInHint(await this.ghStatus().catch(() => ({}))) : "El servidor de Git no te reconoce en este ordenador: inicia sesión en Git (por ejemplo, haz un push desde una terminal una vez) y vuelve a intentarlo.";
+      throw Object.assign(Error(why), { status: 409, signIn: true });
+    }
+  }
+
+  /** What the «Más» menu says before you push: gh's sign-in, when it is already known (never waits). */
+  githubHint() {
+    const known = this.ghCache;
+    if ((!known || Date.now() - known.at > 60000) && !this.ghAsking) this.ghAsking = this.ghStatus().catch(() => {}).finally(() => { this.ghAsking = null; }); // for the next look
+    return known ? { installed: known.installed, authed: known.authed } : null;
+  }
+
   /** «Guardar y subir»: commit, then `git push -u origin <branch>` (the button is the person's OK). */
   async push(taskId) {
-    const task = this.mustTask(taskId);
+    let task = this.mustTask(taskId);
+    if (task.saved) task = await this.recover(taskId);
+    const origin = await git(["remote", "get-url", "origin"], { cwd: task.cwd, ok: [0, 2, 128] });
+    if (!origin.stdout.trim()) throw Object.assign(Error("Este proyecto no está conectado a GitHub (no tiene «origin»). Pídele a Bruno que lo conecte o súbelo tú primero."), { status: 409 });
+    // Signed in? Asked before anything is saved, so it never fails halfway.
+    await this.checkSignIn(task.cwd, origin.stdout);
     await this.commit(taskId);
     const branch = task.branch || (await repoInfo(task.cwd)).branch;
     if (!branch) throw Object.assign(Error("No hay una rama que subir."), { status: 409 });
-    const origin = await git(["remote", "get-url", "origin"], { cwd: task.cwd, ok: [0, 2, 128] });
-    if (!origin.stdout.trim()) throw Object.assign(Error("Este proyecto no está conectado a GitHub (no tiene «origin»). Pídele a Bruno que lo conecte o súbelo tú primero."), { status: 409 });
     try {
       await git(["push", "-u", "origin", "HEAD:refs/heads/" + branch], { cwd: task.cwd, timeout: 300000 });
     } catch (error) {
       const said = String(error.stderr || error.message);
-      const why = /could not read Username|Authentication failed|403|denied/i.test(said) ? "GitHub no te reconoce en este ordenador: inicia sesión en Git (por ejemplo, haz un push desde una terminal una vez)."
+      const why = AUTH_FAIL.test(said) ? (githubRepo(origin.stdout) ? signInHint(await this.ghStatus().catch(() => ({}))) : "El servidor de Git no te reconoce en este ordenador: inicia sesión en Git (por ejemplo, haz un push desde una terminal una vez).")
         : /rejected|non-fast-forward|fetch first/i.test(said) ? "La rama de GitHub tiene cambios que aquí no están. Pídele a Bruno que traiga lo último y lo junte."
         : "No se pudo subir: " + error.message;
       throw Object.assign(Error(why), { status: 409 });
@@ -1732,6 +1878,17 @@ function whichCommand(name) {
 function runCmd(command, args, { cwd, timeout = 60000 } = {}) {
   const [exe, ...lead] = command;
   return new Promise((resolve) => execFile(exe, [...lead, ...args], { cwd, windowsHide: true, timeout, maxBuffer: 16 * 1024 * 1024, env: { ...process.env, GH_PROMPT_DISABLED: "1", NO_COLOR: "1" } }, (error, stdout, stderr) => resolve({ ok: !error, stdout: String(stdout || ""), stderr: String(stderr || "") })));
+}
+
+const lastLine = (s) => String(s || "").trim().split(/\r?\n/).filter(Boolean).at(-1) || "";
+/** gh api's error: its JSON «message» (with its «errors») when there is one, else the last line. */
+function ghMessage(said) {
+  try {
+    const j = JSON.parse(/\{[\s\S]*\}/.exec(String(said || ""))?.[0]);
+    const extra = (j.errors || []).map((e) => (typeof e === "string" ? e : e.message || e.code)).filter(Boolean);
+    if (j.message) return j.message + (extra.length ? " (" + extra.join("; ") + ")" : "");
+  } catch {}
+  return lastLine(said);
 }
 
 /** The history a new engine gets after a switch (T3 Code ContextHandoffService): 16 000 bytes. */

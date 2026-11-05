@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge } from "lucide-react";
+import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { whenLabel, useMenu, MenuSheet, Item, Rule, TaskActions } from "../components/v2/code/ProjectList.jsx";
 import CodeHome from "../components/v2/code/CodeHome.jsx";
@@ -156,10 +156,20 @@ function useWatch(taskId) {
 const CHIP = { height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "7px", background: C.white, border: "1px solid rgba(18,19,26,.08)", whiteSpace: "nowrap", color: C.text2 };
 const SIGNAL = (bg, fg) => ({ ...CHIP, border: 0, background: bg, color: fg, fontFamily: "'Geist', sans-serif", fontWeight: 600 });
 
+/** What GitHub says of an open PR: draft, approved, changes requested ([text, look, title]). */
+function prDecision(pr) {
+  if (!pr?.number || pr.state !== "OPEN") return null;
+  if (pr.isDraft) return ["Borrador", SIGNAL("#EEF0F4", C.text2), "La PR es un borrador: nadie la revisa hasta que la marques como lista"];
+  if (pr.reviewDecision === "APPROVED") return ["✓ Aprobada", SIGNAL("#E3F4EC", C.greenText), "Han aprobado la PR en GitHub"];
+  if (pr.reviewDecision === "CHANGES_REQUESTED") return ["Piden cambios", SIGNAL("#FFF1C7", C.honeyText), "En GitHub piden cambios en la PR: Bruno se pone con ellos"];
+  return null;
+}
+
 /** The chips under the title: branch → base, the PR, CI and where the task stands. */
-function TaskChips({ task, project, running }) {
+function TaskChips({ task, project, running, onMergePr = null }) {
   const pr = task.pr;
   const base = task.base || project?.base || "main";
+  const decision = prDecision(pr);
   const ci = !pr || pr.state === "CLOSED" ? null : pr.state === "MERGED" ? SIGNAL("#E3F4EC", C.greenText) : pr.mergeable === "CONFLICTING" ? SIGNAL("#FFF1C7", C.honeyText) : pr.checks === "failing" ? SIGNAL(C.redSoft, C.red) : pr.checks === "passing" ? SIGNAL("#E3F4EC", C.greenText) : pr.checks === "pending" ? SIGNAL("#EEF0F4", C.text2) : null;
   const ciText = !ci ? null : pr.state === "MERGED" ? "✓ Fusionada" : pr.mergeable === "CONFLICTING" ? "Conflictos con " + base : pr.checks === "failing" ? "✕ CI: falla" : pr.checks === "passing" ? "✓ CI: pasa" : "CI en curso";
   const wake = () => post("/code/tasks/" + task.id + (task.archived ? "/archive" : "/snooze"), task.archived ? { archived: false } : { until: null }).catch((e) => window.alert(e.message));
@@ -171,6 +181,12 @@ function TaskChips({ task, project, running }) {
       {pr?.number ? <a href={pr.url || undefined} target="_blank" rel="noreferrer" style={{ ...CHIP, color: C.text2 }} title={pr.watching ? "Colmena sigue esta PR con gh: si falla el CI, hay conflictos o comentan, Bruno se pone con ello (subir sigue pidiendo tu OK)." : undefined}>PR #{pr.number}</a>
         : pr?.watching ? <span style={CHIP}>PR · esperando…</span> : null}
       {ci ? <span style={ci}>{ciText}</span> : null}
+      {decision ? <span style={decision[1]} title={decision[2]}>{decision[0]}</span> : null}
+      {onMergePr ? (
+        <button type="button" onClick={onMergePr} title="Fusiona en GitHub el último commit que has visto de la PR. Si alguien sube algo después, GitHub no la fusiona." style={{ ...SIGNAL("#F1F1EC", C.blue), cursor: "pointer" }}>
+          <GitMerge size={12} strokeWidth={2.2} aria-hidden="true" />Fusionar en GitHub
+        </button>
+      ) : null}
       {running ? <span style={SIGNAL("#EEF0F4", C.blue)}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", background: C.blue }} />Trabajando</span>
         : task.status === "waiting" || task.status === "planned" ? <span style={SIGNAL(C.honey, C.ink)}>Te espera</span>
           : task.status === "error" ? <span style={SIGNAL(C.redSoft, C.red)}>Atascada</span> : null}
@@ -217,7 +233,7 @@ function blocksOf(rows) {
   return out;
 }
 
-function TaskScreen({ taskId, engines = [], panel, wide, onPanel, onWide, tab, setTab, turn, setTurn }) {
+function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel, onWide, tab, setTab, turn, setTurn }) {
   const { task, project, items, live, models, commands, error, reload } = useCodeTask(taskId);
   const { bots } = useStore();
   const bot = botOf(bots, task);
@@ -230,6 +246,7 @@ function TaskScreen({ taskId, engines = [], panel, wide, onPanel, onWide, tab, s
   useEffect(() => { setMode("build"); setCount(null); }, [taskId]);
   useWatch(taskId);
   const saving = useSave(task, reload);
+  const [prBusy, setPrBusy] = useState(null); // "merge" | "ready": a button on the PR in GitHub
   const more = useMenu(300);
   // «/btw …»: ask Bruno something while he works, apart from the task (BtwNotes.jsx).
   const btw = useBtw("/code/tasks/" + taskId + "/btw");
@@ -270,6 +287,14 @@ function TaskScreen({ taskId, engines = [], panel, wide, onPanel, onWide, tab, s
   const serious = findings.filter((f) => f.severity === "P0" || f.severity === "P1").length;
   const pr = task.pr && task.pr.state !== "CLOSED" && task.pr.state !== "MERGED" ? task.pr : null;
   const ciFailing = pr?.checks === "failing";
+  // The PR on GitHub: merge it (only the commit you saw) or mark a draft ready. Your click is the OK.
+  const openPr = pr?.number && pr.state === "OPEN" ? pr : null;
+  const prMergeWhy = !openPr ? null : openPr.isDraft ? "Es un borrador: márcala como lista primero" : ciFailing ? "Falla el CI: arréglalo antes de fusionar" : openPr.mergeable === "CONFLICTING" ? "Tiene conflictos con " + (task.base || "main") + ": que " + name + " los resuelva antes" : null;
+  const prAction = (kind) => {
+    setPrBusy(kind); saving.setError(null);
+    post("/code/tasks/" + task.id + "/pr/" + kind, {}).catch((e) => saving.setError(e.message)).finally(() => { setPrBusy(null); reload(); });
+  };
+  const ghOff = github && (!github.installed || !github.authed) ? (github.installed ? "GitHub CLI no tiene sesión en este ordenador: para subir y seguir la PR, ejecuta «gh auth login» en una terminal." : "GitHub CLI (gh) no está instalado: para subir a GitHub y seguir la PR, instálalo y ejecuta «gh auth login».") : null;
   const fixable = !running && (findings.length > 0 || ciFailing);
   const fix = () => act(async () => {
     const parts = [];
@@ -286,6 +311,8 @@ function TaskScreen({ taskId, engines = [], panel, wide, onPanel, onWide, tab, s
     onAnswer: (item, body) => act(() => post("/code/tasks/" + task.id + "/asks/" + item.id, body)),
     onEditFrom: (item) => act(async () => { const r = await post("/code/tasks/" + task.id + "/edit-from", { item: item.id }); setDraft({ text: r.text }); }),
     onFinding: (f) => addContext(task.id, findingContext(f)),
+    pr: openPr ? { number: openPr.number } : null,
+    onPublish: (item) => act(() => post("/code/tasks/" + task.id + "/reviews/" + item.id + "/publish", {})),
     onPlan: (item, action) => {
       if (action === "refine") { setMode("plan"); setDraft({ text: "" }); return; }
       return act(async () => {
@@ -359,7 +386,7 @@ function TaskScreen({ taskId, engines = [], panel, wide, onPanel, onWide, tab, s
             <a href="/codigo" style={{ color: C.muted }}>Código</a><span aria-hidden="true">›</span><span style={{ fontFamily: MONO }}>{project?.name || "proyecto"}</span>
           </nav>
           <h1 title={task.title} style={{ margin: 0, font: `600 28px/1.05 ${HEAD}`, letterSpacing: "-0.025em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.title}</h1>
-          <TaskChips task={task} project={project} running={running} />
+          <TaskChips task={task} project={project} running={running} onMergePr={openPr?.reviewDecision === "APPROVED" && !prMergeWhy && !prBusy && !running ? () => prAction("merge") : null} />
         </div>
         <div style={{ position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
           <TaskPeople taskId={task.id} project={project ? { id: project.id, name: project.name } : null} look={{ ...BTN.outline, fontSize: "14px", fontWeight: 400 }} />
@@ -370,9 +397,18 @@ function TaskScreen({ taskId, engines = [], panel, wide, onPanel, onWide, tab, s
             <Ellipsis size={18} strokeWidth={2.2} aria-hidden="true" />
           </button>
           <MenuSheet menu={more} label="Más" width={300}>
-            {saveItems.map(([to, Icon, text]) => <Item key={to} icon={Icon} text={text} disabled={!!saving.busy || running} onClick={() => { more.close(); saving.save(to); }} />)}
+            {saveItems.map(([to, Icon, text]) => {
+              const signIn = ghOff && (to === "push" || to === "pr") ? ghOff : null;
+              return <span key={to} title={signIn || undefined} style={{ display: "block" }}><Item icon={Icon} text={text} note={signIn ? "gh sin sesión" : null} disabled={!!saving.busy || running} onClick={() => { more.close(); saving.save(to); }} /></span>;
+            })}
             {blockedWhy && canSave && !task.saved ? <Item icon={GitMerge} text={(task.isolated ? "Fusionar en " + base : "Guardar") + " igualmente"} disabled={!!saving.busy || running} onClick={() => { more.close(); saving.save(task.isolated ? "base" : "branch", { force: true }); }} /> : null}
-            {saveItems.length ? <Rule /> : null}
+            {openPr?.isDraft ? <Item icon={GitPullRequestArrow} text={prBusy === "ready" ? "Marcando como lista…" : "Marcar la PR como lista"} disabled={!!prBusy} onClick={() => { more.close(); prAction("ready"); }} /> : null}
+            {openPr ? (
+              <span title={prMergeWhy || "Fusiona en GitHub el último commit que has visto de la PR. Si alguien sube algo después, GitHub no la fusiona."} style={{ display: "block" }}>
+                <Item icon={GitMerge} text={prBusy === "merge" ? "Fusionando en GitHub…" : "Fusionar la PR #" + openPr.number + " en GitHub"} disabled={!!prMergeWhy || !!prBusy || running} onClick={() => { more.close(); prAction("merge"); }} />
+              </span>
+            ) : null}
+            {saveItems.length || openPr ? <Rule /> : null}
             {task.group ? <Item icon={Columns3} text="Comparar con los otros motores" onClick={() => { more.close(); navigate("/codigo/comparar/" + task.group); }} /> : null}
             <Item icon={PanelRight} text={panel ? "Ocultar plan, cambios y vista previa" : "Mostrar plan, cambios y vista previa"} onClick={() => { more.close(); onPanel(!panel); }} />
             <Item icon={ExternalLink} text="Abrir la carpeta de la copia" onClick={() => { more.close(); openFolder(); }} />
@@ -529,7 +565,7 @@ export default function CodigoV2({ params = {}, query = {} }) {
         {params.handoff ? <HandoffPage key={params.handoff} id={params.handoff} />
           : params.shared ? <SharedTask key={params.shared} id={params.shared} />
             : params.group ? <Compare group={params.group} projects={projects} />
-              : taskId ? <TaskScreen key={taskId} taskId={taskId} engines={data?.engines || []} panel={panel} wide={wide} onPanel={setPanel} onWide={setWide} tab={tab} setTab={setTab} turn={turn} setTurn={setTurn} />
+              : taskId ? <TaskScreen key={taskId} taskId={taskId} engines={data?.engines || []} github={data?.github || null} panel={panel} wide={wide} onPanel={setPanel} onWide={setWide} tab={tab} setTab={setTab} turn={turn} setTurn={setTurn} />
                 : <div style={{ flex: 1, minWidth: 0, height: "100%" }}><CodeHome projects={projects} selected={selected} onSelect={(id) => { setSelected(id); reload(); }} engines={data?.engines || []} /></div>}
       </div>
       {sheet ? <ShortcutsSheet onClose={() => setSheet(false)} /> : null}

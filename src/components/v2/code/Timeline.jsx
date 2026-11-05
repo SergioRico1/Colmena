@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useExpert } from "../../../lib/expert.js";
-import { Pencil, History, ListChecks, Undo2, Check, Target, ShieldCheck } from "lucide-react";
+import { Pencil, History, ListChecks, Undo2, Check, Target, ShieldCheck, GitPullRequest } from "lucide-react";
 import Markdown from "../../room/Markdown.jsx";
 import { C, MONO, HEAD, CARD, Stat, BTN } from "./parts.jsx";
 import { EngineMark } from "./EngineModels.jsx";
@@ -155,8 +155,10 @@ const SEVERITY = {
 };
 
 /** The review before merging (OpenClaw autoreview): findings P0–P3; «Que Bruno lo arregle» is up in the header. */
-function ReviewCard({ item, onFinding, current }) {
+function ReviewCard({ item, onFinding, current, pr = null, onPublish = null }) {
   const [expert] = useExpert();
+  const [publishing, setPublishing] = useState(false);
+  const publish = async () => { setPublishing(true); try { await onPublish(item); } finally { setPublishing(false); } };
   const findings = item.findings || [];
   const serious = findings.filter((f) => f.severity === "P0" || f.severity === "P1").length;
   const who = item.by ? String(item.by).split(" ")[0] : "Tu bot";
@@ -185,6 +187,16 @@ function ReviewCard({ item, onFinding, current }) {
         <span style={{ fontSize: "12.5px", lineHeight: 1.45, color: C.muted }}>
           Antes de fusionar: {serious ? (serious === 1 ? "1 problema importante" : serious + " problemas importantes") + (findings.length > serious ? " y " + (findings.length - serious === 1 ? "1 aviso" : findings.length - serious + " avisos") : "") : findings.length === 1 ? "1 aviso" : findings.length + " avisos"}. «Que Bruno lo arregle» le pasa {findings.length === 1 ? "el aviso" : findings.length === 2 ? "los dos" : findings.length === 3 ? "los tres" : "todos"}.
         </span>
+      ) : null}
+      {/* Outward-facing: it goes to GitHub only on your click, and only once. */}
+      {item.published ? (
+        <a href={item.published.url} target="_blank" rel="noreferrer" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: C.muted }}>
+          <Check size={12} strokeWidth={2.6} aria-hidden="true" />Publicada en la PR #{item.published.number}
+        </a>
+      ) : pr && onPublish ? (
+        <button type="button" disabled={publishing} onClick={publish} title="La deja en GitHub como una revisión: cada aviso en su línea cuando se puede, el resto en el comentario" style={{ ...BTN.outline, alignSelf: "flex-start", height: "30px", padding: "0 12px", fontSize: "12.5px", opacity: publishing ? 0.55 : 1, cursor: publishing ? "default" : "pointer" }}>
+          <GitPullRequest size={13} strokeWidth={2.2} aria-hidden="true" />{publishing ? "Publicando…" : "Publicar en la PR #" + pr.number}
+        </button>
       ) : null}
     </div>
   );
@@ -253,7 +265,7 @@ export function TimelineRow({ row, ctx }) {
   if (row.kind === "turn") return <TurnCard item={item} total={ctx.turns} busy={ctx.busy} onDiff={ctx.onDiff} onRestore={ctx.onRestore} />;
   if (row.kind === "ask") return <AskCard item={item} onAnswer={ctx.onAnswer} />;
   if (row.kind === "plan") return <PlanCard item={item} busy={ctx.busy} onPlan={ctx.onPlan} onShowPlan={ctx.onShowPlan} />;
-  if (row.kind === "review") return <ReviewCard item={item} onFinding={ctx.onFinding} current={ctx.review === item.id} />;
+  if (row.kind === "review") return <ReviewCard item={item} onFinding={ctx.onFinding} current={ctx.review === item.id} pr={ctx.pr} onPublish={ctx.onPublish} />;
   if (row.kind === "notice") {
     const tone = item.tone === "done" ? { bg: "#E3F4EC", fg: "#0B6B4A" } : item.tone === "warn" ? { bg: "#FFF1C7", fg: "#5C4300" } : null;
     return (
