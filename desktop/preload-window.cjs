@@ -56,6 +56,12 @@ contextBridge.exposeInMainWorld("colmenaWindow", {
       return () => ipcRenderer.removeListener("colmena-update", listener);
     },
   },
+  // Dragging a file Colmena shows into another app: the link it is served at (the main
+  // process finds and checks the file). warm() on press, drag() on dragstart → {ok, error?}.
+  dragFile: {
+    warm: (url) => ipcRenderer.send("colmena-drag-warm", String(url || "").slice(0, 2000)),
+    drag: (url) => ipcRenderer.invoke("colmena-drag-file", String(url || "").slice(0, 2000)),
+  },
   // «Abrir el registro» (start-up screen): what the local service printed since Colmena opened.
   openLog: () => ipcRenderer.send("colmena-startup", "log"),
   edit: (action) => ["cut", "copy", "paste", "selectAll"].includes(action) && ipcRenderer.send("colmena-window", "edit:" + action),

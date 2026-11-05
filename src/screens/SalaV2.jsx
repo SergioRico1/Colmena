@@ -19,6 +19,7 @@ import FilesPanel, { FileView, fileIcon } from "../components/room/FilesPanel.js
 import BrowserLive from "../components/computer/BrowserLive.jsx";
 import TerminalPanel, { commandsOf } from "../components/computer/TerminalPanel.jsx";
 import { useAutoPreview } from "../lib/autoPreview.js";
+import { useOpenFileRequests } from "../components/v2/chat/ChangedFiles.jsx";
 import AsidePanel, { askAsideAbout } from "../components/room/AsidePanel.jsx";
 import SelectionPopup, { quoteInto } from "../components/room/SelectionPopup.jsx";
 import { BlockerBand, StuckBand, RepliesPanel, ProgressPanel, RoomComposer, RoomMessages, ThreadPanel, typingInfo, withOrphanQuestions, OlderMessages } from "../components/room/RoomParts.jsx";
@@ -222,6 +223,8 @@ function Room({ id, query }) {
   const workVersion = useMemo(() => steps.reduce((n, s) => n + (s.activity?.length || 0), 0) + artifacts.length + messages.length, [steps, artifacts, messages]);
   // A web page a bot just made opens in «Vista previa» beside the room (OpenClaw's Canvas).
   useAutoPreview(id, artifacts, (wf) => dock.open({ id: "file:" + wf, kind: "file", path: wf, name: wf.split("/").pop(), type: "code" }));
+  // A file named in an answer or in «Archivos cambiados» opens beside the room.
+  useOpenFileRequests(id, openFile);
   const resolve = (t) => {
     if (t.kind === "reglas") return { label: "Bots y reglas", icon: <Users {...I} />, title: "Bots y reglas · " + comboLabel(SHORTCUTS.reglas), render: () => <RulesPanel mission={mission} bots={bots} memberIds={memberIds} /> };
     if (t.kind === "aparte") return { label: "Preguntar aparte", icon: <MessageCircleQuestion {...I} />, title: "Preguntar aparte · " + comboLabel(SHORTCUTS.aparte), render: () => <AsidePanel mission={mission} /> };

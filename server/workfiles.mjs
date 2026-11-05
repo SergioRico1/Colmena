@@ -2,13 +2,17 @@
 // working folder, which ones the bots changed or read and which you attached; a preview of
 // each (text, Markdown, CSV, images, PDF/Word/Excel as text) and conflict-safe editing:
 // a save only lands if the file still has the hash you opened (SHA-256 of its bytes),
-// otherwise you choose «Recargar» or «Sobrescribir». Limits as OpenClaw: 256 KiB text,
+// otherwise you choose «Recargar» or «Sobrescribir». PDFs are drawn page by page, and Word,
+// Excel and PowerPoint files too once this computer's Office or LibreOffice turns them into a
+// PDF (officepdf.mjs); without either, their text. Limits as OpenClaw: 256 KiB text,
 // no symlinks or hardlinks, UTF-8 only, no NUL bytes; saves are serialized.
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { lstat, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { safePath } from "./files.mjs";
-import { readDocument, isDocumentFormat } from "./documents.mjs";
+import { readDocument, isDocumentFormat, openPdf } from "./documents.mjs";
+import { renderPdfPage } from "./pdfforms.mjs";
+import { isOfficeFile } from "./officepdf.mjs";
 
 export const WORKFILE_LIMITS = Object.freeze({ textBytes: 256 * 1024, entries: 500, depth: 6, rawBytes: 25 * 1024 * 1024 });
 const TEXT_EXT = /\.(txt|md|markdown|csv|tsv|json|xml|yaml|yml|html?|css|js|jsx|ts|tsx|py|sql|sh|ps1|ini|log|svg|env\.example)$/i;
@@ -101,7 +105,37 @@ const serialized = (fn) => {
   return run;
 };
 
-export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, HttpError }) {
+/** Pages of a PDF. */
+export async function pdfPages(bytes) {
+  const { task, pdf } = await openPdf(bytes);
+  try { return pdf.numPages; } finally { await task.destroy().catch(() => {}); }
+}
+
+/** The note under the text preview when a file cannot be seen with its format. */
+export const NO_CONVERTER_NOTE = "Para verlo con su formato hace falta Microsoft Office o LibreOffice en este equipo. Mientras, ves su texto.";
+
+/**
+ * The PDF the preview draws for a file: the PDF itself, or the conversion of an Office file
+ * (cached by content). {pdf, version, missingFonts, engine}, or throws (code NO_CONVERTER…).
+ */
+export async function visualPdf(office, bytes, name, { source = null, signal = null } = {}) {
+  const ext = extOf(name);
+  const version = sha256(bytes).slice(0, 16);
+  if (ext === "pdf") return { pdf: bytes, version, missingFonts: [], engine: null };
+  if (!office || !isOfficeFile(name)) throw Object.assign(Error("Este archivo no tiene vista con formato."), { code: "UNSUPPORTED" });
+  const out = await office.convert(bytes, ext, { source, signal });
+  return { pdf: out.pdf, version, missingFonts: out.missingFonts || [], engine: out.engine || null };
+}
+
+/** Why a file is shown as text instead (the reason of a failed conversion, in words). */
+export function visualNote(error) {
+  if (error?.code === "NO_CONVERTER") return NO_CONVERTER_NOTE;
+  if (error?.code === "TIMEOUT") return "Tardaba demasiado en prepararse con su formato. Ves su texto.";
+  if (error?.code === "TOO_BIG") return "Es demasiado grande para verlo con su formato. Ves su texto.";
+  return "No se pudo ver con su formato (" + String(error?.message || error).replace(/[.\s]+$/, "").slice(0, 160) + "). Ves su texto.";
+}
+
+export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, HttpError, office = null }) {
   const fail = (status, message, extra = {}) => Object.assign(HttpError ? new HttpError(status, message) : Object.assign(Error(message), { status }), extra);
   const fileOf = async (missionId, rel) => {
     let target;
@@ -143,14 +177,64 @@ export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, 
       return res.json({ ...base, text, hash: sha256(buf), lineEnding: eol, editable: eol !== "mixed" });
     }
     if (type === "document" || type === "pdf") {
+      // «pdf»: drawn page by page; «office»: the same once converted (GET …/workfiles/visual).
+      const visual = type === "pdf" ? "pdf" : office && isOfficeFile(rel) ? "office" : null;
       try {
         const doc = await readDocument(await readFile(target), rel, { page: 1, cacheKey: target + ":" + info.size + ":" + info.mtimeMs });
-        return res.json({ ...base, editable: false, preview: String(doc.content || "").slice(0, 60000), pages: doc.pages || null });
+        return res.json({ ...base, editable: false, visual, preview: String(doc.content || "").slice(0, 60000), pages: doc.pages || null });
       } catch (error) {
-        return res.json({ ...base, editable: false, reason: "No pude leer su contenido: " + String(error.message || error).slice(0, 160) });
+        return res.json({ ...base, editable: false, visual, reason: "No pude leer su contenido: " + String(error.message || error).slice(0, 160) });
       }
     }
     res.json({ ...base, editable: false });
+  });
+
+  // The look of a PDF or an Office file: its pages, the fonts this computer lacks and which
+  // program converted it; or why not (no converter: the text preview stays, with a note).
+  // Leaving the preview cancels a conversion nobody else waits for; a newer version of the
+  // file cancels the conversion of the older one.
+  const visualOf = async (req, res) => {
+    const rel = check(pathQuery, String(req.query.path ?? ""));
+    const { target, info } = await fileOf(req.params.id, rel);
+    if (info.size > WORKFILE_LIMITS.rawBytes) throw Object.assign(Error("Es demasiado grande para verlo con su formato."), { code: "TOO_BIG" });
+    const controller = new AbortController();
+    res.on("close", () => { if (!res.writableEnded) controller.abort(); });
+    return visualPdf(office, await readFile(target), rel, { source: req.params.id + "\u0000" + rel, signal: controller.signal });
+  };
+  app.get("/api/missions/:id/workfiles/visual", async (req, res) => {
+    mustGet("missions", req.params.id, "Misión");
+    try {
+      const v = await visualOf(req, res);
+      const pages = await pdfPages(v.pdf).catch(() => 0);
+      if (!pages) return res.json({ available: false, reason: "FAILED", note: "No pude abrir sus páginas. Ves su texto." });
+      res.json({ available: true, pages, version: v.version, missingFonts: v.missingFonts, engine: v.engine });
+    } catch (error) {
+      if (error?.status) throw error;
+      if (error?.code === "ABORTED") return res.end();
+      res.json({ available: false, reason: error?.code || "FAILED", note: visualNote(error) });
+    }
+  });
+  const pngs = new Map(); // version:page:width → PNG (the latest few)
+  app.get("/api/missions/:id/workfiles/page/:n", async (req, res) => {
+    mustGet("missions", req.params.id, "Misión");
+    const n = Number(req.params.n);
+    if (!Number.isInteger(n) || n < 1 || n > 2000) throw fail(400, "Página no válida.");
+    const width = Math.min(1800, Math.max(320, Math.round(Number(req.query.width) || 900)));
+    let v;
+    try { v = await visualOf(req, res); } catch (error) {
+      if (error?.status) throw error;
+      if (error?.code === "ABORTED") return res.end();
+      throw fail(error?.code === "NO_CONVERTER" ? 501 : 422, visualNote(error));
+    }
+    const key = v.version + ":" + n + ":" + width;
+    let png = pngs.get(key);
+    if (!png) {
+      png = (await renderPdfPage(v.pdf, n, { width })).png;
+      pngs.set(key, png);
+      while (pngs.size > 40) pngs.delete(pngs.keys().next().value);
+    }
+    res.set({ "Content-Type": "image/png", "Content-Length": String(png.length), "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox", "Cross-Origin-Resource-Policy": "same-origin", "Cache-Control": "private, max-age=3600" });
+    res.end(png);
   });
 
   app.get("/api/missions/:id/workfiles/raw", async (req, res) => {

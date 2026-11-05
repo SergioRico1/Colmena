@@ -8,12 +8,20 @@ import Diagram from "./Diagram.jsx";
 import { MentionLink } from "../v2/MentionPill.jsx";
 import { InlineCitation, useCitation } from "../v2/chat/SourceChips.jsx";
 import { useStore } from "../../lib/store.jsx";
+import { FileHref, FileLink, linkFiles, useCodeFile, useFileLinks } from "../v2/chat/fileLinks.jsx";
 
 /** A link that is one of the answer's sources shows as an inline citation (SourceChips.jsx). */
 function CitedLink({ href, ...props }) {
   const source = useCitation(href);
   if (source) return <InlineCitation source={source}>{props.children}</InlineCitation>;
   return <a href={href} target="_blank" rel="noreferrer noopener" data-preview="" {...props} />;
+}
+
+/** Inline code; when it is exactly a file the turn changed, a link that opens it. */
+function InlineCode({ children, ...props }) {
+  const file = useCodeFile(typeof children === "string" ? children : Array.isArray(children) ? children.join("") : "");
+  const code = <code style={{ font: "500 12px/1 'Geist Mono', monospace", padding: "3px 6px", background: "#E7EEFF", color: "#1F4FD1", borderRadius: "5px" }} {...props}>{children}</code>;
+  return file ? <FileLink file={file}>{code}</FileLink> : code;
 }
 
 /** Text of a hast node (the code inside a fenced block). */
@@ -34,7 +42,9 @@ const make = (size) => ({
   a: ({ node, href, ...props }) =>
     String(href || "").startsWith("#@")
       ? <MentionLink href={href}>{props.children}</MentionLink>
-      : <CitedLink href={href} {...props} />,
+      : String(href || "").startsWith("#file:")
+        ? <FileHref href={href}>{props.children}</FileHref>
+        : <CitedLink href={href} {...props} />,
   pre: ({ node, ...props }) => {
     // ```mermaid blocks are drawn as diagrams.
     const code = node?.children?.find((c) => c.tagName === "code");
@@ -45,7 +55,7 @@ const make = (size) => ({
   code: ({ node, className, children, ...props }) => {
     const block = /language-/.test(className || "") || String(children).includes("\n");
     if (block) return <code className={className} {...props}>{children}</code>;
-    return <code style={{ font: "500 12px/1 'Geist Mono', monospace", padding: "3px 6px", background: "#E7EEFF", color: "#1F4FD1", borderRadius: "5px" }} {...props}>{children}</code>;
+    return <InlineCode {...props}>{children}</InlineCode>;
   },
   // GFM tables (bots write them for schedules, comparisons…): the same look as the
   // interactive table, scrolling sideways inside the message when they are wide.
@@ -136,12 +146,14 @@ export function plain(md) {
 export default function Markdown({ text, size = 16, style, mentions = [] }) {
   // «@Vera» is a pill wherever a bot of the team is named (not only where a list is passed).
   const { bots = [] } = useStore() || {};
+  // In the answer of a turn that changed files, their names are links (ChangedFiles.jsx).
+  const fileLinks = useFileLinks();
   if (!mentions.length) mentions = bots.map((x) => x.name).filter(Boolean);
   return (
     <div className="rm-md" style={{ display: "flex", flexDirection: "column", gap: size <= 14 ? "8px" : "12px", fontSize: size + "px", lineHeight: size >= 16 ? "1.6" : size <= 14 ? "1.5" : "1.55", overflowWrap: "anywhere", ...style }}>
       {(() => {
         const parts = splitInteractive(String(text || ""));
-        const renderText = (md, key) => <ReactMarkdown key={key} remarkPlugins={GFM} components={size >= 16 ? BODY : size <= 14 ? TINY : SMALL} skipHtml>{withMentions(md, mentions)}</ReactMarkdown>;
+        const renderText = (md, key) => <ReactMarkdown key={key} remarkPlugins={GFM} components={size >= 16 ? BODY : size <= 14 ? TINY : SMALL} skipHtml>{withMentions(linkFiles(md, fileLinks), mentions)}</ReactMarkdown>;
         return parts.some((p) => p.kind !== "md") ? <AnswerLayout parts={parts} renderText={renderText} /> : renderText(String(text || ""), "all");
       })()}
     </div>

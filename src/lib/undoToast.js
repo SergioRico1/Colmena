@@ -83,6 +83,11 @@ function failed(text, message, id = "failed-" + ++seq) {
   }
 }
 
+/** A short notice that something did not work (it goes away on its own). */
+export function failure(text, message = null) {
+  failed(text, message);
+}
+
 /**
  * The change waits five seconds. keys ("mission:<id>", "bot:<id>"…) leave the lists at
  * once. Returns the notice id. `undone` runs when you press «Deshacer». `working` and `done`

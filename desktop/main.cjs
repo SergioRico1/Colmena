@@ -7,6 +7,7 @@ const { createBrowserManager, attachBackend, toBackend } = require("./browser.cj
 const { render } = require("./render.cjs");
 const { setupBackground } = require("./background.cjs");
 const { setupUpdater } = require("./updater.cjs");
+const { setupDragOut } = require("./dragout.cjs");
 let backend, computer, backendOrigin = null, mainWin = null, background = null, updater = null;
 // The team at work, from the server ("presence"): the tray face and the updater read it.
 let presence = {};
@@ -176,6 +177,12 @@ else
           const image = await owner.webContents.capturePage(r);
           return image.isEmpty() ? null : image.toDataURL();
         });
+      }
+      // Dragging a file of Colmena out into another app (desktop/dragout.cjs checks the path).
+      if (!ipcMain._colmenaDrag) {
+        ipcMain._colmenaDrag = true;
+        const dataDir = process.env.COLMENA_DATA_DIR || path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), ".local", "share"), "Colmena");
+        setupDragOut({ ipcMain, app, nativeImage: require("electron").nativeImage, getOrigin: () => backendOrigin, dataDir, icon: ICON });
       }
       win.on("closed", () => ipcMain.removeListener("colmena-window", onWindow));
       // Login pages (ChatGPT and app connections) open in the system browser;

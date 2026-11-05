@@ -31,6 +31,8 @@ import { RefChips, useMentions } from "./Mentions.jsx";
 import { ACTIVE_STEP, BLOCKED_STEP, DONE_STEP } from "./useRoom.js";
 import { ListenButton, MicButton, appendDictation } from "../interaction/Voice.jsx";
 import UndoChanges from "../v2/chat/UndoChanges.jsx";
+import ChangedFiles, { TurnFileLinks } from "../v2/chat/ChangedFiles.jsx";
+import { workFileUrl } from "../../lib/dragOut.js";
 
 // Pieces shared by Sala (design/Sala.dc.html) and En directo (design/EnVivo.dc.html).
 
@@ -348,7 +350,7 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
       <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
       <RefChips refs={message.refs} align="flex-start" />
       {message.failed ? <FailedLine error={message.failed} onRetry={resend.retry} onDiscard={resend.discard} /> : null}
-      {(message.attachments || []).map((f, i) => <FileChip key={i} file={f} />)}
+      {(message.attachments || []).map((f, i) => <FileChip key={i} file={f} dragUrl={message.missionId && f?.name ? workFileUrl(message.missionId, f.name) : null} />)}
       <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />
       <RepliesLink replies={replies} bots={bots} onOpen={onReply} pressed={repliesOpen} />
     </MessageRow>
@@ -779,7 +781,8 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
   const undoChip = (i, m) => {
     const u = undoAt.get(i);
     return u ? (
-      <div key={"undo-" + u.cp.id} style={{ padding: "2px 0 8px 52px", display: "flex", flexDirection: "column" }}>
+      <div key={"undo-" + u.cp.id} style={{ padding: "2px 0 8px 52px", display: "flex", flexDirection: "column", gap: "10px" }}>
+        <ChangedFiles cp={u.cp} missionId={mission.id} />
         <UndoChanges cp={u.cp} missionId={mission.id} bot={findBot(bots, m.botId || u.cp.botId)} working={["running", "planning", "queued"].includes(mission?.status)} later={u.later} />
       </div>
     ) : null;
@@ -816,6 +819,8 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
       for (let j = i + 1; j < visible.length && visible[j].kind === "deliverable" && visible[j].botId === m.botId; j++) extraArtifacts.push(visible[j].artifactId);
       out.push(
         <InteractiveContext.Provider key={m.id || i} value={{ ...interactive, after: repliedAfter(i), botName: findBot(bots, m.botId || "atlas").name, entering: isNew(m.id) }}>
+        {/* The last answer of a turn that changed files: the names of those files are links. */}
+        <TurnFileLinks missionId={undoAt.has(i) ? mission.id : null} cp={undoAt.get(i)?.cp || null}>
         <BotMessage
           key={m.id || i}
           extraArtifacts={m.kind === "deliverable" ? extraArtifacts : ["question", "plan"].includes(m.kind) ? [] : extraArtifacts}
@@ -834,6 +839,7 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
           entering={isNew(m.id)}
           {...(["message", "deliverable"].includes(m.kind || "message") ? threadProps(m) : {})}
         />
+        </TurnFileLinks>
         </InteractiveContext.Provider>,
       );
       if (undoAt.has(i)) out.push(undoChip(i, m));

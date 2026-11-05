@@ -6,6 +6,8 @@ import { copyText, ErrorLine } from "./common.jsx";
 import Markdown from "./Markdown.jsx";
 import { CsvTable } from "./ArtifactPanel.jsx";
 import PagePreview from "./PagePreview.jsx";
+import DocPages, { VisualNotes, useVisual } from "./DocPages.jsx";
+import { dragOutProps } from "../../lib/dragOut.js";
 import { reversible } from "../../lib/undoToast.js";
 
 // «Archivos» of a room or chat (OpenClaw chat-files-panel + chat-sidebar-file-view): the
@@ -112,7 +114,7 @@ function FileRow({ file, missionId, onOpen }) {
   const line = [file.kind === "changed" && file.by ? `cambiado por ${file.by}` : file.kind === "read" && file.by ? `leído por ${file.by}` : file.kind === "attachment" ? "lo adjuntaste" : null, when, size(file.size)].filter(Boolean).join(" · ");
   return (
     <div className="msg-row" style={{ display: "flex", alignItems: "center", gap: "4px", margin: 0, padding: "0 4px 0 0" }}>
-      <button type="button" className="rm-focus" onClick={onOpen} title={file.path} style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", padding: "6px 8px", background: "transparent", border: "0", borderRadius: "10px", cursor: "pointer", textAlign: "left" }}>
+      <button type="button" className="rm-focus" onClick={onOpen} title={file.path} {...dragOutProps(rawUrl(missionId, file.path))} style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", padding: "6px 8px", background: "transparent", border: "0", borderRadius: "10px", cursor: "pointer", textAlign: "left" }}>
         <span style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "8px", color: "#4A4F5C" }}>{fileIcon(file.type)}</span>
         <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
           <span style={{ fontSize: "14px", fontWeight: "600", color: "#12131A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -203,18 +205,23 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
   const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "8px", cursor: "pointer", fontSize: "13px", color: "#12131A", textDecoration: "none" };
   const type = file?.type;
   const page = /[.]html?$/i.test(path);
-  const canToggle = !editing && (type === "markdown" || type === "csv" || page);
+  // PDFs, and Office files once converted, are seen as their pages (the text one click away).
+  const visualUrl = file?.visual ? `/api/missions/${encodeURIComponent(missionId)}/workfiles/visual?path=${encodeURIComponent(path)}` : null;
+  const visual = useVisual(visualUrl, file ? file.size + ":" + file.modifiedAt : "");
+  const pages = file?.visual && visual.state === "ready";
+  const pageUrl = (n) => `/api/missions/${encodeURIComponent(missionId)}/workfiles/page/${n}?path=${encodeURIComponent(path)}&width=1200&v=${visual.info?.version || ""}`;
+  const canToggle = !editing && (type === "markdown" || type === "csv" || page || (pages && file?.preview != null));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
       <div style={{ position: "sticky", top: 0, zIndex: 1, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "10px 14px", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE" }}>
         <span style={{ flex: "1 1 160px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-          <strong style={{ fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={path}>{path.split("/").pop()}</strong>
+          <strong {...dragOutProps(rawUrl(missionId, path))} style={{ fontSize: "14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={path}>{path.split("/").pop()}</strong>
           <span style={{ fontSize: "12px", color: "#555A68" }}>{[path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : null, size(file?.size), file?.modifiedAt ? "modificado " + ago(file.modifiedAt) : null].filter(Boolean).join(" · ")}</span>
         </span>
         {canToggle ? (
           <span role="group" aria-label="Cómo verlo" style={{ display: "inline-flex", padding: "2px", background: "#EEF0F4", borderRadius: "9px" }}>
-            {(page ? [["preview", "Vista previa"], ["source", "Código"]] : [["preview", "Vista"], ["source", "Texto"]]).map(([id, label]) => (
+            {(page ? [["preview", "Vista previa"], ["source", "Código"]] : pages ? [["preview", "Páginas"], ["source", "Texto"]] : [["preview", "Vista"], ["source", "Texto"]]).map(([id, label]) => (
               <button key={id} type="button" className="rm-focus" aria-pressed={view === id ? "true" : "false"} onClick={() => setView(id)} style={{ height: "28px", padding: "0 10px", border: "0", borderRadius: "7px", cursor: "pointer", fontSize: "12px", fontWeight: view === id ? "700" : "500", background: view === id ? "#FFFFFF" : "transparent" }}>{label}</button>
             ))}
           </span>
@@ -255,9 +262,19 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
           </div>
         ) : file ? (
           type === "image" ? <img data-lightbox="" data-name={path.split("/").pop()} src={rawUrl(missionId, path)} alt={path} style={{ cursor: "zoom-in", maxWidth: "100%", height: "auto", alignSelf: "flex-start", borderRadius: "10px", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />
+            : pages && (view === "preview" || file.preview == null) ? (
+              <>
+                <VisualNotes info={visual.info} />
+                <DocPages info={visual.info} pageUrl={pageUrl} label={/\.pptx?$/i.test(path) ? "Diapositiva" : "Página"} />
+              </>
+            )
             : file.preview != null ? (
               <>
-                <p style={{ margin: 0, fontSize: "12px", color: "#555A68" }}>{`Vista de texto${file.pages ? ` · página 1 de ${file.pages}` : ""}. Descárgalo para verlo con su formato.`}</p>
+                <p role={file.visual && visual.state === "loading" ? "status" : undefined} style={{ margin: 0, fontSize: "12px", lineHeight: 1.5, color: "#555A68" }}>
+                  {file.visual && visual.state === "loading" ? (file.visual === "office" ? "Preparando la vista con su formato… Mientras, su texto." : "Dibujando sus páginas…")
+                    : pages ? `Vista de texto${file.pages ? ` · página 1 de ${file.pages}` : ""}.`
+                    : visual.info?.note || `Vista de texto${file.pages ? ` · página 1 de ${file.pages}` : ""}. Descárgalo para verlo con su formato.`}
+                </p>
                 <pre style={{ margin: 0, padding: "14px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", font: "400 13px/1.6 'Geist', sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{file.preview}</pre>
               </>
             )
