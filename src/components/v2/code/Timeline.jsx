@@ -5,7 +5,16 @@ import Markdown from "../../room/Markdown.jsx";
 import { C, MONO, HEAD, CARD, Stat, BTN } from "./parts.jsx";
 import { EngineMark } from "./EngineModels.jsx";
 import { PlanVotes } from "../people/TaskPeople.jsx";
+import { turnStatsLine } from "./model.js";
 export { buildRows } from "./model.js";
+
+/** How long a turn took and what it changed, in the quiet code font (tokens in expert mode). */
+function TurnStats({ stats, files = true, style = null }) {
+  const [expert] = useExpert();
+  const line = turnStatsLine(stats, { files, expert });
+  if (!line) return null;
+  return <span title="Lo que llevó este turno" style={{ font: `400 11.5px/1.4 ${MONO}`, color: C.quiet, ...style }}>{line}</span>;
+}
 
 // The timeline of a «Código» task: your messages, Bruno's answers, a grouped work log with
 // each command's output on unfold (T3 Code), a card per turn that changed files («Ver
@@ -79,10 +88,11 @@ function WorkLog({ row }) {
 function TurnCard({ item, total, busy, onDiff, onRestore }) {
   const files = item.files || [];
   return (
-    <div className="code-turn" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 10px 10px 14px", borderRadius: "14px", background: C.white, boxShadow: CARD }}>
+    <div data-message-id={item.id} className="code-turn" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 10px 10px 14px", borderRadius: "14px", background: C.white, boxShadow: CARD }}>
       <span style={{ flex: "1 1 150px", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
         <strong style={{ fontSize: "13.5px", fontWeight: 600 }}>{files.length === 1 ? "1 archivo cambiado" : files.length + " archivos cambiados"}</strong>
         <span style={{ display: "flex", gap: "6px", alignItems: "center", font: `500 12px/1 ${MONO}` }}><Stat add={item.add} del={item.del} /><span style={{ color: C.quiet }}>· punto {item.n} de {total}</span></span>
+        <TurnStats stats={item.stats} files={false} />
       </span>
       <button type="button" onClick={() => onDiff(item.n)} style={{ ...BTN.outline, height: "32px", padding: "0 12px", fontSize: "13px" }}>Ver cambios</button>
       <button type="button" disabled={busy} onClick={() => onRestore(item.n)} title="Deja el proyecto como estaba justo después de este turno"
@@ -208,14 +218,14 @@ function PlanCard({ item, busy, onPlan, onShowPlan }) {
   const done = { implemented: "aprobado", moved: "en otra tarea", refined: "refinado" }[item.status] || "";
   if (!open) {
     return (
-      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: C.muted }}>
+      <span data-message-id={item.id} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: C.muted }}>
         <ListChecks size={14} strokeWidth={2.2} aria-hidden="true" />Plan de Bruno{done ? " · " + done : ""}
         {onShowPlan ? <button type="button" onClick={onShowPlan} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: C.blue }}>Ver el plan</button> : null}
       </span>
     );
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "16px", background: C.white, boxShadow: RING, animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+    <div data-message-id={item.id} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "16px", background: C.white, boxShadow: RING, animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, color: C.honeyText }}>{PENDING_DOT}Plan · aún no ha tocado nada</span>
       <div style={{ color: C.body }}><Markdown text={item.text} size={14} /></div>
       {item.taskId ? <PlanVotes taskId={item.taskId} item={item} /> : null}
@@ -238,7 +248,7 @@ export function TimelineRow({ row, ctx }) {
     const canEdit = !ctx.busy && !item.steer && ctx.editable.has(item.id);
     return (
       <div className="code-turn" style={{ alignSelf: "flex-end", maxWidth: "92%", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
-        <div style={{ padding: "10px 14px", background: "#E8E8E2", borderRadius: "18px 18px 6px 18px", fontSize: "14.5px", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+        <div data-message-id={item.id} style={{ padding: "10px 14px", background: "#E8E8E2", borderRadius: "18px 18px 6px 18px", fontSize: "14.5px", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
           {item.steer ? <span style={{ display: "block", fontSize: "12px", color: C.faint, marginBottom: "4px" }}>Se lo pasaste mientras trabajaba</span> : null}{item.text}
           {item.contexts?.length ? (
             <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "8px" : 0 }}>
@@ -261,7 +271,14 @@ export function TimelineRow({ row, ctx }) {
       </div>
     );
   }
-  if (row.kind === "text") return <div style={{ color: C.body }}><Markdown text={withoutGoalMark(item.text)} size={14.5} /></div>;
+  if (row.kind === "text") {
+    return (
+      <>
+        <div data-message-id={item.id} style={{ color: C.body }}><Markdown text={withoutGoalMark(item.text)} size={14.5} /></div>
+        {item.stats ? <TurnStats stats={item.stats} style={{ marginTop: "-4px" }} /> : null}
+      </>
+    );
+  }
   if (row.kind === "turn") return <TurnCard item={item} total={ctx.turns} busy={ctx.busy} onDiff={ctx.onDiff} onRestore={ctx.onRestore} />;
   if (row.kind === "ask") return <AskCard item={item} onAnswer={ctx.onAnswer} />;
   if (row.kind === "plan") return <PlanCard item={item} busy={ctx.busy} onPlan={ctx.onPlan} onShowPlan={ctx.onShowPlan} />;
@@ -269,9 +286,10 @@ export function TimelineRow({ row, ctx }) {
   if (row.kind === "notice") {
     const tone = item.tone === "done" ? { bg: "#E3F4EC", fg: "#0B6B4A" } : item.tone === "warn" ? { bg: "#FFF1C7", fg: "#5C4300" } : null;
     return (
-      <span title={item.detail || undefined} style={{ alignSelf: "center", display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "6px 8px", padding: tone ? "6px 12px" : 0, borderRadius: "999px", background: tone ? tone.bg : "transparent", fontSize: "12.5px", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
+      <span data-message-id={item.id} title={item.detail || undefined} style={{ alignSelf: "center", display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "6px 8px", padding: tone ? "6px 12px" : 0, borderRadius: "999px", background: tone ? tone.bg : "transparent", fontSize: "12.5px", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
         {item.tone === "done" ? <Check size={13} strokeWidth={2.6} aria-hidden="true" /> : item.engineSwitch ? <EngineMark engine={item.engineSwitch.to} size={12} /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "50%", border: "2px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
         {item.url ? <a href={item.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Abrir en GitHub</a> : null}
+        {item.overlap ? <a href={"/codigo/" + item.overlap} style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Ver la otra tarea</a> : null}
         {item.undo && ctx.lastNotice === item.id && !ctx.busy ? (
           <button type="button" onClick={() => ctx.onUndoRestore(item)} style={{ display: "flex", alignItems: "center", gap: "5px", height: "26px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: C.ink }}>
             <Undo2 size={12} strokeWidth={2.4} aria-hidden="true" />Deshacer
@@ -280,6 +298,6 @@ export function TimelineRow({ row, ctx }) {
       </span>
     );
   }
-  if (row.kind === "error") return <p role="alert" style={{ margin: 0, padding: "10px 14px", borderRadius: "14px", background: "#FBE9EA", color: "#B4232A", fontSize: "13.5px", lineHeight: 1.5 }}>{item.text}</p>;
+  if (row.kind === "error") return <p data-message-id={item.id} role="alert" style={{ margin: 0, padding: "10px 14px", borderRadius: "14px", background: "#FBE9EA", color: "#B4232A", fontSize: "13.5px", lineHeight: 1.5 }}>{item.text}</p>;
   return null;
 }

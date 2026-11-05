@@ -67,6 +67,7 @@ export default function CommandPalette() {
   const [scope, setScope] = useState("todo");
   const [results, setResults] = useState(null);
   const [peopleHits, setPeopleHits] = useState([]); // conversations with people (/api/peers/search)
+  const [codeHits, setCodeHits] = useState([]); // what was said in «Código» tasks (/api/code/search)
   const [searchFailed, setSearchFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -140,11 +141,14 @@ export default function CommandPalette() {
     if (!q) {
       setResults(null);
       setPeopleHits([]);
+      setCodeHits([]);
       return;
     }
     let alive = true;
     const t = setTimeout(() => {
       get("/peers/search?q=" + encodeURIComponent(q)).then((r) => alive && setPeopleHits(r.hits || [])).catch(() => alive && setPeopleHits([]));
+      // What was said in «Código» tasks (GET /api/code/search; titles come from /api/code below).
+      get("/code/search?q=" + encodeURIComponent(q) + "&limit=12").then((r) => alive && setCodeHits((r.hits || []).filter((h) => h.itemId))).catch(() => alive && setCodeHits([]));
       get("/search?q=" + encodeURIComponent(q))
         .then((r) => {
           if (!alive) return;
@@ -372,7 +376,16 @@ export default function CommandPalette() {
       }),
     });
     groups.push({ title: "Tareas", items: ms.filter((m) => !isChat(m)).slice(0, 4).map(missionRow) });
-    groups.push({ title: "Código", items: rank(codeTasks.filter((t) => !isHidden("codetask:" + t.id)), plain, (t) => [t.title, t.project]).slice(0, 4).map(codeRow) });
+    const codeTitles = rank(codeTasks.filter((t) => !isHidden("codetask:" + t.id)), plain, (t) => [t.title, t.project]).slice(0, 4).map(codeRow);
+    // A Código task found by what was said in it: opens the task at that message.
+    const codeSaid = codeHits.filter((h) => !isHidden("codetask:" + h.taskId)).slice(0, Math.max(2, 5 - codeTitles.length)).map((h) => ({
+      key: "codemsg:" + h.itemId, scope: "tareas", group: "Código", name: h.snippet, icon: iconTile(MessageSquareText),
+      title: <><span style={{ fontWeight: "600" }}>{h.who + ": "}</span><Highlight text={h.snippet} query={plain} /></>,
+      meta: [h.title, h.project, h.archived ? "archivada" : null, shortDate(h.at)].filter(Boolean).join(" · "),
+      run: () => go(withMessage("/codigo/" + h.taskId, h.itemId)),
+      preview: { kind: "Tarea de código" + (h.archived ? " · archivada" : ""), title: h.title, desc: `${h.who}: ${h.snippet}`, facts: [["Proyecto", h.project || "—"], ["Cuándo", shortDate(h.at) || "—"]], cta: "Ir al mensaje" },
+    }));
+    groups.push({ title: "Código", items: [...codeTitles, ...codeSaid] });
     const files = (src.artifacts || []).slice(0, 3).map(artifactRow);
     for (const f of (src.files || []).slice(0, 3)) {
       const name = typeof f === "string" ? f : f.name || f.path || "";
@@ -401,7 +414,7 @@ export default function CommandPalette() {
     matching.push({ key: "routine-of", scope: "comandos", group: "Comandos", name: routine, icon: glyph(">"), title: routine, meta: "Comando", run: () => go("/trabajo/rutinas?nueva=1&texto=" + encodeURIComponent(plain)), preview: { kind: "Comando", title: routine, desc: "Abre el creador de rutinas con lo que has escrito ya puesto.", facts: [["Atajo", "> rutina"]], cta: "Ejecutar" } });
     groups.push({ title: "Comandos", items: matching });
     return groups;
-  }, [plain, scope, results, peopleHits, missions, artifacts, automations, team, bots, codeTasks, actions, expert]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [plain, scope, results, peopleHits, codeHits, missions, artifacts, automations, team, bots, codeTasks, actions, expert]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The list of a command («Ir a…», «Cambiar el modelo…»).
   const menuItems = useMemo(() => {

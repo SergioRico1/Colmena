@@ -214,6 +214,28 @@ export function recommendOf(tasks) {
   return { id: best.id, why: "pasan los tests con el cambio más pequeño (" + size(best) + " líneas)." };
 }
 
+/** «850 tokens», «12 k tokens», «1,4 M tokens». */
+export function tokensLabel(n) {
+  if (!(n > 0)) return null;
+  const one = (x) => (x < 10 ? x.toFixed(1).replace(".", ",").replace(",0", "") : String(Math.round(x)));
+  return (n < 1000 ? String(n) : n < 1e6 ? one(n / 1000) + " k" : one(n / 1e6) + " M") + " tokens";
+}
+
+/**
+ * The quiet line under one of Bruno's turns: how long it took, what it changed (`files`: the
+ * card above already says it) and, in expert mode, the tokens and cost its engine reported.
+ */
+export function turnStatsLine(stats, { files = true, expert = false } = {}) {
+  if (!stats) return "";
+  const parts = [durationLabel(stats.durationMs)];
+  if (files && stats.files) parts.push((stats.files === 1 ? "1 archivo" : stats.files + " archivos") + (stats.add || stats.del ? ` +${stats.add || 0} −${stats.del || 0}` : ""));
+  if (expert) {
+    parts.push(tokensLabel(stats.tokens));
+    if (stats.cost > 0) parts.push(stats.cost < 0.01 ? "< 0,01 $" : stats.cost.toFixed(2).replace(".", ",") + " $");
+  }
+  return parts.filter(Boolean).join(" · ");
+}
+
 /** The «/», «$» or «@» word being typed at the caret, or null. */
 export function triggerAt(text, caret) {
   const before = String(text).slice(0, caret);

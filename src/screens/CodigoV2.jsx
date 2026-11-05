@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow } from "lucide-react";
+import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files } from "lucide-react";
+import { useRevealMessage } from "../lib/reveal.js";
 import Shell from "../components/v2/Shell.jsx";
 import { whenLabel, useMenu, MenuSheet, Item, Rule, TaskActions } from "../components/v2/code/ProjectList.jsx";
 import CodeHome from "../components/v2/code/CodeHome.jsx";
@@ -197,6 +198,11 @@ function TaskChips({ task, project, running, onMergePr = null }) {
         </button>
       ) : null}
       {task.group ? <a href={"/codigo/comparar/" + task.group} style={{ ...SIGNAL("#F1F1EC", C.blue) }} title="La misma petición con otros motores, lado a lado"><Columns3 size={12} strokeWidth={2.2} aria-hidden="true" />Comparar</a> : null}
+      {(task.overlaps || []).slice(0, 2).map((o) => (
+        <a key={o.task} href={"/codigo/" + o.task} style={SIGNAL("#FFF1C7", C.honeyText)} title={`Las dos tareas cambian ${o.count === 1 ? "este archivo" : "estos archivos"}: ${o.files.join(", ")}${o.count > o.files.length ? "…" : ""}. Al fusionar pueden chocar.`}>
+          <Files size={12} strokeWidth={2.2} aria-hidden="true" />Mismos archivos que «{o.title.length > 32 ? o.title.slice(0, 32) + "…" : o.title}»
+        </a>
+      ))}
     </div>
   );
 }
@@ -233,8 +239,10 @@ function blocksOf(rows) {
   return out;
 }
 
-function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel, onWide, tab, setTab, turn, setTurn }) {
+function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel, onWide, tab, setTab, turn, setTurn, reveal = null }) {
   const { task, project, items, live, models, commands, error, reload } = useCodeTask(taskId);
+  // «Buscar en las tareas» opens /codigo/<task>?m=<item>: that message centred and lit up.
+  useRevealMessage(reveal, { ready: items.length > 0 });
   const { bots } = useStore();
   const bot = botOf(bots, task);
   const name = bot?.name || "Bruno";
@@ -565,7 +573,7 @@ export default function CodigoV2({ params = {}, query = {} }) {
         {params.handoff ? <HandoffPage key={params.handoff} id={params.handoff} />
           : params.shared ? <SharedTask key={params.shared} id={params.shared} />
             : params.group ? <Compare group={params.group} projects={projects} />
-              : taskId ? <TaskScreen key={taskId} taskId={taskId} engines={data?.engines || []} github={data?.github || null} panel={panel} wide={wide} onPanel={setPanel} onWide={setWide} tab={tab} setTab={setTab} turn={turn} setTurn={setTurn} />
+              : taskId ? <TaskScreen key={taskId} taskId={taskId} engines={data?.engines || []} github={data?.github || null} panel={panel} wide={wide} onPanel={setPanel} onWide={setWide} tab={tab} setTab={setTab} turn={turn} setTurn={setTurn} reveal={query.m || null} />
                 : <div style={{ flex: 1, minWidth: 0, height: "100%" }}><CodeHome projects={projects} selected={selected} onSelect={(id) => { setSelected(id); reload(); }} engines={data?.engines || []} /></div>}
       </div>
       {sheet ? <ShortcutsSheet onClose={() => setSheet(false)} /> : null}

@@ -32,7 +32,7 @@ if (!args.includes("--input-format")) {
   });
   let n = 0;
   const assistant = (content) => out({ type: "assistant", uuid: "a-" + ++n, message: { id: "m" + n, role: "assistant", content }, parent_tool_use_id: null, session_id: session });
-  const result = () => out({ type: "result", subtype: "success", is_error: false, session_id: session, result: "" });
+  const result = () => out({ type: "result", subtype: "success", is_error: false, session_id: session, result: "", usage: { input_tokens: 1200, output_tokens: 300, cache_read_input_tokens: 800 }, total_cost_usd: 0.0123 });
   async function tool(name, input) {
     const id = "toolu_" + ++n;
     assistant([{ type: "tool_use", id, name, input }]);
