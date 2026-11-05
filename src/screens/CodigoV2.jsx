@@ -9,6 +9,8 @@ import { EngineMark } from "../components/v2/code/EngineModels.jsx";
 import Changes from "../components/v2/code/Changes.jsx";
 import Preview from "../components/v2/code/Preview.jsx";
 import TerminalPanel from "../components/v2/code/Terminal.jsx";
+import Files, { revealInTask } from "../components/v2/code/Files.jsx";
+import Processes from "../components/v2/code/Processes.jsx";
 import { buildRows, TimelineRow, withoutGoalMark, BOT_ROWS } from "../components/v2/code/Timeline.jsx";
 import { findingContext, findingsText, stepsOf } from "../components/v2/code/model.js";
 import { addContext } from "../components/v2/code/Extras.jsx";
@@ -38,7 +40,7 @@ const readWide = () => { try { return localStorage.getItem(WIDE_KEY) === "1"; } 
 // several engines. Bruno works with Claude Code, Codex or OpenCode of this computer
 // (server/code/), in a copy of the project when it uses Git.
 
-const TABS = [["plan", "Plan"], ["cambios", "Cambios"], ["terminal", "Terminal"], ["vista", "Vista previa"]];
+const TABS = [["plan", "Plan"], ["cambios", "Cambios"], ["archivos", "Archivos"], ["terminal", "Terminal"], ["procesos", "Procesos"], ["vista", "Vista previa"]];
 
 /**
  * Saving a task: «Fusionar en main» goes through a review first (OpenClaw autoreview: P0–P1
@@ -383,7 +385,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
     ...(task.isolated ? [["catchup", RefreshCw, "Ponerse al día con " + base]] : []),
   ] : [];
   const openEditor = () => act(async () => { const r = await post("/code/tasks/" + task.id + "/open-editor", { path: ".", line: 1 }); if (!r.editor) setProblem("No encuentro VS Code, Cursor ni Windsurf: se abre la carpeta."); });
-  const openFolder = () => { window.open?.("file:///" + String(task.cwd).replace(/\\/g, "/"), "_blank", "noopener"); };
+  const openFolder = () => act(() => revealInTask(task.id, ""));
   const showChat = !(panel && wide);
   const tabLabel = (id, text) => (id === "cambios" && count ? text + " · " + count : text);
   return (
@@ -492,10 +494,10 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
 
         {panel ? (
           <section data-codepanel="" aria-label="Espacio de trabajo" style={{ flex: "999 1 480px", minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div role="tablist" aria-label="Vista" style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", padding: "10px 20px 0", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
+            <div role="tablist" aria-label="Vista" style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", padding: "10px 20px 0", borderBottom: "1px solid rgba(18,19,26,.07)", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none" }}>
               {TABS.map(([id, text]) => {
                 const on = tab === id;
-                return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setTab(id)} style={{ height: "42px", padding: "0 14px", border: 0, borderBottom: "2px solid " + (on ? C.ink : "transparent"), marginBottom: "-1px", background: "transparent", fontSize: "14px", fontWeight: on ? 600 : 500, color: on ? C.ink : C.text2, cursor: "pointer" }}>{tabLabel(id, text)}</button>;
+                return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setTab(id)} style={{ flex: "none", whiteSpace: "nowrap", height: "42px", padding: "0 12px", border: 0, borderBottom: "2px solid " + (on ? C.ink : "transparent"), marginBottom: "-1px", background: "transparent", fontSize: "14px", fontWeight: on ? 600 : 500, color: on ? C.ink : C.text2, cursor: "pointer" }}>{tabLabel(id, text)}</button>;
               })}
               <span style={{ flex: 1 }} />
               <button type="button" onClick={() => onWide(!wide)} aria-pressed={wide} aria-label={wide ? "Volver a ver la conversación" : "Ampliar el espacio de trabajo"} title={wide ? "Volver a ver la conversación" : "Ampliar (la conversación se oculta)"} style={{ width: "32px", height: "32px", marginBottom: "6px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: wide ? C.track : "transparent", cursor: "pointer", color: C.muted }}>
@@ -505,7 +507,9 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
             {tab === "plan" ? <PlanTab plan={plan} name={name} />
               : tab === "vista" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(18,19,26,.1)", background: C.white }}><Preview task={task} project={project} onAsk={(text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {})} /></div>
                 : tab === "terminal" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "14px", overflow: "hidden", background: C.ink }}><TerminalPanel task={task} /></div>
-                  : <Changes task={task} turn={turn} onTurn={setTurn} onCount={setCount} />}
+                  : tab === "archivos" ? <Files task={task} />
+                    : tab === "procesos" ? <Processes task={task} name={name} />
+                      : <Changes task={task} turn={turn} onTurn={setTurn} onCount={setCount} />}
           </section>
         ) : null}
       </div>
@@ -562,6 +566,8 @@ export default function CodigoV2({ params = {}, query = {} }) {
     tabChanges: () => { setPanel(true); setTab("cambios"); },
     tabPreview: () => { setPanel(true); setTab("vista"); },
     tabTerminal: () => { setPanel(true); setTab("terminal"); },
+    tabFiles: () => { setPanel(true); setTab("archivos"); },
+    tabProcesses: () => { setPanel(true); setTab("procesos"); },
     newTerminal: () => { setPanel(true); setTab("terminal"); setTimeout(() => window.dispatchEvent(new Event("colmena:code-new-terminal")), 300); },
     shortcuts: () => setSheet(true),
   });

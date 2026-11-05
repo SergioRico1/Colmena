@@ -21,7 +21,8 @@ import { CodexEngine, codexModels, findCodexCli, probeCodex } from "./codex.mjs"
 import { OpenCodeEngine, OPENCODE_MODELS, findOpenCode, installOpenCode } from "./opencode.mjs";
 import { decide, askTitle, ACCESS, inside } from "./policy.mjs";
 import { Snapshots, repoInfo, addWorktree, removeWorktree, git, slug, copyIncluded, savedRef, keepCommit, dropRef, restoreWorktree } from "./git.mjs";
-import { taskPorts, descendants, stopFamily } from "./ports.mjs";
+import { taskPorts, descendants, stopFamily, forgetSnapshot } from "./ports.mjs";
+import { listTaskProcesses, leftovers, stopTree } from "./processes.mjs";
 import { Terminals, projectScripts } from "./terminal.mjs";
 import { expandSkills } from "./context.mjs";
 import { AUTH_FAIL, mergeRefusal, prRepo, reviewPayload, rightLines, signInHint } from "./pr.mjs";
@@ -42,6 +43,7 @@ export const EFFORTS = Object.freeze(["low", "medium", "high", "xhigh", "max"]);
 export const KEYBINDINGS = Object.freeze({
   newTask: "mod+n", focusComposer: "mod+l", togglePlan: "mod+shift+m", stop: "mod+.", compact: "mod+shift+c",
   togglePanel: "mod+j", widePanel: "mod+shift+j", tabChanges: "mod+1", tabPreview: "mod+2", tabTerminal: "mod+3",
+  tabFiles: "mod+shift+f", tabProcesses: "mod+shift+o",
   newTerminal: "mod+shift+t", save: "mod+shift+s", shortcuts: "f1",
 });
 /** Bruno's look at the preview through his shell (preview-cli.mjs). */
@@ -1278,6 +1280,55 @@ export class CodeService {
     const entry = this.engines.get(taskId);
     const family = [...(this.families.get(taskId)?.keys() || [])];
     return taskPorts({ rootPids: [entry?.engine?.pid, ...this.terminals.pids(taskId), ...family].filter(Boolean), folders: [task.cwd], exclude: this.excludePorts || [] });
+  }
+
+  // ------------------------------------------------------------------ «Procesos»: what runs for a task
+  /** Where the task's processes hang from: the engine, the terminals' shells, what the engine started. */
+  processRoots(task) {
+    const entry = this.engines.get(task.id);
+    return [
+      ...(entry?.engine?.pid ? [{ pid: entry.engine.pid, kind: "engine", label: ENGINE_LABEL[task.engine] || task.engine }] : []),
+      ...this.terminals.shells(task.id).map((s) => ({ pid: s.pid, kind: "terminal", label: s.title })),
+      ...[...(this.families.get(task.id)?.values() || [])].map((p) => ({ pid: p.pid, kind: "family", command: p.command })),
+    ];
+  }
+
+  async processes(taskId) {
+    const task = this.mustTask(taskId);
+    // The look shared with «Vista previa» (kept 2.5 s); stopping always looks again.
+    const rows = await listTaskProcesses({ roots: this.processRoots(task), folders: [task.cwd], excludePorts: this.excludePorts || [], fresh: false });
+    return { processes: rows, working: !!(this.engines.get(taskId)?.turn || this.starting.has(taskId)) };
+  }
+
+  /** «Parar» one row: only a PID that is the task's right now (looked up again here, never by name). */
+  async stopProcess(taskId, pid) {
+    const task = this.mustTask(taskId);
+    const rows = await listTaskProcesses({ roots: this.processRoots(task), folders: [task.cwd], excludePorts: this.excludePorts || [] });
+    const row = rows.find((r) => r.pid === Number(pid));
+    if (!row) throw Object.assign(Error("Ese proceso ya no está en marcha o no es de esta tarea."), { status: 404 });
+    if (row.kind === "engine") {
+      await this.stop(taskId).catch(() => {});
+      this.closeEngine(taskId);
+    } else if (row.kind === "terminal") {
+      const shell = [...this.terminals.sessions.values()].find((s) => s.taskId === taskId && s.pid === row.pid && !s.exited);
+      if (shell) this.terminals.kill(shell, { forget: false }); // its scrollback stays: it can be opened again
+      else await stopTree(row.pid, rows);
+    } else await stopTree(row.pid, rows);
+    this.families.get(taskId)?.delete(row.pid);
+    forgetSnapshot();
+    return { ok: true, stopped: [row.pid] };
+  }
+
+  /** «Parar todo»: the servers and background processes left running (not the engine nor the shells). */
+  async stopAllProcesses(taskId) {
+    const task = this.mustTask(taskId);
+    if (this.engines.get(taskId)?.turn || this.starting.has(taskId)) throw Object.assign(Error("Bruno está trabajando: páralo antes."), { status: 409 });
+    const rows = await listTaskProcesses({ roots: this.processRoots(task), folders: [task.cwd], excludePorts: this.excludePorts || [] });
+    const pids = leftovers(rows);
+    for (const pid of pids) await stopTree(pid, rows);
+    const family = this.families.get(taskId);
+    if (family) for (const r of rows) if (pids.includes(r.root) || pids.includes(r.pid)) family.delete(r.pid);
+    return { ok: true, stopped: pids };
   }
 
   /** Remembers what the engine started (servers outlive the shell that started them). */

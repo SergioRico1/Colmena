@@ -8,6 +8,7 @@ const { render } = require("./render.cjs");
 const { setupBackground } = require("./background.cjs");
 const { setupUpdater } = require("./updater.cjs");
 const { setupDragOut } = require("./dragout.cjs");
+const { setupReveal } = require("./reveal.cjs");
 let backend, computer, backendOrigin = null, mainWin = null, background = null, updater = null;
 // The team at work, from the server ("presence"): the tray face and the updater read it.
 let presence = {};
@@ -183,6 +184,11 @@ else
         ipcMain._colmenaDrag = true;
         const dataDir = process.env.COLMENA_DATA_DIR || path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), ".local", "share"), "Colmena");
         setupDragOut({ ipcMain, app, nativeImage: require("electron").nativeImage, getOrigin: () => backendOrigin, dataDir, icon: ICON });
+      }
+      // «Código» › Archivos › «Mostrar en el Explorador» (desktop/reveal.cjs checks the path).
+      if (!ipcMain._colmenaReveal) {
+        ipcMain._colmenaReveal = true;
+        setupReveal({ ipcMain, shell, getOrigin: () => backendOrigin });
       }
       win.on("closed", () => ipcMain.removeListener("colmena-window", onWindow));
       // Login pages (ChatGPT and app connections) open in the system browser;
