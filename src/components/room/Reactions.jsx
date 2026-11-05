@@ -120,10 +120,10 @@ export function DownReasons({ current = null, onSave, onRemove, onClose, style }
       </label>
       {error ? <span role="alert" style={{ fontSize: "12.5px", color: "#B4232A" }}>{error}</span> : null}
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {onRemove ? <button type="button" className="rm-focus" onClick={() => { onRemove(); onClose(); }} style={{ height: "32px", padding: "0 10px", border: 0, borderRadius: "8px", background: "transparent", color: "#4A4D57", fontSize: "13px", cursor: "pointer" }}>Quitar «No me sirve»</button> : null}
+        {onRemove ? <button type="button" className="rm-focus" aria-label="Quitar «No me sirve»" title="Quitar «No me sirve»" onClick={() => { onRemove(); onClose(); }} style={{ height: "32px", padding: "0 8px", border: 0, borderRadius: "8px", background: "transparent", color: "#4A4D57", fontSize: "13px", whiteSpace: "nowrap", cursor: "pointer" }}>Quitar</button> : null}
         <span style={{ flex: "1" }} />
-        <button type="button" className="rm-focus" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: "1px solid #DCE0E8", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>Ahora no</button>
-        <button type="button" className="rm-focus" onClick={save} disabled={busy} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13px", fontWeight: 600, cursor: busy ? "wait" : "pointer" }}>Guardar</button>
+        <button type="button" className="rm-focus" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: "1px solid #DCE0E8", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13px", fontWeight: 500, whiteSpace: "nowrap", cursor: "pointer" }}>Ahora no</button>
+        <button type="button" className="rm-focus" onClick={save} disabled={busy} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", cursor: busy ? "wait" : "pointer" }}>Guardar</button>
       </div>
     </div>
   );

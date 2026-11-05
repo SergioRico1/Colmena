@@ -379,6 +379,17 @@ function sentenceOf(b, whenText, who, out, missions) {
 }
 const nameOf = (s) => (s.length > 100 ? s.slice(0, 99) + "…" : s);
 
+/** Whether the builder's own words say exactly what a saved time trigger does (else its sentence is kept). */
+function shownAsIs(a) {
+  const t = a?.trigger;
+  const c = t?.config || {};
+  const hour = (h) => HOURS.includes(h) || /^\d{2}:00$/.test(h || "");
+  if (t?.type === "dia") return ["1,2,3,4,5", "0,1,2,3,4,5,6"].includes([...(c.dias || [])].sort().join()) && (c.festivo || "saltar") === "saltar" && hour(c.hora);
+  if (t?.type === "semana") return String(c.semCada ?? "1") === "1" && hour(c.semHora);
+  if (t?.type === "vez") return hour(c.vezHora);
+  return t?.type === "cada";
+}
+
 /** The builder's state for a saved routine (best effort: parts it cannot show keep their text). */
 function fromRule(a, dates) {
   const c = a.trigger?.config || {};
@@ -435,7 +446,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
 
   const builtWhen = whenOf(b, dates);
   // A saved «when» the builder cannot show (every 2 weeks, a web page…) keeps its own words until you change it.
-  const whenText = (editing && !dirty.when) || !builtWhen ? "Cuando " + (loaded?.trigger?.sentence || "pase lo que elegiste") : builtWhen;
+  const whenText = (editing && !dirty.when && !shownAsIs(loaded)) || !builtWhen ? "Cuando " + (loaded?.trigger?.sentence || "pase lo que elegiste") : builtWhen;
   const where = whereLabel(b.where, missions);
   // The name follows the sentence only while it still is the sentence it was made from.
   const autoName = useMemo(() => {
