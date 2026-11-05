@@ -34,7 +34,8 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
   const chipRow = chips.length ? (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", ...(v3 ? { padding: "12px 14px 0" } : { margin: "0 0 10px 12px" }) }}>
       {chips.map((c) => (
-        <span key={c.key} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 6px 0 14px", borderRadius: v3 ? "10px" : "999px", background: v3 ? "#F6F6F3" : "#FFFFFF", boxShadow: v3 ? "none" : "0 0 0 1px rgba(18,19,26,.08)", fontSize: "13px", fontWeight: 600, color: "#12131A", animation: "pop .25s ease-out" }}>
+        <span key={c.key} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 6px 0 14px", borderRadius: v3 ? "10px" : "999px", background: v3 ? "#F6F6F3" : "#FFFFFF", boxShadow: v3 ? "none" : "0 0 0 1px rgba(18,19,26,.08)", fontSize: "13px", fontWeight: 600, color: "#12131A", animation: "pop .25s ease-out", ...(c.icon ? { gap: "7px", paddingLeft: "8px" } : {}) }}>
+          {c.icon || null}
           {c.label}
           <button type="button" onClick={() => onRemoveChip?.(c.key)} aria-label={"Quitar " + c.label} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>

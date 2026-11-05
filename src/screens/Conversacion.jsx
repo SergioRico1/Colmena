@@ -181,7 +181,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const send = useAction();
   const control = useAction();
   const inputRef = useRef(null);
-  const mentions = useMentions({ value: text, setValue: setText, bots: bots.filter((b) => b.enabled !== false && b.id !== botId), inputRef });
+  const mentions = useMentions({ value: text, setValue: setText, bots: bots.filter((b) => b.enabled !== false && b.id !== botId), inputRef, sources: { missionId: c || null } });
   const [incognito, setIncognito] = useState(privateNew);
   const [showOlder, setShowOlder] = useState(false);
   // The message of yours being written again (Versions.jsx), and the spots with versions.
@@ -232,7 +232,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       for (const extra of mentionedIds(body).filter((id) => !memberIds.includes(id))) await post(`/missions/${c}/members`, { botId: extra });
       await post(`/missions/${c}/messages`, { text: body, ...(sent.length ? { attachments: sent } : {}), ...(mode ? { mode } : {}), ...extra });
     } catch (error) {
-      if (sent.length) { unshowSent(path, temp); setText(body); setFiles(sent); throw error; }
+      if (sent.length || extra.refs?.length) { unshowSent(path, temp); setText(body); setFiles(sent); throw error; }
       failSent(path, temp, error.message);
     }
   };
@@ -249,7 +249,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     if (btw.intercept(body)) { setText(""); return; }
     const steer = c && turn && (whileWorking === "steer") !== !!sayNow;
     rememberPrompt(promptKey, body);
-    if (c && !files.length && !chosen.length && !steer && (turn || send.busy || queue.pending.length)) {
+    if (c && !files.length && !chosen.length && !mentions.refs.length && !steer && (turn || send.busy || queue.pending.length)) {
       setText("");
       void (async () => {
         for (const extra of mentionedIds(body).filter((id) => !memberIds.includes(id))) await post(`/missions/${c}/members`, { botId: extra }).catch(() => {});
@@ -257,22 +257,30 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       })();
       return;
     }
-    const extra = turnBody(chosen);
+    const extra = { ...turnBody(chosen), ...mentions.refsBody() };
+    const picked = mentions.refs;
+    mentions.clearRefs();
+    // What you pointed at with «@» comes back to the box if the message does not go.
     send.act(async () => {
-      if (!c) {
-        const created = await post("/missions", { prompt: body, mode: "solo", botIds: [botId], conversation: true, attachments: files, ...(incognito ? { incognito: true } : {}), ...extra });
-        for (const extra of mentionedIds(body)) await post(`/missions/${created.id}/members`, { botId: extra });
+      try {
+        if (!c) {
+          const created = await post("/missions", { prompt: body, mode: "solo", botIds: [botId], conversation: true, attachments: files, ...(incognito ? { incognito: true } : {}), ...extra });
+          for (const extra of mentionedIds(body)) await post(`/missions/${created.id}/members`, { botId: extra });
+          setText("");
+          setFiles([]);
+          setChosen([]);
+          navigate(created.incognito ? `/chat/${botId}?c=${created.id}` : `/chat/${botId}`, { replace: true });
+          return;
+        }
+        const sent = files;
         setText("");
         setFiles([]);
         setChosen([]);
-        navigate(created.incognito ? `/chat/${botId}?c=${created.id}` : `/chat/${botId}`, { replace: true });
-        return;
+        await deliver(body, sent, steer ? "steer" : null, extra);
+      } catch (error) {
+        mentions.restoreRefs(picked);
+        throw error;
       }
-      const sent = files;
-      setText("");
-      setFiles([]);
-      setChosen([]);
-      await deliver(body, sent, steer ? "steer" : null, extra);
     });
   };
   const retry = (userText) => send.act(() => post(`/missions/${c}/messages`, { text: userText }));
@@ -678,7 +686,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
             {isOlder ? null : (
             <Composer v3 value={text} onChange={(v) => { setText(v); if (slashOpen) setSlashOpen(false); }} onKeyDown={onKeyDown} onSubmit={submit} inputRef={inputRef} inputProps={mentions.inputProps}
               menu={plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={botId} /> : mentions.menu || slashMenu}
-              attachOpen={plusOpen} mentionBots={bots} chips={chosenChips(chosen).filter((ch) => ch.key !== "deep")} onRemoveChip={(k) => setChosen((list) => list.filter((x) => x !== k))}
+              attachOpen={plusOpen} mentionBots={bots} chips={[...mentions.chips, ...chosenChips(chosen).filter((ch) => ch.key !== "deep")]} onRemoveChip={(k) => (mentions.isRef(k) ? mentions.removeRef(k) : setChosen((list) => list.filter((x) => x !== k)))}
               label={`Responder a ${bot?.name || ""}`} placeholder={turn ? (whileWorking === "steer" ? `Sigue escribiendo: ${bot?.name || "el bot"} lo lee en su siguiente paso` : `Sigue escribiendo: se lo pasas cuando ${bot?.name || "termine"} acabe`) : `${c ? "Responder a" : "Escribe a"} ${bot?.name || ""}…  ${expert ? "@ menciona · / comandos · Mayús Intro nueva línea" : "@ para mencionar · / para comandos"}`}
               working={turn} onStop={stopTurn} files={files} onRemoveFile={(i) => setFiles(files.filter((_, j) => j !== i))} onInlinePasted={(i) => { const f = files[i]; setFiles(files.filter((_, j) => j !== i)); setText((t) => (t.trim() ? t.replace(/\s*$/, "\n\n") : "") + f.content); }}
               onAttach={() => { setSlashOpen(false); setPlusOpen((v) => !v); }} drop={drop} busy={send.busy} tools={composerTools}

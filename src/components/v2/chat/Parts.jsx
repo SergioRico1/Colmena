@@ -7,6 +7,7 @@ import LiveMarkdown from "../../room/LiveMarkdown.jsx";
 import { groupTools, headline } from "../../room/ToolCards.jsx";
 import { artifactMeta } from "../../room/DeliverableCard.jsx";
 import { UserText } from "../../room/SelectionPopup.jsx";
+import { RefChips } from "../../room/Mentions.jsx";
 import { copyText } from "../../room/common.jsx";
 import { useReactions } from "../../room/Reactions.jsx";
 import { BotPresence } from "../Presence.jsx";
@@ -55,6 +56,7 @@ export function UserBubble({ message, children }) {
       <div style={{ padding: "14px 18px", background: "#EBEBE6", borderRadius: "20px 20px 6px 20px", fontSize: "15.5px", lineHeight: "1.55", overflowWrap: "anywhere" }}>
         <UserText text={message.text} size={15.5} messageId={message.optimistic ? null : message.id} />
       </div>
+      <RefChips refs={message.refs} />
       {children}
     </div>
   );

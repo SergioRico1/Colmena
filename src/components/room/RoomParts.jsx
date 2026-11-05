@@ -27,7 +27,7 @@ import ActivityLog, { PLUMBING } from "./ActivityLog.jsx";
 import PlusMenu, { chosenChips, turnBody } from "../v2/chat/PlusMenu.jsx";
 import { MentionMirror, MentionPill, findMentions } from "../v2/MentionPill.jsx";
 import WorkingDots from "./Dots.jsx";
-import { useMentions } from "./Mentions.jsx";
+import { RefChips, useMentions } from "./Mentions.jsx";
 import { ACTIVE_STEP, BLOCKED_STEP, DONE_STEP } from "./useRoom.js";
 import { ListenButton, MicButton, appendDictation } from "../interaction/Voice.jsx";
 import UndoChanges from "../v2/chat/UndoChanges.jsx";
@@ -346,6 +346,7 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
     <MessageRow mine messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<UserAvatar size={40} />} continued={continued} at={message.at} padding={padding} actions={<><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} /><ForkButton message={message} /></>}>
       {continued ? null : <Head name="Tú" at={message.at} />}
       <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
+      <RefChips refs={message.refs} align="flex-start" />
       {message.failed ? <FailedLine error={message.failed} onRetry={resend.retry} onDiscard={resend.discard} /> : null}
       {(message.attachments || []).map((f, i) => <FileChip key={i} file={f} />)}
       <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />
@@ -973,7 +974,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
   const { act, busy, error } = useAction();
   const inputRef = useRef(null);
   const ordered = [...memberIds.map((id) => findBot(bots, id)), ...bots.filter((b) => b.enabled !== false && !memberIds.includes(b.id))];
-  const mentions = useMentions({ value: text, setValue: setText, bots: ordered, inputRef });
+  const mentions = useMentions({ value: text, setValue: setText, bots: ordered, inputRef, sources: mission?.id ? { missionId: mission.id } : null });
   const room = mission?.room || "sala";
 
   const [launched, setLaunched] = useState(0);
@@ -994,19 +995,22 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
     const sent = files;
     const path = `/missions/${mission.id}`;
     const temp = showSent(path, body, sent);
-    const extra = turnBody(chosen);
+    const extra = { ...turnBody(chosen), ...mentions.refsBody() };
+    const picked = mentions.refs;
     setText("");
     setFiles([]);
     setChosen([]);
+    mentions.clearRefs();
     onSent?.();
     await act(async () => {
       try {
         await post(path + "/messages", { text: body, ...(sent.length ? { attachments: sent } : {}), ...(other && working ? { mode: otherMode } : {}), ...extra });
       } catch (error) {
-        if (!sent.length) return failSent(path, temp, error.message);
+        if (!sent.length && !picked.length) return failSent(path, temp, error.message);
         unshowSent(path, temp);
         setText(body);
         setFiles(sent);
+        mentions.restoreRefs(picked);
         throw error;
       }
     });
@@ -1110,6 +1114,19 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
       ) : null}
       <div style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "22px" : "28px", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "22px" : "28px" }}>Suelta aquí para adjuntar</div> : null}
         {plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /> : mentions.menu}
+        {mentions.chips.length ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            {mentions.chips.map((ch) => (
+              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "10px", background: "rgba(18,19,26,.06)", fontSize: "13px", fontWeight: 600 }}>
+                {ch.icon}
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.label}</span>
+                <button type="button" onClick={() => mentions.removeRef(ch.key)} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                  <X size={12} strokeWidth={2.6} aria-hidden="true" />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
         {chosen.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {chosenChips(chosen).map((ch) => (
