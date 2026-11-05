@@ -156,7 +156,7 @@ export class AppTools {
         const { args: asked, capped } = capRead(def.slug, rest);
         const args = { tool: def.slug, account: chosen, arguments_json: JSON.stringify(asked) };
         const result = await rt.connections.request(m, step, call, args, signal);
-        if (result?.waiting) rt.decorateConnectionApproval(step.id + ":" + call.call_id, m, rt.bot(step.botId), args);
+        if (result?.waiting || result?.deferredApproval) rt.decorateConnectionApproval(step.id + ":" + call.call_id, m, rt.bot(step.botId), args);
         // Too big or too slow: a read is safe to repeat, smaller (as a person would).
         const again = await retryRead(this.connections, m, step, { tool: def.slug, account: chosen, args: asked }, result);
         if (again) return again;

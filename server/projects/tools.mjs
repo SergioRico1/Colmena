@@ -22,6 +22,7 @@ import {
 import { RUN_LIMITS, installCommand, nodeExecutable, packageDependencies, projectEnv, readPackage, runArgv, scriptCommand } from "./run.mjs";
 import { DevServers, serveKind } from "./servers.mjs";
 import { runConfined, sandboxKey } from "../computer/sandbox.mjs";
+import { deferredResult } from "../redlines.mjs";
 
 export const PROJECT_TOOL_NAMES = ["project_create", "project_files", "project_write", "project_edit", "project_delete", "project_run", "project_server", "project_preview"];
 export const isProjectTool = (name) => PROJECT_TOOL_NAMES.includes(name);
@@ -188,8 +189,8 @@ export class Projects {
           ? "El entorno aislado lo bloqueó (solo deja escribir en el proyecto). Si lo apruebas, se ejecutará una vez sin aislamiento, con tus mismos permisos."
           : "Es código que ha escrito el bot y este ordenador no tiene un entorno aislado disponible: se ejecutaría con tus mismos permisos.");
         const decided = this.runtime.redLineShortcut?.(mission, step, bot, { tool, args, approvalId, title, summary }) || null;
-        if (decided?.denied) return decided.result;
         approval = this.store.put("approvals", {
+          ...(decided?.deferred ? { deferred: true, deferredAt: now() } : {}),
           id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id, tool, args, kind: "permission",
           scope: null, scopeLabel: "Proyecto · " + project, title, summary,
           context: this.runtime.approvalContext?.(mission, bot) || bot.name, blocks: 1, options: [], email: null,
@@ -199,7 +200,7 @@ export class Projects {
         });
         if (!decided?.approved) {
           this.store.event(mission.id, "approval_requested", { botId: bot.id, text: summary });
-          return { waiting: true };
+          return decided?.deferred ? deferredResult(title) : { waiting: true };
         }
       } else if (plan.permission) {
         const grant = findProjectGrant(this.store, { botId: bot.id, scope: plan.scope });
@@ -218,7 +219,7 @@ export class Projects {
       }
       if (!approval) return await this.execute({ ...ctx, confined }, plan);
     }
-    if (approval.status === "pending") return { waiting: true };
+    if (approval.status === "pending") return approval.deferred ? deferredResult(approval.title) : { waiting: true };
     if (["denied", "expired"].includes(approval.status)) return deniedResult(approval, { expired: approval.status === "expired" });
     if (approval.status === "executed") return approval.result;
     const plan = await this.plan(ctx, autonomy);

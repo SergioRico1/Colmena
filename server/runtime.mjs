@@ -2,6 +2,7 @@ import { cheapestModel } from "./checkins.mjs";
 import { RECAP, RECAP_INSTRUCTIONS, cleanRecap, recapInput } from "./recaps.mjs";
 import { postMemoryNotice } from "./learned.mjs";
 import { LoopGuard, LOOP_GUARD, pairKey, postGuardNotice } from "./loops.mjs";
+import { isUnattended, missionFiles, normalizeRel, ownFileCommand, pendingSummary, personAsked, personTurnText } from "./redlines.mjs";
 import { automationNote, quietRun, QUIET_MARK } from "./quiet.mjs";
 import { addressees, chainLead, siblingNote, quietReply, passedTo, speechCut, STOP_RE, MAX_ROUNDS } from "./roomturns.mjs";
 import { NARRATION, NARRATION_INSTRUCTIONS, narrationDue, narrationInput, cleanNarration } from "./narration.mjs";
@@ -2289,7 +2290,7 @@ export class Runtime {
           const { args: asked, capped } = capRead(args.tool, parsed);
           const request = capped ? { ...args, arguments_json: JSON.stringify(asked) } : args;
           const result = await this.connections.request(mission, step, call, request, signal);
-          if (result?.waiting) this.decorateConnectionApproval(step.id + ":" + call.call_id, mission, bot, request);
+          if (result?.waiting || result?.deferredApproval) this.decorateConnectionApproval(step.id + ":" + call.call_id, mission, bot, request);
           const again = this.connections.readNow ? await retryRead(this.connections, mission, step, { tool: request.tool, account: request.account, args: asked }, result) : null;
           return again || result;
         }
@@ -2547,10 +2548,12 @@ export class Runtime {
     if (name === "create_document") return await this.executeDocument(mission, step, args, effectId, bot, extra);
     if (name === "create_spreadsheet") return await this.executeSpreadsheet(mission, step, args, effectId, bot);
     if (name === "write_file") {
-      const result = await createMissionFile(this.root(mission.id), args.path, args.content);
+      // A file this mission wrote may be written again (its own work); anything else stays.
+      const mine = missionFiles(this.store, mission.id);
+      const result = await createMissionFile(this.root(mission.id), args.path, args.content, { overwrite: (rel) => mine.has(normalizeRel(rel)) });
       const { kind, format } = kindFromPath(args.path);
       this.store.put("artifacts", {
-        id: effectId, missionId: mission.id, botId: bot.id, stepId: step.id, title: args.path, content: args.content,
+        id: effectId, missionId: mission.id, botId: bot.id, stepId: step.id, title: args.path, path: result?.path || args.path, content: args.content,
         kind, format, status: "final", version: 1, room: mission.room || null, createdAt: now(),
       });
       this.announce(mission.id, bot, bot.name + " ha creado " + args.path, effectId);
@@ -3181,9 +3184,53 @@ ${made.outline}`,
     this.store.patch("missions", missionId, { status: "queued" });
     this.relaunch(missionId);
   }
+  /**
+   * A red line about to wait for the person (computer commands, unconfined project runs),
+   * judged by its effect (redlines.mjs): {approved, by, resolution} when it only undoes this
+   * mission's own work, when your message in this turn named it exactly, or when you already
+   * approved it after a routine left it pending; {deferred:true} in an unattended run; null =
+   * ask as usual. Never for something read outside, nor for sends, buys or payments.
+   */
+  redLineShortcut(mission, step, bot, { tool, args = {}, approvalId = null } = {}) {
+    const fresh = this.store.get("missions", mission.id) || mission;
+    const same = (a) => a.tool === tool && JSON.stringify(a.args ?? null) === JSON.stringify(args ?? null);
+    const earlier = this.store.where("approvals", "missionId", mission.id).find((a) => a.id !== approvalId && a.deferred && a.status === "approved" && !a.consumedBy && same(a));
+    if (earlier) {
+      this.store.patch("approvals", earlier.id, { consumedBy: approvalId, status: "executed" });
+      return { approved: true, by: "tú", resolution: "Lo aprobaste tú después (lo dejó pendiente una rutina)" };
+    }
+    if (!this.flagged(step) && tool === "run_command") {
+      if (ownFileCommand(this.store, mission.id, args)) return { approved: true, by: "colmena", resolution: "Sin preguntar: solo borra archivos que creó esta misión" };
+      const text = personTurnText(this.store, fresh, step);
+      const files = (args.args || []).map(String).filter((x) => !x.startsWith("-"));
+      const deletes = /^(del|erase|rm|remove-item|ri|rmdir|rd)(\.exe)?$/i.test(path.basename(String(args.program || "")));
+      const asked = deletes ? personAsked(text, { action: "borrar", targets: files })
+        : personAsked(text, { action: "ejecutar", targets: [[path.basename(String(args.program || "")).replace(/\.(exe|com)$/i, ""), ...(args.args || [])].join(" ")] });
+      if (asked) return { approved: true, by: "tú", resolution: "Lo pediste tú en tu mensaje" };
+    }
+    if (isUnattended(fresh, this.settings(), step)) return { deferred: true };
+    return null;
+  }
+  /** Your decision on a red line an unattended routine left for later (its step already ended). */
+  approveDeferred(a, decision) {
+    if (!["approved", "denied"].includes(decision)) throw Error("Decision no valida.");
+    const mission = this.store.get("missions", a.missionId);
+    if (!mission || mission.status === "cancelled") throw Error("La misión está cancelada.");
+    this.store.patch("approvals", a.id, { status: decision, decidedAt: now(), decidedBy: "tú", resolution: decision === "approved" ? "Aprobado · se hace ahora" : "Denegado" });
+    this.store.event(a.missionId, "approval_decided", { text: decision === "approved" ? "Accion aprobada" : "Accion denegada" });
+    if (decision !== "approved") return;
+    const request = "La persona ha aprobado ahora lo que dejaste pendiente mientras no estaba: «" + String(a.title || a.summary || "").slice(0, 300) +
+      "». Hazlo ahora con la misma herramienta (" + a.tool + ") y exactamente los mismos argumentos (" + JSON.stringify(a.args ?? {}).slice(0, 1500) + "): Colmena ya lo tiene aprobado. Después di en una frase cómo ha ido.";
+    const keys = this.queueTurns(a.missionId, [a.botId], this.steps(a.missionId).map((s) => s.key), { request });
+    this.store.patch("missions", a.missionId, { steps: [...(mission.steps || []), ...keys], ...(mission.status === "completed" ? { status: "queued", error: null } : {}) });
+    this.relaunch(a.missionId);
+  }
   approve(approvalId, decision, { always = false } = {}) {
     const a = this.store.get("approvals", approvalId);
     if (!a || a.status !== "pending") throw Error("Esta solicitud ya está resuelta.");
+    // Left pending by an unattended routine that already went on: approving it asks that bot
+    // to do it now (its call is approved by this decision, redLineShortcut).
+    if (a.deferred && !["apps_execute"].includes(a.tool) && this.store.get("steps", a.stepId)?.status === "completed") return this.approveDeferred(a, decision);
     if (!["approved", "denied"].includes(decision)) throw Error("Decision no valida.");
     if (a.tool === "apps_execute") throw Error("Revisa esta acción en el diálogo de conexiones antes de decidir.");
     const mission = this.store.get("missions", a.missionId);
@@ -3298,12 +3345,19 @@ ${made.outline}`,
     const mission = this.store.get("missions", missionId);
     // An automation with nothing new: no notice, and the next run knows what this one said.
     let nothingNew = false;
+    // An unattended run lists the red lines it left for you (they wait in the Bandeja).
+    const pending = pendingSummary(this.store, missionId);
     if (mission.automationId) {
       ({ quiet: nothingNew, text: result } = quietRun(result));
+      if (pending) { nothingNew = false; result = String(result || "") + pending; }
       if (this.store.get("automations", mission.automationId))
         this.store.patch("automations", mission.automationId, { lastSummary: String(result).slice(0, 2000), lastSummaryAt: now(), lastQuiet: nothingNew });
     }
-    this.store.patch("missions", missionId, { status: "completed", result, completedAt: now(), error: null, ...(mission.automationId ? { nothingNew } : {}) });
+    this.store.patch("missions", missionId, {
+      status: "completed", result, completedAt: now(), error: null, ...(mission.automationId ? { nothingNew } : {}),
+      ...(pending ? { pendingRedLines: this.store.where("approvals", "missionId", missionId).filter((a) => a.deferred && a.status === "pending").map((a) => ({ id: a.id, title: a.title || a.summary || "" })) } : {}),
+    });
+    if (pending) this.store.put("messages", { id: "pending-redlines:" + missionId, missionId, role: "system", kind: "activity", text: pending.trim().replace(/\*\*/g, ""), at: now() });
     if (!mission.conversation) {
       const existing = this.store.get("artifacts", missionId + ":result");
       this.store.put("artifacts", {

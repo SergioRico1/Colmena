@@ -9,6 +9,7 @@ import { now } from "../store.mjs";
 import { deniedResult } from "../denial.mjs";
 import { commandOutput } from "../command-output.mjs";
 import { sandboxKey } from "./sandbox.mjs";
+import { deferredResult } from "../redlines.mjs";
 
 export { isComputerTool };
 
@@ -63,8 +64,8 @@ async function runComputerTool(runtime, computer, name, rawArgs, { mission, step
     const grant = plan.policy === "approval" && !runtime.flagged?.(step) && findComputerGrant(store, { botId: bot.id, tool: plan.name, scope: p.grantScope });
     // Unattended missions (routines with nobody around) or a person's explicit OK in this turn.
     const decided = !grant && p.redLine ? runtime.redLineShortcut?.(mission, step, bot, { tool: plan.name, args: plan.args, approvalId, title: p.title, summary: p.summary }) : null;
-    if (decided?.denied) return decided.result;
     a = store.put("approvals", {
+      ...(decided?.deferred ? { deferred: true, deferredAt: now() } : {}),
       id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id,
       tool: plan.name, args: plan.args, kind: "permission", scope: p.grantScope, scopeLabel: p.scopeLabel,
       title: p.title, summary: p.summary, context: runtime.approvalContext(mission, bot), blocks: 1, options: [], email: null,
@@ -75,10 +76,10 @@ async function runComputerTool(runtime, computer, name, rawArgs, { mission, step
     });
     if (!grant && !decided?.approved) {
       store.event(mission.id, "approval_requested", { botId: bot.id, text: p.summary });
-      return { waiting: true };
+      return decided?.deferred ? deferredResult(p.title) : { waiting: true };
     }
   }
-  if (a.status === "pending") return { waiting: true };
+  if (a.status === "pending") return a.deferred ? deferredResult(a.title) : { waiting: true };
   if (["denied", "expired"].includes(a.status)) return deniedResult(a, { expired: a.status === "expired" });
   if (a.status === "executed") return a.result;
   const { sandboxWide: _wide, ...approvedCtx } = ctx;

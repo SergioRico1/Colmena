@@ -92,22 +92,28 @@ export async function readMissionDocument(root, relative, page = 1) {
   return readDocument(bytes, relative, { page, cacheKey: target + ":" + size + ":" + mtimeMs });
 }
 
-export async function createMissionFile(root, relative, content) {
+/** `overwrite(relative)`: true when an existing file there may be replaced (this mission wrote it). */
+export async function createMissionFile(root, relative, content, { overwrite = null } = {}) {
   const binary = Buffer.isBuffer(content);
   if (binary ? content.length > ATTACHMENT_LIMITS.binaryBytes : typeof content !== "string" || Buffer.byteLength(content) > 250000)
     throw Error("Archivo demasiado grande.");
   const target = await safePath(root, relative, { parent: true });
+  let replaced = false;
   try {
     await writeFile(target, content, { flag: "wx" });
   } catch (e) {
     if (e.code !== "EEXIST") throw e;
     const existing = await readFile(target);
-    if (!existing.equals(binary ? content : Buffer.from(content)))
-      throw Error(
-        "Ya existe otro contenido en esta ruta. Elige un nombre nuevo.",
-      );
+    if (!existing.equals(binary ? content : Buffer.from(content))) {
+      if (!overwrite?.(relative))
+        throw Error(
+          "Ya existe otro contenido en esta ruta. Elige un nombre nuevo.",
+        );
+      await writeFile(target, content);
+      replaced = true;
+    }
   }
-  return { path: relative, bytes: binary ? content.length : Buffer.byteLength(content) };
+  return { path: relative, bytes: binary ? content.length : Buffer.byteLength(content), ...(replaced ? { replaced: true } : {}) };
 }
 
 /**
