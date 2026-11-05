@@ -1,14 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, answer, call, outputs, settle } from "./fixtures/runtime-fixture.mjs";
-import { trimHistory, compactHistory, TRIMMED, STUCK_ROUNDS, appsLabel } from "../server/runtime.mjs";
+import { trimHistory, compactHistory, contextBudget, estimateTokens, COMPACT_INSTRUCTIONS, STUCK_ROUNDS, appsLabel } from "../server/runtime.mjs";
+import { isPruned } from "../server/context.mjs";
 import { searchHistory } from "../server/tools.mjs";
 
 const page = (text) => async (url) => ({ url, finalUrl: url, title: "Página", text, truncated: false, untrusted: true });
-const isMain = (r) => !/^(Extrae|Resume el trabajo|Condensa)/.test(r.instructions) && !/# Encargo delegado/.test(r.instructions);
+const isMain = (r) => r.input?.at(-1)?.content !== COMPACT_INSTRUCTIONS && !/^(Extrae|Condensa)/.test(r.instructions) && !/# Encargo delegado/.test(r.instructions);
 
 test("trimHistory and compactHistory keep call ids, the first message and the person's messages", () => {
-  const big = JSON.stringify({ text: "x".repeat(3000) });
+  const big = JSON.stringify({ text: "x".repeat(10000) });
   const history = [{ role: "user", content: "Encargo" }];
   for (let i = 0; i < 6; i++) history.push({ type: "function_call", name: "web_fetch", call_id: "c" + i, arguments: "{}" }, { type: "function_call_output", call_id: "c" + i, output: big });
   history.push({ role: "user", content: "Nota de la persona: céntrate en Madrid" });
@@ -17,7 +18,9 @@ test("trimHistory and compactHistory keep call ids, the first message and the pe
   assert.notEqual(trimmed, history);
   const outs = trimmed.filter((x) => x.type === "function_call_output");
   assert.deepEqual(outs.map((o) => o.call_id), ["c0", "c1", "c2", "c3", "c4", "c5"]);
-  assert.deepEqual(outs.map((o) => o.output === JSON.stringify(TRIMMED)), [true, true, false, false, false, false]);
+  assert.deepEqual(outs.map((o) => isPruned(o.output)), [true, true, false, false, false, false]);
+  // Head and tail stay: the bot still sees what the result was without running it again.
+  assert.ok(outs[0].output.startsWith(big.slice(0, 4096)) && outs[0].output.endsWith(big.slice(-1024)));
   assert.equal(trimHistory(trimmed, { minSize: 0 }), trimmed, "idempotent");
   const compact = compactHistory([...history.slice(0, 5), { role: "user", content: "Prefiero euros" }, ...history.slice(5)], "## Objetivo\nX");
   assert.equal(compact[0].content, "Encargo");
@@ -27,36 +30,50 @@ test("trimHistory and compactHistory keep call ids, the first message and the pe
   assert.ok(compact.filter((x) => x.type === "function_call_output").every((x) => ids.has(x.call_id)), "no orphan outputs");
 });
 
-test("old tool outputs are trimmed before each call; a huge history is summarized and the step goes on", async (t) => {
+test("old tool outputs are pruned before each call; a huge history is summarized by the same model and the step goes on", async (t) => {
   const mains = [], summaries = [];
+  const window = { window: 64_000, maxOutput: 8_000 };
   const { store, runtime } = await fixture(t, async (request) => {
-    if (request.instructions.startsWith("Resume el trabajo")) {
-      summaries.push(JSON.parse(request.input[0].content));
+    if (request.input.at(-1)?.content === COMPACT_INSTRUCTIONS) {
+      summaries.push(request);
       return answer("## Objetivo\nComparar precios\n## Preferencias de la persona\n-\n## Hecho\nLeídas 4 páginas\n## En curso\n-\n## Bloqueado\n-\n## Decisiones\n-\n## Siguiente paso\nResumir");
     }
-    mains.push(request.input);
-    const n = outputs(request.input.filter((x) => x.type === "function_call_output" && !String(x.output).includes("recortado"))).length;
+    mains.push(request);
     const calls = request.input.filter((x) => x.type === "function_call").length;
-    void n;
     const summarized = request.input.some((x) => /^\[Resumen/.test(x.content || ""));
-    // One big page (trimmed later), then many short results that trimming cannot free:
+    // One big page (spilled, then pruned), then many short results that pruning cannot free:
     // only the summary makes room.
     if (calls === 0) return call("web_fetch", { url: "https://example.com/grande" }, "w0");
     if (!summarized && mains.length < 40)
       return { text: "", output: Array.from({ length: 20 }, (_, k) => ({ type: "function_call", name: "web_fetch", arguments: JSON.stringify({ url: "https://example.com/" + mains.length + "-" + k }), call_id: "w" + mains.length + "-" + k })) };
     if (mains.length > 45 || summarized) return answer("Precios comparados");
     return call("list_files", {}, "l" + mains.length);
-  }, { web: async (url) => ({ url, finalUrl: url, title: "Página", text: url.endsWith("grande") ? "precio ".repeat(16000) : "precio ".repeat(100), truncated: false, untrusted: true }) });
+  }, { context: window, web: async (url) => ({ url, finalUrl: url, title: "Página", text: url.endsWith("grande") ? "precio ".repeat(16000) : "precio ".repeat(100), truncated: false, untrusted: true }) });
   const m = runtime.create({ prompt: "Compara precios en cuatro webs" });
   await runtime.launch(m.id);
   assert.equal(summaries.length, 1);
-  assert.equal(summaries[0].encargo.startsWith("Compara precios"), true);
+  // Same instructions, tools and history as the step's own requests: the cached prefix serves it.
+  const [summary] = summaries;
+  const before = mains.filter((r) => !r.input.some((x) => /^\[Resumen/.test(x.content || "")) && !/^\[Colmena va a resumir/.test(r.input.at(-1)?.content || "")).at(-1);
+  assert.equal(summary.instructions, before.instructions);
+  assert.deepEqual(summary.tools.map((x) => x.name), before.tools.map((x) => x.name));
+  const region = summary.input.slice(0, -1), shared = Math.min(region.length, before.input.length);
+  assert.ok(shared > 10);
+  assert.deepEqual(region.slice(0, shared), before.input.slice(0, shared), "the summary request extends the last request's prefix");
+  assert.equal(summary.input[0].content.startsWith("Compara precios"), true);
   const step = runtime.steps(m.id)[0];
   assert.equal(step.compacted, true);
-  const after = mains.find((input) => input.some((x) => /^\[Resumen/.test(x.content || "")));
+  const after = mains.find((r) => r.input.some((x) => /^\[Resumen/.test(x.content || ""))).input;
   assert.equal(after[0].content.startsWith("Compara precios"), true, "first message literal");
-  assert.ok(JSON.stringify(after).length < 350000, "after summary: " + JSON.stringify(after).length);
-  assert.ok(mains.some((input) => input.some((x) => x.type === "function_call_output" && x.call_id === "w0" && x.output === JSON.stringify(TRIMMED))), "the big page was trimmed, call_id kept");
+  assert.ok(estimateTokens(after) < contextBudget(window).compactAt, "after summary: " + estimateTokens(after));
+  const big = mains.flatMap((r) => r.input).filter((x) => x.type === "function_call_output" && x.call_id === "w0").map((x) => x.output);
+  assert.ok(big.some((o) => /\[Colmena guardó la salida completa/.test(o) && !isPruned(o)), "the big page was spilled to a file");
+  const pruned = big.find(isPruned);
+  assert.ok(pruned, "then pruned, call_id kept");
+  const spilled = /«(\.colmena\/salidas\/sesion-[0-9a-f]{12}\/[^»]+)»/.exec(pruned)?.[1];
+  assert.ok(spilled, "the pruned output still says where the whole page is");
+  const read = await runtime.tool(store.get("missions", m.id), step, { name: "read_file", arguments: JSON.stringify({ path: spilled }), call_id: "rf" }, new AbortController().signal, "fixture");
+  assert.ok(!read.error && /precio precio/.test(read.content), "read_file reads the spilled page");
   assert.equal(store.get("missions", m.id).status, "completed");
   assert.equal(store.get("missions", m.id).result, "Precios comparados");
   assert.ok(store.events(m.id).some((e) => e.type === "context_compacted"));
@@ -264,5 +281,5 @@ test("trimming happens in bursts, not every round, so the history prefix stays c
   }
   assert.ok(rewrites.length > 0 && rewrites.length <= 8, "trimmed in a few bursts: " + rewrites.join(","));
   const outs = history.filter((x) => x.type === "function_call_output");
-  assert.notEqual(outs.at(-1).output, JSON.stringify(TRIMMED), "the latest result stays whole");
+  assert.equal(outs.at(-1).output, page, "the latest result stays whole");
 });

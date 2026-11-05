@@ -11,15 +11,48 @@ import { AnthropicProvider, validateSetupToken, isSubscriptionToken } from "./pr
 import { CompletionsProvider } from "./providers/completions.mjs";
 import { ClaudeCliProvider, probeClaudeCli, claudeCliVersion, CLI_MIN_VERSION, newerOrEqual } from "./providers/claude-cli.mjs";
 import { cleanSecret, checkOpenCodeKey } from "./providers/secret-input.mjs";
-import { limitHeaders, usageLimitOf, UNKNOWN_RESET_MS, PROVIDER_LIMIT_CODE } from "./limits.mjs";
+import { limitHeaders, usageLimitOf, UNKNOWN_RESET_MS, PROVIDER_LIMIT_CODE, RATE_MAX_MS } from "./limits.mjs";
 
 // Responses API over SSE. Tools are only returned after the final
 // `response.completed` confirms them; partial or contradictory streams fail.
 export const THINKING_EFFORT = { rapido: "low", equilibrado: "medium", profundo: "high" };
 export const OPENAI_API = "https://api.openai.com/v1";
-/** Waits before each retry of a failed inference (OpenClaw model-failover: bounded same-model recovery). */
-export const RETRY_DELAYS = Object.freeze([2000, 6000, 15000]);
+/**
+ * Retries of a failed inference (OpenClaw model-failover: bounded same-model recovery):
+ * exponential backoff with jitter (DeepSeek Harness llm-retry — MIT), ~2 s, 6 s, 18 s ±20 %.
+ */
+export const RETRY = Object.freeze({ retries: 3, initialMs: 2000, factor: 3, maxMs: 30_000, jitter: 0.2 });
 export const UNAVAILABLE_CODE = "COLMENA_PROVIDER_UNAVAILABLE";
+
+/** What a failed response's Retry-After (or retry-after-ms) asks to wait, in ms; null without one. */
+export function retryAfterMs(headers, at = Date.now()) {
+  const get = (k) => {
+    if (!headers) return null;
+    const v = typeof headers.get === "function" ? headers.get(k) : headers[k];
+    return v === undefined || v === null || v === "" ? null : String(v).trim();
+  };
+  const ms = Number(get("retry-after-ms"));
+  if (Number.isFinite(ms) && ms > 0) return ms;
+  const after = get("retry-after");
+  if (!after) return null;
+  if (/^\d+(\.\d+)?$/.test(after)) return Number(after) * 1000 || null;
+  const when = Date.parse(after);
+  return Number.isFinite(when) && when > at ? when - at : null;
+}
+
+/**
+ * The wait before retry number `attempt` (0-based): the provider's Retry-After when it gives
+ * one within RATE_MAX_MS (a longer one is a usage limit: limits.mjs), else
+ * min(initial · factor^attempt, max) with ±jitter. `base` replaces the exponential step.
+ */
+export function retryDelay(attempt, { error = null, policy = RETRY, random = Math.random, base = null } = {}) {
+  const after = retryAfterMs(error?.headers);
+  if (after && after <= RATE_MAX_MS) return Math.ceil(after);
+  if (base !== null) return base;
+  const step = Math.min(policy.initialMs * policy.factor ** Math.max(0, attempt), policy.maxMs);
+  const jitter = 1 - policy.jitter + 2 * policy.jitter * random();
+  return Math.round(Math.min(step * jitter, policy.maxMs));
+}
 
 const effortOf = (reasoning) => (typeof reasoning === "string" ? reasoning : reasoning?.effort) || null;
 
@@ -784,6 +817,18 @@ export class ProviderHub {
     const { engine } = parseRef(model);
     if (engine !== "openai" || this.kind || !this.primary || this.primary === "openai") return model;
     return this.equivalent(model, this.primary) || model;
+  }
+  /**
+   * {window, maxOutput} of a model, in tokens: the catalogue's for Claude and OpenCode Go (the
+   * answer capped at what the adapters ask for), the ChatGPT account's list when it says it;
+   * null when nobody knows (context.mjs then assumes a default).
+   */
+  modelLimits(model) {
+    const resolved = this.resolveModel(model);
+    const entry = modelEntry(resolved);
+    if (entry) return { window: entry.context, maxOutput: Math.min(entry.maxTokens || 0, 64000) || null };
+    const listed = (this.session?.models || []).find((m) => m.slug === resolved);
+    return listed?.context_window > 0 ? { window: listed.context_window, maxOutput: null } : null;
   }
   /** Same family on another engine (OpenClaw fallbacks list, by role instead of by name). */
   equivalent(model, engine) {

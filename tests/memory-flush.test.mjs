@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, answer, call } from "./fixtures/runtime-fixture.mjs";
+import { COMPACT_INSTRUCTIONS } from "../server/runtime.mjs";
 
 const page = (text) => async (url) => ({ url, finalUrl: url, title: "Página", text, truncated: false, untrusted: true });
 
 test("before a long history is summarized, the bot saves what must outlive it; nothing reaches the room", async (t) => {
   let flushes = 0, summaries = 0, mains = 0;
   const { store, runtime } = await fixture(t, async (request) => {
-    if (request.instructions.startsWith("Resume el trabajo")) {
+    if (request.input.at(-1)?.content === COMPACT_INSTRUCTIONS) {
       summaries += 1;
       return answer("## Objetivo\nX\n## Preferencias de la persona\n-\n## Hecho\n-\n## En curso\n-\n## Bloqueado\n-\n## Decisiones\n-\n## Siguiente paso\n-");
     }
@@ -21,7 +22,7 @@ test("before a long history is summarized, the bot saves what must outlive it; n
     if (request.input.some((x) => /^\[Resumen/.test(x.content || "")) || mains > 30) return answer("Comparativa lista.");
     // Many short results (trimming cannot free them): only the summary makes room.
     return { text: "", output: Array.from({ length: 20 }, (_, k) => ({ type: "function_call", name: "web_fetch", arguments: JSON.stringify({ url: "https://example.com/" + mains + "-" + k }), call_id: "w" + mains + "-" + k })) };
-  }, { web: page("precio ".repeat(100)) });
+  }, { web: page("precio ".repeat(100)), context: { window: 64_000, maxOutput: 8_000 } });
   const m = runtime.create({ prompt: "Compara precios", mode: "solo", botIds: ["nora"] });
   await runtime.launch(m.id);
   assert.equal(flushes, 1, "one silent turn before the one summary");

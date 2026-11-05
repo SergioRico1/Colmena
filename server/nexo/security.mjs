@@ -180,6 +180,8 @@ export function normalizeModels(data) {
           ? m.display_name.slice(0, 150)
           : m.slug,
       reasoning_efforts: modelEfforts(m),
+      // Tokens the model can read, when the account says it (runtime context budget).
+      ...(Number.isSafeInteger(m.context_window) && m.context_window > 0 ? { context_window: m.context_window } : {}),
     }));
 }
 export function modelEfforts(model) {
