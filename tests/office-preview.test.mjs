@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
-import { mkdtemp, mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import express from "express";
@@ -219,7 +219,10 @@ test("dragging out: only files of the working folders resolve to a path on disk"
   const ok = await get("/files/locate?url=" + encodeURIComponent("/api/missions/m1/workfiles/raw?path=docs%2Fcarta.docx"));
   assert.equal(ok.status, 200);
   assert.equal(path.basename(ok.body.path), "carta.docx");
-  assert.ok(ok.body.roots.some((r) => ok.body.path.startsWith(r)));
+  // The path is the real one (a temp folder may be a short 8.3 name, as on CI's Windows), so
+  // the roots are compared by their real paths too, as desktop/dragout.cjs does.
+  const realRoots = await Promise.all(ok.body.roots.map((r) => realpath(r).catch(() => r)));
+  assert.ok(realRoots.some((r) => ok.body.path.startsWith(r)));
   assert.deepEqual(dragRoots(store), [path.join(store.directory, "workspaces")]);
   assert.equal((await get("/files/locate?url=" + encodeURIComponent("/api/artifacts/a1/file"))).body.name, "carta.docx");
   assert.equal((await get("/files/locate?url=" + encodeURIComponent("/api/artifacts/a2/file"))).status, 404);
