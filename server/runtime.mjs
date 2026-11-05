@@ -39,7 +39,7 @@ import {
 import { composeInstructions, autonomyOf, nowNote, useDataDirectory, readSoul, writeSoul } from "./soul.mjs";
 import { webFetch } from "./web.mjs";
 import { addReaction, removeReaction, swapReaction, reactionNotices, reactionsOf, ACK_LOOKING, ACK_TAKEN, ACK_DONE } from "./reactions.mjs";
-import { THINKING_EFFORT, RETRY_DELAYS, UNAVAILABLE_CODE, isTransientError } from "./provider.mjs";
+import { THINKING_EFFORT, RETRY, retryDelay, UNAVAILABLE_CODE, isTransientError } from "./provider.mjs";
 import { canCreateImages, createImage, IMAGE_CODE } from "./images.mjs";
 import { inspectPdf, fillPdf } from "./pdfforms.mjs";
 import { checkLimit, record as recordUsage, stepUsage, LIMIT_CODE, crossedWarning } from "./usage.mjs";
@@ -342,13 +342,14 @@ export class Runtime {
    * 'ordenador' is on. It returns [{name, description, parameters, strict?, run(args, ctx)}];
    * `run` receives {mission, step, bot, call, signal, runtime} and may return {waiting:true}.
    */
-  constructor(store, provider, connections = null, { web = webFetch, extraTools = null, retryDelays = RETRY_DELAYS, seed = !process.env.NODE_TEST_CONTEXT, sleep = null, idleAbortMs = IDLE_ABORT_MS, quietMs = QUIET_MS, suggest = !process.env.NODE_TEST_CONTEXT, review = !process.env.NODE_TEST_CONTEXT, autoTitle = !process.env.NODE_TEST_CONTEXT, narrate = !process.env.NODE_TEST_CONTEXT, recaps = !process.env.NODE_TEST_CONTEXT, speech = !process.env.NODE_TEST_CONTEXT, loopGuard = LOOP_GUARD, checkpoints = !process.env.NODE_TEST_CONTEXT } = {}) {
+  constructor(store, provider, connections = null, { web = webFetch, extraTools = null, retryDelays = null, seed = !process.env.NODE_TEST_CONTEXT, sleep = null, idleAbortMs = IDLE_ABORT_MS, quietMs = QUIET_MS, suggest = !process.env.NODE_TEST_CONTEXT, review = !process.env.NODE_TEST_CONTEXT, autoTitle = !process.env.NODE_TEST_CONTEXT, narrate = !process.env.NODE_TEST_CONTEXT, recaps = !process.env.NODE_TEST_CONTEXT, speech = !process.env.NODE_TEST_CONTEXT, loopGuard = LOOP_GUARD, checkpoints = !process.env.NODE_TEST_CONTEXT } = {}) {
     this.store = store;
     this.provider = provider;
     this.connections = connections;
     this.web = web;
     this.webCache = new Map(); // url → { at, result | error, pending }
     this.extraTools = extraTools;
+    // Fixed waits (tests) instead of the provider's backoff policy (provider.mjs RETRY).
     this.retryDelays = retryDelays;
     this.sleep = sleep;
     this.idleAbortMs = idleAbortMs;
@@ -999,8 +1000,9 @@ export class Runtime {
   }
   /**
    * Inference wrapper: monthly cap before the call, usage after it, and recovery (OpenClaw
-   * model-failover). A 429/5xx/timeout/network error is retried with the same model after
-   * 2 s, 6 s and 15 s; nothing done is lost because the step history and receipts are
+   * model-failover). A 429/5xx/timeout/network error is retried with the same model with
+   * exponential backoff and jitter (~2 s, 6 s, 18 s; the provider's Retry-After when it says
+   * one: provider.mjs retryDelay); nothing done is lost because the step history and receipts are
    * already saved, and a failed stream never returns tools to run. After the retries, the
    * local model (Ajustes › fallback 'local') answers that call; otherwise the error carries
    * UNAVAILABLE_CODE and the mission is paused. `params.timeoutMs` gives every attempt its
@@ -1019,7 +1021,11 @@ export class Runtime {
     // instructions share a key, so OpenAI routes them where that prefix is already cached.
     if (!rest.cacheKey && typeof rest.instructions === "string" && rest.instructions) rest.cacheKey = "colmena-side-" + sha(rest.instructions).slice(0, 32);
     if (!retry) rest.side = true;
-    const delays = !retry ? [] : Array.isArray(this.retryDelays) ? this.retryDelays : RETRY_DELAYS;
+    // Fixed waits when given (tests); otherwise RETRY's backoff with jitter. Either way a
+    // provider's Retry-After wins (provider.mjs retryDelay).
+    const fixed = Array.isArray(this.retryDelays) ? this.retryDelays : null;
+    const retries = !retry ? 0 : fixed ? fixed.length : RETRY.retries;
+    const delayFor = (attempt, error) => retryDelay(attempt, { error, base: fixed ? fixed[attempt] : null });
     const base = rest.signal;
     const attemptParams = () => ({ ...rest, fallback: false, signal: timeoutMs ? (base ? AbortSignal.any([base, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs)) : base });
     const hub = typeof this.provider?.fallbackFor === "function" ? this.provider : null;
@@ -1032,7 +1038,7 @@ export class Runtime {
       const next = hub.fallbackFor(rest.model);
       if (!next) throw limitError(engine, known);
       started = Date.now();
-      result = await this.handOver(next, attemptParams(), { engine, reason: known.label, limit: known, stepId, onRetry, max: delays.length });
+      result = await this.handOver(next, attemptParams(), { engine, reason: known.label, limit: known, stepId, onRetry, max: retries });
     } else for (let attempt = 0; ; attempt++) {
       try {
         started = Date.now();
@@ -1047,9 +1053,9 @@ export class Runtime {
         const accountFailure = [401, 402, 403].includes(error?.status) || usageLimit;
         if (!usageLimit && !isTransientError(error) && !(accountFailure && hub?.fallbackFor(rest.model))) throw error;
         const reason = usageLimit ? limit.label : describeFailure(error);
-        if (attempt < delays.length && !accountFailure) {
-          const wait = delays[attempt];
-          onRetry?.({ attempt: attempt + 1, max: delays.length, wait, reason, status: "waiting" });
+        if (attempt < retries && !accountFailure) {
+          const wait = delayFor(attempt, error);
+          onRetry?.({ attempt: attempt + 1, max: retries, wait, reason, status: "waiting" });
           await this.wait(wait, base);
           continue;
         }
@@ -1057,20 +1063,20 @@ export class Runtime {
         const next = hub ? hub.fallbackFor(rest.model) : null;
         const local = !next && typeof this.provider?.fallbackProvider === "function" ? this.provider.fallbackProvider() : null;
         if (next || local) {
-          if (next) result = await this.handOver(next, attemptParams(), { engine, reason, limit: usageLimit ? limit : null, stepId, onRetry, max: delays.length });
+          if (next) result = await this.handOver(next, attemptParams(), { engine, reason, limit: usageLimit ? limit : null, stepId, onRetry, max: retries });
           else {
-            onRetry?.({ attempt: null, max: delays.length, wait: 0, reason, status: "fallback", to: "el modelo local" });
+            onRetry?.({ attempt: null, max: retries, wait: 0, reason, status: "fallback", to: "el modelo local" });
             const { fallback: _f, webSearch: _w, ...bare } = attemptParams();
             result = await local.respond({ ...bare, reasoning: null });
           }
           break;
         }
-        onRetry?.({ attempt: null, max: delays.length, wait: 0, reason, status: "failed", message: error.message });
+        onRetry?.({ attempt: null, max: retries, wait: 0, reason, status: "failed", message: error.message });
         if (usageLimit) throw limitError(engine, limit, error);
         if (accountFailure) throw error;
         const who = { anthropic: "Claude", "opencode-go": "OpenCode Go" }[error?.engine] || "OpenAI";
         throw Object.assign(
-          Error(`${who} no responde (${reason}) tras ${delays.length} reintentos. La misión queda en pausa: pulsa «Continuar» cuando vuelva; lo hecho se conserva.`),
+          Error(`${who} no responde (${reason}) tras ${retries} reintentos. La misión queda en pausa: pulsa «Continuar» cuando vuelva; lo hecho se conserva.`),
           { code: UNAVAILABLE_CODE, cause: error },
         );
       }
