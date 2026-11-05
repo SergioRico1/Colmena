@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files } from "lucide-react";
+import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files as FilesIcon } from "lucide-react";
 import { useRevealMessage } from "../lib/reveal.js";
 import Shell from "../components/v2/Shell.jsx";
 import { whenLabel, useMenu, MenuSheet, Item, Rule, TaskActions } from "../components/v2/code/ProjectList.jsx";
@@ -202,7 +202,7 @@ function TaskChips({ task, project, running, onMergePr = null }) {
       {task.group ? <a href={"/codigo/comparar/" + task.group} style={{ ...SIGNAL("#F1F1EC", C.blue) }} title="La misma petición con otros motores, lado a lado"><Columns3 size={12} strokeWidth={2.2} aria-hidden="true" />Comparar</a> : null}
       {(task.overlaps || []).slice(0, 2).map((o) => (
         <a key={o.task} href={"/codigo/" + o.task} style={SIGNAL("#FFF1C7", C.honeyText)} title={`Las dos tareas cambian ${o.count === 1 ? "este archivo" : "estos archivos"}: ${o.files.join(", ")}${o.count > o.files.length ? "…" : ""}. Al fusionar pueden chocar.`}>
-          <Files size={12} strokeWidth={2.2} aria-hidden="true" />Mismos archivos que «{o.title.length > 32 ? o.title.slice(0, 32) + "…" : o.title}»
+          <FilesIcon size={12} strokeWidth={2.2} aria-hidden="true" />Mismos archivos que «{o.title.length > 32 ? o.title.slice(0, 32) + "…" : o.title}»
         </a>
       ))}
     </div>
