@@ -57,6 +57,7 @@ import { useAutoPreview } from "../lib/autoPreview.js";
 import { exportConversation } from "../lib/exportConversation.jsx";
 import { LimitBanner } from "../components/v2/LimitNotice.jsx";
 import UndoChanges from "../components/v2/chat/UndoChanges.jsx";
+import ChangedFiles, { TurnFileLinks, useOpenFileRequests } from "../components/v2/chat/ChangedFiles.jsx";
 
 // Colmena 2.0 · 23 «Conversación con un bot» (design/V2Conversacion.dc.html). On the left all
 // conversations; on the right the bot as a presence that breathes while it works, its work
@@ -329,6 +330,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const workVersion = steps.reduce((n, s) => n + (s.activity?.length || 0), 0) + artifacts.length + messages.length;
   // A web page a bot just made opens in «Vista previa» beside the chat (OpenClaw's Canvas).
   useAutoPreview(c, artifacts, (wf) => dock.open({ id: "file:" + wf, kind: "file", path: wf, name: wf.split("/").pop(), type: "code" }));
+  // A file named in an answer or in «Archivos cambiados» opens beside the chat.
+  useOpenFileRequests(c, (f) => dock.open({ id: "file:" + f.path, kind: "file", path: f.path, name: f.name, type: f.type }));
   const now = activity.find((a) => a.botId) || null;
   const runningStep = steps.find((s) => s.status === "running") || null;
   const needs = pending.filter((a) => a.kind !== "secret" && !(a.kind === "question" && messages.some((m) => m.approvalId === a.id)));
@@ -487,7 +490,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         return (
           row.editing ? <EditMessage text={m.text} canRestore={row.canRestore} onCancel={() => acts.current.edit(null)} onSend={(text, restore) => acts.current.sendEdit(m.id, text, restore)} /> : (
           <UserBubble message={m}>
-            {attachments.length ? <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px" }}>{attachments.map((f, i) => <AttachmentChip key={i} name={f.name || String(f)} />)}</span> : null}
+            {attachments.length ? <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px" }}>{attachments.map((f, i) => <AttachmentChip key={i} name={f.name || String(f)} missionId={c} />)}</span> : null}
             {m.failed ? <FailedLine error={m.failed} onRetry={() => acts.current.resend(m)} onDiscard={() => unshowSent(`/missions/${c}`, m.id)} /> : null}
             {row.editable || row.branch ? (
               <span style={{ display: "flex", alignItems: "center", gap: "2px", color: "#5C606C" }}>
@@ -505,7 +508,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         : <QuestionCard approval={row.a} text={m.text} bots={bots} variant="chat" />;
       case "answer": return (
         // V3Chat: head, work, text; then the deliverable, the sources, the actions (and the
-        // versions); expert mode adds the usage line. «Deshacer cambios» last.
+        // versions); expert mode adds the usage line. «Archivos cambiados» and «Deshacer cambios» last.
+        <TurnFileLinks missionId={row.undo ? c : null} cp={row.undo || null}>
         <article style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <CitationContext.Provider value={row.citations}>
             <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} />
@@ -516,8 +520,10 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           <AnswerActions message={m} bot={row.author} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null} onEditAsk={row.regenerate && row.askId ? () => acts.current.edit(row.askId) : null}
             branch={row.branch} versionDisabled={turn} onVersion={(id) => acts.current.version(id)} />
           <UsageLine message={m} step={row.step} />
+          {row.undo ? <ChangedFiles cp={row.undo} missionId={c} /> : null}
           {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
         </article>
+        </TurnFileLinks>
       );
       case "trail": return <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}><AnswerHead bot={row.bot} state="work" /><WorkTrail step={row.step} bots={bots} running /></div>;
       case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} head={row.head} narration={row.narration} onStop={() => acts.current.stop()} />;
