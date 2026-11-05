@@ -676,7 +676,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
             {c ? <ConversationMap missionId={c} version={messages.length + ":" + (messages[messages.length - 1]?.id || "")} scroller={scroller} ownerOf={ownerOf} onJump={mapJump} /> : null}
             {/* An older chat is read-only: you keep talking in the bot's single chat. */}
             {isOlder ? null : (
-            <Composer v3 value={text} onChange={(v) => { setText(v); if (slashOpen) setSlashOpen(false); }} onKeyDown={onKeyDown} onSubmit={submit} inputRef={inputRef} inputProps={mentions.inputProps}
+            <Composer v3 value={text} onChange={(v) => { setText(v); if (slashOpen) setSlashOpen(false); }} onKeyDown={onKeyDown} onSubmit={submit} inputRef={inputRef} inputProps={mentions.inputProps} dictationScope={c || "nuevo:" + botId}
               menu={plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={botId} /> : mentions.menu || slashMenu}
               attachOpen={plusOpen} mentionBots={bots} chips={chosenChips(chosen).filter((ch) => ch.key !== "deep")} onRemoveChip={(k) => setChosen((list) => list.filter((x) => x !== k))}
               label={`Responder a ${bot?.name || ""}`} placeholder={turn ? (whileWorking === "steer" ? `Sigue escribiendo: ${bot?.name || "el bot"} lo lee en su siguiente paso` : `Sigue escribiendo: se lo pasas cuando ${bot?.name || "termine"} acabe`) : `${c ? "Responder a" : "Escribe a"} ${bot?.name || ""}…  ${expert ? "@ menciona · / comandos · Mayús Intro nueva línea" : "@ para mencionar · / para comandos"}`}

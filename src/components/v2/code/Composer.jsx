@@ -56,7 +56,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
         ? { flex: 1, minWidth: 0, border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "19px", lineHeight: 1.45 }
         : { flex: 1, minWidth: 0, minHeight: "40px", padding: "9px 0", border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "14.5px", lineHeight: "22px", maxHeight: "220px" }} />
   );
-  const mic = <MicButton onText={(said) => { appendDictation(setText)(said); extras.track(); }} size={36} style={{ color: C.muted }} />;
+  const mic = <MicButton onText={(said) => { appendDictation(setText)(said); extras.track(); }} target={area} size={36} style={{ color: C.muted }} />;
   const drop = { onDragOver: (e) => { if (e.dataTransfer?.types?.includes("Files")) e.preventDefault(); }, onDrop: extras.onDrop };
 
   if (home) {

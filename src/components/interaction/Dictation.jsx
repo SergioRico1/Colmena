@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { LoaderCircle, Mic, MicOff, Square } from "lucide-react";
+import { Cloud, Laptop, LoaderCircle, Mic, MicOff, Square } from "lucide-react";
 import { get, patch, post } from "../../lib/api.js";
+import { appendText, engineNote, planInsert } from "../../lib/dictation.js";
 
 // Dictation in every composer (chats, rooms, Código, a new bot). The server picks the engine
 // (server/voice.mjs): the speech recognizer of this computer first — Windows' offline one or
 // macOS's — which listens to the microphone itself and sends the words live, so you see them
 // while you speak; then, with an OpenAI API key, a recording sent for transcription. When
 // neither works the microphone stays, quiet, and says why and how to fix it.
+// While you speak it says where («En este equipo» / «En la nube»); when it ends, what you said
+// goes where the caret was, as one edit Ctrl+Z undoes, and nothing arrives in another chat.
 
 /* ───────────── status, shared by every composer and Ajustes ───────────── */
 
@@ -58,13 +61,41 @@ const micProblem = (platform) => ({
   open: "microphone",
 });
 
+const readBox = (el) => (el && typeof el.value === "string" ? { value: el.value, start: el.selectionStart ?? el.value.length, end: el.selectionEnd ?? el.value.length, el } : null);
+/** Puts `text` in place of start…end as the browser's own edit (so Ctrl+Z undoes it at once). */
+function insertInto(el, start, end, text, caret) {
+  try {
+    el.focus({ preventScroll: true });
+    el.setSelectionRange(start, end);
+    if (document.execCommand?.("insertText", false, text)) return true;
+  } catch {}
+  // No execCommand: the value React reads, set the way it notices (not undoable, but in place).
+  try {
+    const proto = Object.getPrototypeOf(el);
+    const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+    if (!setter) return false;
+    setter.call(el, el.value.slice(0, start) + text + el.value.slice(end));
+    el.setSelectionRange(caret, caret);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
- * {available, mode, state:'idle'|'starting'|'listening'|'transcribing', partial, heard, level,
- *  error, problem, start, stop, toggle, clearError}. `onText(text)` gets each finished phrase;
- * `partial` is the phrase being spoken (system engine only) and `heard` all that this
- * dictation already wrote. `error`/`problem` are {message, help, open}.
+ * {available, mode, where, state:'idle'|'starting'|'listening'|'transcribing', partial, heard,
+ *  level, error, problem, start, stop, toggle, clearError}.
+ * - `target`: the text box (a ref or a function returning it). What you dictate goes, when the
+ *   dictation ends, at the caret or selection it had when you began, as one undoable edit; if you
+ *   moved it or the text changed meanwhile, it is appended with `onText(text)` instead (also the
+ *   only way without a target).
+ * - `scope`: what the box belongs to (a chat, a room). If it changes while dictating, the
+ *   dictation stops and its words, even a transcription still on its way, are dropped.
+ * `partial` is the phrase being spoken (system engine only), `heard` all this dictation heard and
+ * `where` the engine in use ({where, cloud, note}). `error`/`problem` are {message, help, open}.
  */
-export function useDictation({ onText }) {
+export function useDictation({ onText, target = null, scope = null }) {
   const voice = useVoiceStatus();
   const canRecord = typeof window !== "undefined" && typeof window.MediaRecorder === "function" && !!navigator.mediaDevices?.getUserMedia;
   const mode = voice?.mode === "sistema" ? "sistema" : voice?.mode === "openai" && canRecord ? "openai" : null;
@@ -73,12 +104,54 @@ export function useDictation({ onText }) {
   const [heard, setHeard] = useState("");
   const [level, setLevel] = useState(0);
   const [error, setError] = useState(null);
+  // The engine of the dictation under way (fixed when it starts, even if the status changes).
+  const [using, setUsing] = useState(null);
   const session = useRef(null);
   const recorder = useRef(null);
   const timer = useRef(null);
   const stopSoon = useRef(false);
   const textRef = useRef(onText);
   textRef.current = onText;
+  const voiceRef = useRef(voice);
+  voiceRef.current = voice;
+  const targetRef = useRef(target);
+  targetRef.current = target;
+  const scopeRef = useRef(scope);
+  scopeRef.current = scope;
+  // Where this dictation began (scope and box), what it heard, and a number that changes when
+  // a dictation is dropped so its late answers find nobody waiting.
+  const origin = useRef({ scope: null, box: null });
+  const said = useRef([]);
+  const pending = useRef(null);
+  const run = useRef(0);
+  const [flush, setFlush] = useState(0);
+  const element = () => (typeof targetRef.current === "function" ? targetRef.current() : targetRef.current?.current) || null;
+  const current = () => origin.current.scope === scopeRef.current;
+  const begin = (engine) => {
+    run.current += 1;
+    origin.current = { scope: scopeRef.current, box: readBox(element()) };
+    said.current = [];
+    pending.current = null;
+    setUsing(engineNote(voiceRef.current, engine));
+    return run.current;
+  };
+  /** Hands the words over once the composer has its box back (an effect, after the render). */
+  const deliver = (text) => {
+    if (!text || !current()) return;
+    pending.current = (pending.current ? pending.current + " " : "") + text;
+    setFlush((n) => n + 1);
+  };
+  useEffect(() => {
+    if (state !== "idle" || pending.current == null) return;
+    const text = pending.current;
+    pending.current = null;
+    if (!current()) return;
+    const el = element();
+    const plan = planInsert(origin.current.box, readBox(el), text);
+    if (!plan) return;
+    if (plan.mode === "caret" && el && insertInto(el, plan.start, plan.end, plan.text, plan.caret)) return;
+    textRef.current?.(plan.text);
+  }, [state, flush]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cleanup = useCallback(() => {
     clearTimeout(timer.current);
@@ -98,13 +171,32 @@ export function useDictation({ onText }) {
 
   const finish = useCallback(() => {
     cleanup();
+    // Everything it heard, in one go: one edit, not one per phrase.
+    deliver(said.current.join(" "));
+    said.current = [];
     setState("idle");
     setPartial("");
     setLevel(0);
-  }, [cleanup]);
+    setUsing(null);
+  }, [cleanup]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Another chat or room in the same composer: this dictation is not for it.
+  useEffect(() => {
+    if (origin.current.scope === scope || (!session.current && !recorder.current && state === "idle")) return;
+    run.current += 1;
+    cleanup();
+    said.current = [];
+    pending.current = null;
+    setState("idle");
+    setPartial("");
+    setHeard("");
+    setLevel(0);
+    setUsing(null);
+  }, [scope]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startSystem = useCallback(async () => {
     stopSoon.current = false;
+    const mine = begin("sistema");
     setState("starting");
     setPartial("");
     setHeard("");
@@ -112,9 +204,16 @@ export function useDictation({ onText }) {
     try {
       ({ id } = await post("/voice/listen"));
     } catch (e) {
+      if (run.current !== mine) return;
       setState("idle");
+      setUsing(null);
       setError({ message: e.message });
       void refreshVoiceStatus({ fresh: true });
+      return;
+    }
+    // Dropped (another chat) while the microphone opened: close it at once.
+    if (run.current !== mine) {
+      post(`/voice/listen/${encodeURIComponent(id)}/stop`).catch(() => {});
       return;
     }
     const source = new EventSource(`/api/voice/listen/${encodeURIComponent(id)}/events`);
@@ -133,16 +232,16 @@ export function useDictation({ onText }) {
       else if (event.type === "partial") setPartial(event.text || "");
       else if (event.type === "final") {
         setPartial("");
-        if (event.text) {
-          textRef.current?.(event.text);
-          setHeard((h) => (h ? h + " " : "") + event.text);
+        if (event.text && current()) {
+          said.current.push(event.text);
+          setHeard((h) => appendText(h, event.text));
         }
       } else if (event.type === "error") {
         setError({ message: event.message, help: event.help, open: event.open });
         void refreshVoiceStatus({ fresh: true });
       } else if (event.type === "end") finish();
     };
-    // The stream broke (server restarted): what was said is already in the box.
+    // The stream broke (server restarted): what was heard until then still goes in.
     source.onerror = () => {
       if (session.current?.source === source) finish();
     };
@@ -161,6 +260,7 @@ export function useDictation({ onText }) {
     const r = new window.MediaRecorder(stream, { ...(type ? { mimeType: type } : {}), audioBitsPerSecond: 32000 });
     const parts = [];
     const began = Date.now();
+    const mine = begin("openai");
     r.stream = stream;
     r.ondataavailable = (e) => e.data?.size && parts.push(e.data);
     r.onstop = async () => {
@@ -168,16 +268,21 @@ export function useDictation({ onText }) {
       recorder.current = null;
       clearTimeout(timer.current);
       const blob = new Blob(parts, { type: r.mimeType || type || "audio/webm" });
-      if (!blob.size) return setState("idle");
+      if (!blob.size) { setState("idle"); setUsing(null); return; }
       setState("transcribing");
       try {
         const { text } = await post("/voice/transcribe", { audio: await toBase64(blob), mime: blob.type || "audio/webm", durationMs: Date.now() - began });
-        if (text) textRef.current?.(text);
+        // Late: you went to another chat (or started again) while it was being transcribed.
+        if (run.current !== mine) return;
+        if (text) deliver(text);
         else setError({ message: "No he entendido nada.", help: "Prueba a hablar más cerca del micrófono." });
       } catch (e) {
-        setError({ message: e.message });
+        if (run.current === mine) setError({ message: e.message });
       } finally {
-        setState("idle");
+        if (run.current === mine) {
+          setState("idle");
+          setUsing(null);
+        }
       }
     };
     recorder.current = r;
@@ -214,6 +319,8 @@ export function useDictation({ onText }) {
     fixable: !mode && !busy && !!voice?.problem,
     mode,
     engine: voice?.system?.label || null,
+    // «En este equipo» / «En la nube»: the dictation under way, or the one the mic would start.
+    where: using || engineNote(voice, mode),
     state,
     partial,
     heard,
@@ -248,6 +355,22 @@ export function DictationHelp({ problem, onClose, style }) {
   );
 }
 
+/** «En este equipo» / «En la nube», shown while you dictate (and why, when auto had to use the cloud). */
+export function EngineTag({ where, dark = false, note = true, style }) {
+  if (!where) return null;
+  const soft = dark ? "rgba(255,255,255,.62)" : "#5C606C";
+  const Icon = where.cloud ? Cloud : Laptop;
+  return (
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: "2px", minWidth: 0, ...style }}>
+      <span title={where.note || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap", fontSize: "12px", fontWeight: 600, color: soft }}>
+        <Icon size={13} strokeWidth={2.2} aria-hidden="true" />
+        {where.where}
+      </span>
+      {note && where.fallback ? <span style={{ fontSize: "12px", lineHeight: 1.35, color: soft, whiteSpace: "normal" }}>{where.note}</span> : null}
+    </span>
+  );
+}
+
 /** The words as they arrive: what is already written, then the phrase still being heard. */
 export function LiveWords({ d, dark = false, style }) {
   const said = d.heard || "";
@@ -275,8 +398,8 @@ export function LiveWords({ d, dark = false, style }) {
  * with your voice, the stop square inside and the words above. Transcribing: a spinner.
  * Nothing can dictate: a crossed mic that explains how to fix it.
  */
-export function MicButton({ onText, style, size = 40, bordered = false, tone = "light", place = "above" }) {
-  const d = useDictation({ onText });
+export function MicButton({ onText, target = null, scope = null, style, size = 40, bordered = false, tone = "light", place = "above" }) {
+  const d = useDictation({ onText, target, scope });
   const [help, setHelp] = useState(false);
   if (!d.available && !d.fixable && !d.error) return null;
   const on = d.state === "listening" || d.state === "starting";
@@ -288,7 +411,7 @@ export function MicButton({ onText, style, size = 40, bordered = false, tone = "
   return (
     <span style={{ position: "relative", display: "inline-flex", flex: "none" }}>
       <button type="button" className="rm-focus" aria-pressed={on ? "true" : "false"} aria-busy={busy || d.state === "starting" ? "true" : undefined} disabled={busy}
-        aria-label={label} title={on ? "Escuchando… pulsa para terminar" : busy ? "Pasando a texto…" : d.fixable ? "Dictado no disponible" : `Dictar (hasta 2 minutos)${d.engine ? " · " + d.engine : ""}`}
+        aria-label={label} title={on ? "Escuchando… pulsa para terminar" : busy ? "Pasando a texto…" : d.fixable ? "Dictado no disponible" : `Dictar (hasta 2 minutos)${d.where ? " · " + d.where.where : ""}${d.where?.cloud ? "" : d.engine ? " · " + d.engine : ""}`}
         onClick={() => {
           if (d.fixable) return setHelp((v) => !v);
           d.clearError();
@@ -309,10 +432,13 @@ export function MicButton({ onText, style, size = 40, bordered = false, tone = "
           : d.fixable ? <MicOff size={17} strokeWidth={2} aria-hidden="true" />
           : <Mic size={17} strokeWidth={2} aria-hidden="true" />}
       </button>
-      {on && d.mode === "sistema" ? (
-        <span role="status" style={{ ...bubble, display: "flex", alignItems: "center", gap: "10px", width: "max-content", maxWidth: "min(420px, 70vw)", height: "40px", padding: "0 16px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", boxShadow: "0 18px 40px -18px rgba(18,19,26,.6)", animation: "c-pop-in .18s ease-out", pointerEvents: "none" }}>
-          <span aria-hidden="true" style={{ width: "8px", height: "8px", flex: "none", borderRadius: "50%", background: "#FF5A4E", transform: `scale(${1 + d.level * 0.6})`, transition: "transform .1s linear" }} />
-          <LiveWords d={d} dark style={{ flex: "1" }} />
+      {on || busy ? (
+        <span role="status" style={{ ...bubble, display: "flex", flexDirection: "column", gap: "4px", width: "max-content", maxWidth: "min(420px, 70vw)", padding: "10px 16px", borderRadius: d.where?.fallback ? "18px" : "22px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", boxShadow: "0 18px 40px -18px rgba(18,19,26,.6)", animation: "c-pop-in .18s ease-out", pointerEvents: "none" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "20px" }}>
+            <span aria-hidden="true" style={{ width: "8px", height: "8px", flex: "none", borderRadius: "50%", background: "#FF5A4E", transform: `scale(${1 + d.level * 0.6})`, transition: "transform .1s linear" }} />
+            {busy ? <span style={{ flex: "1" }}>Pasando tu voz a texto…</span> : d.mode === "sistema" ? <LiveWords d={d} dark style={{ flex: "1" }} /> : <span style={{ flex: "1", color: "rgba(255,255,255,.75)" }}>Grabando… pulsa para terminar</span>}
+          </span>
+          <EngineTag where={d.where} dark />
         </span>
       ) : null}
       {shown && !on ? <DictationHelp problem={shown} onClose={() => { d.clearError(); setHelp(false); }} style={bubble} /> : null}
@@ -321,4 +447,4 @@ export function MicButton({ onText, style, size = 40, bordered = false, tone = "
 }
 
 /** Appends dictated text to a composer value. */
-export const appendDictation = (setText) => (said) => setText((prev) => (prev && !/\s$/.test(prev) ? prev + " " : prev || "") + said);
+export const appendDictation = (setText) => (said) => setText((prev) => appendText(prev, said));
