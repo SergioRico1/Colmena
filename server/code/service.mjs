@@ -1159,9 +1159,10 @@ export class CodeService {
    * project at a time.
    */
   checkOverlaps(taskId, snap = null, projectId = this.store.get("codeTasks", taskId)?.projectId) {
-    if (!projectId) return Promise.resolve(null);
+    if (!projectId || this.closed) return Promise.resolve(null);
     this.overlapRuns ||= new Map();
     const run = (this.overlapRuns.get(projectId) || Promise.resolve()).then(async () => {
+      if (this.closed) return null;
       if (snap !== null) await this.refreshChanged(taskId, snap);
       // Tasks from before this check have no list yet: worked out once, from their last turn.
       for (const t of this.store.list("codeTasks")) if (t.projectId === projectId && !Array.isArray(t.changed) && this.overlapCandidate(t) && (t.turns || []).some((x) => x.files?.length)) await this.refreshChanged(t.id);
@@ -2005,6 +2006,7 @@ export class CodeService {
   }
 
   shutdown() {
+    this.closed = true; // late same-files checks stop here (the store may close next)
     clearInterval(this.prTimer);
     this.prTimer = null;
     clearInterval(this.sweepTimer);

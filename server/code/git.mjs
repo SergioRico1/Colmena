@@ -155,6 +155,17 @@ const CODE_LIMITS = Object.freeze({ ...CHECKPOINT_LIMITS, maxFiles: 60000, maxTo
 const MAX_PATCH = 3 * 1024 * 1024;
 
 /** Restore points of one task folder (one hidden store per task). */
+// Captures and restores share the hidden store's index (colmena-index.lock): one at a time per
+// store, whichever Snapshots object asks (a turn's end, «Deshacer», the same-files check).
+const INDEX_QUEUES = new Map();
+function inIndexQueue(dir, work) {
+  const run = (INDEX_QUEUES.get(dir) || Promise.resolve()).then(work, work);
+  const tail = run.catch(() => {});
+  INDEX_QUEUES.set(dir, tail);
+  void tail.then(() => { if (INDEX_QUEUES.get(dir) === tail) INDEX_QUEUES.delete(dir); });
+  return run;
+}
+
 export class Snapshots {
   constructor({ dir, root, key }) {
     this.scope = { key, dir, root };
@@ -173,6 +184,9 @@ export class Snapshots {
   /** Keeps the folder as it is now; returns the point's id (a commit of the hidden store). */
   async capture(tag) {
     await this.init();
+    return inIndexQueue(this.scope.dir, () => this.captureNow(tag));
+  }
+  async captureNow(tag) {
     const walk = await walkFolder(this.scope.root, CODE_LIMITS);
     if (walk.tooBig) throw Error("La carpeta es demasiado grande para guardar puntos de restauración.");
     return this.backend.capture(this.scope, walk, tag);
@@ -202,7 +216,10 @@ export class Snapshots {
   /** Puts the folder back as it was at point `target`; files made later are removed. */
   async restore(target) {
     await this.init();
-    const now = await this.capture("restore-" + Date.now());
+    return inIndexQueue(this.scope.dir, () => this.restoreNow(target));
+  }
+  async restoreNow(target) {
+    const now = await this.captureNow("restore-" + Date.now());
     const [want, have] = [await this.backend.files(this.scope, target), await this.backend.files(this.scope, now)];
     const write = [...want].filter(([rel, hash]) => have.get(rel) !== hash).map(([rel]) => rel);
     const gone = [...have.keys()].filter((rel) => !want.has(rel));
@@ -213,6 +230,9 @@ export class Snapshots {
   /** Puts only `rels` back as they were at point `target` (a file new since then is removed). */
   async restoreFiles(target, rels) {
     await this.init();
+    return inIndexQueue(this.scope.dir, () => this.restoreFilesNow(target, rels));
+  }
+  async restoreFilesNow(target, rels) {
     const want = await this.backend.files(this.scope, target);
     const key = (rel) => String(rel).replace(/\\/g, "/");
     const back = rels.map(key).filter((rel) => want.has(rel));
