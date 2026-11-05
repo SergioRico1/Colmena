@@ -24,6 +24,7 @@ import { Snapshots, repoInfo, addWorktree, removeWorktree, git, slug, copyInclud
 import { taskPorts, descendants, stopFamily } from "./ports.mjs";
 import { Terminals, projectScripts } from "./terminal.mjs";
 import { expandSkills } from "./context.mjs";
+import { BLOCKED_ROUNDS, blockingKey, mayDeclareBlocked, onlyHard, trackBlocking } from "../guards.mjs";
 
 export const CODE_MODELS = Object.freeze([
   { id: "claude-opus-5-5", label: "Opus 5.5" },
@@ -956,19 +957,32 @@ export class CodeService {
       this.addItem(taskId, { kind: "notice", text: "Objetivo cumplido: «" + clip(goal.text, 120) + "».", tone: "done" });
       return { kind: "done", notice: "Objetivo cumplido: " + goal.text };
     }
-    if (said === "bloqueado") {
-      const why = clip((m?.[2] || "").trim() || "Necesita algo de ti para seguir.", 300);
-      set({ status: "blocked", note: why, turns: goal.turns + 1 });
+    // Anti-false-blocked (guards.mjs): blocked only when the same condition held for
+    // BLOCKED_ROUNDS turns in a row; «it is difficult» is not blocked; anything else resets.
+    const why = said === "bloqueado" ? clip((m?.[2] || "").trim() || "Necesita algo de ti para seguir.", 300) : null;
+    const blocking = trackBlocking(goal.blocking, why && !onlyHard(why) ? blockingKey("objetivo", why) : null);
+    if (why && mayDeclareBlocked(blocking, { reason: why })) {
+      set({ status: "blocked", note: why, turns: goal.turns + 1, blocking });
       this.addItem(taskId, { kind: "notice", text: "Objetivo bloqueado: " + why, tone: "warn" });
       return { kind: "needs", notice: "Objetivo bloqueado: " + why };
     }
     const turns = goal.turns + 1;
+    if (why && turns < (goal.max || GOAL_TURNS)) {
+      set({ turns, blocking });
+      const hard = !blocking.key;
+      return {
+        next: goalPrompt({ ...goal, turns }, false) + "\n" + (hard
+          ? `Dijiste «${why}», pero que algo sea difícil no es un bloqueo: sigue intentándolo de otra forma.`
+          : `Dijiste que estás bloqueado («${why}»). Solo es un bloqueo si la misma condición sigue ${BLOCKED_ROUNDS} vueltas seguidas (van ${blocking.rounds}): antes intenta otra forma de avanzar o deja preparado todo lo demás; si sigue igual, vuelve a marcarlo con el mismo motivo.`),
+        line: `Sigue con el objetivo · vuelta ${turns + 1} de ${goal.max || GOAL_TURNS}`,
+      };
+    }
     if (turns >= (goal.max || GOAL_TURNS)) {
       set({ status: "limited", note: `Ha dado ${turns} vueltas sin cumplirlo.`, turns });
       this.addItem(taskId, { kind: "notice", text: `Bruno ha parado tras ${turns} vueltas: el objetivo aún no se cumple. Reanúdalo o cámbialo.`, tone: "warn" });
       return { kind: "needs", notice: `Ha dado ${turns} vueltas sin cumplir el objetivo.` };
     }
-    set({ turns });
+    set({ turns, blocking: null });
     return { next: goalPrompt({ ...goal, turns }, false), line: `Sigue con el objetivo · vuelta ${turns + 1} de ${goal.max || GOAL_TURNS}` };
   }
 

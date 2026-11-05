@@ -46,6 +46,48 @@ export class LoopGuard {
 
 export const pairKey = (missionId, a, b) => missionId + ":" + [a, b].sort().join("|");
 
+// ------------------------------------------------------- repeated tool calls
+// The same tool with the same arguments again and again in one step (DeepSeek Harness
+// repeat-tool-reminder): at these counts the result carries a reminder. Never blocks; a new
+// message of the person starts the count again.
+export const REPEAT_REMINDERS = Object.freeze([3, 5, 8]);
+
+/** Stable key of a call: tool name + its arguments with sorted keys. */
+export function callKey(name, args) {
+  let value = args;
+  if (typeof args === "string") try { value = JSON.parse(args); } catch {}
+  const sorted = (v) => (Array.isArray(v) ? v.map(sorted) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sorted(v[k])])) : v);
+  return name + "\u0000" + JSON.stringify(sorted(value) ?? null);
+}
+
+/**
+ * Counts this call in `state` ({since, counts}) and returns {state, count, reminder|null}.
+ * `personAt`: the time of the person's latest message; newer than `since` resets the count.
+ */
+export function countRepeat(state, key, { personAt = null } = {}) {
+  const fresh = !state || (personAt && (!state.since || personAt > state.since));
+  const counts = fresh ? {} : { ...(state.counts || {}) };
+  const count = (counts[key] || 0) + 1;
+  counts[key] = count;
+  // Keep the record small: the 60 most recent keys.
+  const keys = Object.keys(counts);
+  if (keys.length > 60) for (const k of keys.slice(0, keys.length - 60)) delete counts[k];
+  return { state: { since: fresh ? personAt || state?.since || null : state.since, counts }, count, reminder: REPEAT_REMINDERS.includes(count) ? repeatReminder(count) : null };
+}
+
+export const repeatReminder = (count) =>
+  `Aviso de Colmena: es la ${count}.ª vez en este paso que llamas a esta herramienta con exactamente los mismos argumentos. ` +
+  (count >= 8 ? "Repetirlo no va a cambiar el resultado: para, cambia de enfoque (otra herramienta, otros argumentos) o explica a la persona qué te falta." :
+    count >= 5 ? "Te estás repitiendo: no lo vuelvas a llamar igual; usa lo que ya tienes o prueba otro camino." :
+      "Si ya tienes la respuesta, úsala; si no, cambia de enfoque en vez de repetir lo mismo.");
+
+/** The result with the reminder attached (objects keep their shape; anything else is wrapped). */
+export function withReminder(result, reminder) {
+  if (!reminder || result?.waiting) return result;
+  if (result && typeof result === "object" && !Array.isArray(result)) return { ...result, aviso_repeticion: reminder };
+  return { resultado: result, aviso_repeticion: reminder };
+}
+
 /** One quiet line in the room: «Colmena frenó a Atlas y Nora…». */
 export function postGuardNotice(store, { missionId, text, key }) {
   if (!missionId) return null;

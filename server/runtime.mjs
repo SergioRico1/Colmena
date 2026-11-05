@@ -1,8 +1,9 @@
 import { cheapestModel } from "./checkins.mjs";
 import { RECAP, RECAP_INSTRUCTIONS, cleanRecap, recapInput } from "./recaps.mjs";
 import { postMemoryNotice } from "./learned.mjs";
-import { LoopGuard, LOOP_GUARD, pairKey, postGuardNotice } from "./loops.mjs";
+import { LoopGuard, LOOP_GUARD, callKey, countRepeat, pairKey, postGuardNotice, withReminder } from "./loops.mjs";
 import { isUnattended, missionFiles, normalizeRel, ownFileCommand, pendingSummary, personAsked, personTurnText } from "./redlines.mjs";
+import { blockingKey, mayDeclareBlocked, permissionChangeNote, trackBlocking } from "./guards.mjs";
 import { automationNote, quietRun, QUIET_MARK } from "./quiet.mjs";
 import { addressees, chainLead, siblingNote, quietReply, passedTo, speechCut, STOP_RE, MAX_ROUNDS } from "./roomturns.mjs";
 import { NARRATION, NARRATION_INSTRUCTIONS, narrationDue, narrationInput, cleanNarration } from "./narration.mjs";
@@ -1382,6 +1383,39 @@ export class Runtime {
       seenMessages: [...seen, ...fresh.map((x) => x.id)],
     });
   }
+  /**
+   * What the bot may do now: its autonomy, its access to each app («Qué app usa cada bot»), its
+   * capabilities and the computer switches. Compared round by round (injectPermissionChange).
+   */
+  permissionState(mission, botId) {
+    const bot = this.bot(botId);
+    if (!bot) return null;
+    const settings = this.settings();
+    const caps = capabilitiesOf(bot);
+    return {
+      autonomy: this.autonomy(mission, bot),
+      apps: Object.fromEntries(Object.entries(bot.tools || {}).filter(([, v]) => typeof v === "string").sort(([a], [b]) => a.localeCompare(b))),
+      capabilities: Object.fromEntries(Object.entries(caps).map(([k, v]) => [k, !!v]).sort(([a], [b]) => a.localeCompare(b))),
+      computer: settings.computer?.enabled !== false && bot.computer !== false,
+      commands: settings.computer?.commands !== false,
+    };
+  }
+  /**
+   * The person changed this bot's permissions or autonomy while it works: one note at its next
+   * round (what changed, before → now), so it neither relies on what it lost nor stays shy.
+   */
+  injectPermissionChange(mission, step) {
+    const current = this.permissionState(mission, step.botId);
+    if (!current) return step;
+    const before = step.permissions;
+    if (!before) return this.store.patch("steps", step.id, { permissions: current });
+    if (JSON.stringify(before) === JSON.stringify(current)) return step;
+    const note = permissionChangeNote(before, current);
+    return this.store.patch("steps", step.id, {
+      permissions: current,
+      ...(note ? { history: [...step.history, { role: "user", content: note }] } : {}),
+    });
+  }
   /** Adds hints written in the thread after the step started. */
   injectHints(step) {
     const seen = new Set(step.seenHints || []);
@@ -1391,6 +1425,19 @@ export class Runtime {
       history: [...step.history, ...fresh.map((h) => ({ role: "user", content: "Nota de la persona en el hilo (tenla en cuenta): " + h.text }))],
       seenHints: [...seen, ...fresh.map((h) => h.id)],
     });
+  }
+  /**
+   * Counts identical calls (tool + arguments) in a step: at 3, 5 and 8 the result carries a
+   * reminder to change approach (loops.mjs). The person's new message starts the count again.
+   */
+  repeatReminder(missionId, stepId, call, result) {
+    const step = this.store.get("steps", stepId);
+    if (!step || result?.waiting) return result;
+    const personAt = this.store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && (!m.kind || m.kind === "message"))
+      .reduce((latest, m) => (String(m.at || "") > latest ? String(m.at) : latest), "") || null;
+    const { state, reminder } = countRepeat(step.repeats, callKey(call.name, call.arguments), { personAt });
+    this.store.patch("steps", stepId, { repeats: state });
+    return withReminder(result, reminder);
   }
   /** Loop guard: the same call (tool + arguments) failing with the same error LOOP_LIMIT times. */
   countFailure(stepId, call, error) {
@@ -1612,6 +1659,8 @@ export class Runtime {
                 return;
               }
               this.toolActivity(step.id, call, args, result?.error ? "error" : "done");
+              // The same call again and again: a reminder rides on its result (never blocks).
+              result = this.repeatReminder(missionId, step.id, call, result);
               // A screenshot goes to the model once, as an image; the receipt keeps the rest.
               if (typeof result?.image === "string" && result.image.startsWith("data:image/")) shots.set(call.call_id, result);
               const stored = shots.has(call.call_id) ? forReceipt(result) : result;
@@ -1663,10 +1712,13 @@ export class Runtime {
           const batch = step.pending.map((c) => this.store.get("receipts", step.id + ":" + c.call_id)?.result);
           const allFailed = batch.length > 0 && batch.every((r) => r?.error);
           const lastError = allFailed ? { tool: step.pending.at(-1).name, error: batch.at(-1).error } : null;
-          this.store.patch("steps", step.id, { pending: [], failedRounds: allFailed ? (step.failedRounds || 0) + 1 : 0 });
+          // Anti-false-blocked (guards.mjs): «stuck» needs the same blocking condition for
+          // BLOCKED_ROUNDS rounds in a row; varied failures mean it is still trying (hard cap 2×).
+          const blocking = trackBlocking(step.blocking, lastError ? blockingKey(lastError.tool, lastError.error) : null);
+          this.store.patch("steps", step.id, { pending: [], failedRounds: allFailed ? (step.failedRounds || 0) + 1 : 0, blocking });
           step = this.store.get("steps", step.id);
-          if (!looping && step.failedRounds >= STUCK_ROUNDS) {
-            stall("loop", `Me he atascado: llevo ${STUCK_ROUNDS} intentos seguidos sin que nada funcione (el último, «${lastError.tool}»: «${String(lastError.error).slice(0, 160)}»). Paro para no gastar en balde; dime cómo seguir o «continúa» para intentarlo de otra forma.`);
+          if (!looping && step.failedRounds >= STUCK_ROUNDS && (mayDeclareBlocked(blocking, { reason: lastError?.error }) || step.failedRounds >= STUCK_ROUNDS * 2)) {
+            stall("loop", `Me he atascado: llevo ${step.failedRounds} intentos seguidos sin que nada funcione (el último, «${lastError.tool}»: «${String(lastError.error).slice(0, 160)}»). Paro para no gastar en balde; dime cómo seguir o «continúa» para intentarlo de otra forma.`);
             return;
           }
           if (looping) {
@@ -1679,6 +1731,7 @@ export class Runtime {
         // Before the first word: what it is doing, so a slow start never looks frozen.
         if (!step.rounds) this.setActivity(bot.id, missionId, step.id, "preparando", "");
         step = this.injectHints(step);
+        step = this.injectPermissionChange(this.store.get("missions", missionId) || mission, step);
         step = this.injectMessages(this.store.get("missions", missionId) || mission, step);
         step = this.injectBrief(this.store.get("missions", missionId) || mission, step);
         if (contextSize(step.history) > CONTEXT.compactAt) this.setActivity(bot.id, missionId, step.id, "resumiendo", "");
