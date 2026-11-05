@@ -78,6 +78,8 @@ export const schemas = {
     sources: z.array(z.object({ url: z.string().max(2000).default(""), quote: z.string().max(600).default("") }).strict()).max(3).default([]),
     // More questions at once, answered one at a time (questions.mjs): options or a free answer.
     more: z.array(z.object({ question: z.string().trim().min(3).max(600), options: z.array(z.string().trim().min(1).max(120)).max(3).default([]), optional: z.boolean().default(false) }).strict()).max(4).default([]),
+    // Minutes to wait for the answer (0 = Colmena's default); then the bot goes on, the question stays open.
+    waitMinutes: z.number().int().min(0).max(1440).default(0),
   }).strict(),
   ask_bot: z.object({
     botId: z.string().max(240).default(""),
@@ -309,6 +311,7 @@ const DEFS = {
     blocks: int,
     sources: { type: "array", items: { type: "object", properties: { url: text, quote: text }, required: ["url", "quote"], additionalProperties: false } },
     more: { type: "array", items: { type: "object", properties: { question: text, options: { type: "array", items: text }, optional: { type: "boolean" } }, required: ["question", "options", "optional"], additionalProperties: false } },
+    waitMinutes: { type: "integer", description: "Minutos que esperas la respuesta (0 = lo normal de Colmena). Después sigues con lo prudente y la pregunta sigue abierta." },
   }),
   ask_bot: fn("ask_bot", "Consulta a otro bot del equipo. Una pregunta: botId + question (tasks vacío). Varias partes en paralelo: tasks [{botId, task, context}] (botId y question vacios); cada bot trabaja con herramientas de lectura y te devuelve su resultado. Pide su especialidad, no delegues todo el trabajo. Sus herramientas son solo de lectura y no incluyen tus apps conectadas: lo que tú puedes hacer con tus herramientas, hazlo tú.", {
     botId: text,

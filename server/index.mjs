@@ -100,6 +100,9 @@ const aiConnected = () => {
   return !!session.status() && !!store.get("settings", "main").model;
 };
 const scheduler = new Scheduler(store, runtime, aiConnected, { connections });
+// A bot's question whose wait ended (also across a restart): its mission goes on with the
+// prudent option and the question stays open (Runtime#sweepQuestions).
+setInterval(() => { if (aiConnected()) try { runtime.sweepQuestions(); } catch {} }, 60000).unref();
 let origin = "http://127.0.0.1:4317";
 runtime.vault = new SiteVault(store); // site passwords for browser_sign_in (DPAPI)
 runtime.mcp = new McpHub(store); // MCP connections (catalogue in Ajustes › Conexiones)

@@ -177,6 +177,10 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     // Several questions answered by steps (questions.mjs), and what you said to each.
     questions: kind === "question" && a.questions?.length ? a.questions : null,
     answers: kind === "question" && a.answers?.length ? a.answers : null,
+    // A timed question whose wait ended: the bot went on with the prudent option, yet you can still answer.
+    waitUntil: kind === "question" && pending ? a.waitUntil ?? null : null,
+    stillOpen: kind === "question" && pending && !!a.timedOut,
+    lateAnswer: kind === "question" && !!a.lateAnswer,
     // A key request: its name, why, for which sites and whether it replaces one (never a value).
     secret: kind === "secret" && a.secret ? { name: a.secret.name, reason: a.secret.reason, allowedHosts: a.secret.allowedHosts || [], existing: a.secret.existing || null } : null,
     email: kind === "send" ? email : null,

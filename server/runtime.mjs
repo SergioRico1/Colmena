@@ -55,7 +55,7 @@ import {
 import { decideRevert } from "./verdicts.mjs";
 import { stopReason, stoppedRecord } from "./stopped.mjs";
 import { visibleMessages } from "./branches.mjs";
-import { answersForBot, answersText, buildQuestions, checkAnswers } from "./questions.mjs";
+import { answersForBot, answersText, buildQuestions, checkAnswers, lateAnswerText, QUESTION_PENDING, QUESTION_WAIT_MINUTES } from "./questions.mjs";
 import { applyMemoryOps, normalizeMemoryOp, guessTarget, MEMORY_LABELS, TARGET_OF } from "./memory.mjs";
 
 export { TOOLS, CONNECTION_TOOLS };
@@ -1367,13 +1367,15 @@ export class Runtime {
   injectMessages(mission, step) {
     if (this.usesBrief(mission, step) || !step.startedAt) return step;
     const seen = new Set(step.seenMessages || []);
+    // A late answer to this bot's question (it timed out) comes in too, tagged as the reply.
+    const late = (x) => x.lateAnswer && this.store.get("approvals", x.approvalId)?.stepId === step.id;
     const fresh = this.store.where("messages", "missionId", mission.id).filter((x) => x.role === "user" && (!x.kind || x.kind === "message")
-      && !x.approvalId && !x.replyTo && !x.deliver && x.id !== step.ackOn && !(step.ackExtra || []).includes(x.id) && x.at > step.startedAt && !seen.has(x.id) && x.text);
+      && (!x.approvalId || late(x)) && !x.replyTo && !x.deliver && x.id !== step.ackOn && !(step.ackExtra || []).includes(x.id) && x.at > step.startedAt && !seen.has(x.id) && x.text);
     if (!fresh.length) return step;
     const mine = (x) => !x.to?.length || x.to.includes(step.botId);
     for (const x of fresh.filter(mine)) try { addReaction(this.store, x.id, ACK_TAKEN, step.botId); } catch {}
     return this.store.patch("steps", step.id, {
-      history: [...step.history, ...fresh.map((x) => ({ role: "user", content: mine(x)
+      history: [...step.history, ...fresh.map((x) => ({ role: "user", content: x.lateAnswer ? lateAnswerText(x.answersQuestion, x.text) : mine(x)
         ? "La persona acaba de escribir mientras trabajabas (tenlo en cuenta): «" + String(x.text).slice(0, 4000) + "»"
         : "La persona acaba de escribir a " + x.to.map((b) => this.bot(b)?.name || b).join(", ") + " (contexto; no es para ti): «" + String(x.text).slice(0, 4000) + "»" }))],
       seenMessages: [...seen, ...fresh.map((x) => x.id)],
@@ -2803,12 +2805,18 @@ ${made.outline}`,
       }));
       // Several at once: answered one at a time in the chat (questions.mjs).
       const questions = args.more?.length ? buildQuestions(args).map((q, i) => (i === 0 ? { ...q, options } : q)) : null;
+      // How long the bot waits (questionWait): then it goes on with the prudent option and the
+      // question stays open; a later answer still reaches it.
+      const waitMinutes = this.questionWait(mission, bot, args.waitMinutes);
+      const waitUntil = waitMinutes ? new Date(Date.now() + waitMinutes * 60000).toISOString() : null;
       this.store.put("approvals", {
         id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id, tool: "ask_user",
         kind: "question", title: args.question.slice(0, 140), summary: args.question, context: this.approvalContext(mission, bot),
         blocks: args.blocks, options, email: null, canAlways: false, status: "pending", createdAt: now(),
         decidedAt: null, decidedBy: null, resolution: null, ...(questions ? { questions } : {}),
+        ...(waitUntil ? { waitMinutes, waitUntil } : {}),
       });
+      if (waitUntil) this.wakeAt(mission.id, waitUntil);
       this.store.put("messages", {
         id: "question:" + approvalId, missionId: mission.id, botId: bot.id, role: "assistant", kind: "question",
         text: args.question, options, approvalId, stepId: step.id, at: now(),
@@ -2816,16 +2824,51 @@ ${made.outline}`,
       this.store.event(mission.id, "approval_requested", { botId: bot.id, text: bot.name + " tiene una pregunta" });
       return { waiting: true };
     }
+    if (a.status === "pending" && a.timedOut) return QUESTION_PENDING;
+    if (a.status === "pending" && a.waitUntil && Date.parse(a.waitUntil) <= Date.now()) {
+      // Nobody answered in time: pending, never a «no» nor a «yes»; the card stays answerable.
+      this.store.patch("approvals", a.id, { timedOut: true, timedOutAt: now() });
+      this.store.event(mission.id, "question_timeout", { botId: bot.id, text: bot.name + " sigue con lo prudente; la pregunta sigue abierta" });
+      return QUESTION_PENDING;
+    }
     if (a.status === "pending") return { waiting: true };
     if (a.status === "answered" && a.answers) return answersForBot(a.answers);
     if (a.status === "answered") return { answer: a.answer.text || a.answer.label, optionId: a.answer.optionId || null };
     return { answer: null, message: "La persona prefirio no responder. Sigue con la opcion mas prudente y dilo." };
+  }
+  /**
+   * Minutes a bot waits for an answer: what it asked for (waitMinutes), else for bots that act
+   * on their own settings.questionWaitMinutes (default QUESTION_WAIT_MINUTES; 0 = no limit).
+   * A bot that only suggests waits for you unless it asked for a limit.
+   */
+  questionWait(mission, bot, asked = 0) {
+    if (asked > 0) return Math.min(asked, 24 * 60);
+    if (this.autonomy(mission, bot) === "sugiere") return 0;
+    const setting = this.settings().questionWaitMinutes;
+    return Number.isFinite(setting) && setting >= 0 ? Math.min(setting, 24 * 60) : QUESTION_WAIT_MINUTES;
+  }
+  /** Relaunches the mission when a question's wait ends (missed timers: sweepQuestions). */
+  wakeAt(missionId, at) {
+    const timer = setTimeout(() => this.sweepQuestions(missionId), Math.max(0, Date.parse(at) - Date.now()) + 50);
+    timer.unref?.();
+  }
+  /** Questions whose wait ended while nobody answered: their mission goes on. */
+  sweepQuestions(missionId = null) {
+    const due = this.store.list("approvals").filter((a) => a.kind === "question" && a.status === "pending" && !a.timedOut && a.waitUntil
+      && Date.parse(a.waitUntil) <= Date.now() && (!missionId || a.missionId === missionId));
+    for (const missionId of new Set(due.map((a) => a.missionId))) {
+      const m = this.store.get("missions", missionId);
+      if (m && !["cancelled", "completed"].includes(m.status) && !this.active.has(missionId)) this.relaunch(missionId);
+    }
+    return due.length;
   }
   answer(approvalId, { optionId = null, text = "", answers = null } = {}) {
     const a = this.store.get("approvals", approvalId);
     if (!a || a.kind !== "question") throw Error("Pregunta no encontrada.");
     if (a.status !== "pending") throw Error("Esta pregunta ya está respondida.");
     if (this.store.get("missions", a.missionId)?.status === "cancelled") throw Error("La misión está cancelada.");
+    // The bot already went on without it: the answer reaches it as your message, tagged as the reply.
+    if (a.timedOut) return this.lateAnswer(a, { optionId, text, answers });
     // Several questions, answered by steps: all of them together, once.
     if (a.questions?.length) {
       const normalized = checkAnswers(a.questions, answers || [{ id: a.questions[0].id, optionId, text }]);
@@ -2862,7 +2905,44 @@ ${made.outline}`,
     if (a.status !== "pending") throw Error("Esta pregunta ya no espera respuesta.");
     this.store.patch("approvals", a.id, { status: "dismissed", decidedAt: now(), decidedBy: "tú", resolution: "Sin responder" });
     this.store.event(a.missionId, "approval_decided", { text: "Pregunta descartada" });
-    this.relaunch(a.missionId);
+    // Timed out: the bot already went on; nothing waits for this card any more.
+    if (!a.timedOut) this.relaunch(a.missionId);
+  }
+  /**
+   * An answer to a question that already timed out (the bot went on with the prudent option):
+   * it closes the question and reaches the bot as your message, tagged as the reply — in the
+   * step that asked when it still works, else in a new turn of that bot.
+   */
+  lateAnswer(a, { optionId = null, text = "", answers = null } = {}) {
+    let said, answer, extra = {};
+    if (a.questions?.length) {
+      const normalized = checkAnswers(a.questions, answers || [{ id: a.questions[0].id, optionId, text }]);
+      said = answersText(normalized);
+      answer = { optionId: null, label: null, text: said };
+      extra = { answers: normalized };
+    } else {
+      const option = optionId ? a.options.find((o) => o.id === optionId) : null;
+      if (optionId && !option) throw Error("Opcion no valida.");
+      const written = String(text || "").trim().slice(0, 4000);
+      if (!option && !written) throw Error("Elige una opcion o escribe una respuesta.");
+      said = written || option.label;
+      answer = { optionId: option?.id || null, label: option?.label || null, text: written || null };
+    }
+    this.store.patch("approvals", a.id, { status: "answered", answer, ...extra, lateAnswer: true, decidedAt: now(), decidedBy: "tú", resolution: String(said).replace(/\s+/g, " ").trim().slice(0, 200) });
+    const message = this.store.put("messages", { id: id(), missionId: a.missionId, role: "user", kind: "message", text: said, approvalId: a.id, lateAnswer: true, answersQuestion: String(a.summary || a.title || "").slice(0, 600), at: now() });
+    this.store.event(a.missionId, "approval_decided", { text: "Pregunta respondida (después de que siguiera)" });
+    const step = this.store.get("steps", a.stepId);
+    const mission = this.store.get("missions", a.missionId);
+    if (step && step.status !== "completed") {
+      if (!this.active.has(a.missionId)) this.relaunch(a.missionId);
+      return message;
+    }
+    if (!mission || mission.status === "cancelled") return message;
+    const keys = this.queueTurns(a.missionId, [a.botId], this.steps(a.missionId).map((s) => s.key), { request: lateAnswerText(message.answersQuestion, said), ackOn: message.id });
+    this.store.patch("missions", a.missionId, { steps: [...(mission.steps || []), ...keys], ...(mission.status === "completed" ? { status: "queued", error: null } : {}) });
+    if (mission.status === "completed" && this.active.has(a.missionId)) void Promise.resolve(this.missionJobs.get(a.missionId)).then(() => this.launch(a.missionId));
+    else if (!this.active.has(a.missionId) && !["paused"].includes(mission.status)) this.launch(a.missionId);
+    return message;
   }
   /** Bot that `bot` may consult or delegate to (helpers, availability, personal bots). Throws otherwise. */
   helperFor(bot, botId, mission) {

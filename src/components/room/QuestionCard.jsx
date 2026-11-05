@@ -1,3 +1,4 @@
+import { Clock } from "lucide-react";
 import { post } from "../../lib/api.js";
 import QuestionFlow, { AnswerList } from "../v2/chat/QuestionFlow.jsx";
 import { useAction } from "../../lib/store.jsx";
@@ -16,6 +17,27 @@ function BoldNames({ text, bots }) {
   if (!names.length) return text;
   const re = new RegExp(`(${names.map(escapeRe).join("|")})`, "g");
   return String(text || "").split(re).map((part, i) => (names.includes(part) ? <strong key={i}>{part}</strong> : part));
+}
+
+/**
+ * A timed question: before its wait ends, when the bot will go on by itself; after it, that
+ * the bot went on with the prudent option and the question can still be answered.
+ */
+function WaitNote({ approval, bots }) {
+  const name = bots.find((b) => b.id === approval.botId)?.name || "El bot";
+  const until = approval.waitUntil ? new Date(approval.waitUntil) : null;
+  const text = approval.stillOpen
+    ? `Sigue abierta: ${name} ha seguido con lo más prudente mientras tanto. Si respondes, se lo paso y lo ajusta.`
+    : until && !Number.isNaN(until.getTime())
+      ? `Si no respondes antes de las ${until.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}, ${name} seguirá con lo más prudente y podrás responder igual.`
+      : null;
+  if (!text) return null;
+  return (
+    <p style={{ margin: "0", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", lineHeight: "1.45", color: "#555A68" }}>
+      <Clock size={14} aria-hidden="true" style={{ flex: "none" }} />
+      <span>{text}</span>
+    </p>
+  );
 }
 
 /**
@@ -73,6 +95,7 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
         <span style={{ alignSelf: "flex-start", fontSize: "13px", color: "#6B6F7A" }}>{"Ya no espera respuesta"}</span>
       ) : null}
       {pending && !(approval.questions?.length > 1) ? <QuestionReply approval={approval} /> : null}
+      {pending ? <WaitNote approval={approval} bots={bots} /> : null}
       {chat && helper && !answered ? (
         <p style={{ margin: "0", fontSize: "13px", color: "#555A68" }}>{`${helper.name} contestará aquí mismo. No hace falta crear una sala.`}</p>
       ) : null}

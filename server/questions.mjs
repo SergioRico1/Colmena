@@ -41,3 +41,21 @@ export function answersText(normalized = []) {
 
 /** What ask_user returns to the bot once you answered. */
 export const answersForBot = (normalized = []) => ({ answers: normalized.map((a) => ({ question: a.question, answer: a.skipped ? null : a.text || a.label })) });
+
+// ------------------------------------------------------------- timed questions
+/** Minutes a bot that acts on its own waits for an answer (settings.questionWaitMinutes). */
+export const QUESTION_WAIT_MINUTES = 10;
+
+/** ask_user when nobody answered in time: pending, never a refusal nor a permission. */
+export const QUESTION_PENDING = Object.freeze({
+  pending: true,
+  answer: null,
+  message: "Nadie ha respondido todavía a tu pregunta. Sigue abierta: si la persona responde más tarde, te llegará como un mensaje suyo marcado como respuesta. " +
+    "Esto no es un «no» ni un «sí»: sigue con la opción más prudente, di claramente qué has supuesto y por qué, y no hagas nada que sea línea roja " +
+    "(enviar, comprar, publicar, pagar, borrar…) basándote en este silencio: eso déjalo pendiente para la persona.",
+});
+
+/** The person's late answer, as the bot reads it (its question already timed out). */
+export const lateAnswerText = (question, said) =>
+  "La persona responde ahora a tu pregunta «" + String(question || "").slice(0, 300) + "» (llegó después de que siguieras con la opción prudente): «" +
+  String(said || "").slice(0, 4000) + "». Revisa lo que supusiste y corrige o completa lo que haga falta según su respuesta.";

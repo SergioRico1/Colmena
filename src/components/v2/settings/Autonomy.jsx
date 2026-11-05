@@ -22,6 +22,8 @@ const lock = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke=
 // «Tareas de Código» (T3 Code auto-settle rules, GET/PUT /api/code/archive-settings): finished
 // tasks leave the list on their own when saved into main, when their PR closes, or after idle days.
 const DAYS = [[0, "Nunca"], [1, "1 día"], [3, "3 días"], [7, "7 días"], [14, "14 días"]];
+// How long a bot that acts on its own waits for your answer (settings.questionWaitMinutes).
+const WAITS = [[5, "5 min"], [10, "10 min"], [30, "30 min"], [60, "1 hora"], [0, "Sin límite"]];
 function CodeArchive() {
   const [rules, setRules] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -167,6 +169,15 @@ export default function AutonomySection() {
       <Card><Row anchor="revisor" first title="Revisor automático" sub="Lo que no sale de Colmena (guardar un archivo, recordar algo) lo aprueba el modelo más barato si es claramente parte de lo que pediste. Nunca las líneas rojas ni nada tras leer contenido de fuera; si duda, te lo deja a ti." min="84px">
         <Switch on={settings.autoReview !== false} label="Revisor automático" onChange={(v) => save({ autoReview: v }, v ? "Revisor automático encendido" : "Revisor automático apagado", { autoReview: !v })} />
       </Row></Card>
+
+      <Card>
+        <Row anchor="esperar-respuesta" first title="Cuánto espera un bot tu respuesta" sub="Si le preguntas algo a un bot que hace solo y no respondes a tiempo, sigue con lo más prudente y te dice qué supuso. La pregunta sigue abierta: si respondes luego, se lo pasa. El silencio nunca vale como permiso." min="84px">
+          <Pills label="Espera tu respuesta" items={WAITS} value={settings.questionWaitMinutes ?? 10} onPick={(v) => save({ questionWaitMinutes: v }, v ? `Espera tu respuesta ${v} min` : "Espera tu respuesta sin límite", { questionWaitMinutes: settings.questionWaitMinutes ?? 10 })} />
+        </Row>
+        <Row anchor="sin-supervision" title="Rutinas sin supervisión" sub="Las rutinas y disparadores que trabajan cuando no estás no esperan por las líneas rojas: hacen todo lo demás y te dejan en la Bandeja lo que necesita tu OK, para aprobarlo después." min="84px">
+          <Switch on={settings.unattended === true} label="Rutinas sin supervisión" onChange={(v) => save({ unattended: v }, v ? "Las rutinas no esperan por las líneas rojas" : "Las rutinas esperan tu OK en las líneas rojas", { unattended: !v })} />
+        </Row>
+      </Card>
 
       <CodeArchive />
     </>
