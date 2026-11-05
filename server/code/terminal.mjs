@@ -208,6 +208,11 @@ export class Terminals {
     return [...this.sessions.values()].filter((s) => s.taskId === taskId && !s.exited).map((s) => s.pid).filter(Boolean);
   }
 
+  /** The task's live shells with their names (the «Procesos» tab). */
+  shells(taskId) {
+    return [...this.sessions.values()].filter((s) => s.taskId === taskId && !s.exited && s.pid).map((s) => ({ id: s.id, pid: s.pid, title: s.title }));
+  }
+
   async closeTask(taskId, { forget = true } = {}) {
     for (const s of [...this.sessions.values()].filter((x) => x.taskId === taskId)) {
       this.sessions.delete(this.key(taskId, s.id));

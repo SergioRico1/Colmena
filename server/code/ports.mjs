@@ -37,38 +37,58 @@ export function parseLsof(text) {
   return out;
 }
 
-/** `ps -axww -o pid=,ppid=,command=` → Map(pid → {pid, parent, name, command}). */
-export function parsePs(text) {
+/** ps's elapsed time «[[dd-]hh:]mm:ss» → seconds (null when it is not one). */
+export function parseEtime(text) {
+  const m = /^(?:(\d+)-)?(?:(\d{1,2}):)?(\d{1,2}):(\d{2})$/.exec(String(text || "").trim());
+  return m ? ((Number(m[1] || 0) * 24 + Number(m[2] || 0)) * 60 + Number(m[3])) * 60 + Number(m[4]) : null;
+}
+
+/**
+ * `ps -axww -o pid=,ppid=,etime=,command=` (etime optional) → Map(pid → {pid, parent, name,
+ * command, started}); `started` is ms since the epoch when ps said how long it has run.
+ */
+export function parsePs(text, now = Date.now()) {
   const processes = new Map();
   for (const line of String(text).split(/\r?\n/)) {
-    const m = /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(line);
+    const m = /^\s*(\d+)\s+(\d+)\s+(?:((?:\d+-)?(?:\d{1,2}:)?\d{1,2}:\d{2})\s+)?(.*)$/.exec(line);
     if (!m) continue;
-    const command = m[3].trim();
-    processes.set(Number(m[1]), { pid: Number(m[1]), parent: Number(m[2]), name: path.posix.basename(command.split(/\s+/)[0] || ""), command });
+    const command = m[4].trim();
+    const secs = m[3] ? parseEtime(m[3]) : null;
+    processes.set(Number(m[1]), { pid: Number(m[1]), parent: Number(m[2]), name: path.posix.basename(command.split(/\s+/)[0] || ""), command, started: secs === null ? null : now - secs * 1000 });
   }
   return processes;
 }
 
+/** Win32_Process rows (ConvertTo-Json) → Map(pid → {pid, parent, name, command, started}). */
+export function parseCim(json) {
+  let list = [];
+  try { list = JSON.parse(json || "[]"); } catch {}
+  if (!Array.isArray(list)) list = [list];
+  return new Map(list.filter((p) => p && Number.isFinite(p.ProcessId)).map((p) => [p.ProcessId, {
+    pid: p.ProcessId, parent: p.ParentProcessId, name: p.Name || "", command: p.CommandLine || "", started: Number(p.Started) > 0 ? Number(p.Started) : null,
+  }]));
+}
+
 let cache = { at: 0, value: null };
-async function snapshot() {
-  if (cache.value && Date.now() - cache.at < 2500) return cache.value;
+/** The next look asks again (after stopping something). */
+export function forgetSnapshot() { cache.at = 0; }
+/** Listening ports and the process list, kept 2.5 s (`fresh`: asked again now). */
+export async function snapshot({ fresh = false } = {}) {
+  if (!fresh && cache.value && Date.now() - cache.at < 2500) return cache.value;
   if (process.platform !== "win32") {
     const lsof = ["/usr/sbin/lsof", "/usr/bin/lsof"].find((f) => existsSync(f)) || "lsof";
-    const [net, procs] = await Promise.all([run(lsof, ["-nP", "-iTCP", "-sTCP:LISTEN", "-F", "pn"]), run("/bin/ps", ["-axww", "-o", "pid=,ppid=,command="])]);
+    const [net, procs] = await Promise.all([run(lsof, ["-nP", "-iTCP", "-sTCP:LISTEN", "-F", "pn"]), run("/bin/ps", ["-axww", "-o", "pid=,ppid=,etime=,command="])]);
     cache = { at: Date.now(), value: { listening: parseLsof(net), processes: parsePs(procs) } };
     return cache.value;
   }
   const system = process.env.SystemRoot || "C:\\Windows";
+  // Started: CreationDate as ms since the epoch (0 for the few system processes without one).
   const [net, procs] = await Promise.all([
     run(path.join(system, "System32", "NETSTAT.EXE"), ["-ano", "-p", "TCP"]),
     run(path.join(system, "System32", "WindowsPowerShell", "v1.0", "powershell.exe"), ["-NoProfile", "-NonInteractive", "-Command",
-      "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress"], 15000),
+      "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine,@{n='Started';e={if($_.CreationDate){[long](($_.CreationDate.ToUniversalTime()-[datetime]'1970-01-01').TotalMilliseconds)}else{0}}} | ConvertTo-Json -Compress"], 15000),
   ]);
-  let list = [];
-  try { list = JSON.parse(procs || "[]"); } catch {}
-  if (!Array.isArray(list)) list = [list];
-  const processes = new Map(list.filter(Boolean).map((p) => [p.ProcessId, { pid: p.ProcessId, parent: p.ParentProcessId, name: p.Name || "", command: p.CommandLine || "" }]));
-  cache = { at: Date.now(), value: { listening: parseNetstat(net), processes } };
+  cache = { at: Date.now(), value: { listening: parseNetstat(net), processes: parseCim(procs) } };
   return cache.value;
 }
 

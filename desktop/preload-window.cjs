@@ -62,6 +62,9 @@ contextBridge.exposeInMainWorld("colmenaWindow", {
     warm: (url) => ipcRenderer.send("colmena-drag-warm", String(url || "").slice(0, 2000)),
     drag: (url) => ipcRenderer.invoke("colmena-drag-file", String(url || "").slice(0, 2000)),
   },
+  // «Código»: shows a file of a task in Explorer / Finder (or opens the task folder for «»).
+  // The main process asks the local service where it is and checks it is inside the task.
+  revealPath: (task, rel) => ipcRenderer.invoke("colmena-reveal-path", { task: String(task || "").slice(0, 80), path: String(rel ?? "").slice(0, 1000) }),
   // «Abrir el registro» (start-up screen): what the local service printed since Colmena opened.
   openLog: () => ipcRenderer.send("colmena-startup", "log"),
   edit: (action) => ["cut", "copy", "paste", "selectAll"].includes(action) && ipcRenderer.send("colmena-window", "edit:" + action),

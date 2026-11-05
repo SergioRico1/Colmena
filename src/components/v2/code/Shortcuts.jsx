@@ -9,7 +9,7 @@ import { C, HEAD, MONO, SHEET } from "./parts.jsx";
 export const ACTION_LABEL = {
   newTask: "Nueva tarea", focusComposer: "Escribir a Bruno", togglePlan: "Cambiar entre Construir y Plan", stop: "Parar a Bruno",
   compact: "Compactar la conversación", togglePanel: "Mostrar u ocultar el panel", widePanel: "Ampliar el panel",
-  tabChanges: "Ver los cambios", tabPreview: "Ver la vista previa", tabTerminal: "Ver la terminal", newTerminal: "Nueva terminal",
+  tabChanges: "Ver los cambios", tabPreview: "Ver la vista previa", tabTerminal: "Ver la terminal", tabFiles: "Ver los archivos", tabProcesses: "Ver los procesos", newTerminal: "Nueva terminal",
   save: "Guardar (el botón principal)", shortcuts: "Ver los atajos",
 };
 

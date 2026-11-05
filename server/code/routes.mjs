@@ -8,6 +8,8 @@ import { EFFORTS, ENGINES, CONTEXT_KINDS } from "./service.mjs";
 import { ACCESS } from "./policy.mjs";
 import { saveScript } from "./terminal.mjs";
 import { listFiles, fuzzyFiles, listSkills, saveAttachment } from "./context.mjs";
+import { listDir, readPreview, resolveInside, reveal as revealPath, trackedSets } from "./files.mjs";
+import { existsSync, statSync } from "node:fs";
 import { btwQuestion } from "../btw.mjs";
 
 const attachments = z.array(z.object({ path: z.string().min(1).max(1000) }).passthrough()).max(20);
@@ -25,7 +27,41 @@ export function registerCodeRoutes(app, { code }) {
   app.get("/api/code/tasks/:id/files", async (req, res) => {
     const task = code.mustTask(id.parse(req.params.id));
     const q = z.string().max(200).default("").parse(req.query.q || "");
-    res.json({ files: fuzzyFiles(await listFiles(task.cwd), q) });
+    const limit = z.coerce.number().int().min(1).max(200).default(30).parse(req.query.limit ?? 30);
+    res.json({ files: fuzzyFiles(await listFiles(task.cwd), q, limit) });
+  });
+  // «Archivos»: the task copy one folder at a time, a file read-only, and «Mostrar en el Explorador».
+  // Paths are relative to the task folder and checked by files.mjs (never outside it).
+  const relPath = z.string().max(1000).default("");
+  const folderOf = (taskId) => {
+    const task = code.mustTask(taskId);
+    if (!task.cwd || !existsSync(task.cwd)) throw Object.assign(Error("La copia de esta tarea se limpió: escríbele a Bruno y Colmena la recupera."), { status: 409 });
+    return task.cwd;
+  };
+  app.get("/api/code/tasks/:id/tree", async (req, res) => {
+    const folder = folderOf(id.parse(req.params.id));
+    res.json(await listDir(folder, relPath.parse(req.query.dir ?? ""), { tracked: trackedSets(await listFiles(folder).catch(() => [])) }));
+  });
+  app.get("/api/code/tasks/:id/file", async (req, res) => {
+    res.json(await readPreview(folderOf(id.parse(req.params.id)), relPath.parse(req.query.path ?? "")));
+  });
+  // The desktop asks where a path is (desktop/reveal.cjs checks it again and shows it itself).
+  app.get("/api/code/tasks/:id/locate", async (req, res) => {
+    const at = await resolveInside(folderOf(id.parse(req.params.id)), relPath.parse(req.query.path ?? ""));
+    res.json({ path: at.real, root: at.root, top: at.rel === "", folder: statSync(at.real).isDirectory() });
+  });
+  app.post("/api/code/tasks/:id/reveal", async (req, res) => {
+    const body = z.object({ path: relPath }).strict().parse(req.body || {});
+    const at = await resolveInside(folderOf(id.parse(req.params.id)), body.path);
+    revealPath(at.real, { folder: at.rel === "" });
+    res.json({ ok: true });
+  });
+  // «Procesos»: what runs for the task; «Parar» one tree (its PID must be the task's) or the leftovers.
+  app.get("/api/code/tasks/:id/processes", async (req, res) => res.json(await code.processes(id.parse(req.params.id))));
+  app.post("/api/code/tasks/:id/processes/stop-all", async (req, res) => res.json(await code.stopAllProcesses(id.parse(req.params.id))));
+  app.post("/api/code/tasks/:id/processes/:pid/stop", async (req, res) => {
+    const pid = z.coerce.number().int().min(1).max(2 ** 32).parse(req.params.pid);
+    res.json(await code.stopProcess(id.parse(req.params.id), pid));
   });
   app.get("/api/code/projects/:id/files", async (req, res) => {
     const project = code.mustProject(id.parse(req.params.id));
