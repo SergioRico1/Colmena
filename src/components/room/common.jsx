@@ -1,6 +1,7 @@
 import { BotPresence, PersonPresence } from "../v2/Presence.jsx";
 import WorkingDots from "./Dots.jsx";
 import { useEffect, useRef } from "react";
+import { dragOutProps } from "../../lib/dragOut.js";
 import { avatarStyle, initial, faceOf } from "../../lib/bots.js";
 
 // Shared pieces for Chat, Sala, En directo and Debate. Every style here is
@@ -84,10 +85,10 @@ export function FileCard({ file, onRemove }) {
 }
 
 /** Attachment chip from the Sala mockup (room message). */
-export function FileChip({ file, onRemove }) {
+export function FileChip({ file, onRemove, dragUrl = null }) {
   const s = extStyle(file.name);
   return (
-    <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px 8px 8px", border: "1px solid #DCE0E8", borderRadius: "10px", fontSize: "14px", background: "#FFFFFF" }}>
+    <span {...dragOutProps(dragUrl)} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px 8px 8px", border: "1px solid #DCE0E8", borderRadius: "10px", fontSize: "14px", background: "#FFFFFF" }}>
       <span aria-hidden="true" style={{ width: "28px", height: "28px", borderRadius: "6px", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 9px/1 'Geist Mono', monospace" }}>{s.label}</span>
       {file.name}
       {onRemove ? (

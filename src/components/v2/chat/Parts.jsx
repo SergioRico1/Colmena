@@ -16,6 +16,7 @@ import WorkLog, { CommandOutput, durationText } from "./WorkLog.jsx";
 import { workSummary } from "../../../lib/worklog.js";
 import { useExpert } from "../../../lib/expert.js";
 import { useStore } from "../../../lib/store.jsx";
+import { dragOutProps, workFileUrl } from "../../../lib/dragOut.js";
 
 // Colmena 3 conversation pieces (design/V3Chat.dc.html, V3ChatExperto.dc.html): your message
 // as a soft bubble on the right; the bot's answer under its shape, name and time, in 15.5 px;
@@ -61,11 +62,12 @@ export function UserBubble({ message, children }) {
 }
 
 /** A file you attached, as the board draws it: a tinted tile with its kind and its name. */
-export function AttachmentChip({ name }) {
+export function AttachmentChip({ name, missionId = null }) {
   const ext = extOf(name);
   const [bg, fg] = extTint(ext);
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "30px", padding: "0 12px 0 6px", borderRadius: "10px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "13px" }}>
+    // Attachments live in the chat's folder under their name: in the desktop app they drag out.
+    <span {...(missionId ? dragOutProps(workFileUrl(missionId, name)) : {})} style={{ display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "30px", padding: "0 12px 0 6px", borderRadius: "10px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "13px" }}>
       <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "6px", background: bg, color: fg, fontSize: "9px", fontWeight: 700 }}>{ext}</span>
       <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
     </span>
@@ -201,7 +203,7 @@ export function DeliverableV2({ artifact, onOpen, extra = null }) {
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "10px", background: bg, color: fg, fontSize: "10px", fontWeight: 700 }}>{ext}</span>
         <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-          <span style={{ fontSize: "15.5px", fontWeight: 600, overflowWrap: "anywhere" }}>{artifact?.title || "Entregable"}</span>
+          <span {...(artifact?.id && (artifact.file || artifact.workFile || isImage) ? dragOutProps(`/api/artifacts/${encodeURIComponent(artifact.id)}/file`) : {})} style={{ fontSize: "15.5px", fontWeight: 600, overflowWrap: "anywhere" }}>{artifact?.title || "Entregable"}</span>
           <span style={{ fontSize: "13px", color: "#5C606C" }}>{[artifactMeta(artifact), pages].filter(Boolean).join(" · ")}</span>
         </div>
         {extra}

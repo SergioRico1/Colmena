@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Download, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { canDragOut, isLocatable } from "../../lib/dragOut.js";
 
 // Image viewer (OpenClaw image gallery/lightbox). Any <img data-lightbox> opens here on click;
 // its gallery is the images of the same message ([data-message-id]) or of the closest
@@ -76,7 +77,8 @@ function Lightbox({ images, index: start, onClose }) {
       style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", maxWidth: "none", maxHeight: "none", margin: 0, padding: 0, border: 0, background: "rgba(18,19,26,.92)", overflow: "hidden" }}>
       <div onWheel={onWheel} onClick={(e) => { if (e.target === e.currentTarget) dialog.current.close(); }}
         style={{ position: "absolute", inset: "56px 84px 92px", display: "grid", placeItems: "center", overflow: "hidden" }}>
-        <img key={image.src} src={image.src} alt={image.alt} draggable="false"
+        {/* Not zoomed, in the desktop app, a picture of a file drags out into other apps. */}
+        <img key={image.src} src={image.src} alt={image.alt} draggable={scale === 1 && canDragOut() && isLocatable(image.src) ? "true" : "false"}
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
           onDoubleClick={() => (scale === 1 ? zoom(2) : reset())}
           style={{ animation: "c-fade 160ms ease both", maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "8px", background: "#FFFFFF", transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transition: drag.current ? "none" : "transform .14s ease", cursor: scale > 1 ? (drag.current ? "grabbing" : "grab") : "zoom-in", userSelect: "none", touchAction: "none" }} />
