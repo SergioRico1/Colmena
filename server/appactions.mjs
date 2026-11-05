@@ -90,31 +90,38 @@ export function namesFor(store, stepId, addresses = []) {
 }
 
 /**
- * Whether you asked for this very email in your last message in the mission: a send verb
- * and every recipient named (the address, or its name part). Then the send needs no
- * second OK; it still leaves with 10 s to cancel. Anything a bot decided by itself, or
- * read in a page or an email, keeps waiting for you.
+ * Your words in this turn: every message you wrote since the bot last answered. A send asked
+ * for and then pinned down in your answer to its question («pídele que lo mire» → «¿a quién?»
+ * → «a Raúl») is one request; what you said before the bot's last answer is not.
  */
-/** Your last message in the chat tells it to send («envíalo», «mándalo ya»). */
+export function turnText(store, missionId) {
+  const messages = store.where("messages", "missionId", missionId).filter((m) => typeof m.text === "string")
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const answered = messages.findLastIndex((m) => m.role === "assistant" && (!m.kind || m.kind === "message"));
+  const mine = messages.slice(answered + 1).filter((m) => m.role === "user").slice(-3);
+  return mine.map(yours).join("\n");
+}
+
+/** Your words in this turn tell it to send («envíalo», «mándalo ya», «pídele…»). */
 export function saysSend(store, missionId) {
-  const last = store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && typeof m.text === "string")
-    .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
-  return !!last && SEND_VERB.test(yours(last)) && !/\b(no|todavia no|aun no|nunca)\s+(lo |la )?(envies|mandes)\b/.test(yours(last));
+  const text = turnText(store, missionId);
+  return !!text && SEND_VERB.test(text) && !/\b(no|todavia no|aun no|nunca)\s+(lo |la )?(envies|mandes)\b/.test(text);
 }
 
 /** «Envíamelo», «mándamelo a mi correo»: you are sending it to yourself. */
 export function asksForSelf(store, missionId) {
-  const last = store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && typeof m.text === "string")
-    .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
-  return saysSend(store, missionId) && /\b(enviame\w*|mandame\w*|reenviame\w*|a mi correo|a mi email|a mi mail|a mi mism[oa])\b/.test(yours(last));
+  return saysSend(store, missionId) && /\b(enviame\w*|mandame\w*|reenviame\w*|a mi correo|a mi email|a mi mail|a mi mism[oa])\b/.test(turnText(store, missionId));
 }
 
+/**
+ * Whether you asked for this very email in this turn: a send verb and every recipient named
+ * (the address, or its name part). Then the send needs no second OK; it still leaves with
+ * 10 s to cancel. Anything a bot decided by itself, or read in a page or an email, keeps
+ * waiting for you.
+ */
 export function explicitlyAsked(store, missionId, recipients = [], { names = {} } = {}) {
-  const last = store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && typeof m.text === "string")
-    .sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
-  if (!last) return false;
-  const text = yours(last);
-  if (!SEND_VERB.test(text) || !recipients.length) return false;
+  const text = turnText(store, missionId);
+  if (!saysSend(store, missionId) || !recipients.length) return false;
   return recipients.every((r) => {
     const address = fold(r).trim();
     if (!address) return false;

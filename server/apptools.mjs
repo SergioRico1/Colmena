@@ -22,8 +22,8 @@ export const CURATED = {
 // How to use each email action well (Codex's Gmail skill, Gmail API threading rules): a reply
 // stays in its conversation, a change keeps the draft there, «envíalo» sends that draft.
 const USAGE = {
-  GMAIL_REPLY_TO_THREAD: "Para contestar un correo: sale dentro de su conversación. thread_id es el del hilo (no el id del mensaje); no lleva asunto. Contesta a quien escribió el último mensaje y pon en cc al resto solo si la respuesta les afecta.",
-  GMAIL_CREATE_EMAIL_DRAFT: "Si es una respuesta, pon el thread_id del hilo y deja el asunto vacío: así el borrador queda dentro de la conversación. Si te piden contestar sin decir «envía», prepara el borrador.",
+  GMAIL_REPLY_TO_THREAD: "Para contestar un correo: sale dentro de su conversación. thread_id es el del hilo (no el id del mensaje); no lleva asunto. Contesta a quien escribió el último mensaje y pon en cc al resto solo si la respuesta les afecta. Úsalo también cuando la persona te pide escribir a alguien de ese hilo («pídele…», «dile…», «contéstale…»): eso es enviar, no un borrador.",
+  GMAIL_CREATE_EMAIL_DRAFT: "Solo cuando la persona pide un borrador o que lo prepares o redactes para revisarlo. Si te pide enviar, contestar, pedir, decir, preguntar o avisar algo a alguien por correo, no hagas un borrador: envíalo (gmail_send_email, gmail_reply_to_thread o gmail_send_draft); Colmena le enseña el correo antes de que salga si hace falta su OK. Si es una respuesta, pon el thread_id del hilo y deja el asunto vacío: así el borrador queda dentro de la conversación.",
   GMAIL_UPDATE_DRAFT: "Sustituye el borrador entero: manda el texto completo y, si es una respuesta, el thread_id de su hilo.",
   GMAIL_SEND_DRAFT: "Envía tal cual un borrador que ya existe (su draft_id) y Gmail lo quita de Borradores. Úsalo cuando te pidan enviar un borrador; no lo rehagas con gmail_send_email.",
   GMAIL_SEND_EMAIL: "Solo para correos nuevos. Para contestar uno usa gmail_reply_to_thread; para enviar un borrador, gmail_send_draft.",

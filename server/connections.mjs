@@ -55,7 +55,7 @@ export function classify(p) {
     // «include_signature: false»…): empty ones change nothing and are fine.
     const a = sendArgs(args);
     const bad = Object.keys(a).find(k => !SEND_KEYS.includes(k));
-    if (a.attachment !== undefined) throw Error('Este envío lleva un adjunto, que no puedo enseñarte para revisarlo. Envíalo sin adjunto (attachment vacío) o prepara un borrador.');
+    if (a.attachment !== undefined) throw Error('Este envío lleva un adjunto, que no puedo enseñarte para revisarlo. Envíalo sin adjunto (attachment vacío). Solo si el adjunto es imprescindible, prepara un borrador con él y di a la persona que no ha salido por el adjunto y que lo envíe ella desde Gmail.');
     if (a.from_email !== undefined) throw Error('Este envío sale de otra dirección (from_email), que no puedo revisar contigo. Envíalo sin from_email.');
     if (a.is_html) throw Error('Escribe el cuerpo como texto normal (is_html: false) para que se pueda revisar.');
     // A new email titled «Re: …» lands outside the conversation it answers.
@@ -68,7 +68,7 @@ export function classify(p) {
   if (tool === 'GMAIL_REPLY_TO_THREAD') {
     const a = sendArgs(args);
     const bad = Object.keys(a).find(k => !REPLY_KEYS.includes(k));
-    if (a.attachment !== undefined) throw Error('Esta respuesta lleva un adjunto, que no puedo enseñarte para revisarlo. Envíala sin adjunto o prepara un borrador.');
+    if (a.attachment !== undefined) throw Error('Esta respuesta lleva un adjunto, que no puedo enseñarte para revisarlo. Envíala sin adjunto. Solo si el adjunto es imprescindible, prepara un borrador con él y di a la persona que no ha salido por el adjunto y que lo envíe ella desde Gmail.');
     if (a.is_html) throw Error('Escribe el cuerpo como texto normal (is_html: false) para que se pueda revisar.');
     if (!bad && ['thread_id', 'recipient_email', 'message_body'].every(k => typeof a[k] === 'string' && a[k].trim()) &&
         ['cc', 'bcc', 'extra_recipients'].every(k => a[k] === undefined || Array.isArray(a[k]) && a[k].every(v => typeof v === 'string')) &&

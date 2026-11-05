@@ -53,3 +53,23 @@ test("connected-app tools read in plain Spanish, never by their tool name", () =
   assert.equal(verbFor("gmail_fetch_emails"), "leyendo");
   assert.equal(verbFor("gmail_send_email"), "usando una app");
 });
+
+test("a send asked for and pinned down in the answer to the bot's question is one request", async (t) => {
+  const history = [{ type: "function_call_output", call_id: "c", output: JSON.stringify({ data: { messages: [{ sender: "Raúl Corregidor <rcorregidor@ejemplo.es>", subject: "Informe" }] } }) }];
+  const store = await storeWith(t, "Resume el informe de ayer", history);
+  const at = (s) => new Date(Date.parse("2026-11-05T10:00:00Z") + s * 1000).toISOString();
+  store.patch("messages", "u1", { at: at(0) });
+  store.put("messages", { id: "a1", missionId: "m", role: "assistant", kind: "message", text: "El informe dice…", at: at(10) });
+  store.put("messages", { id: "u2", missionId: "m", role: "user", kind: "message", text: "Sí, pídele que lo mire", at: at(20) });
+  store.put("messages", { id: "a2", missionId: "m", role: "assistant", kind: "question", text: "¿A quién se lo pido?", at: at(30) });
+  store.put("messages", { id: "u3", missionId: "m", role: "user", kind: "message", text: "Raúl Corregidor: el pico del 4/11", at: at(40) });
+  const names = namesFor(store, "m:s", ["rcorregidor@ejemplo.es"]);
+  assert.equal(explicitlyAsked(store, "m", ["rcorregidor@ejemplo.es"], { names }), true);
+  // Once the bot has answered, an older «pídele» no longer counts.
+  store.put("messages", { id: "a3", missionId: "m", role: "assistant", kind: "message", text: "Hecho.", at: at(50) });
+  store.put("messages", { id: "u4", missionId: "m", role: "user", kind: "message", text: "Gracias, Raúl lo verá", at: at(60) });
+  assert.equal(explicitlyAsked(store, "m", ["rcorregidor@ejemplo.es"], { names }), false);
+  // «No lo envíes» in the turn keeps it waiting.
+  store.put("messages", { id: "u5", missionId: "m", role: "user", kind: "message", text: "Escríbele a Raúl pero no lo envíes todavía", at: at(70) });
+  assert.equal(explicitlyAsked(store, "m", ["rcorregidor@ejemplo.es"], { names }), false);
+});

@@ -76,7 +76,11 @@ test("a short yes or no in the chat is an answer", () => {
 test("an email you asked for, naming who gets it, needs no second OK", async (t) => {
   const { store } = await fixture(t);
   let clock = Date.parse("2026-10-18T10:00:00Z");
-  const say = (text) => store.put("messages", { id: "m" + clock, missionId: "x", role: "user", text, at: new Date((clock += 1000)).toISOString() });
+  // Each request gets the bot's answer before the next one: a turn is your words since then.
+  const say = (text) => {
+    store.put("messages", { id: "a" + clock, missionId: "x", role: "assistant", kind: "message", text: "Hecho.", at: new Date((clock += 1000)).toISOString() });
+    store.put("messages", { id: "m" + clock, missionId: "x", role: "user", text, at: new Date((clock += 1000)).toISOString() });
+  };
   say("Envíale a oriol@orvalia.es la revisión de septiembre");
   assert.equal(explicitlyAsked(store, "x", ["oriol@orvalia.es"]), true);
   assert.equal(explicitlyAsked(store, "x", ["oriol@orvalia.es", "otro@fuera.com"]), false);
