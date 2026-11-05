@@ -6,6 +6,7 @@ import { TOOLKITS } from './triggers.mjs';
 import { asksForSelf, explicitlyAsked, namesFor, saysSend } from './appactions.mjs';
 import { draftFields } from './gmaildrafts.mjs';
 import { isFlagged } from './external-content.mjs';
+import { actionOfTool, appTargets, deferredResult, isUnattended, ownAppTarget, personAsked, personTurnText } from './redlines.mjs';
 
 // A send you asked for in so many words leaves on its own after this long (cancel in the chat).
 export const AUTO_SEND_MS = 10000;
@@ -148,7 +149,8 @@ export class Connections {
     const a = this.store.get('approvals', id);
     if (!a || a.tool !== 'apps_execute') throw Error('Solicitud de conexión no encontrada.');
     const mission = this.store.get('missions', a.missionId);
-    if (!mission || ['cancelled', 'completed'].includes(mission.status))
+    // Left for later by an unattended routine: you can still approve it once the run ended.
+    if (!mission || mission.status === 'cancelled' || (mission.status === 'completed' && !a.deferred))
       throw Error('La misión ya no admite esta acción.');
     return a;
   }
@@ -190,6 +192,18 @@ export class Connections {
       const flagged = isFlagged(this.store, step.id);
       if ((granted || runsWithoutAsking({kind, redLine}, access)) && !(flagged && kind !== 'read'))
         return this.decide(id, {decision: 'approved', revision: ticket.revision, remember: false, auto: true});
+      // Effect, not name (redlines.mjs): undoing what this mission created in your account, or
+      // the one action your own message in this turn named with its exact target.
+      if (redLine && kind !== 'send' && !flagged) {
+        const own = ownAppTarget(this.store, mission.id, {tool: p.tool, toolkit: p.toolkit, arguments: p.arguments});
+        const action = !own && actionOfTool(p.tool);
+        const asked = action && personAsked(personTurnText(this.store, mission, step), {action, targets: appTargets(p.arguments)});
+        if (own || asked) {
+          const result = await this.decide(id, {decision: 'approved', revision: ticket.revision, remember: false, auto: true});
+          this.store.patch('approvals', id, {decidedBy: own ? 'colmena' : 'tú', resolution: own ? 'Sin preguntar: deshace algo que creó esta misión' : 'Lo pediste tú en tu mensaje'});
+          return result;
+        }
+      }
       if (kind === 'send' && !flagged) {
         const to = review.draft ? [...review.draft.to, ...review.draft.cc] : recipientsOf(review.arguments);
         // «Envíalo» about the draft it prepared here, which you have seen: that is the OK.
@@ -200,8 +214,17 @@ export class Connections {
             (asksForSelf(this.store, mission.id) && await this.isOwnAddress(mission, args.account, to));
         if (asked) this.autoSend(id);
       }
+      // A routine working while you are away (Rutinas sin supervisión): a red line never waits;
+      // it stays for you in the Bandeja and the bot finishes the rest. A send you asked for in
+      // so many words still leaves on its own, as always.
+      if ((redLine || kind === 'send') && !this.store.get('approvals', id)?.autoSendAt && isUnattended(mission, this.store.get('settings', 'main') || {}, step)) {
+        this.store.patch('approvals', id, {deferred: true, deferredAt: now()});
+        this.store.event(mission.id, 'approval_requested', {botId: step.botId, text: p.name + ' (pendiente para después)'});
+        return {...deferredResult(p.name), deferredApproval: id};
+      }
       this.store.event(mission.id, 'approval_requested', {botId: step.botId, text: p.name});
     }
+    if (a?.deferred && a.status === 'pending') return {...deferredResult(a.review?.name || a.title), deferredApproval: id};
     return {waiting: true};
   }
   /**

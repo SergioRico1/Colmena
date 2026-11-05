@@ -106,7 +106,11 @@ const ALWAYS_FREE_ACTS = ["desplazar", "esperar"];
  * Policy table by autonomy ('sugiere' | 'avisa' | 'solo').
  * @returns {'free'|'approval'|'redline'}
  */
-export function computerPolicy(name, args = {}, bot = null, { autonomy } = {}) {
+/**
+ * `unconfined` (reason): run_command would run code the bot wrote with no sandbox available
+ * (fail closed: a red line). `wide`: a run the sandbox blocked, asked again without it.
+ */
+export function computerPolicy(name, args = {}, bot = null, { autonomy, unconfined = null, wide = false } = {}) {
   const level = autonomyFor(bot, autonomy);
   switch (name) {
     case "browser_open":
@@ -131,7 +135,7 @@ export function computerPolicy(name, args = {}, bot = null, { autonomy } = {}) {
     case "open_app":
       return level === "sugiere" ? "approval" : "free";
     case "run_command":
-      return classifyCommand(args.program, args.args).redLine ? "redline" : level === "sugiere" ? "approval" : "free";
+      return classifyCommand(args.program, args.args).redLine || wide || unconfined ? "redline" : level === "sugiere" ? "approval" : "free";
     default:
       return "redline";
   }
@@ -244,10 +248,17 @@ export function describeForApproval(name, args = {}, info = {}) {
     case "run_command": {
       const line = commandLine(args.program, args.args);
       const danger = classifyCommand(args.program, args.args);
+      const confinement = info.wide
+        ? " El entorno aislado la bloqueó (solo deja escribir en su carpeta). Si lo apruebas, se ejecutará una vez sin aislamiento, con tus mismos permisos."
+        : info.unconfined
+          ? " " + info.unconfined + " Este ordenador no tiene un entorno aislado disponible: se ejecutaría con tus mismos permisos."
+          : info.sandboxed
+            ? " Se ejecuta en un entorno aislado: solo puede escribir en su carpeta."
+            : " Aquí no hay un entorno aislado: el programa tendría tus mismos permisos.";
       return {
-        title: "Ejecutar «" + line.slice(0, 80) + (line.length > 80 ? "…" : "") + "»",
+        title: (info.wide ? "Ejecutar sin aislamiento «" : "Ejecutar «") + line.slice(0, 80) + (line.length > 80 ? "…" : "") + "»",
         summary: who + " quiere ejecutar «" + line.slice(0, 400) + "» en " + (info.folderLabel || "la carpeta de la misión") + ". Motivo: " +
-          (args.reason || "sin motivo") + ". En Windows no hay un entorno aislado: el programa tendría tus mismos permisos." +
+          (args.reason || "sin motivo") + "." + confinement +
           (danger.redLine ? " Atención: " + danger.reason : ""),
         scope: "Este ordenador · " + (info.folderLabel || "carpeta de la misión"),
       };

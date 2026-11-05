@@ -106,8 +106,17 @@ Todas las ops de pestaña llevan `missionId` y `botId`. Errores con `code`: `PAS
   permiso **una vez por proyecto y bot** (regla `tool: "project"`, `scope: "proyecto:<misión>/<nombre>:ejecutar"`) e
   instalar pide permiso **una vez por proyecto** con la lista de paquetes y solo vuelve a preguntar por paquetes nuevos; siempre `--ignore-scripts`; solo versiones del registro
   (nada de `file:`, git, URLs ni alias). `run_command` sigue igual y rechaza `npm` remitiendo a `project_run`.
-  Límite honesto: el código del proyecto corre con los permisos de la persona; Windows no permite aislarlo ni
-  cortarle la red por proceso sin ser administrador.
+  **Entorno aislado** (`server/computer/sandbox.mjs`): `run_command` y `project_run` (script/node) corren confinados
+  cuando el ordenador tiene con qué: en Windows el Codex CLI instalado (`codex sandbox -P :workspace`, token
+  restringido «unelevated», su propio `CODEX_HOME` en la carpeta de datos; confina escrituras, no la red), en macOS
+  `sandbox-exec` con un perfil Seatbelt generado y en Linux `bwrap` (ambos también sin red). Solo escribe en su
+  carpeta de trabajo y en una temporal privada; en Windows solo se confinan carpetas dentro de la de datos de
+  Colmena (el aislamiento añade una ACE a la carpeta), nunca una carpeta compartida de la persona. Sin entorno
+  aislado, el código que escribió o trajo el bot (un script, un programa de la carpeta) pasa a línea roja; los
+  programas normales siguen como antes. Si el aislamiento bloquea una orden, el bot puede repetirla igual una vez
+  y se convierte en una tarjeta «Ejecutar sin aislamiento»; aprobada, corre sin él. Un fallo del propio
+  aislamiento (no arranca) se distingue de un bloqueo: no ejecuta nada y deja el entorno como no disponible
+  10 minutos. Los servidores de desarrollo y las instalaciones siguen sin aislar.
 
 ## «Tomar el control»
 

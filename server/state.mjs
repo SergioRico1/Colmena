@@ -121,7 +121,8 @@ export function isExternalApproval(a, kind = a.kind) {
 }
 /** ISO time when a pending external approval stops being valid, or null. */
 export function approvalExpiresAt(a, kind = a.kind) {
-  if (a.status !== "pending" || !isExternalApproval(a, kind)) return null;
+  // Left for later by an unattended routine: it waits for you as long as it takes (re-prepared on approval).
+  if (a.status !== "pending" || a.deferred || !isExternalApproval(a, kind)) return null;
   const base = Math.max(...[a.preparedAt, a.editedAt, a.createdAt].map((t) => Date.parse(t || "")).filter((t) => !Number.isNaN(t)), -Infinity);
   return Number.isFinite(base) ? new Date(base + APPROVAL_TTL_MS).toISOString() : null;
 }
@@ -177,6 +178,12 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     // Several questions answered by steps (questions.mjs), and what you said to each.
     questions: kind === "question" && a.questions?.length ? a.questions : null,
     answers: kind === "question" && a.answers?.length ? a.answers : null,
+    // A timed question whose wait ended: the bot went on with the prudent option, yet you can still answer.
+    waitUntil: kind === "question" && pending ? a.waitUntil ?? null : null,
+    stillOpen: kind === "question" && pending && !!a.timedOut,
+    lateAnswer: kind === "question" && !!a.lateAnswer,
+    // Left for later by a routine without supervision: the bot went on; approving it does it now.
+    deferred: pending && !!a.deferred,
     // A key request: its name, why, for which sites and whether it replaces one (never a value).
     secret: kind === "secret" && a.secret ? { name: a.secret.name, reason: a.secret.reason, allowedHosts: a.secret.allowedHosts || [], existing: a.secret.existing || null } : null,
     email: kind === "send" ? email : null,

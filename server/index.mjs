@@ -16,6 +16,7 @@ import { CuaDesktop, desktopExtraTools } from "./computer/desktop.mjs";
 import { createApp } from "./app.mjs";
 import { computer } from "./computer/bridge.mjs";
 import { computerExtraTools } from "./computer/wire.mjs";
+import { Sandbox } from "./computer/sandbox.mjs";
 import { lockInstance } from "./instance.mjs";
 import { ComposioHub } from "./nexo/composio.mjs";
 import { windowsVault } from "./nexo/credential-vault.mjs";
@@ -99,9 +100,16 @@ const aiConnected = () => {
   return !!session.status() && !!store.get("settings", "main").model;
 };
 const scheduler = new Scheduler(store, runtime, aiConnected, { connections });
+// A bot's question whose wait ended (also across a restart): its mission goes on with the
+// prudent option and the question stays open (Runtime#sweepQuestions).
+setInterval(() => { if (aiConnected()) try { runtime.sweepQuestions(); } catch {} }, 60000).unref();
 let origin = "http://127.0.0.1:4317";
 runtime.vault = new SiteVault(store); // site passwords for browser_sign_in (DPAPI)
 runtime.mcp = new McpHub(store); // MCP connections (catalogue in Ajustes › Conexiones)
+// Commands and project scripts bots run go through a process sandbox when this computer has
+// one (Codex CLI on Windows, sandbox-exec on macOS, bwrap on Linux); bot-written code without
+// one waits for your OK (server/computer/sandbox.mjs).
+runtime.sandbox = new Sandbox({ directory });
 const computerTools = computerExtraTools(runtime, { computer });
 // Projects (custom development): files, npm/node, a dev server and its preview.
 runtime.projects = new Projects({ store, runtime, computer });

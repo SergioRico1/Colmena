@@ -175,6 +175,41 @@ test("a bot that acts runs and installs its project without asking (Codex auto m
   assert.equal(store.list("approvals").length, 0);
 });
 
+test("project code runs in the sandbox; blocked and asked again it waits for one wider run; without a sandbox it fails closed", async (t) => {
+  const { store, projects, run, again, runs } = await setup(t);
+  // Stand-in backend: the runner sees BOXED=1 and the "sandbox" denies the write.
+  projects.sandboxOption = { canConfine: () => true, markBroken() {}, clean: (r) => r, dispose() {}, wrap: (file, args, { env }) => ({ kind: "fake", file, args, env: { ...env, BOXED: "1" } }) };
+  projects.runner = async (file, args, opts) => {
+    runs.push({ file, args, opts });
+    return opts.env.BOXED ? { exitCode: 1, stdout: "", stderr: "Error: EPERM: operation not permitted", truncated: false, timedOut: false, seconds: 0.1 } : { exitCode: 0, stdout: "hecho", stderr: "", truncated: false, timedOut: false, seconds: 0.1 };
+  };
+  await run("project_create", { name: "api", template: "vacio" });
+  await run("project_write", { project: "api", path: "build.js", content: "console.log('hecho')" });
+  const call = { project: "api", action: "node", target: "build.js", args: [] };
+  const blocked = await run("project_run", call);
+  assert.equal(blocked.sandboxBlocked, true);
+  assert.match(blocked.sandbox, /aislado/);
+  assert.match(blocked.note, /vuelve a llamar exactamente igual/);
+  assert.deepEqual(await again("project_run", call, "w1"), { waiting: true });
+  const card = store.get("approvals", "s1:w1");
+  assert.equal(card.redLine, true);
+  assert.equal(card.canAlways, false);
+  assert.match(card.title, /sin aislamiento/);
+  store.patch("approvals", "s1:w1", { status: "approved" });
+  const wide = await again("project_run", call, "w1");
+  assert.equal(wide.exitCode, 0);
+  assert.equal(wide.sandbox, "amplio");
+  assert.equal(store.list("grants").length, 0, "never a «once per project» rule");
+  // Installs keep running as before (network, no scripts).
+  await run("project_write", { project: "api", path: "package.json", content: JSON.stringify({ name: "api", dependencies: { zod: "^3.24.0" } }) });
+  assert.equal((await run("project_run", { project: "api", action: "install", target: "", args: [] })).exitCode, 0);
+  assert.equal(runs.at(-1).opts.env.BOXED, undefined);
+  // No sandbox available: the bot's code waits for the person.
+  projects.sandboxOption = { canConfine: () => false, wrap: () => null };
+  assert.deepEqual(await again("project_run", { ...call, args: ["--otra"] }, "n1"), { waiting: true });
+  assert.match(store.get("approvals", "s1:n1").summary, /no tiene un entorno aislado/);
+});
+
 test("with «Solo sugiere»: once per project; installs ask again only for new packages", async (t) => {
   assert.equal(projectPermission("project_write", {}, { autonomy: "sugiere" }), "editar");
   assert.equal(projectPermission("project_run", { action: "install" }, { autonomy: "sugiere" }), "instalar");

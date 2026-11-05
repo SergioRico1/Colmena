@@ -615,7 +615,9 @@ function Preview({ a, bot }) {
         ) : null}
         {a.blocks ? <p style={{ margin: "0", color: "#4A4F5C" }}>{`Mientras no respondas, ${plural(a.blocks, "paso queda", "pasos quedan")} en espera.`}</p> : null}
       </div>
-      <div style={foot}>{a.kind === "question" ? `Lo pregunta ${name}. Tu respuesta llega a la sala.` : `Lo pide ${name}. No se hace nada sin tu OK.`}</div>
+      <div style={foot}>{a.kind === "question"
+        ? (a.stillOpen ? `Lo pregunta ${name}. Ha seguido con lo más prudente, pero la pregunta sigue abierta: tu respuesta le llega igual.` : `Lo pregunta ${name}. Tu respuesta llega a la sala.`)
+        : a.deferred ? `Lo dejó pendiente ${name} en una rutina sin supervisión; terminó lo demás. Si lo apruebas, se hace ahora.` : `Lo pide ${name}. No se hace nada sin tu OK.`}</div>
     </div>
   );
 }

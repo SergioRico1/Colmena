@@ -21,6 +21,8 @@ import {
 } from "./files.mjs";
 import { RUN_LIMITS, installCommand, nodeExecutable, packageDependencies, projectEnv, readPackage, runArgv, scriptCommand } from "./run.mjs";
 import { DevServers, serveKind } from "./servers.mjs";
+import { runConfined, sandboxKey } from "../computer/sandbox.mjs";
+import { deferredResult } from "../redlines.mjs";
 
 export const PROJECT_TOOL_NAMES = ["project_create", "project_files", "project_write", "project_edit", "project_delete", "project_run", "project_server", "project_preview"];
 export const isProjectTool = (name) => PROJECT_TOOL_NAMES.includes(name);
@@ -111,8 +113,9 @@ const tail = (s, n = OUTPUT_CHARS) => (String(s || "").length > n ? "…" + Stri
 
 // ---------------------------------------------------------------- the tools
 export class Projects {
-  constructor({ store, runtime, computer = defaultComputer, servers = null, colmenaRoot, runner = runArgv } = {}) {
+  constructor({ store, runtime, computer = defaultComputer, servers = null, colmenaRoot, runner = runArgv, sandbox = undefined } = {}) {
     this.store = store;
+    this.sandboxOption = sandbox;
     this.runner = runner;
     this.runtime = runtime;
     this.computer = computer;
@@ -145,6 +148,24 @@ export class Projects {
 
   missionRoot(missionId) { return this.runtime.root(missionId); }
 
+  /** The process sandbox (server/computer/sandbox.mjs); undefined = not configured (as before). */
+  box() { return this.sandboxOption !== undefined ? this.sandboxOption : this.runtime?.sandbox; }
+
+  /**
+   * Running the project's code (script/node) with a sandbox configured: confined when it can;
+   * a red line when it cannot (fail closed) or when the same run was blocked and is asked again.
+   */
+  confinement(ctx) {
+    const box = this.box();
+    if (box === undefined || ctx.tool !== "project_run" || ctx.args.action === "install") return null;
+    const key = sandboxKey(ctx.tool, { project: ctx.project, action: ctx.args.action, target: ctx.args.target, args: ctx.args.args });
+    const state = this.store.get("steps", ctx.step.id)?.sandboxBlocked?.[key];
+    const dir = path.join(ctx.root, PROJECTS_DIR, ctx.project);
+    if (state === "blocked") return { key, permission: "amplio" };
+    if (!box?.canConfine?.(dir)) return { key, permission: "sin-aislar" };
+    return { key, permission: null, state };
+  }
+
   /** Runs one call: plans its permission, waits for it if needed, executes. */
   async run(tool, rawArgs, { mission, step, bot, call, signal }) {
     const args = parseProjectArgs(tool, rawArgs);
@@ -158,7 +179,30 @@ export class Projects {
     if (!approval) {
       const plan = await this.plan(ctx, autonomy);
       this.runtime.setActivity?.(bot.id, mission.id, step.id, plan.verb, plan.detail);
-      if (plan.permission) {
+      const confined = this.confinement(ctx);
+      if (confined?.permission) {
+        // Never a «once per project» rule: each unconfined run waits for the person.
+        const wide = confined.permission === "amplio";
+        if (wide) this.noteSandbox(step.id, confined.key, "asked");
+        const title = (wide ? "Ejecutar sin aislamiento «" : "Ejecutar sin entorno aislado «") + plan.line.slice(0, 80) + "»";
+        const summary = bot.name + " quiere ejecutar «" + plan.line.slice(0, 200) + "» en el proyecto «" + project + "». " + (wide
+          ? "El entorno aislado lo bloqueó (solo deja escribir en el proyecto). Si lo apruebas, se ejecutará una vez sin aislamiento, con tus mismos permisos."
+          : "Es código que ha escrito el bot y este ordenador no tiene un entorno aislado disponible: se ejecutaría con tus mismos permisos.");
+        const decided = this.runtime.redLineShortcut?.(mission, step, bot, { tool, args, approvalId, title, summary }) || null;
+        approval = this.store.put("approvals", {
+          ...(decided?.deferred ? { deferred: true, deferredAt: now() } : {}),
+          id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id, tool, args, kind: "permission",
+          scope: null, scopeLabel: "Proyecto · " + project, title, summary,
+          context: this.runtime.approvalContext?.(mission, bot) || bot.name, blocks: 1, options: [], email: null,
+          canAlways: false, redLine: true, external: false, project: { name: project, permission: confined.permission, line: plan.line || null },
+          status: decided?.approved ? "approved" : "pending", createdAt: now(), preparedAt: now(),
+          decidedAt: decided?.approved ? now() : null, decidedBy: decided?.approved ? decided.by : null, resolution: decided?.approved ? decided.resolution : null,
+        });
+        if (!decided?.approved) {
+          this.store.event(mission.id, "approval_requested", { botId: bot.id, text: summary });
+          return decided?.deferred ? deferredResult(title) : { waiting: true };
+        }
+      } else if (plan.permission) {
         const grant = findProjectGrant(this.store, { botId: bot.id, scope: plan.scope });
         const covered = plan.permission === "instalar" ? !newPackages(plan.packages, grant).length : !!grant;
         if (!covered) {
@@ -173,14 +217,15 @@ export class Projects {
           return { waiting: true };
         }
       }
-      return await this.execute(ctx, plan);
+      if (!approval) return await this.execute({ ...ctx, confined }, plan);
     }
-    if (approval.status === "pending") return { waiting: true };
+    if (approval.status === "pending") return approval.deferred ? deferredResult(approval.title) : { waiting: true };
     if (["denied", "expired"].includes(approval.status)) return deniedResult(approval, { expired: approval.status === "expired" });
     if (approval.status === "executed") return approval.result;
     const plan = await this.plan(ctx, autonomy);
-    this.remember(bot, mission, project, approval.project?.permission || plan.permission, plan);
-    const result = await this.execute(ctx, plan);
+    const unconfined = ["amplio", "sin-aislar"].includes(approval.project?.permission);
+    if (!unconfined) this.remember(bot, mission, project, approval.project?.permission || plan.permission, plan);
+    const result = await this.execute({ ...ctx, sandboxMode: unconfined ? "amplio" : "aislado", confined: unconfined ? null : this.confinement(ctx) }, plan);
     this.store.patch("approvals", approvalId, { status: "executed", result: result && typeof result === "object" && "image" in result ? { ...result, image: undefined, imageOmitted: true } : result });
     return result;
   }
@@ -247,7 +292,7 @@ export class Projects {
       return {
         verb: "ejecutando una tarea", detail: project + " · " + line.slice(0, 60), permission: projectPermission(tool, args, { autonomy }), scope: grantScope(mission.id, project, "ejecutar"), line,
         title: "Ejecutar el proyecto «" + project + "»",
-        summary: who + " quiere ejecutar «" + line.slice(0, 200) + "» en el proyecto «" + project + "». Es código que ha escrito el bot y corre con tus permisos (Windows no permite aislarlo), sin internet. Si lo apruebas, " + who + " podrá ejecutar este proyecto sin volver a preguntar.",
+        summary: who + " quiere ejecutar «" + line.slice(0, 200) + "» en el proyecto «" + project + "». Es código que ha escrito el bot y corre en un entorno aislado cuando este ordenador lo tiene (si no, con tus permisos), sin internet. Si lo apruebas, " + who + " podrá ejecutar este proyecto sin volver a preguntar.",
       };
     }
     if (tool === "project_server" && args.action !== "start") return { ...base, verb: "ejecutando una tarea", permission: null };
@@ -318,12 +363,32 @@ export class Projects {
     }
     let cwd = dir;
     try { cwd = realpathSync.native(dir); } catch {}
-    const result = await this.runner(cmd.file, cmd.args, { cwd, env: projectEnv({ install }), timeoutMs, signal });
+    const env = projectEnv({ install });
+    // The project's own code runs in the sandbox when there is one (installs need the network
+    // and run no scripts: as before). A person's OK for a wider run runs it without it.
+    const box = install ? undefined : this.box();
+    const { result, sandbox } = box === undefined
+      ? { result: await this.runner(cmd.file, cmd.args, { cwd, env, timeoutMs, signal }), sandbox: null }
+      : await runConfined(box, { file: cmd.file, args: cmd.args, cwd, env, mode: ctx.sandboxMode || "aislado", untrusted: true },
+        (file, list, runEnv) => this.runner(file, list, { cwd, env: runEnv, timeoutMs, signal }));
+    if (result?.sandboxRunner) return { project, command: cmd.line, ok: false, error: result.error };
+    let note = null;
+    if (sandbox?.blocked && ctx.confined?.key) {
+      if (ctx.confined.state === "asked") note = "El entorno aislado lo ha vuelto a bloquear y ya pediste ejecutarlo sin aislamiento: no insistas, cambia de enfoque o explica a la persona qué falta.";
+      else { this.noteSandbox(ctx.step.id, ctx.confined.key, "blocked"); note = sandbox.note; }
+    }
     return {
       project, command: cmd.line, exitCode: result.exitCode, ok: result.exitCode === 0 && !result.timedOut, seconds: result.seconds,
       timedOut: result.timedOut, truncated: result.truncated, stdout: tail(result.stdout), stderr: tail(result.stderr),
+      ...(sandbox ? { sandbox: sandbox.mode === "aislado" ? "aislado (solo escribe en el proyecto)" : sandbox.mode } : {}),
+      ...(note ? { sandboxBlocked: true, note } : {}),
       limits: "Máximo " + timeoutMs / 1000 + " s. " + (install ? "Con internet, solo para instalar." : "Sin internet."), notice: NOTICE,
     };
+  }
+
+  noteSandbox(stepId, key, state) {
+    const step = this.store.get("steps", stepId);
+    if (step) this.store.patch("steps", stepId, { sandboxBlocked: { ...(step.sandboxBlocked || {}), [key]: state } });
   }
 
   async startServer(ctx, dir, plan) {

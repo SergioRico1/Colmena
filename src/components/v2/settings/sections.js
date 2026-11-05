@@ -69,6 +69,8 @@ export const SECTIONS = [
       ["que-app", "Qué app usa cada bot", "permisos lee escribe acceso matriz"],
       ["permisos", "Permisos que diste para siempre", "grants retirar revocar siempre"],
       ["revisor", "Revisor automático", "aprobar solo rutinario permisos revisión"],
+      ["esperar-respuesta", "Cuánto espera un bot tu respuesta", "pregunta esperar minutos respuesta prudente"],
+      ["sin-supervision", "Rutinas sin supervisión", "rutinas disparadores ausente líneas rojas pendientes bandeja"],
       ["codigo-archivar", "Tareas de Código: archivar las terminadas", "archivar código tareas inactivas días pr posponer guardar main"],
       ["capacidades", "Qué más puede hacer cada bot", "herramientas ficha bot", "/equipo"],
     ],
