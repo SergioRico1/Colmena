@@ -18,7 +18,7 @@ const I = { size: 13, strokeWidth: 2.2, "aria-hidden": "true" };
 // glyph, the name and what it is on the right.
 const MENU = { position: "absolute", zIndex: 30, left: "0", bottom: "calc(100% + 8px)", width: "320px", maxWidth: "calc(100vw - 32px)", maxHeight: "360px", overflowY: "auto", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" };
 const ROW = { minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "10px", background: "transparent", textAlign: "left", cursor: "pointer", width: "100%", flex: "none", color: "#12131A" };
-const HEAD = { padding: "8px 10px 4px", fontSize: "12px", fontWeight: 600, color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const HEAD = { flex: "none", display: "block", padding: "8px 10px 4px", fontSize: "12px", fontWeight: 600, color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 const tile = (bg, fg = "#3D404A") => ({ width: "18px", height: "18px", flex: "none", display: "grid", placeItems: "center", borderRadius: "4px", background: bg, color: fg, fontSize: "7px", fontWeight: 700 });
 
 function FileGlyph({ name }) {
@@ -91,6 +91,10 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null })
   const options = items.filter((x) => x.type !== "head");
   const open = query != null && options.length > 0;
   const current = Math.min(index, Math.max(0, options.length - 1));
+  // ↑/↓ keep the chosen row in view (the list scrolls when it is longer than the card).
+  useEffect(() => {
+    if (open) document.querySelector('#rm-mentions [aria-selected="true"]')?.scrollIntoView?.({ block: "nearest" });
+  }, [open, current, dir]);
 
   const detect = useCallback((text, caret) => {
     const m = TRIGGER.exec(text.slice(0, caret));

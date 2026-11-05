@@ -27,7 +27,7 @@ test("client: the «@» menu groups bots, the folder (one level, searchable) and
   const all = mentionItems({ query: "", bots, files, chats });
   assert.deepEqual(all.map((x) => x.type === "head" ? "#" + x.label : x.type + ":" + (x.bot?.name || x.path || x.chat?.title)),
     ["#Bots", "bot:Vera", "bot:Tomás", "#Archivos", "folder:datos", "file:informe.pdf", "#Conversaciones", "chat:Lanzamiento", "chat:Presupuesto"]);
-  const inside = mentionItems({ query: "", bots: [], files, chats: null, dir: "datos" });
+  const inside = mentionItems({ query: "", bots, files, chats, dir: "datos" }); // inside a folder, only its files
   assert.deepEqual(inside.map((x) => x.type + ":" + (x.path ?? x.label)), ["head:Archivos · datos", "up:", "here:datos", "folder:datos/2025", "file:datos/ventas.csv"]);
   const search = mentionItems({ query: "ene", bots, files, chats });
   assert.deepEqual(search.filter((x) => x.type !== "head").map((x) => x.path), ["datos/2025/enero.csv"], "a search looks in every folder");

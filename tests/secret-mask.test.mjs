@@ -42,9 +42,9 @@ test("a value after a word that names it is a secret; ordinary words are not", (
 });
 
 test("mask keeps the first 8 (never more than half) and segments rebuild the text", () => {
-  assert.equal(maskSecret(OPENAI), "sk-proj-" + "•".repeat(OPENAI.length - 8));
+  assert.equal(maskSecret(OPENAI), "sk-proj-" + "•".repeat(20));
   assert.equal(maskSecret("Hunter2x!"), "Hunt" + "•••••");
-  assert.equal(maskSecret("x".repeat(200)).length, 8 + 32, "long values never fill the bubble");
+  assert.equal(maskSecret("x".repeat(200)).length, 8 + 20, "long values never fill the bubble");
   const text = "Hola, usa " + OPENAI + " y la contraseña: Hunter2x! vale";
   const parts = secretSegments(text);
   assert.equal(parts.map((p) => p.text).join(""), text);

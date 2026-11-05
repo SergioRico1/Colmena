@@ -53,8 +53,12 @@ export function chatsFrom(missions = [], exclude = null) {
 export function mentionItems({ query = "", bots = [], files = null, chats = null, dir = "" } = {}) {
   const q = fold(query);
   const out = [];
+  // Inside a folder only its files show; with nothing typed yet each group keeps to a few,
+  // so all three fit on screen.
+  const few = !q && !dir;
+  const limit = (name) => (few ? Math.min(MENTION_LIMITS[name], 4) : MENTION_LIMITS[name]);
   const group = (label, items) => { if (items.length) out.push({ type: "head", key: "head:" + label, label }, ...items); };
-  group("Bots", (bots || []).filter((b) => fold(b.name).startsWith(q)).slice(0, MENTION_LIMITS.bots).map((bot) => ({ type: "bot", key: "bot:" + bot.id, bot })));
+  if (!dir) group("Bots", (bots || []).filter((b) => fold(b.name).startsWith(q)).slice(0, limit("bots")).map((bot) => ({ type: "bot", key: "bot:" + bot.id, bot })));
   if (Array.isArray(files)) {
     if (q) {
       const hits = [
@@ -71,11 +75,11 @@ export function mentionItems({ query = "", bots = [], files = null, chats = null
       const entries = [
         ...view.folders.map((f) => ({ type: "folder", key: "folder:" + f.path, path: f.path, name: f.name, count: f.count })),
         ...view.files.map((f) => ({ type: "file", key: "file:" + f.path, path: f.path, name: f.name })),
-      ].slice(0, MENTION_LIMITS.files);
+      ].slice(0, dir ? MENTION_LIMITS.files : limit("files"));
       group(dir ? "Archivos · " + dir : "Archivos", dir || entries.length ? [...nav, ...entries] : []);
     }
   }
-  if (Array.isArray(chats)) group("Conversaciones", chats.filter((c) => !q || fold(c.title).includes(q)).slice(0, MENTION_LIMITS.chats).map((chat) => ({ type: "chat", key: "chat:" + chat.id, chat })));
+  if (Array.isArray(chats) && !dir) group("Conversaciones", chats.filter((c) => !q || fold(c.title).includes(q)).slice(0, limit("chats")).map((chat) => ({ type: "chat", key: "chat:" + chat.id, chat })));
   return out;
 }
 

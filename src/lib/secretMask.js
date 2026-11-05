@@ -120,7 +120,7 @@ export function findSecrets(text) {
 }
 
 /** «sk-proj-•••••…»: the first 8 characters (never more than half), the rest as •. */
-export function maskSecret(value, { visible = 8, max = 32 } = {}) {
+export function maskSecret(value, { visible = 8, max = 20 } = {}) {
   const v = String(value || "");
   const keep = Math.min(visible, Math.floor(v.length / 2));
   return v.slice(0, keep) + "•".repeat(Math.max(1, Math.min(v.length - keep, max)));
