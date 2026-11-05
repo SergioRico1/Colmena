@@ -162,13 +162,15 @@ export function resolveProgram(program, { envPath = process.env.PATH || process.
  * @returns {Promise<{exitCode, stdout, stderr, truncated, timedOut, seconds}>}
  */
 /** `onOutput(text)` receives the output as it comes (the chat's live view of a command). */
-export function runProgram(file, args, { cwd, timeoutMs = COMMAND_LIMITS.timeoutMs, maxBytes = COMMAND_LIMITS.maxBytes, signal, spawnImpl = spawn, onOutput = null } = {}) {
+/** `env` replaces the minimal environment (the sandbox adds its temp folder); `tree` ends the
+ * whole process tree on a timeout (a sandbox runner starts the program as its child). */
+export function runProgram(file, args, { cwd, env = null, tree = false, timeoutMs = COMMAND_LIMITS.timeoutMs, maxBytes = COMMAND_LIMITS.maxBytes, signal, spawnImpl = spawn, onOutput = null } = {}) {
   return new Promise((resolve, reject) => {
     const started = Date.now();
     let child;
     try {
       child = spawnImpl(file, args, {
-        cwd, env: minimalEnv(), shell: false, windowsHide: true, windowsVerbatimArguments: false, stdio: ["ignore", "pipe", "pipe"],
+        cwd, env: env || minimalEnv(), shell: false, windowsHide: true, windowsVerbatimArguments: false, stdio: ["ignore", "pipe", "pipe"],
       });
     } catch (error) {
       return reject(Error("No se pudo iniciar el programa: " + error.message));
@@ -189,7 +191,16 @@ export function runProgram(file, args, { cwd, timeoutMs = COMMAND_LIMITS.timeout
     };
     child.stdout?.on("data", take(out));
     child.stderr?.on("data", take(err));
-    const kill = () => { try { child.kill(); } catch {} };
+    const kill = () => {
+      // Only the PID Colmena started, with its children (taskkill /T).
+      if (tree && process.platform === "win32" && child.pid && spawnImpl === spawn) {
+        try {
+          spawn(path.win32.join(process.env.SystemRoot || "C:\\Windows", "System32", "taskkill.exe"), ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" }).on("error", () => {});
+          return;
+        } catch {}
+      }
+      try { child.kill(); } catch {}
+    };
     const timer = setTimeout(() => { timedOut = true; kill(); }, timeoutMs);
     timer.unref?.();
     const onAbort = () => kill();
