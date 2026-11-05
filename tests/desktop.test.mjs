@@ -82,9 +82,9 @@ test("a bot set to «Solo sugiere» asks once to use an app", async (t) => {
 });
 
 test("a screenshot in the history counts as a small fixed cost, not as its base64 size", async () => {
-  const { contextSize, CONTEXT } = await import("../server/runtime.mjs");
-  const shot = "data:image/png;base64," + "A".repeat(600000);
+  const { contextSize, contextBudget, CONTEXT } = await import("../server/runtime.mjs");
+  const shot = "data:image/png;base64," + "A".repeat(1_000_000);
   const history = [{ type: "function_call_output", call_id: "l", output: [{ type: "input_text", text: "{}" }, { type: "input_image", image_url: shot }] }];
-  assert.ok(JSON.stringify(history).length > CONTEXT.hardLimit, "raw JSON would trip the limit");
+  assert.ok(JSON.stringify(history).length / CONTEXT.charsPerToken > contextBudget().hardLimit, "raw JSON would trip the limit");
   assert.ok(contextSize(history) < 10000);
 });

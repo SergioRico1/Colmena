@@ -818,6 +818,18 @@ export class ProviderHub {
     if (engine !== "openai" || this.kind || !this.primary || this.primary === "openai") return model;
     return this.equivalent(model, this.primary) || model;
   }
+  /**
+   * {window, maxOutput} of a model, in tokens: the catalogue's for Claude and OpenCode Go (the
+   * answer capped at what the adapters ask for), the ChatGPT account's list when it says it;
+   * null when nobody knows (context.mjs then assumes a default).
+   */
+  modelLimits(model) {
+    const resolved = this.resolveModel(model);
+    const entry = modelEntry(resolved);
+    if (entry) return { window: entry.context, maxOutput: Math.min(entry.maxTokens || 0, 64000) || null };
+    const listed = (this.session?.models || []).find((m) => m.slug === resolved);
+    return listed?.context_window > 0 ? { window: listed.context_window, maxOutput: null } : null;
+  }
   /** Same family on another engine (OpenClaw fallbacks list, by role instead of by name). */
   equivalent(model, engine) {
     const list = this.modelsFor(engine);
