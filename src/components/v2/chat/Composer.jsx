@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, MicOff } from "lucide-react";
-import { DictationHelp, LiveWords, useDictation } from "../../interaction/Voice.jsx";
+import { DictationHelp, EngineTag, LiveWords, useDictation } from "../../interaction/Voice.jsx";
 import PastedCard from "../../room/PastedCard.jsx";
 import { FileCard } from "../../room/common.jsx";
 import { MESSAGE_MAX, dropOverlay } from "../../../lib/useFileDrop.js";
@@ -12,13 +12,17 @@ import { MentionMirror, findMentions } from "../MentionPill.jsx";
 // an OpenAI key and «Pasando tu voz a texto…» after) and send. Files: «+», drop or paste.
 const MAX_S = 120;
 
-export default function Composer({ value, onChange, onKeyDown, onSubmit, placeholder, label, working, onStop, inputRef, inputProps = {}, files = [], onRemoveFile, onInlinePasted, onAttach, attachOpen = null, chips = [], onRemoveChip, mentionBots = [], drop = null, menu = null, above = null, below = null, busy = false, v3 = false, tools = null }) {
+export default function Composer({ value, onChange, onKeyDown, onSubmit, placeholder, label, working, onStop, inputRef, inputProps = {}, files = [], onRemoveFile, onInlinePasted, onAttach, attachOpen = null, chips = [], onRemoveChip, mentionBots = [], drop = null, menu = null, above = null, below = null, busy = false, v3 = false, tools = null, dictationScope = null }) {
   // «@Vera» shows as a pill while you write (MentionMirror behind the textarea).
   const mirror = useRef(null);
   const pills = mentionBots.length > 0 && findMentions(value, mentionBots).length > 0;
   const [since, setSince] = useState(0);
   const [k, setK] = useState(0);
-  const d = useDictation({ onText: (said) => onChange((prev) => (prev && !/\s$/.test(prev) ? prev + " " : prev || "") + said) });
+  // Dictation goes where the caret was (the box is swapped for the live words meanwhile) and
+  // never into another chat: `dictationScope` names the one it belongs to.
+  const ownBox = useRef(null);
+  const box = inputRef || ownBox;
+  const d = useDictation({ onText: (said) => onChange((prev) => (prev && !/\s$/.test(prev) ? prev + " " : prev || "") + said), target: box, scope: dictationScope });
   const rec = d.state === "listening" || d.state === "starting";
   const trans = d.state === "transcribing";
   const live = rec && d.mode === "sistema";
@@ -58,6 +62,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
         <div style={{ position: "relative", maxWidth: "764px", margin: "0 auto" }}>
           {above}
           {d.error ? <DictationHelp problem={d.error} onClose={d.clearError} style={{ margin: "0 0 10px auto", maxWidth: "min(440px, 100%)" }} /> : null}
+          {(rec || trans) && d.where?.fallback ? <p role="note" style={{ margin: "0 0 8px", fontSize: "13px", lineHeight: 1.45, color: "#4A4D57", textAlign: "right" }}>{d.where.note}</p> : null}
           <div style={{ position: "relative", display: "flex", flexDirection: "column", borderRadius: "24px", transition: "background .3s ease", background: rec ? "#12131A" : "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" }}>
             {drop?.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: "24px" }}>{"Suelta aquí para adjuntar"}</div> : null}
             {menu}
@@ -71,12 +76,14 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
                 )}
                 <span style={{ font: "500 14px/1 'Geist Mono', monospace", color: "#FFFFFF" }}>{`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} / 2:00`}</span>
                 {live ? null : <span style={{ fontSize: "13px", color: "#C9CBD3", whiteSpace: "nowrap" }}>{"Escuchando… pulsa para terminar"}</span>}
+                <EngineTag where={d.where} dark note={false} style={{ flex: "none" }} />
                 <button type="button" onClick={d.stop} aria-label="Dejar de dictar" style={{ ...round, background: "#FFFFFF" }}><span aria-hidden="true" style={{ width: "14px", height: "14px", borderRadius: "4px", background: "#12131A" }} /></button>
               </div>
             ) : trans ? (
               <div role="status" style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "62px", padding: "8px 18px", animation: "fade .2s ease-out" }}>
                 <span aria-hidden="true" style={{ width: "18px", height: "18px", borderRadius: "50%", border: "2px solid rgba(18,19,26,.15)", borderTopColor: "#12131A", animation: "spin .8s linear infinite" }} />
                 <span style={{ fontSize: "15.5px", fontWeight: "500", background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2s linear infinite" }}>{"Pasando tu voz a texto…"}</span>
+                <EngineTag where={d.where} note={false} />
               </div>
             ) : <>
               {chipRow}
@@ -84,7 +91,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
               <label style={{ display: "flex", position: "relative", padding: "10px 18px 4px" }}>
                 <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{label}</span>
                 {pills ? <MentionMirror ref={mirror} value={value} bots={mentionBots} style={{ padding: "10px 18px 4px", fontSize: "15.5px", lineHeight: "1.5", fontFamily: "inherit" }} /> : null}
-                <textarea ref={inputRef} rows="2" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
+                <textarea ref={box} rows="2" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
                   onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
                   style={{ position: "relative", flex: "1", minWidth: "0", minHeight: "46px", maxHeight: "200px", padding: 0, border: "0", outline: "none", background: "transparent", fontSize: "15.5px", lineHeight: "1.5", resize: "none", fieldSizing: "content", fontFamily: "inherit", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
               </label>
@@ -98,7 +105,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
                 <div style={{ flex: "1", minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 6px" }}>{tools}</div>
                 {working ? <button type="button" onClick={onStop} aria-label="Detener" title="Detener (Esc)" style={{ ...ghost, width: "38px", height: "38px", borderRadius: "50%" }}><span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "3px", background: "#12131A" }} /></button> : null}
                 {d.available || d.fixable ? (
-                  <button type="button" onClick={d.fixable && d.error ? d.clearError : d.start} aria-label={d.fixable ? "El dictado no está disponible: ver cómo activarlo" : "Dictar"} title={d.fixable ? "Dictado no disponible" : "Dictar (hasta 2 minutos)" + (d.engine ? " · " + d.engine : "")} style={{ ...ghost, width: "38px", height: "38px", borderRadius: "50%", color: d.fixable ? "#A3A6AF" : "#4A4D57" }}>
+                  <button type="button" onClick={d.fixable && d.error ? d.clearError : d.start} aria-label={d.fixable ? "El dictado no está disponible: ver cómo activarlo" : "Dictar"} title={d.fixable ? "Dictado no disponible" : "Dictar (hasta 2 minutos)" + (d.where ? " · " + d.where.where : "")} style={{ ...ghost, width: "38px", height: "38px", borderRadius: "50%", color: d.fixable ? "#A3A6AF" : "#4A4D57" }}>
                     {d.fixable ? <MicOff size={18} strokeWidth={1.9} aria-hidden="true" /> : <Mic size={18} strokeWidth={1.9} aria-hidden="true" />}
                   </button>
                 ) : null}
@@ -117,6 +124,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
     <form onSubmit={onSubmit} {...(drop?.props || {})} style={{ position: "relative", flex: "none", width: "100%", maxWidth: "860px", margin: "0 auto", padding: "6px clamp(20px, 4vw, 44px) 22px" }}>
       {above}
       {d.error ? <DictationHelp problem={d.error} onClose={d.clearError} style={{ margin: "0 0 10px auto", maxWidth: "min(440px, 100%)" }} /> : null}
+          {(rec || trans) && d.where?.fallback ? <p role="note" style={{ margin: "0 0 8px", fontSize: "13px", lineHeight: 1.45, color: "#4A4D57", textAlign: "right" }}>{d.where.note}</p> : null}
       {chipRow}
       {fileRow}
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px", minHeight: "62px", padding: "8px 8px 8px 18px", borderRadius: "31px", transition: "background .3s ease, box-shadow .3s ease", background: rec ? "#12131A" : "#FFFFFF", boxShadow: rec ? "0 20px 50px -20px rgba(18,19,26,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)" }}>
@@ -134,6 +142,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
             )}
             <span style={{ font: "500 14px/1 'Geist Mono', monospace", color: "#FFFFFF" }}>{`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} / 2:00`}</span>
             {live ? null : <span style={{ fontSize: "13px", color: "#C9CBD3", whiteSpace: "nowrap" }}>{"Escuchando… pulsa para terminar"}</span>}
+                <EngineTag where={d.where} dark note={false} style={{ flex: "none" }} />
             <button type="button" onClick={d.stop} aria-label="Dejar de dictar" style={{ ...round, background: "#FFFFFF" }}>
               <span aria-hidden="true" style={{ width: "14px", height: "14px", borderRadius: "4px", background: "#12131A" }} />
             </button>
@@ -142,13 +151,14 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
           <div role="status" style={{ flex: "1", minWidth: "0", height: "46px", display: "flex", alignItems: "center", gap: "12px", animation: "fade .2s ease-out" }}>
             <span aria-hidden="true" style={{ width: "18px", height: "18px", borderRadius: "50%", border: "2px solid rgba(18,19,26,.15)", borderTopColor: "#12131A", animation: "spin .8s linear infinite" }} />
             <span style={{ fontSize: "16px", fontWeight: "500", background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2s linear infinite" }}>{"Pasando tu voz a texto…"}</span>
+                <EngineTag where={d.where} note={false} />
           </div>
         ) : (
           <div style={{ flex: "1", minWidth: "0", display: "flex", alignItems: "center", gap: "8px" }}>
             <label style={{ flex: "1", display: "flex", position: "relative", minWidth: 0 }}>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{label}</span>
               {pills ? <MentionMirror ref={mirror} value={value} bots={mentionBots} style={{ padding: "12px 6px", fontSize: "16px", lineHeight: "1.4", fontFamily: "inherit" }} /> : null}
-              <textarea ref={inputRef} rows="1" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
+              <textarea ref={box} rows="1" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
                 onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
                 style={{ position: "relative", flex: "1", minWidth: "0", minHeight: "46px", maxHeight: "200px", padding: "12px 6px", border: "0", outline: "none", background: "transparent", fontSize: "16px", lineHeight: "1.4", resize: "none", fieldSizing: "content", fontFamily: "inherit", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
             </label>
@@ -165,7 +175,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
               </button>
             ) : null}
             {d.available || d.fixable ? (
-              <button type="button" onClick={d.fixable && d.error ? d.clearError : d.start} aria-label={d.fixable ? "El dictado no está disponible: ver cómo activarlo" : "Dictar con el micrófono"} title={d.fixable ? "Dictado no disponible" : "Dictar (hasta 2 minutos)" + (d.engine ? " · " + d.engine : "")} style={{ ...round, background: "rgba(18,19,26,.05)", color: d.fixable ? "#A3A6AF" : "#3D404A" }}>
+              <button type="button" onClick={d.fixable && d.error ? d.clearError : d.start} aria-label={d.fixable ? "El dictado no está disponible: ver cómo activarlo" : "Dictar con el micrófono"} title={d.fixable ? "Dictado no disponible" : "Dictar (hasta 2 minutos)" + (d.where ? " · " + d.where.where : "")} style={{ ...round, background: "rgba(18,19,26,.05)", color: d.fixable ? "#A3A6AF" : "#3D404A" }}>
                 {d.fixable ? <MicOff size={18} strokeWidth={2} aria-hidden="true" /> : <Mic size={18} strokeWidth={2} aria-hidden="true" />}
               </button>
             ) : null}

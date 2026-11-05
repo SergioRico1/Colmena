@@ -17,6 +17,7 @@ import { dropObservations } from "./verdicts.mjs";
 import { QUEUE_MODES, roomSlug } from "./runtime.mjs";
 import { forkRoom, snoozeUntil } from "./rooms.mjs";
 import { reactionsOf, togglePersonReaction } from "./reactions.mjs";
+import { DOWN_CODES, NOTE_MAX, reactionView, setDownFeedback } from "./feedback.mjs";
 import { registerWorkFileRoutes } from "./workfiles.mjs";
 import { OUTSIDE_NOTE, restoreLine } from "./checkpoints.mjs";
 import { SecretStore, registerSecretRoutes } from "./secrets.mjs";
@@ -44,7 +45,7 @@ import { registerDiagnosticsRoutes } from "./diagnostics.mjs";
 import { registerMemoryImportRoutes } from "./memory-import.mjs";
 import { registerPortraitRoutes } from "./portraits.mjs";
 
-import { Scheduler } from "./scheduler.mjs";
+import { DELIVERY_MODES, Scheduler } from "./scheduler.mjs";
 import { search } from "./search.mjs";
 import { applyOnboarding, ROLES, DAILY_APPS } from "./onboarding.mjs";
 import { registerLearningRoutes } from "./learning-routes.mjs";
@@ -127,9 +128,13 @@ const missionCreate = z
 const automationFields = z.object({
   name: short, botId: short, prompt: z.string().trim().min(1).max(20000), enabled: z.boolean(), trigger: triggerInput,
   notify: z.enum(["siempre", "resultado", "fallo"]), needs: z.array(z.object({ tool: z.enum(TOOL_KEYS), access }).strict()).max(10),
+  // Where each run goes: a new conversation, always the same one, or a room you chose.
+  delivery: z.object({ mode: z.enum(DELIVERY_MODES), missionId: short.nullable().optional() }).strict(),
 });
-const automationCreate = automationFields.partial({ enabled: true, notify: true, needs: true }).strict();
-const automationPatch = automationFields.partial().strict();
+const automationCreate = automationFields.partial({ enabled: true, notify: true, needs: true, delivery: true }).strict();
+// `expectedEditedAt`: the editedAt the editor loaded (null for a rule never edited); a different
+// one means someone else changed the rule meanwhile, and the edit is refused instead of overwriting.
+const automationPatch = automationFields.extend({ expectedEditedAt: z.string().max(40).nullable() }).partial().strict();
 const folderFields = z.object({ path: z.string().trim().min(1).max(1000), label: short, botIds: z.array(short).max(20), access: z.enum(["lee", "escribe"]) });
 const personFields = z.object({ name: short, email: email.nullable(), role: z.string().trim().max(100) });
 
@@ -714,7 +719,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}), ...(m.voice ? { voice: true } : {}),
       // «@» picks of files and conversations (mention-refs.mjs): chips under your message.
       ...(Array.isArray(m.refs) && m.refs.length ? { refs: m.refs.slice(0, 6).map((r) => ({ kind: r.kind, id: r.id ?? null, path: r.path ?? null, label: r.label ?? null })) } : {}),
-      reactions: reactionsOf(m).map((r) => ({ emoji: r.emoji, by: r.by })),
+      reactions: reactionsOf(m).map(reactionView),
       learned: m.learned ? {
         type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1,
         // «Por qué»: the messages or receipts that justify it (learning.mjs whyOf).
@@ -1013,7 +1018,13 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.post("/api/messages/:id/reactions", (req, res) => {
     const { emoji } = check(z.object({ emoji: z.string().trim().min(1).max(16) }).strict(), req.body);
     const updated = togglePersonReaction(store, req.params.id, emoji);
-    res.json({ id: updated.id, reactions: reactionsOf(updated).map((r) => ({ emoji: r.emoji, by: r.by })) });
+    res.json({ id: updated.id, reactions: reactionsOf(updated).map(reactionView) });
+  });
+  // «No me sirve» and why: reason chips and a note on the person's 👎 (feedback.mjs), editable later.
+  app.put("/api/messages/:id/feedback", (req, res) => {
+    const data = check(z.object({ reasons: z.array(z.enum(DOWN_CODES)).max(DOWN_CODES.length).default([]), note: z.string().max(NOTE_MAX).default("") }).strict(), req.body);
+    const updated = setDownFeedback(store, req.params.id, data);
+    res.json({ id: updated.id, reactions: reactionsOf(updated).map(reactionView) });
   });
   app.post("/api/missions/:id/control", async (req, res) => {
     const { action } = check(z.object({ action: z.enum(["pause", "resume", "cancel", "retry", "discard"]) }).strict(), req.body);
@@ -1427,10 +1438,27 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   const ruleBot = (botId) => {
     if (botId !== "atlas") enabledBot(botId);
   };
+  /** A rule's delivery as stored: «sala» needs a conversation that exists; «misma» keeps the one it made. */
+  const ruleDelivery = (input, previous = null) => {
+    if (!input || input.mode === "nueva") return { mode: "nueva", missionId: null };
+    if (input.mode === "misma") return { mode: "misma", missionId: previous?.mode === "misma" ? previous.missionId || null : null };
+    const room = input.missionId ? store.get("missions", input.missionId) : null;
+    if (!room || room.status === "cancelled") throw new HttpError(422, "Esa conversación ya no existe. Elige otra.");
+    if (room.incognito) throw new HttpError(422, "Las rutinas no pueden escribir en un chat de incógnito.");
+    return { mode: "sala", missionId: room.id };
+  };
+  // Monotonic even if the clock goes back, so a stale editor never matches by chance.
+  const editStamp = (previous) => {
+    const t = Date.now();
+    const before = previous ? Date.parse(previous) : NaN;
+    return new Date(Number.isFinite(before) && before >= t ? before + 1 : t).toISOString();
+  };
   const createAutomation = (data) => {
     ruleBot(data.botId);
     const trigger = normalizeTrigger(data.trigger);
-    const rule = { id: id(), name: data.name, botId: data.botId, prompt: data.prompt, enabled: data.enabled ?? true, trigger, notify: data.notify || "resultado", needs: data.needs || defaultNeeds(trigger), createdAt: now(), queue: [] };
+    const delivery = ruleDelivery(data.delivery);
+    const created = now();
+    const rule = { id: id(), name: data.name, botId: data.botId, prompt: data.prompt, enabled: data.enabled ?? true, trigger, notify: data.notify || "resultado", needs: data.needs || defaultNeeds(trigger), delivery, createdAt: created, editedAt: created, anchorAt: created, queue: [] };
     rule.nextRun = scheduler.next(rule);
     if (trigger.type === "vez" && !rule.nextRun) throw Error("Esa fecha ya ha pasado. Elige una fecha futura.");
     rule.state = rule.enabled ? "scheduled" : "paused";
@@ -1475,13 +1503,18 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     });
   });
   app.patch("/api/automations/:id", (req, res) => {
-    const data = check(automationPatch, req.body);
+    const { expectedEditedAt, ...data } = check(automationPatch, req.body);
     const rule = mustGet("automations", req.params.id, "Automatización");
+    if (expectedEditedAt !== undefined && expectedEditedAt !== (rule.editedAt ?? null))
+      throw new HttpError(409, "Esta rutina ha cambiado mientras la editabas. Ábrela otra vez para ver lo último antes de guardar.");
     if (data.botId) ruleBot(data.botId);
-    const changes = { ...data };
+    const changes = { ...data, editedAt: editStamp(rule.editedAt) };
+    if (data.delivery) changes.delivery = ruleDelivery(data.delivery, rule.delivery);
     const enabling = data.enabled === true && !rule.enabled;
     if (data.trigger) {
       changes.trigger = normalizeTrigger(data.trigger);
+      // A new interval starts counting now; the same interval keeps its phase.
+      if (changes.trigger.type === "cada" && (rule.trigger?.type !== "cada" || JSON.stringify(changes.trigger.config) !== JSON.stringify(rule.trigger.config))) changes.anchorAt = now();
       if (changes.trigger.type !== rule.trigger?.type) Object.assign(changes, { seen: [], baselineAt: null, lastEvent: null, queue: [] });
       if (changes.trigger.type === "web" && JSON.stringify(changes.trigger.config) !== JSON.stringify(rule.trigger?.config)) {
         Object.assign(changes, { webHash: null, webTitle: null, webPrice: null, webFailures: 0, baselineAt: null, lastEvent: null, queue: [] });

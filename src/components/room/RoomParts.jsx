@@ -548,7 +548,7 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
   const isQuestion = kind === "question";
   // One card per tool the bot used for this answer (steps[].tools), behind the activity pill.
   const step = kind === "message" && message.stepId ? steps.find((s) => s.id === message.stepId) : null;
-  const [reactions, react] = useReactions(message);
+  const [reactions, react, explain] = useReactions(message);
   // Atlas's face: «duda» while his question or plan waits for you, «feliz» on the final delivery.
   const mood = (isQuestion && approval?.status === "pending") || (kind === "plan" && mission?.status === "awaiting_plan") ? "duda" : message.phase === "synthesis" ? "feliz" : null;
   return (
@@ -567,7 +567,7 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
           const extra = artifacts.find((a) => a.id === aid) || { id: aid, title: "Entregable" };
           return <DeliverableCard key={aid} artifact={extra} variant="room" pressed={openArtifactId === aid} onOpen={() => onOpenArtifact(aid)} />;
         })}
-        <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />
+        <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} explain={explain} />
         <RepliesLink replies={replies} bots={bots} onOpen={onReply} pressed={repliesOpen} />
         {threadSlot}
     </MessageRow>
@@ -1084,7 +1084,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
             <input ref={inputRef} type="text" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", outline: "none", background: "transparent", fontSize: "15px" }} />
           </label>
-          <MicButton onText={appendDictation(setText)} />
+          <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} />
           <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "#FFC93C", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer" }}>
             <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" /></span>
           </button>
@@ -1158,7 +1158,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title="Añadir archivos, herramientas o apps" onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "#12131A" : "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", color: plusOpen ? "#FFFFFF" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
             <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
           </button>
-          <MicButton onText={appendDictation(setText)} size={40} style={{ borderRadius: "50%", background: "rgba(18,19,26,.05)", color: "#3D404A" }} />
+          <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={40} style={{ borderRadius: "50%", background: "rgba(18,19,26,.05)", color: "#3D404A" }} />
           <button type="button" className="rm-focus" aria-label="Mencionar a un bot" title="Mencionar a un bot (@)" onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", font: "600 17px/1 'Geist', sans-serif", color: "#3D404A" }}>{"@"}</button>
           <span style={{ flex: "1", textAlign: "right", fontSize: "12px", color: "#555A68", paddingRight: "4px" }}>
             {text.trim()

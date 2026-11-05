@@ -316,7 +316,7 @@ export default function Main({ query = {} }) {
                   Adjuntar
                   {files.length ? <span key={files.length} className="c-pop" style={{ minWidth: "22px", height: "22px", padding: "0 6px", borderRadius: "11px", background: "#12131A", color: "#FFC93C", font: "600 12px/22px 'Geist Mono', monospace", textAlign: "center" }}>{files.length}</span> : null}
                 </button>
-                <MicButton onText={appendDictation((fn) => { setText(fn); setFormError(null); })} size={44} bordered style={{ borderRadius: "12px", background: "#FFFFFF" }} />
+                <MicButton onText={appendDictation((fn) => { setText(fn); setFormError(null); })} target={area} size={44} bordered style={{ borderRadius: "12px", background: "#FFFFFF" }} />
                 {files.length ? (
                   <button type="button" onClick={() => setFiles([])} aria-label="Quitar los adjuntos" style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "8px", cursor: "pointer", color: "#4A4F5C", marginLeft: "-6px" }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>

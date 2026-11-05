@@ -717,7 +717,7 @@ export default function Chat({ params, query }) {
                     <button type="button" className="rm-focus" aria-label="Adjuntar archivo" title="Adjuntar archivo" onClick={attach} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer" }}>
                       <Plus size={17} strokeWidth={2.2} aria-hidden="true" />
                     </button>
-                    <MicButton onText={appendDictation(setText)} bordered />
+                    <MicButton onText={appendDictation(setText)} target={inputRef} scope={c || "nuevo:" + botId} bordered />
                     <span ref={thinkRef} style={{ position: "relative", display: "flex" }}>
                       <button type="button" className="rm-focus" aria-haspopup="listbox" aria-expanded={thinkOpen ? "true" : "false"} aria-label={`Forma de pensar: ${thinkingLabel}`} title="Cuánto piensa antes de responder" disabled={thinking.busy} onClick={() => setThinkOpen(!thinkOpen)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 12px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "13px" }}>
                         <Brain size={15} strokeWidth={2} aria-hidden="true" />{thinkingLabel}

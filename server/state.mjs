@@ -462,7 +462,9 @@ export function automationView(r, reference = Date.now()) {
     trigger: r.trigger ? { ...r.trigger, config: editorConfig(r.trigger.type, r.trigger.config) } : null, notify: r.notify || "resultado", needs: r.needs || [],
     state: r.state || "scheduled", nextRun: r.nextRun ?? null, lastRun: r.lastRun ?? null, lastStatus: r.lastStatus ?? null,
     subtitle: subtitle(r, new Date(reference)), error: r.error ?? null, lastMissionId: r.lastMissionId ?? null,
-    createdAt: r.createdAt ?? null,
+    createdAt: r.createdAt ?? null, editedAt: r.editedAt ?? null,
+    delivery: { mode: r.delivery?.mode || "nueva", missionId: r.delivery?.missionId ?? null },
+    lastMerged: r.lastMerged || 0,
   };
 }
 

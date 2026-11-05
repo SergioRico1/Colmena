@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Ellipsis, SmilePlus } from "lucide-react";
-import { post } from "../../lib/api.js";
+import { post, put } from "../../lib/api.js";
 import { findBot, useDismiss } from "./common.jsx";
 import { freshness, popIn } from "../../lib/motion.js";
 
@@ -17,24 +17,116 @@ export function isEmoji(value) {
 
 const names = (list) => (list.length > 1 ? list.slice(0, -1).join(", ") + " y " + list.at(-1) : list[0] || "");
 
-/** The message's reactions: what the server says, or the person's click until it confirms. */
+/**
+ * The message's reactions: what the server says, or the person's click until it confirms.
+ * [list, toggle, explain]: `explain(reasons, note)` says why a bot's answer did not help (it
+ * puts the 👎 if it is not there; server/feedback.mjs).
+ */
 export function useReactions(message) {
   const [local, setLocal] = useState(null);
   const server = message.reactions || [];
   const key = JSON.stringify(server);
   useEffect(() => setLocal(null), [key]);
   const list = local || server;
+  // The click on 👎 is a toggle: its reasons wait for it, or they could arrive first and the toggle undo them.
+  const inflight = useRef(Promise.resolve());
   const toggle = useCallback(async (emoji) => {
     const mine = list.some((r) => r.emoji === emoji && r.by === "user");
     setLocal(mine ? list.filter((r) => !(r.emoji === emoji && r.by === "user")) : [...list, { emoji, by: "user" }]);
+    const sent = post("/messages/" + message.id + "/reactions", { emoji });
+    inflight.current = sent.catch(() => {});
     try {
-      const r = await post("/messages/" + message.id + "/reactions", { emoji });
+      const r = await sent;
       setLocal(r.reactions);
     } catch {
       setLocal(null);
     }
   }, [list, message.id]);
-  return [list, toggle];
+  const explain = useCallback(async (reasons, note) => {
+    const rest = list.filter((r) => !(r.emoji === DOWN && r.by === "user"));
+    setLocal([...rest, { emoji: DOWN, by: "user", ...(reasons.length || note ? { reasons, note } : {}) }]);
+    try {
+      await inflight.current;
+      const r = await put("/messages/" + message.id + "/feedback", { reasons, note });
+      setLocal(r.reactions);
+    } catch (error) {
+      setLocal(null);
+      throw error;
+    }
+  }, [list, message.id]);
+  return [list, toggle, explain];
+}
+
+/* ───────────── «No me sirve» and why (server/feedback.mjs) ───────────── */
+
+export const DOWN = "👎";
+export const DOWN_REASONS = [
+  ["no-pedido", "No hizo lo que pedí"], ["datos", "Datos incorrectos"], ["largo", "Demasiado largo"], ["paso", "Se saltó un paso"],
+  ["tono", "Tono"], ["lento", "Lento"], ["otro", "Otro"],
+];
+const REASON = Object.fromEntries(DOWN_REASONS);
+/** The person's 👎 in a list of reactions, with its reasons and note. */
+export const myDown = (list) => list.find((r) => r.emoji === DOWN && r.by === "user") || null;
+/** «Datos incorrectos, Tono» or «Con una nota», for a 👎 that says why. */
+export const downSummary = (r) => (r?.reasons?.length ? r.reasons.map((c) => REASON[c]).filter(Boolean).join(", ") : r?.note ? "Con una nota" : "");
+
+/**
+ * The small popover a 👎 opens: what failed (chips, as many as apply) and an optional note.
+ * Saving with nothing chosen keeps a plain 👎; «Quitar» takes the 👎 away.
+ */
+export function DownReasons({ current = null, onSave, onRemove, onClose, style }) {
+  const [picked, setPicked] = useState(() => current?.reasons || []);
+  const [note, setNote] = useState(() => current?.note || "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const ref = useDismiss(true, onClose);
+  const first = useRef(null);
+  useEffect(() => { first.current?.focus(); }, []);
+  const flip = (code) => setPicked((list) => (list.includes(code) ? list.filter((c) => c !== code) : [...list, code]));
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await onSave(picked, note.trim());
+      onClose();
+    } catch (e) {
+      setError(e.message || "No se pudo guardar.");
+      setBusy(false);
+    }
+  };
+  return (
+    <div ref={ref} role="dialog" aria-label="Por qué no te sirve"
+      onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void save(); } }}
+      style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", left: "0", width: "min(340px, 86vw)", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "14px", boxShadow: "0 14px 34px rgba(18,19,26,.16)", textAlign: "left", ...popIn("top left"), ...style }}>
+      <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        <strong style={{ fontSize: "14px", fontWeight: 600, color: "#12131A" }}>{current?.reasons?.length || current?.note ? "Cambiar por qué no sirve" : "¿Qué ha fallado?"}</strong>
+        <span style={{ fontSize: "12.5px", lineHeight: 1.4, color: "#555A68" }}>Elige lo que aplique. Sirve para que aprenda; puedes cambiarlo luego.</span>
+      </span>
+      <div role="group" aria-label="Motivos" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+        {DOWN_REASONS.map(([code, label], i) => {
+          const on = picked.includes(code);
+          return (
+            <button key={code} ref={i === 0 ? first : null} type="button" className="rm-focus react-chip" aria-pressed={on ? "true" : "false"} onClick={() => flip(code)}
+              style={{ ...chip(on), height: "30px", padding: "0 11px", borderRadius: "15px", fontWeight: on ? 600 : 500 }}>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <span style={{ fontSize: "12.5px", fontWeight: 500, color: "#4A4D57" }}>Una nota <span style={{ fontWeight: 400, color: "#5C606C" }}>(opcional)</span></span>
+        <textarea rows="2" value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="Por ejemplo: la cifra de marzo es de febrero"
+          style={{ padding: "8px 10px", border: "1px solid #DCE0E8", borderRadius: "10px", outline: "none", resize: "vertical", font: "inherit", fontSize: "14px", lineHeight: 1.45, color: "#12131A" }} />
+      </label>
+      {error ? <span role="alert" style={{ fontSize: "12.5px", color: "#B4232A" }}>{error}</span> : null}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {onRemove ? <button type="button" className="rm-focus" aria-label="Quitar «No me sirve»" title="Quitar «No me sirve»" onClick={() => { onRemove(); onClose(); }} style={{ height: "32px", padding: "0 8px", border: 0, borderRadius: "8px", background: "transparent", color: "#4A4D57", fontSize: "13px", whiteSpace: "nowrap", cursor: "pointer" }}>Quitar</button> : null}
+        <span style={{ flex: "1" }} />
+        <button type="button" className="rm-focus" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: "1px solid #DCE0E8", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13px", fontWeight: 500, whiteSpace: "nowrap", cursor: "pointer" }}>Ahora no</button>
+        <button type="button" className="rm-focus" onClick={save} disabled={busy} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", cursor: busy ? "wait" : "pointer" }}>Guardar</button>
+      </div>
+    </div>
+  );
 }
 
 /** Groups by emoji, in order of the first reaction; the person first among who reacted. */
@@ -134,9 +226,19 @@ export function ReactTools({ list, toggle }) {
   );
 }
 
-/** The row of chips under a message: «👍 2», pressed when it is yours; + to add another. */
-export function ReactionRow({ list, toggle, bots, id = "" }) {
+/**
+ * The row of chips under a message: «👍 2», pressed when it is yours; + to add another. On a
+ * bot's answer (`explain`), your 👎 asks why (once, when you put it) and shows the reason after.
+ */
+export function ReactionRow({ list, toggle, bots, id = "", explain = null }) {
   const [open, setOpen] = useState(false);
+  const [why, setWhy] = useState(false);
+  const down = explain ? myDown(list) : null;
+  const had = useRef(!!down);
+  useEffect(() => {
+    if (down && !had.current) setWhy(true);
+    had.current = !!down;
+  }, [!!down]); // eslint-disable-line react-hooks/exhaustive-deps
   const groups = grouped(list, bots);
   const fresh = freshness("react:" + id, groups.map((g) => g.emoji));
   if (!list.length) return null;
@@ -159,6 +261,15 @@ export function ReactionRow({ list, toggle, bots, id = "" }) {
         </button>
         {open ? <ReactionPicker mine={list.filter((r) => r.by === "user").map((r) => r.emoji)} onPick={toggle} onClose={() => setOpen(false)} style={{ left: "0", right: "auto" }} /> : null}
       </span>
+      {down ? (
+        <span style={{ position: "relative", display: "flex" }}>
+          <button type="button" className="rm-focus" onClick={() => setWhy((v) => !v)} aria-expanded={why ? "true" : "false"} aria-haspopup="dialog"
+            title={down.note || undefined} style={{ height: "26px", padding: "0 8px", border: 0, borderRadius: "13px", background: "transparent", color: "#4A4F5C", fontSize: "12.5px", cursor: "pointer" }}>
+            {downSummary(down) ? "No sirve: " + downSummary(down) : "¿Por qué no sirve?"}
+          </button>
+          {why ? <DownReasons current={down} onSave={explain} onRemove={() => toggle(DOWN)} onClose={() => setWhy(false)} /> : null}
+        </span>
+      ) : null}
     </div>
   );
 }
