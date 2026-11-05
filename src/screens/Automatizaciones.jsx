@@ -17,6 +17,7 @@ const TRIGGERS = [
   { id: "dia", label: "Cada día a una hora", desc: "Ej.: los laborables a las 08:00", keys: "dia diario hora mañana laborables cada dia" },
   { id: "semana", label: "Cada semana", desc: "Ej.: los lunes a las 09:00", keys: "semana semanal lunes martes miercoles jueves viernes sabado domingo" },
   { id: "vez", label: "Una sola vez", desc: "En una fecha y hora concretas", keys: "una vez fecha recordatorio dia concreto" },
+  { id: "cada", label: "Cada cierto tiempo", desc: "Cada 15 minutos, cada hora…", keys: "cada minutos horas intervalo repetir frecuencia" },
   { header: true, label: "Cuando pase algo" },
   { id: "correo", label: "Llegue un correo", desc: "De alguien, con un asunto o con adjuntos", keys: "correo email mail factura adjunto remitente buzon" },
   { id: "archivo", label: "Se suba un archivo", desc: "A una carpeta compartida", keys: "archivo carpeta subir pdf documento fichero" },
@@ -39,7 +40,7 @@ const TOOL = {
   erp: { art: "al ERP", chip: "ERP", lee: "leer el ERP", escribe: "escribir en el ERP" },
 };
 const NEEDS_BY_TRIGGER = { correo: [{ tool: "correo", access: "lee" }], archivo: [{ tool: "carpeta", access: "lee" }], evento: [{ tool: "calendario", access: "lee" }], hoja: [{ tool: "hojas", access: "lee" }] };
-const PROBE_LABEL = { dia: "Probar ahora", semana: "Probar ahora", vez: "Probar ahora", correo: "Probar con el último correo", archivo: "Probar con el último archivo", evento: "Probar con el próximo evento", sala: "Probar con el último mensaje", hoja: "Probar con el último cambio", web: "Probar con la última lectura" };
+const PROBE_LABEL = { dia: "Probar ahora", semana: "Probar ahora", vez: "Probar ahora", cada: "Probar ahora", correo: "Probar con el último correo", archivo: "Probar con el último archivo", evento: "Probar con el próximo evento", sala: "Probar con el último mensaje", hoja: "Probar con el último cambio", web: "Probar con la última lectura" };
 
 const fold = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const isCoordinator = (b) => b?.id === "atlas" || /coordin/i.test(b?.role || "");
@@ -84,6 +85,8 @@ function fromAutomation(a) {
     id: a.id, name: a.name || "", botId: a.botId || "atlas", prompt: a.prompt || "", enabled: a.enabled !== false,
     trigger: { type: TRIGGER_META[a.trigger?.type] ? a.trigger.type : "dia", config: a.trigger?.config || {}, sentence: a.trigger?.sentence || "" },
     notify: a.notify || "resultado", needs: a.needs || [],
+    // The version this editor loaded: saving with it never overwrites someone else's newer edit.
+    editedAt: a.editedAt ?? null,
   };
 }
 function blankDraft(extra = {}) {
@@ -272,9 +275,10 @@ export default function Automatizaciones({ query = {} }) {
   const persist = async () => {
     const problem = validate();
     if (problem) { setSaveError(problem); return { ok: false, error: problem }; }
-    const res = await call(() => (isNew ? post("/automations", { ...body(), enabled: draft.enabled }) : patch(`/automations/${encodeURIComponent(draft.id)}`, body())));
+    const res = await call(() => (isNew ? post("/automations", { ...body(), enabled: draft.enabled }) : patch(`/automations/${encodeURIComponent(draft.id)}`, { ...body(), expectedEditedAt: draft.editedAt ?? null })));
     if (!res.ok) return res;
     const created = res.value;
+    if (!isNew) setDraft((d) => ({ ...d, editedAt: created?.editedAt ?? d.editedAt }));
     if (isNew) {
       if (!created?.id) return { ok: false, error: "El servidor no devolvió la automatización creada." };
       setSelId(created.id);

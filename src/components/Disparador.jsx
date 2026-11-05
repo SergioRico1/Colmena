@@ -11,6 +11,7 @@ export const TRIGGER_META = {
   dia: ["Cada día a una hora", "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"],
   semana: ["Cada semana", "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4"],
   vez: ["Una sola vez", "M5 21V4h12l-2 4 2 4H5"],
+  cada: ["Cada cierto tiempo", "M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M12 7v5l3 2"],
   correo: ["Llegue un correo", "M3 5h18v14H3zM3 7l9 6 9-6"],
   archivo: ["Se suba un archivo", "M3 6h7l2 2h9v11H3z"],
   evento: ["Se acerque un evento", "M4 6h16v14H4zM4 10h16M8 14h4"],
@@ -18,7 +19,8 @@ export const TRIGGER_META = {
   hoja: ["Cambie una hoja de cálculo", "M4 4h16v16H4zM4 10h16M10 4v16"],
   web: ["Una página web cambia", "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17M12 3c-2.4 2.5-3.6 5.5-3.6 9s1.2 6.5 3.6 9c2.4-2.5 3.6-5.5 3.6-9S14.4 5.5 12 3z"],
 };
-export const TIME_TRIGGERS = ["dia", "semana", "vez"];
+export const TIME_TRIGGERS = ["dia", "semana", "vez", "cada"];
+const everyText = (s) => (s.cadaUnidad === "minutos" ? Number(s.cadaN) + " minutos" : Number(s.cadaN) === 1 ? "una hora" : Number(s.cadaN) + " horas");
 
 const ZONES = [
   ["Europe/Madrid", "Madrid"],
@@ -65,6 +67,7 @@ export function triggerDefaults(tipo, { folders = [], rooms = [] } = {}) {
     case "dia": return { hora: "08:00", dias: [1, 2, 3, 4, 5], festivo: "saltar", zona };
     case "semana": return { dia: 1, hora: "09:00", cada: 1, zona };
     case "vez": return { fecha: isoDay(tomorrow), hora: "10:00", avisarAntes: true, zona };
+    case "cada": return { cadaN: 1, cadaUnidad: "horas" };
     case "correo": return { buzon: "tu correo", de: "todos", remitentes: [], asunto: "", adjuntos: "igual", entender: true };
     case "archivo": {
       const f = folders[0];
@@ -101,6 +104,7 @@ export function triggerSentence(t, s) {
   const ML = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   if (t === "dia") return "sean las " + s.hora + " " + daysText(s.dias || []);
   if (t === "semana") return "sea " + DN[s.dia] + " a las " + s.hora + (Number(s.cada) !== 1 ? ", cada " + s.cada + " semanas" : "");
+  if (t === "cada") return (Number(s.cadaN) === 1 && s.cadaUnidad !== "minutos" ? "pase " : "pasen ") + everyText(s) + " desde la vez anterior";
   if (t === "vez") {
     const p = (s.fecha || "").split("-").map(Number);
     if (p.length < 3 || !p[0]) return "llegue la fecha que elijas";
@@ -176,6 +180,12 @@ export function nextRuns(t, s, now = new Date()) {
     for (let i = 0; i < 8 && !first; i++) { const c = at(day(i), s.hora); if (c > now && c.getDay() === Number(s.dia)) first = c; }
     const n = Number(s.cada) || 1;
     for (let k = 0; first && k < 3; k++) runs.push(fmt(new Date(first.getFullYear(), first.getMonth(), first.getDate() + k * 7 * n), s.hora));
+  } else if (t === "cada") {
+    const every = (Number(s.cadaN) || 0) * (s.cadaUnidad === "minutos" ? 60000 : 3600000);
+    for (let k = 1; every >= 15 * 60000 && k <= 3; k++) {
+      const c = new Date(now.getTime() + k * every);
+      runs.push(fmt(c, pad(c.getHours()) + ":" + pad(c.getMinutes())));
+    }
   } else if (t === "vez") {
     const p = (s.fecha || "").split("-").map(Number);
     if (p[0]) {
@@ -397,6 +407,19 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               </label>
             </div>
             {zoneSelect}
+          </div>
+        ) : null}
+
+        {t === "cada" ? (
+          <div style={col18}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: "12px" }}>
+              <label style={labelStyle}>{"Cada"}<input type="number" min="1" max="9999" value={s.cadaN} onChange={set("cadaN", true)} style={timeInput} /></label>
+              <div style={col8}>
+                <span style={fieldTitle}>{"Unidad"}</span>
+                <Seg label="Unidad" value={s.cadaUnidad} onPick={(cadaUnidad) => update({ cadaUnidad })} options={[["minutos", "Minutos"], ["horas", "Horas"]]} />
+              </div>
+            </div>
+            {(Number(s.cadaN) || 0) * (s.cadaUnidad === "minutos" ? 1 : 60) < 15 ? <span role="alert" style={{ fontSize: "13px", fontWeight: "600", color: "#B4372A" }}>{"Como poco, cada 15 minutos."}</span> : null}
           </div>
         ) : null}
 

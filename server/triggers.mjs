@@ -8,8 +8,8 @@ import { validateWebUrl, webFetch } from "./web.mjs";
 import { LoopGuard, ROOM_LOOP_GUARD, postGuardNotice } from "./loops.mjs";
 
 // Trigger types and their config mirror design/Disparador.dc.html (class Logic).
-export const TIME_TYPES = new Set(["dia", "semana", "vez"]);
-export const TRIGGER_TYPES = ["dia", "semana", "vez", "correo", "archivo", "evento", "sala", "hoja", "web"];
+export const TIME_TYPES = new Set(["dia", "semana", "vez", "cada"]);
+export const TRIGGER_TYPES = ["dia", "semana", "vez", "cada", "correo", "archivo", "evento", "sala", "hoja", "web"];
 export const CONNECTOR_OF = { correo: "correo", evento: "calendario", hoja: "hojas" };
 export const CONNECTOR_NAMES = {
   correo: "Correo", calendario: "Calendario", carpeta: "Carpeta compartida", hojas: "Hojas de cálculo",
@@ -37,6 +37,7 @@ const configFields = z
     hora: hhmm, zona: text(60), dias: z.array(day).max(7), festivo: z.enum(["saltar", "igual", "siguiente"]),
     semDia: day, semHora: hhmm, semCada: z.union([z.enum(["1", "2", "3", "4"]), z.number().int().min(1).max(4)]),
     vezFecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha no válida (AAAA-MM-DD)."), vezHora: hhmm, vezAviso: z.boolean(),
+    cadaN: z.union([z.string().regex(/^\d{1,4}$/), z.number().int().min(1).max(9999)]), cadaUnidad: z.enum(["minutos", "horas"]),
     buzon: text(254), deModo: z.enum(["todos", "algunos"]), remitentes: z.array(text(254).min(1)).max(20), nuevoRem: text(254),
     asunto: text(200), adjuntos: z.enum(["igual", "si", "pdf"]), entiende: z.boolean(),
     carpeta: text(400), folderId: text(100), subcarpetas: z.boolean(), tipoArchivo: z.enum(["pdf", "hoja", "imagen", "todo"]),
@@ -58,6 +59,7 @@ const DEFAULTS = {
   dia: { hora: "08:00", zona: "Madrid", dias: [1, 2, 3, 4, 5], festivo: "saltar" },
   semana: { semDia: 1, semHora: "09:00", semCada: "1" },
   vez: { vezFecha: "", vezHora: "10:00", vezAviso: true },
+  cada: { cadaN: 1, cadaUnidad: "horas" },
   correo: { buzon: "", deModo: "todos", remitentes: [], asunto: "", adjuntos: "igual", entiende: true },
   archivo: { carpeta: "", folderId: "", subcarpetas: true, tipoArchivo: "todo", nombre: "", quienSube: "todos" },
   evento: { calendario: "personal", eventoFiltro: "todos", eventoPalabra: "", antelacion: "30", unidad: "minutos", laboral: false },
@@ -115,6 +117,12 @@ export function normalizeTrigger(input) {
   if (type === "semana") out.semCada = String(out.semCada);
   if (type === "evento") out.antelacion = String(out.antelacion);
   if (type === "vez" && !out.vezFecha) throw Error("Elige la fecha de la automatización.");
+  if (type === "cada") {
+    out.cadaN = Number(out.cadaN);
+    const minutes = intervalMs(out) / 60000;
+    if (minutes < MIN_EVERY_MINUTES) throw Error("Como poco, cada 15 minutos.");
+    if (minutes > MAX_EVERY_MINUTES) throw Error("Como mucho, cada 168 horas (una semana).");
+  }
   if (type === "correo") out.remitentes = [...new Set(out.remitentes)];
   if (type === "archivo" && !out.carpeta && !out.folderId) throw Error("Elige la carpeta que se vigila.");
   if (type === "hoja" && !out.hoja) throw Error("Elige la hoja de cálculo.");
@@ -128,6 +136,22 @@ export function normalizeTrigger(input) {
   }
   const trigger = { type, config: out };
   return { ...trigger, sentence: sentence(trigger) };
+}
+
+// «Cada N minutos/horas»: fixed-rate runs aligned to an anchor (the rule's creation, or the
+// moment its interval last changed), so downtime coalesces instead of shifting the phase.
+export const MIN_EVERY_MINUTES = 15;
+export const MAX_EVERY_MINUTES = 168 * 60;
+/** Milliseconds between two runs of a «cada» trigger. */
+export function intervalMs(config = {}) {
+  const n = Math.max(1, Number(config.cadaN) || 1);
+  return n * (config.cadaUnidad === "minutos" ? 60000 : 3600000);
+}
+/** «15 minutos», «una hora», «2 horas». */
+export function everyText(config = {}) {
+  const n = Number(config.cadaN) || 1;
+  if (config.cadaUnidad === "minutos") return n === 1 ? "un minuto" : n + " minutos";
+  return n === 1 ? "una hora" : n + " horas";
 }
 
 const DN = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -152,6 +176,7 @@ export function sentence({ type, config }) {
   const s = { ...DEFAULTS[type], ...config };
   if (type === "dia") return "sean las " + s.hora + " " + daysText(s.dias);
   if (type === "semana") return "sea " + DN[s.semDia] + " a las " + s.semHora + (String(s.semCada) !== "1" ? ", cada " + s.semCada + " semanas" : "");
+  if (type === "cada") return (Number(s.cadaN) === 1 ? "pase " : "pasen ") + everyText(s) + " desde la vez anterior";
   if (type === "vez") {
     const p = (s.vezFecha || "").split("-").map(Number);
     if (p.length < 3 || !p[0]) return "llegue la fecha que elijas";
@@ -359,6 +384,13 @@ export function nextRun(trigger, from = new Date(), { holidays = [], anchor = nu
     }
     return first.toISOString();
   }
+  if (trigger.type === "cada") {
+    const every = intervalMs(c);
+    const start = anchor ? Date.parse(anchor) : NaN;
+    if (!Number.isFinite(start)) return new Date(base.getTime() + every).toISOString();
+    const k = Math.max(1, Math.floor((base.getTime() - start) / every) + 1);
+    return new Date(start + k * every).toISOString();
+  }
   if (trigger.type === "vez") {
     const p = String(c.vezFecha || "").split("-").map(Number);
     if (!p[0]) return null;
@@ -409,6 +441,10 @@ export function triggerLabel({ type, config }) {
     const p = String(c.vezFecha).split("-").map(Number);
     return p[0] ? p[2] + " " + MS[p[1] - 1] + ", " + c.vezHora : "Una vez";
   }
+  if (type === "cada") {
+    const n = Number(c.cadaN) || 1;
+    return c.cadaUnidad === "minutos" ? "Cada " + n + " min" : n === 1 ? "Cada hora" : "Cada " + n + " h";
+  }
   return {
     correo: "Cuando llega un correo",
     archivo: "Cuando se sube un archivo",
@@ -429,7 +465,7 @@ export function subtitle(rule, reference = new Date()) {
   else if (rule.state === "running") tail = "En marcha";
   else if (rule.lastRun) {
     const ok = !["blocked", "cancelled", "failed"].includes(rule.lastStatus);
-    const when = !rule.trigger || TIME_TYPES.has(rule.trigger.type) ? dayLabel(rule.lastRun, reference) : capital(ago(rule.lastRun, reference.getTime()));
+    const when = !rule.trigger || (TIME_TYPES.has(rule.trigger.type) && rule.trigger.type !== "cada") ? dayLabel(rule.lastRun, reference) : capital(ago(rule.lastRun, reference.getTime()));
     tail = when + (ok ? " ✓" : " ✗");
   } else if (rule.nextRun) {
     const next = new Date(rule.nextRun);
