@@ -58,7 +58,7 @@ export function registerCodeRoutes(app, { code }) {
 
   app.get("/api/code", async (_req, res) => {
     const engines = await code.catalog();
-    res.json({ projects: code.projects(), engines, models: engines[0].models, efforts: EFFORTS, access: ACCESS });
+    res.json({ projects: code.projects(), engines, models: engines[0].models, efforts: EFFORTS, access: ACCESS, github: code.githubHint() });
   });
   app.post("/api/code/projects", async (req, res) => {
     const body = z.object({ folder: z.string().trim().min(1).max(1000).optional(), clone: z.string().trim().min(1).max(500).optional(), name: z.string().trim().min(1).max(80).optional() }).strict().parse(req.body || {});
@@ -164,6 +164,11 @@ export function registerCodeRoutes(app, { code }) {
     const body = z.object({ watch: z.boolean() }).strict().parse(req.body || {});
     res.json(await code.setPrWatch(id.parse(req.params.id), body.watch));
   });
+  // The person's buttons on GitHub (red lines: never from Bruno): merge with the head-SHA
+  // guard, mark a draft ready, publish Código's review on the PR.
+  app.post("/api/code/tasks/:id/pr/merge", async (req, res) => res.json(await code.mergePr(id.parse(req.params.id))));
+  app.post("/api/code/tasks/:id/pr/ready", async (req, res) => res.json(await code.readyPr(id.parse(req.params.id))));
+  app.post("/api/code/tasks/:id/reviews/:item/publish", async (req, res) => res.json(await code.publishReview(id.parse(req.params.id), { item: id.parse(req.params.item) })));
   // Review before saving, «Ponerse al día» with the base, and Bruno's look at the preview.
   app.post("/api/code/tasks/:id/review", async (req, res) => res.json(await code.review(id.parse(req.params.id))));
   app.post("/api/code/tasks/:id/catch-up", async (req, res) => res.json(await code.catchUp(id.parse(req.params.id))));
