@@ -13,7 +13,7 @@ import { workbookSchema, COLUMN_TYPES, TOTALS, RULES, STYLES } from "./sheets/sp
 // Tool catalogue for bots. Definitions follow the Responses API strict function
 // format; zod schemas re-validate every argument before the runtime dispatches.
 const str = z.string().min(1).max(240);
-export const TRIGGER_KINDS = ["dia", "semana", "vez", "correo", "archivo", "evento", "sala", "hoja"];
+export const TRIGGER_KINDS = ["dia", "semana", "vez", "cada", "correo", "archivo", "evento", "sala", "hoja"];
 /** Hermes names accepted as aliases of the Colmena skill tools. */
 export const TOOL_ALIASES = { skill_view: "read_skill", skills_list: "list_skills" };
 export const DELIVERABLE_KINDS = ["document", "table", "slides", "design", "code", "sheet"];
@@ -364,7 +364,7 @@ const DEFS = {
   propose_automation: {
     type: "function",
     name: "propose_automation",
-    description: "Propone una automatizacion (no la crea): la persona la vera como sugerencia y decide. trigger.type: dia (config {hora:'08:00', dias:[1,2,3,4,5]}), semana ({semDia:1, semHora:'09:00'}), vez ({vezFecha:'2026-11-03', vezHora:'10:00'}), correo, archivo, evento, sala u hoja. prompt: el encargo que se hara cada vez.",
+    description: "Propone una automatizacion (no la crea): la persona la vera como sugerencia y decide. trigger.type: dia (config {hora:'08:00', dias:[1,2,3,4,5]}), semana ({semDia:1, semHora:'09:00'}), vez ({vezFecha:'2026-11-03', vezHora:'10:00'}), cada ({cadaN:2, cadaUnidad:'horas'}; minimo 15 minutos), correo, archivo, evento, sala u hoja. prompt: el encargo que se hara cada vez.",
     strict: false,
     parameters: {
       type: "object",

@@ -66,3 +66,6 @@ public/screens/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Agent worktrees (Claude Code)
+.claude/worktrees/
