@@ -4,11 +4,12 @@ import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
-import { fixture, answer, call } from "./fixtures/runtime-fixture.mjs";
-import { COMPACT_INSTRUCTIONS } from "../server/runtime.mjs";
+import { fixture, answer, call, settle } from "./fixtures/runtime-fixture.mjs";
+import { Store } from "../server/store.mjs";
+import { Runtime, COMPACT_INSTRUCTIONS } from "../server/runtime.mjs";
 import {
   CONTEXT, contextBudget, estimateTokens, compactHistory, compactCut, safeCuts, pruneOutput, isPruned, isColmenaNote, isPersonMessage,
-  SUMMARY_HEAD,
+  SUMMARY_HEAD, NEVER_RAN, OUTCOME_UNKNOWN,
 } from "../server/context.mjs";
 import { spillOutput, spillPreview, spillFolder } from "../server/spill.mjs";
 import { isContextOverflow, stopReason } from "../server/stopped.mjs";
@@ -247,4 +248,48 @@ test("an output too big for the context is spilled to a private file; the model 
   // Pruned later, the marker still says where the whole output is.
   const pruned = pruneOutput(spillPreview(text, where));
   assert.ok(isPruned(pruned) && pruned.includes("la salida completa está en «" + where + "»"));
+});
+
+test("calls left without a result by a close get one on resume: never ran, or outcome unknown; none runs by itself", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "colmena-dangling-"));
+  const first = new Store(directory);
+  first.patch("settings", "main", { model: "fixture", learning: false });
+  const r1 = new Runtime(first, { respond: async () => answer("x") }, null, {});
+  const m = r1.create({ prompt: "Ordena mis archivos", mode: "solo", botIds: ["nora"] });
+  first.patch("missions", m.id, { status: "running" });
+  const stepId = r1.steps(m.id)[0].id;
+  const fc = (id, name) => ({ type: "function_call", name, call_id: id, arguments: JSON.stringify({ url: "https://example.com/" + id }) });
+  first.patch("steps", stepId, {
+    status: "running",
+    history: [{ role: "user", content: "Ordena mis archivos" }, fc("old", "web_fetch"), fc("a", "web_fetch"), fc("b", "list_files"), fc("c", "write_file")],
+    pending: [fc("a", "web_fetch"), fc("b", "list_files"), fc("c", "write_file")],
+    activity: [{ callId: "a", tool: "web_fetch", status: "running" }],
+  });
+  // c waits for an OK: it keeps waiting.
+  first.put("approvals", { id: stepId + ":c", missionId: m.id, stepId, status: "pending", kind: "write" });
+  await r1.shutdown();
+  first.close();
+
+  let fetched = 0;
+  const seen = [];
+  const store = new Store(directory);
+  const runtime = new Runtime(store, { respond: async ({ input }) => { seen.push(input); return answer("Listo"); } }, null, { web: async () => { fetched++; return { url: "u", text: "t" }; } });
+  t.after(async () => { await runtime.shutdown(); store.close(); await rm(directory, { recursive: true, force: true }); });
+  const step = runtime.settleInterrupted(store.get("steps", stepId));
+  assert.equal(store.get("receipts", stepId + ":a").result.error, OUTCOME_UNKNOWN, "it had started: outcome unknown");
+  assert.equal(store.get("receipts", stepId + ":b").result.error, NEVER_RAN, "it never started");
+  assert.equal(store.get("receipts", stepId + ":c"), null, "waiting for an OK: untouched");
+  const orphan = step.history.find((x) => x.type === "function_call_output" && x.call_id === "old");
+  assert.match(orphan.output, /No llegó a ejecutarse/, "a call outside pending gets its output right away");
+  assert.equal(runtime.settleInterrupted(step), step, "idempotent");
+
+  store.remove("approvals", stepId + ":c");
+  runtime.resumeInterrupted();
+  await settle(runtime);
+  assert.equal(fetched, 0, "nothing re-ran on its own");
+  const outs = Object.fromEntries(seen[0].filter((x) => x.type === "function_call_output").map((x) => [x.call_id, x.output]));
+  assert.match(outs.a, /Resultado desconocido: .*Repítela solo si es de lectura o idempotente/);
+  assert.match(outs.b, /No llegó a ejecutarse/);
+  assert.match(outs.c, /No llegó a ejecutarse/);
+  assert.equal(store.get("missions", m.id).status, "completed");
 });

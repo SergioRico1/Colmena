@@ -42,6 +42,7 @@ import { addReaction, removeReaction, swapReaction, reactionNotices, reactionsOf
 import { THINKING_EFFORT, RETRY, retryDelay, UNAVAILABLE_CODE, isTransientError } from "./provider.mjs";
 import {
   CONTEXT, contextBudget, contextSize, estimateTokens, trimHistory, compactHistory, compactCut, pruneOutput, isColmenaNote, isPersonMessage,
+  interruptedResult, unansweredCalls,
 } from "./context.mjs";
 import { spillOutput } from "./spill.mjs";
 import { canCreateImages, createImage, IMAGE_CODE } from "./images.mjs";
@@ -1352,6 +1353,33 @@ export class Runtime {
       seenHints: [...seen, ...fresh.map((h) => h.id)],
     });
   }
+  /**
+   * A step resumed after a cancel, «Reintentar» or a close (DSH agent-loop «unanswered
+   * calls»): every call it chose that has no result gets one instead of running again on its
+   * own — «never ran» when it had not started, «outcome unknown» (retry only what only reads or
+   * is idempotent; otherwise check the real state or ask) when its activity shows it had.
+   * Calls with a receipt (done, «sin confirmar», waiting) or an approval keep their way. A call
+   * of the history outside `pending` with no output gets its output appended right away.
+   */
+  settleInterrupted(step) {
+    const open = unansweredCalls(step.history);
+    if (!open.length) return step;
+    const started = new Set((step.activity || []).filter((e) => e?.callId).map((e) => e.callId));
+    const pending = new Set((step.pending || []).map((c) => c.call_id));
+    const outputs = [];
+    for (const call of open) {
+      const receiptId = step.id + ":" + call.call_id;
+      const receipt = this.store.get("receipts", receiptId);
+      if (pending.has(call.call_id)) {
+        if (receipt || this.store.get("approvals", receiptId)) continue;
+        this.store.put("receipts", { id: receiptId, tool: call.name, status: RECEIPT.done, result: interruptedResult(started.has(call.call_id)), at: now() });
+      } else {
+        const result = receipt?.result !== undefined ? receipt.result : interruptedResult(started.has(call.call_id));
+        outputs.push({ type: "function_call_output", call_id: call.call_id, output: this.modelOutput(step.missionId, step.id, call, result) });
+      }
+    }
+    return outputs.length ? this.store.patch("steps", step.id, { history: [...step.history, ...outputs] }) : step;
+  }
   /** Loop guard: the same call (tool + arguments) failing with the same error LOOP_LIMIT times. */
   countFailure(stepId, call, error) {
     let args = call.arguments;
@@ -1544,6 +1572,9 @@ export class Runtime {
         instructions: instructions(),
       });
     else if (!step.instructions) step = this.store.patch("steps", step.id, { instructions: instructions() });
+    // Cut by a cancel, «Reintentar» or a close (not waiting for an OK): the calls it had
+    // chosen and that never got a result get one now, so it decides again.
+    if (["running", "pending"].includes(step.status)) step = this.settleInterrupted(step);
     let segment = Date.now(), accounted = false;
     this.store.patch("steps", step.id, { status: "running", startedAt: step.startedAt || now() });
     this.store.event(missionId, "bot_started", { botId: bot.id, stepId: step.id, text: bot.name + " está trabajando" });
@@ -2435,7 +2466,8 @@ export class Runtime {
       }
       throw Error("Herramienta no disponible.");
     } catch (error) {
-      // An aborted call leaves no receipt, so it is retried on resume instead of recorded as failed.
+      // An aborted call leaves no receipt: on resume it gets «outcome unknown» (settleInterrupted)
+      // and the bot decides whether to repeat it, instead of it being recorded as failed here.
       if (signal.aborted) throw error;
       // Which fields were wrong, so the bot can fix them in one go (a deck has many).
       const issues = error instanceof z.ZodError ? error.issues.slice(0, 6).map((i) => (i.path.join(".") || "argumentos") + ": " + i.message).join("; ") : "";

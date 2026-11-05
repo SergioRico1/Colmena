@@ -198,3 +198,13 @@ export function compactHistory(history, summary, { tail = CONTEXT.tail, cut = nu
   return [first, ...person, { role: "user", content: SUMMARY_HEAD + summary }, ...history.slice(at)];
 }
 
+// ------------------------------------------------------------------ interrupted calls
+export const NEVER_RAN = "No llegó a ejecutarse: el trabajo se paró antes de empezar esta llamada. Si todavía hace falta, vuelve a pedirla.";
+export const OUTCOME_UNKNOWN = "Resultado desconocido: el trabajo se paró mientras se hacía esta llamada. Repítela solo si es de lectura o idempotente; si pudo cambiar algo (un envío, un archivo, una acción en una web), comprueba antes el estado real o pregunta a la persona.";
+/** The result a call left without one gets on resume (DSH agent-loop «unanswered calls»). */
+export const interruptedResult = (started) => (started ? { error: OUTCOME_UNKNOWN, interrupted: true, uncertain: true } : { error: NEVER_RAN, interrupted: true });
+/** Function calls of a history that have no output in it, in order. */
+export function unansweredCalls(history) {
+  const answered = new Set((history || []).filter((x) => x?.type === "function_call_output").map((x) => x.call_id));
+  return (history || []).filter((x) => x?.type === "function_call" && !answered.has(x.call_id));
+}
