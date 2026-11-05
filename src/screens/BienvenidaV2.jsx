@@ -162,7 +162,7 @@ export default function BienvenidaV2({ query = {} }) {
         {desktop ? <div aria-hidden="true" style={{ position: "fixed", top: 0, left: "110px", right: 0, height: "26px", zIndex: 5, WebkitAppRegion: "drag" }} /> : null}
         <div style={{ minHeight: "100vh", display: "flex", flexWrap: "wrap", background: "#F5F5F2", color: INK }}>
           <aside style={{ flex: "1 1 360px", maxWidth: "460px", display: "flex", flexDirection: "column", gap: "40px", padding: "28px 40px 36px", background: INK, color: "#FFFFFF" }}>
-            <div style={{ height: "11px", display: "flex", alignItems: "center" }}><WindowDots dark inline /></div>
+            <div style={{ height: "20px", display: "flex", alignItems: "center" }}><WindowDots dark inline /></div>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <img src="/colmena-icon-128.png" alt="" width="44" height="44" style={{ display: "block", width: "44px", height: "44px", animation: "breathe 3s ease-in-out infinite" }} />
               <span style={{ font: "600 26px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{"Colmena"}</span>

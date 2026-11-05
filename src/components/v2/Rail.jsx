@@ -23,28 +23,34 @@ const off = { background: "transparent", color: "#4A4D57" };
 
 /** Close · minimise · maximise as the three drawn dots; a glyph shows on hover. */
 /** The window buttons (close, minimise, maximise); `dark` on the dark welcome screens. */
-export function WindowDots({ dark = false, inline = false }) {
+export function WindowDots({ dark = false, inline = false, compact = false }) {
   const api = typeof window !== "undefined" ? window.colmenaWindow : null;
   const [hover, setHover] = useState(false);
   const [state, setState] = useState({ focused: true, maximized: false });
   useEffect(() => api?.onState?.(setState), [api]);
-  const dot = { width: "11px", height: "11px", borderRadius: "50%", background: dark ? "rgba(255,255,255,.16)" : "rgba(18,19,26,.14)" };
+  // 14 px dots inside 20 px buttons: easy to see and to hit, 8 px apart. `compact` (the
+  // folded sidebar, 44 px of room): 12 px dots in 14 px buttons.
+  const size = compact ? 12 : 14, box = (compact ? 14 : 20) + "px";
+  const dot = { width: size + "px", height: size + "px", borderRadius: "50%", background: dark ? "rgba(255,255,255,.16)" : "rgba(18,19,26,.14)" };
+  const row = { display: "flex", alignItems: "center", gap: "2px", height: box, margin: compact ? "0 -1px" : "0 -3px", marginBottom: inline ? "0" : "10px" };
   if (!api) {
     return (
-      <span aria-hidden="true" title="Zona de los botones de la ventana" style={{ display: "flex", gap: "6px", height: "14px", marginBottom: inline ? "0" : "14px" }}>
-        <span style={dot} /><span style={dot} /><span style={dot} />
+      <span aria-hidden="true" title="Zona de los botones de la ventana" style={row}>
+        {[0, 1, 2].map((i) => <span key={i} style={{ width: box, height: box, display: "grid", placeItems: "center" }}><span style={dot} /></span>)}
       </span>
     );
   }
-  const glyph = { width: "7px", height: "7px", fill: "none", stroke: "#12131A", strokeWidth: 3, strokeLinecap: "round", opacity: hover ? 0.7 : 0, transition: "opacity .12s ease" };
+  const glyph = { width: "9px", height: "9px", fill: "none", stroke: "#12131A", strokeWidth: 2.6, strokeLinecap: "round", opacity: hover ? 0.7 : 0, transition: "opacity .12s ease" };
   const button = (label, onClick, color, path) => (
     <button type="button" tabIndex={-1} aria-label={label} title={label} onClick={onClick}
-      style={{ ...dot, padding: 0, border: 0, display: "grid", placeItems: "center", cursor: "pointer", WebkitAppRegion: "no-drag", background: hover && state.focused ? color : dot.background, transition: "background .12s ease" }}>
-      <svg viewBox="0 0 10 10" style={glyph} aria-hidden="true">{path}</svg>
+      style={{ width: box, height: box, padding: 0, border: 0, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer", WebkitAppRegion: "no-drag" }}>
+      <span style={{ ...dot, display: "grid", placeItems: "center", background: hover && state.focused ? color : dot.background, transition: "background .12s ease" }}>
+        <svg viewBox="0 0 10 10" style={glyph} aria-hidden="true">{path}</svg>
+      </span>
     </button>
   );
   return (
-    <span role="group" aria-label="Ventana" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ display: "flex", gap: "6px", height: "14px", marginBottom: inline ? "0" : "14px", WebkitAppRegion: "no-drag" }}>
+    <span role="group" aria-label="Ventana" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ ...row, WebkitAppRegion: "no-drag" }}>
       {button("Cerrar", () => api.close(), "#FFC93C", <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" />)}
       {button("Minimizar", () => api.minimize(), "rgba(18,19,26,.28)", <path d="M2 5h6" />)}
       {button(state.maximized ? "Restaurar" : "Maximizar", () => api.toggleMaximize(), "rgba(18,19,26,.28)", <path d="M2.5 5h5M5 2.5v5" />)}
