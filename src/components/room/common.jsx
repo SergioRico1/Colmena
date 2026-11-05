@@ -2,6 +2,18 @@ import { BotPresence, PersonPresence } from "../v2/Presence.jsx";
 import WorkingDots from "./Dots.jsx";
 import { useEffect, useRef } from "react";
 import { avatarStyle, initial, faceOf } from "../../lib/bots.js";
+import { navigate } from "../../lib/router.jsx";
+
+/** « · Ver en Código» after a quiet line that points into the app (a task handed to Código). */
+export function NoteLink({ link }) {
+  if (!link || typeof link.href !== "string" || !link.href.startsWith("/codigo/")) return null;
+  return (
+    <>
+      {" · "}
+      <a href={link.href} className="rm-focus" onClick={(e) => { e.preventDefault(); navigate(link.href); }} style={{ fontWeight: "600", color: "#1F4FD1" }}>{link.label || "Abrir"}</a>
+    </>
+  );
+}
 
 // Shared pieces for Chat, Sala, En directo and Debate. Every style here is
 // copied from design/Chat|Sala|EnVivo|Debate.dc.html.

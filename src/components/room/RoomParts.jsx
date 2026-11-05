@@ -18,7 +18,7 @@ import { asQuote, UserText } from "./SelectionPopup.jsx";
 import { usePanelWidth } from "../../lib/usePanelWidth.jsx";
 import { ago, roomUrl, time } from "../../lib/format.js";
 import { navigate } from "../../lib/router.jsx";
-import { BotAvatar, UserAvatar, FileChip, ErrorLine, Dots, MentionText, dayLabel, findBot, useDismiss, popoverStyle, popoverItem } from "./common.jsx";
+import { BotAvatar, UserAvatar, FileChip, ErrorLine, Dots, MentionText, NoteLink, dayLabel, findBot, useDismiss, popoverStyle, popoverItem } from "./common.jsx";
 import PastedCard from "./PastedCard.jsx";
 import Markdown, { plain } from "./Markdown.jsx";
 import QuestionCard from "./QuestionCard.jsx";
@@ -712,6 +712,7 @@ function ActivityLine({ run, bot }) {
         {bot ? <strong style={{ color: "#12131A" }}>{bot.name + " "}</strong> : null}
         {text(last)}
         {last.at ? <span style={{ color: "#555A68" }}>{" · " + time(last.at)}</span> : null}
+        <NoteLink link={last.link} />
       </p>
     );
   }
@@ -726,7 +727,7 @@ function ActivityLine({ run, bot }) {
       </p>
       {open ? (
         <ol style={{ margin: "4px 0 0", padding: "0 0 0 70px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "13px", color: "#4A4F5C" }}>
-          {run.map((m, k) => <li key={m.id || k}>{text(m)}{m.at ? <span style={{ color: "#555A68" }}>{" · " + time(m.at)}</span> : null}</li>)}
+          {run.map((m, k) => <li key={m.id || k}>{text(m)}{m.at ? <span style={{ color: "#555A68" }}>{" · " + time(m.at)}</span> : null}<NoteLink link={m.link} /></li>)}
         </ol>
       ) : null}
     </div>

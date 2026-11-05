@@ -32,7 +32,7 @@ import { failSent, showSent, unshowSent, useAction, useStore } from "../lib/stor
 import { navigate } from "../lib/router.jsx";
 import { olderOf, threadOf } from "../lib/threads.js";
 import { pickFiles, post } from "../lib/api.js";
-import { findBot } from "../components/room/common.jsx";
+import { NoteLink, findBot } from "../components/room/common.jsx";
 import { useRoom } from "../components/room/useRoom.js";
 import { useMentions } from "../components/room/Mentions.jsx";
 import { plain } from "../components/room/Markdown.jsx";
@@ -499,7 +499,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         );
       }
       case "secret": return <SecretLine message={m} approval={row.approval} bots={bots} />;
-      case "note": return <p style={{ margin: "0", textAlign: "center", fontSize: "13px", color: "#6B6F7A" }}>{plain(m.text)}</p>;
+      case "note": return <p style={{ margin: "0", textAlign: "center", fontSize: "13px", color: "#6B6F7A" }}>{plain(m.text)}<NoteLink link={m.link} /></p>;
       case "question": return row.a?.status === "pending"
         ? <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />
         : <QuestionCard approval={row.a} text={m.text} bots={bots} variant="chat" />;
