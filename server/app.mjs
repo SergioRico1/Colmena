@@ -3,6 +3,7 @@ import { isYes, isNo } from "./appactions.mjs";
 
 import { CHAT_PAGE, MAX_PAGE, ROOM_PAGE, conversationMap, historyPage, stepsForPage, withoutSaidText } from "./history.mjs";
 import { createLiveCoalescer } from "./live-coalescer.mjs";
+import { createLiveSnapshot } from "./live-snapshot.mjs";
 import { commandOutput } from "./command-output.mjs";
 import { branchPoints, openBranch, switchTo, visibleMessages } from "./branches.mjs";
 import { QUEUE_TEXT_MAX, deliverNext, editQueued, enqueue, moveQueued, queueOf, queueView, takeQueued, watchQueues } from "./queue.mjs";
@@ -416,6 +417,12 @@ export function createApp({ store, runtime, session, scheduler, connections, get
 
   // SSE: coalesced {type:'changed', kinds} + runtime live events passed through.
   const LIVE = new Set(["delta", "activity", "step_done", "notify"]);
+  // Each live step's text so far (server/live-snapshot.mjs): a stream that reconnects starts with it.
+  const liveText = createLiveSnapshot();
+  app.locals.liveText = liveText;
+  store.listeners.add((event) => {
+    if (LIVE.has(event?.type) || (event?.type === "completed" && event.seq !== undefined)) liveText.apply(event);
+  });
   app.get("/api/events", (req, res) => {
     res.set({ "Content-Type": "text/event-stream", Connection: "keep-alive" });
     res.flushHeaders();
@@ -423,6 +430,9 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const kinds = new Set();
     let timer = null;
     const write = (event) => res.write("data: " + JSON.stringify(event) + "\n\n");
+    // First frame: the text of every step still writing, which replaces the browser's copy;
+    // the pieces after it (this same tick on, through `send`) append to it.
+    write({ type: "live_snapshot", steps: liveText.snapshot() });
     // Streamed text and activity go out in ~50 ms windows (server/live-coalescer.mjs).
     const live = createLiveCoalescer(write);
     // Messages and steps travel whole (OpenClaw-style push): the open room applies them at

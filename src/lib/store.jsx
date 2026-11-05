@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { addUnsent, removeUnsent } from "./unsent.js";
 import { api } from "./api.js";
+import { applyDeltas, applyLiveSnapshot, queueDelta } from "./liveText.js";
 import { useHiddenVersion, visible } from "./undoToast.js";
 
 // Global data layer: /api/state snapshot + SSE invalidation + live text deltas.
@@ -60,11 +61,7 @@ export function StoreProvider({ children }) {
     if (!deltas.current.size) return;
     const batch = [...deltas.current];
     deltas.current.clear();
-    setLive((all) => {
-      const next = { ...all };
-      for (const [stepId, d] of batch) next[stepId] = { botId: d.botId, mission: d.mission, text: (d.reset ? "" : all[stepId]?.text || "") + d.text };
-      return next;
-    });
+    setLive((all) => applyDeltas(all, batch));
     setActivity((all) => {
       const next = { ...all };
       for (const [, d] of batch) next[d.botId] = { verb: all[d.botId]?.verb === "programando" ? "programando" : "escribiendo", mission: d.mission, at: Date.now() };
@@ -131,16 +128,19 @@ export function StoreProvider({ children }) {
           window.dispatchEvent(new CustomEvent("colmena:browser_frame", { detail: event }));
           return;
         }
+        if (event.type === "live_snapshot") {
+          // First frame of every stream: what each step still writing has said so far. It
+          // replaces the copy here (the pieces sent while the stream was down come back);
+          // the deltas waiting for a frame are already in it.
+          deltas.current.clear();
+          setLive((all) => applyLiveSnapshot(all, event.steps));
+          return;
+        }
         if (event.type === "delta") {
           // At most one repaint per frame however many deltas arrive (OpenClaw); a reset
           // (a retry, or a part of the answer already said in the room) applies at once.
           const queue = deltas.current;
-          const prev = queue.get(event.stepId);
-          queue.set(event.stepId, {
-            botId: event.botId, mission: event.mission,
-            reset: event.reset || prev?.reset || false,
-            text: event.reset ? event.text || "" : (prev?.text || "") + (event.text || ""),
-          });
+          queue.set(event.stepId, queueDelta(queue.get(event.stepId), event));
           if (event.reset) flushDeltas();
           else if (!frame.current) frame.current = (typeof requestAnimationFrame === "function" && document.visibilityState !== "hidden" ? requestAnimationFrame : (fn) => setTimeout(fn, 16))(flushDeltas);
           return;
