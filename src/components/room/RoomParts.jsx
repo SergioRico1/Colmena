@@ -547,7 +547,7 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
   const isQuestion = kind === "question";
   // One card per tool the bot used for this answer (steps[].tools), behind the activity pill.
   const step = kind === "message" && message.stepId ? steps.find((s) => s.id === message.stepId) : null;
-  const [reactions, react] = useReactions(message);
+  const [reactions, react, explain] = useReactions(message);
   // Atlas's face: «duda» while his question or plan waits for you, «feliz» on the final delivery.
   const mood = (isQuestion && approval?.status === "pending") || (kind === "plan" && mission?.status === "awaiting_plan") ? "duda" : message.phase === "synthesis" ? "feliz" : null;
   return (
@@ -566,7 +566,7 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
           const extra = artifacts.find((a) => a.id === aid) || { id: aid, title: "Entregable" };
           return <DeliverableCard key={aid} artifact={extra} variant="room" pressed={openArtifactId === aid} onOpen={() => onOpenArtifact(aid)} />;
         })}
-        <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />
+        <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} explain={explain} />
         <RepliesLink replies={replies} bots={bots} onOpen={onReply} pressed={repliesOpen} />
         {threadSlot}
     </MessageRow>

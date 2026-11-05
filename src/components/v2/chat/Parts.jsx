@@ -8,7 +8,7 @@ import { groupTools, headline } from "../../room/ToolCards.jsx";
 import { artifactMeta } from "../../room/DeliverableCard.jsx";
 import { UserText } from "../../room/SelectionPopup.jsx";
 import { copyText } from "../../room/common.jsx";
-import { useReactions } from "../../room/Reactions.jsx";
+import { DOWN, DownReasons, downSummary, myDown, useReactions } from "../../room/Reactions.jsx";
 import { BotPresence } from "../Presence.jsx";
 import { BotMark } from "./Mark.jsx";
 import { BranchPicker } from "./Versions.jsx";
@@ -157,8 +157,15 @@ const ACTION_ICONS = {
  */
 export function AnswerActions({ message, bot, onRetry = null, onEditAsk = null, branch = null, onVersion = null, versionDisabled = false }) {
   const [copied, setCopied] = useState(false);
-  const [reactions, toggle] = useReactions(message);
+  const [reactions, toggle, explain] = useReactions(message);
   const mine = (emoji) => reactions.some((r) => r.emoji === emoji && r.by === "user");
+  // «No me sirve» asks why in a small popover (server/feedback.mjs); pressed again, it opens it to change or take it back.
+  const [why, setWhy] = useState(false);
+  const down = myDown(reactions);
+  const onDown = () => {
+    if (!down) void toggle(DOWN);
+    setWhy((v) => !v || !down);
+  };
   if (!message?.text) return branch ? <BranchPicker branch={branch} disabled={versionDisabled} onShow={onVersion} /> : null;
   const pressed = (on) => (on ? { background: "#F1F1EC", color: "#12131A" } : {});
   return (
@@ -168,7 +175,11 @@ export function AnswerActions({ message, bot, onRetry = null, onEditAsk = null, 
       {onRetry ? <button type="button" className="rm-focus" aria-label="Volver a hacer" title="Volver a hacer" onClick={onRetry} style={ICON}><Glyph d={ACTION_ICONS.again} /></button> : null}
       {onEditAsk ? <button type="button" className="rm-focus" aria-label="Editar mi petición" title="Editar mi petición" onClick={onEditAsk} style={ICON}><Glyph d={ACTION_ICONS.edit} /></button> : null}
       <button type="button" className="rm-focus" aria-label="Útil" title="Útil" aria-pressed={mine("👍") ? "true" : "false"} onClick={() => toggle("👍")} style={{ ...ICON, ...pressed(mine("👍")) }}><Glyph d={ACTION_ICONS.up} /></button>
-      <button type="button" className="rm-focus" aria-label="No me sirve" title="No me sirve" aria-pressed={mine("👎") ? "true" : "false"} onClick={() => toggle("👎")} style={{ ...ICON, ...pressed(mine("👎")) }}><Glyph d={ACTION_ICONS.down} /></button>
+      <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+        <button type="button" className="rm-focus" aria-label="No me sirve" title={down && downSummary(down) ? "No me sirve: " + downSummary(down) : "No me sirve"} aria-pressed={down ? "true" : "false"} aria-expanded={why ? "true" : "false"} aria-haspopup="dialog" onClick={onDown} style={{ ...ICON, ...pressed(!!down) }}><Glyph d={ACTION_ICONS.down} /></button>
+        {down && downSummary(down) && !why ? <button type="button" className="rm-focus" onClick={() => setWhy(true)} title={down.note || undefined} style={{ height: "28px", padding: "0 8px", border: 0, borderRadius: "8px", background: "transparent", color: "#5C606C", fontSize: "12.5px", cursor: "pointer" }}>{downSummary(down)}</button> : null}
+        {why ? <DownReasons current={down} onSave={explain} onRemove={down ? () => toggle(DOWN) : null} onClose={() => setWhy(false)} /> : null}
+      </span>
       {branch && branch.count > 1 ? <span style={{ marginLeft: "8px" }}><BranchPicker branch={branch} disabled={versionDisabled} onShow={onVersion} /></span> : null}
     </div>
   );

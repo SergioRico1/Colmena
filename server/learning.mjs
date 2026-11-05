@@ -13,6 +13,7 @@ import {
 import { normalizeTrigger } from "./triggers.mjs";
 import { forget, forgetHash, isForgotten } from "./forgotten.mjs";
 import { observeMission, refreshObservations, missionEnding, isCorrection } from "./verdicts.mjs";
+import { feedbackCorrections } from "./feedback.mjs";
 
 export { containsSecret, forgetHash, isForgotten };
 
@@ -272,7 +273,9 @@ export function personCorrections(store, mission) {
   const followups = own.slice(1).map((m) => m.text).filter((t) => !mission.conversation || isCorrection(t));
   const hints = store.where("thread", "missionId", mission.id).filter((t) => t.from === "user").map((t) => t.text);
   const plans = store.where("approvals", "missionId", mission.id).filter((a) => a.kind === "plan" && a.note).map((a) => a.note);
-  return [...followups, ...hints, ...plans].map((t) => String(t).slice(0, 1500)).slice(-10);
+  // «No me sirve» with a reason: what she said was wrong with an answer (feedback.mjs).
+  const answers = feedbackCorrections(store, mission.id).map((f) => f.text);
+  return [...followups, ...hints, ...plans, ...answers].map((t) => String(t).slice(0, 1500)).slice(-10);
 }
 
 /** Actions of this bot the person stopped with a reason (newest first): the real «why not». */
@@ -292,6 +295,10 @@ export function recentCorrections(store, botId, exceptMissionId = null, { days =
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   for (const m of missions) {
     const own = store.where("messages", "missionId", m.id).filter((x) => x.role === "user" && typeof x.text === "string");
+    for (const f of feedbackCorrections(store, m.id).reverse()) {
+      out.push({ id: f.id, missionId: m.id, texto: f.text.slice(0, 600) });
+      if (out.length >= limit) return out;
+    }
     for (const x of own.slice(1).reverse()) {
       if (m.conversation && !isCorrection(x.text)) continue;
       out.push({ id: x.id, missionId: m.id, texto: String(x.text).replace(/\s+/g, " ").trim().slice(0, 600) });

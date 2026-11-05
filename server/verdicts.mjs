@@ -15,6 +15,7 @@ import { primaryBot, usedSkills, toolOutcomes, tokens, jaccard } from "./learnin
 import { activateSkill } from "./skills.mjs";
 import { writeSoul } from "./soul.mjs";
 import { forget } from "./forgotten.mjs";
+import { REASON_LABEL, downReasonsOf } from "./feedback.mjs";
 
 export const VERDICTS = ["ayudo", "empeoro", "sin-efecto", "dudoso"];
 export const VERDICT_LABELS = Object.freeze({ ayudo: "Ayudó", empeoro: "Empeoró", "sin-efecto": "Sin efecto observado", dudoso: "Dudoso" });
@@ -75,9 +76,12 @@ export function missionSignals(store, missionId) {
     for (const call of (step.history || []).filter((x) => x.type === "function_call"))
       toolMs += store.get("receipts", step.id + ":" + call.call_id)?.ms || 0;
   const spent = store.where("usage", "missionId", missionId).filter((u) => u.stepId).reduce((n, u) => n + (u.tokens || 0), 0);
+  // «No me sirve» with a reason (feedback.mjs): which reasons, and on how many answers.
+  const down = downReasonsOf(messages);
   const signals = {
     ending, corrections, denials: denied.length, reasons: denied.filter((a) => String(a.denyReason || "").trim()).length, approved,
-    positive, negative, toolFailures: Math.max(0, toolFailures), stuckRounds, guards, providerRetries, toolMs, tokens: spent,
+    positive, negative, downReasons: down.codes, downReasoned: down.reasoned,
+    toolFailures: Math.max(0, toolFailures), stuckRounds, guards, providerRetries, toolMs, tokens: spent,
   };
   signals.outcome = outcomeOf(signals);
   return signals;
@@ -87,7 +91,8 @@ export function missionSignals(store, missionId) {
 export function outcomeOf(s) {
   if (!s.ending || s.ending === "limitada") return null;
   if (["fallida", "cancelada"].includes(s.ending)) return "mal";
-  if (s.corrections || s.denials || s.guards || s.toolFailures >= 3 || s.stuckRounds >= 2 || (s.negative && !s.positive)) return "mal";
+  // A 👎 that says why weighs as a correction, even next to a 👍 on another answer.
+  if (s.corrections || s.denials || s.guards || s.toolFailures >= 3 || s.stuckRounds >= 2 || (s.negative && !s.positive) || s.downReasoned) return "mal";
   if (s.positive || s.approved) return "bien";
   return "regular";
 }
@@ -256,7 +261,8 @@ export function computeVerdict(store, kind, targetId) {
   const bad = obs.filter((o) => o.outcome === "mal").length, good = obs.filter((o) => o.outcome === "bien").length;
   const summary = `${n} ${n === 1 ? "tarea medida" : "tareas medidas"}: ${good} bien, ${n - good - bad} sin quejas, ${bad} con problemas` +
     (bn ? ` · antes, ${Math.round(mean(base.map((b) => b.score)) * 100)} % de acierto en ${bn}` : " · sin referencia de antes") +
-    (Math.abs(saving) >= 0.3 ? (saving > 0 ? " · más rápido" : " · más lento") : "");
+    (Math.abs(saving) >= 0.3 ? (saving > 0 ? " · más rápido" : " · más lento") : "") +
+    topReason(obs);
   const record = {
     id: kind + ":" + targetId, kind, targetId, botId: obs[0].botId, value, confidence, hint: hintOf(store, kind, target, obs),
     n, baseline: bn, delta: delta === null ? null : Math.round(delta * 100) / 100, summary, updatedAt: now(),
@@ -269,6 +275,15 @@ export function computeVerdict(store, kind, targetId) {
   store.patch(kindOf, targetId, { verdict: view, consolidated, ...(consolidated && !target.consolidatedAt ? { consolidatedAt: now() } : {}) });
   if (value === "empeoro" && confidence !== "baja") proposeRevert(store, kind, store.get(kindOf, targetId), record);
   return record;
+}
+
+/** « · lo que más se repite: Datos incorrectos (3)» from the 👎 reasons of the observed missions, or "". */
+function topReason(obs) {
+  const count = new Map();
+  for (const o of obs) for (const c of o.signals?.downReasons || []) count.set(c, (count.get(c) || 0) + 1);
+  const [code, n] = [...count].sort((a, b) => b[1] - a[1])[0] || [];
+  if (!code) return "";
+  return " · lo que más se repite al decir que no sirve: " + (REASON_LABEL[code] || code) + (n > 1 ? " (" + n + ")" : "");
 }
 
 /** Verdicts of a bot (or all), newest first, with labels for the UI. */

@@ -15,6 +15,7 @@ import { dropObservations } from "./verdicts.mjs";
 import { QUEUE_MODES, roomSlug } from "./runtime.mjs";
 import { forkRoom, snoozeUntil } from "./rooms.mjs";
 import { reactionsOf, togglePersonReaction } from "./reactions.mjs";
+import { DOWN_CODES, NOTE_MAX, reactionView, setDownFeedback } from "./feedback.mjs";
 import { registerWorkFileRoutes } from "./workfiles.mjs";
 import { OUTSIDE_NOTE, restoreLine } from "./checkpoints.mjs";
 import { SecretStore, registerSecretRoutes } from "./secrets.mjs";
@@ -701,7 +702,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       // What a notice is about (watch.mjs): the mails, events or messages, for its «Fuentes».
       ...(Array.isArray(m.sources) && m.sources.length ? { sources: m.sources.slice(0, 6).map((s) => ({ id: s.id ?? null, hilo: s.hilo ?? null, fuente: s.fuente ?? null, de: s.de ?? null, titulo: s.titulo ?? null, asunto: s.asunto ?? null, fecha: s.fecha ?? null, cuenta: s.cuenta ?? null, url: s.url ?? null })) } : {}),
       ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}), ...(m.voice ? { voice: true } : {}),
-      reactions: reactionsOf(m).map((r) => ({ emoji: r.emoji, by: r.by })),
+      reactions: reactionsOf(m).map(reactionView),
       learned: m.learned ? {
         type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1,
         // «Por qué»: the messages or receipts that justify it (learning.mjs whyOf).
@@ -998,7 +999,13 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.post("/api/messages/:id/reactions", (req, res) => {
     const { emoji } = check(z.object({ emoji: z.string().trim().min(1).max(16) }).strict(), req.body);
     const updated = togglePersonReaction(store, req.params.id, emoji);
-    res.json({ id: updated.id, reactions: reactionsOf(updated).map((r) => ({ emoji: r.emoji, by: r.by })) });
+    res.json({ id: updated.id, reactions: reactionsOf(updated).map(reactionView) });
+  });
+  // «No me sirve» and why: reason chips and a note on the person's 👎 (feedback.mjs), editable later.
+  app.put("/api/messages/:id/feedback", (req, res) => {
+    const data = check(z.object({ reasons: z.array(z.enum(DOWN_CODES)).max(DOWN_CODES.length).default([]), note: z.string().max(NOTE_MAX).default("") }).strict(), req.body);
+    const updated = setDownFeedback(store, req.params.id, data);
+    res.json({ id: updated.id, reactions: reactionsOf(updated).map(reactionView) });
   });
   app.post("/api/missions/:id/control", async (req, res) => {
     const { action } = check(z.object({ action: z.enum(["pause", "resume", "cancel", "retry", "discard"]) }).strict(), req.body);
