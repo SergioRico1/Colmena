@@ -49,6 +49,42 @@ export function draftFields(data) {
   };
 }
 
+/**
+ * Who is in a Gmail thread and how it is called, from a thread read (Composio's
+ * GMAIL_FETCH_MESSAGE_BY_THREAD_ID, whole or cut to a `preview`): the addresses in its From,
+ * To and Cc (headers only, never the bodies: an address written in an email is not a person
+ * of the thread) and its thread and message ids, as Gmail links use them.
+ */
+export function threadParty(data) {
+  const addresses = new Set(), ids = new Set();
+  const add = (v) => { for (const m of String(v ?? "").matchAll(/[A-Za-z0-9._%+'-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)) addresses.add(m[0].toLowerCase()); };
+  const id = (v) => { if (typeof v === "string" && /^[0-9a-f]{10,24}$/i.test(v)) ids.add(v.toLowerCase()); };
+  const PEOPLE = /^(sender|from|to|cc|recipient|recipients|reply_?to)$/i;
+  const walk = (o, depth = 0) => {
+    if (!o || typeof o !== "object" || depth > 8) return;
+    if (Array.isArray(o)) { for (const x of o) walk(x, depth + 1); return; }
+    // A header list: [{name: "From", value: "Ana <ana@x.es>"}].
+    if (typeof o.name === "string" && PEOPLE.test(o.name) && "value" in o) add(o.value);
+    for (const [k, v] of Object.entries(o)) {
+      if (PEOPLE.test(k) && (typeof v === "string" || Array.isArray(v))) add(Array.isArray(v) ? v.map((x) => (typeof x === "string" ? x : x?.email || x?.address || "")).join(",") : v);
+      else if (/^(messageId|message_id|threadId|thread_id|id)$/.test(k)) id(v);
+      else if (v && typeof v === "object") walk(v, depth + 1);
+    }
+  };
+  let o = data;
+  const cut = typeof data?.preview === "string" ? data.preview : null;
+  if (cut) {
+    try { o = JSON.parse(cut); } catch {
+      o = null;
+      for (const m of cut.matchAll(/"(sender|from|to|cc|reply_to)"\s*:\s*"((?:[^"\\]|\\.)*)"/gi)) add(m[2]);
+      for (const m of cut.matchAll(/"name"\s*:\s*"(from|to|cc|reply-to)"\s*,\s*"value"\s*:\s*"((?:[^"\\]|\\.)*)"/gi)) add(m[2]);
+      for (const m of cut.matchAll(/"(messageId|threadId|thread_id|id)"\s*:\s*"([0-9a-f]{10,24})"/gi)) id(m[2]);
+    }
+  }
+  walk(o);
+  return { addresses: [...addresses], ids: [...ids] };
+}
+
 const json = (s) => { try { return JSON.parse(s || "{}"); } catch { return {}; } };
 const accountId = (a) => String(a.args?.account || a.review?.account || "").split(" · ").pop();
 const alias = (a) => a.review?.account_alias || "";

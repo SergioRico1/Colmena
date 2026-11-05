@@ -102,6 +102,44 @@ export function turnText(store, missionId) {
   return mine.map(yours).join("\n");
 }
 
+/** The bot's last answer before your words in this turn (what you are answering), or "". */
+export function answeredText(store, missionId) {
+  const messages = store.where("messages", "missionId", missionId).filter((m) => typeof m.text === "string")
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const answered = messages.findLastIndex((m) => m.role === "assistant" && (!m.kind || m.kind === "message"));
+  return answered >= 0 ? messages[answered].text : "";
+}
+
+// «Sí, el martes», «vale», «acepta», «dile que no»: a decision about what the bot told you.
+const DECIDES = /^(?:si|sip|vale|ok|okey|okay|de acuerdo|perfecto|claro|adelante|venga|genial|dale|hecho|confirma\w*|acepta\w*|rechaza\w*|declina\w*)\b/;
+// «Déjalo», «lo miro yo», «sin responder»: you keep it for yourself.
+const KEEPS = /\b(?:dejalo|dejala|dejadlo|no hace falta|lo miro yo|lo hablo yo|lo hago yo|lo llevo yo|me encargo yo|sin responder|sin contestar|no respondas|no contestes|no lo envies|no lo mandes|todavia no|aun no|espera|ahora no)\b/;
+
+/**
+ * Your words in this turn decide how to answer an email the bot just told you about
+ * («Raúl propone el martes 10 o el jueves 12…» → «Sí, martes 10 a las 12:00»): a yes, a
+ * choice or a send verb, without a question and without keeping it for yourself.
+ */
+export function decidesReply(store, missionId) {
+  const text = turnText(store, missionId);
+  if (!text || /\?/.test(text) || KEEPS.test(text) || isNo(text)) return false;
+  return DECIDES.test(text.trim()) || SEND_VERB.test(text);
+}
+
+/**
+ * Whether a reply in a thread is the one your answer asked for: you decided about what the
+ * bot's last message said, that message points at this thread (its Gmail link or id), and
+ * the reply goes only to people already in the thread. Then, as with «envía», it needs no
+ * second OK and leaves with 10 s to cancel.
+ */
+export function answersThread(store, missionId, { ids = [], addresses = [] } = {}, recipients = []) {
+  if (!recipients.length || !ids.length || !decidesReply(store, missionId)) return false;
+  const said = answeredText(store, missionId).toLowerCase();
+  if (!ids.some((id) => said.includes(id.toLowerCase()))) return false;
+  const party = new Set(addresses.map((a) => a.toLowerCase()));
+  return recipients.every((r) => party.has((String(r).match(/[^<\s,]+@[^>\s,]+/)?.[0] || "").toLowerCase()));
+}
+
 /** Your words in this turn tell it to send («envíalo», «mándalo ya», «pídele…»). */
 export function saysSend(store, missionId) {
   const text = turnText(store, missionId);

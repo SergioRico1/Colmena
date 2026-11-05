@@ -3,8 +3,8 @@ import { now } from './store.mjs';
 import { deniedResult } from './denial.mjs';
 
 import { TOOLKITS } from './triggers.mjs';
-import { asksForSelf, explicitlyAsked, namesFor, saysSend } from './appactions.mjs';
-import { draftFields } from './gmaildrafts.mjs';
+import { answersThread, asksForSelf, explicitlyAsked, namesFor, saysSend } from './appactions.mjs';
+import { draftFields, threadParty } from './gmaildrafts.mjs';
 import { isFlagged } from './external-content.mjs';
 import { actionOfTool, appTargets, deferredResult, isUnattended, ownAppTarget, personAsked, personTurnText } from './redlines.mjs';
 
@@ -175,9 +175,15 @@ export class Connections {
         else kind = 'write';
       }
       // A reply shows the conversation it goes into (it has no subject of its own).
+      let party = null;
       if (String(p.tool).toUpperCase() === 'GMAIL_REPLY_TO_THREAD') {
-        const t = await this.readGmail(mission, args.account, 'GMAIL_FETCH_MESSAGE_BY_THREAD_ID', {user_id: 'me', thread_id: p.arguments?.thread_id});
+        const raw = await this.readGmailRaw(mission, args.account, 'GMAIL_FETCH_MESSAGE_BY_THREAD_ID', {user_id: 'me', thread_id: p.arguments?.thread_id});
+        const t = raw ? draftFields(raw.data) : null;
         if (t?.subject) review.thread = {subject: /^\s*re\s*:/i.test(t.subject) ? t.subject : 'Re: ' + t.subject};
+        if (raw) {
+          party = threadParty(raw.data);
+          if (p.arguments?.thread_id) party.ids.push(String(p.arguments.thread_id).toLowerCase());
+        }
       }
       const category = categoryOf(p);
       a = this.store.put('approvals', {id, missionId: mission.id, botId: step.botId,
@@ -210,6 +216,8 @@ export class Connections {
         const ownDraft = review.draft && this.preparedHere(mission.id, p.arguments?.draft_id);
         const asked = ownDraft ? saysSend(this.store, mission.id)
           : explicitlyAsked(this.store, mission.id, to, {names: namesFor(this.store, step.id, to)}) ||
+            // «Sí, el martes» to the bot's notice about this very thread, to the people in it.
+            (!!party && answersThread(this.store, mission.id, party, to)) ||
             // «Envíamelo»: to yourself, as Codex does, with no second OK.
             (asksForSelf(this.store, mission.id) && await this.isOwnAddress(mission, args.account, to));
         if (asked) this.autoSend(id);

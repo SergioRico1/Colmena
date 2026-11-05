@@ -151,3 +151,43 @@ test("a send you asked for leaves on its own after the undo window", async (t) =
   assert.equal(store.get("approvals", "s1:c1").status, "executed");
   assert.equal(resumed, "mi");
 });
+
+test("«Sí, martes 10» to Vera's notice about Raúl's email: the reply leaves on its own after the undo window", async (t) => {
+  const { store } = await fixture(t);
+  store.put("bots", { id: "vera", name: "Vera", tools: { correo: "escribe" } });
+  store.put("missions", { id: "mi", status: "running" });
+  const at = (s) => new Date(Date.now() - 60000 + s * 1000).toISOString();
+  store.put("messages", { id: "a1", missionId: "mi", role: "assistant", kind: "message", at: at(0),
+    text: "Raúl propone el martes 10, el jueves 12 o el viernes 13 a las 12:00. [Correo de Raul](https://mail.google.com/mail/u/#all/1a1ac2d778c8085e)" });
+  store.put("messages", { id: "u1", missionId: "mi", role: "user", kind: "message", text: "Sí, martes 10 a las 12:00", at: at(10) });
+  const reply = { tool: "GMAIL_REPLY_TO_THREAD", toolkit: "gmail", arguments: { thread_id: "1a1ac0b5e3f2d901", recipient_email: "rcorregidor@k-global.es", extra_recipients: ["x.franquesa@slimstock.com"], message_body: "El martes 10 a las 12:00 me va bien." } };
+  const thread = { messages: [{ messageId: "1a1ac2d778c8085e", threadId: "1a1ac0b5e3f2d901", subject: "Slim4", sender: "Raúl Corregidor <rcorregidor@k-global.es>", to: "x.franquesa@slimstock.com, sergior@k-global.es" }] };
+  const calls = [];
+  const h = {
+    async dispatch(_profile, op, a) {
+      calls.push(op);
+      if (op === "prepare" && a.tool === "GMAIL_FETCH_MESSAGE_BY_THREAD_ID") return { proposal: "read1", name: "Fetch thread", tool: a.tool, toolkit: "gmail", arguments: JSON.parse(a.arguments_json), read_scope: "inbox" };
+      if (op === "commit" && a.proposal === "read1") return { ok: true, data: thread };
+      if (op === "prepare") return { proposal: "p1", name: "Reply to thread", account: "Gmail · ca_1", account_alias: "Gmail", ...reply };
+      if (op === "commit") return { ok: true, receipt: { id: "r1" } };
+      return {};
+    },
+  };
+  const connections = new Connections(store, h);
+  let resumed = null;
+  connections.onDecided = (id) => { resumed = id; };
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const result = await connections.request({ id: "mi" }, { id: "s1", botId: "vera" }, call, { tool: "GMAIL_REPLY_TO_THREAD", account: "ca_1", arguments_json: JSON.stringify(reply.arguments) }, signal);
+  assert.deepEqual(result, { waiting: true });
+  assert.ok(store.get("approvals", "s1:c1").autoSendAt, "no second OK: it leaves with time to cancel");
+  t.mock.timers.tick(AUTO_SEND_MS + 10);
+  t.mock.timers.reset();
+  for (let i = 0; i < 20 && !resumed; i++) await new Promise((r) => setImmediate(r));
+  assert.equal(store.get("approvals", "s1:c1").status, "executed");
+
+  // «Déjalo, lo miro yo» instead: the same reply waits for the person.
+  store.put("messages", { id: "u1", missionId: "mi", role: "user", kind: "message", text: "Déjalo, lo miro yo", at: at(10) });
+  const again = await connections.request({ id: "mi" }, { id: "s2", botId: "vera" }, call, { tool: "GMAIL_REPLY_TO_THREAD", account: "ca_1", arguments_json: JSON.stringify(reply.arguments) }, signal);
+  assert.deepEqual(again, { waiting: true });
+  assert.equal(store.get("approvals", "s2:c1").autoSendAt, undefined);
+});

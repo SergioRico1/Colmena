@@ -56,6 +56,7 @@ HABILIDADES (solo si revisar.habilidades es true; si no, action "none"):
 - patch: skillId de habilidadesLeidas y edits minimos [{old,new}], donde old es un trozo LITERAL y unico del contenido actual (copialo exactamente) y new su sustitucion. Corrige la frase que fallo en su sitio; no añadas «ACTUALIZACION:» al final. No cambies el nombre.
 - create: content es un SKILL.md con frontmatter YAML (name y description; la description empieza por «Úsala cuando…») y secciones «Cuando usarla», «Pasos» (1., 2., …), «Comprobacion» y «Limites». Generica: sin datos personales, clientes, cifras concretas ni secretos.
 - Las correcciones de estilo o formato de una tarea van a la habilidad de esa tarea, no a la memoria.
+- Los permisos no son cosa de las habilidades: no escribas pasos que pidan el OK, que dejen en borrador lo que la persona mandó enviar o responder, ni que esperen su revisión si no la pidió. Colmena decide qué necesita su OK y le enseña el envío antes de que salga. Si una habilidad ya los tiene y la tarea lo muestra, quítalos con patch.
 
 NO SE GUARDA (ni en memoria ni en habilidades): fallos del entorno (falta una cuenta, una carpeta o una conexion; la persona puede arreglarlo), errores pasajeros que se resolvieron reintentando, afirmaciones negativas sobre herramientas («la herramienta X no va»), relatos de una sola vez, ni intentos fallidos presentados como metodo fiable.
 
