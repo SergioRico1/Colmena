@@ -16,6 +16,9 @@ import { QUEUE_MODES, roomSlug } from "./runtime.mjs";
 import { forkRoom, snoozeUntil } from "./rooms.mjs";
 import { reactionsOf, togglePersonReaction } from "./reactions.mjs";
 import { registerWorkFileRoutes } from "./workfiles.mjs";
+import { createOfficeConverter } from "./officepdf.mjs";
+import { registerTurnChangeRoutes } from "./turn-changes.mjs";
+import { registerDragRoutes } from "./dragout.mjs";
 import { OUTSIDE_NOTE, restoreLine } from "./checkpoints.mjs";
 import { SecretStore, registerSecretRoutes } from "./secrets.mjs";
 import express from "express";
@@ -223,7 +226,7 @@ export function critiqueAbout(text, name) {
   return hit ? hit.replace(/^(?:\*\*)?Sobre\s+[^:\n]{1,40}:(?:\*\*)?\s*/i, "").trim() : text;
 }
 
-export function createApp({ store, runtime, session, scheduler, connections, getOrigin, computer = null, backups = null, dbKeys = null }) {
+export function createApp({ store, runtime, session, scheduler, connections, getOrigin, computer = null, backups = null, dbKeys = null, office = null }) {
   const app = express(),
     csrf = randomBytes(32).toString("hex");
   app.disable("x-powered-by");
@@ -1654,7 +1657,11 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerCoreRoutes(app, { store, runtime });
   registerUsageRoutes(app, { store, runtime });
   registerDiagnosticsRoutes(app, { store, runtime, connections, version: VERSION });
-  registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, HttpError });
+  // Office files seen with their format: this computer's Office or LibreOffice, cached by content.
+  const officePdf = office || createOfficeConverter({ cacheDir: path.join(store.directory, "cache", "office-pdf") });
+  registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, HttpError, office: officePdf });
+  registerTurnChangeRoutes(app, { store, runtime, check, z, mustGet, HttpError, office: officePdf }); // «Archivos cambiados» and before/after
+  registerDragRoutes(app, { store, rootOf, check, z }); // dragging files out (desktop shell)
   app.use("/api", (_req, res) => res.status(404).json({ error: "Operación no disponible." }));
   app.use((err, _req, res, _next) => {
     if (err instanceof z.ZodError) return res.status(400).json({ error: zodMessage(err), fields: err.issues.map((i) => i.path.join(".")) });

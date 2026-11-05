@@ -203,6 +203,38 @@ export class GitBackend {
     present.forEach((rel, i) => map.set(rel, out[i] || null));
     return map;
   }
+  /** Sizes of stored files by their hash: Map hash → bytes. */
+  async sizes(scope, hashes) {
+    await this.init(scope);
+    const want = [...new Set(hashes.filter((h) => /^[0-9a-f]{40,64}$/.test(String(h || ""))))];
+    const map = new Map();
+    if (!want.length) return map;
+    const out = (await this.git(scope, ["cat-file", "--batch-check"], { input: want.join("\n") + "\n" })).stdout.toString("utf8");
+    for (const line of out.split("\n")) {
+      const m = /^([0-9a-f]+) blob (\d+)$/.exec(line.trim());
+      if (m) map.set(m[1], Number(m[2]));
+    }
+    return map;
+  }
+  /** Contents of stored files by their hash (one «git cat-file --batch»): Map hash → Buffer. */
+  async blobs(scope, hashes) {
+    await this.init(scope);
+    const want = [...new Set(hashes.filter((h) => /^[0-9a-f]{40,64}$/.test(String(h || ""))))];
+    const map = new Map();
+    if (!want.length) return map;
+    const out = (await this.git(scope, ["cat-file", "--batch"], { input: want.join("\n") + "\n" })).stdout;
+    let at = 0;
+    while (at < out.length) {
+      const nl = out.indexOf(10, at);
+      if (nl < 0) break;
+      const m = /^([0-9a-f]+) blob (\d+)$/.exec(out.subarray(at, nl).toString("utf8"));
+      if (!m) { at = nl + 1; continue; } // «<hash> missing»
+      const size = Number(m[2]);
+      map.set(m[1], out.subarray(nl + 1, nl + 1 + size));
+      at = nl + 1 + size + 1;
+    }
+    return map;
+  }
   async write(scope, snap, rels) {
     if (!rels.length) return;
     await this.git(scope, ["restore", "--source=" + snap, "--worktree", "--pathspec-from-file=-", "--pathspec-file-nul"], { input: rels.join("\0") + "\0" });
@@ -271,6 +303,20 @@ export class CopyBackend {
     const map = new Map();
     for (const rel of rels) {
       try { map.set(rel, sha256(await readFile(path.join(scope.root, rel)))); } catch { map.set(rel, null); }
+    }
+    return map;
+  }
+  async sizes(scope, hashes) {
+    const map = new Map();
+    for (const hash of new Set(hashes.filter((h) => /^[0-9a-f]{64}$/.test(String(h || ""))))) {
+      try { map.set(hash, (await stat(path.join(this.dirs(scope).objects, hash.slice(0, 2), hash))).size); } catch {}
+    }
+    return map;
+  }
+  async blobs(scope, hashes) {
+    const map = new Map();
+    for (const hash of new Set(hashes.filter((h) => /^[0-9a-f]{64}$/.test(String(h || ""))))) {
+      try { map.set(hash, await readFile(path.join(this.dirs(scope).objects, hash.slice(0, 2), hash))); } catch {}
     }
     return map;
   }
@@ -535,6 +581,44 @@ export class Checkpoints {
     // What the bots are told in their next turn: how the files stand now.
     this.store.patch(KIND, cpId, (r) => ({ restores: [...(r.restores || []), { at, mode, files: plan.files.filter((f) => !f.hidden).map((f) => ({ path: f.path, change: f.change, folder: f.folder })) }], notified: [] }));
     return { mode, files: plan.files, failed, restoredAt: at, records: plan.records.map((r) => r.id) };
+  }
+  /**
+   * What one turn did to each file: its size and (when `read({path, size})` says so) its
+   * bytes before and after that turn — the turn's own restore points, not the files as they
+   * are now. `paths` [{scope?, path}] limits it to those files; `max` caps the list.
+   * → {record, files: [{scope, path, change, folder, before: {size, bytes?}|null, after}], more}
+   */
+  async turnFiles(missionId, cpId, { paths = null, max = 200, read = () => true } = {}) {
+    const record = this.store.get(KIND, cpId);
+    if (!record || record.missionId !== missionId || record.status !== "done") throw Object.assign(Error("Ese cambio ya no se puede ver."), { status: 404 });
+    const backend = await this.backend();
+    const wanted = record.changes.filter((c) => !c.hidden && (!paths || paths.some((p) => p.path === c.path && (!p.scope || p.scope === c.scope))));
+    const shown = wanted.slice(0, max);
+    const files = [];
+    for (const entry of record.scopes) {
+      if (!entry.before || !entry.after) continue;
+      const mine = shown.filter((c) => c.scope === entry.key);
+      if (!mine.length) continue;
+      const scope = this.scopeOf(entry);
+      // A snapshot never changes: its listing is kept for the next look at the same turn.
+      this.listings ||= new Map();
+      const listing = async (snap) => {
+        const key = entry.key + "\u0000" + snap;
+        if (!this.listings.has(key)) {
+          this.listings.set(key, await backend.files(scope, snap));
+          while (this.listings.size > 16) this.listings.delete(this.listings.keys().next().value);
+        }
+        return this.listings.get(key);
+      };
+      const [was, is] = [await listing(entry.before), await listing(entry.after)];
+      const pairs = mine.flatMap((c) => [[was.get(c.path), c.path], [is.get(c.path), c.path]]).filter(([h]) => h);
+      const sizes = await backend.sizes(scope, pairs.map(([h]) => h));
+      const blobs = await backend.blobs(scope, pairs.filter(([h, rel]) => sizes.has(h) && read({ path: rel, size: sizes.get(h) })).map(([h]) => h));
+      const side = (hash) => (hash ? { size: sizes.get(hash) ?? null, ...(blobs.has(hash) ? { bytes: blobs.get(hash) } : {}) } : null);
+      for (const c of mine) files.push({ scope: entry.key, path: c.path, change: c.change, folder: entry.kind === "mission" ? null : entry.label, before: side(was.get(c.path)), after: side(is.get(c.path)) });
+    }
+    files.sort((a, b) => a.path.localeCompare(b.path));
+    return { record, files, more: Math.max(0, wanted.length - shown.length) + (record.more || 0) };
   }
   /** Restores this bot has not been told about yet (its next turn reads them once). */
   takeNotice(missionId, botId) {
