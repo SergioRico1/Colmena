@@ -25,6 +25,8 @@ const NOT_EFFECTS = new Set([
   "list_files", "list_folder", "list_skills", "read_skill", "recall", "react", "ask_user", "ask_bot", "request_secret",
   "apps_accounts", "apps_search", "apps_describe", "apps_table", "mcp_tools",
   "browser_read", "browser_screenshot", "desktop_look", "desktop_windows", "project_files",
+  // Keyed by the call (a Código job, a note to a teammate): asked again, they find what they did.
+  "code_task", "message_bot",
 ]);
 // Direct app tools that only read (apptools.mjs): fetch, list, get, search…
 const DIRECT_READ = /^(gmail|googlecalendar|googlesheets|googledrive|googledocs|notion|slack|outlook)_\w*(fetch|list|get|find|search|download|batch_get|info|history)\w*$/;
