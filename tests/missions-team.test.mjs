@@ -363,17 +363,22 @@ test("two parts at once that write the same folder: the later one gets an adviso
 
 test("writing the same file at run time also notes the overlap (once per pair)", async (t) => {
   const seen = [];
+  // Nora writes first and is still at work when Vera writes the same file.
+  let noraWrote, veraWrote;
+  const afterNora = new Promise((r) => { noraWrote = r; }), afterVera = new Promise((r) => { veraWrote = r; });
   const { runtime, store } = await fixture(t, team(
     [{ botId: "nora", task: "Primera parte" }, { botId: "vera", task: "Segunda parte" }],
     async (name, { input }) => {
       const out = outputs(input);
       if (name === "Nora") {
         if (!out.length) return call("write_file", { path: "comun.md", content: "Nora" }, "n1");
-        await new Promise((r) => setTimeout(r, 60));
+        noraWrote();
+        await afterVera;
         return answer("Nora hecho");
       }
-      if (!out.length) { await new Promise((r) => setTimeout(r, 20)); return call("write_file", { path: "comun.md", content: "Vera" }, "v1"); }
+      if (!out.length) { await afterNora; return call("write_file", { path: "comun.md", content: "Vera" }, "v1"); }
       seen.push(input.filter((x) => x.role === "user").map((x) => String(x.content)).join("\n"));
+      veraWrote();
       return answer("Vera hecho");
     },
   ));
