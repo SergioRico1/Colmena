@@ -345,7 +345,7 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
   return (
     <MessageRow mine messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<UserAvatar size={40} />} continued={continued} at={message.at} padding={padding} actions={<><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} /><ForkButton message={message} /></>}>
       {continued ? null : <Head name="Tú" at={message.at} />}
-      <UserText text={message.text} />
+      <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
       {message.failed ? <FailedLine error={message.failed} onRetry={resend.retry} onDiscard={resend.discard} /> : null}
       {(message.attachments || []).map((f, i) => <FileChip key={i} file={f} />)}
       <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />

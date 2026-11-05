@@ -616,7 +616,7 @@ export default function Chat({ params, query }) {
                           {m.at ? <span style={{ fontSize: "12px", color: "#555A68" }}>{new Date(m.at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span> : null}
                         </div>
                         {attachments.length ? <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>{attachments.map((f, j) => <FileCard key={j} file={f} />)}</div> : null}
-                        <UserText text={m.text} size={16} />
+                        <UserText text={m.text} size={16} messageId={m.optimistic ? null : m.id} />
                         {m.failed ? <FailedLine error={m.failed} onRetry={() => resend(m)} onDiscard={() => unshowSent(`/missions/${c}`, m.id)} /> : null}
                       </article>,
                     );

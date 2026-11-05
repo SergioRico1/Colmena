@@ -3,6 +3,7 @@ import { PillText } from "../v2/MentionPill.jsx";
 import { createPortal } from "react-dom";
 import { Check, Copy, MessageCircleQuestion, Quote } from "lucide-react";
 import { copyText } from "./common.jsx";
+import { copyRealSecrets, realSelectionText, SecretText } from "./SecretText.jsx";
 
 // Select a passage of a message (OpenClaw chat-selection-popup): a small toolbar appears over
 // it — «Citar» puts it in your message as a quote, «Preguntar aparte» asks about it on the
@@ -26,7 +27,8 @@ export default function SelectionPopup({ scope, onQuote, onAsk }) {
     const bubble = el?.closest?.("[data-message-id]");
     // Across two messages: nothing (OpenClaw).
     if (!bubble || !scope.current?.contains(bubble)) return null;
-    const text = sel.toString().trim();
+    // A masked key is copied or quoted as it really is (SecretText.jsx).
+    const text = realSelectionText(sel).trim();
     if (!text) return null;
     const r = range.getBoundingClientRect();
     if (!r.width && !r.height) return null;
@@ -77,8 +79,12 @@ export function quoteInto(missionId, text) {
 }
 export const asQuote = (text) => String(text || "").trim().split("\n").map((l) => "> " + l).join("\n") + "\n\n";
 
-/** Your own message as written, with its «> » lines shown as a quote (from «Citar»). */
-export function UserText({ text, size = 15 }) {
+/**
+ * Your own message as written, with its «> » lines shown as a quote (from «Citar») and any
+ * key or password you pasted masked (SecretText.jsx); `messageId` lets «Guardar en llaves»
+ * leave only the key's name in it.
+ */
+export function UserText({ text, size = 15, messageId = null }) {
   const blocks = [];
   for (const line of String(text || "").split("\n")) {
     const quoted = /^>\s?/.test(line);
@@ -88,13 +94,13 @@ export function UserText({ text, size = 15 }) {
     else blocks.push({ quoted, lines: [value] });
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+    <div onCopy={copyRealSecrets} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
       {blocks.map((b, i) => {
         const body = b.lines.join("\n").replace(/^\n+|\n+$/g, "");
         if (!body) return null;
         return b.quoted
-          ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid #FFC93C", color: "#4A4F5C", fontSize: size - 1 + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{body}</blockquote>
-          : <p key={i} style={{ margin: 0, fontSize: size + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><PillText text={body} /></p>;
+          ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid #FFC93C", color: "#4A4F5C", fontSize: size - 1 + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} /></blockquote>
+          : <p key={i} style={{ margin: 0, fontSize: size + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <PillText text={t} />} /></p>;
       })}
     </div>
   );

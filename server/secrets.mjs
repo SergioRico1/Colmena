@@ -260,6 +260,7 @@ async function apiRequest(runtime, secrets, raw, { mission, step, bot, call, sig
  *   GET    /api/secrets                       → {available, secrets:[…]}
  *   POST   /api/secrets/requests/:approvalId  {value, allowedHosts}  (answers request_secret)
  *   POST   /api/secrets/requests/:approvalId/cancel
+ *   POST   /api/secrets                       {name, value, allowedHosts, messageId?}  («Guardar en llaves»)
  *   PATCH  /api/secrets/:name                 {allowedHosts}
  *   DELETE /api/secrets/:name
  */
@@ -293,6 +294,22 @@ export function registerSecretRoutes(app, { store, runtime, secrets }) {
     store.patch("approvals", a.id, { status: "denied", decidedAt: now(), decidedBy: "tú", resolution: "Prefieres no darla" });
     runtime?.relaunch?.(a.missionId);
     res.json({ ok: true });
+  });
+  // «Guardar en llaves»: a key you pasted into a message goes to the encrypted store; that
+  // message then keeps only its marker ({{secret:NAME}}, what api_request takes).
+  app.post("/api/secrets", async (req, res) => {
+    const data = z.object({
+      name: z.string().trim().toUpperCase().pipe(z.string().regex(NAME_RE, "Nombre de clave no válido: letras, números y _ (p. ej. OPENAI_API_KEY).")),
+      value: z.string().min(1).max(SECRET_LIMITS.value), allowedHosts: z.array(z.string().max(253)).min(1).max(SECRET_LIMITS.hosts),
+      messageId: z.string().max(200).nullable().optional(),
+    }).strict().parse(req.body ?? {});
+    const message = data.messageId ? store.get("messages", data.messageId) : null;
+    if (data.messageId && (!message || message.role !== "user")) throw Object.assign(Error("Ese mensaje ya no está."), { status: 404 });
+    const saved = await secrets.save(data.name, data.value, { allowedHosts: data.allowedHosts, reason: "La pegaste en un mensaje", by: "tú" });
+    if (message && String(message.text || "").includes(data.value)) {
+      store.patch("messages", message.id, { text: String(message.text).split(data.value).join("{{secret:" + data.name + "}}") });
+    }
+    res.json({ ok: true, secret: saved });
   });
   app.patch("/api/secrets/:name", (req, res) => {
     const data = z.object({ allowedHosts: z.array(z.string().max(253)).min(1).max(SECRET_LIMITS.hosts) }).strict().parse(req.body ?? {});

@@ -53,7 +53,7 @@ export function UserBubble({ message, children }) {
     <div data-message-id={message.optimistic ? undefined : message.id} aria-busy={message.optimistic ? "true" : undefined}
       style={{ alignSelf: "flex-end", maxWidth: "78%", display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-end", opacity: message.optimistic ? 0.65 : 1, transition: "opacity .2s ease" }}>
       <div style={{ padding: "14px 18px", background: "#EBEBE6", borderRadius: "20px 20px 6px 20px", fontSize: "15.5px", lineHeight: "1.55", overflowWrap: "anywhere" }}>
-        <UserText text={message.text} size={15.5} />
+        <UserText text={message.text} size={15.5} messageId={message.optimistic ? null : message.id} />
       </div>
       {children}
     </div>

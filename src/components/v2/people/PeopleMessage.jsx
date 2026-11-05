@@ -6,6 +6,7 @@ import MeetingCard from "./MeetingCard.jsx";
 import { FileCard } from "./PeerFiles.jsx";
 import ErrandCard from "./ErrandCard.jsx";
 import { mentionSegments } from "../../../lib/mentions.js";
+import { copyRealSecrets, SecretText } from "../../room/SecretText.jsx";
 
 // One message of a conversation with people (design/V2Personas.dc.html, pasos sala and hilo):
 // plain text (never HTML or Markdown: it comes from someone else), «@» pills for bots and
@@ -104,8 +105,8 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
             </span>
           </div>
         ) : (m.file && m.text === m.file.name) || m.errand ? null : (
-          <p style={{ margin: 0, fontSize: inThread ? "15px" : "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }}>
-            {messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i}>{s.text}</span>
+          <p style={{ margin: 0, fontSize: inThread ? "15px" : "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }} onCopy={copyRealSecrets}>
+            {messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i}><SecretText text={s.text} /></span>
               : s.mention.kind === "person" ? <PersonPill key={i} person={s.mention.person} text={s.text} />
                 : <MentionPill key={i} bot={s.mention} label={shared(s.mention.name) || !s.mention.mine ? s.mention.note : null} />))}
           </p>
