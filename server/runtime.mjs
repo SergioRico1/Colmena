@@ -425,9 +425,11 @@ export class Runtime {
     use = [],
     deep = false,
     thread = false,
+    context = "",
   }) {
-    // «+» in a new chat's composer: the same note and effort as for a later message.
-    const promptNote = turnNote(use, { deep });
+    // «+» in a new chat's composer: the same note and effort as for a later message; `context`
+    // is what its «@» picks bring (server/mention-refs.mjs).
+    const promptNote = turnNote(use, { deep }) + String(context || "");
     if (typeof prompt !== "string" || !prompt.trim()) throw Error("Escribe el encargo.");
     if (!["solo", "equipo", "debate"].includes(mode)) throw Error("Modo no válido.");
     const previous = conversationOf ? this.store.get("missions", conversationOf) : null;
@@ -585,10 +587,11 @@ export class Runtime {
     });
     return keys;
   }
-  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false } = {}) {
-    // «+» in the composer: tools or apps chosen for this message, and «Pensar a fondo».
+  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "" } = {}) {
+    // «+» in the composer: tools or apps chosen for this message, and «Pensar a fondo»; the
+    // «@» picks of files and conversations bring `context` (server/mention-refs.mjs).
     const chosen = cleanUse(use);
-    const note = turnNote(chosen, { deep });
+    const note = turnNote(chosen, { deep }) + String(context || "");
     const effort = deep ? "high" : undefined;
     const m = this.store.get("missions", missionId);
     // A reply in a message's thread: it stays in that thread, and the bot that wrote the
@@ -628,6 +631,7 @@ export class Runtime {
       ...(named.length ? { to: named } : {}),
       ...(QUEUE_MODES.includes(forcedMode) ? { mode: forcedMode } : {}),
       ...(chosen.length ? { use: chosen } : {}), ...(deep ? { deep: true } : {}),
+      ...(refs?.length ? { refs } : {}),
       // «Espera» / «Junta»: the bots at work do not see it until they finish.
       ...(working && (mode === "followup" || mode === "collect") ? { deliver: "after" } : {}),
     });

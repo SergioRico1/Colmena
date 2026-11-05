@@ -3,6 +3,8 @@ import { isYes, isNo } from "./appactions.mjs";
 
 import { CHAT_PAGE, MAX_PAGE, ROOM_PAGE, conversationMap, historyPage, stepsForPage, withoutSaidText } from "./history.mjs";
 import { createLiveCoalescer } from "./live-coalescer.mjs";
+import { createLiveSnapshot } from "./live-snapshot.mjs";
+import { referenceContext, refsInput } from "./mention-refs.mjs";
 import { commandOutput } from "./command-output.mjs";
 import { branchPoints, openBranch, switchTo, visibleMessages } from "./branches.mjs";
 import { QUEUE_TEXT_MAX, deliverNext, editQueued, enqueue, moveQueued, queueOf, queueView, takeQueued, watchQueues } from "./queue.mjs";
@@ -118,6 +120,8 @@ const missionCreate = z
     incognito: z.boolean().optional(),
     // «+» in the composer: tools or apps for this message, and «Pensar a fondo».
     use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional(),
+    // «@» picks of past conversations (server/mention-refs.mjs); a new chat has no folder yet.
+    refs: refsInput.optional(),
   })
   .strict();
 const automationFields = z.object({
@@ -416,6 +420,12 @@ export function createApp({ store, runtime, session, scheduler, connections, get
 
   // SSE: coalesced {type:'changed', kinds} + runtime live events passed through.
   const LIVE = new Set(["delta", "activity", "step_done", "notify"]);
+  // Each live step's text so far (server/live-snapshot.mjs): a stream that reconnects starts with it.
+  const liveText = createLiveSnapshot();
+  app.locals.liveText = liveText;
+  store.listeners.add((event) => {
+    if (LIVE.has(event?.type) || (event?.type === "completed" && event.seq !== undefined)) liveText.apply(event);
+  });
   app.get("/api/events", (req, res) => {
     res.set({ "Content-Type": "text/event-stream", Connection: "keep-alive" });
     res.flushHeaders();
@@ -423,6 +433,9 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const kinds = new Set();
     let timer = null;
     const write = (event) => res.write("data: " + JSON.stringify(event) + "\n\n");
+    // First frame: the text of every step still writing, which replaces the browser's copy;
+    // the pieces after it (this same tick on, through `send`) append to it.
+    write({ type: "live_snapshot", steps: liveText.snapshot() });
     // Streamed text and activity go out in ~50 ms windows (server/live-coalescer.mjs).
     const live = createLiveCoalescer(write);
     // Messages and steps travel whole (OpenClaw-style push): the open room applies them at
@@ -641,7 +654,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     return bot;
   };
   app.post("/api/missions", async (req, res) => {
-    const { attachments, ...data } = check(missionCreate, req.body);
+    const { attachments, refs, ...data } = check(missionCreate, req.body);
     // conversationOf = previous mission of a 1:1 chat; the new turn continues it.
     const previous = data.conversationOf ? mustGet("missions", data.conversationOf, "Conversación") : null;
     if (previous) Object.assign(data, { mode: "solo", conversation: true });
@@ -654,13 +667,15 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     if (data.conversation && data.mode === "solo" && botIds.length === 1 && !data.incognito && !previous) {
       const thread = botThread(store, botIds[0]);
       if (thread) {
+        const picked = await referenceContext(store, { missionId: thread.id, refs, rootOf });
         const written = await writeAttachments(thread.id, attachments);
-        await need("addMessage")(thread.id, data.prompt, written, { ...(data.use?.length ? { use: data.use } : {}), ...(data.deep ? { deep: true } : {}) });
+        await need("addMessage")(thread.id, data.prompt, written, { ...(data.use?.length ? { use: data.use } : {}), ...(data.deep ? { deep: true } : {}), ...(picked.refs.length ? { refs: picked.refs, context: picked.note } : {}) });
         return res.status(200).json({ ...store.get("missions", thread.id), continued: true });
       }
     }
     const files = attachments.map((f) => ({ name: f.name, size: f.size ?? (f.encoding === "base64" ? Math.floor(f.content.length * 3 / 4) : Buffer.byteLength(f.content)) }));
-    const mission = need("create")({ ...data, botIds, conversation: !!data.conversation, attachments: files, ...(data.conversation && data.mode === "solo" && !data.incognito ? { thread: true } : {}) });
+    const picked = await referenceContext(store, { refs: refs?.filter((r) => r.kind === "chat") });
+    const mission = need("create")({ ...data, botIds, conversation: !!data.conversation, attachments: files, ...(data.conversation && data.mode === "solo" && !data.incognito ? { thread: true } : {}), ...(picked.note ? { context: picked.note } : {}) });
     try {
       await writeAttachments(mission.id, attachments);
     } catch (error) {
@@ -697,6 +712,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       // What a notice is about (watch.mjs): the mails, events or messages, for its «Fuentes».
       ...(Array.isArray(m.sources) && m.sources.length ? { sources: m.sources.slice(0, 6).map((s) => ({ id: s.id ?? null, hilo: s.hilo ?? null, fuente: s.fuente ?? null, de: s.de ?? null, titulo: s.titulo ?? null, asunto: s.asunto ?? null, fecha: s.fecha ?? null, cuenta: s.cuenta ?? null, url: s.url ?? null })) } : {}),
       ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}), ...(m.voice ? { voice: true } : {}),
+      // «@» picks of files and conversations (mention-refs.mjs): chips under your message.
+      ...(Array.isArray(m.refs) && m.refs.length ? { refs: m.refs.slice(0, 6).map((r) => ({ kind: r.kind, id: r.id ?? null, path: r.path ?? null, label: r.label ?? null })) } : {}),
       reactions: reactionsOf(m).map((r) => ({ emoji: r.emoji, by: r.by })),
       learned: m.learned ? {
         type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1,
@@ -814,16 +831,18 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     if (btwQuestion(text) !== null) throw new HttpError(400, "«/btw» es una pregunta al margen: no entra en la conversación. Envíala con POST /api/missions/:id/btw.");
   };
   app.post("/api/missions/:id/messages", async (req, res) => {
-    const { text, attachments, replyTo, mode, use, deep } = check(z.object({ text: z.string().trim().min(1).max(20000), attachments: z.array(attachmentInput).max(5).default([]), replyTo: z.string().trim().min(1).max(200).optional(), mode: z.enum(QUEUE_MODES).optional(), use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional() }).strict(), req.body);
+    const { text, attachments, replyTo, mode, use, deep, refs } = check(z.object({ text: z.string().trim().min(1).max(20000), attachments: z.array(attachmentInput).max(5).default([]), replyTo: z.string().trim().min(1).max(200).optional(), mode: z.enum(QUEUE_MODES).optional(), use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional(), refs: refsInput.optional() }).strict(), req.body);
     mustGet("missions", req.params.id, "Misión");
     notAside(text);
     const add = need("addMessage");
-    if (!attachments.length && !replyTo && !use?.length && !deep) {
+    // «@» picks: files or folders of this conversation, other conversations (mention-refs.mjs).
+    const picked = await referenceContext(store, { missionId: req.params.id, refs, rootOf });
+    if (!attachments.length && !replyTo && !use?.length && !deep && !picked.refs.length) {
       const decided = await typedDecision(req.params.id, text);
       if (decided) return res.json(decided);
     }
     const files = await writeAttachments(req.params.id, attachments);
-    res.json(await add(req.params.id, text, files, { ...(replyTo ? { replyTo } : {}), ...(mode ? { mode } : {}), ...(use?.length ? { use } : {}), ...(deep ? { deep } : {}) }));
+    res.json(await add(req.params.id, text, files, { ...(replyTo ? { replyTo } : {}), ...(mode ? { mode } : {}), ...(use?.length ? { use } : {}), ...(deep ? { deep } : {}), ...(picked.refs.length ? { refs: picked.refs, context: picked.note } : {}) }));
   });
   // The queue of a conversation (server/queue.mjs): messages written while the bot works,
   // sent one by one when it finishes; «Pasárselo ya» gives one to it at its next step.
