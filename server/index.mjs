@@ -189,6 +189,8 @@ store.listeners.add((event) => {
 // What was cut by the last close goes on by itself once the AI account is ready.
 setTimeout(() => {
   try { if (aiConnected()) runtime.resumeInterrupted(); } catch {}
+  // Código tasks run on their own engines' sign-in (Claude Code, Codex, OpenCode), not the AI account.
+  try { runtime.code.resumeInterrupted(); } catch (error) { console.warn("Código: no se pudo retomar lo cortado: " + error.message); }
 }, 2000).unref();
 const server = http.createServer(app);
 let vite;

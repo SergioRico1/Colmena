@@ -8,6 +8,49 @@ export function prRepo(url) {
   return m ? m[1] + "/" + m[2] : null;
 }
 
+/**
+ * Automated reviewers (Copilot, CodeRabbit…) are fallible input, not an authority: each one
+ * wakes Bruno for at most BOT_ROUNDS review runs per PR (DeepSeek's dsh-superagent rule).
+ * A run is that bot's feedback on one head commit, however many comments it leaves.
+ */
+export const BOT_ROUNDS = 3;
+
+/** «copilot-pull-request-reviewer[bot]» and «copilot-pull-request-reviewer» are one bot. */
+export const botName = (login) => String(login || "").replace(/\[bot\]$/i, "");
+
+/**
+ * New PR feedback split into people's and bots' (gh pr view `comments`/`reviews` as `said`,
+ * the REST line comments as `lines`). `bots` is the Set of bot names; `rounds` maps each bot
+ * to the head commits it has reviewed so far, `capped` the bots that used up their rounds.
+ * A bot over its rounds is dropped (and named once in `newlyCapped`).
+ */
+export function sortFeedback({ said = [], lines = [], bots = new Set(), rounds = {}, capped = [], head = null }) {
+  const people = { said: [], lines: [] };
+  const fromBots = new Map(); // name → {said, lines}
+  const nextRounds = { ...rounds };
+  const nextCapped = new Set(capped);
+  const newlyCapped = [];
+  const place = (c, kind) => {
+    const name = botName(kind === "lines" ? c.user?.login : c.author?.login);
+    if (!name || !bots.has(name)) { people[kind].push(c); return; }
+    const commit = (kind === "lines" ? c.commit_id : c.commit?.oid) || head || "?";
+    const runs = nextRounds[name] || [];
+    if (!runs.includes(commit)) {
+      if (runs.length >= BOT_ROUNDS) {
+        if (!nextCapped.has(name)) { nextCapped.add(name); newlyCapped.push(name); }
+        return;
+      }
+      nextRounds[name] = [...runs, commit];
+    }
+    const entry = fromBots.get(name) || { said: [], lines: [] };
+    entry[kind].push(c);
+    fromBots.set(name, entry);
+  };
+  for (const c of said) place(c, "said");
+  for (const c of lines) place(c, "lines");
+  return { people, bots: fromBots, rounds: nextRounds, capped: [...nextCapped], newlyCapped };
+}
+
 /** What git says when the remote does not know who you are (push and ls-remote alike). */
 export const AUTH_FAIL = /could not read (Username|Password)|Authentication failed|terminal prompts disabled|Permission denied|access denied|denied to|\b40[13]\b|Invalid username or password|Repository not found/i;
 

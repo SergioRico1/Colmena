@@ -1,6 +1,7 @@
 // A stand-in for GitHub CLI in «Código» tests: `auth status`, `pr view <branch> --json …`,
 // `run view <id> --log-failed`, `pr merge|ready|diff <n>` and `api …` (the signed-in user, a
-// PR's line comments, posting a review), answering from the JSON file in GH_FAKE_STATE.
+// PR's line comments, posting a review, whether a login is a GitHub App), answering from the
+// JSON file in GH_FAKE_STATE.
 // What changes GitHub (merge, ready, a posted review) is written back to that file under
 // `calls` (the arguments) and `posted` (the review payloads).
 import { readFileSync, writeFileSync } from "node:fs";
@@ -34,6 +35,13 @@ if (args[0] === "auth" && args[1] === "status") {
   process.stdout.write(state.logs?.[args[2]] || "");
 } else if (args[0] === "api" && args[1] === "user") {
   process.stdout.write((state.login || "yo") + "\n");
+} else if (args[0] === "api" && args[1].startsWith("users/")) {
+  // «<login>[bot]»: a GitHub App (listed in `bots`) answers type Bot, anyone else 404.
+  (state.lookups ||= []).push(args[1]);
+  save();
+  const login = decodeURIComponent(args[1].slice(6)).replace(/\[bot\]$/, "");
+  if (!(state.bots || []).includes(login)) fail("gh: Not Found (HTTP 404)");
+  process.stdout.write("Bot\n");
 } else if (args[0] === "api" && /\/pulls\/\d+\/comments/.test(args[1])) {
   process.stdout.write(JSON.stringify(state.lineComments || []));
 } else if (args[0] === "api" && /\/pulls\/\d+\/reviews$/.test(args[1]) && args.includes("POST")) {

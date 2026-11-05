@@ -25,7 +25,7 @@ import { taskPorts, descendants, stopFamily, forgetSnapshot } from "./ports.mjs"
 import { listTaskProcesses, leftovers, stopTree } from "./processes.mjs";
 import { Terminals, projectScripts } from "./terminal.mjs";
 import { expandSkills } from "./context.mjs";
-import { AUTH_FAIL, mergeRefusal, prRepo, reviewPayload, rightLines, signInHint } from "./pr.mjs";
+import { AUTH_FAIL, BOT_ROUNDS, botName, mergeRefusal, prRepo, reviewPayload, rightLines, signInHint, sortFeedback } from "./pr.mjs";
 import { BLOCKED_ROUNDS, blockingKey, mayDeclareBlocked, onlyHard, trackBlocking } from "../guards.mjs";
 import { searchTasks } from "./search.mjs";
 
@@ -49,6 +49,9 @@ export const KEYBINDINGS = Object.freeze({
 /** Bruno's look at the preview through his shell (preview-cli.mjs). */
 export const PREVIEW_CLI = fileURLToPath(new URL("./preview-cli.mjs", import.meta.url));
 const IDLE_MS = 30 * 60 * 1000;
+/** A task cut by a restart goes on by itself at most this many times in RESUME_WINDOW_MS (crash-loop breaker). */
+export const CODE_RESUMES = 3;
+const RESUME_WINDOW_MS = 15 * 60000;
 /** Automatic archiving (T3 Code auto-settle): after N days idle, when saved, when its PR closes. */
 export const ARCHIVE_DEFAULTS = Object.freeze({ idleDays: 3, onSave: true, onPr: true, keepWithPr: false });
 const SWEEP_MS = 30 * 1000;
@@ -134,7 +137,10 @@ export class CodeService {
     this.watch = { task: null, focused: false, until: 0 }; // the task the person has in front of them
     // Questions that were open when Colmena closed can no longer be answered.
     for (const item of store.list("codeItems").filter((i) => i.kind === "ask" && i.status === "pending")) store.put("codeItems", { ...item, status: "expired" });
-    for (const task of store.list("codeTasks").filter((t) => ["working", "waiting"].includes(t.status))) store.put("codeTasks", { ...task, status: "idle", queue: task.queue || [] });
+    // A turn still under way when Colmena closed (or crashed) is marked `cut`: resumeInterrupted()
+    // picks it up once the server listens.
+    for (const task of store.list("codeTasks").filter((t) => ["working", "waiting"].includes(t.status)))
+      store.put("codeTasks", { ...task, status: "idle", queue: task.queue || [], cut: task.cut || { at: now(), n: (task.turns || []).length + 1 } });
     void this.pruneSaved().catch(() => {});
     if (store.list("codeTasks").some((t) => t.pr?.watching)) this.startPrWatch();
     this.startSweeps();
@@ -773,7 +779,7 @@ export class CodeService {
         ? this.addItem(task.id, { kind: "notice", text: "Compactando la conversación para liberar contexto…", compact: true, turn: n })
         : goal ? this.addItem(task.id, { kind: "notice", text: goal, goal: true, detail: clip(text, 6000), turn: n })
           : this.addItem(task.id, { kind: "user", text, attachments: attachments.length ? attachments : undefined, contexts: contexts.length ? contexts : undefined, turn: n, mode: mode === "plan" ? "plan" : undefined });
-      this.setTask(task.id, { status: "working", error: null });
+      this.setTask(task.id, { status: "working", error: null, cut: null });
       let startSnap = null;
       try { startSnap = await this.snapsOf(task).capture("t" + n + "-start-" + Date.now()); } catch {}
       let entry;
@@ -867,6 +873,7 @@ export class CodeService {
     const turn = entry.turn;
     if (!turn) return;
     entry.turn = null;
+    if (this.closed) return; // cut by the close: shutdown() marked it, the next start resumes it
     const task = this.mustTask(taskId);
     for (const id of turn.tools.values()) {
       const item = this.store.get("codeItems", id);
@@ -1030,6 +1037,8 @@ export class CodeService {
   onExit(taskId, entry, error) {
     if (this.engines.get(taskId) === entry) this.engines.delete(taskId);
     clearTimeout(entry.idle);
+    // Closed by shutdown(): the store may be gone; the next start expires its questions.
+    if (this.closed) return;
     for (const [askId, pending] of this.asks) if (pending.taskId === taskId) { pending.resolve({ behavior: "deny", message: DENIED }); this.asks.delete(askId); this.patchItem(askId, { status: "expired" }); }
     if (entry.turn) void this.finishTurn(taskId, entry, error || Error((ENGINE_LABEL[entry.engine.kind] || "El motor") + " se cerró."));
   }
@@ -1084,7 +1093,11 @@ export class CodeService {
         resolve(value);
       };
       this.asks.set(item.id, { taskId, resolve: done });
-      signal?.addEventListener("abort", () => { this.patchItem(item.id, { status: "expired" }); done({ behavior: "deny", message: "Cancelado." }); }, { once: true });
+      signal?.addEventListener("abort", () => {
+        if (this.closed) return; // the close: the next start expires it
+        this.patchItem(item.id, { status: "expired" });
+        done({ behavior: "deny", message: "Cancelado." });
+      }, { once: true });
     });
   }
 
@@ -1423,7 +1436,12 @@ export class CodeService {
     for (const c of said) seen.add(c.id || c.url);
     const onLines = pr.state === "OPEN" ? await this.lineComments(cmd, cwd, pr, { seen, since }) : [];
     for (const c of onLines) seen.add("lc:" + c.id);
-    const next = { ...prev, ...view, seen: [...seen].slice(-200), checkedAt: now() };
+    // Automated reviewers apart: fallible, and only BOT_ROUNDS review runs each per PR.
+    const bots = new Set();
+    for (const c of said) if (await this.isBot(cmd, cwd, c.author?.login)) bots.add(botName(c.author.login));
+    for (const c of onLines) if (await this.isBot(cmd, cwd, c.user?.login, c.user?.type)) bots.add(botName(c.user.login));
+    const sorted = sortFeedback({ said, lines: onLines, bots, rounds: prev.botRounds || {}, capped: prev.botCapped || [], head: pr.headRefOid });
+    const next = { ...prev, ...view, seen: [...seen].slice(-200), botRounds: sorted.rounds, botCapped: sorted.capped, checkedAt: now() };
     if (pr.state !== "OPEN") return this.prClosed(taskId, { ...next, watching: false });
     // Something for Bruno: each one wakes him once (signature), never twice for the same thing.
     const wake = [];
@@ -1442,9 +1460,16 @@ export class CodeService {
     if (pr.mergeable === "CONFLICTING" && prev.mergeable !== "CONFLICTING") wake.push(`La PR #${pr.number} tiene conflictos con ${task.base || "main"}.`);
     const decided = view.reviewDecision !== (prev.reviewDecision ?? null) ? view.reviewDecision : null;
     if (decided === "CHANGES_REQUESTED") wake.push(`Piden cambios en la PR #${pr.number}.`);
-    if (said.length) wake.push(`Han comentado en la PR #${pr.number}:\n` + said.slice(0, 10).map((c) => `- ${c.author?.login || "alguien"}: ${clip(String(c.body || "").replace(/\s+/g, " "), 600)}`).join("\n"));
-    if (onLines.length) wake.push(`Han comentado líneas de la PR #${pr.number}:\n` + onLines.slice(0, 15).map((c) => `- ${c.user?.login || "alguien"} en ${c.path}${c.line || c.original_line ? ":" + (c.line || c.original_line) : ""}: ${clip(String(c.body || "").replace(/\s+/g, " "), 600)}`).join("\n"));
+    const body = (c) => clip(String(c.body || "").replace(/\s+/g, " "), 600);
+    const where = (c) => c.path + (c.line || c.original_line ? ":" + (c.line || c.original_line) : "");
+    const { people } = sorted;
+    if (people.said.length) wake.push(`Han comentado en la PR #${pr.number}:\n` + people.said.slice(0, 10).map((c) => `- ${c.author?.login || "alguien"}: ${body(c)}`).join("\n"));
+    if (people.lines.length) wake.push(`Han comentado líneas de la PR #${pr.number}:\n` + people.lines.slice(0, 15).map((c) => `- ${c.user?.login || "alguien"} en ${where(c)}: ${body(c)}`).join("\n"));
+    for (const [name, b] of sorted.bots)
+      wake.push(`Revisión automática de ${name} en la PR #${pr.number} (ronda ${sorted.rounds[name].length} de ${BOT_ROUNDS}):\n` + [...b.said.map((c) => `- ${body(c)}`), ...b.lines.map((c) => `- en ${where(c)}: ${body(c)}`)].slice(0, 15).join("\n"));
     this.setTask(taskId, { pr: next });
+    for (const name of sorted.newlyCapped)
+      this.addItem(taskId, { kind: "notice", text: `${name} ya ha revisado ${BOT_ROUNDS} veces la PR #${pr.number}: Bruno no atiende más revisiones automáticas suyas.`, url: pr.url });
     if (decided === "APPROVED") {
       // Good news only: a notice, never a turn for Bruno.
       this.addItem(taskId, { kind: "notice", text: `La PR #${pr.number} está aprobada.`, url: pr.url, tone: "done" });
@@ -1453,7 +1478,7 @@ export class CodeService {
     if (!wake.length) return next;
     this.addItem(taskId, { kind: "notice", text: wake.map((w) => w.split("\n")[0]).join(" "), url: pr.url, tone: "warn" });
     this.notifyTask(taskId, "needs", wake.map((w) => w.split("\n")[0]).join(" "));
-    await this.send(taskId, { line: "Bruno se pone con la PR #" + pr.number + ": " + wake.map((w) => w.split("\n")[0]).join(" "), text: wake.join("\n\n") + "\n\nArréglalo en tu copia y comprueba que funciona. Para subirlo de nuevo, pide permiso: subir sigue necesitando el OK de la persona." }).catch((e) => console.warn("Código: PR: " + e.message));
+    await this.send(taskId, { line: "Bruno se pone con la PR #" + pr.number + ": " + wake.map((w) => w.split("\n")[0]).join(" "), text: wake.join("\n\n") + (sorted.bots.size ? "\n\n" + BOT_ADVICE : "") + "\n\nArréglalo en tu copia y comprueba que funciona. Para subirlo de nuevo, pide permiso: subir sigue necesitando el OK de la persona." }).catch((e) => console.warn("Código: PR: " + e.message));
     return next;
   }
 
@@ -1486,6 +1511,22 @@ export class CodeService {
     if (this.ghUser) return this.ghUser;
     const r = await runCmd(cmd, ["api", "user", "--jq", ".login"], { timeout: 20000 });
     return (this.ghUser = r.ok ? r.stdout.trim() || null : null);
+  }
+
+  /**
+   * Whether a GitHub login is an automated account. gh pr view drops the «[bot]» of apps, so an
+   * unknown login is asked once as «<login>[bot]» (a GitHub App answers type Bot, a person 404).
+   * A failed lookup (no network) is not remembered: it counts as a person and is asked again.
+   */
+  async isBot(cmd, cwd, login, type = null) {
+    if (!login) return false;
+    if (type === "Bot" || /\[bot\]$/i.test(login)) return true;
+    this.botCache ||= new Map();
+    if (this.botCache.has(login)) return this.botCache.get(login);
+    const r = await runCmd(cmd, ["api", "users/" + encodeURIComponent(login + "[bot]"), "--jq", ".type"], { cwd, timeout: 20000 });
+    const bot = r.ok && r.stdout.trim() === "Bot";
+    if (r.ok || /Not Found|\b404\b/.test(r.stderr + r.stdout)) this.botCache.set(login, bot);
+    return bot;
   }
 
   // ------------------------------------------------------------------ acting on the PR (the person's buttons)
@@ -2005,8 +2046,47 @@ export class CodeService {
     return null;
   }
 
+  /**
+   * After a restart: tasks whose turn was cut go on by themselves, told to check their copy and
+   * GitHub before repeating anything (like the missions, runtime.resumeInterrupted). At most
+   * CODE_RESUMES times in 15 minutes per task; after that, or while the team is paused, a line
+   * asks the person to write to Bruno. Returns the ids it resumed.
+   */
+  resumeInterrupted() {
+    const resumed = [];
+    const paused = !!this.store.get("settings", "main")?.paused;
+    for (const task of this.store.list("codeTasks").filter((t) => t.cut)) {
+      const recent = (task.autoResumes || []).filter((t) => Date.now() - Date.parse(t) < RESUME_WINDOW_MS);
+      if (task.archived || this.engines.get(task.id)?.turn || this.starting.has(task.id)) { this.setTask(task.id, { cut: null }); continue; }
+      if (paused || recent.length >= CODE_RESUMES) {
+        this.setTask(task.id, { cut: null });
+        this.addItem(task.id, {
+          kind: "notice", tone: "warn",
+          text: paused ? "El turno de Bruno se cortó al reiniciar Colmena y el equipo está en pausa: escríbele cuando quieras que siga."
+            : "Colmena se ha cerrado varias veces mientras Bruno trabajaba en esto: escríbele cuando quieras que siga.",
+        });
+        continue;
+      }
+      this.setTask(task.id, { cut: null, autoResumes: [...recent, now()] });
+      // A first turn cut before the engine had a conversation: the request goes again with the note.
+      const asked = this.items(task.id).find((i) => i.kind === "user" && i.turn === task.cut.n);
+      const fresh = !task.session?.started && asked?.text;
+      void this.send(task.id, {
+        text: fresh ? RESUME_NOTE + "\n\nLo que te pidieron:\n" + asked.text : RESUME_NOTE,
+        mode: asked?.mode === "plan" ? "plan" : "build",
+        line: "Bruno sigue: Colmena se reinició mientras trabajaba.",
+      }).catch((e) => console.warn("Código: no se pudo retomar " + task.id + ": " + e.message));
+      resumed.push(task.id);
+    }
+    return resumed;
+  }
+
   shutdown() {
-    this.closed = true; // late same-files checks stop here (the store may close next)
+    // Turns under way are cut by this close: marked so the next start picks them up.
+    const cut = (id, n) => { try { this.store.patch("codeTasks", id, () => ({ cut: { at: now(), n } })); } catch {} };
+    for (const [id, entry] of this.engines) if (entry.turn && !entry.turn.stopped) cut(id, entry.turn.n);
+    for (const id of this.starting) if (!this.engines.get(id)?.turn) cut(id, (this.store.get("codeTasks", id)?.turns || []).length + 1);
+    this.closed = true; // late same-files checks and turn ends stop here (the store may close next)
     clearInterval(this.prTimer);
     this.prTimer = null;
     clearInterval(this.sweepTimer);
@@ -2061,6 +2141,12 @@ function ghMessage(said) {
   } catch {}
   return lastLine(said);
 }
+
+/** What Bruno is told along with an automated review (dsh-superagent's take on review bots). */
+const BOT_ADVICE = "Los revisores automáticos se equivocan a menudo: comprueba cada sugerencia contra el código y aplica solo las que lo mejoren claramente, sin añadir complejidad innecesaria. Las que no apliques, déjalas y di en una frase por qué.";
+
+/** What a Código task is told when Colmena restarted in the middle of its turn. */
+export const RESUME_NOTE = "Colmena se reinició mientras trabajabas y tu turno se cortó a medias. Antes de repetir nada, mira cómo está tu copia (git status, git log) y, si estabas tocando GitHub u otra cosa de fuera, cómo está allí. Luego sigue con lo que estabas haciendo.";
 
 /** The history a new engine gets after a switch (T3 Code ContextHandoffService): 16 000 bytes. */
 export const HANDOFF_BYTES = 16000;
