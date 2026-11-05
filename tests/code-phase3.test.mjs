@@ -98,6 +98,7 @@ test("shortcuts: defaults, a change, freeing a key and going back", async () => 
     assert.ok(!("nonsense" in next.bindings));
     assert.equal(code.setKeybindings({}).bindings.togglePanel, KEYBINDINGS.togglePanel);
   } finally {
+    code.shutdown(); // its sweeps would read the closed store later in the run
     store.close();
     rmSync(dir, { recursive: true, force: true });
   }
