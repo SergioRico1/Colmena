@@ -78,9 +78,3 @@ export function forgetOlder(missionId) {
   if (!pages.delete(missionId)) return;
   emit();
 }
-
-/** For tests. */
-export function resetPages() {
-  pages.clear();
-  emit();
-}

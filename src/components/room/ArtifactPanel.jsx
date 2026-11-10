@@ -69,15 +69,6 @@ export const isFileArtifact = (a) => !!a && FILE_FORMATS.has(String(a.format || 
 export const artifactFileUrl = (id, download = false) => `/api/artifacts/${encodeURIComponent(id)}/file${download ? "?download=1" : ""}`;
 export const artifactPageUrl = (id, page, width = 900) => `/api/artifacts/${encodeURIComponent(id)}/pages/${page}?width=${width}`;
 
-/** Thumbnail of a deliverable for lists (Biblioteca, cards): PNG image, first PDF page, SVG; null otherwise. */
-export function ArtifactThumb({ artifact, size = 64, style = {} }) {
-  const [failed, setFailed] = useState(false);
-  const format = String(artifact?.format || "").toLowerCase();
-  const src = !artifact || failed ? null : format === "png" ? artifactFileUrl(artifact.id) : format === "pdf" ? artifactPageUrl(artifact.id, 1, 320) : null;
-  if (!src) return null;
-  return <img src={src} alt="" aria-hidden="true" loading="lazy" onError={() => setFailed(true)} style={{ display: "block", width: `${size}px`, height: `${size}px`, objectFit: "cover", borderRadius: "8px", border: "1px solid #E6E8EE", background: "#F7F8FA", ...style }} />;
-}
-
 /** Field → value table of a filled PDF, with the comparison-table styles of the Chat mockup. */
 function FieldsTable({ fields }) {
   if (!fields?.length) return null;

@@ -18,7 +18,7 @@ envía, compra, publica o ejecuta pasa por la Bandeja y siempre se puede «Tomar
 | `server/computer/system.mjs` | Carpetas (sin `..`, ADS ni enlaces), apps permitidas, `resolveProgram` y `runProgram` (sin shell). |
 | `server/computer/tools.mjs` | Definiciones, `planComputerCall`, `executeComputerTool`, salida para el modelo, reglas con caducidad. |
 | `server/computer/routes.mjs` | Endpoints `/api/computer/*`. |
-| `src/components/computer/` | `BrowserLive.jsx` (vista en vivo + `useBrowserFrames`) y `ApprovalShot.jsx` (captura y campos de una aprobación). |
+| `src/components/computer/` | `BrowserLive.jsx` (vista en vivo + `useBrowserFrames`). |
 
 ## Protocolo IPC
 
@@ -143,7 +143,7 @@ import {
    comprobación «herramienta disponible» debe aceptar esos nombres.
 2. **Verbo** (en `runStep`, antes de `this.tool(...)`): `isComputerTool(call.name) ? verbForComputer(call.name, args) : verbFor(call.name, args)`
    y detalle con `computerActivityDetail(call.name, args)`. Verbos nuevos: «navegando», «rellenando un formulario»,
-   «usando el ordenador», «ejecutando una tarea» (añadirlos a `VerbIcon`/`normalizeVerb` en el cliente).
+   «usando el ordenador», «ejecutando una tarea».
 3. **Política + aprobación + ejecución** (en `tool()`, antes de `schemas[call.name]`):
 
 ```js
@@ -224,9 +224,6 @@ Si se añade `browser_frame` a `LIVE`, tratarlo **antes** de `schedule()` para n
 ### Pantallas
 
 - `<BrowserLive missionId={id} bot={bot} verb={activity[bot.id]?.verb} missionActive={…} />` en En vivo / Sala.
-- `<ApprovalShot approvalId={a.id} />` dentro de la tarjeta de la Bandeja. `approvalView` (state.mjs) no expone
-  `tool`/`computer`: añadir `computer: !!a.computer` para mostrarla solo cuando toca (si no, el componente hace la
-  petición y no pinta nada).
 
 ## Pruebas
 

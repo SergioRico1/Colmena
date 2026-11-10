@@ -100,8 +100,3 @@ export function useFollow(key) {
   }, []);
   return { ref: attach, below, toEnd };
 }
-
-/** Older callers: just the ref. */
-export function useStickToBottom(key) {
-  return useFollow(key).ref;
-}

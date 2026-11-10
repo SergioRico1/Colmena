@@ -15,21 +15,6 @@ import { GROUPS, groupOf, snoozePresets, whenLabel, pillOf, homeSections } from 
 // actions): pin, snooze until a time, archive (settle) or keep it out of automatic archiving,
 // and delete. The archived ones wait folded at the end.
 
-const STATUS = {
-  working: { text: "Trabajando", dot: C.bruno, fg: C.faint, state: "work" },
-  waiting: { text: "Te espera", dot: C.honey, fg: C.honeyText, state: "wait" },
-  planned: { text: "Te espera · plan", dot: C.honey, fg: C.honeyText, state: "wait" },
-  error: { text: "Atascada", dot: "#C2412D", fg: C.red, state: "rest" },
-};
-
-export function taskStatus(t) {
-  if (STATUS[t.status]) return STATUS[t.status];
-  if (t.merging) return { text: "Conflictos con " + (t.base || "main"), dot: C.honey, fg: C.honeyText, state: "wait" };
-  if (t.goal && ["blocked", "limited"].includes(t.goal.status)) return { text: "Te espera · objetivo", dot: C.honey, fg: C.honeyText, state: "wait" };
-  if (t.turns) return { text: t.merged || t.saved ? "Guardado" : t.isolated ? "Listo para revisar" : "Listo", dot: C.green, fg: C.faint, state: "rest" };
-  return { text: "Nueva", dot: "#C9CBD1", fg: C.faint, state: "rest" };
-}
-
 export { GROUPS, groupOf, whenLabel };
 
 const SHELF_KEY = "colmena:code-shelves";

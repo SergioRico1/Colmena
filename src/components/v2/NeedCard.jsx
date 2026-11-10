@@ -1,26 +1,16 @@
 import { useEffect, useState } from "react";
 import QuestionFlow from "./chat/QuestionFlow.jsx";
 import { QuestionReply } from "../room/QuestionReply.jsx";
-import { Calendar, FileText, Folder, Mail, MessageSquare } from "lucide-react";
 import { post } from "../../lib/api.js";
 import { roomUrl, time } from "../../lib/format.js";
 import { cancel, schedule, useUndoable } from "../../lib/undoable.js";
 import { BotPresence } from "./Presence.jsx";
-import { later } from "../../lib/undoToast.js";
 
 // «Te necesitan» cards of Colmena 2.0 (design/V2Hoy.dc.html): the only honey on the screen.
 // A send shows what goes out and to whom; «Aprobar y enviar» waits 10 s with «Deshacer».
 // A question shows its options; your choice also waits 10 s before it is given.
 export const HONEY = "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)";
 export const CALM = "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)";
-
-// What was approved or answered here stays visible a while, confirmed, then goes.
-const done = new Map(); // approval id → {approval, text, at}
-const remember = (approval, text) => done.set(approval.id, { approval, text, at: Date.now() });
-export const recentlyDone = () => {
-  for (const [id, d] of done) if (Date.now() - d.at > 10 * 60e3) done.delete(id);
-  return [...done.values()];
-};
 
 const tag = (label) => (
   <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600", color: "#8A5A00" }}>
@@ -89,7 +79,6 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
     setError(null);
     schedule(key, async () => {
       await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision });
-      remember(a, isSend ? `Enviado a las ${time(new Date())}. Lo encontrarás en el Archivo.` : `Aprobado a las ${time(new Date())}.`);
     });
   };
   const pick = (o) => {
@@ -97,7 +86,6 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
     setChoice(o.id);
     schedule(key, async () => {
       await post(`/approvals/${a.id}/answer`, { optionId: o.id, revision: a.revision });
-      remember(a, `Decidido: ${o.label}. ${bot?.name || "El bot"} sigue con ello.`);
     });
   };
   const undo = () => { cancel(key); setChoice(null); };
@@ -184,75 +172,6 @@ export function ChoiceCard({ m, bots }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
         <a href={isPlan ? `/encargo/${m.id}` : `/debate/${m.id}`} style={{ flex: "1", display: "flex", alignItems: "center", justifyContent: "center", height: "50px", padding: "0 22px", borderRadius: "999px", background: "#FFC93C", fontSize: "15px", fontWeight: "600" }}>{isPlan ? "Revisar el plan" : "Ver las propuestas"}</a>
       </div>
-    </article>
-  );
-}
-
-/**
- * «Te avisa de lo importante» (Dots, OpenClaw): a question the bot that watches your apps left you in its chat. One
- * click answers it there, as if you had typed it; the bot then gets on with it (a reply it
- * writes still waits for your OK before it leaves).
- */
-// Where a note comes from (server/watch-sources.mjs «fuente»).
-const WHERE = { Correo: ["en tu correo", Mail], Agenda: ["en tu agenda", Calendar], Slack: ["en Slack", MessageSquare], Drive: ["en Drive", FileText], Notion: ["en Notion", FileText], Carpeta: ["en tus carpetas", Folder] };
-export function WatchCard({ n, bot }) {
-  const [busy, setBusy] = useState(false);
-  const [said, setSaid] = useState(null);
-  const [error, setError] = useState(null);
-  const chat = `/chat/${n.botId}?c=${n.missionId}`;
-  const answer = async (text) => {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await post(`/watch/notes/${n.id}/reply`, { text });
-      setSaid(text);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  const dismiss = () => {
-    setError(null);
-    later({ id: "watchnote:" + n.id, keys: ["watchnote:" + n.id], text: "Aviso descartado", error: "No se pudo descartar", run: () => post(`/watch/notes/${n.id}/dismiss`, {}) });
-  };
-  const replies = n.replies?.length ? n.replies : ["Sí, hazlo", "No hace falta"];
-  return (
-    <article style={{ padding: "26px", background: "#FFFFFF", borderRadius: "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: said ? CALM : HONEY }}>
-      <Header bot={bot} who={(WHERE[n.sources?.[0]?.fuente] || WHERE.Correo)[0]} at={n.createdAt} label={said ? null : "Responder"} />
-      <h3 style={{ margin: "0", font: "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em" }}>{n.question || n.title}</h3>
-      <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#3D404A", display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{n.text}</p>
-      {n.sources?.length ? (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {n.sources.map((s, i) => (
-            <a key={i} href={s.url} target="_blank" rel="noreferrer" title={s.asunto} style={{ display: "flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "34px", padding: "0 14px 0 10px", borderRadius: "999px", background: "#F6F6F3", fontSize: "13px", color: "#3D404A" }}>
-              {(() => { const Icon = (WHERE[s.fuente] || WHERE.Correo)[1]; return <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />; })()}
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.asunto || "Ver el original"}</span>
-            </a>
-          ))}
-        </div>
-      ) : null}
-      {said ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-          <Sent text={`Le has dicho «${said}». ${bot?.name || "El bot"} se pone con ello.`} />
-          <a href={chat} style={{ fontSize: "14px", fontWeight: "600", color: "#1F4FD1" }}>{"Ver el chat"}</a>
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-            {replies.map((r, i) => (
-              <button key={r} type="button" disabled={busy} onClick={() => answer(r)}
-                style={{ flex: i === 0 ? "1 1 auto" : "0 1 auto", height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", cursor: busy ? "default" : "pointer", fontSize: "15px", fontWeight: "600", background: i === 0 ? "#FFC93C" : "rgba(18,19,26,.06)", color: "#12131A", opacity: busy ? 0.6 : 1 }}>{r}</button>
-            ))}
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "18px", fontSize: "14px" }}>
-            <a href={chat} style={{ fontWeight: "600", color: "#1F4FD1" }}>{"Contestar en el chat"}</a>
-            <button type="button" onClick={dismiss} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "14px", color: "#5C606C" }}>{"Ahora no"}</button>
-          </div>
-        </div>
-      )}
-      {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4372A" }}>{error}</span> : null}
     </article>
   );
 }

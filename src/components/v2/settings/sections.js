@@ -189,7 +189,7 @@ export const SECTION_OF = Object.fromEntries(SECTIONS.map((s) => [s.id, s]));
 export const DEFAULT_SECTION = "general";
 
 // Detail pages (one click below a section): which section they belong to.
-export const PARENT = { "ia-v1": "ia", ordenador: "apps", personas: "general", seguridad: "privacidad" };
+export const PARENT = { ordenador: "apps", personas: "general", seguridad: "privacidad" };
 // Old section addresses (Colmena 2 and before) whose content now lives in a section.
 export const ALIAS = {
   cuenta: "general", espacio: "general", inteligencia: "ia", autonomia: "permisos",

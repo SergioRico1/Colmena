@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BotPresence, shapeOf } from "../../v2/Presence.jsx";
-import { ArtifactContent } from "../../../screens/Biblioteca.jsx";
+import { ArtifactContent } from "./ArtifactContent.jsx";
 import { useResource } from "../../../lib/store.jsx";
 import { download, get } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";

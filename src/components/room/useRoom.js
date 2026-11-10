@@ -81,7 +81,3 @@ export function useRoom(id) {
 export const ACTIVE_STEP = new Set(["running", "active", "working", "in_progress"]);
 export const DONE_STEP = new Set(["completed", "done", "final"]);
 export const BLOCKED_STEP = new Set(["blocked", "failed", "error"]);
-
-export function isRunning(mission) {
-  return ["running", "planning", "queued"].includes(mission?.status);
-}

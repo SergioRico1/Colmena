@@ -1,0 +1,53 @@
+import ReactMarkdown from "react-markdown";
+import { SlideViewer, isDeck } from "../../v2/SlideDeck.jsx";
+import { DocViewer, SheetViewer, isWordDoc, isWorkbook } from "../../v2/OfficeFiles.jsx";
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quoted = false;
+  const sep = (text.split("\n")[0].match(/;/g) || []).length > (text.split("\n")[0].match(/,/g) || []).length ? ";" : ",";
+  for (let i = 0; i < text.length && rows.length < 300; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') quoted = false; else cell += c;
+    } else if (c === '"') quoted = true;
+    else if (c === sep) { row.push(cell); cell = ""; }
+    else if (c === "\n") { row.push(cell.replace(/\r$/, "")); rows.push(row); row = []; cell = ""; }
+    else cell += c;
+  }
+  if (cell || row.length) rows.push([...row, cell]);
+  return rows;
+}
+
+/** The content of a deliverable: image, table, page, markdown or code. */
+export function ArtifactContent({ a, loading = false, error = null }) {
+  const content = a?.content ?? "";
+  if (loading && !a) return <p style={{ margin: 0, color: "#4A4F5C" }}>Abriendo…</p>;
+  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "#FDECEC", border: "1px solid #F1B5B7", borderRadius: "10px", fontSize: "14px", color: "#8F1D22" }}>{`No se pudo abrir: ${error}`}</p>;
+  if (!content) return <p style={{ margin: 0, color: "#4A4F5C" }}>{a?.status === "en curso" ? "Todavía se está haciendo. Aparecerá aquí en cuanto el bot lo termine." : "Este entregable está vacío."}</p>;
+  if (isDeck(a)) return <SlideViewer artifact={a} />;
+  if (isWordDoc(a)) return <DocViewer artifact={a} />;
+  if (isWorkbook(a)) return <SheetViewer artifact={a} />;
+  if (a.format === "svg") return <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(content)}`} alt={a.title} style={{ maxWidth: "100%", display: "block", margin: "0 auto", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px" }} />;
+  if (a.format === "csv") {
+    const rows = parseCsv(content);
+    return (
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "collapse", fontSize: "13px", minWidth: "100%" }}>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>{r.map((c, j) => i === 0
+                ? <th key={j} scope="col" style={{ padding: "8px", borderBottom: "2px solid #12131A", textAlign: "left", fontWeight: "600", whiteSpace: "nowrap" }}>{c}</th>
+                : <td key={j} style={{ padding: "8px", borderBottom: "1px solid #E6E8EE", fontFamily: /^-?[\d.,%€$ ]+$/.test(c) ? "'Geist Mono', monospace" : "inherit" }}>{c}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+  if (a.format === "html") return <iframe title={a.title} sandbox="" srcDoc={content} style={{ width: "100%", height: "70vh", border: "1px solid #E6E8EE", borderRadius: "12px", background: "#FFFFFF" }} />;
+  if (a.format === "md" || a.format === "txt" || a.kind === "document" || a.kind === "slides") return <div className="colmena-md"><ReactMarkdown>{content}</ReactMarkdown></div>;
+  return <pre style={{ margin: 0, padding: "16px", background: "#12131A", color: "#E6E8EE", borderRadius: "12px", overflow: "auto", font: "400 13px/1.6 'Geist Mono', monospace" }}>{content}</pre>;
+}

@@ -1,7 +1,5 @@
 // Shared formatting + URL helpers (Spanish locale).
 export const isRoom = (m) => !m.conversation && m.status !== "cancelled";
-/** Everything in the Bandeja that waits for you: pending, and expired ones still to clear. */
-export const waitingOnYou = (approvals = []) => approvals.filter((a) => a.status === "pending" || a.status === "expired");
 export const needsYou = (m) => ["waiting", "awaiting_choice", "awaiting_plan"].includes(m.status) || m.pendingCount > 0 || m.watchAsks > 0;
 
 /**
@@ -53,12 +51,8 @@ export function ago(value) {
   if (s < 86400) return `hace ${Math.round(s / 3600)} h`;
   return `hace ${Math.round(s / 86400)} d`;
 }
-export function todayLabel() {
-  return new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }).replace(",", ",");
-}
 export function greeting() {
   const h = new Date().getHours();
   return h < 13 ? "Buenos días." : h < 20 ? "Buenas tardes." : "Buenas noches.";
 }
 export const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-export const words = (text) => (text || "").trim().split(/\s+/).filter(Boolean).length;

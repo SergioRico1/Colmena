@@ -17,7 +17,6 @@ import { writeSoul } from "./soul.mjs";
 import { forget } from "./forgotten.mjs";
 import { REASON_LABEL, downReasonsOf } from "./feedback.mjs";
 
-export const VERDICTS = ["ayudo", "empeoro", "sin-efecto", "dudoso"];
 export const VERDICT_LABELS = Object.freeze({ ayudo: "Ayudó", empeoro: "Empeoró", "sin-efecto": "Sin efecto observado", dudoso: "Dudoso" });
 export const CONFIDENCE_LABELS = Object.freeze({ baja: "confianza baja", media: "confianza media", alta: "confianza alta" });
 const SCORE = { bien: 1, regular: 0.6, mal: 0 };

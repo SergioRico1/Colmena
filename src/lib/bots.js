@@ -1,9 +1,6 @@
 // Visual identity of bots: shape + colour + initial (never colour alone).
 const LIGHT_INK = new Set(["#FFC93C", "#FF5CA8", "#FF7A1A", "#FFE08A", "#3DDC97"]);
 
-export const SHAPES = ["hex", "circle", "square", "diamond", "arch", "leaf"];
-export const SHAPE_LABEL = { hex: "hexágono", circle: "círculo", square: "cuadrado", diamond: "rombo", arch: "arco", leaf: "hoja" };
-
 /** Inline style fragment for a bot avatar of `size` px (matches the mockups' radii). */
 export function avatarStyle(bot, size = 24) {
   const color = bot?.color || "#C9CCD6";
@@ -42,21 +39,9 @@ export function portraitOf(bot) {
 
 export const initial = (bot) => (bot?.name || "?").trim().charAt(0).toUpperCase();
 
-export const USER = { id: "user", name: "Tú", color: "#12131A", shape: "circle" };
-
 export function botById(bots, id) {
   return bots.find((b) => b.id === id) || null;
 }
-
-/** Status dot used by the compact sidebar and lists. */
-export function statusDot(status) {
-  if (status === "trabaja") return { width: "7px", height: "7px", borderRadius: "50%", background: "#3DDC97" };
-  if (status === "espera") return { width: "7px", height: "7px", borderRadius: "2px", background: "#FFC93C" };
-  if (status === "bloqueado") return { width: "7px", height: "7px", borderRadius: "2px", background: "#E5484D" };
-  return null; // libre / pausado: no dot in the compact variant
-}
-
-export const STATUS_LABEL = { trabaja: "Trabaja", espera: "Te espera", libre: "Libre", pausado: "En pausa", bloqueado: "Bloqueado" };
 
 
 /**

@@ -42,10 +42,6 @@ html.colmena-desktop[data-v2] #root{padding-top:0}
   #root > div:has(> nav.colmena-sidebar) > nav.colmena-sidebar{overflow:hidden}
   .colmena-sidebar{flex-shrink:0}
   .colmena-sidebar-scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#2C2F3A transparent}
-  .colmena-chat{overflow:hidden!important}
-  .colmena-chat > *{flex-shrink:0}
-  .colmena-chat > .colmena-chat-body{flex:1 1 0!important;min-height:0;flex-wrap:nowrap!important;overflow:hidden}
-  .colmena-chat-body > *{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 }
 .colmena-sidebar-scroll::-webkit-scrollbar{width:8px}
 .colmena-sidebar-scroll::-webkit-scrollbar-thumb{background:#2C2F3A;border-radius:8px;border:2px solid #12131A}
@@ -131,8 +127,6 @@ div:not(#root):has(> [role="dialog"][aria-modal="true"]){animation:c-fade 160ms 
 .c-chart-in path[data-slice]{transform-box:view-box;transform-origin:50% 50%;animation:c-pop-in 320ms var(--c-ease) both}
 /* 7 · progress segments fill instead of jumping */
 .c-seg-fill{transition:background-color 300ms ease,background-image 300ms ease,opacity 300ms ease}
-/* 8 · a check that draws itself once */
-.c-draw path,.c-draw polyline{stroke-dasharray:40;stroke-dashoffset:40;animation:c-dash 520ms ease-out 80ms forwards}
 /* 10 · drop zone */
 .c-drop-zone{animation:c-fade 140ms ease both}
 /* 11 · quick-ask window */

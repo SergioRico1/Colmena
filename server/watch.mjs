@@ -43,7 +43,7 @@ export function itemsInput(items, recent, onSuspicious = () => {}) {
     "yaLeContaste (tus propias notas, no datos de fuera): " + JSON.stringify(recent)].join("\n\n");
 }
 
-export { availability, compactMail, gmailUrl, ownAddress } from "./watch-sources.mjs";
+export { availability, gmailUrl, ownAddress } from "./watch-sources.mjs";
 export const WATCH_DEFAULTS = Object.freeze({ enabled: true, level: "importante", everyMinutes: 10, botId: null, checklist: "", sources: {} });
 export const WATCH_LEVELS = ["urgente", "importante"];
 export const MAX_FAILURES = 3; // then that source (or the whole look) stops until you press «Mirar ahora»

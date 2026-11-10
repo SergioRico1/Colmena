@@ -67,13 +67,6 @@ export async function projectFile(missionRoot, name, rel, { write = false } = {}
   }
 }
 
-/** Projects of a mission: [{name, template, files}]. */
-export async function listProjects(missionRoot) {
-  let entries = [];
-  try { entries = await readdir(path.join(missionRoot, PROJECTS_DIR), { withFileTypes: true }); } catch { return []; }
-  return entries.filter((e) => e.isDirectory() && !e.isSymbolicLink()).map((e) => ({ name: e.name }));
-}
-
 /** Recursive listing without node_modules, .git or build output: {files:[{path,size}], truncated}. */
 export async function listProjectFiles(missionRoot, name, rel = "") {
   const root = await projectRoot(missionRoot, name);

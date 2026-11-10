@@ -160,4 +160,4 @@ export function ListenArtifactButton({ artifactId, bot, title }) {
 
 /* ───────────── dictation (Dictation.jsx) ───────────── */
 
-export { useDictation, MicButton, appendDictation, LiveWords, DictationHelp, EngineTag, useVoiceStatus, refreshVoiceStatus, setDictationEngine } from "./Dictation.jsx";
+export { useDictation, MicButton, appendDictation, LiveWords, DictationHelp, EngineTag } from "./Dictation.jsx";

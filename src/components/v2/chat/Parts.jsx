@@ -320,15 +320,4 @@ function RunningCommand({ command, stepId, narration, bots }) {
   );
 }
 
-/** «Hoy» between days in a room (a hairline on each side). */
-export function DayLine({ label }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "2px 0 12px", fontSize: "13px", color: "#6B6F7A" }}>
-      <span style={{ flex: "1", height: "1px", background: "rgba(18,19,26,.08)" }} />
-      {label}
-      <span style={{ flex: "1", height: "1px", background: "rgba(18,19,26,.08)" }} />
-    </div>
-  );
-}
-
 export { BotPresence };

@@ -33,10 +33,6 @@ export function removeUnsent(id) {
   if (list.some((u) => u.id === id)) commit(list.filter((u) => u.id !== id));
 }
 
-export function unsentOf(missionId) {
-  return list.filter((u) => u.missionId === missionId);
-}
-
 const subscribe = (fn) => { subs.add(fn); return () => subs.delete(fn); };
 const snapshot = () => list;
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronRight, Copy, ExternalLink, Eye, FileDiff, GitBranch, GitPullRequest, Lock, MessageSquare, UsersRound } from "lucide-react";
+import { ArrowRight, Copy, ExternalLink, Eye, FileDiff, GitBranch, GitPullRequest, Lock, MessageSquare } from "lucide-react";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { names } from "./PeopleMessage.jsx";
 import { navigate } from "../../../lib/router.jsx";
-import { useHandoffs, useSharedTask, useSharedTasks } from "../../../lib/codeshare.js";
+import { useSharedTask } from "../../../lib/codeshare.js";
 import { get, post } from "../../../lib/api.js";
 
 // Código tasks other people share with you (design/V2Codigo.dc.html, paso compartida): what
@@ -17,47 +17,6 @@ export const sharedStatus = (s, owner = "") => ({
   error: { text: "Atascada", dot: "#D9483B" },
 }[s.running ? "working" : s.status] || { text: "En pausa", dot: "#C9CBD1" });
 const CHECKS = { passing: ["Pasa el CI", "#0B6B4A", "#E8F5EE"], failing: ["Falla el CI", "#B4231A", "#FCEBEA"], pending: ["CI en marcha", "#6B4E00", "#FFF6DE"], none: ["Sin CI", "#5C606C", "rgba(18,19,26,.05)"] };
-
-/** «Compartidas contigo» at the end of the list of projects. */
-export function SharedShelf({ current = null }) {
-  const items = useSharedTasks();
-  const handoffs = useHandoffs();
-  const [open, setOpen] = useState(true);
-  if (!items?.length && !handoffs.length) return null;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-      {handoffs.map((h) => (
-        <a key={h.id} href={"/codigo/traspaso/" + h.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/traspaso/" + h.id); }}
-          style={{ display: "flex", alignItems: "center", gap: "11px", margin: "0 0 6px 4px", padding: "10px 12px", borderRadius: "16px", background: current === h.id ? "#FFFFFF" : "#FFF6DE", color: "#12131A", textDecoration: "none", boxShadow: "0 1px 2px rgba(18,19,26,.05)" }}>
-          <PeerAvatar person={h.ownerPerson} size={24} />
-          <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#6B4E00" }}>{h.ownerPerson.name.split(" ")[0] + " te pasa"}</span>
-            <span style={{ fontSize: "14px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.title}</span>
-          </span>
-        </a>
-      ))}
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
-        style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px 4px", border: 0, background: "transparent", cursor: "pointer", font: `500 11px/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: "#8C8F99", textAlign: "left" }}>
-        <ChevronRight size={11} strokeWidth={2.6} aria-hidden="true" style={{ transition: "transform .2s ease", transform: open ? "rotate(90deg)" : "none" }} />
-        <UsersRound size={11} strokeWidth={2.4} aria-hidden="true" />{"Compartidas contigo"}<span style={{ color: "#A3A6AE" }}>{(items || []).length}</span>
-      </button>
-      {open ? (items || []).map((m) => {
-        const st = sharedStatus(m.snapshot, m.ownerPerson.name);
-        const here = current === m.id;
-        return (
-          <a key={m.id} href={"/codigo/compartida/" + m.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/compartida/" + m.id); }}
-            style={{ display: "flex", alignItems: "center", gap: "11px", marginLeft: "14px", padding: "9px 10px", borderRadius: "14px", background: here ? "#FFFFFF" : "transparent", boxShadow: here ? "0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)" : "none", color: "#12131A", textDecoration: "none" }}>
-            <PeerAvatar person={m.ownerPerson} size={22} />
-            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-              <span style={{ fontSize: "14px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.snapshot.title}</span>
-              <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#6B6F7A" }}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", background: st.dot }} />{st.text}</span>
-            </span>
-          </a>
-        );
-      }) : null}
-    </div>
-  );
-}
 
 /** One task shared with you. */
 export function SharedTask({ id }) {

@@ -32,7 +32,6 @@ export function cancel(id) {
   notify();
   return true;
 }
-export const isPending = (id) => pending.has(id);
 
 /** Holds a wait where it is (the window is hidden, you are reading its notice). */
 export function pause(id) {

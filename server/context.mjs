@@ -69,7 +69,6 @@ const NOTE_PREFIXES = [
 const textOf = (item) => typeof item?.content === "string" ? item.content
   : Array.isArray(item?.content) ? String(item.content.find((p) => typeof p?.text === "string")?.text || "") : "";
 export const isColmenaNote = (item) => item?.role === "user" && !item.type && NOTE_PREFIXES.some((p) => textOf(item).startsWith(p));
-export const isSummary = (item) => item?.role === "user" && !item.type && textOf(item).startsWith("[Resumen del trabajo hasta ahora");
 /** A message the person really wrote (or the request itself): kept literally through a compaction. */
 export const isPersonMessage = (item) => item?.role === "user" && !item.type && !isColmenaNote(item);
 

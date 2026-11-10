@@ -19,26 +19,6 @@ export function NoteLink({ link }) {
 // Shared pieces for Chat, Sala, En directo and Debate. Every style here is
 // copied from design/Chat|Sala|EnVivo|Debate.dc.html.
 
-export const roomCss = `
-.rm-item:hover{background:#F7F8FA}
-.rm-item:focus-visible,.rm-focus:focus-visible{outline:2px solid #2F6BFF;outline-offset:2px}
-.rm-md>*:first-child{margin-top:0}
-.rm-md a{color:#1F4FD1;font-weight:600}
-.rm-md a:hover{text-decoration:underline}
-@keyframes rm-blink{50%{opacity:0}}
-@keyframes rm-dots{0%,80%,100%{opacity:.25}40%{opacity:1}}
-@keyframes rm-spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-`;
-
-const FONT = { 20: 11, 22: 11, 24: 11, 26: 12, 28: 13, 30: 13, 32: 14, 40: 17, 56: 24 };
-const DIAMOND_FONT = { 20: 9, 22: 9, 24: 10, 26: 10, 28: 11, 30: 12, 32: 12, 40: 15, 56: 20 };
-
-export function botFont(bot, size) {
-  const table = bot?.shape === "diamond" ? DIAMOND_FONT : FONT;
-  return table[size] || Math.round(size * (bot?.shape === "diamond" ? 0.38 : 0.43));
-}
-
 /** Bot avatar — Colmena 2.0: a presence (shape + colour + gloss, no letters). */
 export function BotAvatar({ bot, size = 28, style, ring = false, mood = null, state = "rest" }) {
   return <BotPresence bot={bot} size={size} state={state} style={style} />;
@@ -174,22 +154,6 @@ export function ErrorLine({ children, style }) {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17v.5" /></svg>
       {children}
     </p>
-  );
-}
-
-/** Designed loading / error / empty state for a whole room. */
-export function StateCard({ title, text, href, cta, tone = "neutral" }) {
-  const alert = tone === "error";
-  return (
-    <div style={{ flex: "1", display: "grid", placeItems: "center", padding: "48px clamp(16px, 3vw, 32px)" }}>
-      <div role={alert ? "alert" : "status"} style={{ width: "min(100%, 520px)", background: "#FFFFFF", border: alert ? "2px solid #12131A" : "1px solid #DCE0E8", boxShadow: alert ? "6px 6px 0 #FFC93C" : "none", borderRadius: "16px", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "10px" }}>
-        <strong style={{ font: "700 20px/1.2 'Bricolage Grotesque', sans-serif" }}>{title}</strong>
-        {text ? <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#2B2D36" }}>{text}</p> : null}
-        {href ? (
-          <a href={href} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", height: "40px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", borderRadius: "10px", fontSize: "14px", fontWeight: "600" }}>{cta}</a>
-        ) : null}
-      </div>
-    </div>
   );
 }
 

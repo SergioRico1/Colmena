@@ -35,4 +35,4 @@ El motor conserva propuestas privadas, caducidad, revalidacion de esquema/cuenta
 - A 390px se observa el ancho original de 1440px; se registra como limitacion, no como responsive aprobado.
 - OAuth de apps, acceso real Gmail/Calendar e instalador nativo no se han verificado. No se han enviado correos ni conectado cuentas reales.
 
-Reproducir: npm run check. Para QA visual aislado: node scripts/connections-qa-server.mjs y ejecutar scripts/connections-ui-check.snippet.js con playwright-cli run-code --filename desde una pagina de ese servidor. No usar ese script contra datos reales.
+Reproducir: npm run check.

@@ -171,7 +171,6 @@ export function setPaused(value) {
   }
   notify();
 }
-export const isPaused = () => paused;
 
 /** «Deshacer» on the newest notice (Ctrl+Z outside a text field). */
 export function undoLast() {

@@ -51,8 +51,6 @@ export function normalizeFormula(src) {
 export const colLetter = (c) => { let s = ""; for (c += 1; c > 0; c = Math.floor((c - 1) / 26)) s = String.fromCharCode(65 + ((c - 1) % 26)) + s; return s; };
 export const colIndex = (letters) => [...letters.toUpperCase()].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
 export const cellName = (r, c) => colLetter(c) + (r + 1);
-/** «Hoja 1» → 'Hoja 1' when Excel needs the quotes. */
-export const sheetRef = (name) => (/^[A-Za-z_][A-Za-z0-9_.]*$/.test(name) && !/^[A-Z]{1,3}\d+$/i.test(name) ? name : `'${name.replace(/'/g, "''")}'`);
 
 // ---- tokenizer ----
 const SHEET = String.raw`(?:'((?:[^']|'')+)'|([A-Za-z_À-ÿ][\wÀ-ÿ.]*))!`;
@@ -319,7 +317,6 @@ const LAZY = {
   IFERROR: (args, ev) => { const v = ev(args[0]); return isErr(v) ? ev(args[1]) : v; },
   IFNA: (args, ev) => { const v = ev(args[0]); return isErr(v) && v.code === "#N/A" ? ev(args[1]) : v; },
 };
-export const KNOWN = new Set([...Object.keys(FUNCTIONS), ...Object.keys(LAZY)]);
 
 /**
  * Evaluates a parsed formula. ctx: {sheet, cell(sheet, r, c) → value, size(sheet) → {rows, cols} | null}.

@@ -8,7 +8,7 @@ import { navigate } from "../../lib/router.jsx";
 //    app-level «te necesita», so it goes in honey; one way out, to Ajustes › Cuentas de IA.
 //  - StuckBotCard: a bot that got stuck — red ring around its shape, the reason in words, the
 //    technical detail only in expert mode, «Reintentar» and «Hablar con …».
-// For empty places see EmptyState.jsx; for loading, v2/Skeleton.jsx; for plan limits,
+// For loading see v2/Skeleton.jsx; for plan limits,
 // v2/LimitNotice.jsx (PlanLimitNotice).
 
 const INK = "#12131A";

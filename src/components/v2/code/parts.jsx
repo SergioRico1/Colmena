@@ -13,7 +13,6 @@ export const MONO = "'Geist Mono', ui-monospace, monospace";
 export const HEAD = "'Bricolage Grotesque', sans-serif";
 export const CARD = "0 1px 2px rgba(18,19,26,.04)";
 export const SHEET = "0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45)";
-export const FRAME = "0 1px 2px rgba(18,19,26,.05), 0 30px 70px -40px rgba(18,19,26,.35)";
 
 export const MODEL_LABEL = { "claude-opus-5-5": "Opus 5.5", "claude-sonnet-5-5": "Sonnet 5.5", "claude-haiku-5-5": "Haiku 5.5" };
 export const EFFORT_LABEL = { low: "Bajo", medium: "Medio", high: "Alto", xhigh: "Muy alto", max: "Máximo" };
@@ -88,18 +87,6 @@ export function Stat({ add, del, size = 12 }) {
   return (
     <span className="code-stat" style={{ font: `500 ${size}px/1 ${MONO}`, whiteSpace: "nowrap" }}>
       {add ? <span style={{ color: C.greenText }}>+{add}</span> : null}{add && del ? " " : ""}{del ? <span style={{ color: C.red }}>−{del}</span> : null}
-    </span>
-  );
-}
-
-/** Bruno's shape (orange arch) in its state: breathing at work, honey glow when waiting. */
-export function BrunoMark({ size = 18, state = "rest", bot = null }) {
-  const color = bot?.color || C.bruno;
-  const anim = state === "work" ? "breathe 1.4s ease-in-out infinite" : state === "wait" ? "beckon 1.8s ease-out infinite" : "none";
-  const filter = state === "work" ? `drop-shadow(0 3px 7px ${color}88)` : "drop-shadow(0 2px 3px rgba(18,19,26,.16))";
-  return (
-    <span aria-hidden="true" style={{ display: "inline-grid", flex: "none", animation: anim, filter }}>
-      <span style={{ display: "block", width: size + "px", height: size + "px", background: `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${color}`, borderRadius: "50% 50% 14% 14%" }} />
     </span>
   );
 }

@@ -44,7 +44,7 @@ function preloadScreens() {
 }
 const Palette = live["./screens/CommandPalette.jsx"] ? lazy(live["./screens/CommandPalette.jsx"]) : null;
 
-const OPEN_BEFORE_ONBOARDING = new Set(["Bienvenida", "BienvenidaV2", "AjustesIA", "AjustesIAV2", "DesignGallery", "Mapa", "QuickAsk"]);
+const OPEN_BEFORE_ONBOARDING = new Set(["BienvenidaV2", "AjustesIAV2", "DesignGallery", "Mapa", "QuickAsk"]);
 
 function App() {
   const { route, params, query, pathname } = useRouter();

@@ -1,5 +1,3 @@
-import { post } from "../../lib/api.js";
-import { useAction } from "../../lib/store.jsx";
 
 const ERROR = { margin: "0", fontSize: "13px", color: "#B4372A", fontWeight: "600" };
 
@@ -22,21 +20,5 @@ export default function ApprovalConflict({ error, conflict, style }) {
         <span style={{ fontSize: "13px", color: "#2B2D36" }}>{expired ? "Por seguridad no se hace nada con una revisión caducada." : "Ya ves la versión actual. Revísala antes de decidir."}</span>
       </span>
     </div>
-  );
-}
-
-/** «Caducado» actions for an expired send/permission: ask the bot to prepare it again, or drop it. */
-export function ExpiredActions({ a, name = "el bot", dark, light, ghost }) {
-  const { act, busy, error, conflict } = useAction();
-  const renew = () => act(() => post(`/approvals/${a.id}/renew`, { revision: a.revision }));
-  const drop = () => act(() => post(`/approvals/${a.id}`, { decision: "denied", revision: a.revision }));
-  return (
-    <>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        <button type="button" disabled={busy} onClick={renew} title={`Se lo pedimos a ${name} en la sala`} style={{ ...dark, opacity: busy ? "0.6" : "1" }}>Volver a preparar</button>
-        <button type="button" disabled={busy} onClick={drop} style={ghost || light}>Descartar</button>
-      </div>
-      <ApprovalConflict error={error} conflict={conflict} />
-    </>
   );
 }

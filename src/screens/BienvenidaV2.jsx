@@ -4,7 +4,7 @@ import { css } from "../design/V3Bienvenida.jsx";
 import { shapeOf } from "../components/v2/Presence.jsx";
 import { WindowDots } from "../components/v2/Rail.jsx";
 import ProviderMark from "../components/v2/ProviderMark.jsx";
-import { B, ROLES, APP_TASK } from "./Bienvenida.jsx";
+import { B, ROLES, APP_TASK } from "../lib/onboarding.js";
 import { useAction, useStore } from "../lib/store.jsx";
 import { useExpert } from "../lib/expert.js";
 import { patch, post } from "../lib/api.js";

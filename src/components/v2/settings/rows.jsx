@@ -85,24 +85,3 @@ export function Segmented({ label, items, value, onPick, busy }) {
 }
 export const pill = (dark) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "14px", fontWeight: 600, flex: "none", whiteSpace: "nowrap", background: dark ? INK : "rgba(18,19,26,.06)", color: dark ? "#FFFFFF" : INK });
 export const inputStyle = { flex: "1 1 240px", minWidth: 0, width: "100%", height: "46px", padding: "0 16px", border: 0, borderRadius: "14px", outline: "none", background: "#F4F4F0", fontSize: "15px", color: INK, boxSizing: "border-box" };
-
-/** The big number of a group: Bricolage 44 px, with its unit beside it. */
-export function Figure({ value, unit, small = false }) {
-  return (
-    <span style={{ display: "flex", alignItems: "baseline", gap: "8px", flexWrap: "wrap" }}>
-      <strong style={{ font: `600 ${small ? 30 : 44}px/1 'Bricolage Grotesque', sans-serif`, letterSpacing: "-0.04em" }}>{value}</strong>
-      {unit ? <span style={{ fontSize: "15px", color: MUTED }}>{unit}</span> : null}
-    </span>
-  );
-}
-
-/** A thin bar (8 px) that fills to `percent`; honey only when the limit is close. */
-export function Bar({ percent, warn = false, height = 8, tick = null, label }) {
-  const p = Math.max(0, Math.min(100, Number(percent) || 0));
-  return (
-    <span role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : "true"} style={{ position: "relative", display: "block", height: height + "px", borderRadius: height / 2 + "px", background: "rgba(18,19,26,.07)", overflow: "hidden" }}>
-      <span style={{ display: "block", height: "100%", width: p + "%", borderRadius: height / 2 + "px", background: warn ? "#FFC93C" : INK, transformOrigin: "left", animation: "grow .8s ease-out" }} />
-      {tick != null ? <span title="Donde estarías gastando a ritmo constante" style={{ position: "absolute", top: 0, bottom: 0, left: `calc(${Math.max(0, Math.min(100, tick))}% - 1px)`, width: "2px", background: "rgba(18,19,26,.35)" }} /> : null}
-    </span>
-  );
-}

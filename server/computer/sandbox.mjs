@@ -15,7 +15,6 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 
-export const SANDBOX_MODES = ["aislado", "amplio"];
 const BROKEN_MS = 10 * 60 * 1000;
 const WIN_TRIPLES = { x64: ["@openai/codex-win32-x64", "x86_64-pc-windows-msvc"], arm64: ["@openai/codex-win32-arm64", "aarch64-pc-windows-msvc"] };
 
@@ -124,7 +123,6 @@ export const sandboxKey = (tool, value) => createHash("sha256").update(tool + "\
 
 export const BLOCKED_NOTE = "El entorno aislado ha bloqueado algo de esta orden: solo puede escribir en su carpeta de trabajo (y, donde el sistema lo permite, sin red). Si de verdad hace falta más (escribir fuera o usar internet), vuelve a llamar exactamente igual una vez: Colmena pedirá a la persona permiso para ejecutarla sin aislamiento. Si no es imprescindible, cambia de enfoque y no lo repitas.";
 export const RUNNER_NOTE = "El entorno aislado no ha podido arrancar esta orden (fallo del aislamiento, no de tu programa: no se ha ejecutado). No es un bloqueo: vuelve a llamar igual; un programa normal correrá como siempre y, si es código tuyo, Colmena pedirá permiso a la persona para ejecutarlo sin aislamiento.";
-export const REBLOCKED_NOTE = "El entorno aislado lo ha vuelto a bloquear y ya pediste ejecutarlo sin aislamiento: no insistas, cambia de enfoque o explica a la persona qué falta.";
 
 /**
  * One per server. `directory` is Colmena's data folder: the sandbox's own CODEX_HOME and its

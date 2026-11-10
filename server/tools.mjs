@@ -451,9 +451,6 @@ export function isRedLine(name) {
 }
 
 export const READ_TOOLS = new Set(["read_file", "read_folder_file", "web_fetch", "search_history", "read_thread", "pdf_fields", "read_deliverable"]);
-/** Tools whose use means the bot already curated memory / skills during the mission (Hermes counters reset). */
-export const MEMORY_TOOLS = new Set(["remember"]);
-export const SKILL_TOOLS = new Set(["read_skill", "skill_view"]);
 
 /** Live verb shown while a tool runs. */
 export function verbFor(name, args = {}) {

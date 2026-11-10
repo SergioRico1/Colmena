@@ -691,7 +691,6 @@ function view(r) {
   };
 }
 
-export const changeLabel = { created: "creado", edited: "editado", deleted: "borrado" };
 const UNDONE = { created: "ya no está", edited: "vuelve a una versión anterior", deleted: "vuelve a estar" };
 
 /** The line the thread gets, and the note the bot reads in its next turn. */
