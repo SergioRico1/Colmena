@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
 import { z } from "zod";
 import { safePath } from "../files.mjs";
 import { computer as defaultComputer, UNAVAILABLE_MESSAGE } from "./bridge.mjs";
-import { allowedApps, DEFAULT_APPS } from "./system.mjs";
+import { allowedApps, appPathOk, DEFAULT_APPS } from "./system.mjs";
 
 const RUNNING = ["running", "queued", "planning"];
 const SHOT = /^capturas\/[\w.-]+\.jpg$/;
@@ -150,7 +150,7 @@ export function registerComputerRoutes(app, { store, runtime, computer = default
   });
   const appEntry = z.union([
     z.enum(DEFAULT_APPS.map((a) => a.id)),
-    z.object({ label: z.string().trim().min(1).max(60), path: z.string().trim().min(4).max(400).regex(/^[a-zA-Z]:\\.+\.exe$/i, "Indica la ruta completa de un .exe") }).strict(),
+    z.object({ label: z.string().trim().min(1).max(60), path: z.string().trim().min(4).max(400).refine((p) => appPathOk(p), process.platform === "darwin" ? "Indica la ruta completa de una aplicación (.app)" : "Indica la ruta completa de un .exe") }).strict(),
   ]);
   app.put("/api/computer/apps", (req, res) => {
     const { apps } = z.object({ apps: z.array(appEntry).max(30) }).strict().parse(req.body);

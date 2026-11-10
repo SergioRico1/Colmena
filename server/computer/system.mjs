@@ -73,7 +73,7 @@ function officeCandidates(exe) {
 }
 const SYSTEM_ROOT = () => env("SystemRoot", "C:\\Windows");
 
-export const DEFAULT_APPS = [
+const WINDOWS_APPS = [
   { id: "excel", label: "Excel", candidates: () => officeCandidates("EXCEL.EXE") },
   { id: "word", label: "Word", candidates: () => officeCandidates("WINWORD.EXE") },
   { id: "powerpoint", label: "PowerPoint", candidates: () => officeCandidates("POWERPNT.EXE") },
@@ -81,25 +81,45 @@ export const DEFAULT_APPS = [
   { id: "bloc-de-notas", label: "Bloc de notas", candidates: () => [path.win32.join(SYSTEM_ROOT(), "System32", "notepad.exe"), path.win32.join(SYSTEM_ROOT(), "notepad.exe")] },
   { id: "explorador", label: "Explorador de archivos", candidates: () => [path.win32.join(SYSTEM_ROOT(), "explorer.exe")] },
 ];
+// The same six on macOS (same ids, so a list of allowed apps means the same on both).
+const MAC_APPS = [
+  { id: "excel", label: "Excel", candidates: () => ["/Applications/Microsoft Excel.app"] },
+  { id: "word", label: "Word", candidates: () => ["/Applications/Microsoft Word.app"] },
+  { id: "powerpoint", label: "PowerPoint", candidates: () => ["/Applications/Microsoft PowerPoint.app"] },
+  { id: "calculadora", label: "Calculadora", candidates: () => ["/System/Applications/Calculator.app", "/Applications/Calculator.app"] },
+  { id: "bloc-de-notas", label: "TextEdit", candidates: () => ["/System/Applications/TextEdit.app", "/Applications/TextEdit.app"] },
+  { id: "explorador", label: "Finder", candidates: () => ["/System/Library/CoreServices/Finder.app"] },
+];
+export const defaultApps = (platform = process.platform) => (platform === "darwin" ? MAC_APPS : WINDOWS_APPS);
+export const DEFAULT_APPS = defaultApps();
+
+/** Whether a path names an app of this platform: an absolute .exe on Windows, an .app bundle on macOS. */
+export function appPathOk(file, platform = process.platform) {
+  const p = String(file || "");
+  if (platform === "win32") return path.win32.isAbsolute(p) && /\.exe$/i.test(p);
+  if (platform === "darwin") return path.posix.isAbsolute(p) && /\.app\/?$/i.test(p);
+  return false;
+}
 
 const slug = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 /**
  * Apps the bots may open. settings.allowedApps (edited only by the person):
- * array of default ids ('excel') or {label, path} with an absolute .exe path.
- * Unset → the six defaults.
+ * array of default ids ('excel') or {label, path} with the absolute path of an app
+ * (an .exe on Windows, an .app on macOS). Unset → the six defaults.
  */
-export function allowedApps(settings = {}, { exists = existsSync } = {}) {
-  const list = Array.isArray(settings?.allowedApps) ? settings.allowedApps : DEFAULT_APPS.map((a) => a.id);
+export function allowedApps(settings = {}, { exists = existsSync, platform = process.platform } = {}) {
+  const defaults = defaultApps(platform);
+  const list = Array.isArray(settings?.allowedApps) ? settings.allowedApps : defaults.map((a) => a.id);
   const out = [];
   for (const entry of list) {
     if (typeof entry === "string") {
-      const known = DEFAULT_APPS.find((a) => a.id === entry);
+      const known = defaults.find((a) => a.id === entry);
       if (!known) continue;
       const found = known.candidates().find((p) => exists(p)) || null;
       out.push({ id: known.id, label: known.label, path: found, installed: !!found });
     } else if (entry && typeof entry === "object" && typeof entry.path === "string" && typeof entry.label === "string") {
-      const ok = path.win32.isAbsolute(entry.path) && /\.exe$/i.test(entry.path);
+      const ok = appPathOk(entry.path, platform);
       const id = slug(entry.id || entry.label);
       if (!ok || !id || out.some((a) => a.id === id)) continue;
       out.push({ id, label: entry.label.slice(0, 60), path: entry.path, installed: exists(entry.path) });

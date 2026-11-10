@@ -7,6 +7,7 @@ import express from "express";
 import { Store } from "../server/store.mjs";
 import { createBridge } from "../server/computer/bridge.mjs";
 import { registerComputerRoutes } from "../server/computer/routes.mjs";
+import { allowedApps, appPathOk, defaultApps } from "../server/computer/system.mjs";
 
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 0xff, 0xd9]);
 
@@ -111,16 +112,38 @@ test("frames reach store listeners and the mission's own stream, never the datab
   assert.equal(rows.n, 0);
 });
 
-test("allowed apps are edited only through the API with real .exe paths", async (t) => {
+// A real app and one that is not there: an .exe on Windows, an .app bundle on macOS.
+const APPS = { win32: { real: process.execPath, missing: "C:\\no\\existe.exe" }, darwin: { real: "/System/Applications/Calculator.app", missing: "/Applications/No Existe.app" } }[process.platform];
+
+test("allowed apps are edited only through the API with real app paths (.exe, .app on macOS)", { skip: APPS ? false : "allowed apps exist on Windows and macOS only" }, async (t) => {
   const { base, store } = await setup(t);
   store.put("settings", { id: "main" });
   const list = await (await fetch(base + "/apps")).json();
   assert.deepEqual(list.defaults.map((a) => a.id), ["excel", "word", "powerpoint", "calculadora", "bloc-de-notas", "explorador"]);
-  const bad = await fetch(base + "/apps", { ...json({ apps: [{ label: "Malo", path: "C:\\no\\existe.exe" }] }), method: "PUT" });
+  const bad = await fetch(base + "/apps", { ...json({ apps: [{ label: "Malo", path: APPS.missing }] }), method: "PUT" });
   assert.equal(bad.status, 422);
   const script = await fetch(base + "/apps", { ...json({ apps: [{ label: "Script", path: "C:\\x\\a.bat" }] }), method: "PUT" });
   assert.equal(script.status, 400);
-  const ok = await fetch(base + "/apps", { ...json({ apps: ["calculadora", { label: "Node", path: process.execPath }] }), method: "PUT" });
+  const relative = await fetch(base + "/apps", { ...json({ apps: [{ label: "Suelta", path: process.platform === "darwin" ? "Calculator.app" : "calc.exe" }] }), method: "PUT" });
+  assert.equal(relative.status, 400);
+  const ok = await fetch(base + "/apps", { ...json({ apps: ["calculadora", { label: "Node", path: APPS.real }] }), method: "PUT" });
   assert.equal(ok.status, 200);
   assert.deepEqual(store.get("settings", "main").allowedApps.length, 2);
+});
+
+test("allowed apps per platform: .exe paths on Windows, .app bundles on macOS, the same six defaults", () => {
+  assert.ok(appPathOk("C:\\Program Files\\App\\app.exe", "win32"));
+  assert.ok(!appPathOk("C:\\x\\a.bat", "win32"));
+  assert.ok(!appPathOk("/Applications/Notas.app", "win32"));
+  assert.ok(appPathOk("/Applications/Notas.app", "darwin"));
+  assert.ok(!appPathOk("Notas.app", "darwin"), "absolute only");
+  assert.ok(!appPathOk("/usr/bin/osascript", "darwin"), "an app, not a program");
+  assert.ok(!appPathOk("C:\\x\\app.exe", "darwin"));
+  assert.ok(!appPathOk("/usr/bin/gedit", "linux"));
+  assert.deepEqual(defaultApps("darwin").map((a) => a.id), defaultApps("win32").map((a) => a.id));
+  const mac = allowedApps({ allowedApps: ["calculadora", "excel", { label: "Notas", path: "/Applications/Notas.app" }, { label: "Malo", path: "C:\\x\\malo.exe" }] },
+    { platform: "darwin", exists: (p) => p === "/System/Applications/Calculator.app" || p === "/Applications/Notas.app" });
+  assert.deepEqual(mac.map((a) => [a.id, a.installed, a.path]), [["calculadora", true, "/System/Applications/Calculator.app"], ["excel", false, null], ["notas", true, "/Applications/Notas.app"]]);
+  const win = allowedApps({ allowedApps: [{ label: "Notas", path: "/Applications/Notas.app" }, { label: "Bueno", path: "C:\\x\\bueno.exe" }] }, { platform: "win32", exists: () => true });
+  assert.deepEqual(win.map((a) => a.id), ["bueno"]);
 });

@@ -928,9 +928,10 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
         const target = String(args.path || "");
         if (!path.isAbsolute(target) || !fs.existsSync(target)) throw codedError("El archivo no existe.", "NOT_FOUND");
         if (BLOCKED_DOWNLOAD.test(target) && !args.app) throw codedError("No se abren programas ni scripts.", "BLOCKED_FILE");
-        if (args.app && !/\.exe$/i.test(target)) throw codedError("Aplicación no válida.", "BLOCKED_FILE");
+        // An allowed app (server/computer/system.mjs appPathOk): an .exe, or an .app bundle on macOS.
+        if (args.app && !(process.platform === "darwin" ? /\.app\/?$/i : /\.exe$/i).test(target)) throw codedError("Aplicación no válida.", "BLOCKED_FILE");
         const error = await shell.openPath(target);
-        if (error) throw codedError("Windows no pudo abrirlo: " + error, "OPEN_FAILED");
+        if (error) throw codedError("El sistema no pudo abrirlo: " + error, "OPEN_FAILED");
         return { opened: true };
       }
       default:

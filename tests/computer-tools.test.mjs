@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createBridge, ComputerError } from "../server/computer/bridge.mjs";
@@ -12,6 +12,9 @@ import {
 import { Store } from "../server/store.mjs";
 
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xd9]).toString("base64");
+// An app of this computer the person could allow: an .exe on Windows, an .app on macOS.
+// Elsewhere (Linux, where Colmena does not ship) there are no allowed apps.
+const APP_PATH = process.platform === "win32" ? process.execPath : process.platform === "darwin" ? "/System/Applications/Calculator.app" : null;
 
 /** Fake desktop: a real bridge whose `send` answers from handlers, like Electron would. */
 function fakeComputer(handlers = {}) {
@@ -66,16 +69,17 @@ const SUBMIT_PAGE = {
 test("tool definitions are strict and depend on the desktop app", () => {
   const offline = computerToolDefs({ id: "nora" }, { available: false });
   assert.deepEqual(offline.map((d) => d.name), ["run_command"]);
-  const defs = computerToolDefs({ id: "nora" }, { available: true, settings: { allowedApps: [{ label: "Node", path: process.execPath }] } });
+  const defs = computerToolDefs({ id: "nora" }, { available: true, settings: { allowedApps: [{ label: "Node", path: APP_PATH }] } });
   const names = defs.map((d) => d.name);
-  for (const n of ["browser_open", "browser_read", "browser_screenshot", "browser_act", "browser_fill", "browser_submit", "browser_download", "open_file", "open_app", "run_command"])
+  for (const n of ["browser_open", "browser_read", "browser_screenshot", "browser_act", "browser_fill", "browser_submit", "browser_download", "open_file", ...(APP_PATH ? ["open_app"] : []), "run_command"])
     assert.ok(names.includes(n), n);
   for (const d of defs) {
     assert.equal(d.strict, true);
     assert.deepEqual(d.parameters.required, Object.keys(d.parameters.properties));
     assert.equal(d.parameters.additionalProperties, false);
   }
-  assert.deepEqual(defs.find((d) => d.name === "open_app").parameters.properties.app.enum, ["node"]);
+  if (APP_PATH) assert.deepEqual(defs.find((d) => d.name === "open_app").parameters.properties.app.enum, ["node"]);
+  else assert.ok(!names.includes("open_app"), "no tool without an app it could open");
   assert.match(defs.find((d) => d.name === "browser_open").description, /captcha.*2FA.*contraseña.*pago/s);
   assert.deepEqual(computerToolDefs({}, { available: true, settings: { computer: { enabled: false } } }), []);
 });
@@ -196,7 +200,8 @@ test("run_command: free when the bot acts (asked with «Solo sugiere»), exact-a
   assert.match(version.stdout, /^v\d+\./);
   const env = await executeComputerTool("run_command", { program: process.execPath, args: ["-p", "JSON.stringify([process.cwd(), process.env.COLMENA_SECRET_FOR_TEST || null, 'a b & echo hacked'])"], folderId: null, reason: "Probar" }, { ...ctx, approved: true });
   const [cwd, secret, literal] = JSON.parse(env.stdout);
-  assert.equal(path.resolve(cwd).toLowerCase(), path.resolve(missionRoot).toLowerCase());
+  // Real paths: on macOS the temp folder is /var/… and the child sees /private/var/….
+  assert.equal(realpathSync(cwd).toLowerCase(), realpathSync(missionRoot).toLowerCase());
   assert.equal(secret, null);
   assert.equal(literal, "a b & echo hacked");
 });
