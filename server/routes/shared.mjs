@@ -132,7 +132,6 @@ export function critiqueAbout(text, name) {
 }
 
 export {
-  FEMININE, notFound, SOON, short, pct, hex, shape, access, toolsSchema, personality, channels, autonomy, thinking, attachment, skillDraft,
-  instructions, email, botFields, botCreate, botPatch, draftBase, missionCreate, automationFields, automationCreate, automationPatch, folderFields,
-  personFields, MESSAGES, check, LATER, desktopOnly, pick, safe, fold, inside,
+  notFound, SOON, short, attachment, instructions, email, botCreate, botPatch, draftBase, missionCreate, automationCreate, automationPatch,
+  folderFields, personFields, check, desktopOnly, pick, safe, fold, inside,
 };
