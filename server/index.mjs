@@ -23,6 +23,7 @@ import { windowsVault } from "./nexo/credential-vault.mjs";
 import { applyPendingRestore } from "./backup.mjs";
 import { databaseKeys } from "./db-key.mjs";
 import { applyPendingEncryption, openStore } from "./encryption.mjs";
+import { startHistoryMigration } from "./histories.mjs";
 import { Connections } from "./connections.mjs";
 import { AppTools } from "./apptools.mjs";
 import { Projects } from "./projects/tools.mjs";
@@ -64,6 +65,9 @@ if (encrypted?.failed) console.warn("No se pudo cifrar la base de datos (sigue c
 // Encrypted: opened with its key; without one, that database is set aside and Colmena still starts.
 const { store, locked } = await openStore(directory, dbKeys);
 if (locked) console.warn("Colmena: falta la clave de la base de datos cifrada; está apartada en " + locked.folder);
+// Steps written by earlier versions carry their provider conversation inline: moved to their
+// own records in short batches while the server already answers (histories.mjs).
+void startHistoryMigration(store).then((moved) => { if (moved) console.log(`Colmena: ${moved} conversaciones de pasos movidas a su propio registro.`); });
 const session = new ChatGPTSession({ directory: path.join(directory, "auth") });
 await session.init();
 try {

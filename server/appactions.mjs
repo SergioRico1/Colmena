@@ -2,6 +2,7 @@
 // («crear un evento en Google Calendar: «Renovar PlayStation Plus», 11 nov.»), from the
 // prepared action (tool slug like GOOGLECALENDAR_CREATE_EVENT, toolkit and arguments).
 import { withoutExternal } from "./external-content.mjs";
+import { stepHistory } from "./histories.mjs";
 
 const VERBS = [
   [/(?:^|_)(?:CREATE|NEW|INSERT)(?:_|$)/, "crear"], [/(?:^|_)(?:ADD|APPEND)(?:_|$)/, "añadir"],
@@ -70,8 +71,7 @@ const SEND_VERB = /\b(?:envia|enviale|envialo|enviala|envialos|envie|enviar|envi
  * <pferran@nubaria.es>»): you say «Pablo», the address says «pferran».
  */
 export function namesFor(store, stepId, addresses = []) {
-  const step = stepId ? store.get("steps", stepId) : null;
-  const texts = (step?.history || []).filter((x) => x?.type === "function_call_output").map((x) => String(x.output || ""));
+  const texts = (stepHistory(store, stepId) || []).filter((x) => x?.type === "function_call_output").map((x) => String(x.output || ""));
   const out = {};
   for (const address of addresses) {
     const a = String(address || "").trim().toLowerCase();
@@ -208,10 +208,9 @@ export function explicitlyAsked(store, missionId, recipients = [], { names = {},
  * must not pass for the Pablo you meant.
  */
 export function nameOwners(store, stepId) {
-  const step = stepId ? store.get("steps", stepId) : null;
   const owners = new Map();
   const add = (w, address) => { if (w.length >= 3) (owners.get(w) || owners.set(w, new Set()).get(w)).add(address); };
-  for (const x of step?.history || []) {
+  for (const x of stepHistory(store, stepId) || []) {
     if (x?.type !== "function_call_output") continue;
     const t = String(x.output || "").replace(/\\"/g, '"');
     for (const m of t.matchAll(/([\p{L}][\p{L}'. -]{1,60})?\s*<([^<>\s"]+@[^<>\s"]+)>/gu)) {

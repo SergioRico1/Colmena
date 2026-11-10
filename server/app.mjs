@@ -1107,7 +1107,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       await Promise.race([Promise.resolve(job).catch(() => {}), new Promise((r) => setTimeout(r, 8000))]);
     }
     store.tx(() => {
-      for (const kind of ["messages", "steps", "thread", "asides", "approvals", "intents", "notifications", "receipts", "relays", "codeJobs"])
+      for (const kind of ["messages", "steps", "histories", "thread", "asides", "approvals", "intents", "notifications", "receipts", "relays", "codeJobs"])
         for (const rec of store.where(kind, "missionId", missionId)) {
           // Skill and personality proposals born here are about the bot, not the room: kept.
           if (kind === "approvals" && ["skill", "soul"].includes(rec.kind)) continue;

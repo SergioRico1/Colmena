@@ -32,6 +32,6 @@ test("a delegated part that comes back empty counts as missing, not as a result"
   });
   const m = runtime.create({ prompt: "Informe", mode: "solo", botIds: ["nora"] });
   await runtime.launch(m.id);
-  const out = JSON.parse(runtime.steps(m.id)[0].history.find((x) => x.type === "function_call_output" && x.call_id === "d1").output);
+  const out = JSON.parse(runtime.history(runtime.steps(m.id)[0]).find((x) => x.type === "function_call_output" && x.call_id === "d1").output);
   assert.match(out.results[0].error, /no devolvió resultado/);
 });

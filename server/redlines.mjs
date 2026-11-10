@@ -11,6 +11,7 @@
 //     Bandeja and the bot is told to finish the rest and say what is left.
 import path from "node:path";
 import { withoutExternal } from "./external-content.mjs";
+import { stepHistory } from "./histories.mjs";
 
 const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
 
@@ -73,7 +74,7 @@ export function missionFiles(store, missionId) {
   for (const a of store.where("artifacts", "missionId", missionId)) { add(a.path); add(a.workFile); add(a.file); }
   // Project files it wrote (project_write in the steps' own history).
   for (const s of store.where("steps", "missionId", missionId))
-    for (const x of s.history || []) {
+    for (const x of stepHistory(store, s) || []) {
       if (x?.type !== "function_call" || x.name !== "project_write") continue;
       try {
         const args = JSON.parse(x.arguments || "{}");

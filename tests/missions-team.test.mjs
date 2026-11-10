@@ -64,7 +64,7 @@ test("a failed part fails alone: independent work finishes, its dependents wait,
   assert.match(step("work-nora").error, /La fuente no responde/);
   assert.equal(step("work-tomas").status, "completed");
   assert.equal(step("work-vera").status, "pending", "Vera needs Nora: she never started");
-  assert.equal(step("work-vera").history, null);
+  assert.equal(runtime.history(step("work-vera")), null);
   assert.ok(!ran.includes("Vera"));
   const events = store.events(m.id).map((e) => e.type);
   assert.ok(events.includes("step_failed") && events.includes("partial"));

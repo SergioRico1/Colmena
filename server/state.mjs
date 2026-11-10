@@ -566,41 +566,72 @@ export function toolCard(name, args, result, bots) {
   return extraToolCard(name, args, r) || { type: "other" };
 }
 
+// How many tool calls a step shows (its latest), and the arguments kept for one still open.
+const CALLS_SHOWN = 40, OPEN_ARGS = 8000;
+const callArgs = (text) => {
+  try {
+    return JSON.parse(text || "{}") || {};
+  } catch {
+    return {};
+  }
+};
+/** One call as the room shows it; without a result its state follows the step's. */
+function callView(call, result, step, bots) {
+  const has = result !== undefined && result !== null;
+  const status = has
+    ? result?.uncertain ? "uncertain" : result?.error ? "error" : result?.waiting ? "waiting" : "done"
+    : step.status === "waiting" ? "waiting" : ["running", "queued", "active"].includes(step.status) ? "running" : "error";
+  const error = has && result?.error ? clipText(result.error, 240) : !has && status === "error" ? "Se interrumpió antes de terminar." : null;
+  return { id: call.call_id, name: call.name, status, error, card: toolCard(String(call.name || ""), callArgs(call.arguments), has ? result : null, bots) };
+}
 /**
- * Tool calls of a step from its stored history (function_call + function_call_output) and
- * receipts: [{ id, name, status: 'running'|'waiting'|'done'|'error', error, card }].
+ * The latest tool calls of a provider conversation, small enough to live in the step record
+ * (step.cards, written with the conversation: histories.mjs), so a room opens and a step is
+ * pushed without reading the conversation itself. One entry per call, in order:
+ * {view} a call with its result, as shown; {search} a hosted web search item; {call[, settled]}
+ * a call without a usable result yet (its state is decided when it is shown).
  */
-export function toolCalls(step, { bots, receipt } = {}) {
-  const history = Array.isArray(step.history) ? step.history : [];
+export function toolDigest(history, { bots } = {}) {
+  const items = Array.isArray(history) ? history : [];
   const outputs = new Map();
-  for (const x of history) if (x?.type === "function_call_output") outputs.set(x.call_id, x.output);
+  for (const x of items) if (x?.type === "function_call_output") outputs.set(x.call_id, x.output);
   // Hosted web searches (web_search_call items) keep their place among the function calls.
-  const calls = history.filter((x) => x?.type === "function_call" || x?.type === "web_search_call");
-  for (const c of step.pending || []) if (c?.call_id && !calls.some((x) => x.call_id === c.call_id)) calls.push(c);
-  return [...calls.slice(-40).map((call) => {
-    if (call.type === "web_search_call") return webSearchToolCall(call, step);
-    let args = {};
-    try {
-      args = JSON.parse(call.arguments || "{}") || {};
-    } catch {}
-    let result;
+  return items.filter((x) => x?.type === "function_call" || x?.type === "web_search_call").slice(-CALLS_SHOWN).map((call) => {
+    if (call.type === "web_search_call") return { search: call };
     // A screenshot output is [input_text, input_image]: its text part is the JSON result.
     const stored = outputs.get(call.call_id);
     const shown = Array.isArray(stored) ? stored.find((p) => p?.type === "input_text")?.text : stored;
     // Outside content reaches the model wrapped (external-content.mjs); the card reads the JSON inside.
     const raw = unwrapExternal(shown) ?? shown;
+    let result;
     if (raw !== undefined) {
       try {
         result = JSON.parse(raw);
       } catch {
         result = { text: String(raw) };
       }
-    } else result = receipt?.(call.call_id)?.result;
-    const has = result !== undefined && result !== null;
-    const status = has
-      ? result?.uncertain ? "uncertain" : result?.error ? "error" : result?.waiting ? "waiting" : "done"
-      : step.status === "waiting" ? "waiting" : ["running", "queued", "active"].includes(step.status) ? "running" : "error";
-    const error = has && result?.error ? clipText(result.error, 240) : !has && status === "error" ? "Se interrumpió antes de terminar." : null;
-    return { id: call.call_id, name: call.name, status, error, card: toolCard(String(call.name || ""), args, has ? result : null, bots) };
+    }
+    if (result !== undefined && result !== null) return { view: callView(call, result, {}, bots) };
+    // Big arguments are not copied: while the call is open they are in step.pending.
+    const open = { call_id: call.call_id, name: call.name, ...(String(call.arguments || "").length <= OPEN_ARGS ? { arguments: call.arguments } : {}) };
+    return raw !== undefined ? { call: open, settled: true } : { call: open };
+  });
+}
+
+/**
+ * Tool calls of a step, from the digest kept with it (step.cards; an older record or a
+ * caller that has the conversation at hand: step.history) and its receipts:
+ * [{ id, name, status: 'running'|'waiting'|'done'|'error', error, card }].
+ */
+export function toolCalls(step, { bots, receipt } = {}) {
+  const entries = Array.isArray(step.history) ? toolDigest(step.history, { bots }) : Array.isArray(step.cards) ? [...step.cards] : [];
+  const known = new Set(entries.map((e) => e.call?.call_id ?? e.view?.id).filter(Boolean));
+  const pending = new Map((step.pending || []).filter((c) => c?.call_id).map((c) => [c.call_id, c]));
+  for (const c of pending.values()) if (!known.has(c.call_id)) entries.push(c.type === "web_search_call" ? { search: c } : { call: c });
+  return [...entries.slice(-CALLS_SHOWN).map((e) => {
+    if (e.search) return webSearchToolCall(e.search, step);
+    if (e.view) return e.view;
+    const call = e.call.arguments === undefined && pending.has(e.call.call_id) ? { ...e.call, arguments: pending.get(e.call.call_id).arguments } : e.call;
+    return callView(call, e.settled ? null : receipt?.(call.call_id)?.result, step, bots);
   }), ...recoveryToolCalls(step)];
 }

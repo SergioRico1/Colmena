@@ -28,9 +28,10 @@ test("steer (default): the bot reads it at its next step, skips a change it chos
   await runtime.launch(m.id);
   await settle(runtime);
   const step = runtime.steps(m.id)[0];
-  const out = JSON.parse(step.history.find((x) => x.type === "function_call_output" && x.call_id === "w1").output);
+  const history = runtime.history(step.id);
+  const out = JSON.parse(history.find((x) => x.type === "function_call_output" && x.call_id === "w1").output);
   assert.equal(out.skipped, true, "the change chosen before the message was not made");
-  assert.ok(step.history.some((x) => x.role === "user" && /Somos tres, no dos/.test(x.content || "")), "delivered at the next step");
+  assert.ok(history.some((x) => x.role === "user" && /Somos tres, no dos/.test(x.content || "")), "delivered at the next step");
   assert.ok(tookIt(store, written.id, "nora"), "👍 when it read it");
   assert.equal(followups(runtime, m.id).length, 1);
   const answers = store.list("messages").filter((x) => x.missionId === m.id && x.role === "assistant").map((x) => x.text);
@@ -59,7 +60,7 @@ test("collect: messages written while they work wait, and become one turn", asyn
   await runtime.launch(m.id);
   await settle(runtime);
   const work = runtime.steps(m.id)[0];
-  assert.ok(!work.history.some((x) => /Primera cosa/.test(JSON.stringify(x.content || ""))), "not delivered while working");
+  assert.ok(!runtime.history(work.id).some((x) => /Primera cosa/.test(JSON.stringify(x.content || ""))), "not delivered while working");
   const turns = followups(runtime, m.id);
   assert.equal(turns.length, 1, "one turn for both");
   assert.match(turns[0].request, /Primera cosa[\s\S]*Segunda cosa/);
