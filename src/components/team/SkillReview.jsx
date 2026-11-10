@@ -110,7 +110,7 @@ export default function SkillReview({ skillId, onClose }) {
           {bot ? <BotAvatar bot={bot} size={40} /> : null}
           <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
             <span style={{ font: "500 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>Revisar pasos{bot ? ` · ${bot.name}` : ""}</span>
-            <h2 id="skill-review-t" style={{ margin: 0, font: "600 24px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", letterSpacing: "-0.01em" }}>{skill?.name || (loading ? "Cargando…" : "Habilidad")}</h2>
+            <h2 id="skill-review-t" style={{ margin: 0, font: "600 24px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{skill?.name || (loading ? "Cargando…" : "Habilidad")}</h2>
             {skill ? (
               <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "14px", color: "#5C606C" }}>
                 {origin}{skill.createdAt ? ` · ${longDay(skill.createdAt)}` : ""}

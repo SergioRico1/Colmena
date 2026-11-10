@@ -50,7 +50,7 @@ export default function UsageHistory() {
       </a>
     }>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 14px" }}>
-        <span style={{ font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", letterSpacing: "-0.02em" }}>{formatTokens(data.total)}</span>
+        <span style={{ font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{formatTokens(data.total)}</span>
         <span style={{ fontSize: "14px", color: "#5C606C" }}>{`tokens · ${data.calls.toLocaleString("es-ES")} ${data.calls === 1 ? "llamada" : "llamadas"} · ${active} ${active === 1 ? "día con uso" : "días con uso"}`}</span>
       </div>
 

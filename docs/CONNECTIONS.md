@@ -35,4 +35,4 @@ El motor conserva propuestas privadas, caducidad, revalidacion de esquema/cuenta
 - A 390px se observa el ancho original de 1440px; se registra como limitacion, no como responsive aprobado.
 - OAuth de apps, acceso real Gmail/Calendar e instalador nativo no se han verificado. No se han enviado correos ni conectado cuentas reales.
 
-Reproducir: npm run check.
+Reproducir: npm run verify.

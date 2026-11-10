@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
 
+# One run per tag, and a release in progress is never cancelled.
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -17,6 +18,7 @@ concurrency:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5
       - name: The tag matches package.json
@@ -38,13 +40,17 @@ jobs:
 
   test:
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/npm-ci
+      - run: npm run check
+      # Before the tests: the boot-time budget needs dist/ (see ci.yml).
+      - run: npm run build
       - run: npm test
 
   build:
@@ -54,13 +60,15 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    # Both installers take about a quarter of an hour; notarization can add to the Mac one.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/npm-ci
 
       - name: Native canvas for both Mac architectures
         if: runner.os == 'macOS'
@@ -84,11 +92,13 @@ jobs:
           CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         run: |
+          # electron-builder downloads Electron and its packaging tools: a failed attempt is tried again.
+          retry() { for n in 1 2 3; do "$@" && return 0; echo "::warning::electron-builder failed (attempt $n of 3)"; if [ "$n" -lt 3 ]; then sleep $((n * 20)); fi; done; return 1; }
           if [ -z "$CSC_LINK" ]; then
             echo "::warning::No Windows certificate: the installer is unsigned and SmartScreen will warn."
             unset CSC_LINK CSC_KEY_PASSWORD
           fi
-          npx electron-builder --win --publish never
+          retry npx electron-builder --win --publish never
 
       - name: macOS dmg and zip
         if: runner.os == 'macOS'
@@ -101,14 +111,16 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # electron-builder downloads Electron and its packaging tools: a failed attempt is tried again.
+          retry() { for n in 1 2 3; do "$@" && return 0; echo "::warning::electron-builder failed (attempt $n of 3)"; if [ "$n" -lt 3 ]; then sleep $((n * 20)); fi; done; return 1; }
           if [ -z "$CSC_LINK" ]; then
             echo "::warning::No Apple certificate: the app is ad-hoc signed. Gatekeeper will warn and updates must be downloaded by hand."
             unset CSC_LINK CSC_KEY_PASSWORD
             export CSC_IDENTITY_AUTO_DISCOVERY=false
-            npx electron-builder --mac --publish never -c.mac.identity=- -c.mac.notarize=false
+            retry npx electron-builder --mac --publish never -c.mac.identity=- -c.mac.notarize=false
           else
             if [ -z "$APPLE_ID" ]; then extra="-c.mac.notarize=false"; echo "::warning::No Apple ID: signed but not notarized."; fi
-            npx electron-builder --mac --publish never $extra
+            retry npx electron-builder --mac --publish never $extra
           fi
 
       - name: The packaged app starts (Windows)
@@ -138,6 +150,7 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Publish the release (installed apps see it from now on)
         env:

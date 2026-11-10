@@ -1,0 +1,15 @@
+# `npm ci`, tried up to three times: a registry or binary download that times out once
+# (a 504 from a CDN) should not fail a build or a release.
+name: Install dependencies
+description: npm ci with retries for transient download failures
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        for attempt in 1 2 3; do
+          if npm ci; then exit 0; fi
+          echo "::warning::npm ci failed (attempt $attempt of 3)"
+          if [ "$attempt" -lt 3 ]; then sleep $((attempt * 20)); fi
+        done
+        exit 1
