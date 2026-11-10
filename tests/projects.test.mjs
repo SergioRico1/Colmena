@@ -11,7 +11,7 @@ import { computerExtraTools } from "../server/computer/wire.mjs";
 import {
   createProject, editProjectFile, listProjectFiles, projectName, trashProjectPath, writeProjectFile, dependencyClosure,
 } from "../server/projects/files.mjs";
-import { npmCli, packageDependencies, projectEnv, scriptCommand, simpleScript } from "../server/projects/run.mjs";
+import { killTree, npmCli, ownGroup, packageDependencies, projectEnv, scriptCommand, simpleScript } from "../server/projects/run.mjs";
 import { DevServers, portArgs, serveKind } from "../server/projects/servers.mjs";
 import {
   Projects, PREVIEW_ROUNDS, grantScope, newPackages, projectPermission, projectToolCard, projectToolDefs,
@@ -141,9 +141,14 @@ test("the vite-react template is ready offline with Colmena's own packages", asy
 
 // ------------------------------------------------------------------ run
 test("npm runs through node and npm-cli.js; dependencies only from the registry", () => {
-  const found = npmCli({ execPath: "C:\\node\\node.exe", envPath: "", exists: (p) => p === path.join("C:\\node", "node_modules", "npm", "bin", "npm-cli.js"), override: "" });
-  assert.match(found, /npm-cli\.js$/);
-  assert.throws(() => npmCli({ execPath: "C:\\x\\node.exe", envPath: "", exists: () => false, override: "" }), /No encuentro npm/);
+  // Windows: npm next to node.exe. macOS and Linux: <prefix>/bin/node, <prefix>/lib/node_modules/npm.
+  const cli = ["node_modules", "npm", "bin", "npm-cli.js"];
+  const winDir = path.resolve("/node"), prefix = path.resolve("/opt/node");
+  assert.equal(npmCli({ execPath: path.join(winDir, "node.exe"), envPath: "", exists: (p) => p === path.join(winDir, ...cli), override: "" }), path.join(winDir, ...cli));
+  assert.equal(npmCli({ execPath: path.join(prefix, "bin", "node"), envPath: "", exists: (p) => p === path.join(prefix, "lib", ...cli), override: "" }), path.join(prefix, "lib", ...cli));
+  assert.equal(npmCli({ execPath: path.resolve("/app/Colmena"), envPath: path.join(prefix, "bin"), exists: (p) => p === path.join(prefix, "lib", ...cli), override: "" }), path.join(prefix, "lib", ...cli), "the Node.js in PATH");
+  assert.throws(() => npmCli({ execPath: path.join(winDir, "node.exe"), envPath: "", exists: () => false, override: "" }), /No encuentro npm/);
+  assert.match(npmCli({ override: "" }), /npm-cli\.js$/, "the npm of the Node.js running the tests");
   assert.deepEqual(packageDependencies({ dependencies: { react: "^19.0.0", "@vitejs/plugin-react": "~4.7", zod: "latest" }, devDependencies: { vite: ">=6 <7" } }).map((d) => d.name), ["react", "@vitejs/plugin-react", "zod", "vite"]);
   for (const spec of ["file:../x", "git+https://github.com/a/b.git", "https://x.com/a.tgz", "github:a/b", "npm:react@19", "link:../y"])
     assert.throws(() => packageDependencies({ dependencies: { a: spec } }), /solo se instalan versiones del registro/, spec);
@@ -154,6 +159,17 @@ test("npm runs through node and npm-cli.js; dependencies only from the registry"
   assert.equal(env.npm_config_offline, "true");
   assert.match(env.HTTPS_PROXY, /127\.0\.0\.1:9/);
   assert.equal(projectEnv({ install: true, source: {} }).npm_config_offline, undefined, "installs may reach the registry");
+  assert.match(projectEnv({ source: {}, platform: "win32" }).ComSpec, /cmd\.exe$/);
+  assert.equal(projectEnv({ source: {}, platform: "darwin" }).ComSpec, undefined, "cmd.exe is Windows's");
+  // Ending a run: taskkill /T on Windows; elsewhere the process group the run leads.
+  assert.deepEqual(ownGroup("win32"), {});
+  assert.deepEqual(ownGroup("darwin"), { detached: true });
+  const signals = [];
+  const child = { pid: 4242, exitCode: null, kill: (s) => signals.push(["child", s]) };
+  killTree(child, { platform: "darwin", kill: (pid, s) => signals.push([pid, s]) });
+  killTree(child, { platform: "darwin", kill: () => { throw Error("ESRCH"); } });
+  killTree(child, { platform: "darwin", spawnImpl: () => {}, kill: (pid, s) => signals.push([pid, s]) });
+  assert.deepEqual(signals, [[-4242, "SIGTERM"], ["child", "SIGTERM"], ["child", "SIGTERM"]], "the group; the child alone when it leads none or is a stand-in");
   assert.throws(() => resolveProgram("npm"), /project_run/);
 });
 

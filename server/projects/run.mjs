@@ -1,5 +1,5 @@
-// npm and node for projects, without a console: node.exe runs npm-cli.js directly (npm.cmd
-// would need cmd.exe), so a bot never gets a shell. Installs are the only calls that may use
+// npm and node for projects, without a console: node runs npm-cli.js directly (on Windows
+// npm.cmd would need cmd.exe), so a bot never gets a shell. Installs are the only calls that may use
 // the network; everything else runs with npm offline and a dead proxy (best effort: the
 // project's own code runs with the person's permissions, Windows cannot box it without admin).
 import path from "node:path";
@@ -21,23 +21,26 @@ export function nodeExecutable({ execPath = process.execPath, envPath = process.
   throw Error("No encuentro Node.js para ejecutar el proyecto.");
 }
 
-/** npm-cli.js next to node.exe (or in a folder of PATH that has npm). */
+/**
+ * npm-cli.js of the Node.js that runs Colmena, or of one in PATH. Windows keeps npm next to
+ * node.exe (<dir>/node_modules/npm); macOS and Linux keep it under the prefix, beside bin/
+ * (<prefix>/bin/node → <prefix>/lib/node_modules/npm).
+ */
 export function npmCli({ execPath = process.execPath, envPath = process.env.PATH || process.env.Path || "", exists = existsSync, override = process.env.COLMENA_NPM_CLI } = {}) {
-  const candidates = [
-    override,
-    path.join(path.dirname(execPath), "node_modules", "npm", "bin", "npm-cli.js"),
-    ...envPath.split(path.delimiter).filter(Boolean).map((dir) => path.join(dir.replace(/^"|"$/g, ""), "node_modules", "npm", "bin", "npm-cli.js")),
-  ].filter(Boolean);
+  const cli = ["node_modules", "npm", "bin", "npm-cli.js"];
+  const dirs = [path.dirname(execPath), ...envPath.split(path.delimiter).filter(Boolean).map((dir) => dir.replace(/^"|"$/g, ""))];
+  const candidates = [override, ...dirs.flatMap((dir) => [path.join(dir, ...cli), path.join(dir, "..", "lib", ...cli)])].filter(Boolean);
   const found = candidates.find((p) => exists(p));
   if (!found) throw Error("No encuentro npm en este ordenador (va con Node.js).");
   return found;
 }
 
 /** Child environment: no Colmena secrets; offline unless it is an approved install. */
-export function projectEnv({ install = false, port = null, source = process.env } = {}) {
+export function projectEnv({ install = false, port = null, source = process.env, platform = process.platform } = {}) {
   const env = {
     ...minimalEnv(source),
-    ComSpec: source.ComSpec || path.win32.join(source.SystemRoot || "C:\\Windows", "System32", "cmd.exe"),
+    // npm run starts the script with cmd.exe on Windows (/bin/sh elsewhere, which needs nothing).
+    ...(platform === "win32" ? { ComSpec: source.ComSpec || path.win32.join(source.SystemRoot || "C:\\Windows", "System32", "cmd.exe") } : {}),
     npm_config_update_notifier: "false", npm_config_fund: "false", npm_config_audit: "false",
     NO_UPDATE_NOTIFIER: "1", BROWSER: "none", FORCE_COLOR: "0", NO_COLOR: "1",
   };
@@ -52,8 +55,15 @@ export function projectEnv({ install = false, port = null, source = process.env 
   return env;
 }
 
+/**
+ * Spawn option for a process that may start others (npm run → sh → node): on macOS and Linux
+ * it leads its own process group, so killTree can end all of them. Windows needs nothing
+ * (taskkill /T follows the tree).
+ */
+export const ownGroup = (platform = process.platform) => (platform === "win32" ? {} : { detached: true });
+
 /** Ends a process and its children (npm run → cmd → node). Only the PID Colmena started. */
-export function killTree(child, { spawnImpl = spawn, platform = process.platform } = {}) {
+export function killTree(child, { spawnImpl = spawn, platform = process.platform, kill = process.kill } = {}) {
   if (!child?.pid || child.exitCode != null) return;
   if (platform === "win32") {
     try {
@@ -61,6 +71,10 @@ export function killTree(child, { spawnImpl = spawn, platform = process.platform
       spawnImpl(taskkill, ["/PID", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore", shell: false }).on?.("error", () => {});
       return;
     } catch {}
+  } else if (spawnImpl === spawn) {
+    // The whole group when the child leads one (ownGroup, a terminal); ESRCH when it does not.
+    // Never with a test's stand-in spawn: its made-up PID could be someone's real group.
+    try { kill(-child.pid, "SIGTERM"); return; } catch {}
   }
   try { child.kill("SIGTERM"); } catch {}
 }
@@ -74,7 +88,7 @@ export function runArgv(file, args, { cwd, env, timeoutMs = RUN_LIMITS.timeoutMs
     const started = Date.now();
     let child;
     try {
-      child = spawnImpl(file, args, { cwd, env, shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+      child = spawnImpl(file, args, { cwd, env, shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"], ...ownGroup() });
     } catch (error) {
       return reject(Error("No se pudo iniciar: " + error.message));
     }

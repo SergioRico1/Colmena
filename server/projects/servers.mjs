@@ -9,7 +9,7 @@ import { spawn } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
 import { lstat, readFile } from "node:fs/promises";
 import { safePath } from "../files.mjs";
-import { killTree, nodeExecutable, npmCli, projectEnv, readPackage, scriptCommand } from "./run.mjs";
+import { killTree, ownGroup, nodeExecutable, npmCli, projectEnv, readPackage, scriptCommand } from "./run.mjs";
 
 export const PORT_RANGE = [5200, 5299];
 export const MAX_SERVERS = 3;
@@ -164,7 +164,7 @@ export class DevServers {
     this.log(server, "> " + cmd.line);
     let child;
     try {
-      child = this.spawnImpl(cmd.file || nodeExecutable(), cmd.args, { cwd: root, env: projectEnv({ port }), shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+      child = this.spawnImpl(cmd.file || nodeExecutable(), cmd.args, { cwd: root, env: projectEnv({ port }), shell: false, windowsHide: true, stdio: ["ignore", "pipe", "pipe"], ...ownGroup() });
     } catch (error) {
       server.status = "failed";
       server.error = "No se pudo iniciar: " + error.message;
