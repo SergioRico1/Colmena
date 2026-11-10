@@ -612,10 +612,21 @@ export function toolDigest(history, { bots } = {}) {
       }
     }
     if (result !== undefined && result !== null) return { view: callView(call, result, {}, bots) };
-    // Big arguments are not copied: while the call is open they are in step.pending.
-    const open = { call_id: call.call_id, name: call.name, ...(String(call.arguments || "").length <= OPEN_ARGS ? { arguments: call.arguments } : {}) };
+    // Big arguments are not copied whole (while the call is open they are in step.pending):
+    // the card keeps their short fields (a title, a path), not the body.
+    const open = { call_id: call.call_id, name: call.name, ...(String(call.arguments || "").length <= OPEN_ARGS ? { arguments: call.arguments } : shortArguments(call.arguments)) };
     return raw !== undefined ? { call: open, settled: true } : { call: open };
   });
+}
+
+/** The short fields of a call's big arguments, as { arguments, trimmed } ({} when unreadable). */
+function shortArguments(text) {
+  try {
+    const short = Object.entries(JSON.parse(text)).filter(([, v]) => v === null || (typeof v !== "object" && String(v).length <= 400));
+    return { arguments: JSON.stringify(Object.fromEntries(short)), trimmed: true };
+  } catch {
+    return {};
+  }
 }
 
 /**
@@ -631,7 +642,7 @@ export function toolCalls(step, { bots, receipt } = {}) {
   return [...entries.slice(-CALLS_SHOWN).map((e) => {
     if (e.search) return webSearchToolCall(e.search, step);
     if (e.view) return e.view;
-    const call = e.call.arguments === undefined && pending.has(e.call.call_id) ? { ...e.call, arguments: pending.get(e.call.call_id).arguments } : e.call;
+    const call = (e.call.arguments === undefined || e.call.trimmed) && pending.has(e.call.call_id) ? { ...e.call, arguments: pending.get(e.call.call_id).arguments } : e.call;
     return callView(call, e.settled ? null : receipt?.(call.call_id)?.result, step, bots);
   }), ...recoveryToolCalls(step)];
 }

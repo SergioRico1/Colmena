@@ -31,7 +31,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { id, now } from "./store.mjs";
-import { hasHistory, historySize, setStepHistory, stepHistory } from "./histories.mjs";
+import { hasHistory, historySize, removeStepHistory, setStepHistory, stepHistory } from "./histories.mjs";
 import { createMissionFile, readMissionFile, listMissionFiles, readMissionDocument, readMissionBytes, createUniqueFile, saveWorkFile, workFileName } from "./files.mjs";
 import { activateSkill, resolveSkillApproval, touchSkill, importSkill, parseSkill } from "./skills.mjs";
 import {
@@ -392,6 +392,8 @@ export class Runtime {
       followup: "Respuesta de " + name + " a tu mensaje",
     };
     const { missionTitle, ...rest } = extra;
+    // A step made again under the same key starts a new conversation.
+    removeStepHistory(this.store, missionId + ":" + key);
     return this.store.put("steps", {
       id: missionId + ":" + key,
       key,
