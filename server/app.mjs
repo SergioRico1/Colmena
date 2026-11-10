@@ -19,7 +19,6 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { id, now } from "./store.mjs";
 import { createMissionFile } from "./files.mjs";
 import { registerCoreRoutes, attachmentBodyParser } from "./core-routes.mjs";
 import { buildState, automationView, ConnectorCache, approvalRevision, notificationView } from "./state.mjs";
@@ -43,10 +42,8 @@ import { Backups, registerBackupRoutes } from "./backup-service.mjs";
 import { Encryption, registerEncryptionRoutes } from "./encryption.mjs";
 import { windowsVault } from "./nexo/credential-vault.mjs";
 import { olderChats } from "./threads.mjs";
-import { registerGoalRoutes, acceptGoalSuggestion } from "./goals.mjs";
-import {
-  HttpError, zodMessage, notFound, SOON, short, automationCreate, folderFields, personFields, check, pick, safe, fold, inside,
-} from "./routes/shared.mjs";
+import { registerGoalRoutes } from "./goals.mjs";
+import { HttpError, zodMessage, notFound, SOON, short, check, safe, fold, inside } from "./routes/shared.mjs";
 import { registerConnectionRoutes } from "./routes/connections.mjs";
 import { registerSettingsRoutes } from "./routes/settings.mjs";
 import { registerMissionRoutes } from "./routes/missions.mjs";
@@ -55,6 +52,8 @@ import { registerBotRoutes } from "./routes/bots.mjs";
 import { registerSkillRoutes } from "./routes/skills.mjs";
 import { registerArtifactRoutes } from "./routes/artifacts.mjs";
 import { registerAutomationRoutes } from "./routes/automations.mjs";
+import { registerSuggestionRoutes } from "./routes/suggestions.mjs";
+import { registerFolderRoutes } from "./routes/folders.mjs";
 export { HttpError, zodMessage, critiqueAbout } from "./routes/shared.mjs";
 
 const APP_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -414,87 +413,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerSkillRoutes(app, { store, mustGet, runtime, optional });
   registerArtifactRoutes(app, { mustGet, store });
   const { createAutomation } = registerAutomationRoutes(app, { enabledBot, store, scheduler, ask, parseJson, mustGet });
-
-  // ------------------------------------------------------ suggestions
-  app.post("/api/suggestions/:id", (req, res) => {
-    const { decision } = check(z.object({ decision: z.enum(["accept", "dismiss"]) }).strict(), req.body);
-    const s = mustGet("suggestions", req.params.id, "Sugerencia");
-    if (s.status && !["active", "pending"].includes(s.status)) throw new HttpError(409, "Esta sugerencia ya está resuelta.");
-    // A goal proposed by a bot becomes a goal only when you accept it.
-    if (decision === "accept" && s.kind === "goal") return res.json({ ok: true, goal: acceptGoalSuggestion(store, s) });
-    // An idea with evidence (mail, calendar) becomes a mission when you accept it; nothing is sent.
-    if (decision === "accept" && s.kind === "idea") {
-      const prompt = String(s.payload?.prompt || "").trim();
-      if (!prompt) throw Error("Esta idea no tiene un encargo que preparar.");
-      const botId = store.get("bots", s.botId)?.enabled ? s.botId : "atlas";
-      const mission = need("create")({ prompt, mode: "solo", botIds: [botId], safety: "preguntar", attachments: [] });
-      store.patch("suggestions", s.id, { status: "accepted", decidedAt: now(), payload: { ...(s.payload || {}), missionId: mission.id } });
-      safe(() => runtime.launch(mission.id));
-      return res.json({ ok: true, missionId: mission.id });
-    }
-    const result = store.tx(() => {
-      let created = {};
-      if (decision === "accept" && s.kind === "automation") {
-        const payload = check(automationCreate, pick(s.payload || {}, ["name", "botId", "prompt", "enabled", "trigger", "notify", "needs"]));
-        created = { automation: automationView(createAutomation(payload)) };
-      } else if (decision === "accept" && s.kind === "always-approve") {
-        const p = s.payload || {};
-        created = { grant: store.put("grants", { ...pick(p, ["tool", "kind", "scope", "missionId", "target", "account"]), id: id(), botId: p.botId ?? s.botId ?? null, active: true, origin: "suggestion", suggestionId: s.id, createdAt: now() }) };
-      } else if (decision === "accept") throw Error("No sé aplicar este tipo de sugerencia.");
-      store.patch("suggestions", s.id, { status: decision === "accept" ? "accepted" : "dismissed", decidedAt: now() });
-      return { ok: true, ...created };
-    });
-    res.json(result);
-  });
-
-  // --------------------------------------------- folders & people & search
-  const folderBots = (botIds = []) => {
-    for (const b of botIds) mustGet("bots", b, "Bot");
-    return [...new Set(botIds)];
-  };
-  app.post("/api/folders", async (req, res) => {
-    const data = check(folderFields.partial({ label: true, botIds: true, access: true }).strict(), req.body);
-    const real = await validateFolder(data.path, store.directory);
-    if (store.list("folders").some((f) => fold(f.path) === fold(real))) throw new HttpError(409, "Esa carpeta ya está añadida.");
-    const folder = store.put("folders", { id: id(), path: real, label: data.label || path.basename(real), botIds: folderBots(data.botIds), access: data.access || "lee", createdAt: now() });
-    res.status(201).json(folder);
-  });
-  app.patch("/api/folders/:id", (req, res) => {
-    const data = check(folderFields.omit({ path: true }).partial().strict(), req.body);
-    mustGet("folders", req.params.id, "Carpeta");
-    if (data.botIds) data.botIds = folderBots(data.botIds);
-    res.json(store.patch("folders", req.params.id, data));
-  });
-  app.delete("/api/folders/:id", (req, res) => {
-    if (!store.remove("folders", req.params.id)) throw notFound("Carpeta");
-    res.json({ ok: true });
-  });
-  const notSelf = (personId) => {
-    if (personId === "me") throw Error("Tu propia ficha se cambia en Ajustes › Espacio.");
-  };
-  app.get("/api/people", (_req, res) => res.json(store.list("people")));
-  app.post("/api/people", (req, res) => {
-    const data = check(personFields.partial({ email: true, role: true }).strict(), req.body);
-    if (data.email && store.list("people").some((p) => p.email?.toLowerCase() === data.email.toLowerCase())) throw new HttpError(409, "Ya hay una persona con ese correo.");
-    res.status(201).json(store.put("people", { id: id(), name: data.name, email: data.email ?? null, role: data.role || "", createdAt: now() }));
-  });
-  app.patch("/api/people/:id", (req, res) => {
-    notSelf(req.params.id);
-    const data = check(personFields.partial().strict(), req.body);
-    mustGet("people", req.params.id, "Persona");
-    res.json(store.patch("people", req.params.id, data));
-  });
-  app.delete("/api/people/:id", (req, res) => {
-    notSelf(req.params.id);
-    if (!store.remove("people", req.params.id)) throw notFound("Persona");
-    res.json({ ok: true });
-  });
-  app.delete("/api/grants/:id", (req, res) => {
-    const grant = store.get("grants", req.params.id);
-    if (!grant) throw notFound("Regla");
-    store.patch("grants", grant.id, { active: false, revokedAt: now() });
-    res.json({ ok: true });
-  });
+  registerSuggestionRoutes(app, { mustGet, store, need, runtime, createAutomation });
+  registerFolderRoutes(app, { mustGet, validateFolder, store });
   // ------------------------------------------------------ notifications
   app.get("/api/notifications", (_req, res) => {
     res.json(store.list("notifications").reverse().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100).map(notificationView));
