@@ -6,7 +6,6 @@ import { watchQueues } from "./queue.mjs";
 import { SiteVault, registerVaultRoutes } from "./vault.mjs";
 import { McpHub } from "./mcp/hub.mjs";
 import { registerMcpRoutes } from "./mcp/routes.mjs";
-import { forget } from "./forgotten.mjs";
 import { registerWorkFileRoutes } from "./workfiles.mjs";
 import { createOfficeConverter } from "./officepdf.mjs";
 import { registerTurnChangeRoutes } from "./turn-changes.mjs";
@@ -21,16 +20,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { id, now } from "./store.mjs";
-import * as skillsModule from "./skills.mjs";
 import { createMissionFile } from "./files.mjs";
 import { registerCoreRoutes, attachmentBodyParser } from "./core-routes.mjs";
-import { buildState, artifactSummary, skillSummary, memorySummary, automationView, ConnectorCache, approvalRevision, notificationView } from "./state.mjs";
+import { buildState, automationView, ConnectorCache, approvalRevision, notificationView } from "./state.mjs";
 import { normalizeTrigger, defaultNeeds, CONFIG_KEYS, pageLines, findPrice, webDomain } from "./triggers.mjs";
 import { linkPreview, validateWebUrl } from "./web.mjs";
 import { usageCsv, usageHistory } from "./usage.mjs";
 import { registerUsageRoutes } from "./usage-routes.mjs";
 import { registerDiagnosticsRoutes } from "./diagnostics.mjs";
-import { registerMemoryImportRoutes } from "./memory-import.mjs";
 
 import { Scheduler } from "./scheduler.mjs";
 import { search } from "./search.mjs";
@@ -56,6 +53,8 @@ import { registerSettingsRoutes } from "./routes/settings.mjs";
 import { registerMissionRoutes } from "./routes/missions.mjs";
 import { registerApprovalRoutes } from "./routes/approvals.mjs";
 import { registerBotRoutes } from "./routes/bots.mjs";
+import { registerSkillRoutes } from "./routes/skills.mjs";
+import { registerArtifactRoutes } from "./routes/artifacts.mjs";
 export { HttpError, zodMessage, critiqueAbout } from "./routes/shared.mjs";
 
 const APP_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -412,83 +411,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   const { messageView, stepView, enabledBot } = registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued });
   registerApprovalRoutes(app, { store, runtime, mustGet, connection, need, emailEdit });
   const { ask, parseJson } = registerBotRoutes(app, { store, runtime, optional, mustGet });
-
-  // ------------------------------------------------ skills & memories
-  app.get("/api/skills", (_req, res) => res.json(store.list("skills").filter((s) => !s.removed).map(skillSummary)));
-  app.get("/api/skills/:id", (req, res) => {
-    const skill = mustGet("skills", req.params.id, "Habilidad");
-    const detail = typeof skillsModule.skillDetail === "function" ? skillsModule.skillDetail(store, skill.id) : null;
-    const prior = detail?.previous ?? (typeof skill.previous === "string" ? store.get("skills", skill.previous) : null);
-    res.json({ ...skillSummary(skill), content: skill.content, previous: prior ? { version: prior.version, content: prior.content } : null });
-  });
-  // Runtime-owned resolver when available (method or module export), else the store.
-  const skillResolver = async () => {
-    if (typeof runtime?.resolveSkillApproval === "function") return (skillId, decision) => runtime.resolveSkillApproval(skillId, decision);
-    for (const name of ["./runtime.mjs", "./learning.mjs"]) {
-      const mod = await optional(name);
-      if (typeof mod?.resolveSkillApproval === "function") return (skillId, decision) => mod.resolveSkillApproval(store, skillId, decision);
-    }
-    return null;
-  };
-  app.patch("/api/skills/:id", async (req, res) => {
-    const { status } = check(z.object({ status: z.enum(["active", "disabled", "pending"]) }).strict(), req.body);
-    mustGet("skills", req.params.id, "Habilidad");
-    const skill = skillsModule.activateSkill(store, req.params.id, status);
-    const resolver = status !== "pending" ? await skillResolver() : null;
-    // A reviewed skill also resolves its pending entry in the Bandeja.
-    if (resolver) await resolver(skill.id, status === "active" ? "approved" : "denied");
-    else if (status !== "pending")
-      for (const a of store.list("approvals").filter((x) => x.skillId === skill.id && x.status === "pending"))
-        store.patch("approvals", a.id, { status: status === "active" ? "approved" : "denied", decidedAt: now(), decidedBy: "tú" });
-    res.json(skillSummary(skill));
-  });
-  app.post("/api/skills", (req, res) => {
-    const data = check(z.object({ content: z.string().min(20).max(60000), source: z.string().max(500).optional(), botId: short.nullable().optional() }).strict(), req.body);
-    if (data.botId) mustGet("bots", data.botId, "Bot");
-    res.status(201).json(skillSummary(skillsModule.importSkill(store, { ...data, botId: data.botId ?? null })));
-  });
-  app.post("/api/memories", (req, res) => {
-    const data = check(z.object({ text: z.string().trim().min(1).max(2000), botId: short.nullable().optional(), scope: z.enum(["bot", "equipo"]).optional() }).strict(), req.body);
-    if (data.botId) mustGet("bots", data.botId, "Bot");
-    const scope = data.scope || (data.botId ? "bot" : "equipo");
-    if (scope === "bot" && !data.botId) throw Error("Elige de qué bot es este recuerdo.");
-    const memory = store.put("memories", { id: id(), text: data.text, botId: data.botId ?? null, scope, source: "dijiste", review: false, missionId: null, active: true, createdAt: now() });
-    res.json(memorySummary(memory));
-  });
-  registerMemoryImportRoutes(app, { store, runtime, z, check });
-  app.patch("/api/memories/:id", (req, res) => {
-    const data = check(z.object({ text: z.string().trim().min(1).max(2000), review: z.boolean() }).partial().strict(), req.body);
-    mustGet("memories", req.params.id, "Recuerdo");
-    res.json(memorySummary(store.patch("memories", req.params.id, data)));
-  });
-  app.delete("/api/memories/:id", (req, res) => {
-    const memory = store.get("memories", req.params.id);
-    if (!store.remove("memories", req.params.id)) throw notFound("Recuerdo");
-    // A bot's deduction you threw away is never learned again (forgotten.mjs).
-    if (memory.source !== "dijiste") forget(store, "memory", memory.text, null, { missionId: memory.missionId ?? null, reason: "rejected" });
-    res.json({ ok: true });
-  });
-
-  // -------------------------------------------------------- artifacts
-  const MIME = { md: "text/markdown", csv: "text/csv", tsv: "text/tab-separated-values", svg: "image/svg+xml", html: "text/html", json: "application/json", py: "text/x-python", js: "text/javascript", ts: "text/plain", txt: "text/plain", xml: "application/xml", yaml: "text/yaml", yml: "text/yaml", sql: "text/plain" };
-  app.get("/api/artifacts/:id", (req, res) => {
-    const a = mustGet("artifacts", req.params.id, "Entregable");
-    res.json({ ...artifactSummary(a, new Map([[a.missionId, store.get("missions", a.missionId)]])), content: a.content ?? "" });
-  });
-  app.get("/api/artifacts/:id/download", (req, res) => {
-    const a = mustGet("artifacts", req.params.id, "Entregable");
-    // Deliverables stored as files (images, filled PDFs) are served by the core routes.
-    if (a.file) return res.redirect(302, "/api/artifacts/" + encodeURIComponent(a.id) + "/file?download=1");
-    const summary = artifactSummary(a);
-    const base = String(summary.title).replace(/\.[a-z0-9]{1,6}$/i, "").replace(/[\\/:*?"<>|\x00-\x1f]+/g, "-").trim().slice(0, 120) || "entregable";
-    const name = base + "." + summary.format;
-    res.set({
-      "Content-Type": (MIME[summary.format] || "text/plain") + "; charset=utf-8",
-      "Content-Disposition": "attachment; filename=\"" + name.replace(/[^\x20-\x7e]/g, "_").replace(/"/g, "") + "\"; filename*=UTF-8''" + encodeURIComponent(name),
-      "Content-Security-Policy": "sandbox; default-src 'none'",
-    });
-    res.send(String(a.content ?? ""));
-  });
+  registerSkillRoutes(app, { store, mustGet, runtime, optional });
+  registerArtifactRoutes(app, { mustGet, store });
 
   // ------------------------------------------------------ automations
   const ruleBot = (botId) => {
