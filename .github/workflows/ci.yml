@@ -19,15 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: windows-latest # the main platform: this leg decides
-            experimental: false
-          # The suite has only ever run on Windows. Until a green run on macOS confirms it,
-          # this leg reports without failing the workflow; then set experimental to false.
-          - os: macos-latest
-            experimental: true
+        os: [windows-latest, macos-latest] # both ship, both decide
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
