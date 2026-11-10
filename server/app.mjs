@@ -66,9 +66,10 @@ import { windowsVault } from "./nexo/credential-vault.mjs";
 import { botThread, olderChats } from "./threads.mjs";
 import { registerGoalRoutes, acceptGoalSuggestion } from "./goals.mjs";
 import {
-  HttpError, zodMessage, critiqueAbout, notFound, SOON, short, attachment, instructions, email, botCreate, botPatch, draftBase, missionCreate,
+  HttpError, zodMessage, critiqueAbout, notFound, SOON, short, attachment, instructions, botCreate, botPatch, draftBase, missionCreate,
   automationCreate, automationPatch, folderFields, personFields, check, desktopOnly, pick, safe, fold, inside,
 } from "./routes/shared.mjs";
+import { registerConnectionRoutes } from "./routes/connections.mjs";
 export { HttpError, zodMessage, critiqueAbout } from "./routes/shared.mjs";
 
 const APP_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -195,62 +196,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.use(express.json({ limit: "1400kb" }));
   app.get("/api/health", (_req, res) => res.json({ application: "Colmena", version: VERSION, pid: process.pid, ...(app.locals.stalls ? { stalls: app.locals.stalls.state } : {}) }));
   app.get("/api/bootstrap", (_req, res) => res.json({ csrf }));
-
-  // ------------------------------------------------ connections (09b/09c)
-  const connection = () => {
-    if (!connections) throw Error("Conexiones no disponibles.");
-    return connections;
-  };
-  app.get("/api/connections/status", async (_req, res) => {
-    const { configured } = await connection().call("status");
-    res.json({ available: configured });
-  });
-  app.get("/api/connections/accounts", async (req, res) => {
-    const page = await connection().call("accounts", { cursor: check(z.string().max(2000), req.query.cursor || "") });
-    // A new account (just authorized) gets its direct tools without waiting for the cache.
-    runtime.appTools?.refreshSoon?.();
-    res.json(page);
-  });
-  app.get("/api/connections/catalogue", async (req, res) =>
-    res.json(
-      await connection().call(
-        "catalogue",
-        check(
-          z.object({ query: z.string().max(200).default(""), category: z.enum(["", "mail", "documents", "team", "development"]).default(""), cursor: z.string().max(12000).default("") }).strict(),
-          req.query,
-        ),
-      ),
-    ),
-  );
-  const management = {
-    link: z.object({ toolkit: short }).strict(),
-    rename: z.object({ account: short, alias: z.string().trim().min(1).max(80) }).strict(),
-    disconnect: z.object({ account: short }).strict(),
-  };
-  for (const [op, schema] of Object.entries(management))
-    app.post("/api/connections/" + op, async (req, res) => {
-      const result = await connection().manage(op, check(schema, req.body));
-      void connectorCache.refresh();
-      runtime.appTools?.refreshSoon?.();
-      res.json(result);
-    });
-  app.get("/api/connections/review/:id", async (req, res) => res.json(await connection().review(req.params.id)));
-  const emailEdit = z.object({ to: z.array(email).min(1).max(30), cc: z.array(email).max(30).default([]), cco: z.array(email).max(30).default([]), subject: z.string().max(998), body: z.string().max(18000) });
-  app.patch("/api/connections/review/:id", async (req, res) => {
-    const data = check(emailEdit.extend({ revision: short }).strict(), req.body);
-    res.json(await connection().edit(req.params.id, data));
-  });
-  app.post("/api/connections/review/:id", async (req, res) => {
-    const { reason, ...data } = check(z.object({ decision: z.enum(["approved", "denied"]), revision: z.string().max(100).default(""), remember: z.boolean().default(false), reason: z.string().trim().max(DENY_REASON_MAX).default("") }).strict(), req.body);
-    if (data.decision === "denied" && reason && store.get("approvals", req.params.id)) store.patch("approvals", req.params.id, { denyReason: reason });
-    const result = await connection().decide(req.params.id, data);
-    const a = store.get("approvals", req.params.id);
-    if (a && typeof runtime.launch === "function") {
-      const prior = runtime.missionJobs?.get?.(a.missionId);
-      void Promise.resolve(prior).then(() => runtime.launch(a.missionId));
-    }
-    res.json(result);
-  });
+  const { connection, emailEdit } = registerConnectionRoutes(app, { connections, runtime, connectorCache, store });
 
   // ------------------------------------------------------------ state
   const listModels = async () => {
