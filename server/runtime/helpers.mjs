@@ -207,7 +207,7 @@ const countWords = (text) => (String(text || "").trim().match(/\S+/g) || []).len
 const sha = (text) => createHash("sha256").update(String(text)).digest("hex");
 
 export {
-  LOOP_LIMIT, ACTIVE, STOPWORDS, DIRECTIONS, INCOGNITO_DENY, INCOGNITO_NOTE, INTERRUPT_CODE, stepLabel, MISSION_WIDE, RETRY_CODE, RESUME_WINDOW_MS,
-  LIMIT_RESUMES, WEB_CACHE, CHAT_STEPS, isChatStep, watchSourcesNote, PARALLEL_TOOLS, DIRECT_READ, runsInParallel, BRIEF_KINDS, PROGRESS_MAX,
-  RUNNABLE, LIVE_AFTER, LEFT_TO_DO, FILLER, flat, sameUrl, countWords, sha,
+  LOOP_LIMIT, ACTIVE, DIRECTIONS, INCOGNITO_DENY, INCOGNITO_NOTE, INTERRUPT_CODE, stepLabel, MISSION_WIDE, RETRY_CODE, RESUME_WINDOW_MS,
+  LIMIT_RESUMES, WEB_CACHE, isChatStep, watchSourcesNote, runsInParallel, BRIEF_KINDS, PROGRESS_MAX, RUNNABLE, LIVE_AFTER, flat, sameUrl, countWords,
+  sha,
 };

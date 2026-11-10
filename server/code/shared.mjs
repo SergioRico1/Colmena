@@ -170,6 +170,6 @@ export function githubRepo(remote) {
 }
 
 export {
-  IDLE_MS, RESUME_WINDOW_MS, SWEEP_MS, MAX_OUTPUT, OVERLAP_FILES, DENIED, clip, identity, base, textOfContent, redTitle, whichCommand, runCmd,
-  lastLine, ghMessage, BOT_ADVICE,
+  IDLE_MS, RESUME_WINDOW_MS, SWEEP_MS, MAX_OUTPUT, OVERLAP_FILES, DENIED, clip, identity, base, redTitle, whichCommand, runCmd, lastLine, ghMessage,
+  BOT_ADVICE,
 };
