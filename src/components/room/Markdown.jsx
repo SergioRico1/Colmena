@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Check, ClipboardCopy, Copy } from "lucide-react";
@@ -143,19 +143,29 @@ export function plain(md) {
     .trim();
 }
 
-export default function Markdown({ text, size = 16, style, mentions = [] }) {
+const NO_MENTIONS = [];
+function Markdown({ text, size = 16, style, mentions = NO_MENTIONS }) {
   // «@Vera» is a pill wherever a bot of the team is named (not only where a list is passed).
   const { bots = [] } = useStore() || {};
   // In the answer of a turn that changed files, their names are links (ChangedFiles.jsx).
   const fileLinks = useFileLinks();
-  if (!mentions.length) mentions = bots.map((x) => x.name).filter(Boolean);
+  // The names as one string: the list is a new array on every /api/state, the names are not.
+  const names = (mentions.length ? mentions : bots.map((x) => x.name).filter(Boolean)).join("\n");
+  // Parsed only when its own text (or what turns into pills and links) changes: the same
+  // elements come back otherwise, so React skips the whole answer.
+  const body = useMemo(() => {
+    const who = names ? names.split("\n") : NO_MENTIONS;
+    const parts = splitInteractive(String(text || ""));
+    const renderText = (md, key) => <ReactMarkdown key={key} remarkPlugins={GFM} components={size >= 16 ? BODY : size <= 14 ? TINY : SMALL} skipHtml>{withMentions(linkFiles(md, fileLinks), who)}</ReactMarkdown>;
+    return parts.some((p) => p.kind !== "md") ? <AnswerLayout parts={parts} renderText={renderText} /> : renderText(String(text || ""), "all");
+  }, [text, size, names, fileLinks]);
   return (
     <div className="rm-md" style={{ display: "flex", flexDirection: "column", gap: size <= 14 ? "8px" : "12px", fontSize: size + "px", lineHeight: size >= 16 ? "1.6" : size <= 14 ? "1.5" : "1.55", overflowWrap: "anywhere", ...style }}>
-      {(() => {
-        const parts = splitInteractive(String(text || ""));
-        const renderText = (md, key) => <ReactMarkdown key={key} remarkPlugins={GFM} components={size >= 16 ? BODY : size <= 14 ? TINY : SMALL} skipHtml>{withMentions(linkFiles(md, fileLinks), mentions)}</ReactMarkdown>;
-        return parts.some((p) => p.kind !== "md") ? <AnswerLayout parts={parts} renderText={renderText} /> : renderText(String(text || ""), "all");
-      })()}
+      {body}
     </div>
   );
 }
+
+// Callers pass `style` and `mentions` written inline (new objects on every render): compared by content.
+const shallow = (a, b) => a === b || (!!a && !!b && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((k) => a[k] === b[k]));
+export default memo(Markdown, (a, b) => a.text === b.text && a.size === b.size && shallow(a.style, b.style) && shallow(a.mentions, b.mentions));

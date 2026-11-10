@@ -3,8 +3,12 @@ import { addUnsent, removeUnsent } from "./unsent.js";
 import { api } from "./api.js";
 import { applyDeltas, applyLiveSnapshot, queueDelta } from "./liveText.js";
 import { useHiddenVersion, visible } from "./undoToast.js";
+import { activityStore, liveStore } from "./liveStore.js";
 
 // Global data layer: /api/state snapshot + SSE invalidation + live text deltas.
+// The context holds what changes now and then (/api/state, ready, online…). What changes on
+// every streamed frame (the live text and what each bot is doing) goes to liveStore.js, read
+// with its own hooks, so a frame never re-renders every useStore() caller.
 const StoreContext = createContext(null);
 // Detail views refetch on every server change; only they listen to this counter, so a
 // change that leaves /api/state identical does not re-render the whole app.
@@ -48,8 +52,6 @@ export function StoreProvider({ children }) {
   const [ready, setReady] = useState(!!snapshot);
   const [error, setError] = useState(null);
   const [revision, setRevision] = useState(0); // bumps on every server change (detail views refetch)
-  const [live, setLive] = useState({}); // stepId -> { text, botId, mission }
-  const [activity, setActivity] = useState({}); // botId -> { verb, detail, mission, at }
   const [online, setOnline] = useState(true); // live channel to the local service
   const timer = useRef(null);
   const retryTimer = useRef(null);
@@ -61,8 +63,8 @@ export function StoreProvider({ children }) {
     if (!deltas.current.size) return;
     const batch = [...deltas.current];
     deltas.current.clear();
-    setLive((all) => applyDeltas(all, batch));
-    setActivity((all) => {
+    liveStore.set((all) => applyDeltas(all, batch));
+    activityStore.set((all) => {
       const next = { ...all };
       for (const [, d] of batch) next[d.botId] = { verb: all[d.botId]?.verb === "programando" ? "programando" : "escribiendo", mission: d.mission, at: Date.now() };
       return next;
@@ -133,7 +135,7 @@ export function StoreProvider({ children }) {
           // replaces the copy here (the pieces sent while the stream was down come back);
           // the deltas waiting for a frame are already in it.
           deltas.current.clear();
-          setLive((all) => applyLiveSnapshot(all, event.steps));
+          liveStore.set((all) => applyLiveSnapshot(all, event.steps));
           return;
         }
         if (event.type === "delta") {
@@ -150,18 +152,18 @@ export function StoreProvider({ children }) {
           // writes it again when it goes on.
           if (!event.verb) {
             for (const [k, d] of deltas.current) if (d.botId === event.botId && d.mission === event.mission) deltas.current.delete(k);
-            setLive((all) => {
+            liveStore.set((all) => {
               const stale = Object.entries(all).filter(([, l]) => l.botId === event.botId && l.mission === event.mission);
               return stale.length ? Object.fromEntries(Object.entries(all).filter(([, l]) => !(l.botId === event.botId && l.mission === event.mission))) : all;
             });
-            setActivity((all) => {
+            activityStore.set((all) => {
               if (!all[event.botId] || all[event.botId].mission !== event.mission) return all;
               const { [event.botId]: _gone, ...rest } = all;
               return rest;
             });
             return;
           }
-          setActivity((all) => ({ ...all, [event.botId]: { verb: event.verb, detail: event.detail, mission: event.mission, at: Date.now() } }));
+          activityStore.set((all) => ({ ...all, [event.botId]: { verb: event.verb, detail: event.detail, mission: event.mission, at: Date.now() } }));
           return;
         }
         if (event.type === "notify") {
@@ -181,8 +183,15 @@ export function StoreProvider({ children }) {
         if (event.type === "step_done" || event.type === "completed") {
           for (const [k, d] of deltas.current) if (k === event.stepId || (event.type === "completed" && d.mission === event.mission)) deltas.current.delete(k);
           const done = (entry) => entry.mission === event.mission && (event.type === "completed" || entry.botId === event.botId);
-          setLive((all) => Object.fromEntries(Object.entries(all).filter(([key, entry]) => !(key === event.stepId || (event.type === "completed" && entry.mission === event.mission)))));
-          setActivity((all) => Object.fromEntries(Object.entries(all).filter(([botId, entry]) => !done({ ...entry, botId }))));
+          // Nothing of theirs was there → the same object, so nobody repaints.
+          liveStore.set((all) => {
+            const gone = ([key, entry]) => key === event.stepId || (event.type === "completed" && entry.mission === event.mission);
+            return Object.entries(all).some(gone) ? Object.fromEntries(Object.entries(all).filter((e) => !gone(e))) : all;
+          });
+          activityStore.set((all) => {
+            const gone = ([botId, entry]) => done({ ...entry, botId });
+            return Object.entries(all).some(gone) ? Object.fromEntries(Object.entries(all).filter((e) => !gone(e))) : all;
+          });
         }
         // A step or a mission ended: its records arrive pushed; only the summary refreshes.
         schedule(event.type === "step_done" || event.type === "completed" ? ["missions"] : null);
@@ -234,7 +243,7 @@ export function StoreProvider({ children }) {
     for (const [key, kind] of HIDEABLE) if (Array.isArray(state[key])) out[key] = visible(kind, state[key]);
     return out;
   }, [state, hiddenVersion]); // eslint-disable-line react-hooks/exhaustive-deps
-  const value = useMemo(() => ({ ...shown, state: shown, ready, error, online, live, activity, refresh, run }), [shown, ready, error, online, live, activity, refresh, run]);
+  const value = useMemo(() => ({ ...shown, state: shown, ready, error, online, refresh, run }), [shown, ready, error, online, refresh, run]);
   return <StoreContext.Provider value={value}><RevisionContext.Provider value={revision}>{children}</RevisionContext.Provider></StoreContext.Provider>;
 }
 

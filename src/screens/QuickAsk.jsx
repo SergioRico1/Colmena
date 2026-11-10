@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AppWindow, ArrowUpRight, ClipboardPaste, Crop, FileText, History, LayoutGrid, LoaderCircle, Plus, X } from "lucide-react";
 import { pickFiles, post } from "../lib/api.js";
 import { useStore } from "../lib/store.jsx";
+import { useMissionLive } from "../lib/liveStore.js";
 import { useRoom } from "../components/room/useRoom.js";
 import LiveMarkdown from "../components/room/LiveMarkdown.jsx";
 import Markdown from "../components/room/Markdown.jsx";
@@ -89,7 +90,7 @@ const slug = (s) => String(s || "app").normalize("NFD").replace(/\p{M}/gu, "").t
 const chars = (n) => n.toLocaleString("es-ES") + " caracteres";
 
 export default function QuickAsk() {
-  const { bots, live, missions } = useStore();
+  const { bots, missions } = useStore();
   const team = useMemo(() => bots.filter((b) => b.enabled !== false && b.id !== "atlas"), [bots]);
   const [target, setTarget] = useState("equipo");
   const [replyIn, setReplyIn] = useState(null); // a recent conversation or room to continue
@@ -105,6 +106,7 @@ export default function QuickAsk() {
   const card = useRef(null);
   const [shown, setShown] = useState(0);
   const room = useRoom(sent?.id || null);
+  const live = useMissionLive(sent?.id);
 
   // A new visit: the window you came from; what was attached last time is cleared, as is
   // a finished answer (one still being written stays).
@@ -125,7 +127,7 @@ export default function QuickAsk() {
   }, [fresh]);
   useEffect(() => {
     if (!shown) return;
-    if (sent && DONE.includes(room.mission?.status) && !Object.values(live || {}).some((v) => v.mission === sent.id)) setSent(null);
+    if (sent && DONE.includes(room.mission?.status) && !live.length) setSent(null);
     requestAnimationFrame(() => input.current?.focus());
   }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -247,7 +249,7 @@ export default function QuickAsk() {
   const bot = sent?.botId ? bots.find((b) => b.id === sent.botId) : bots.find((b) => b.id === "atlas");
   const since = sent?.at || null;
   const answers = (room.messages || []).filter((m) => m.role === "assistant" && m.text && (!since || m.at >= since));
-  const streaming = Object.values(live || {}).filter((v) => v.mission === sent?.id).map((v) => v.text).join("");
+  const streaming = live.map((v) => v.text).join("");
   const reply = streaming || (answers.length ? answers.map((a) => a.text).join("\n\n") : "");
   const done = !!sent && !streaming && DONE.includes(room.mission?.status);
   const openUrl = sent ? (sent.conversation ? `/chat/${sent.botId}?c=${sent.id}` : roomUrl({ id: sent.id, room: sent.room, status: room.mission?.status })) : "/";

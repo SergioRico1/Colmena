@@ -1,6 +1,3 @@
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { renderToStaticMarkup } from "react-dom/server";
 import { api, download } from "./api.js";
 import { conversationMarkdown, conversationTitle, wordDocument } from "./exporting.js";
 
@@ -17,6 +14,8 @@ export async function exportConversation(missionId, format, { bots = [] } = {}) 
     return "copied";
   }
   if (format === "word") {
+    // Only Word needs the Markdown and server renderers: loaded when asked, out of the main bundle.
+    const [{ default: ReactMarkdown }, { default: remarkGfm }, { renderToStaticMarkup }] = await Promise.all([import("react-markdown"), import("remark-gfm"), import("react-dom/server")]);
     const html = renderToStaticMarkup(<ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml>{md}</ReactMarkdown>);
     download(fileName(title, "doc"), wordDocument(title, html), "application/msword");
     return "word";

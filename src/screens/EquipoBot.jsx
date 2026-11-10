@@ -18,6 +18,7 @@ import { TOOL_KEYS, TOOL_LABEL, longDay, monthName, shortDay } from "../componen
 import { AUTONOMY, INK, LINE, More, Seg, Shape, TEXT2, TEXT3, Toggle, card, dark, h2, outline, quiet, sub } from "../components/v3/team/parts.jsx";
 import { formatTokens } from "../components/settings/format.jsx";
 import { useAction, useResource, useStore } from "../lib/store.jsx";
+import { useActivity } from "../lib/liveStore.js";
 import { del, get, patch, pickTextFiles, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { missionUrl, roomUrl, shortDate } from "../lib/format.js";
@@ -68,7 +69,8 @@ const memoryNote = (m) => (m.scope === "equipo" ? "Lo sabe todo el equipo" : (SO
 export default function EquipoBot({ params = {}, query = {} }) {
   const id = params.bot;
   const store = useStore();
-  const { bots, ready, connectors = [], approvals = [], missions = [], activity = {}, ai = null, settings = {} } = store;
+  const { bots, ready, connectors = [], approvals = [], missions = [], ai = null, settings = {} } = store;
+  const activity = useActivity(id);
   const [expert] = useExpert();
   const { data, error: loadError, setData } = useResource(id ? `/bots/${encodeURIComponent(id)}` : null);
   const { data: learning, setData: setLearning } = useResource(id ? `/bots/${encodeURIComponent(id)}/learning` : null);
@@ -132,7 +134,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
 
   const color = bot.color || "#C9CBD1";
   const work = bot.status === "trabaja";
-  const verb = activity?.[bot.id]?.verb;
+  const verb = activity?.verb;
   const now = work && verb ? "ahora: " + verb : STATE[bot.status] && bot.status !== "libre" ? "ahora: " + STATE[bot.status] : null;
   const live = missions.filter((m) => ["running", "queued", "planning"].includes(m.status) && [...(m.botIds || []), ...(m.chosenBotIds || [])].includes(bot.id));
   const merge = (r) => { if (r && typeof r === "object") setData((d) => (d ? { ...d, ...r } : d)); return r; };
