@@ -94,6 +94,12 @@ export function namesFor(store, stepId, addresses = []) {
  * for and then pinned down in your answer to its question («pídele que lo mire» → «¿a quién?»
  * → «a Raúl») is one request; what you said before the bot's last answer is not.
  */
+/** When the bot last answered in this mission (ISO), or "". What it did before, you have seen. */
+export function answeredAt(store, missionId) {
+  return store.where("messages", "missionId", missionId).filter((m) => m.role === "assistant" && (!m.kind || m.kind === "message") && typeof m.text === "string")
+    .map((m) => String(m.at)).sort().at(-1) || "";
+}
+
 export function turnText(store, missionId) {
   const messages = store.where("messages", "missionId", missionId).filter((m) => typeof m.text === "string")
     .sort((a, b) => String(a.at).localeCompare(String(b.at)));
@@ -112,6 +118,18 @@ export function answeredText(store, missionId) {
 
 // «Sí, el martes», «vale», «acepta», «dile que no»: a decision about what the bot told you.
 const DECIDES = /^(?:si|sip|vale|ok|okey|okay|de acuerdo|perfecto|claro|adelante|venga|genial|dale|hecho|confirma\w*|acepta\w*|rechaza\w*|declina\w*)\b/;
+// What only acknowledges: «ok», «vale, gracias», «perfecto».
+const ACK_WORDS = /\b(?:si|sip|vale|ok|okey|okay|de acuerdo|perfecto|claro|adelante|venga|genial|dale|hecho|gracias|muchas|mil|bien|muy|estupendo|entendido|anotado|visto|por favor|porfa)\b/g;
+// The bot's last message offered to answer the email («¿Le confirmo…?», «¿Respondo que sí?»).
+const OFFERS_REPLY = /¿[^?]*\b(?:respond|contest|confirm|envi|mand|dig|dec|acept|rechaz|declin|escrib)\w*[^?]*\?/;
+// «Prepárame un borrador», «redacta una respuesta»: you want to see it first. A plain
+// «envíalo» in the same words still sends.
+const asksDraft = (text) => /\b(?:borrador\w*|draft|prepar\w+|redact\w+)\b/.test(text) && !/\b(?:envi|mand|reenvi)\w+/.test(text);
+// One bare address («ana@x.es»): never «Raúl <x@evil.com>» or two in one field.
+export const bareAddress = (r) => { const a = fold(r).trim(); return /^[^\s<>,;:"'()]+@[^\s<>,;:"'()@]+\.[a-z]{2,}$/.test(a) ? a : ""; };
+// Words too common to name anyone («envía un correo…» does not name correo@…).
+const COMMON = new Set(["correo", "correos", "email", "mail", "mensaje", "info", "hola", "gracias", "para", "por", "con", "que", "los", "las", "del", "una", "uno", "este", "esta", "sobre", "informe", "favor"]);
+
 // «Déjalo», «lo miro yo», «sin responder»: you keep it for yourself.
 const KEEPS = /\b(?:dejalo|dejala|dejadlo|no hace falta|lo miro yo|lo hablo yo|lo hago yo|lo llevo yo|me encargo yo|sin responder|sin contestar|no respondas|no contestes|no lo envies|no lo mandes|todavia no|aun no|espera|ahora no)\b/;
 
@@ -122,8 +140,13 @@ const KEEPS = /\b(?:dejalo|dejala|dejadlo|no hace falta|lo miro yo|lo hablo yo|l
  */
 export function decidesReply(store, missionId) {
   const text = turnText(store, missionId);
-  if (!text || /\?/.test(text) || KEEPS.test(text) || isNo(text)) return false;
-  return DECIDES.test(text.trim()) || SEND_VERB.test(text);
+  if (!text || /\?/.test(text) || KEEPS.test(text) || isNo(text) || asksDraft(text)) return false;
+  if (SEND_VERB.test(text)) return true;
+  if (!DECIDES.test(text.trim())) return false;
+  // «Ok, gracias» only acknowledges what the bot said. A bare yes is a reply when the bot
+  // offered one («¿Le confirmo el martes?»); otherwise it must say something («sí, el martes»).
+  const rest = text.replace(ACK_WORDS, " ").replace(/[^a-z0-9]+/g, " ").trim();
+  return rest.length >= 3 || OFFERS_REPLY.test(fold(answeredText(store, missionId)).slice(-600));
 }
 
 /**
@@ -137,13 +160,13 @@ export function answersThread(store, missionId, { ids = [], addresses = [] } = {
   const said = answeredText(store, missionId).toLowerCase();
   if (!ids.some((id) => said.includes(id.toLowerCase()))) return false;
   const party = new Set(addresses.map((a) => a.toLowerCase()));
-  return recipients.every((r) => party.has((String(r).match(/[^<\s,]+@[^>\s,]+/)?.[0] || "").toLowerCase()));
+  return recipients.every((r) => { const a = bareAddress(r); return !!a && party.has(a); });
 }
 
 /** Your words in this turn tell it to send («envíalo», «mándalo ya», «pídele…»). */
 export function saysSend(store, missionId) {
   const text = turnText(store, missionId);
-  return !!text && SEND_VERB.test(text) && !/\b(no|todavia no|aun no|nunca)\s+(lo |la )?(envies|mandes)\b/.test(text);
+  return !!text && SEND_VERB.test(text) && !asksDraft(text) && !/\b(no|todavia no|aun no|nunca)\s+(lo |la )?(envies|mandes)\b/.test(text);
 }
 
 /** «Envíamelo», «mándamelo a mi correo»: you are sending it to yourself. */
@@ -157,17 +180,47 @@ export function asksForSelf(store, missionId) {
  * 10 s to cancel. Anything a bot decided by itself, or read in a page or an email, keeps
  * waiting for you.
  */
-export function explicitlyAsked(store, missionId, recipients = [], { names = {} } = {}) {
+export function explicitlyAsked(store, missionId, recipients = [], { names = {}, owners = null } = {}) {
   const text = turnText(store, missionId);
   if (!saysSend(store, missionId) || !recipients.length) return false;
+  // Your words, without the addresses you wrote: «ana» inside ana@x.es names nobody else.
+  const said = new Set(text.replace(/[^\s<>,;:"'()]+@[^\s<>,;:"'()]+/g, " ").split(/[^a-z0-9]+/).filter(Boolean));
   return recipients.every((r) => {
-    const address = fold(r).trim();
+    const address = bareAddress(r);
     if (!address) return false;
-    if (text.includes(address)) return true;
-    const local = address.split("@")[0];
-    const words = [...local.split(/[._+-]/), ...(names[address] || []).flatMap((n) => fold(n).split(/[^a-z0-9]+/))];
-    return words.filter((w) => w.length >= 3).some((w) => new RegExp("(?:^|[^a-z0-9])" + w + "(?:$|[^a-z0-9])").test(text));
+    // The whole address, as you wrote it (not inside a longer one).
+    const at = text.indexOf(address);
+    if (at >= 0 && !/[a-z0-9._%+-]/.test(text[at - 1] || " ") && !/^(?:[a-z0-9@-]|\.[a-z0-9])/.test(text.slice(at + address.length))) return true;
+    const words = [...address.split("@")[0].split(/[^a-z0-9]+/), ...(names[address] || []).flatMap((n) => fold(n).split(/[^a-z0-9]+/))];
+    // A word of yours that is its name: not a verb or a common word, and not also the name
+    // of someone else in what the bot read («Pablo» of two different addresses asks).
+    return words.some((w) => {
+      if (w.length < 3 || !said.has(w) || COMMON.has(w) || SEND_VERB.test(w)) return false;
+      const who = owners?.get(w);
+      return !who || (who.size === 1 && who.has(address));
+    });
   });
+}
+
+/**
+ * Every name word and local-part word in what the bot read in this step → the addresses it
+ * goes by. A word with two addresses is ambiguous: an email signed «Pablo <x@otra.com>»
+ * must not pass for the Pablo you meant.
+ */
+export function nameOwners(store, stepId) {
+  const step = stepId ? store.get("steps", stepId) : null;
+  const owners = new Map();
+  const add = (w, address) => { if (w.length >= 3) (owners.get(w) || owners.set(w, new Set()).get(w)).add(address); };
+  for (const x of step?.history || []) {
+    if (x?.type !== "function_call_output") continue;
+    const t = String(x.output || "").replace(/\\"/g, '"');
+    for (const m of t.matchAll(/([\p{L}][\p{L}'. -]{1,60})?\s*<([^<>\s"]+@[^<>\s"]+)>/gu)) {
+      const address = fold(m[2]);
+      for (const w of address.split("@")[0].split(/[^a-z0-9]+/)) add(w, address);
+      for (const w of fold(m[1] || "").split(/[^a-z0-9]+/)) add(w, address);
+    }
+  }
+  return owners;
 }
 
 // What an app action does, in plain Spanish («Leer correos», «Crear evento en el calendario»), from its

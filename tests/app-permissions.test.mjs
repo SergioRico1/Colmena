@@ -191,3 +191,42 @@ test("«Sí, martes 10» to Vera's notice about Raúl's email: the reply leaves 
   assert.deepEqual(again, { waiting: true });
   assert.equal(store.get("approvals", "s2:c1").autoSendAt, undefined);
 });
+
+test("a send you cancelled stays cancelled in that turn; a draft written in the same turn is not «seen»", async (t) => {
+  const { store } = await fixture(t);
+  store.put("bots", { id: "vera", name: "Vera", tools: { correo: "escribe" } });
+  store.put("missions", { id: "mi", status: "running" });
+  const at = (s) => new Date(Date.now() - 600000 + s * 1000).toISOString();
+  store.put("messages", { id: "a0", missionId: "mi", role: "assistant", kind: "message", text: "Hola.", at: at(0) });
+  store.put("messages", { id: "u1", missionId: "mi", role: "user", kind: "message", text: "Envía a ana@ejemplo.com el resumen", at: at(10) });
+  const send = { tool: "GMAIL_SEND_EMAIL", toolkit: "gmail", arguments: { recipient_email: "ana@ejemplo.com", subject: "Resumen", body: "Hola" } };
+  const draft = { messages: [{ to: "ana@ejemplo.com", subject: "Resumen", messageText: "Hola", threadId: "t1", messageId: "t1" }] };
+  const h = {
+    async dispatch(_profile, op, a) {
+      if (op === "prepare" && a.tool === "GMAIL_GET_DRAFT") return { proposal: "read1", name: "Get draft", tool: a.tool, toolkit: "gmail", arguments: JSON.parse(a.arguments_json), read_scope: "inbox" };
+      if (op === "commit" && a.proposal === "read1") return { ok: true, data: draft };
+      if (op === "prepare" && a.tool === "GMAIL_SEND_DRAFT") return { proposal: "p2", name: "Send draft", account: "Gmail · ca_1", tool: a.tool, toolkit: "gmail", arguments: JSON.parse(a.arguments_json) };
+      if (op === "prepare") return { proposal: "p1", name: "Send email", account: "Gmail · ca_1", account_alias: "Gmail", ...send };
+      if (op === "commit") return { ok: true, receipt: { id: "r1" } };
+      return {};
+    },
+  };
+  const connections = new Connections(store, h);
+  const ask = (step, tool, json) => connections.request({ id: "mi" }, { id: step, botId: "vera" }, call, { tool, account: "ca_1", arguments_json: JSON.stringify(json) }, signal);
+  // Asked for in so many words: it would leave on its own… and the person cancels it.
+  await ask("s1", "GMAIL_SEND_EMAIL", send.arguments);
+  assert.ok(store.get("approvals", "s1:c1").autoSendAt);
+  const { revision } = await connections.review("s1:c1");
+  await connections.decide("s1:c1", { decision: "denied", revision });
+  assert.equal(store.get("approvals", "s1:c1").status, "denied");
+  // The bot tries again in the same turn: now it waits for the person.
+  await ask("s2", "GMAIL_SEND_EMAIL", send.arguments);
+  assert.equal(store.get("approvals", "s2:c1").autoSendAt, undefined);
+
+  // «Escribe a Ana…»: a draft the bot wrote in this same turn has not been seen, so
+  // «GMAIL_SEND_DRAFT» right after it is judged like any send (and this one was cancelled).
+  store.put("approvals", { id: "s3:c0", missionId: "mi", botId: "vera", status: "executed", decidedAt: new Date().toISOString(), result: { ok: true, data: { id: "d1" } }, review: { tool: "GMAIL_CREATE_EMAIL_DRAFT", arguments: {} } });
+  assert.equal(connections.preparedHere("mi", "d1"), true);
+  assert.equal(connections.preparedHere("mi", "d1", { before: at(0) }), false, "written after the bot last answered");
+  assert.equal(connections.preparedHere("mi", "d1", { before: new Date(Date.now() + 1000).toISOString() }), true);
+});

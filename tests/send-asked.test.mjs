@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { Store } from "../server/store.mjs";
 import { classify } from "../server/connections.mjs";
-import { answersThread, decidesReply, explicitlyAsked, namesFor } from "../server/appactions.mjs";
+import { answersThread, decidesReply, explicitlyAsked, nameOwners, namesFor, saysSend } from "../server/appactions.mjs";
 import { threadParty } from "../server/gmaildrafts.mjs";
 import { toolCard } from "../server/state.mjs";
 import { verbFor } from "../server/tools.mjs";
@@ -117,12 +117,49 @@ test("«Sí, martes 10 a las 12:00» to the bot's notice about an email is the r
     store.put("messages", { id: "u2", missionId: "m", role: "user", kind: "message", text, at: at(20) });
     assert.equal(decidesReply(store, "m"), false, text);
   }
-  for (const text of ["Vale", "Acepta el jueves 12", "Dile que el martes me va bien", "ok, el viernes"]) {
+  // An acknowledgement of the notice is not a reply either, nor asking for a draft.
+  for (const text of ["Vale", "ok, gracias", "Perfecto, muchas gracias", "Genial", "Sí, prepárame un borrador"]) {
+    store.put("messages", { id: "u2", missionId: "m", role: "user", kind: "message", text, at: at(20) });
+    assert.equal(decidesReply(store, "m"), false, text);
+  }
+  for (const text of ["Acepta el jueves 12", "Dile que el martes me va bien", "ok, el viernes", "Sí, martes 10"]) {
     store.put("messages", { id: "u2", missionId: "m", role: "user", kind: "message", text, at: at(20) });
     assert.equal(decidesReply(store, "m"), true, text);
   }
+  // A recipient field that hides another address never passes for someone in the thread.
+  assert.equal(answersThread(store, "m", party, ["rcorregidor@k-global.es <x@evil.com>"]), false);
+  // A bare «sí» is the reply when the bot offered one.
+  store.put("messages", { id: "a1", missionId: "m", role: "assistant", kind: "message", at: at(10), text: "Raúl propone el martes 10 (hilo 1a1ac2d778c8085e). ¿Le confirmo el martes?" });
+  store.put("messages", { id: "u2", missionId: "m", role: "user", kind: "message", text: "Sí", at: at(20) });
+  assert.equal(answersThread(store, "m", party, ["rcorregidor@k-global.es"]), true);
   // Once the bot answered something else, the old notice is not what you are answering.
   store.put("messages", { id: "a2", missionId: "m", role: "assistant", kind: "message", text: "Sesame te recuerda la encuesta.", at: at(30) });
   store.put("messages", { id: "u3", missionId: "m", role: "user", kind: "message", text: "Sí", at: at(40) });
   assert.equal(answersThread(store, "m", party, ["rcorregidor@k-global.es"]), false);
+});
+
+test("naming a recipient: no regex from the address, no verbs or common words, no shared names, no draft requests", async (t) => {
+  const history = [{ type: "function_call_output", call_id: "c", output: JSON.stringify({ data: { messages: [
+    { sender: "Pablo Ferrán <pferran@nubaria.es>", subject: "Presupuesto" },
+    { sender: "Pablo <x@evil.com>", subject: "Hola" },
+  ] } }) }];
+  const store = await storeWith(t, "Envía el informe a Pablo", history);
+  const owners = nameOwners(store, "m:s");
+  const ask = (to) => explicitlyAsked(store, "m", to, { names: namesFor(store, "m:s", to), owners });
+  // Two addresses go by «Pablo» in what the bot read: neither leaves on its own.
+  assert.equal(ask(["pferran@nubaria.es"]), false);
+  assert.equal(ask(["x@evil.com"]), false);
+  // A local part is never a pattern, a verb or a common word.
+  for (const to of ["a|b@evil.com", "qq|e@evil.com", "envia@evil.com", "informe@evil.com", "j(an@evil.com"]) assert.equal(ask([to]), false, to);
+  // The address as written counts; inside a longer one, or with a display name, it does not.
+  store.put("messages", { id: "u1", missionId: "m", role: "user", kind: "message", text: "Envía el informe a ana@ejemplo.com", at: new Date().toISOString() });
+  assert.equal(ask(["ana@ejemplo.com"]), true);
+  assert.equal(ask(["ana@ejemplo.com.evil.org"]), false);
+  assert.equal(ask(["ana@ejemplo.com <x@evil.com>"]), false);
+  // «Escribe un borrador para Ana» asks for a draft, not for a send; «…y envíalo» sends.
+  store.put("messages", { id: "u1", missionId: "m", role: "user", kind: "message", text: "Escribe un borrador para ana@ejemplo.com", at: new Date().toISOString() });
+  assert.equal(saysSend(store, "m"), false);
+  assert.equal(ask(["ana@ejemplo.com"]), false);
+  store.put("messages", { id: "u1", missionId: "m", role: "user", kind: "message", text: "Redacta una respuesta para ana@ejemplo.com y envíala", at: new Date().toISOString() });
+  assert.equal(ask(["ana@ejemplo.com"]), true);
 });

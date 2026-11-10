@@ -3,7 +3,7 @@ import { now } from './store.mjs';
 import { deniedResult } from './denial.mjs';
 
 import { TOOLKITS } from './triggers.mjs';
-import { answersThread, asksForSelf, explicitlyAsked, namesFor, saysSend } from './appactions.mjs';
+import { answeredAt, answersThread, asksForSelf, explicitlyAsked, nameOwners, namesFor, saysSend } from './appactions.mjs';
 import { draftFields, threadParty } from './gmaildrafts.mjs';
 import { isFlagged } from './external-content.mjs';
 import { actionOfTool, appTargets, deferredResult, isUnattended, ownAppTarget, personAsked, personTurnText } from './redlines.mjs';
@@ -213,9 +213,14 @@ export class Connections {
       if (kind === 'send' && !flagged) {
         const to = review.draft ? [...review.draft.to, ...review.draft.cc] : recipientsOf(review.arguments);
         // «Envíalo» about the draft it prepared here, which you have seen: that is the OK.
-        const ownDraft = review.draft && this.preparedHere(mission.id, p.arguments?.draft_id);
-        const asked = ownDraft ? saysSend(this.store, mission.id)
-          : explicitlyAsked(this.store, mission.id, to, {names: namesFor(this.store, step.id, to)}) ||
+        // Seen: it was there when the bot last answered, not written in this same turn.
+        const since = answeredAt(this.store, mission.id);
+        const ownDraft = review.draft && this.preparedHere(mission.id, p.arguments?.draft_id, {before: since});
+        // A send you cancelled in this turn stays cancelled: the bot trying again asks you.
+        const cancelled = this.store.where('approvals', 'missionId', mission.id).some((x) => x.kind === 'send' && x.status === 'denied' &&
+          x.askedByYou && String(x.decidedAt || '') > since);
+        const asked = cancelled ? false : ownDraft ? saysSend(this.store, mission.id)
+          : explicitlyAsked(this.store, mission.id, to, {names: namesFor(this.store, step.id, to), owners: nameOwners(this.store, step.id)}) ||
             // «Sí, el martes» to the bot's notice about this very thread, to the people in it.
             (!!party && answersThread(this.store, mission.id, party, to)) ||
             // «Envíamelo»: to yourself, as Codex does, with no second OK.
@@ -256,9 +261,11 @@ export class Connections {
     return this.call('commit', {proposal: p.proposal});
   }
   /** Whether a bot created or changed this Gmail draft in this mission. */
-  preparedHere(missionId, draftId) {
+  preparedHere(missionId, draftId, {before = null} = {}) {
     if (!draftId) return false;
+    if (before === '') return false; // the bot has not answered yet: you have not seen it
     return this.store.where('approvals', 'missionId', missionId).some((x) => x.status === 'executed' && x.result?.ok &&
+      (before === null || String(x.decidedAt || x.createdAt || '') < before) &&
       ['GMAIL_CREATE_EMAIL_DRAFT', 'GMAIL_UPDATE_DRAFT'].includes(String(x.review?.tool || '').toUpperCase()) &&
       (x.result?.data?.id === draftId || x.review?.arguments?.draft_id === draftId));
   }

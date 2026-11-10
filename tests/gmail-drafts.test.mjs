@@ -62,14 +62,17 @@ test("changing a reply draft keeps it in its thread", async (t) => {
 
 test("«envíalo» on a draft is a send you review with the draft's own recipients and text", async (t) => {
   const { store } = await fixture(t);
-  store.put("messages", { id: "u1", missionId: "mi", role: "user", text: "Envialo", at: new Date().toISOString() });
+  const ago = (s) => new Date(Date.now() - s * 1000).toISOString();
+  // Vera showed the draft in her answer; then you said «envíalo».
+  store.put("messages", { id: "a0", missionId: "mi", role: "assistant", kind: "message", text: "Borrador listo.", at: ago(60) });
+  store.put("messages", { id: "u1", missionId: "mi", role: "user", text: "Envialo", at: ago(30) });
   const c = new Connections(store, hub());
   t.mock.timers.enable({ apis: ["setTimeout"] });
   // A draft from somewhere else: «envíalo» alone does not say who it goes to.
   await c.request({ id: "mi" }, { id: "s0", botId: "vera" }, { call_id: "c0" }, ask("GMAIL_SEND_DRAFT", { user_id: "me", draft_id: "r828" }), signal);
   assert.equal(store.get("approvals", "s0:c0").autoSendAt, undefined);
   // The draft Vera prepared here: «envíalo» is the OK.
-  store.put("approvals", { id: "made", missionId: "mi", tool: "apps_execute", status: "executed", review: { tool: "GMAIL_CREATE_EMAIL_DRAFT", arguments: {} }, result: { ok: true, data: { id: "r828" } } });
+  store.put("approvals", { id: "made", missionId: "mi", tool: "apps_execute", status: "executed", decidedAt: ago(90), review: { tool: "GMAIL_CREATE_EMAIL_DRAFT", arguments: {} }, result: { ok: true, data: { id: "r828" } } });
   const result = await c.request({ id: "mi" }, { id: "s1", botId: "vera" }, { call_id: "c1" }, ask("GMAIL_SEND_DRAFT", { user_id: "me", draft_id: "r828" }), signal);
   t.mock.timers.reset();
   assert.deepEqual(result, { waiting: true });
