@@ -57,7 +57,7 @@ export function useBtw(path) {
   return { notes, ask, retry, dismiss, handleKey, intercept };
 }
 
-const INK = "#12131A", MUTED = "#5C606C", FAINT = "#8A8D96";
+const INK = "#12131A", MUTED = "#5C606C", FAINT = "#6B6F7A";
 const shimmer = { fontSize: "15px", fontWeight: "500", background: `linear-gradient(90deg, ${FAINT} 0%, ${FAINT} 35%, ${INK} 50%, ${FAINT} 65%, ${FAINT} 100%)`, backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
 
 function BtwNote({ note, botName, onDismiss, onRetry }) {

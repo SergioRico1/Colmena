@@ -59,12 +59,12 @@ export function EditMessage({ text, canRestore = false, onSend, onCancel }) {
     try { await onSend(body, restore); } catch (err) { setError(err?.message || "No se pudo enviar."); setBusy(false); }
   };
   return (
-    <form onSubmit={send} style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 16px 40px -24px rgba(18,19,26,.3)", animation: "rise .2s ease-out" }}>
+    <form className="c-ring" onSubmit={send} style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 16px 40px -24px rgba(18,19,26,.3)", animation: "rise .2s ease-out" }}>
       <label style={{ display: "flex" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Editar el mensaje"}</span>
-        <textarea ref={box} value={value} onChange={(e) => setValue(e.target.value)} rows={2}
+        <textarea className="c-bare" ref={box} value={value} onChange={(e) => setValue(e.target.value)} rows={2}
           onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onCancel(); } if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) send(e); }}
-          style={{ flex: "1", resize: "none", border: 0, outline: "none", padding: "6px 8px", fontSize: "16px", lineHeight: "1.5", fontFamily: "inherit", color: "#12131A", fieldSizing: "content", maxHeight: "260px", background: "transparent" }} />
+          style={{ flex: "1", resize: "none", border: 0, padding: "6px 8px", fontSize: "16px", lineHeight: "1.5", fontFamily: "inherit", color: "#12131A", fieldSizing: "content", maxHeight: "260px", background: "transparent" }} />
       </label>
       {canRestore ? (
         <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 8px", fontSize: "13px", color: "#3D404A", cursor: "pointer" }}>

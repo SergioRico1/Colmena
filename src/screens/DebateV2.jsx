@@ -167,7 +167,7 @@ export default function DebateV2({ params = {} }) {
           {!chosen && marked.length === 2 && deciding ? <>
             <label style={{ flex: "1 1 240px", display: "flex" }}>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Qué tomas de cada una"}</span>
-              <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué tomas de cada una? (opcional)" style={{ flex: "1", minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", outline: "none", background: "#F6F6F3", fontSize: "14.5px" }} />
+              <input className="c-quiet" type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué tomas de cada una? (opcional)" style={{ flex: "1", minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#F6F6F3", fontSize: "14.5px" }} />
             </label>
             <button type="button" onClick={() => decide(marked)} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "15px", fontWeight: 600, cursor: "pointer" }}>{"Combinarlas"}</button>
           </> : null}

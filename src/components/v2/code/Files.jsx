@@ -170,7 +170,7 @@ export default function Files({ task }) {
           <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "999px", background: "rgba(18,19,26,.045)", color: C.muted }}>
             <Search size={13} strokeWidth={2.2} aria-hidden="true" />
             <span style={SR}>Filtrar archivos</span>
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "13px" }} />
+            <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "13px" }} />
           </label>
         </div>
         <div role="tree" aria-label="Archivos de la tarea" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: "0 10px 14px", display: "flex", flexDirection: "column", gap: "1px" }}>

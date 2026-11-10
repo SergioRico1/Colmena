@@ -3,7 +3,7 @@ import { useWarmOnType } from "../../lib/warm.js";
 import { shapeOf } from "../v2/Presence.jsx";
 import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, FileText, GitBranch, LoaderCircle, Sparkles, Check, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, RotateCcw, Undo2, Wrench, X } from "lucide-react";
 import { InteractiveContext } from "./Interactive.jsx";
-import { freshness } from "../../lib/motion.js";
+import { freshness, scrollBehavior } from "../../lib/motion.js";
 import { ReactTools, ReactionRow, useReactions } from "./Reactions.jsx";
 import { useFileDrop, dropOverlay } from "../../lib/useFileDrop.js";
 import { post, patch, pickFiles } from "../../lib/api.js";
@@ -110,7 +110,7 @@ export function BlockerBand({ mission, pending, bots }) {
         const target = document.getElementById(scrollTo);
         if (!target) return;
         e.preventDefault();
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
         target.querySelector("input, button")?.focus({ preventScroll: true });
       }
     : undefined;
@@ -383,7 +383,7 @@ function PlanBlock({ mission, message, bots }) {
     <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) onSend(); }} style={{ maxWidth: "560px" }}>
       <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "12px" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Qué cambiarías del plan"}</span>
-        <input type="text" autoFocus value={note} onChange={(e) => setNote(e.target.value)} placeholder={placeholder} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", outline: "none", background: "transparent", fontSize: "14px" }} />
+        <input className="c-bare" type="text" autoFocus value={note} onChange={(e) => setNote(e.target.value)} placeholder={placeholder} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "14px" }} />
         <button type="submit" aria-label="Enviar cambios" disabled={busy || !note.trim()} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "9px", cursor: "pointer" }}>
           <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />
         </button>
@@ -995,11 +995,11 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           {`${workingCount} ${workingCount === 1 ? "bot trabajando" : "bots trabajando"}`}
           <QueueModeHint mission={mission} />
         </p>
-        <div style={{ position: "relative", border: "2px solid #12131A", borderRadius: "18px", padding: "12px 12px 12px 16px", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div className="c-ring" style={{ position: "relative", border: "2px solid #12131A", borderRadius: "18px", padding: "12px 12px 12px 16px", display: "flex", alignItems: "center", gap: "8px" }}>
           {mentions.menu}
           <label style={{ flex: "1", display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
-            <input ref={inputRef} type="text" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", outline: "none", background: "transparent", fontSize: "15px" }} />
+            <input className="c-bare" ref={inputRef} type="text" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "15px" }} />
           </label>
           <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} />
           <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "#FFC93C", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer" }}>
@@ -1030,7 +1030,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <QueueModeHint mission={mission} />
         </div>
       ) : null}
-      <div style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "22px" : "28px", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "22px" : "28px" }}>Suelta aquí para adjuntar</div> : null}
+      <div className="c-ring" style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "22px" : "28px", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "22px" : "28px" }}>Suelta aquí para adjuntar</div> : null}
         {plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /> : mentions.menu}
         {mentions.chips.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -1066,9 +1066,9 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
           {/* «@Vera» as a pill while you write (MentionMirror behind the textarea). */}
           {pills ? <MentionMirror ref={mirror} value={text} bots={bots} style={{ padding: "8px 0 4px", fontSize: "16px", lineHeight: "1.5" }} /> : null}
-          <textarea ref={inputRef} rows={tools ? 2 : 1} placeholder={placeholder || `Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown}
+          <textarea className="c-bare" ref={inputRef} rows={tools ? 2 : 1} placeholder={placeholder || `Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown}
             onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
-            style={{ position: "relative", flex: "1", resize: "none", border: "0", outline: "none", fontSize: "16px", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
+            style={{ position: "relative", flex: "1", resize: "none", border: "0", fontSize: "16px", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
         </label>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: tools ? "-8px" : 0 }}>
           {tools}
@@ -1179,7 +1179,7 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
       <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px", background: "#F7F8FA" }}>
         <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "14px" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
-          <textarea rows="2" value={text} autoFocus onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) send(e); }} placeholder="Responder en el hilo…" style={{ flex: "1", minWidth: "0", resize: "none", border: "0", outline: "none", fontSize: "14px", lineHeight: "1.5", background: "transparent", padding: "4px 0" }} />
+          <textarea className="c-bare" rows="2" value={text} autoFocus onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) send(e); }} placeholder="Responder en el hilo…" style={{ flex: "1", minWidth: "0", resize: "none", border: "0", fontSize: "14px", lineHeight: "1.5", background: "transparent", padding: "4px 0" }} />
           <button type="submit" aria-label="Responder" disabled={busy || !text.trim()} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#FFC93C", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", opacity: busy || !text.trim() ? 0.55 : 1 }}>
             <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
@@ -1247,7 +1247,7 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
       <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", bottom: "0", background: "#F7F8FA" }}>
         <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "12px" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
-          <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Corrígeles o dales una pista…" style={{ flex: "1", minWidth: "0", height: "40px", border: "0", outline: "none", background: "transparent", fontSize: "14px" }} />
+          <input className="c-bare" type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Corrígeles o dales una pista…" style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "14px" }} />
           <button type="submit" aria-label="Enviar al hilo" disabled={busy} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "9px", cursor: "pointer" }}>
             <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>

@@ -100,7 +100,7 @@ export default function Limites() {
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "10px" }}>
           <label style={{ ...field.label, flex: "1 1 220px" }}>
             Tokens al mes
-            <input inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Sin límite" style={{ ...field.input, ...field.mono }} />
+            <input className="c-quiet" inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Sin límite" style={{ ...field.input, ...field.mono }} />
           </label>
           <button type="submit" disabled={busy} style={{ ...btn.dark, height: "44px" }}>Guardar</button>
         </div>

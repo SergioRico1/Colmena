@@ -7,6 +7,7 @@ import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { needsYou, roomUrl, time } from "../lib/format.js";
 import { useExpert } from "../lib/expert.js";
+import { scrollBehavior } from "../lib/motion.js";
 
 // Colmena 3 · Trabajo › Tareas (design/V3Tareas.dc.html): everything the bots do once, as a
 // board (what needs you → under way → stuck → done this week) or a list. Tasks are the
@@ -158,7 +159,7 @@ export default function Tareas({ query = {} }) {
           <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
             <span style={ZERO_WIDTH}>Buscar tareas</span>
-            <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tareas" style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "14.5px" }} />
+            <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "14.5px" }} />
           </label>
           <span style={{ position: "relative" }}>
             <button type="button" aria-haspopup="listbox" aria-expanded={menu} onClick={() => setMenu((o) => !o)} style={{ height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", cursor: "pointer" }}>
@@ -246,7 +247,7 @@ function NewTask({ team, onClose }) {
   const [due, setDue] = useState("");
   const act = useAction();
   const box = useRef(null);
-  useEffect(() => { box.current?.focus(); box.current?.scrollIntoView({ block: "center", behavior: "smooth" }); }, []);
+  useEffect(() => { box.current?.focus(); box.current?.scrollIntoView({ block: "center", behavior: scrollBehavior() }); }, []);
   const atlas = team.find((b) => b.id === "atlas");
   const helpers = team.filter((b) => b.id !== "atlas");
   const toggle = (id) => setWho((w) => (w.includes(id) ? w.filter((x) => x !== id) : [...w, id].slice(0, 4)));
@@ -260,16 +261,16 @@ function NewTask({ team, onClose }) {
   const whoText = who.length === 0 ? `${atlas?.name || "Atlas"} decide quién lo hace` : who.length === 1 ? `${team.find((b) => b.id === who[0])?.name} se encarga` : `${atlas?.name || "Atlas"} lo reparte entre ${who.map((id) => team.find((b) => b.id === id)?.name).join(" y ")}`;
   const chip = (on) => ({ height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: `1.5px solid ${on ? "#12131A" : "rgba(18,19,26,.1)"}`, borderRadius: "12px", background: "#FFFFFF", fontSize: "14px", cursor: "pointer" });
   return (
-    <section aria-labelledby="nt-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
+    <section className="c-ring" aria-labelledby="nt-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
         <h2 id="nt-t" style={{ margin: 0, fontSize: "15px", fontWeight: 600 }}>Nueva tarea</h2>
         <span style={{ fontSize: "13.5px", color: "#5C606C" }}>Algo que se hace una vez, con su plan y su entrega.</span>
       </div>
       <label style={{ display: "flex" }}>
         <span style={ZERO_WIDTH}>Qué hay que hacer</span>
-        <textarea ref={box} rows={2} value={text} maxLength={20000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) start(); if (e.key === "Escape") onClose(); }}
+        <textarea className="c-bare" ref={box} rows={2} value={text} maxLength={20000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) start(); if (e.key === "Escape") onClose(); }}
           placeholder="Prepara el informe del trimestre para el comité del miércoles"
-          style={{ flex: 1, minWidth: 0, padding: "4px 0", border: 0, outline: "none", resize: "none", background: "transparent", font: "500 clamp(22px, 2.4vw, 28px)/1.4 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", color: "#12131A" }} />
+          style={{ flex: 1, minWidth: 0, padding: "4px 0", border: 0, resize: "none", background: "transparent", font: "500 clamp(22px, 2.4vw, 28px)/1.4 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", color: "#12131A" }} />
       </label>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "18px", background: "#F6F6F3" }}>
         <span style={{ fontSize: "13.5px", fontWeight: 600 }}>Quién lo hace <span style={{ fontWeight: 400, color: "#5C606C" }}>{"· " + whoText}</span></span>

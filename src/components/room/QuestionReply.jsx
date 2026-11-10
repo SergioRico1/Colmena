@@ -22,11 +22,11 @@ export function QuestionReply({ approval, onDone }) {
   const dismiss = () => act(async () => { await post(`/approvals/${approval.id}/dismiss`, { revision: approval.revision }); onDone?.(); });
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <form onSubmit={send} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 16px", borderRadius: "999px", background: "#F6F6F3" }}>
+      <form className="c-ring" onSubmit={send} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 16px", borderRadius: "999px", background: "#F6F6F3" }}>
         <label style={{ flex: "1", minWidth: 0, display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder con tus palabras"}</span>
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="O responde con tus palabras…" maxLength={4000}
-            style={{ flex: "1", minWidth: 0, height: "40px", border: 0, outline: "none", background: "transparent", fontSize: "15px", fontFamily: "inherit", color: "#12131A" }} />
+          <input className="c-bare" value={text} onChange={(e) => setText(e.target.value)} placeholder="O responde con tus palabras…" maxLength={4000}
+            style={{ flex: "1", minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "15px", fontFamily: "inherit", color: "#12131A" }} />
         </label>
         <button type="submit" disabled={busy || !text.trim()} aria-label="Enviar la respuesta" className="rm-focus"
           style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: text.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: text.trim() ? "pointer" : "default", transition: "background .2s ease" }}>

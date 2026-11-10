@@ -74,8 +74,8 @@ export default function SecretPrompt({ approval, bots = [], compact = false }) {
       <label style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "12px" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{`Valor de ${s.name}`}</span>
         <KeyRound {...I} style={{ color: "#555A68", flex: "none" }} />
-        <input ref={input} type={shown ? "text" : "password"} value={value} onChange={(e) => setValue(e.target.value)} autoComplete="off" spellCheck={false} placeholder="Pega aquí la clave" name="colmena-secret"
-          style={{ flex: "1", minWidth: 0, height: "38px", border: "0", outline: "none", background: "transparent", font: "500 14px/1 'Geist Mono', monospace", letterSpacing: shown ? "0" : "0.08em" }} />
+        <input className="c-bare" ref={input} type={shown ? "text" : "password"} value={value} onChange={(e) => setValue(e.target.value)} autoComplete="off" spellCheck={false} placeholder="Pega aquí la clave" name="colmena-secret"
+          style={{ flex: "1", minWidth: 0, height: "38px", border: "0", background: "transparent", font: "500 14px/1 'Geist Mono', monospace", letterSpacing: shown ? "0" : "0.08em" }} />
         <button type="button" className="rm-focus" aria-pressed={shown ? "true" : "false"} aria-label={shown ? "Ocultar la clave" : "Mostrar la clave"} title={shown ? "Ocultar" : "Mostrar"} onClick={() => { setShown(!shown); input.current?.focus(); }}
           style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "9px", cursor: "pointer", color: "#4A4F5C" }}>
           {shown ? <EyeOff {...I} /> : <Eye {...I} />}

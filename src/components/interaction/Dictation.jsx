@@ -379,7 +379,7 @@ export function LiveWords({ d, dark = false, style }) {
   const tail = all.length > 120 ? "…" + all.slice(-118) : all;
   const cut = Math.max(0, tail.length - live.length);
   const text = dark ? "#FFFFFF" : "#12131A";
-  const soft = dark ? "rgba(255,255,255,.55)" : "#8A8D96";
+  const soft = dark ? "rgba(255,255,255,.55)" : "#6B6F7A";
   if (!tail) {
     return <span style={{ color: soft, ...style }}>{d.state === "starting" ? "Preparando el micrófono…" : d.mode === "openai" ? "Grabando… pulsa para terminar" : "Te escucho…"}</span>;
   }

@@ -36,7 +36,7 @@ const checksOf = (d, files) => {
   ];
 };
 const label = { display: "flex", flexDirection: "column", gap: "6px", fontSize: "13.5px", fontWeight: "600", color: "#3D404A" };
-const input = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", fontSize: "15px", fontWeight: "400", color: "#12131A", background: "#FFFFFF", outline: "none" };
+const input = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", fontSize: "15px", fontWeight: "400", color: "#12131A", background: "#FFFFFF" };
 const sr = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 
 export default function NewBot({ onClose, onHired }) {
@@ -155,8 +155,8 @@ export default function NewBot({ onClose, onHired }) {
                   <span style={{ fontSize: "14px", color: "#5C606C" }}>{"Cuéntaselo como a un compañero nuevo. Con una o dos frases basta; luego lo afinas."}</span>
                 </label>
                 <div style={{ position: "relative" }}>
-                  <textarea id="nb-desc" rows="4" value={desc} onChange={(e) => { setDesc(e.target.value); setError(null); }} placeholder="Ej.: Lee las facturas de proveedores que llegan al correo, apúntalas en la hoja de gastos y avísame si alguna pasa de 500 €."
-                    style={{ width: "100%", padding: "14px 60px 14px 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "16px", background: "#FFFFFF", fontSize: "16px", lineHeight: "1.5", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit", outline: "none" }} />
+                  <textarea className="c-quiet" id="nb-desc" rows="4" value={desc} onChange={(e) => { setDesc(e.target.value); setError(null); }} placeholder="Ej.: Lee las facturas de proveedores que llegan al correo, apúntalas en la hoja de gastos y avísame si alguna pasa de 500 €."
+                    style={{ width: "100%", padding: "14px 60px 14px 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "16px", background: "#FFFFFF", fontSize: "16px", lineHeight: "1.5", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
                   <span style={{ position: "absolute", right: "10px", bottom: "12px", display: "flex" }}><MicButton onText={appendDictation(setDesc)} size={38} style={{ background: "#F6F6F3" }} /></span>
                 </div>
                 <div role="list" aria-label="Atlas lo va revisando" style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
@@ -215,8 +215,8 @@ export default function NewBot({ onClose, onHired }) {
           {step === 1 && d ? (
             <>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: "12px" }}>
-                <label style={label}>{"Nombre"}<input type="text" value={d.name} maxLength="20" onChange={(e) => set({ name: e.target.value })} placeholder="Ponle un nombre" style={input} /></label>
-                <label style={label}>{"Puesto"}<input type="text" value={d.role} maxLength="100" onChange={(e) => set({ role: e.target.value })} placeholder="Qué hace, en pocas palabras" style={input} /></label>
+                <label style={label}>{"Nombre"}<input className="c-quiet" type="text" value={d.name} maxLength="20" onChange={(e) => set({ name: e.target.value })} placeholder="Ponle un nombre" style={input} /></label>
+                <label style={label}>{"Puesto"}<input className="c-quiet" type="text" value={d.role} maxLength="100" onChange={(e) => set({ role: e.target.value })} placeholder="Qué hace, en pocas palabras" style={input} /></label>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <span style={{ fontSize: "13.5px", fontWeight: "600", color: "#3D404A" }}>{"Forma"}</span>
@@ -242,7 +242,7 @@ export default function NewBot({ onClose, onHired }) {
               </div>
               <label style={label}>
                 {"Instrucciones · Colmena las ha preparado"}
-                <textarea rows="5" value={d.instructions} onChange={(e) => set({ instructions: e.target.value })} style={{ padding: "12px 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "14px", fontSize: "14.5px", fontWeight: "400", lineHeight: "1.55", color: "#12131A", fontFamily: "inherit", resize: "vertical", outline: "none" }} />
+                <textarea className="c-quiet" rows="5" value={d.instructions} onChange={(e) => set({ instructions: e.target.value })} style={{ padding: "12px 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "14px", fontSize: "14.5px", fontWeight: "400", lineHeight: "1.55", color: "#12131A", fontFamily: "inherit", resize: "vertical" }} />
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "13.5px", fontWeight: "600", color: "#3D404A" }}>{"Habilidades preparadas"}</span>
@@ -253,8 +253,8 @@ export default function NewBot({ onClose, onHired }) {
                       <button type="button" onClick={() => set({ skills: d.skills.filter((_, j) => j !== i) })} aria-label={"Quitar " + k.name} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>{"×"}</button>
                     </span>
                   ))}
-                  <form onSubmit={(e) => { e.preventDefault(); if (skillIn.trim()) { set({ skills: [...d.skills, { name: skillIn.trim(), description: "" }].slice(0, 8) }); setSkillIn(""); } }} style={{ height: "40px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px 0 14px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px" }}>
-                    <label style={{ display: "flex" }}><span style={sr}>{"Nombre de la habilidad"}</span><input type="text" value={skillIn} onChange={(e) => setSkillIn(e.target.value)} placeholder="Otra: resumir contratos…" style={{ width: "170px", border: "0", outline: "none", background: "transparent", fontSize: "14px" }} /></label>
+                  <form className="c-ring" onSubmit={(e) => { e.preventDefault(); if (skillIn.trim()) { set({ skills: [...d.skills, { name: skillIn.trim(), description: "" }].slice(0, 8) }); setSkillIn(""); } }} style={{ height: "40px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px 0 14px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px" }}>
+                    <label style={{ display: "flex" }}><span style={sr}>{"Nombre de la habilidad"}</span><input className="c-bare" type="text" value={skillIn} onChange={(e) => setSkillIn(e.target.value)} placeholder="Otra: resumir contratos…" style={{ width: "170px", border: "0", background: "transparent", fontSize: "14px" }} /></label>
                     <button type="submit" style={{ height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "12.5px", fontWeight: "600" }}>{"Añadir"}</button>
                   </form>
                 </div>
@@ -307,10 +307,10 @@ export default function NewBot({ onClose, onHired }) {
                 ) : null}
                 <span ref={chatEnd} />
               </div>
-              <form onSubmit={(e) => { e.preventDefault(); ask(); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 8px 8px 16px", borderRadius: "16px", border: "1px solid rgba(18,19,26,.14)" }}>
+              <form className="c-ring" onSubmit={(e) => { e.preventDefault(); ask(); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 8px 8px 16px", borderRadius: "16px", border: "1px solid rgba(18,19,26,.14)" }}>
                 <label style={{ flex: "1", display: "flex" }}>
                   <span style={sr}>{"Otra pregunta de prueba"}</span>
-                  <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chat.length ? "Otra pregunta de prueba…" : `Pregúntale algo a ${d.name || "tu bot"}…`} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", outline: "none", fontSize: "15px", background: "transparent" }} />
+                  <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chat.length ? "Otra pregunta de prueba…" : `Pregúntale algo a ${d.name || "tu bot"}…`} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", fontSize: "15px", background: "transparent" }} />
                 </label>
                 <button type="submit" aria-label="Preguntar" disabled={busy === "ask" || !q.trim()} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: q.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: "pointer" }}>{"↑"}</button>
               </form>

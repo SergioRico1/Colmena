@@ -435,7 +435,7 @@ export default function Automatizaciones({ query = {} }) {
                           <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", margin: "2px 2px 6px", padding: "0 12px", background: "#F6F6F3", border: "0", borderRadius: "999px" }}>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
                             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar disparador"}</span>
-                            <input type="text" autoFocus value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setOpen(null); }} placeholder="Busca: «factura», «lunes», «carpeta»…" style={{ flex: "1", minWidth: "0", border: "0", outline: "none", background: "transparent", fontSize: "14px" }} />
+                            <input className="c-bare" type="text" autoFocus value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setOpen(null); }} placeholder="Busca: «factura», «lunes», «carpeta»…" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "14px" }} />
                           </label>
                           {visible.map((o) => (o.header ? (
                             <span key={o.label} style={{ display: "block", padding: "10px 10px 4px", font: "600 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{o.label}</span>

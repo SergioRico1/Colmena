@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { scrollBehavior } from "./motion.js";
 
 // Jump to a message (OpenClaw chat-message-reveal): /sala/x?m=<id> or /chat/bot?c=y&m=<id>
 // opens the conversation with that message centred and briefly highlighted. If it is older
@@ -16,7 +17,7 @@ export function useRevealMessage(messageId, { ready, olderCount = 0, showOlder =
       const el = document.querySelector(`[data-message-id="${CSS.escape(messageId)}"]`);
       if (el) {
         done.current = messageId;
-        el.scrollIntoView({ block: "center", behavior: matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+        el.scrollIntoView({ block: "center", behavior: scrollBehavior() });
         flash(el);
         return;
       }

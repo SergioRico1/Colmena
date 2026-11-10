@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BotPresence, shapeOf } from "../../v2/Presence.jsx";
 import { ArtifactContent } from "./ArtifactContent.jsx";
 import { useResource } from "../../../lib/store.jsx";
 import { download, get } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { time } from "../../../lib/format.js";
+import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // Biblioteca › Archivos (design/V3Archivos.dc.html): what the bots delivered, as small pages
 // with their type, who made it and when; the chosen one on the right with where it was made,
@@ -127,7 +128,7 @@ export default function Files({ artifacts, bots, missions, ready, expert, initia
         <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar archivos"}</span>
-          <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o contenido" style={{ flex: "1", minWidth: "0", border: "0", outline: "none", background: "transparent", fontSize: "14.5px" }} />
+          <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o contenido" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "14.5px" }} />
         </label>
         {KINDS.map(([id, label]) => {
           const on = kind === id;
@@ -241,13 +242,7 @@ function Look({ a, bot, place, mission, onClose }) {
   const { data, error, loading } = useResource(`/artifacts/${encodeURIComponent(a.id)}`);
   const [full, setFull] = useState(false);
   const [copied, setCopied] = useState(false);
-  const closeRef = useRef(null);
-  useEffect(() => {
-    closeRef.current?.focus();
-    const key = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", key);
-    return () => document.removeEventListener("keydown", key);
-  }, [onClose]);
+  const box = useDialogFocus({ onEscape: onClose });
   const binary = IMAGE.has(a.format);
   const share = async () => {
     try {
@@ -267,7 +262,7 @@ function Look({ a, bot, place, mission, onClose }) {
   const href = missionHref(mission);
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: "40px 20px", background: "rgba(18,19,26,.32)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", animation: "fade .25s ease-out" }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="look-t" style={{ width: full ? "min(1240px, 100%)" : "min(980px, 100%)", maxHeight: "100%", overflow: "auto", display: "flex", flexWrap: "wrap", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.6)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="look-t" style={{ width: full ? "min(1240px, 100%)" : "min(980px, 100%)", maxHeight: "100%", overflow: "auto", display: "flex", flexWrap: "wrap", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.6)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ flex: full ? "1 1 100%" : "3 1 420px", minHeight: "420px", maxHeight: full ? "none" : "70vh", margin: "14px", borderRadius: "20px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.05)", overflow: "auto", background: "#FBFBF9" }}>
           {binary ? <img src={`/api/artifacts/${encodeURIComponent(a.id)}/file`} alt={a.title} style={{ display: "block", width: "100%", height: "100%", minHeight: "420px", objectFit: "contain" }} /> : (
             <div style={{ padding: "26px 28px" }}><ArtifactContent a={data} loading={loading} error={error} /></div>
@@ -276,7 +271,7 @@ function Look({ a, bot, place, mission, onClose }) {
         <div style={{ flex: "2 1 300px", padding: full ? "8px 32px 28px" : "30px 30px 26px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
             <h2 id="look-t" style={{ margin: 0, font: "600 26px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{a.title}</h2>
-            <button ref={closeRef} type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "#F1F1EC", cursor: "pointer", color: "#12131A" }}>
+            <button data-autofocus="" type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "#F1F1EC", cursor: "pointer", color: "#12131A" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
           </div>

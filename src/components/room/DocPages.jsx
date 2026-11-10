@@ -41,7 +41,7 @@ export default function DocPages({ info, pageUrl, max = 200, gap = "12px", label
         <figure key={i} style={{ margin: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
           <img loading="lazy" src={pageUrl(i + 1)} alt={`${label} ${i + 1} de ${info.pages}`}
             style={{ width: "100%", height: "auto", minHeight: "120px", borderRadius: "8px", background: "#FFFFFF", border: "1px solid #E6E8EE", boxShadow: "0 10px 30px -22px rgba(18,19,26,.45)" }} />
-          {info.pages > 1 ? <figcaption style={{ alignSelf: "center", font: "500 11px/1 'Geist Mono', monospace", color: "#8C91A0" }}>{`${i + 1} / ${info.pages}`}</figcaption> : null}
+          {info.pages > 1 ? <figcaption style={{ alignSelf: "center", font: "500 11px/1 'Geist Mono', monospace", color: "#5C606C" }}>{`${i + 1} / ${info.pages}`}</figcaption> : null}
         </figure>
       ))}
       {info?.pages > max ? <p style={{ margin: 0, fontSize: "12px", color: "#555A68" }}>{`Se muestran las primeras ${max} páginas. Descárgalo para ver el resto.`}</p> : null}

@@ -5,7 +5,7 @@ import { navigate } from "../../../lib/router.jsx";
 import { del, get, patch, post } from "../../../lib/api.js";
 import { withMessage } from "../../../lib/reveal.js";
 import { Highlight } from "../../home/shared.jsx";
-import { later, reversible, useHidden } from "../../../lib/undoToast.js";
+import { failure, later, reversible, useHidden } from "../../../lib/undoToast.js";
 import { useStore } from "../../../lib/store.jsx";
 import { C, MONO, SHEET, BotShape, botOf, Pill, SR, timeAgo } from "./parts.jsx";
 import { GROUPS, groupOf, snoozePresets, whenLabel, pillOf, homeSections } from "./model.js";
@@ -20,7 +20,8 @@ export { GROUPS, groupOf, whenLabel };
 const SHELF_KEY = "colmena:code-shelves";
 const readShelves = () => { try { return JSON.parse(localStorage.getItem(SHELF_KEY) || "{}"); } catch { return {}; } };
 
-const act = (fn) => fn().catch((e) => window.alert(e.message));
+// A change that fails says so in a notice (the app's toasts), never in a system dialog.
+const act = (fn) => fn().catch((e) => failure("No se pudo hacer el cambio", e.message));
 const toLocalInput = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
 /** A menu anchored to a button, drawn above the list (fixed), closed by a click outside or Esc. */
@@ -295,7 +296,7 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
           <label title="Busca en los títulos y en lo que se ha dicho en cada tarea, también en las archivadas" style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "240px", padding: "0 12px", borderRadius: "999px", background: C.white, border: "1px solid rgba(18,19,26,.1)", color: C.muted }}>
             <Search size={14} strokeWidth={2.2} aria-hidden="true" />
             <span style={SR}>Buscar en las tareas</span>
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "13.5px" }} />
+            <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "13.5px" }} />
           </label>
         ) : null}
       </div>

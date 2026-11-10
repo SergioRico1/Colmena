@@ -248,7 +248,7 @@ function Catalogue({ c, initialQuery }) {
         <label style={{ flex: "0 1 260px", display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 12px", borderRadius: "10px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
           <span style={srOnly}>Buscar una app</span>
-          <input type="text" value={text} onChange={(e) => type(e.target.value)} placeholder={`Buscar entre ${c.curated.length > 30 ? "cientos de" : "todas las"} apps`} style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "14px", color: INK }} />
+          <input className="c-bare" type="text" value={text} onChange={(e) => type(e.target.value)} placeholder={`Buscar entre ${c.curated.length > 30 ? "cientos de" : "todas las"} apps`} style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "14px", color: INK }} />
         </label>
       </div>
       <div role="group" aria-label="Filtrar por tipo" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>

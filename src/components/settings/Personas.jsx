@@ -64,15 +64,15 @@ export default function Personas() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
           <label style={{ ...field.label, flex: "1 1 200px" }}>
             Nombre
-            <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Marta López" autoComplete="off" style={field.input} />
+            <input className="c-quiet" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Marta López" autoComplete="off" style={field.input} />
           </label>
           <label style={{ ...field.label, flex: "1 1 220px" }}>
             Correo
-            <input type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="marta@empresa.com" autoComplete="off" style={{ ...field.input, ...field.mono }} />
+            <input className="c-quiet" type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="marta@empresa.com" autoComplete="off" style={{ ...field.input, ...field.mono }} />
           </label>
           <label style={{ ...field.label, flex: "1 1 180px" }}>
             Rol
-            <select value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })} style={{ ...field.input, cursor: "pointer", fontWeight: "600" }}>
+            <select className="c-quiet" value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })} style={{ ...field.input, cursor: "pointer", fontWeight: "600" }}>
               {ROLES.map((r) => <option key={r}>{r}</option>)}
             </select>
           </label>

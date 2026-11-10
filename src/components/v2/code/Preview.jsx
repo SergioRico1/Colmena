@@ -19,9 +19,9 @@ function NoteBox({ box, onAdd, onCancel }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) onAdd(note.trim()); }} onMouseDown={(e) => e.stopPropagation()}
       style={{ position: "absolute", left: Math.max(8, box.x) + "px", top: box.y + box.h + 8 + "px", width: "280px", zIndex: 3, padding: "10px", display: "flex", flexDirection: "column", gap: "8px", borderRadius: "16px", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>
-      <textarea autoFocus rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué cambiarías aquí?"
+      <textarea className="c-bare" autoFocus rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué cambiarías aquí?"
         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (note.trim()) onAdd(note.trim()); } if (e.key === "Escape") onCancel(); }}
-        style={{ border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "13px", lineHeight: 1.5 }} />
+        style={{ border: 0, resize: "none", background: "transparent", fontSize: "13px", lineHeight: 1.5 }} />
       <span style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
         <button type="button" onClick={onCancel} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: C.muted }}>Cancelar</button>
         <button type="submit" disabled={!note.trim()} style={{ height: "30px", padding: "0 14px", border: 0, borderRadius: "999px", background: note.trim() ? C.ink : "rgba(18,19,26,.12)", color: C.white, cursor: note.trim() ? "pointer" : "default", fontSize: "12px", fontWeight: 600 }}>Añadir al mensaje</button>

@@ -183,7 +183,7 @@ function RelayGroup({ relay, act }) {
         <Text title={RELAY_LABEL[relay.status] || "Buzón"} sub={relay.status === "online" ? "Cada mensaje sale cerrado con llave desde este ordenador y solo lo abre el de la otra persona: el buzón guarda sobres que no puede leer." : relay.error || "Sin buzón no se puede hablar con nadie."} />
       </div>
       <FieldRow title="Dirección del buzón" sub="Todas las personas que habláis tenéis que usar el mismo." last>
-        <input type="url" aria-label="Dirección del buzón" value={draft} placeholder="https://buzon.ejemplo.com" spellCheck={false} onChange={(e) => setDraft(e.target.value)} onBlur={save} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} style={inputStyle} />
+        <input className="c-quiet" type="url" aria-label="Dirección del buzón" value={draft} placeholder="https://buzon.ejemplo.com" spellCheck={false} onChange={(e) => setDraft(e.target.value)} onBlur={save} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} style={inputStyle} />
       </FieldRow>
     </Group>
   );

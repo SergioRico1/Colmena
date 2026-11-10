@@ -7,6 +7,7 @@ import { exportConversation } from "../lib/exportConversation.jsx";
 import { useStore } from "../lib/store.jsx";
 import { missionUrl, roomUrl } from "../lib/format.js";
 import { later, reversible } from "../lib/undoToast.js";
+import { useDialogFocus } from "../lib/useDialogFocus.js";
 
 // Colmena's own right-click menu (the desktop window has none of its own). One listener
 // for the whole app reads what is under the pointer, so screens keep the exact markup of
@@ -79,15 +80,8 @@ function snoozeChoices(from = new Date()) {
 function ConfirmDialog({ eyebrow, title, text, action, onConfirm, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const box = useRef(null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  useEffect(() => {
-    box.current?.querySelector("button[data-cancel]")?.focus();
-    const key = (e) => e.key === "Escape" && closeRef.current();
-    document.addEventListener("keydown", key);
-    return () => document.removeEventListener("keydown", key);
-  }, []);
+  // Focus starts on «Cancelar» (data-autofocus): the safe answer.
+  const box = useDialogFocus({ onEscape: onClose });
   const go = async () => {
     setBusy(true);
     setError(null);
@@ -109,7 +103,7 @@ function ConfirmDialog({ eyebrow, title, text, action, onConfirm, onClose }) {
           {error ? <p role="alert" style={{ margin: "4px 0 0", fontSize: "13px", color: "#B4372A", fontWeight: "600" }}>{error}</p> : null}
         </div>
         <div style={{ padding: "14px 22px 18px", borderTop: "1px solid #E6E8EE", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" data-cancel="" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", color: "#12131A", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "14px" }}>{"Cancelar"}</button>
+          <button type="button" data-autofocus="" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", color: "#12131A", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "14px" }}>{"Cancelar"}</button>
           <button type="button" onClick={go} disabled={busy} aria-busy={busy ? "true" : undefined} style={{ height: "44px", padding: "0 16px", background: "#B4372A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: busy ? "default" : "pointer", fontWeight: "600", fontSize: "14px", opacity: busy ? 0.7 : 1 }}>{busy ? "Borrando…" : action}</button>
         </div>
       </div>
@@ -123,14 +117,8 @@ function RenameDialog({ current, onSave, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const input = useRef(null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  useEffect(() => {
-    input.current?.select();
-    const key = (e) => e.key === "Escape" && closeRef.current();
-    document.addEventListener("keydown", key);
-    return () => document.removeEventListener("keydown", key);
-  }, []);
+  const box = useDialogFocus({ onEscape: onClose });
+  useEffect(() => { input.current?.select(); }, []);
   const preview = value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/^#+/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
   const save = async (e) => {
     e.preventDefault();
@@ -147,12 +135,12 @@ function RenameDialog({ current, onSave, onClose }) {
   };
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 16px" }}>
-      <form onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="renombrar-t" style={{ width: "min(440px, 100%)", background: "#FFFFFF", color: "#12131A", border: "2px solid #12131A", borderRadius: "20px", boxShadow: "8px 8px 0 #FFC93C", display: "flex", flexDirection: "column" }}>
+      <form ref={box} onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="renombrar-t" style={{ width: "min(440px, 100%)", background: "#FFFFFF", color: "#12131A", border: "2px solid #12131A", borderRadius: "20px", boxShadow: "8px 8px 0 #FFC93C", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 22px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
           <h2 id="renombrar-t" style={{ margin: "0", font: "700 22px/1.15 'Bricolage Grotesque', sans-serif" }}>Renombrar sala</h2>
           <label style={{ display: "flex", alignItems: "center", gap: "6px", height: "46px", padding: "0 14px", border: "1.5px solid #12131A", borderRadius: "12px", fontSize: "16px" }}>
             <span aria-hidden="true" style={{ color: "#8C91A0", fontWeight: "700" }}>#</span>
-            <input ref={input} value={value} onChange={(e) => setValue(e.target.value)} aria-label="Nombre de la sala" maxLength={60} style={{ flex: "1", minWidth: "0", border: "0", outline: "none", fontSize: "16px", background: "transparent" }} />
+            <input className="c-bare" ref={input} data-autofocus="" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Nombre de la sala" maxLength={60} style={{ flex: "1", minWidth: "0", border: "0", fontSize: "16px", background: "transparent" }} />
           </label>
           <span style={{ fontSize: "13px", color: "#4A4F5C" }}>{preview ? `Quedará así: #${preview}` : "Escribe un nombre con letras o números."}</span>
           {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4372A", fontWeight: "600" }}>{error}</span> : null}
@@ -222,7 +210,7 @@ function Menu({ menu, onClose, onReplace }) {
 
   return (
     <div ref={box} role="menu" tabIndex={-1} aria-label={menu.label || "Acciones"} onMouseDown={(e) => e.preventDefault()} onContextMenu={(e) => e.preventDefault()}
-      style={{ animation: pos.ready ? "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" : "none", transformOrigin: "top left", position: "fixed", left: pos.left + "px", top: pos.top + "px", zIndex: 2147483100, minWidth: "220px", maxWidth: "300px", padding: "6px", background: "#FFFFFF", color: "#12131A", border: "1px solid #DCE0E8", borderRadius: "12px", boxShadow: "0 14px 36px -10px rgba(18,19,26,0.32), 0 2px 6px rgba(18,19,26,0.08)", outline: "none", visibility: pos.ready ? "visible" : "hidden", font: "400 14px/1.2 'Geist', sans-serif", userSelect: "none" }}>
+      style={{ animation: pos.ready ? "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" : "none", transformOrigin: "top left", position: "fixed", left: pos.left + "px", top: pos.top + "px", zIndex: 2147483100, minWidth: "220px", maxWidth: "300px", padding: "6px", background: "#FFFFFF", color: "#12131A", border: "1px solid #DCE0E8", borderRadius: "12px", boxShadow: "0 14px 36px -10px rgba(18,19,26,0.32), 0 2px 6px rgba(18,19,26,0.08)", visibility: pos.ready ? "visible" : "hidden", font: "400 14px/1.2 'Geist', sans-serif", userSelect: "none" }}>
       {menu.label ? <div style={{ padding: "6px 10px 8px", font: "500 11px/1.2 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{menu.label}</div> : null}
       {items.map((it, i) => it.separator
         ? <div key={i} role="separator" style={{ height: "1px", margin: "5px 6px", background: "#E6E8EE" }} />

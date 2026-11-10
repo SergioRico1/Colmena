@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Copy, X } from "lucide-react";
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { shareUrl } from "../../../lib/peers.js";
+import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // «Hablar con una persona» and «Tengo una invitación» (design/V2Personas.dc.html, paso
 // invitar / aceptar). Colmena never sends the invitation: you copy it and send it yourself.
@@ -11,13 +12,6 @@ const card = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY:
 const dark = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: on ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: on ? "#12131A" : "#C9CBD1", color: "#FFFFFF" });
 const quiet = { height: "44px", padding: "0 18px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: "#5C606C" };
 
-function useEscape(onClose) {
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-}
 function Close({ onClose }) {
   return (
     <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer" }}>
@@ -37,7 +31,7 @@ const Steps = ({ items }) => (
 );
 
 export function InviteSheet({ onClose, initialName = "" }) {
-  useEscape(onClose);
+  const box = useDialogFocus({ onEscape: onClose });
   const [name, setName] = useState(initialName);
   const [made, setMade] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -60,7 +54,7 @@ export function InviteSheet({ onClose, initialName = "" }) {
   const first = (made?.name || name).split(/\s+/)[0] || "esa persona";
   return (
     <div style={veil} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="inv-t" style={card(560)}>
+      <section ref={box} role="dialog" aria-modal="true" aria-labelledby="inv-t" style={card(560)}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <h2 id="inv-t" style={{ margin: 0, font: "600 26px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{made ? "Invitación para " + first : "Hablar con una persona"}</h2>
@@ -70,10 +64,10 @@ export function InviteSheet({ onClose, initialName = "" }) {
         </div>
         {!made ? (
           <>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "999px", background: "#F2F2EE" }}>
+            <div className="c-ring" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "999px", background: "#F2F2EE" }}>
               <label style={{ flex: 1, display: "flex" }}>
                 <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre"}</span>
-                <input autoFocus type="text" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: 1, minWidth: 0, height: "44px", border: 0, outline: "none", background: "transparent", fontSize: "16px" }} />
+                <input className="c-bare" autoFocus type="text" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", fontSize: "16px" }} />
               </label>
               <button type="button" onClick={make} disabled={!name.trim() || busy} style={dark(!!name.trim() && !busy)}>{busy ? "Creando…" : "Crear invitación"}</button>
             </div>
@@ -107,7 +101,7 @@ export function InviteSheet({ onClose, initialName = "" }) {
 }
 
 export function AcceptSheet({ onClose }) {
-  useEscape(onClose);
+  const box = useDialogFocus({ onEscape: onClose });
   const [code, setCode] = useState("");
   const [preview, setPreview] = useState(null);
   const [done, setDone] = useState(null);
@@ -127,7 +121,7 @@ export function AcceptSheet({ onClose }) {
   const first = (preview?.name || "").split(/\s+/)[0] || "esa persona";
   return (
     <div style={veil} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="acc-t" style={{ ...card(520), alignItems: preview ? "center" : "stretch", textAlign: preview ? "center" : "left", gap: "20px" }}>
+      <section ref={box} role="dialog" aria-modal="true" aria-labelledby="acc-t" style={{ ...card(520), alignItems: preview ? "center" : "stretch", textAlign: preview ? "center" : "left", gap: "20px" }}>
         {!preview ? (
           <>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
@@ -137,10 +131,10 @@ export function AcceptSheet({ onClose }) {
               </span>
               <Close onClose={onClose} />
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "999px", background: "#F2F2EE" }}>
+            <div className="c-ring" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "999px", background: "#F2F2EE" }}>
               <label style={{ flex: 1, display: "flex" }}>
                 <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Código de invitación"}</span>
-                <input autoFocus type="text" value={code} maxLength={400} onChange={(e) => { const m = /COLMENA[-\s]*(?:[0-9A-Z]{4}[-\s]*){4}/i.exec(e.target.value); setCode(m ? m[0] : e.target.value); }} onKeyDown={(e) => { if (e.key === "Enter") look(); }} placeholder="COLMENA-XXXX-XXXX-XXXX-XXXX" spellCheck={false} style={{ flex: 1, minWidth: 0, height: "44px", border: 0, outline: "none", background: "transparent", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.03em" }} />
+                <input className="c-bare" autoFocus type="text" value={code} maxLength={400} onChange={(e) => { const m = /COLMENA[-\s]*(?:[0-9A-Z]{4}[-\s]*){4}/i.exec(e.target.value); setCode(m ? m[0] : e.target.value); }} onKeyDown={(e) => { if (e.key === "Enter") look(); }} placeholder="COLMENA-XXXX-XXXX-XXXX-XXXX" spellCheck={false} style={{ flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.03em" }} />
               </label>
               <button type="button" onClick={look} disabled={!code.trim() || busy} style={dark(!!code.trim() && !busy)}>{busy ? "Buscando…" : "Continuar"}</button>
             </div>

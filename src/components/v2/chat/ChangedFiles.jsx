@@ -114,10 +114,10 @@ const STYLE = {
 
 function Unified({ rows }) {
   return rows.map((row, k) => row.type === "hunk"
-    ? (k ? <div key={k} style={{ padding: "4px 12px 4px 64px", font: `400 11.5px/1.5 ${MONO}`, color: "#8C91A0", background: "rgba(18,19,26,.03)" }}>{"línea " + row.start}</div> : null)
+    ? (k ? <div key={k} style={{ padding: "4px 12px 4px 64px", font: `400 11.5px/1.5 ${MONO}`, color: "#6B6F7A", background: "rgba(18,19,26,.03)" }}>{"línea " + row.start}</div> : null)
     : row.type === "note" ? null : (
       <div key={k} style={{ display: "flex", background: STYLE[row.type].bg, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-        <span style={{ flex: "none", width: "48px", paddingRight: "10px", textAlign: "right", color: "#8C91A0", userSelect: "none" }}>{row.b ?? row.a ?? ""}</span>
+        <span style={{ flex: "none", width: "48px", paddingRight: "10px", textAlign: "right", color: "#5C606C", userSelect: "none" }}>{row.b ?? row.a ?? ""}</span>
         <span aria-hidden="true" style={{ flex: "none", width: "16px", color: STYLE[row.type].fg, userSelect: "none" }}>{STYLE[row.type].sign}</span>
         <span style={{ minWidth: 0, color: STYLE[row.type].fg, paddingRight: "14px" }}>{row.text || " "}</span>
       </div>
@@ -132,7 +132,7 @@ function Split({ rows }) {
     const bg = row.type === "ctx" ? "transparent" : s.bg;
     return (
       <>
-        <span style={{ paddingRight: "8px", textAlign: "right", color: "#8C91A0", background: bg, userSelect: "none" }}>{(side === "left" ? row.a : row.b) ?? ""}</span>
+        <span style={{ paddingRight: "8px", textAlign: "right", color: "#5C606C", background: bg, userSelect: "none" }}>{(side === "left" ? row.a : row.b) ?? ""}</span>
         <span style={{ minWidth: 0, padding: "0 10px 0 4px", whiteSpace: "pre-wrap", wordBreak: "break-word", color: s.fg, background: bg }}>{row.text || " "}</span>
       </>
     );
@@ -143,7 +143,7 @@ function Split({ rows }) {
         <span /><span>{"Antes"}</span><span /><span>{"Después"}</span>
       </div>
       {pairs.map((p) => p.type === "hunk"
-        ? <div key={"h" + p.k} style={{ padding: "4px 12px 4px 56px", font: `400 11.5px/1.5 ${MONO}`, color: "#8C91A0", background: "rgba(18,19,26,.03)" }}>{"línea " + p.start}</div>
+        ? <div key={"h" + p.k} style={{ padding: "4px 12px 4px 56px", font: `400 11.5px/1.5 ${MONO}`, color: "#6B6F7A", background: "rgba(18,19,26,.03)" }}>{"línea " + p.start}</div>
         : <div key={"p" + p.k} style={{ display: "grid", gridTemplateColumns: "44px minmax(0, 1fr) 44px minmax(0, 1fr)" }}>{half(p.left, "left")}{half(p.right, "right")}</div>)}
     </>
   );

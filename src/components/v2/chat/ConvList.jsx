@@ -10,6 +10,7 @@ import { shareUrl } from "../../../lib/peers.js";
 import { PeerAvatar, ShareFace } from "../people/PeerAvatar.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import PeopleIntro from "../people/PeopleIntro.jsx";
+import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // «Chats» column of Colmena 2.0 (the boards call the place «Conversaciones»; the rail fits one line) (design/V2Conversacion.dc.html): rooms (#) and chats
 // with each bot in one list, newest first; the current one as a white piece; a honey dot when
@@ -65,7 +66,7 @@ export default function ConvList({ current = null }) {
       <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", margin: "0 4px", padding: "0 12px", background: "rgba(18,19,26,.045)", borderRadius: "12px", color: "#5C606C" }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4-4" /></svg>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar chats y salas"}</span>
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" style={{ flex: "1", minWidth: "0", border: "0", outline: "none", background: "transparent", fontSize: "14px" }} />
+        <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "14px" }} />
       </label>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         {shown.length === 0 ? <p style={{ margin: "8px 10px", fontSize: "14px", color: "#6B6F7A" }}>{q.trim() ? "Ningún chat ni sala coincide." : "Aún no hay chats. Pulsa «Nueva» para empezar."}</p> : null}
@@ -143,11 +144,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
   const [people, setPeople] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const box = useDialogFocus({ onEscape: onClose });
   const team = bots.filter((b) => b.enabled !== false);
   const contacts = (peers?.contacts || []).filter((c) => c.status === "active");
   // Bots and people do not mix yet: choosing one kind clears the other.
@@ -193,7 +190,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
   };
   return (
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: "0", zIndex: "70", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px 24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="nc-t" style={{ width: "min(620px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "32px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="nc-t" style={{ width: "min(620px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "32px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "24px 24px 6px 28px" }}>
           <h2 id="nc-t" style={{ margin: "0", font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{withPeople ? (isRoom ? "Nueva conversación" : "Nuevo chat") : isRoom || (salaMode && !chosen.length) ? "Nueva sala" : "Nuevo chat"}</h2>
           <button type="button" aria-label="Cerrar" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer" }}>
@@ -221,16 +218,16 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                 </button>
               </span>
             ))}
-            <input autoFocus type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chosen.length ? "Añadir otro bot" : withPeople ? "Añadir otra persona" : "Escribe un nombre"} aria-label="Buscar bots y personas"
+            <input className="c-bare" autoFocus type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chosen.length ? "Añadir otro bot" : withPeople ? "Añadir otra persona" : "Escribe un nombre"} aria-label="Buscar bots y personas"
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (q.trim() && !withPeople && items[0]) { pick(items[0].id); setQ(""); } else if (q.trim() && peopleItems[0]) { pickPerson(peopleItems[0].id); setQ(""); } else go(); } }}
-              style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", outline: "none", background: "transparent", fontSize: "15px" }} />
+              style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", background: "transparent", fontSize: "15px" }} />
           </div>
           <span style={{ padding: "0 4px", fontSize: "13px", lineHeight: "1.45", color: "#5C606C" }}>{hint}</span>
           {isRoom ? (
             <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "50px", padding: "0 16px", borderRadius: "16px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", animation: "fade .3s ease-out" }}>
               <span aria-hidden="true" style={{ font: "600 17px/1 'Geist', sans-serif", color: "#8A8D96" }}>{"#"}</span>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre de la sala"}</span>
-              <input type="text" value={name || auto} onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={{ flex: "1", minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "16px", fontWeight: "600" }} />
+              <input className="c-bare" type="text" value={name || auto} onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "16px", fontWeight: "600" }} />
             </label>
           ) : null}
         </div>

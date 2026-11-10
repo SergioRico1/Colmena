@@ -2,6 +2,15 @@
 // screen when a room opens), 120–240 ms, transform/opacity only. The keyframes live in
 // styles/base.css (c-*), and «reduce motion» in Windows switches them all off.
 
+/** «Reduce motion» is on in the system (Windows: Accessibility › Visual effects › Animation effects). */
+export const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * The `behavior` for scrollIntoView / scrollTo: a glide, or a jump when motion is reduced.
+ * (The CSS guard in styles/base.css does not reach a scroll asked for from code.)
+ */
+export const scrollBehavior = () => (reducedMotion() ? "auto" : "smooth");
+
 const FIRST = new Map(); // key (room) → Map(id → first seen at; 0 = was there when it opened)
 
 /**

@@ -129,7 +129,7 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
   let n = -1;
   return (
     <div ref={box} role="menu" aria-label="Añadir" tabIndex={-1} onKeyDown={onKeyDown}
-      style={{ position: "absolute", left: "0", bottom: "calc(100% + 10px)", zIndex: 40, width: "min(420px, 100%)", maxHeight: "min(440px, 60vh)", overflowY: "auto", padding: "6px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 24px 50px -24px rgba(18,19,26,.4), 0 0 0 1px rgba(18,19,26,.06)", outline: "none", animation: "rise .2s ease-out" }}>
+      style={{ position: "absolute", left: "0", bottom: "calc(100% + 10px)", zIndex: 40, width: "min(420px, 100%)", maxHeight: "min(440px, 60vh)", overflowY: "auto", padding: "6px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 24px 50px -24px rgba(18,19,26,.4), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
       {sections.map((s) => (
         <div key={s.title} role="group" aria-label={s.title} style={{ display: "flex", flexDirection: "column", paddingBottom: "4px" }}>
           <span style={{ padding: "10px 12px 4px", fontSize: "12px", color: "#6B6F7A" }}>{s.title}</span>

@@ -84,4 +84,4 @@ export function Segmented({ label, items, value, onPick, busy }) {
   );
 }
 export const pill = (dark) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "14px", fontWeight: 600, flex: "none", whiteSpace: "nowrap", background: dark ? INK : "rgba(18,19,26,.06)", color: dark ? "#FFFFFF" : INK });
-export const inputStyle = { flex: "1 1 240px", minWidth: 0, width: "100%", height: "46px", padding: "0 16px", border: 0, borderRadius: "14px", outline: "none", background: "#F4F4F0", fontSize: "15px", color: INK, boxSizing: "border-box" };
+export const inputStyle = { flex: "1 1 240px", minWidth: 0, width: "100%", height: "46px", padding: "0 16px", border: 0, borderRadius: "14px", background: "#F4F4F0", fontSize: "15px", color: INK, boxSizing: "border-box" };

@@ -63,7 +63,7 @@ export default function FilesPanel({ missionId, onOpen, version = 0 }) {
         <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "10px" }}>
           <Search {...I} style={{ color: "#555A68", flex: "none" }} />
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Buscar archivos</span>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en los archivos de la sala" style={{ flex: "1", minWidth: 0, border: "0", outline: "none", background: "transparent", fontSize: "14px" }} />
+          <input className="c-bare" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en los archivos de la sala" style={{ flex: "1", minWidth: 0, border: "0", background: "transparent", fontSize: "14px" }} />
           {q ? <button type="button" className="rm-focus" onClick={() => setQ("")} aria-label="Borrar búsqueda" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", cursor: "pointer" }}><X {...I} size={13} /></button> : null}
         </label>
         {files.length ? (
@@ -253,12 +253,12 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
         {file?.reason ? <p style={{ margin: 0, fontSize: "14px", color: "#4A4F5C" }}>{file.reason}</p> : null}
         {file && editing ? (
           <div style={{ flex: "1", display: "flex", minHeight: "320px", background: "#FFFFFF", border: "1.5px solid #12131A", borderRadius: "12px", overflow: "hidden" }}>
-            <div ref={gutter} aria-hidden="true" style={{ flex: "none", padding: "12px 8px 12px 10px", background: "#F7F8FA", borderRight: "1px solid #E6E8EE", font: "400 13px/1.6 'Geist Mono', monospace", color: "#8C91A0", textAlign: "right", overflow: "hidden", userSelect: "none", whiteSpace: "pre" }}>
+            <div ref={gutter} aria-hidden="true" style={{ flex: "none", padding: "12px 8px 12px 10px", background: "#F7F8FA", borderRight: "1px solid #E6E8EE", font: "400 13px/1.6 'Geist Mono', monospace", color: "#6B6F7A", textAlign: "right", overflow: "hidden", userSelect: "none", whiteSpace: "pre" }}>
               {Array.from({ length: lines }, (_, i) => i + 1).join("\n")}
             </div>
-            <textarea ref={area} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKeyDown} spellCheck={false} aria-label={"Editar " + path}
+            <textarea className="c-bare" ref={area} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKeyDown} spellCheck={false} aria-label={"Editar " + path}
               onScroll={(e) => { if (gutter.current) gutter.current.scrollTop = e.currentTarget.scrollTop; }}
-              style={{ flex: "1", minWidth: 0, padding: "12px", border: "0", outline: "none", resize: "none", font: "400 13px/1.6 'Geist Mono', monospace", color: "#12131A", whiteSpace: "pre", overflow: "auto" }} />
+              style={{ flex: "1", minWidth: 0, padding: "12px", border: "0", resize: "none", font: "400 13px/1.6 'Geist Mono', monospace", color: "#12131A", whiteSpace: "pre", overflow: "auto" }} />
           </div>
         ) : file ? (
           type === "image" ? <img data-lightbox="" data-name={path.split("/").pop()} src={rawUrl(missionId, path)} alt={path} style={{ cursor: "zoom-in", maxWidth: "100%", height: "auto", alignSelf: "flex-start", borderRadius: "10px", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />

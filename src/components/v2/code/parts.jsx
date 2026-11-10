@@ -5,7 +5,7 @@ import { SHAPES } from "../Presence.jsx";
 // Small pieces shared by the «Código» screen (design/V2Codigo.dc.html).
 
 export const C = {
-  ink: "#12131A", body: "#1E2029", text: "#3D404A", muted: "#5C606C", faint: "#6B6F7A", quiet: "#8A8D96", rule: "rgba(18,19,26,.07)",
+  ink: "#12131A", body: "#1E2029", text: "#3D404A", muted: "#5C606C", faint: "#6B6F7A", quiet: "#6B6F7A", rule: "rgba(18,19,26,.07)",
   paper: "#F5F5F2", soft: "#F4F4F0", white: "#FFFFFF", honey: "#FFC93C", honeyText: "#8A5A00", green: "#0B8A5F", greenText: "#0B6B4A",
   greenSoft: "#E1F4EC", red: "#B4232A", redSoft: "#FBE9EA", bruno: "#FF7A1A", blue: "#1F4FD1", text2: "#4A4D57", card: "#F6F6F3", track: "#F1F1EC",
 };

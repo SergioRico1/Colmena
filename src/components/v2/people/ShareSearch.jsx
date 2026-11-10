@@ -30,9 +30,9 @@ export default function ShareSearch({ shareId, onClose }) {
     <div role="search" style={{ position: "relative", padding: "0 clamp(20px, 4vw, 44px) 14px", animation: "fade .2s ease-out" }}>
       <label style={{ display: "flex", alignItems: "center", gap: "10px", height: "46px", padding: "0 8px 0 16px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.25)" }}>
         <Search size={17} strokeWidth={2.2} color="#6B6F7A" aria-hidden="true" />
-        <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onClose(); } if (e.key === "Enter" && hits?.[0]) { navigate(hitUrl(hits[0])); onClose(); } }}
+        <input className="c-bare" ref={input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onClose(); } if (e.key === "Enter" && hits?.[0]) { navigate(hitUrl(hits[0])); onClose(); } }}
           placeholder="Buscar en esta conversación" aria-label="Buscar en esta conversación"
-          style={{ flex: 1, minWidth: 0, height: "100%", border: 0, outline: "none", background: "transparent", font: "inherit", fontSize: "15px" }} />
+          style={{ flex: 1, minWidth: 0, height: "100%", border: 0, background: "transparent", font: "inherit", fontSize: "15px" }} />
         {hits ? <span style={{ fontSize: "13px", color: "#6B6F7A", whiteSpace: "nowrap" }}>{hits.length === 0 ? "Nada" : hits.length === 1 ? "1 mensaje" : hits.length + (hits.length >= 40 ? "+" : "") + " mensajes"}</span> : null}
         <button type="button" aria-label="Cerrar la búsqueda" onClick={onClose} style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer", color: "#3D404A" }}><X size={15} strokeWidth={2.4} aria-hidden="true" /></button>
       </label>

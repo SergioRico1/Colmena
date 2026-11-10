@@ -40,7 +40,7 @@ function KeyRow({ s, first }) {
       {editing ? (
         <form className="c-enter" onSubmit={(e) => { e.preventDefault(); act(async () => { await patch(`/secrets/${encodeURIComponent(s.name)}`, { allowedHosts: hosts.split(/[,\s]+/).filter(Boolean) }); setEditing(false); }); }}
           style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", paddingLeft: "46px" }}>
-          <input value={hosts} onChange={(e) => setHosts(e.target.value)} aria-label={"Sitios de " + s.name} placeholder="api.ejemplo.com" spellCheck={false} style={{ ...field.input, ...field.mono, flex: "1 1 260px" }} />
+          <input className="c-quiet" value={hosts} onChange={(e) => setHosts(e.target.value)} aria-label={"Sitios de " + s.name} placeholder="api.ejemplo.com" spellCheck={false} style={{ ...field.input, ...field.mono, flex: "1 1 260px" }} />
           <button type="submit" disabled={busy || !hosts.trim()} style={{ ...btn.dark, opacity: busy || !hosts.trim() ? 0.6 : 1 }}>{"Guardar"}</button>
           <button type="button" onClick={() => { setHosts(s.allowedHosts.join(", ")); setEditing(false); }} style={btn.quiet}>{"Cancelar"}</button>
         </form>

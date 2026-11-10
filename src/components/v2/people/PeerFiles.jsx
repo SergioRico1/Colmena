@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download, File, FileImage, FileSpreadsheet, FileText, Lock, Presentation, RotateCw, X } from "lucide-react";
 import { get, post } from "../../../lib/api.js";
+import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // Files shared in a conversation with people (design/V2Personas.dc.html, paso archivo): a
 // card in the message and a viewer over the conversation. The viewer only shows plain data
@@ -56,12 +57,11 @@ export function FileViewer({ file, onClose }) {
   useEffect(() => {
     let alive = true;
     get(`/peers/files/${enc(file.id)}/preview`).then((d) => alive && setData(d)).catch((e) => alive && setError(e.message));
-    const esc = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", esc);
-    return () => { alive = false; window.removeEventListener("keydown", esc); };
-  }, [file.id, onClose]);
+    return () => { alive = false; };
+  }, [file.id]);
+  const box = useDialogFocus({ onEscape: onClose });
   return (
-    <div role="dialog" aria-modal="true" aria-label={"Ver " + file.name} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <div ref={box} role="dialog" aria-modal="true" aria-label={"Ver " + file.name} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: "fixed", inset: 0, zIndex: 80, display: "flex", justifyContent: "center", padding: "28px", background: "rgba(18,19,26,.42)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
       <div style={{ width: "min(1040px, 100%)", height: "100%", display: "flex", flexDirection: "column", borderRadius: "30px", background: "#F5F5F2", overflow: "hidden", boxShadow: "0 40px 90px -30px rgba(18,19,26,.6)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <header style={{ flex: "none", display: "flex", alignItems: "center", gap: "12px", padding: "18px 18px 14px 24px" }}>

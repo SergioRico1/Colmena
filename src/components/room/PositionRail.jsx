@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { scrollBehavior } from "../../lib/motion.js";
 
 // Message navigator for long conversations (OpenClaw chat-position-rail): a slim rail on the
 // right edge with a mark per message of yours and per answer that follows it; hovering shows
@@ -73,7 +74,7 @@ export default function PositionRail({ scroller, items, version = 0, locate = nu
     if (locate) return locate.jump(id);
     const node = scroller.current?.querySelector(`[data-message-id="${CSS.escape(id)}"]`);
     if (!node) return;
-    node.scrollIntoView({ block: "center", behavior: "smooth" });
+    node.scrollIntoView({ block: "center", behavior: scrollBehavior() });
     node.classList.remove("c-reveal");
     void node.offsetWidth;
     node.classList.add("c-reveal");

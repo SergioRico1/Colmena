@@ -178,15 +178,15 @@ export default function WindowChrome() {
           </span>
         ) : <span />}
         <div role="group" aria-label="Ventana" style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" }}>
-          <button type="button" tabIndex={-1} aria-label="Minimizar" title="Minimizar" onClick={() => api.minimize()} onMouseEnter={enter(false)} onMouseLeave={leave} style={button}>
+          <button type="button" aria-label="Minimizar la ventana" title="Minimizar" onClick={() => api.minimize()} onMouseEnter={enter(false)} onMouseLeave={leave} style={button}>
             <Minus size={15} strokeWidth={2.2} aria-hidden="true" />
           </button>
-          <button type="button" tabIndex={-1} aria-label={state.maximized ? "Restaurar" : "Maximizar"} title={state.maximized ? "Restaurar" : "Maximizar"} aria-pressed={state.maximized ? "true" : "false"} onClick={() => api.toggleMaximize()} onMouseEnter={enter(false)} onMouseLeave={leave} style={button}>
+          <button type="button" aria-label={state.maximized ? "Restaurar la ventana" : "Maximizar la ventana"} title={state.maximized ? "Restaurar" : "Maximizar"} aria-pressed={state.maximized ? "true" : "false"} onClick={() => api.toggleMaximize()} onMouseEnter={enter(false)} onMouseLeave={leave} style={button}>
             {state.maximized
               ? <Copy size={14} strokeWidth={2.2} aria-hidden="true" />
               : <Square size={13} strokeWidth={2.2} aria-hidden="true" />}
           </button>
-          <button type="button" tabIndex={-1} aria-label="Cerrar Colmena" title="Cerrar" onClick={() => api.close()} onMouseEnter={enter(true)} onMouseLeave={leave} style={button}>
+          <button type="button" aria-label="Cerrar Colmena" title="Cerrar" onClick={() => api.close()} onMouseEnter={enter(true)} onMouseLeave={leave} style={button}>
             <X size={16} strokeWidth={2.2} aria-hidden="true" />
           </button>
         </div>

@@ -10,6 +10,7 @@ import { useExpert } from "../lib/expert.js";
 import { findBot } from "../components/room/common.jsx";
 import { formatTokens } from "../components/settings/format.jsx";
 import { later, useHidden } from "../lib/undoToast.js";
+import { useDialogFocus } from "../lib/useDialogFocus.js";
 
 // Colmena 3 · Trabajo › Objetivos (design/V3Objetivos.dc.html): what you want to achieve over
 // weeks or months. On the left your goals with a ring of progress; on the right the chosen
@@ -146,10 +147,10 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
                     </div>
                   );
                 })}
-                <form onSubmit={(e) => { e.preventDefault(); const t = newMs.trim(); if (t) run(() => post(`/goals/${g.id}/milestones`, { title: t })).then((r) => r && setNewMs("")); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "14px", border: "1px solid rgba(18,19,26,.1)" }}>
+                <form className="c-ring" onSubmit={(e) => { e.preventDefault(); const t = newMs.trim(); if (t) run(() => post(`/goals/${g.id}/milestones`, { title: t })).then((r) => r && setNewMs("")); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "14px", border: "1px solid rgba(18,19,26,.1)" }}>
                   <label style={{ flex: 1, display: "flex" }}>
                     <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Nuevo hito</span>
-                    <input type="text" value={newMs} onChange={(e) => setNewMs(e.target.value)} maxLength={200} placeholder="Añade un hito, por ejemplo «Elegir la plataforma»" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, outline: "none", background: "transparent", fontSize: "14.5px" }} />
+                    <input className="c-bare" type="text" value={newMs} onChange={(e) => setNewMs(e.target.value)} maxLength={200} placeholder="Añade un hito, por ejemplo «Elegir la plataforma»" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "14.5px" }} />
                   </label>
                   <button type="submit" disabled={busy || !newMs.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", cursor: newMs.trim() ? "pointer" : "default", fontSize: "13.5px", fontWeight: 600, background: newMs.trim() ? "#12131A" : "rgba(18,19,26,.08)", color: newMs.trim() ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
                 </form>
@@ -220,7 +221,7 @@ function NewGoal({ onClose, onCreated, initialTitle = "", ownerName = "Atlas" })
   const [due, setDue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  useEffect(() => { const k = (e) => e.key === "Escape" && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  const box = useDialogFocus({ onEscape: onClose });
   const save = async (e) => {
     e.preventDefault();
     if (!title.trim()) return setError("Escribe qué quieres conseguir.");
@@ -228,15 +229,15 @@ function NewGoal({ onClose, onCreated, initialTitle = "", ownerName = "Atlas" })
     try { onCreated(await run(() => post("/goals", { title: title.trim(), why: why.trim(), ...(due ? { dueAt: new Date(due + "T18:00:00").toISOString() } : {}) }))); }
     catch (err) { setError(err.message); setBusy(false); }
   };
-  const field = { width: "100%", height: "46px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", outline: "none", background: "#FFFFFF", fontSize: "15px", boxSizing: "border-box" };
+  const field = { width: "100%", height: "46px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "15px", boxSizing: "border-box" };
   return (
     <div onClick={(e) => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
-      <form onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="ng-t" style={{ width: "min(560px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "26px 28px", background: "#FFFFFF", borderRadius: "26px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
+      <form ref={box} onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="ng-t" style={{ width: "min(560px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "26px 28px", background: "#FFFFFF", borderRadius: "26px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <h2 id="ng-t" style={{ margin: 0, font: "600 26px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>Nuevo objetivo</h2>
         <p style={{ margin: 0, fontSize: "14px", color: "#4A4D57" }}>{`Algo que quieres conseguir en semanas o meses. ${ownerName} lo partirá en hitos.`}</p>
-        <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13.5px", fontWeight: 500, color: "#4A4D57" }}>Qué quieres conseguir<input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="Lanzar la tienda online en marzo" style={field} /></label>
-        <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13.5px", fontWeight: 500, color: "#4A4D57" }}>Por qué te importa<input value={why} onChange={(e) => setWhy(e.target.value)} maxLength={500} placeholder="El 40 % de los clientes pregunta si puede comprar desde casa" style={field} /></label>
-        <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13.5px", fontWeight: 500, color: "#4A4D57" }}>Para cuándo (opcional)<input type="date" value={due} onChange={(e) => setDue(e.target.value)} style={field} /></label>
+        <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13.5px", fontWeight: 500, color: "#4A4D57" }}>Qué quieres conseguir<input className="c-quiet" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="Lanzar la tienda online en marzo" style={field} /></label>
+        <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13.5px", fontWeight: 500, color: "#4A4D57" }}>Por qué te importa<input className="c-quiet" value={why} onChange={(e) => setWhy(e.target.value)} maxLength={500} placeholder="El 40 % de los clientes pregunta si puede comprar desde casa" style={field} /></label>
+        <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13.5px", fontWeight: 500, color: "#4A4D57" }}>Para cuándo (opcional)<input className="c-quiet" type="date" value={due} onChange={(e) => setDue(e.target.value)} style={field} /></label>
         {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4232A" }}>{error}</span> : null}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", paddingTop: "4px" }}>
           <button type="button" onClick={onClose} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "14.5px" }}>Cancelar</button>

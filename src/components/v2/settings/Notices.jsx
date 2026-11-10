@@ -78,9 +78,9 @@ function WatchRows({ bots }) {
               <span style={{ fontSize: "15px", fontWeight: 500 }}>Qué te importa</span>
               <span style={{ fontSize: "13px", color: MUTED }}>{`Con tus palabras. ${name} lo tiene en cuenta cada vez que mira.`}</span>
             </span>
-            <textarea value={draft} maxLength={1500} rows={3} onChange={(e) => setList(e.target.value)} onBlur={keep}
+            <textarea className="c-quiet" value={draft} maxLength={1500} rows={3} onChange={(e) => setList(e.target.value)} onBlur={keep}
               placeholder={"Avísame enseguida si escribe mi socia.\nLos pedidos de la tienda, mejor juntos en el resumen.\nNo me cuentes los boletines del banco."}
-              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: "84px", padding: "10px 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", font: "400 14.5px/1.5 'Geist', sans-serif", color: INK, outline: "none" }} />
+              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: "84px", padding: "10px 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", font: "400 14.5px/1.5 'Geist', sans-serif", color: INK }} />
           </label>
         </>
       ) : null}

@@ -59,7 +59,7 @@ export default function QuestionFlow({ approval }) {
         </span>
         {q.optional ? <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{"Opcional"}</span> : null}
       </div>
-      <h4 ref={heading} tabIndex={-1} key={q.id} style={{ margin: 0, outline: "none", font: "600 19px/1.3 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.015em", animation: "rise .25s ease-out" }}>{q.question}</h4>
+      <h4 ref={heading} tabIndex={-1} key={q.id} style={{ margin: 0, font: "600 19px/1.3 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.015em", animation: "rise .25s ease-out" }}>{q.question}</h4>
       {q.options.length ? (
         <div role="radiogroup" aria-label={q.question} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {q.options.map((o, i) => {
@@ -74,11 +74,11 @@ export default function QuestionFlow({ approval }) {
           })}
         </div>
       ) : null}
-      <form onSubmit={(e) => { e.preventDefault(); next(); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 16px", borderRadius: "999px", background: "#F6F6F3" }}>
+      <form className="c-ring" onSubmit={(e) => { e.preventDefault(); next(); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 16px", borderRadius: "999px", background: "#F6F6F3" }}>
         <label style={{ flex: "1", minWidth: 0, display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Tu respuesta"}</span>
-          <input value={current.text || ""} onChange={(e) => set({ text: e.target.value })} placeholder={q.options.length ? "O escribe tu respuesta…" : "Tu respuesta…"} maxLength={4000} autoFocus={step > 0 && !q.options.length}
-            style={{ flex: "1", minWidth: 0, height: "40px", border: 0, outline: "none", background: "transparent", fontSize: "15px", fontFamily: "inherit", color: "#12131A" }} />
+          <input className="c-bare" value={current.text || ""} onChange={(e) => set({ text: e.target.value })} placeholder={q.options.length ? "O escribe tu respuesta…" : "Tu respuesta…"} maxLength={4000} autoFocus={step > 0 && !q.options.length}
+            style={{ flex: "1", minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "15px", fontFamily: "inherit", color: "#12131A" }} />
         </label>
         <button type="submit" aria-label={last ? "Enviar las respuestas" : "Siguiente pregunta"} disabled={!String(current.text || "").trim()} className="rm-focus"
           style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: String(current.text || "").trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: "pointer" }}>

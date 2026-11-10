@@ -139,7 +139,7 @@ function BusyPreview({ data }) {
         <span />
         {days.map((d) => <span key={d.toISOString()} style={{ textAlign: "center", fontSize: "12px", fontWeight: 600, color: MUTED }}>{d.toLocaleDateString("es-ES", { weekday: "narrow", day: "numeric" })}</span>)}
         {hours.map((h) => [
-          <span key={"h" + h} style={{ font: "500 11px/22px 'Geist Mono', monospace", color: "#8A8D96" }}>{h}</span>,
+          <span key={"h" + h} style={{ font: "500 11px/22px 'Geist Mono', monospace", color: FAINT }}>{h}</span>,
           ...days.map((d) => <span key={d.toISOString() + h} style={{ height: "22px", borderRadius: "6px", background: busyAt(d, h) ? "#3D404A" : "#FFFFFF" }} />),
         ])}
       </div>

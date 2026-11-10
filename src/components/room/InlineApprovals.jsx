@@ -54,9 +54,9 @@ function Row({ a, bots }) {
       </div>
       {denying ? (
         <form className="c-enter" onSubmit={(e) => { e.preventDefault(); decide("denied", false, reason.trim()); }} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", paddingLeft: "40px" }}>
-          <input autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setDenying(false); } }}
+          <input className="c-quiet" autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setDenying(false); } }}
             placeholder={`¿Por qué? Se lo diremos a ${bot.name} (opcional)`} aria-label="Por qué no"
-            style={{ flex: "1 1 220px", height: "38px", padding: "0 14px", background: "#F4F4F0", border: "0", borderRadius: "999px", fontSize: "14px", outline: "none" }} />
+            style={{ flex: "1 1 220px", height: "38px", padding: "0 14px", background: "#F4F4F0", border: "0", borderRadius: "999px", fontSize: "14px" }} />
           <button type="submit" disabled={busy} style={{ ...btn, background: "#12131A", color: "#FFFFFF" }}>No lo hagas</button>
           <button type="button" onClick={() => setDenying(false)} style={{ ...btn, background: "transparent", fontWeight: "500", color: "#5C606C" }}>Cancelar</button>
         </form>
@@ -81,7 +81,7 @@ function Row({ a, bots }) {
               <button type="button" className="rm-focus" disabled={busy} onClick={() => setDenying(true)} style={{ ...btn, background: "transparent", fontWeight: "500", color: "#5C606C" }}>Ahora no</button>
             </>
           )}
-          {!review && !leaving ? <span style={{ marginLeft: "auto", fontSize: "12px", color: "#8A8D96" }}>{"También puedes responder «sí» en el chat"}</span> : null}
+          {!review && !leaving ? <span style={{ marginLeft: "auto", fontSize: "12px", color: "#6B6F7A" }}>{"También puedes responder «sí» en el chat"}</span> : null}
         </div>
       )}
       <ErrorLine style={{ paddingLeft: "40px" }}>{error}</ErrorLine>

@@ -229,7 +229,7 @@ export function DeliverableV2({ artifact, onOpen, extra = null }) {
   );
 }
 
-const shimmerText = { alignSelf: "flex-start", fontSize: "14.5px", fontWeight: "500", background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
+const shimmerText = { alignSelf: "flex-start", fontSize: "14.5px", fontWeight: "500", background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
 
 /**
  * The work while it happens (idea 04: «nada de procesando»): what it reads (each file with a

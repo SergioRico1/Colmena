@@ -49,12 +49,12 @@ export default function Composer({ task = null, models = [], busy = false, runni
   const ready = !!(text.trim() || extras.files.length || extras.contexts.length);
   if (disabled) return <p style={{ flex: "none", margin: 0, padding: "14px 4px 4px", fontSize: "14px", lineHeight: 1.5, color: C.faint, textAlign: "center" }}>{disabled}</p>;
   const field = (
-    <textarea ref={area} data-code-composer="" rows={home ? 2 : 1} value={text} autoFocus={autoFocus} onChange={(e) => { setText(e.target.value); extras.track(); }} placeholder={placeholder}
+    <textarea className="c-bare" ref={area} data-code-composer="" rows={home ? 2 : 1} value={text} autoFocus={autoFocus} onChange={(e) => { setText(e.target.value); extras.track(); }} placeholder={placeholder}
       onSelect={extras.track} onPaste={extras.onPaste}
       onKeyDown={(e) => { if (extras.onKeyDown(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e); }}
       style={home
-        ? { flex: 1, minWidth: 0, border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "19px", lineHeight: 1.45 }
-        : { flex: 1, minWidth: 0, minHeight: "40px", padding: "9px 0", border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "14.5px", lineHeight: "22px", maxHeight: "220px" }} />
+        ? { flex: 1, minWidth: 0, border: 0, resize: "none", background: "transparent", fontSize: "19px", lineHeight: 1.45 }
+        : { flex: 1, minWidth: 0, minHeight: "40px", padding: "9px 0", border: 0, resize: "none", background: "transparent", fontSize: "14.5px", lineHeight: "22px", maxHeight: "220px" }} />
   );
   const mic = <MicButton onText={(said) => { appendDictation(setText)(said); extras.track(); }} target={area} size={36} style={{ color: C.muted }} />;
   const drop = { onDragOver: (e) => { if (e.dataTransfer?.types?.includes("Files")) e.preventDefault(); }, onDrop: extras.onDrop };
@@ -62,7 +62,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
   if (home) {
     return (
       <form onSubmit={submit} className="code-composer" style={{ width: "100%" }}>
-        <section aria-label="Nueva tarea de código" {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", borderRadius: "26px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 28px 60px -34px rgba(18,19,26,.4)" }}>
+        <section className="c-ring" aria-label="Nueva tarea de código" {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", borderRadius: "26px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 28px 60px -34px rgba(18,19,26,.4)" }}>
           {extras.menu}
           {extras.chips ? <div style={{ padding: "16px 24px 0" }}>{extras.chips}</div> : null}
           <div style={{ display: "flex", alignItems: "flex-end", gap: "2px", padding: "22px 14px 8px 24px" }}>
@@ -104,7 +104,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
       ) : null}
       {status}
       {mode === "plan" ? <span style={{ display: "block", margin: "0 0 8px 4px", fontSize: "12px", color: C.muted }}><strong style={{ fontWeight: 600, color: C.ink }}>Modo plan</strong> · Bruno propone antes de tocar nada.</span> : null}
-      <div {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "6px", padding: "8px 8px 8px 14px", borderRadius: "16px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.06), 0 14px 30px -20px rgba(18,19,26,.4)" }}>
+      <div className="c-ring" {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "6px", padding: "8px 8px 8px 14px", borderRadius: "16px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.06), 0 14px 30px -20px rgba(18,19,26,.4)" }}>
         {extras.menu}
         {extras.chips}
         <div style={{ display: "flex", alignItems: "flex-end", gap: "4px" }}>
@@ -182,7 +182,7 @@ function ContextRing({ used, max = 200000, onCompact = null, disabled = false })
   return (
     <span style={{ position: "relative", display: "flex" }}>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} title={`Contexto usado: ${Math.round(pct * 100)} % (${Math.round(used / 1000)} k de ${Math.round(max / 1000)} k)`}
-        style={{ display: "flex", alignItems: "center", gap: "4px", height: "36px", padding: "0 6px", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", whiteSpace: "nowrap", font: "500 11px/1 'Geist Mono', monospace", color: "#8A8D96" }}>
+        style={{ display: "flex", alignItems: "center", gap: "4px", height: "36px", padding: "0 6px", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", whiteSpace: "nowrap", font: "500 11px/1 'Geist Mono', monospace", color: C.quiet }}>
         <svg width="20" height="20" viewBox="0 0 36 36" aria-hidden="true" style={{ transform: "rotate(-90deg)" }}>
           <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(18,19,26,.08)" strokeWidth="4" />
           <circle cx="18" cy="18" r={r} fill="none" stroke={pct > 0.85 ? C.honey : C.ink} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${len * pct} ${len}`} />

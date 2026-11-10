@@ -16,6 +16,7 @@ import { PLACES } from "../components/v3/Sidebar.jsx";
 import { SECTIONS, searchSettings, SECTION_OF } from "../components/v2/settings/sections.js";
 import { hitUrl } from "../components/v2/people/ShareSearch.jsx";
 import { shareUrl } from "../lib/peers.js";
+import { useDialogFocus } from "../lib/useDialogFocus.js";
 
 // Colmena 3 · «Buscar o pedir» (design/V3Buscar.dc.html; Ctrl K, or the window event
 // 'colmena:palette' with detail.text). One box finds chats, tareas, archivos, bots, rutinas,
@@ -121,6 +122,10 @@ export default function CommandPalette() {
       document.body.style.overflow = prev;
     };
   }, [open]);
+
+  // Tab stays in the palette and Escape closes it from any of its buttons (the field has its
+  // own Escape steps); focus goes back through `close` above.
+  const sheet = useDialogFocus({ active: open, onEscape: close, restoreFocus: false });
 
   const parsed = parseQuery(menu ? "" : text);
   const actionsOnly = parsed.actionsOnly || (scope === "comandos" && !menu);
@@ -575,16 +580,17 @@ export default function CommandPalette() {
   let index = -1;
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }} style={{ position: "fixed", inset: "0", zIndex: 1000, background: "rgba(18,19,26,.38)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "72px 24px 24px", overflowY: "auto", animation: "fade .2s ease-out" }}>
-      <div role="dialog" aria-modal="true" aria-label="Buscar o pedir" style={{ width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.6)", overflow: "hidden", animation: "sheet .25s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "#12131A" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "0 22px", height: "70px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
+      <div ref={sheet} role="dialog" aria-modal="true" aria-label="Buscar o pedir" style={{ width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.6)", overflow: "hidden", animation: "sheet .25s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "#12131A" }}>
+        <div className="c-ring-in" style={{ display: "flex", alignItems: "center", gap: "14px", padding: "0 22px", height: "70px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
           {menu ? (
             <button type="button" onClick={back} aria-label="Volver" style={{ display: "flex", alignItems: "center", gap: "6px", flex: "none", height: "32px", padding: "0 12px 0 8px", border: 0, borderRadius: "999px", background: "#F1F1EC", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "#12131A" }}>
               <ArrowLeft size={14} strokeWidth={2.4} aria-hidden="true" />{menu.title}
             </button>
           ) : parsed.actionsOnly ? <span style={{ flex: "none", display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "12px", fontWeight: 600 }}>{"Comandos"}</span>
             : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>}
-          <input
+          <input className="c-bare"
             ref={input}
+            data-autofocus=""
             type="text"
             value={text}
             placeholder={placeholder}
@@ -597,7 +603,7 @@ export default function CommandPalette() {
             onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart); setActive(null); setError(null); }}
             onSelect={(e) => setCaret(e.target.selectionStart)}
             onKeyDown={onKeyDown}
-            style={{ flex: "1", minWidth: "0", height: "48px", border: "0", outline: "none", background: "transparent", fontSize: "20px", color: "#12131A" }}
+            style={{ flex: "1", minWidth: "0", height: "48px", border: "0", background: "transparent", fontSize: "20px", color: "#12131A" }}
           />
           <button type="button" onClick={close} aria-label="Cerrar" style={{ padding: "5px 8px", border: "0", borderRadius: "7px", background: "#F1F1EC", font: "500 12px/1 'Geist Mono', monospace", color: "#4A4D57", cursor: "pointer" }}>{"Esc"}</button>
         </div>

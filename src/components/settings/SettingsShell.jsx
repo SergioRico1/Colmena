@@ -88,7 +88,7 @@ export const btn = {
 
 export const field = {
   label: { display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px", fontWeight: 500, color: MUTED },
-  input: { height: "48px", padding: "0 16px", background: "#F4F4F0", border: 0, borderRadius: "14px", fontSize: "15px", color: INK, outline: "none", minWidth: "0" },
+  input: { height: "48px", padding: "0 16px", background: "#F4F4F0", border: 0, borderRadius: "14px", fontSize: "15px", color: INK, minWidth: "0" },
   mono: { fontFamily: "'Geist Mono', monospace", fontSize: "13px" },
 };
 

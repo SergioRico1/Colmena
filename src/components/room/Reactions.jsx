@@ -115,8 +115,8 @@ export function DownReasons({ current = null, onSave, onRemove, onClose, style }
       </div>
       <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
         <span style={{ fontSize: "12.5px", fontWeight: 500, color: "#4A4D57" }}>Una nota <span style={{ fontWeight: 400, color: "#5C606C" }}>(opcional)</span></span>
-        <textarea rows="2" value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="Por ejemplo: la cifra de marzo es de febrero"
-          style={{ padding: "8px 10px", border: "1px solid #DCE0E8", borderRadius: "10px", outline: "none", resize: "vertical", font: "inherit", fontSize: "14px", lineHeight: 1.45, color: "#12131A" }} />
+        <textarea className="c-quiet" rows="2" value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="Por ejemplo: la cifra de marzo es de febrero"
+          style={{ padding: "8px 10px", border: "1px solid #DCE0E8", borderRadius: "10px", resize: "vertical", font: "inherit", fontSize: "14px", lineHeight: 1.45, color: "#12131A" }} />
       </label>
       {error ? <span role="alert" style={{ fontSize: "12.5px", color: "#B4232A" }}>{error}</span> : null}
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>

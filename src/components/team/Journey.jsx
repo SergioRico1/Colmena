@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Brain, Check, FolderOpen, Globe, GraduationCap, MessagesSquare, PencilLine, Sparkles, Trash2, Type, Wrench, X } from "lucide-react";
 import { del, patch, post } from "../../lib/api.js";
 import { roomUrl, shortDate } from "../../lib/format.js";
 import { navigate } from "../../lib/router.jsx";
 import { useAction, useResource, useStore } from "../../lib/store.jsx";
+import { useDialogFocus } from "../../lib/useDialogFocus.js";
 
 // «Qué ha aprendido» (Hermes /journey): what a bot learned, newest first, each with the room it
 // came from; memories can be corrected or forgotten in place. «Enséñale» (Hermes /learn) opens a
@@ -81,14 +82,7 @@ export function TeachDialog({ bot, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const first = useRef(null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  useEffect(() => {
-    first.current?.focus();
-    const key = (e) => e.key === "Escape" && closeRef.current();
-    document.addEventListener("keydown", key);
-    return () => document.removeEventListener("keydown", key);
-  }, []);
+  const box = useDialogFocus({ onEscape: onClose });
   const rooms = missions.filter((m) => m.status !== "cancelled" && !m.teach).slice(-40).reverse();
   const ready = what.trim().length >= 3 && (type === "texto" || value.trim());
   const submit = async (e) => {
@@ -108,7 +102,7 @@ export function TeachDialog({ bot, onClose }) {
   const field = { width: "100%", minHeight: "44px", padding: "0 12px", background: "#FFFFFF", border: "0", borderRadius: "10px", fontSize: "15px", color: "#12131A" };
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "80px 16px 16px", overflowY: "auto" }}>
-      <form onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="ensena-t" style={{ width: "min(560px, 100%)", background: "#FFFFFF", color: "#12131A", border: "0", borderRadius: "20px", display: "flex", flexDirection: "column" }}>
+      <form ref={box} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="ensena-t" style={{ width: "min(560px, 100%)", background: "#FFFFFF", color: "#12131A", border: "0", borderRadius: "20px", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 22px 16px", display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <h2 id="ensena-t" style={{ margin: 0, font: "600 22px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{`Enséñale algo a ${bot.name}`}</h2>
@@ -118,7 +112,7 @@ export function TeachDialog({ bot, onClose }) {
             {"¿Qué quieres que aprenda?"}
             <span style={{ display: "flex", alignItems: "center", gap: "8px", ...field, padding: "0 12px" }}>
               <span style={{ color: "#6B6F7A", fontWeight: "400", whiteSpace: "nowrap" }}>{"Aprende"}</span>
-              <input ref={first} value={what} maxLength={300} onChange={(e) => setWhat(e.target.value)} placeholder="cómo hago las facturas" style={{ flex: "1", minWidth: 0, height: "42px", border: 0, outline: "none", fontSize: "15px", background: "transparent" }} />
+              <input className="c-bare" ref={first} data-autofocus="" value={what} maxLength={300} onChange={(e) => setWhat(e.target.value)} placeholder="cómo hago las facturas" style={{ flex: "1", minWidth: 0, height: "42px", border: 0, fontSize: "15px", background: "transparent" }} />
             </span>
           </label>
           <fieldset style={{ margin: 0, padding: 0, border: 0, display: "flex", flexDirection: "column", gap: "8px" }}>

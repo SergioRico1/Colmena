@@ -50,6 +50,21 @@ html.colmena-desktop[data-v2] #root{padding-top:0}
 /* Keyboard focus everywhere (mouse clicks show nothing): blue on light, white on the dark sidebar. */
 :where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid #2F6BFF;outline-offset:2px}
 .colmena-sidebar :where(a,button):focus-visible{outline-color:#FFFFFF}
+/* Things that only take focus from code (a dialog, a menu, the chat scroller, a heading):
+   no ring around the whole block. */
+:where(div,section,form,aside,main,nav,span,p,ul,h1,h2,h3,h4)[tabindex="-1"]:focus-visible{outline:none}
+/* Text fields that live in a box of their own. A click leaves them as they are; moving with
+   the keyboard (<html data-kbd>, lib/focusModality.js) draws the same ring as everywhere:
+     .c-quiet    a field with its own border or fill: the ring goes on the field
+     .c-bare     a borderless field inside a styled box: the ring goes on that box, which is
+                 its parent, or the ancestor marked .c-ring (.c-ring-in when the box is
+                 clipped by its container: the ring is drawn inside). */
+:is(input,textarea,select):is(.c-quiet,.c-bare):focus-visible{outline:none}
+html[data-kbd] :is(input,textarea,select).c-quiet:focus-visible{outline:2px solid #2F6BFF;outline-offset:2px}
+html[data-kbd] :is(label,div,span,form,section,p,li):has(> .c-bare:focus-visible),
+html[data-kbd] .c-ring:has(.c-bare:focus-visible){outline:2px solid #2F6BFF;outline-offset:2px}
+html[data-kbd] .c-ring-in:has(.c-bare:focus-visible){outline:2px solid #2F6BFF;outline-offset:-2px}
+html[data-kbd] :is(.c-ring,.c-ring-in) :has(> .c-bare:focus-visible):not(.c-ring,.c-ring-in){outline:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 .colmena-skeleton{background:linear-gradient(90deg,#E6E8EE 0%,#F2F4F7 40%,#E6E8EE 80%);background-size:300% 100%;animation:colmena-shimmer 1.6s ease-in-out infinite}
 @keyframes colmena-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
@@ -142,7 +157,9 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 /* Draggable left edge of the side panels (usePanelWidth). */
 .c-panel-resize{position:absolute;top:0;bottom:0;left:-5px;width:10px;cursor:col-resize;z-index:5;touch-action:none;outline:none}
 .c-panel-resize::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;background:transparent;transition:background .12s ease}
-.c-panel-resize:hover::after,.c-panel-resize:focus-visible::after,.c-resizing .c-panel-resize::after{background:#FFC93C}
+.c-panel-resize:hover::after,.c-resizing .c-panel-resize::after{background:#FFC93C}
+/* Keyboard focus on the handle: the app's focus blue, not honey (honey means «te necesita»). */
+.c-panel-resize:focus-visible::after{background:#2F6BFF}
 .c-resizing,.c-resizing *{cursor:col-resize !important;user-select:none !important}
 .c-resizing iframe{pointer-events:none}
 /* Working dots (OpenClaw): three dots that breathe while a bot works. */

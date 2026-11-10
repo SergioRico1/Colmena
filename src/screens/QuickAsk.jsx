@@ -286,14 +286,14 @@ export default function QuickAsk() {
   return (
     <div style={{ padding: `${PAD_TOP}px 18px ${PAD_BOTTOM}px 18px`, boxSizing: "border-box" }}>
       <style>{NO_SCROLL}</style>
-      <section ref={card} key={shown} className="c-quick" role="dialog" aria-label="Pregunta rápida" style={{ boxSizing: "border-box", maxHeight: `calc(100vh - ${PAD_TOP + PAD_BOTTOM}px)`, overflowY: "auto", scrollbarWidth: "none", display: "flex", flexDirection: "column", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.55)", color: "#12131A", animation: "sheet .25s ease-out" }}>
+      <section ref={card} key={shown} className="c-quick c-ring" role="dialog" aria-label="Pregunta rápida" style={{ boxSizing: "border-box", maxHeight: `calc(100vh - ${PAD_TOP + PAD_BOTTOM}px)`, overflowY: "auto", scrollbarWidth: "none", display: "flex", flexDirection: "column", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.55)", color: "#12131A", animation: "sheet .25s ease-out" }}>
         <form onSubmit={send} style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 10px 10px 18px" }}>
             <img src="/colmena-icon-128.png" alt="" width="28" height="28" style={{ display: "block", width: "28px", height: "28px", flex: "none", WebkitAppRegion: "drag" }} />
             <label style={{ flex: "1", display: "flex", minWidth: 0 }}>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Pídele algo a tu equipo"}</span>
-              <textarea ref={input} rows="1" value={text} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} disabled={busy} placeholder={placeholder}
-                style={{ flex: "1", minWidth: "0", minHeight: "52px", maxHeight: "150px", padding: "14px 0", border: "0", outline: "none", resize: "none", fontSize: "19px", lineHeight: "1.3", background: "transparent", fieldSizing: "content", color: "#12131A" }} />
+              <textarea className="c-bare" ref={input} rows="1" value={text} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} disabled={busy} placeholder={placeholder}
+                style={{ flex: "1", minWidth: "0", minHeight: "52px", maxHeight: "150px", padding: "14px 0", border: "0", resize: "none", fontSize: "19px", lineHeight: "1.3", background: "transparent", fieldSizing: "content", color: "#12131A" }} />
             </label>
             <button type="submit" aria-label="Enviar" title="Enviar (Intro) · Ctrl+Intro: enviar y abrir en Colmena" disabled={!canSend} style={{ width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", cursor: canSend ? "pointer" : "default", background: "#12131A", color: "#FFFFFF", opacity: canSend || busy ? 1 : 0.35, transition: "opacity .2s ease" }}>
               {busy ? <LoaderCircle {...ICON} size={18} className="c-spin" /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>}

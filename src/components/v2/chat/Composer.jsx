@@ -63,7 +63,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
           {above}
           {d.error ? <DictationHelp problem={d.error} onClose={d.clearError} style={{ margin: "0 0 10px auto", maxWidth: "min(440px, 100%)" }} /> : null}
           {(rec || trans) && d.where?.fallback ? <p role="note" style={{ margin: "0 0 8px", fontSize: "13px", lineHeight: 1.45, color: "#4A4D57", textAlign: "right" }}>{d.where.note}</p> : null}
-          <div style={{ position: "relative", display: "flex", flexDirection: "column", borderRadius: "24px", transition: "background .3s ease", background: rec ? "#12131A" : "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" }}>
+          <div className="c-ring" style={{ position: "relative", display: "flex", flexDirection: "column", borderRadius: "24px", transition: "background .3s ease", background: rec ? "#12131A" : "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" }}>
             {drop?.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: "24px" }}>{"Suelta aquí para adjuntar"}</div> : null}
             {menu}
             {rec ? (
@@ -82,7 +82,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
             ) : trans ? (
               <div role="status" style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "62px", padding: "8px 18px", animation: "fade .2s ease-out" }}>
                 <span aria-hidden="true" style={{ width: "18px", height: "18px", borderRadius: "50%", border: "2px solid rgba(18,19,26,.15)", borderTopColor: "#12131A", animation: "spin .8s linear infinite" }} />
-                <span style={{ fontSize: "15.5px", fontWeight: "500", background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2s linear infinite" }}>{"Pasando tu voz a texto…"}</span>
+                <span style={{ fontSize: "15.5px", fontWeight: "500", background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2s linear infinite" }}>{"Pasando tu voz a texto…"}</span>
                 <EngineTag where={d.where} note={false} />
               </div>
             ) : <>
@@ -91,9 +91,9 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
               <label style={{ display: "flex", position: "relative", padding: "10px 18px 4px" }}>
                 <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{label}</span>
                 {pills ? <MentionMirror ref={mirror} value={value} bots={mentionBots} style={{ padding: "10px 18px 4px", fontSize: "15.5px", lineHeight: "1.5", fontFamily: "inherit" }} /> : null}
-                <textarea ref={box} rows="2" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
+                <textarea className="c-bare" ref={box} rows="2" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
                   onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
-                  style={{ position: "relative", flex: "1", minWidth: "0", minHeight: "46px", maxHeight: "200px", padding: 0, border: "0", outline: "none", background: "transparent", fontSize: "15.5px", lineHeight: "1.5", resize: "none", fieldSizing: "content", fontFamily: "inherit", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
+                  style={{ position: "relative", flex: "1", minWidth: "0", minHeight: "46px", maxHeight: "200px", padding: 0, border: "0", background: "transparent", fontSize: "15.5px", lineHeight: "1.5", resize: "none", fieldSizing: "content", fontFamily: "inherit", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
               </label>
               <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px 10px" }}>
                 {onAttach ? (
@@ -127,7 +127,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
           {(rec || trans) && d.where?.fallback ? <p role="note" style={{ margin: "0 0 8px", fontSize: "13px", lineHeight: 1.45, color: "#4A4D57", textAlign: "right" }}>{d.where.note}</p> : null}
       {chipRow}
       {fileRow}
-      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px", minHeight: "62px", padding: "8px 8px 8px 18px", borderRadius: "31px", transition: "background .3s ease, box-shadow .3s ease", background: rec ? "#12131A" : "#FFFFFF", boxShadow: rec ? "0 20px 50px -20px rgba(18,19,26,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)" }}>
+      <div className="c-ring" style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px", minHeight: "62px", padding: "8px 8px 8px 18px", borderRadius: "31px", transition: "background .3s ease, box-shadow .3s ease", background: rec ? "#12131A" : "#FFFFFF", boxShadow: rec ? "0 20px 50px -20px rgba(18,19,26,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)" }}>
         {drop?.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: "31px" }}>{"Suelta aquí para adjuntar"}</div> : null}
         {menu}
         {rec ? (
@@ -150,7 +150,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
         ) : trans ? (
           <div role="status" style={{ flex: "1", minWidth: "0", height: "46px", display: "flex", alignItems: "center", gap: "12px", animation: "fade .2s ease-out" }}>
             <span aria-hidden="true" style={{ width: "18px", height: "18px", borderRadius: "50%", border: "2px solid rgba(18,19,26,.15)", borderTopColor: "#12131A", animation: "spin .8s linear infinite" }} />
-            <span style={{ fontSize: "16px", fontWeight: "500", background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2s linear infinite" }}>{"Pasando tu voz a texto…"}</span>
+            <span style={{ fontSize: "16px", fontWeight: "500", background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2s linear infinite" }}>{"Pasando tu voz a texto…"}</span>
                 <EngineTag where={d.where} note={false} />
           </div>
         ) : (
@@ -158,9 +158,9 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
             <label style={{ flex: "1", display: "flex", position: "relative", minWidth: 0 }}>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{label}</span>
               {pills ? <MentionMirror ref={mirror} value={value} bots={mentionBots} style={{ padding: "12px 6px", fontSize: "16px", lineHeight: "1.4", fontFamily: "inherit" }} /> : null}
-              <textarea ref={box} rows="1" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
+              <textarea className="c-bare" ref={box} rows="1" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
                 onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
-                style={{ position: "relative", flex: "1", minWidth: "0", minHeight: "46px", maxHeight: "200px", padding: "12px 6px", border: "0", outline: "none", background: "transparent", fontSize: "16px", lineHeight: "1.4", resize: "none", fieldSizing: "content", fontFamily: "inherit", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
+                style={{ position: "relative", flex: "1", minWidth: "0", minHeight: "46px", maxHeight: "200px", padding: "12px 6px", border: "0", background: "transparent", fontSize: "16px", lineHeight: "1.4", resize: "none", fieldSizing: "content", fontFamily: "inherit", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
             </label>
             {onAttach ? (
               <button type="button" onClick={onAttach} data-plus-toggle="" aria-label={attachOpen === null ? "Adjuntar archivo" : "Añadir"} title={attachOpen === null ? "Adjuntar archivo" : "Añadir archivos, herramientas o apps"}

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Copy, Pencil, UserPlus, X } from "lucide-react";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { del, patch, post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
+import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // Who is in a group (design/V2Personas.dc.html, paso roles): the owner renames it, chooses
 // each person's role (Miembro, or Invitado: writes and reads, wakes no bot), takes someone
@@ -20,17 +21,13 @@ export default function RoomSheet({ share, onClose, onChanged }) {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [inviting, setInviting] = useState(null); // {name, role} while writing, then the invitation
-  useEffect(() => {
-    const esc = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
-  }, [onClose]);
+  const box = useDialogFocus({ onEscape: onClose });
   const mine = share.mine;
   const act = async (fn) => { setBusy(true); setError(null); try { await fn(); await onChanged?.(); } catch (e) { setError(e.message); } finally { setBusy(false); } };
   const members = [...share.members].sort((a, b) => (a.role === "owner" ? -1 : b.role === "owner" ? 1 : a.name.localeCompare(b.name)));
   const outside = (peers?.contacts || []).filter((c) => c.status === "active" && !share.members.some((m) => m.id === c.id));
   return (
-    <div role="dialog" aria-modal="true" aria-label={"Personas de " + share.title} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <div ref={box} role="dialog" aria-modal="true" aria-label={"Personas de " + share.title} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", justifyContent: "flex-end", background: "rgba(18,19,26,.28)", animation: "fade .2s ease-out" }}>
       <aside style={{ width: "min(460px, 100%)", height: "100%", overflowY: "auto", padding: "28px 26px 36px", boxSizing: "border-box", background: "rgba(255,255,255,.96)", WebkitBackdropFilter: "blur(30px) saturate(1.6)", backdropFilter: "blur(30px) saturate(1.6)", borderRadius: "30px 0 0 30px", boxShadow: "-40px 0 80px -30px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "22px", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <header style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
@@ -38,7 +35,7 @@ export default function RoomSheet({ share, onClose, onChanged }) {
             <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{share.members.length + " personas"}</span>
             {renaming ? (
               <form onSubmit={(e) => { e.preventDefault(); act(async () => { await patch("/peers/shares/" + enc(share.id), { title }); setRenaming(false); }); }} style={{ display: "flex", gap: "6px" }}>
-                <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} aria-label="Nombre de la conversación" style={{ flex: 1, minWidth: 0, height: "40px", padding: "0 12px", border: 0, borderRadius: "12px", outline: "none", background: "#F4F4F0", font: "600 18px/1 'Bricolage Grotesque', sans-serif" }} />
+                <input className="c-quiet" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} aria-label="Nombre de la conversación" style={{ flex: 1, minWidth: 0, height: "40px", padding: "0 12px", border: 0, borderRadius: "12px", background: "#F4F4F0", font: "600 18px/1 'Bricolage Grotesque', sans-serif" }} />
                 <button type="submit" disabled={busy || !title.trim()} style={{ ...pill, background: "#12131A", color: "#FFFFFF" }}>{"Guardar"}</button>
               </form>
             ) : (
@@ -97,7 +94,7 @@ export default function RoomSheet({ share, onClose, onChanged }) {
                 </>
               ) : (
                 <form onSubmit={(e) => { e.preventDefault(); if (!inviting?.name?.trim()) return; act(async () => { const made = await post("/peers/invites", { name: inviting.name.trim(), room: share.id, role: inviting.role || "member" }); setInviting({ ...made, role: inviting.role }); }); }} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <input value={inviting?.name || ""} onChange={(e) => setInviting({ ...(inviting || {}), name: e.target.value })} maxLength={80} placeholder="Cómo se llama" aria-label="Cómo se llama" style={{ height: "40px", padding: "0 12px", border: 0, borderRadius: "12px", outline: "none", background: "#FFFFFF", font: "inherit", fontSize: "14px" }} />
+                  <input className="c-quiet" value={inviting?.name || ""} onChange={(e) => setInviting({ ...(inviting || {}), name: e.target.value })} maxLength={80} placeholder="Cómo se llama" aria-label="Cómo se llama" style={{ height: "40px", padding: "0 12px", border: 0, borderRadius: "12px", background: "#FFFFFF", font: "inherit", fontSize: "14px" }} />
                   <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
                     <span role="radiogroup" aria-label="Papel" style={{ display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.06)" }}>
                       {[["member", "Miembro"], ["guest", "Invitado"]].map(([v, label]) => <button key={v} type="button" role="radio" aria-checked={(inviting?.role || "member") === v ? "true" : "false"} onClick={() => setInviting({ ...(inviting || {}), role: v })} style={seg((inviting?.role || "member") === v)}>{label}</button>)}

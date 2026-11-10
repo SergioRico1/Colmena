@@ -100,7 +100,7 @@ export default function Memory({ memories, bots, expert }) {
     <>
       <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 8px 8px 20px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 44px -30px rgba(18,19,26,.4)" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Cuéntales algo para que lo recuerden"}</span>
-        <input type="text" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") tell(); }} placeholder="Cuéntales algo para que lo recuerden: «Los viernes salgo a las 15:00»" style={{ flex: "1", minWidth: "0", height: "50px", border: "0", outline: "none", background: "transparent", fontSize: "16px" }} />
+        <input className="c-bare" type="text" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") tell(); }} placeholder="Cuéntales algo para que lo recuerden: «Los viernes salgo a las 15:00»" style={{ flex: "1", minWidth: "0", height: "50px", border: "0", background: "transparent", fontSize: "16px" }} />
         <button type="button" onClick={tell} disabled={!text.trim() || act.busy} style={{ height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14.5px", fontWeight: "600", cursor: text.trim() ? "pointer" : "default" }}>{"Guardar"}</button>
       </label>
       {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{act.error}</p> : null}

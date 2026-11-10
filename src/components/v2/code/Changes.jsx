@@ -20,13 +20,13 @@ const STYLE = {
 function CommentBox({ label, onAdd, onCancel, onEditor = null }) {
   const [note, setNote] = useState("");
   return (
-    <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) onAdd(note.trim()); }} style={{ display: "flex", gap: "10px", margin: "6px 12px 10px 60px", padding: "10px 12px", borderRadius: "10px", background: C.card, fontFamily: "'Geist', sans-serif", fontSize: "13px", lineHeight: 1.45, whiteSpace: "normal", animation: "rise .2s ease-out" }}>
+    <form className="c-ring" onSubmit={(e) => { e.preventDefault(); if (note.trim()) onAdd(note.trim()); }} style={{ display: "flex", gap: "10px", margin: "6px 12px 10px 60px", padding: "10px 12px", borderRadius: "10px", background: C.card, fontFamily: "'Geist', sans-serif", fontSize: "13px", lineHeight: 1.45, whiteSpace: "normal", animation: "rise .2s ease-out" }}>
       <span aria-hidden="true" style={{ flex: "none", width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "50%", background: C.ink, color: C.white, fontSize: "8px", fontWeight: 600 }}>TÚ</span>
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={{ font: `500 11px/1 ${MONO}`, color: C.faint }}>{label}</span>
-        <textarea autoFocus rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué le dirías a Bruno de estas líneas?" aria-label="Comentario"
+        <textarea className="c-bare" autoFocus rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué le dirías a Bruno de estas líneas?" aria-label="Comentario"
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (note.trim()) onAdd(note.trim()); } if (e.key === "Escape") onCancel(); }}
-          style={{ border: 0, outline: "none", resize: "none", background: "transparent", fontSize: "13px", lineHeight: 1.45 }} />
+          style={{ border: 0, resize: "none", background: "transparent", fontSize: "13px", lineHeight: 1.45 }} />
         <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
           <span style={{ flex: 1, fontSize: "12px", color: C.muted }}>Bruno lo verá en su siguiente paso</span>
           {onEditor ? <button type="button" onClick={onEditor} style={{ height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "12px", fontWeight: 500, color: C.blue }}>Abrir en el editor</button> : null}
@@ -198,7 +198,7 @@ export default function Changes({ task, turn, onTurn, onCount = null }) {
             <label style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "999px", background: "rgba(18,19,26,.045)", color: C.muted }}>
               <Search size={13} strokeWidth={2.2} aria-hidden="true" />
               <span style={SR}>Buscar en los cambios</span>
-              <input type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && hits.length) { e.preventDefault(); setHit((h) => (h + (e.shiftKey ? hits.length - 1 : 1)) % hits.length); } }} placeholder="Buscar en los cambios" style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "13px" }} />
+              <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && hits.length) { e.preventDefault(); setHit((h) => (h + (e.shiftKey ? hits.length - 1 : 1)) % hits.length); } }} placeholder="Buscar en los cambios" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "13px" }} />
               {query ? <span style={{ font: `500 11px/1 ${MONO}`, color: C.quiet }}>{hits.length ? hit + 1 + "/" + hits.length : "0"}</span> : null}
             </label>
             <button type="button" onClick={() => setSplit(!split)} aria-pressed={split} aria-label="Ver lado a lado" title={split ? "Ver unificado" : "Ver lado a lado: antes a la izquierda, después a la derecha"}

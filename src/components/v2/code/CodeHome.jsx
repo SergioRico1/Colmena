@@ -188,8 +188,8 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
           <form onSubmit={confirm} style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", marginTop: "-8px", animation: "rise .25s ease-out" }}>
             <label style={{ flex: "1 1 320px", display: "flex" }}>
               <span style={SR}>{mode === "clone" ? "Enlace del repositorio" : "Nombre del proyecto"}</span>
-              <input autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder={mode === "clone" ? "https://github.com/usuario/proyecto" : "Nombre del proyecto nuevo"}
-                style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", background: C.white, outline: "none", fontSize: "15px", fontFamily: mode === "clone" ? MONO : undefined }} />
+              <input className="c-quiet" autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder={mode === "clone" ? "https://github.com/usuario/proyecto" : "Nombre del proyecto nuevo"}
+                style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", background: C.white, fontSize: "15px", fontFamily: mode === "clone" ? MONO : undefined }} />
             </label>
             <button type="submit" disabled={busy || !value.trim()} style={{ ...BTN.primary, height: "44px", opacity: busy || !value.trim() ? 0.5 : 1 }}>{busy ? (mode === "clone" ? "Clonando…" : "Creando…") : mode === "clone" ? "Clonar" : "Crear"}</button>
             <button type="button" onClick={() => setMode(null)} style={{ ...BTN.quiet, height: "44px" }}>Cancelar</button>

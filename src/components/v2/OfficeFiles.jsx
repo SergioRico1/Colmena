@@ -130,7 +130,7 @@ function cellStyle(cell, col, row) {
 function Grid({ sheet, dark: headBg = "12131A", maxHeight = "64vh", rows: limit = Infinity, cols: colLimit = Infinity, onPick, picked }) {
   const columns = sheet.columns.slice(0, colLimit);
   const rows = sheet.rows.slice(0, limit);
-  const mono = { font: "500 11px/1 'Geist Mono', monospace", color: "#8A8D96" };
+  const mono = { font: "500 11px/1 'Geist Mono', monospace", color: "#6B6F7A" };
   return (
     <div style={{ overflow: "auto", maxHeight, border: "1px solid #E6E8EE", borderRadius: "14px", background: "#FFFFFF" }}>
       <table style={{ borderCollapse: "separate", borderSpacing: 0, minWidth: "100%" }}>

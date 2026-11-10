@@ -26,6 +26,7 @@ const off = { background: "transparent", color: "#4A4D57" };
 export function WindowDots({ dark = false, inline = false, compact = false }) {
   const api = typeof window !== "undefined" ? window.colmenaWindow : null;
   const [hover, setHover] = useState(false);
+  const [keys, setKeys] = useState(false);
   const [state, setState] = useState({ focused: true, maximized: false });
   useEffect(() => api?.onState?.(setState), [api]);
   // 14 px dots inside 20 px buttons: easy to see and to hit, 8 px apart. `compact` (the
@@ -40,20 +41,23 @@ export function WindowDots({ dark = false, inline = false, compact = false }) {
       </span>
     );
   }
-  const glyph = { width: "9px", height: "9px", fill: "none", stroke: "#12131A", strokeWidth: 2.6, strokeLinecap: "round", opacity: hover ? 0.7 : 0, transition: "opacity .12s ease" };
-  const button = (label, onClick, color, path) => (
-    <button type="button" tabIndex={-1} aria-label={label} title={label} onClick={onClick}
+  // The glyphs show on hover and while one of the buttons has keyboard focus (a click does not keep them on).
+  const shown = hover || keys;
+  const glyph = { width: "9px", height: "9px", fill: "none", stroke: "#12131A", strokeWidth: 2.6, strokeLinecap: "round", opacity: shown ? 0.7 : 0, transition: "opacity .12s ease" };
+  const button = (label, name, onClick, color, path) => (
+    <button type="button" aria-label={name} title={label} onClick={onClick}
       style={{ width: box, height: box, padding: 0, border: 0, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer", WebkitAppRegion: "no-drag" }}>
-      <span style={{ ...dot, display: "grid", placeItems: "center", background: hover && state.focused ? color : dot.background, transition: "background .12s ease" }}>
+      <span style={{ ...dot, display: "grid", placeItems: "center", background: shown && state.focused ? color : dot.background, transition: "background .12s ease" }}>
         <svg viewBox="0 0 10 10" style={glyph} aria-hidden="true">{path}</svg>
       </span>
     </button>
   );
   return (
-    <span role="group" aria-label="Ventana" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ ...row, WebkitAppRegion: "no-drag" }}>
-      {button("Cerrar", () => api.close(), "#FFC93C", <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" />)}
-      {button("Minimizar", () => api.minimize(), "rgba(18,19,26,.28)", <path d="M2 5h6" />)}
-      {button(state.maximized ? "Restaurar" : "Maximizar", () => api.toggleMaximize(), "rgba(18,19,26,.28)", <path d="M2.5 5h5M5 2.5v5" />)}
+    <span role="group" aria-label="Ventana" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      onFocus={(e) => setKeys(!!e.target.matches?.(":focus-visible"))} onBlur={() => setKeys(false)} style={{ ...row, WebkitAppRegion: "no-drag" }}>
+      {button("Cerrar", "Cerrar Colmena", () => api.close(), "#FFC93C", <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" />)}
+      {button("Minimizar", "Minimizar la ventana", () => api.minimize(), "rgba(18,19,26,.28)", <path d="M2 5h6" />)}
+      {button(state.maximized ? "Restaurar" : "Maximizar", state.maximized ? "Restaurar la ventana" : "Maximizar la ventana", () => api.toggleMaximize(), "rgba(18,19,26,.28)", <path d="M2.5 5h5M5 2.5v5" />)}
     </span>
   );
 }

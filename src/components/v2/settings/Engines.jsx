@@ -29,7 +29,7 @@ function Command({ text }) {
   );
 }
 
-const field = { flex: "1 1 260px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "14px", background: "#FFFFFF", font: "500 14px/1 'Geist Mono', monospace", color: INK, outline: "none" };
+const field = { flex: "1 1 260px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "14px", background: "#FFFFFF", font: "500 14px/1 'Geist Mono', monospace", color: INK };
 
 // Pasting often brings a trailing space, a line break or an invisible character.
 const clean = (v) => String(v).replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, "").replace(/^[\s\u00A0]+|[\s\u00A0]+$/g, "");
@@ -40,7 +40,7 @@ function SecretForm({ placeholder, label, busy, onSubmit }) {
   useEffect(() => { ref.current?.focus(); }, []);
   return (
     <form onSubmit={(e) => { e.preventDefault(); if (clean(value)) onSubmit(clean(value)).then((ok) => ok && setValue("")); }} style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-      <input ref={ref} type="password" autoComplete="off" spellCheck="false" aria-label={label} placeholder={placeholder} value={value} onChange={(e) => setValue(e.target.value)} style={field} />
+      <input className="c-quiet" ref={ref} type="password" autoComplete="off" spellCheck="false" aria-label={label} placeholder={placeholder} value={value} onChange={(e) => setValue(e.target.value)} style={field} />
       <button type="submit" disabled={busy || !clean(value)} style={{ ...pill(true), opacity: busy || !clean(value) ? 0.5 : 1, cursor: busy ? "wait" : "pointer" }}>{busy ? "Comprobando…" : "Conectar"}</button>
     </form>
   );

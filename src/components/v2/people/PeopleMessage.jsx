@@ -93,11 +93,11 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
           <p style={{ margin: 0, fontSize: "15px", fontStyle: "italic", color: "#8C8F99" }}>{mine ? "Borraste este mensaje" : "Mensaje borrado"}</p>
         ) : editing !== null ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", animation: "fade .15s ease-out" }}>
-            <textarea autoFocus value={editing} maxLength={8000} disabled={saving} aria-label="Editar el mensaje"
+            <textarea className="c-quiet" autoFocus value={editing} maxLength={8000} disabled={saving} aria-label="Editar el mensaje"
               onChange={(e) => { setEditing(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 240) + "px"; }}
               onFocus={(e) => { const n = e.target.value.length; e.target.setSelectionRange(n, n); e.target.style.height = Math.min(e.target.scrollHeight, 240) + "px"; }}
               onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); setEditing(null); } if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); save(); } }}
-              style={{ width: "100%", minHeight: "46px", maxHeight: "240px", padding: "11px 14px", border: 0, borderRadius: "16px", outline: "none", resize: "none", background: "#FFFFFF", boxShadow: "inset 0 0 0 1.5px rgba(31,79,209,.35), 0 8px 24px -16px rgba(18,19,26,.3)", font: "inherit", fontSize: "16px", lineHeight: 1.5, boxSizing: "border-box" }} />
+              style={{ width: "100%", minHeight: "46px", maxHeight: "240px", padding: "11px 14px", border: 0, borderRadius: "16px", resize: "none", background: "#FFFFFF", boxShadow: "inset 0 0 0 1.5px rgba(31,79,209,.35), 0 8px 24px -16px rgba(18,19,26,.3)", font: "inherit", fontSize: "16px", lineHeight: 1.5, boxSizing: "border-box" }} />
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "13px", color: "#6B6F7A" }}>
               <button type="button" onClick={save} disabled={saving} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>{"Guardar"}</button>
               <button type="button" onClick={() => setEditing(null)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "13px", fontWeight: 600 }}>{"Cancelar"}</button>

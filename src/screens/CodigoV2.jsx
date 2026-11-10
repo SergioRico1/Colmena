@@ -22,7 +22,7 @@ import { useStore } from "../lib/store.jsx";
 import { usePanelWidth } from "../lib/usePanelWidth.jsx";
 import ShortcutsSheet, { useCodeKeys } from "../components/v2/code/Shortcuts.jsx";
 import Compare from "../components/v2/code/Compare.jsx";
-import { later } from "../lib/undoToast.js";
+import { failure, later } from "../lib/undoToast.js";
 import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
 import TaskPeople, { PeerComments } from "../components/v2/people/TaskPeople.jsx";
 import { HandoffPage, SharedTask } from "../components/v2/people/SharedTasks.jsx";
@@ -174,7 +174,7 @@ function TaskChips({ task, project, running, onMergePr = null }) {
   const decision = prDecision(pr);
   const ci = !pr || pr.state === "CLOSED" ? null : pr.state === "MERGED" ? SIGNAL("#E3F4EC", C.greenText) : pr.mergeable === "CONFLICTING" ? SIGNAL("#FFF1C7", C.honeyText) : pr.checks === "failing" ? SIGNAL(C.redSoft, C.red) : pr.checks === "passing" ? SIGNAL("#E3F4EC", C.greenText) : pr.checks === "pending" ? SIGNAL("#EEF0F4", C.text2) : null;
   const ciText = !ci ? null : pr.state === "MERGED" ? "✓ Fusionada" : pr.mergeable === "CONFLICTING" ? "Conflictos con " + base : pr.checks === "failing" ? "✕ CI: falla" : pr.checks === "passing" ? "✓ CI: pasa" : "CI en curso";
-  const wake = () => post("/code/tasks/" + task.id + (task.archived ? "/archive" : "/snooze"), task.archived ? { archived: false } : { until: null }).catch((e) => window.alert(e.message));
+  const wake = () => post("/code/tasks/" + task.id + (task.archived ? "/archive" : "/snooze"), task.archived ? { archived: false } : { until: null }).catch((e) => failure(task.archived ? "No se pudo desarchivar la tarea" : "No se pudo reanudar la tarea", e.message));
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", font: `400 12.5px/1 ${MONO}`, color: C.text2 }}>
       {task.isolated ? (
@@ -482,7 +482,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
                 {running && (!blocks.length || !blocks.at(-1).bot) ? (
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                     <BotShape bot={bot} size={22} state="work" />
-                    <span style={{ fontSize: "14.5px", color: C.body, whiteSpace: "pre-wrap" }}><LiveOr taskId={taskId}><span style={{ fontWeight: 500, background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>{name} está trabajando…</span></LiveOr></span>
+                    <span style={{ fontSize: "14.5px", color: C.body, whiteSpace: "pre-wrap" }}><LiveOr taskId={taskId}><span style={{ fontWeight: 500, background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>{name} está trabajando…</span></LiveOr></span>
                   </div>
                 ) : null}
                 {problem ? <p role="alert" style={{ margin: 0, fontSize: "13.5px", color: C.red }}>{problem}</p> : null}

@@ -56,7 +56,7 @@ const clean = (v) => String(v).replace(/[​-‍⁠﻿­]/g, "").trim();
 const ghost = { height: "48px", padding: "0 18px", border: "0", borderRadius: "999px", background: "transparent", fontSize: "15px", fontWeight: "500", color: TEXT2, cursor: "pointer" };
 const primary = (off = false) => ({ height: "52px", padding: "0 28px", border: "0", borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "16px", fontWeight: "600", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1, display: "inline-flex", alignItems: "center" });
 const outline = { height: "40px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", fontWeight: "500", cursor: "pointer", flex: "none" };
-const field = { flex: "1 1 240px", minWidth: "0", height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "14px", background: "#FFFFFF", font: "500 14px/1 'Geist Mono', monospace", color: INK, outline: "none" };
+const field = { flex: "1 1 240px", minWidth: "0", height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "14px", background: "#FFFFFF", font: "500 14px/1 'Geist Mono', monospace", color: INK };
 const h1 = { margin: "0", font: "600 48px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" };
 const lead = { margin: "0", fontSize: "17px", lineHeight: "1.5", color: TEXT2 };
 
@@ -360,7 +360,7 @@ export default function BienvenidaV2({ query = {} }) {
                   </div>
                   <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 8px 8px 22px", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 60px -30px rgba(18,19,26,.35)" }}>
                     <label htmlFor="v3-first-request" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Tu primera petición"}</label>
-                    <input id="v3-first-request" type="text" autoFocus value={request} onChange={(e) => setText(e.target.value)} placeholder="Escribe lo que necesitas" style={{ flex: "1", minWidth: "0", height: "56px", border: "0", outline: "none", background: "transparent", fontSize: "18px" }} />
+                    <input className="c-bare" id="v3-first-request" type="text" autoFocus value={request} onChange={(e) => setText(e.target.value)} placeholder="Escribe lo que necesitas" style={{ flex: "1", minWidth: "0", height: "56px", border: "0", background: "transparent", fontSize: "18px" }} />
                     <button type="submit" aria-label="Enviar y entrar en Colmena" disabled={!!busy} style={{ width: "48px", height: "48px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: INK, color: "#FFFFFF", cursor: busy ? "wait" : "pointer" }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M12 19V5M6 11l6-6 6 6" />
@@ -417,7 +417,7 @@ function SecretForm({ label, placeholder, busy, onSubmit }) {
   const ready = !!clean(value);
   return (
     <form onSubmit={(e) => { e.preventDefault(); if (ready) onSubmit(clean(value)); }} style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-      <input ref={ref} type="password" autoComplete="off" spellCheck="false" aria-label={label} placeholder={placeholder} value={value} onChange={(e) => setValue(e.target.value)} style={field} />
+      <input className="c-quiet" ref={ref} type="password" autoComplete="off" spellCheck="false" aria-label={label} placeholder={placeholder} value={value} onChange={(e) => setValue(e.target.value)} style={field} />
       <button type="submit" disabled={busy || !ready} style={{ ...outline, height: "44px", background: INK, color: "#FFFFFF", border: "0", fontWeight: "600", opacity: busy || !ready ? 0.5 : 1, cursor: busy ? "wait" : "pointer" }}>{busy ? "Comprobando…" : "Conectar"}</button>
     </form>
   );

@@ -93,9 +93,9 @@ function QueueItem({ index, message, onRemove, onEdit, onSayNow, sayBusy, botNam
         <form onSubmit={(e) => { e.preventDefault(); save(); }} style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "8px", padding: "2px 0" }}>
           <label style={{ display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{`Editar el mensaje ${index + 1} de la cola`}</span>
-            <textarea autoFocus rows="2" value={value} onChange={(e) => setValue(e.target.value)}
+            <textarea className="c-quiet" autoFocus rows="2" value={value} onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); save(); } if (e.key === "Escape") { e.stopPropagation(); setValue(message.text); setEditing(false); } }}
-              style={{ flex: "1", resize: "none", border: 0, outline: "none", borderRadius: "12px", padding: "10px 12px", background: "#F5F5F2", fontSize: "15px", lineHeight: "1.45", fontFamily: "inherit", fieldSizing: "content", maxHeight: "160px" }} />
+              style={{ flex: "1", resize: "none", border: 0, borderRadius: "12px", padding: "10px 12px", background: "#F5F5F2", fontSize: "15px", lineHeight: "1.45", fontFamily: "inherit", fieldSizing: "content", maxHeight: "160px" }} />
           </label>
           <span style={{ display: "flex", gap: "6px" }}>
             <button type="submit" style={{ height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>{"Guardar"}</button>

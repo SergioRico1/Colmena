@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Eraser } from "lucide-react";
 import { get, post } from "../../lib/api.js";
 import { useStore } from "../../lib/store.jsx";
+import { useDialogFocus } from "../../lib/useDialogFocus.js";
 
 // «Olvidar lo aprendido aquí» (OpenClaw memory provenance): preview of the memories and
 // skills born in a mission (missionId) and, after you confirm, they are removed and never
@@ -16,9 +17,7 @@ export function ForgetDialog({ missionId, title, onClose, onDone }) {
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState({});
   const [done, setDone] = useState(null);
-  const box = useRef(null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
+  const box = useDialogFocus({ onEscape: onClose });
   useEffect(() => {
     let alive = true;
     get(`/missions/${encodeURIComponent(missionId)}/learned`)
@@ -28,12 +27,8 @@ export function ForgetDialog({ missionId, title, onClose, onDone }) {
         setPicked(Object.fromEntries([...d.memories, ...d.skills].map((x) => [x.id, true])));
       })
       .catch((e) => alive && setError(e.message));
-    box.current?.focus();
-    const key = (e) => e.key === "Escape" && closeRef.current();
-    document.addEventListener("keydown", key);
     return () => {
       alive = false;
-      document.removeEventListener("keydown", key);
     };
   }, [missionId]);
   const memories = data?.memories || [];
@@ -65,7 +60,7 @@ export function ForgetDialog({ missionId, title, onClose, onDone }) {
   );
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 32px" }}>
-      <div ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="olvidar-t" style={{ width: "min(560px, 100%)", maxHeight: "calc(100vh - 128px)", background: "#FFFFFF", border: "0", borderRadius: "20px", overflow: "hidden", display: "flex", flexDirection: "column", outline: "none", color: "#12131A" }}>
+      <div ref={box} tabIndex={-1} data-autofocus="" role="dialog" aria-modal="true" aria-labelledby="olvidar-t" style={{ width: "min(560px, 100%)", maxHeight: "calc(100vh - 128px)", background: "#FFFFFF", border: "0", borderRadius: "20px", overflow: "hidden", display: "flex", flexDirection: "column", color: "#12131A" }}>
         <div style={{ padding: "20px 22px 14px", borderBottom: "1px solid rgba(18,19,26,.06)", display: "flex", flexDirection: "column", gap: "6px" }}>
           <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{title ? `«${title}»` : "Esta misión"}</span>
           <h2 id="olvidar-t" style={{ margin: "0", font: "600 22px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Olvidar lo aprendido aquí"}</h2>

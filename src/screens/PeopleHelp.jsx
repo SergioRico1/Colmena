@@ -2,6 +2,7 @@ import { ArrowLeft, Bot, CalendarClock, CodeXml, Inbox, KeyRound, MessageSquare,
 import Shell from "../components/v2/Shell.jsx";
 import { INTRO_STEPS } from "../components/v2/people/PeopleIntro.jsx";
 import { navigate } from "../lib/router.jsx";
+import { scrollBehavior } from "../lib/motion.js";
 
 // «Cómo funciona Personas» (design/V2Personas.dc.html, paso ayuda): the whole thing on one
 // page, from Ajustes › Personas and Ctrl+K. Short paragraphs, the person's words, no jargon.
@@ -86,7 +87,7 @@ export default function PeopleHelp() {
           ))}
         </ol>
         <nav aria-label="En esta página" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {SECTIONS.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "13px", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>{title}</a>)}
+          {SECTIONS.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "13px", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>{title}</a>)}
         </nav>
         {SECTIONS.map(([id, Icon, title, paragraphs]) => (
           <section key={id} id={id} aria-labelledby={id + "-t"} style={{ display: "flex", flexDirection: "column", gap: "12px", scrollMarginTop: "24px" }}>

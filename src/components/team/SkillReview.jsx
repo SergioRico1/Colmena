@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { patch } from "../../lib/api.js";
 import { useAction, useResource, useStore } from "../../lib/store.jsx";
 import { BotAvatar, Notice, Spinner, longDay } from "./common.jsx";
+import { useDialogFocus } from "../../lib/useDialogFocus.js";
 
 // «Revisar pasos» of a skill: what the bot learned, step by step, and what changed
 // since the previous version. Dialog language of the command palette mockup.
@@ -72,22 +73,13 @@ export default function SkillReview({ skillId, onClose }) {
   }, [error, skill, attempt]);
   const missing = error && !skill && attempt && /no encontrad/i.test(error);
   const { act, busy, error: actionError } = useAction();
-  const dialog = useRef(null);
-  const opener = useRef(typeof document !== "undefined" ? document.activeElement : null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
+  const dialog = useDialogFocus({ onEscape: onClose });
 
   useEffect(() => {
-    dialog.current?.focus();
-    const esc = (e) => { if (e.key === "Escape") closeRef.current(); };
-    document.addEventListener("keydown", esc);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const back = opener.current;
     return () => {
-      document.removeEventListener("keydown", esc);
       document.body.style.overflow = prev;
-      back?.focus?.();
     };
   }, []);
 
@@ -105,7 +97,7 @@ export default function SkillReview({ skillId, onClose }) {
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 32px", overflowY: "auto" }}>
       <style>{MD_CSS}</style>
-      <div ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="skill-review-t" style={{ width: "min(720px, 100%)", maxHeight: "calc(100vh - 128px)", background: "#FFFFFF", border: "0", borderRadius: "20px", overflow: "hidden", display: "flex", flexDirection: "column", outline: "none" }}>
+      <div ref={dialog} tabIndex={-1} data-autofocus="" role="dialog" aria-modal="true" aria-labelledby="skill-review-t" style={{ width: "min(720px, 100%)", maxHeight: "calc(100vh - 128px)", background: "#FFFFFF", border: "0", borderRadius: "20px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", padding: "20px 22px 16px", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
           {bot ? <BotAvatar bot={bot} size={40} /> : null}
           <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>

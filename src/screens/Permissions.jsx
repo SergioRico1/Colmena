@@ -179,7 +179,7 @@ export default function Permissions({ params, query = {} }) {
             </div>
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ fontSize: "12px", color: "#5C606C" }}>O escribe otro nombre</span>
-              <input type="text" value={nameValue} maxLength={80} onChange={(e) => setCustomName(e.target.value)} style={{ height: "46px", border: "0", outline: "none", borderRadius: "999px", background: "#F4F4F0", padding: "0 18px", fontFamily: "inherit", fontSize: "15px", color: "#12131A" }} />
+              <input className="c-quiet" type="text" value={nameValue} maxLength={80} onChange={(e) => setCustomName(e.target.value)} style={{ height: "46px", border: "0", borderRadius: "999px", background: "#F4F4F0", padding: "0 18px", fontFamily: "inherit", fontSize: "15px", color: "#12131A" }} />
             </label>
             <button type="button" disabled={busy || !account || !nameValue.trim()} onClick={() => action(async () => {
               await post("/connections/rename", { account: account.id, alias: nameValue.trim() });

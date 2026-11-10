@@ -187,7 +187,7 @@ export default function ChatsHome() {
         <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "42px", padding: "0 14px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar en los chats"}</span>
-          <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en nombres y mensajes" style={{ flex: "1", minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "14.5px" }} />
+          <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en nombres y mensajes" style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "14.5px" }} />
         </label>
       </div>
 
@@ -215,8 +215,8 @@ export default function ChatsHome() {
                       {renaming?.key === r.key ? (
                         <form onSubmit={(e) => { e.preventDefault(); saveName(r, renaming.value); }} style={{ flex: "1", minWidth: 0, display: "flex" }}>
                           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nuevo nombre"}</span>
-                          <input autoFocus value={renaming.value} onChange={(e) => setRenaming({ ...renaming, value: e.target.value })} onBlur={() => saveName(r, renaming.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); setRenaming(null); } }}
-                            style={{ flex: "1", minWidth: 0, height: "38px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "10px", outline: "none", background: "#FFFFFF", fontSize: "15px", fontWeight: 500 }} />
+                          <input className="c-quiet" autoFocus value={renaming.value} onChange={(e) => setRenaming({ ...renaming, value: e.target.value })} onBlur={() => saveName(r, renaming.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); setRenaming(null); } }}
+                            style={{ flex: "1", minWidth: 0, height: "38px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "10px", background: "#FFFFFF", fontSize: "15px", fontWeight: 500 }} />
                         </form>
                       ) : (
                         <a href={r.href} style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px", color: "#12131A" }}>

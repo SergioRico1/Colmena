@@ -190,7 +190,7 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
   return (
     <div style={{ flex: "1", minWidth: 0, minHeight: "0", position: "relative", display: "flex" }}>
     <div ref={(el) => { scroller.current = el; if (typeof scrollerRef === "function") scrollerRef(el); else if (scrollerRef) scrollerRef.current = el; }} onScroll={onScroll} tabIndex={-1}
-      style={{ flex: "1", minWidth: 0, minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", overflowAnchor: "none", outline: "none", ...style }}>
+      style={{ flex: "1", minWidth: 0, minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", overflowAnchor: "none", ...style }}>
       <div ref={contentRef} role="log" aria-live="off" style={{ position: "relative", width: "100%", height: total + lift + "px", visibility: placed ? "visible" : "hidden" }}>
         {loadingOlder || olderError ? (
           <div style={{ position: "absolute", top: lift + 8 + "px", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 1 }}>

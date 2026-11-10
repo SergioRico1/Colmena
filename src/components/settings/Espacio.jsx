@@ -97,16 +97,16 @@ export default function Espacio() {
         <h2 id="nombres" style={{ margin: "0", font: "600 20px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Nombre y cuenta</h2>
         <label style={field.label}>
           Nombre del espacio
-          <input value={form.spaceName} onChange={(e) => setForm({ ...form, spaceName: e.target.value })} maxLength={80} placeholder="Equipo de operaciones" style={{ ...field.input, height: "48px", font: "600 18px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
+          <input className="c-quiet" value={form.spaceName} onChange={(e) => setForm({ ...form, spaceName: e.target.value })} maxLength={80} placeholder="Equipo de operaciones" style={{ ...field.input, height: "48px", font: "600 18px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
         </label>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
           <label style={{ ...field.label, flex: "1 1 220px" }}>
             Tu nombre
-            <input value={form.userName} onChange={(e) => setForm({ ...form, userName: e.target.value })} maxLength={80} placeholder="Tu cuenta" style={field.input} />
+            <input className="c-quiet" value={form.userName} onChange={(e) => setForm({ ...form, userName: e.target.value })} maxLength={80} placeholder="Tu cuenta" style={field.input} />
           </label>
           <label style={{ ...field.label, flex: "1 1 220px" }}>
             Tu rol
-            <input value={form.userRole} onChange={(e) => setForm({ ...form, userRole: e.target.value })} maxLength={80} placeholder="Administrador" list="roles-espacio" style={field.input} />
+            <input className="c-quiet" value={form.userRole} onChange={(e) => setForm({ ...form, userRole: e.target.value })} maxLength={80} placeholder="Administrador" list="roles-espacio" style={field.input} />
             <datalist id="roles-espacio"><option value="Administrador" /><option value="Responsable" /><option value="Colaborador" /></datalist>
           </label>
         </div>

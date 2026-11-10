@@ -105,8 +105,8 @@ function Nav({ active, tags }) {
       <label style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", height: "40px", marginBottom: "10px", padding: "0 12px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
         <span style={srOnly}>Buscar un ajuste</span>
-        <input ref={box} type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKeyDown} placeholder="Buscar un ajuste" role="combobox" aria-expanded={!!q} aria-controls="st-results" aria-activedescendant={q && results[at] ? "st-r-" + at : undefined} autoComplete="off" spellCheck={false}
-          style={{ flex: 1, minWidth: 0, border: 0, outline: "none", background: "transparent", fontSize: "14px", color: INK }} />
+        <input className="c-bare" ref={box} type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKeyDown} placeholder="Buscar un ajuste" role="combobox" aria-expanded={!!q} aria-controls="st-results" aria-activedescendant={q && results[at] ? "st-r-" + at : undefined} autoComplete="off" spellCheck={false}
+          style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "14px", color: INK }} />
         {q ? (
           <button type="button" aria-label="Borrar la búsqueda" onClick={() => { setQ(""); box.current?.focus(); }} style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer", color: MUTED }}>
             <X size={12} strokeWidth={2.4} aria-hidden="true" />

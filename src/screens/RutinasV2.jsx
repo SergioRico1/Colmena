@@ -8,6 +8,7 @@ import { del, patch, post } from "../lib/api.js";
 import { navigate, useRouter } from "../lib/router.jsx";
 import { ago, isRoom } from "../lib/format.js";
 import { later, useHidden } from "../lib/undoToast.js";
+import { scrollBehavior } from "../lib/motion.js";
 
 // Colmena 3 · Trabajo › Rutinas (design/V3Rutinas.dc.html): what repeats. «Nueva rutina» reads
 // as a sentence you tap to change (?nueva=1 opens it, with ?texto= and ?bot= from a chat).
@@ -143,8 +144,8 @@ export default function RutinasV2() {
   const ruleList = automations.filter((a) => !hiddenRule(a.id));
   const atlas = team.find((b) => b.id === "atlas") || team.find((b) => /coordin/i.test(b.role || "")) || team[0];
   const botOf = (id) => team.find((b) => b.id === id) || null;
-  const openNew = () => { setChanging(null); setOpen(true); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: "smooth" })); };
-  const openChange = (ruleId) => { setOpen(false); setChanging(ruleId); setReloads((n) => n + 1); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: "smooth" })); };
+  const openNew = () => { setChanging(null); setOpen(true); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: scrollBehavior() })); };
+  const openChange = (ruleId) => { setOpen(false); setChanging(ruleId); setReloads((n) => n + 1); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: scrollBehavior() })); };
   const changingRule = changing ? automations.find((a) => a.id === changing) || null : null;
 
   const rows = [
@@ -313,7 +314,7 @@ function Field({ label, value, onChange, placeholder }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: "8px", animation: "fade .3s ease-out" }}>
       <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED }}>{label}</span>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", outline: "none", background: "#FFFFFF", fontSize: "15px" }} />
+      <input className="c-quiet" type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "15px" }} />
     </label>
   );
 }
@@ -333,7 +334,7 @@ function EveryPicker({ n, unit, onPick }) {
       </div>
       {other ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-          <input type="number" aria-label="Cada cuántos" min={unit === "horas" ? 1 : MIN_EVERY} max={unit === "horas" ? 168 : 9999} value={n} onChange={(e) => onPick(Math.max(1, Math.round(Number(e.target.value) || 0)), unit)} style={{ width: "90px", height: "38px", padding: "0 12px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", outline: "none", background: "#FFFFFF", fontSize: "15px", color: INK }} />
+          <input className="c-quiet" type="number" aria-label="Cada cuántos" min={unit === "horas" ? 1 : MIN_EVERY} max={unit === "horas" ? 168 : 9999} value={n} onChange={(e) => onPick(Math.max(1, Math.round(Number(e.target.value) || 0)), unit)} style={{ width: "90px", height: "38px", padding: "0 12px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "15px", color: INK }} />
           {[["minutos", "minutos"], ["horas", "horas"]].map(([u, label]) => {
             const on = unit === u;
             return <button key={u} type="button" aria-pressed={on} onClick={() => onPick(n, u)} style={{ height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "12px", background: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: on ? 600 : 500, color: INK }}>{label}</button>;
@@ -649,7 +650,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
             ))}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.1)" }}>
-            <input type="text" aria-label="Otra cosa" value={b.custom} onChange={(e) => setB((x) => ({ ...x, custom: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") applyCustom(); }} placeholder="Otra cosa: escríbelo con tus palabras" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, outline: "none", background: "transparent", fontSize: "15px" }} />
+            <input className="c-bare" type="text" aria-label="Otra cosa" value={b.custom} onChange={(e) => setB((x) => ({ ...x, custom: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") applyCustom(); }} placeholder="Otra cosa: escríbelo con tus palabras" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "15px" }} />
             <button type="button" onClick={applyCustom} disabled={!b.custom.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: b.custom.trim() ? INK : "rgba(18,19,26,.08)", color: b.custom.trim() ? "#FFFFFF" : "#8A8D96" }}>Usar</button>
           </div>
         </div>
@@ -709,7 +710,7 @@ function untilOptions(now = new Date()) {
   return [[null, "Sin fecha"], [month.toISOString(), "Fin de mes"], [year.toISOString(), "Fin de año"]];
 }
 const longDate = (iso) => { const d = new Date(iso); return `${d.getDate()} de ${MONTH[d.getMonth()]}`; };
-const inputBox = { padding: "12px 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", outline: "none", background: "#FFFFFF", fontSize: "15px", lineHeight: 1.5, resize: "vertical", fontFamily: "inherit", color: INK };
+const inputBox = { padding: "12px 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "15px", lineHeight: 1.5, resize: "vertical", fontFamily: "inherit", color: INK };
 
 function OrderForm({ team, initial, onClose }) {
   const untils = useMemo(() => untilOptions(), []);
@@ -733,16 +734,16 @@ function OrderForm({ team, initial, onClose }) {
       <h2 id="of-t" style={{ margin: 0, fontSize: "15px", fontWeight: 600 }}>{initial ? "Cambiar el encargo" : "Nuevo encargo"}</h2>
       <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {label("Nombre del encargo")}
-        <input type="text" autoFocus value={f.title} maxLength={100} onChange={(e) => set({ title: e.target.value })} placeholder="Facturas de proveedores" style={{ ...inputBox, height: "44px", padding: "0 14px" }} />
+        <input className="c-quiet" type="text" autoFocus value={f.title} maxLength={100} onChange={(e) => set({ title: e.target.value })} placeholder="Facturas de proveedores" style={{ ...inputBox, height: "44px", padding: "0 14px" }} />
       </label>
       {!initial ? <Pills label="Quién se encarga" value={f.botId} onPick={(v) => set({ botId: v })} items={team.map((b) => [b.id, b.name])} /> : null}
       <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {label("Qué hace")}
-        <textarea rows="2" value={f.what} onChange={(e) => set({ what: e.target.value })} placeholder="Revisa las facturas que lleguen y apúntalas en la hoja de gastos." style={inputBox} />
+        <textarea className="c-quiet" rows="2" value={f.what} onChange={(e) => set({ what: e.target.value })} placeholder="Revisa las facturas que lleguen y apúntalas en la hoja de gastos." style={inputBox} />
       </label>
       <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {label("Cuándo para y te pregunta")}
-        <textarea rows="2" value={f.stopWhen} onChange={(e) => set({ stopWhen: e.target.value })} placeholder="Si el importe pasa de 500 € o falta algún dato." style={inputBox} />
+        <textarea className="c-quiet" rows="2" value={f.stopWhen} onChange={(e) => set({ stopWhen: e.target.value })} placeholder="Si el importe pasa de 500 € o falta algún dato." style={inputBox} />
       </label>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
         <Pills label="Avisos como mucho" items={NOTIFY} value={f.notifyMax} onPick={(v) => set({ notifyMax: v })} />
@@ -771,7 +772,7 @@ function ReminderForm() {
     await post("/intents", { keywords, remind: what.trim() });
     setTopic(""); setWhat("");
   });
-  const input = { flex: 1, minWidth: 0, height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", outline: "none", background: "#FFFFFF", font: "500 16px/1 'Geist', sans-serif", color: INK };
+  const input = { flex: 1, minWidth: 0, height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", font: "500 16px/1 'Geist', sans-serif", color: INK };
   return (
     <section aria-labelledby="rf-t" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "22px", background: SOFT }}>
       <h3 id="rf-t" style={{ margin: 0, fontSize: "14px", fontWeight: 600 }}>Nuevo recordatorio <span style={{ fontWeight: 400, color: FAINT }}>· vale en cualquier sala o chat</span></h3>
@@ -779,12 +780,12 @@ function ReminderForm() {
         Cuando se hable de
         <label style={{ flex: "1 1 220px", display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Cuando se hable de</span>
-          <input id="rf-topic" type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="contrato de limpieza, limpieza" style={input} />
+          <input className="c-quiet" id="rf-topic" type="text" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="contrato de limpieza, limpieza" style={input} />
         </label>
         , recuérdame
         <label style={{ flex: "2 1 280px", display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Recuérdame</span>
-          <input type="text" value={what} onChange={(e) => setWhat(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} placeholder="que el preaviso es de 30 días" style={input} />
+          <input className="c-quiet" type="text" value={what} onChange={(e) => setWhat(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} placeholder="que el preaviso es de 30 días" style={input} />
         </label>
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>

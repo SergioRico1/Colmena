@@ -461,7 +461,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                       </button>
                     </span>
                   ))}
-                  <input type="text" aria-label="Añadir remitente" value={nuevoRem} onChange={(e) => setNuevoRem(e.target.value)} onKeyDown={addRem} placeholder="Dirección o @dominio y pulsa Intro" style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", outline: "none", background: "transparent", fontFamily: "inherit", fontSize: "14px", color: "#12131A" }} />
+                  <input className="c-bare" type="text" aria-label="Añadir remitente" value={nuevoRem} onChange={(e) => setNuevoRem(e.target.value)} onKeyDown={addRem} placeholder="Dirección o @dominio y pulsa Intro" style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", background: "transparent", fontFamily: "inherit", fontSize: "14px", color: "#12131A" }} />
                 </div>
               ) : null}
             </div>

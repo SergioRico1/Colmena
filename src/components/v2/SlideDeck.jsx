@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Download, Expand, FileText, Presentation } from "lucide-react";
+import { scrollBehavior } from "../../lib/motion.js";
 
 // A presentation the bots made (create_presentation): its slides as pictures (drawn by the
 // desktop app) or, until there are pictures, as the slide's own page scaled down.
@@ -75,7 +76,7 @@ export function SlideViewer({ artifact }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [go]);
-  useEffect(() => { strip.current?.querySelector(`[data-n="${n}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); }, [n]);
+  useEffect(() => { strip.current?.querySelector(`[data-n="${n}"]`)?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: scrollBehavior() }); }, [n]);
   if (!count) return null;
   const arrow = (dir) => ({ ...soft, width: "40px", padding: 0, justifyContent: "center", opacity: (dir < 0 ? n === 1 : n === count) ? 0.35 : 1 });
   return (

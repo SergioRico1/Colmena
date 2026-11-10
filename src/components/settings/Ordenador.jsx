@@ -66,7 +66,7 @@ export default function Ordenador() {
           <label style={{ ...field.label, flex: "2 1 300px" }}>
             Ruta
             <span style={{ display: "flex", gap: "8px" }}>
-              <input value={draft.path} onChange={(e) => setDraft({ ...draft, path: e.target.value })} placeholder="C:\Users\tú\Documentos\Contabilidad" spellCheck="false" style={{ ...field.input, ...field.mono, flex: "1", minWidth: "0" }} />
+              <input className="c-quiet" value={draft.path} onChange={(e) => setDraft({ ...draft, path: e.target.value })} placeholder="C:\Users\tú\Documentos\Contabilidad" spellCheck="false" style={{ ...field.input, ...field.mono, flex: "1", minWidth: "0" }} />
               {window.colmenaWindow?.pickFolder ? (
                 <button type="button" onClick={async () => {
                   const chosen = await window.colmenaWindow.pickFolder().catch(() => null);
@@ -79,7 +79,7 @@ export default function Ordenador() {
           </label>
           <label style={{ ...field.label, flex: "1 1 200px" }}>
             Nombre para el equipo
-            <input value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} placeholder="Contabilidad" style={field.input} />
+            <input className="c-quiet" value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} placeholder="Contabilidad" style={field.input} />
           </label>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", fontSize: "13px", color: "#5C606C" }}>

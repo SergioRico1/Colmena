@@ -24,6 +24,7 @@ import { navigate } from "../lib/router.jsx";
 import { missionUrl, roomUrl, shortDate } from "../lib/format.js";
 import { later, reversible, useHidden } from "../lib/undoToast.js";
 import { useExpert } from "../lib/expert.js";
+import { scrollBehavior } from "../lib/motion.js";
 
 // Colmena 3 · «Ficha de un bot» (design/V3Bot.dc.html): a header tinted with the bot's colour
 // (its shape, what it does and what it is doing now, «Pausar» and «Hablar con …»), the section
@@ -108,7 +109,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
     e?.preventDefault?.();
     setTab(target);
     lock.current = Date.now() + 800;
-    document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById(target)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   };
   useEffect(() => {
     const hash = location.hash.slice(1);

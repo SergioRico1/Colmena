@@ -21,6 +21,7 @@ import UpdateNotice from "./components/UpdateNotice.jsx";
 import UndoToasts from "./components/v2/UndoToasts.jsx";
 import { listenForNoticeSounds } from "./lib/noticeSounds.js";
 import { installDragOut } from "./lib/dragOut.js";
+import { watchFocusModality } from "./lib/focusModality.js";
 
 const live = import.meta.glob("./screens/*.jsx");
 // Mockups are only reachable while developing (/_design); the desktop build never ships them as screens.
@@ -87,6 +88,8 @@ for (const type of ["dragover", "drop"]) {
 
 // Files Colmena shows drag out into other apps (desktop app; src/lib/dragOut.js).
 installDragOut();
+// Text fields show their focus ring only while you move with the keyboard (styles/base.css).
+watchFocusModality();
 // «Ha terminado» and «te necesita» each sound their own way (Ajustes › Avisos).
 listenForNoticeSounds();
 createRoot(document.body.appendChild(Object.assign(document.createElement("div"), { id: "root" }))).render(

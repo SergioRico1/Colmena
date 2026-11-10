@@ -13,6 +13,7 @@ import { formatTokens } from "../components/settings/format.jsx";
 import { navigate } from "../lib/router.jsx";
 import { NoAccountNotice } from "../components/v3/States.jsx";
 import { PlanLimitNotice } from "../components/v2/LimitNotice.jsx";
+import { scrollBehavior } from "../lib/motion.js";
 
 // Colmena 3 · Inicio (design/V3Inicio.dc.html): one sentence says how many things need you, a
 // box asks your team for anything (Atlas decides who does it, or you pick the bot), then what
@@ -62,7 +63,7 @@ export default function Hoy({ query = {} }) {
 
   // «Pedir» from elsewhere (an old /#pedir link or the colmena:ask event): here, with the box focused.
   useEffect(() => {
-    const focus = () => requestAnimationFrame(() => { input.current?.focus(); input.current?.scrollIntoView({ block: "center", behavior: "smooth" }); });
+    const focus = () => requestAnimationFrame(() => { input.current?.focus(); input.current?.scrollIntoView({ block: "center", behavior: scrollBehavior() }); });
     if (location.hash === "#pedir") focus();
     window.addEventListener("colmena:ask", focus);
     return () => window.removeEventListener("colmena:ask", focus);
@@ -189,12 +190,12 @@ export default function Hoy({ query = {} }) {
         <PlanLimitNotice />
 
         <section id="pedir" aria-label="Pedir algo" style={{ scrollMarginTop: "40px", display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 28px 64px -34px rgba(18,19,26,.35)", padding: "8px 8px 0 22px" }}>
+          <div className="c-ring" style={{ background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 28px 64px -34px rgba(18,19,26,.35)", padding: "8px 8px 0 22px" }}>
             <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <label style={{ flex: "1", display: "flex" }}>
                 <span style={srOnly}>{"Pide algo a tu equipo"}</span>
-                <input ref={input} type="text" value={ask} onChange={(e) => { setAsk(e.target.value); setSent(null); setError(null); }} placeholder="Pide algo a tu equipo…" maxLength={4000}
-                  style={{ flex: "1", minWidth: "0", height: "60px", border: "0", outline: "none", background: "transparent", fontSize: "19px", letterSpacing: "-0.01em" }} />
+                <input className="c-bare" ref={input} type="text" value={ask} onChange={(e) => { setAsk(e.target.value); setSent(null); setError(null); }} placeholder="Pide algo a tu equipo…" maxLength={4000}
+                  style={{ flex: "1", minWidth: "0", height: "60px", border: "0", background: "transparent", fontSize: "19px", letterSpacing: "-0.01em" }} />
               </label>
               <button type="submit" aria-label="Enviar" disabled={busy || !ask.trim()} style={{ width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", cursor: ask.trim() ? "pointer" : "default", opacity: ask.trim() || busy ? 1 : 0.9 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>

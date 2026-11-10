@@ -5,9 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { AudioLines, Check, ChevronDown, Mic, MicOff, PhoneOff, RotateCw, X } from "lucide-react";
 import { BotPresence } from "../Presence.jsx";
 import { useVoiceCall } from "../../../lib/voiceCall.js";
+import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 const ink = "#12131A", grey = "#5C606C";
-const shimmer = { background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
+const shimmer = { background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
 const round = (dark) => ({ width: "60px", height: "60px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", cursor: "pointer", background: dark ? ink : "#FFFFFF", color: dark ? "#FFFFFF" : ink, boxShadow: dark ? "0 14px 30px -14px rgba(18,19,26,.55)" : "0 0 0 1px rgba(18,19,26,.08), 0 10px 24px -16px rgba(18,19,26,.3)", transition: "transform .15s ease, background .2s ease" });
 const label = { fontSize: "12px", color: grey, textAlign: "center" };
 const voiceName = (v) => (v ? v[0].toUpperCase() + v.slice(1) : "");
@@ -46,13 +47,7 @@ export default function VoiceCall({ bot, missionId, onClose }) {
   const close = () => { call.hangUp(); onClose(); };
   // Hanging up with a red line still on screen keeps the panel: it is answered first.
   const hangUp = () => (confirms.length ? call.hangUp() : close());
-  useEffect(() => {
-    const key = (e) => {
-      if (e.key === "Escape") { e.preventDefault(); if (voicesOpen) setVoicesOpen(false); else hangUp(); }
-    };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  });
+  const box = useDialogFocus({ onEscape: (e) => { e.preventDefault(); if (voicesOpen) setVoicesOpen(false); else hangUp(); } });
 
   const other = captions.last === "assistant" ? "user" : "assistant";
   const main = captions.last ? captions[captions.last] : "";
@@ -61,7 +56,7 @@ export default function VoiceCall({ bot, missionId, onClose }) {
   const unavailable = info && !info.available;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={`Llamada con ${name}`}
+    <div ref={box} role="dialog" aria-modal="true" aria-label={`Llamada con ${name}`}
       style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", flexDirection: "column", background: "rgba(245,245,242,.94)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", animation: "fade .25s ease-out" }}>
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "28px clamp(20px, 5vw, 56px) 30px", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
         <p style={{ margin: 0, fontSize: "13px", color: grey, letterSpacing: "0.01em" }}>{`${name} · Voz ${voiceName(voice) || "…"}`}</p>
@@ -84,9 +79,9 @@ export default function VoiceCall({ bot, missionId, onClose }) {
               <p role="alert" style={{ margin: 0, font: "500 19px/1.4 'Geist', sans-serif", color: ink, animation: "rise .3s ease-out" }}>{error}</p>
             ) : (
               <>
-                {before ? <p key={"b" + other + before.slice(0, 12)} style={{ margin: 0, fontSize: "15px", lineHeight: 1.45, color: "#8A8D96", animation: "fade .3s ease-out", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{before}</p> : null}
+                {before ? <p key={"b" + other + before.slice(0, 12)} style={{ margin: 0, fontSize: "15px", lineHeight: 1.45, color: "#6B6F7A", animation: "fade .3s ease-out", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{before}</p> : null}
                 {main ? <p key={"m" + captions.last + main.slice(0, 12)} style={{ margin: 0, font: `500 ${captions.last === "assistant" ? 23 : 20}px/1.38 'Geist', sans-serif`, letterSpacing: "-0.01em", color: captions.last === "assistant" ? ink : grey, animation: "fade .3s ease-out", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{main}</p>
-                  : phase === "listening" ? <p style={{ margin: 0, fontSize: "17px", color: "#8A8D96", animation: "fade .6s ease-out" }}>{`Habla cuando quieras. Para cortar a ${name}, háblale por encima.`}</p> : null}
+                  : phase === "listening" ? <p style={{ margin: 0, fontSize: "17px", color: "#6B6F7A", animation: "fade .6s ease-out" }}>{`Habla cuando quieras. Para cortar a ${name}, háblale por encima.`}</p> : null}
               </>
             )}
           </div>

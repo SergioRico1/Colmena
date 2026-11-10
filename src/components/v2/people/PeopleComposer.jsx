@@ -113,14 +113,14 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
           })}
         </div>
       ) : null}
-      <div style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: compact ? "6px" : "8px", background: "#FFFFFF", borderRadius: compact ? "24px" : "28px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)" }}>
+      <div className="c-ring" style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: compact ? "6px" : "8px", background: "#FFFFFF", borderRadius: compact ? "24px" : "28px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)" }}>
         <label style={{ flex: 1, display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje"}</span>
-          <textarea ref={input} rows={1} value={text} disabled={disabled} maxLength={8000}
+          <textarea className="c-bare" ref={input} rows={1} value={text} disabled={disabled} maxLength={8000}
             onChange={(e) => { const v = e.target.value; setText(v); if (v.trim()) onTyping(); if (/(^|\s)@$/.test(v)) setOpen(true); else if (open && !/@\S*$/.test(v)) setOpen(false); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
             onKeyDown={(e) => { if (e.key === "Escape" && open) { e.preventDefault(); setOpen(false); return; } if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
             placeholder={placeholder}
-            style={{ flex: 1, minWidth: 0, minHeight: compact ? "40px" : "44px", maxHeight: "200px", padding: compact ? "9px 12px" : "11px 14px", border: 0, outline: "none", resize: "none", background: "transparent", font: "inherit", fontSize: compact ? "15px" : "16px", lineHeight: 1.4 }} />
+            style={{ flex: 1, minWidth: 0, minHeight: compact ? "40px" : "44px", maxHeight: "200px", padding: compact ? "9px 12px" : "11px 14px", border: 0, resize: "none", background: "transparent", font: "inherit", fontSize: compact ? "15px" : "16px", lineHeight: 1.4 }} />
         </label>
         {onAttach ? <button type="button" aria-label="Adjuntar un archivo" title="Compartir un archivo o un entregable" aria-expanded={attachOpen ? "true" : "false"} onClick={() => { setOpen(false); setAttachOpen((o) => !o); }} disabled={disabled} style={{ width: compact ? "40px" : "44px", height: compact ? "40px" : "44px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", cursor: "pointer", background: attachOpen ? "#12131A" : "rgba(18,19,26,.05)", color: attachOpen ? "#FFFFFF" : "#12131A" }}><Paperclip size={18} strokeWidth={2} aria-hidden="true" /></button> : null}
         <button type="button" aria-label="Mencionar a alguien" title="Mencionar a una persona o a un bot" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((o) => !o)} disabled={disabled || !anyone} style={{ width: compact ? "40px" : "44px", height: compact ? "40px" : "44px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", cursor: "pointer", font: "600 17px/1 'Geist', sans-serif", background: "rgba(18,19,26,.05)", color: "#12131A" }}>{"@"}</button>

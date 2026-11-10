@@ -122,8 +122,8 @@ export default function Revisar({ params = {} }) {
   const adder = (field, label) => (
     <label key={"add" + field} style={{ display: "inline-flex", alignItems: "center" }}>
       <span style={srOnly}>{label}</span>
-      <input type="email" value={inputs[field]} placeholder="Añadir" onChange={(e) => setInputs({ ...inputs, [field]: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(field); } }} onBlur={() => add(field)}
-        style={{ width: "180px", height: "30px", padding: "0 10px", border: "0", outline: "none", background: "transparent", fontSize: "13.5px", color: "#12131A" }} />
+      <input className="c-bare" type="email" value={inputs[field]} placeholder="Añadir" onChange={(e) => setInputs({ ...inputs, [field]: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(field); } }} onBlur={() => add(field)}
+        style={{ width: "180px", height: "30px", padding: "0 10px", border: "0", background: "transparent", fontSize: "13.5px", color: "#12131A" }} />
     </label>
   );
   const row = { display: "flex", alignItems: "center", gap: "12px", padding: "14px 22px", borderBottom: "1px solid rgba(18,19,26,.07)" };
@@ -170,13 +170,13 @@ export default function Revisar({ params = {} }) {
                   <div style={{ flex: "1", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>{d[f].map((e, i) => chip(f, e, i))}{adder(f, f === "cc" ? "Añadir en copia" : "Añadir en copia oculta")}</div>
                 </div>
               )) : null}
-              <label style={{ display: "flex", alignItems: "center", gap: "12px", padding: "0 22px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
+              <label className="c-ring-in" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "0 22px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
                 <span style={label}>{"Asunto"}</span>
-                <input type="text" value={d.subject} onChange={(e) => set((n) => { n.subject = e.target.value; })} style={{ flex: "1", minWidth: "0", height: "52px", border: "0", outline: "none", background: "transparent", fontSize: "15.5px", fontWeight: "600" }} />
+                <input className="c-bare" type="text" value={d.subject} onChange={(e) => set((n) => { n.subject = e.target.value; })} style={{ flex: "1", minWidth: "0", height: "52px", border: "0", background: "transparent", fontSize: "15.5px", fontWeight: "600" }} />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", padding: "18px 22px" }}>
+              <label className="c-ring-in" style={{ display: "flex", flexDirection: "column", padding: "18px 22px" }}>
                 <span style={srOnly}>{"Cuerpo del mensaje"}</span>
-                <textarea rows="12" value={d.body} onChange={(e) => set((n) => { n.body = e.target.value; })} style={{ width: "100%", border: "0", outline: "none", resize: "vertical", background: "transparent", fontSize: "15.5px", lineHeight: "1.65", color: "#12131A" }} />
+                <textarea className="c-bare" rows="12" value={d.body} onChange={(e) => set((n) => { n.body = e.target.value; })} style={{ width: "100%", border: "0", resize: "vertical", background: "transparent", fontSize: "15.5px", lineHeight: "1.65", color: "#12131A" }} />
               </label>
               {d.files.length ? (
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 22px", borderTop: "1px solid rgba(18,19,26,.07)", background: "#FAFAF8" }}>
