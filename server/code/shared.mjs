@@ -95,7 +95,7 @@ function redTitle(rule) {
     "delete-outside": "Bruno quiere borrar fuera del proyecto",
     "write-outside": "Bruno quiere escribir fuera del proyecto",
     "global-install": "Bruno quiere instalar algo para todo el ordenador",
-    system: "Bruno quiere cambiar la configuración de Windows",
+    system: "Bruno quiere cambiar la configuración del sistema",
     remote: "Bruno quiere conectarse a otro equipo",
     kill: "Bruno quiere cerrar programas",
   }[rule] || "Bruno necesita tu OK";

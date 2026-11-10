@@ -3,7 +3,7 @@
 // question, restore, edit from here, saving to the base branch and deleting.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, existsSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -51,18 +51,45 @@ test("shell commands: red lines for publishing, sending, outside deletes and the
   assert.equal(red("echo hola > dentro.txt 2>/dev/null").redLine, false);
   assert.equal(red("ssh server ls").rule, "remote");
   assert.equal(red('echo "git push" && ls').redLine, false, "quoted text is not a command");
+  // The line a shell is given is judged too (Codex on macOS runs «/bin/zsh -lc "…"»).
+  assert.equal(red('/bin/zsh -lc "cd src && git push origin main"').rule, "git-push");
+  assert.equal(red("bash -c 'rm -rf ../otra'").rule, "delete-outside");
+  assert.equal(red('cmd /c "npm publish"').rule, "publish");
+  assert.equal(red("cmd /c git push").rule, "git-push");
+  assert.equal(red('powershell -NoProfile -Command "git push"').rule, "git-push");
+  assert.equal(red("zsh -lc 'git status && npm test'").redLine, false);
+  assert.equal(red("brew install git").rule, "system");
+  assert.equal(red("defaults write com.apple.dock autohide -bool true").rule, "system");
+  assert.equal(red("defaults read com.apple.dock").redLine, false);
   assert.deepEqual(splitCommands("a b; c | d && e"), [["a", "b"], ["c"], ["d"], ["e"]]);
-  assert.ok(inside("C:/p", "c:\\P\\x\\y.js"));
+  assert.ok(inside("/p", "/P/x/y.js"));
+  if (process.platform === "win32") assert.ok(inside("C:/p", "c:\\P\\x\\y.js"), "any slash, any case");
   assert.ok(!inside("C:/p", "C:/pp/x"));
+});
+
+test("a folder reached through a link is the same folder (macOS: /var → /private/var)", () => {
+  const dir = tmp("link");
+  try {
+    const real = path.join(dir, "real"), link = path.join(dir, "link");
+    mkdirSync(path.join(real, "src"), { recursive: true });
+    symlinkSync(real, link, "junction");
+    assert.ok(inside(link, path.join(real, "src", "a.js")), "the engine names the file by its real path");
+    assert.ok(inside(real, path.join(link, "nuevo", "b.js")), "a file that does not exist yet");
+    assert.ok(!inside(link, path.join(dir, "otra", "a.js")));
+    assert.equal(decide({ tool: "Write", input: { file_path: path.join(real, "nota.txt") }, cwd: link }).decision, "allow");
+    assert.equal(decide({ tool: "Write", input: { file_path: path.join(dir, "nota.txt") }, cwd: link }).decision, "redline");
+    assert.equal(classifyShell("rm -rf " + path.join(real, "src").replace(/\\/g, "/"), { cwd: link }).redLine, false);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("access: free inside the project, asked when chosen, red lines always", () => {
   const cwd = path.resolve("C:/p/tienda");
   const at = (f) => path.join(cwd, f);
+  const outside = path.resolve("C:/otra/a.js"); // absolute on every platform, like cwd
   assert.equal(decide({ tool: "Read", input: { file_path: "C:/Windows/x" }, cwd }).decision, "allow");
   assert.equal(decide({ tool: "Edit", input: { file_path: at("a.js") }, cwd }).decision, "allow");
-  assert.equal(decide({ tool: "Write", input: { file_path: "C:/otra/a.js" }, cwd }).decision, "redline");
-  assert.equal(decide({ tool: "Write", input: { file_path: "C:/otra/a.js" }, cwd, access: "full" }).decision, "allow");
+  assert.equal(decide({ tool: "Write", input: { file_path: outside }, cwd }).decision, "redline");
+  assert.equal(decide({ tool: "Write", input: { file_path: outside }, cwd, access: "full" }).decision, "allow");
   assert.equal(decide({ tool: "Edit", input: { file_path: at("a.js") }, cwd, access: "ask" }).decision, "ask");
   assert.equal(decide({ tool: "Bash", input: { command: "npm test" }, cwd, access: "ask" }).decision, "ask");
   assert.equal(decide({ tool: "Bash", input: { command: "rm -rf ../x" }, cwd, access: "full" }).decision, "redline");

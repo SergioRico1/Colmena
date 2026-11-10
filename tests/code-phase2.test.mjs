@@ -45,6 +45,9 @@ test("Codex commands and items read like Claude Code's", () => {
   assert.equal(unwrapCommand('"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "git push origin \\"main\\""'), 'git push origin "main"');
   assert.equal(unwrapCommand("powershell.exe -Command 'echo ''hi'''"), "echo 'hi'");
   assert.equal(unwrapCommand("npm test"), "npm test");
+  assert.equal(unwrapCommand('/bin/zsh -lc "git push origin \\"main\\""'), 'git push origin "main"');
+  assert.equal(unwrapCommand("/bin/bash -lc 'echo '\\''hi'\\'''"), "echo 'hi'");
+  assert.equal(unwrapCommand("sh -c ls"), "ls");
   assert.equal(toolOf({ type: "commandExecution", command: "cat a.js", commandActions: [{ type: "read", path: "C:/p/a.js", name: "a.js" }] }).name, "Read");
   assert.equal(toolOf({ type: "fileChange", changes: [{ path: "C:/p/n.txt", kind: { type: "add" } }] }).name, "Write");
   assert.equal(toolOf({ type: "fileChange", changes: [{ path: "C:/p/n.txt", kind: { type: "update" } }, { path: "C:/p/m.txt", kind: { type: "update" } }] }).input.paths.length, 2);

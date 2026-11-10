@@ -8,6 +8,7 @@
 // sending data out, deleting or writing outside the project, installing for the whole computer,
 // changing the system and closing other programs.
 import path from "node:path";
+import { realpathSync } from "node:fs";
 
 export const ACCESS = Object.freeze(["project", "ask", "full"]);
 
@@ -17,11 +18,26 @@ const EDIT_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
 const SHELL_TOOLS = new Set(["Bash", "PowerShell"]);
 
 const norm = (p) => path.resolve(String(p || "")).replace(/[\\/]+$/, "").toLowerCase();
-/** Whether `file` is `root` or inside it (case-insensitive, any slash). */
+/** The path with its symlinks resolved, as far as it exists on disk. */
+function real(p) {
+  let head = path.resolve(String(p || "")), tail = "";
+  for (;;) {
+    try { return path.join(realpathSync.native(head), tail); } catch {}
+    const up = path.dirname(head);
+    if (up === head) return path.join(head, tail);
+    tail = path.join(path.basename(head), tail);
+    head = up;
+  }
+}
+const within = (r, f) => f === r || f.startsWith(r + path.sep) || f.startsWith(r + "/");
+/**
+ * Whether `file` is `root` or inside it (case-insensitive, any slash). The same place under
+ * two names counts too: on macOS the temp folder is /var/… for Colmena and /private/var/… for
+ * the engine, whose working directory comes with its symlinks resolved.
+ */
 export function inside(root, file) {
   if (!root || !file) return false;
-  const r = norm(root), f = norm(file);
-  return f === r || f.startsWith(r + path.sep) || f.startsWith(r + "/");
+  return within(norm(root), norm(file)) || within(norm(real(root)), norm(real(file)));
 }
 
 // ------------------------------------------------------------------ shell parsing
@@ -58,10 +74,17 @@ export function splitCommands(line) {
 const program = (t) => path.win32.basename(path.posix.basename(String(t || ""))).toLowerCase().replace(/\.(exe|cmd|bat|ps1|com)$/i, "");
 const WRAPPERS = new Set(["sudo", "env", "time", "nohup", "command", "exec", "call", "start", "cmd", "/c", "start-process"]);
 
+/** Shells that take the command line as one argument: «zsh -lc "…"», «cmd /c "…"», «pwsh -Command "…"». */
+const SHELLS = new Set(["sh", "bash", "zsh", "dash", "ksh", "fish", "powershell", "pwsh", "cmd"]);
+const SHELL_COMMAND_FLAG = /^(-[a-z]*c|-command|\/c|\/k)$/i;
+
 const SYSTEM = new Set(["winget", "choco", "chocolatey", "scoop", "msiexec", "reg", "regedit", "shutdown", "restart-computer", "stop-computer", "format",
   "diskpart", "bcdedit", "takeown", "icacls", "cacls", "setx", "schtasks", "sc", "netsh", "net", "net1", "runas", "wmic", "vssadmin", "cipher",
   "manage-bde", "powercfg", "dism", "sfc", "fsutil", "pnputil", "set-itemproperty", "new-itemproperty", "remove-itemproperty", "set-executionpolicy",
-  "install-module", "install-package", "add-appxpackage", "register-scheduledtask", "new-service", "set-service"]);
+  "install-module", "install-package", "add-appxpackage", "register-scheduledtask", "new-service", "set-service",
+  // macOS
+  "brew", "port", "installer", "softwareupdate", "launchctl", "csrutil", "spctl", "dscl", "networksetup", "systemsetup", "pmset", "scutil", "nvram",
+  "diskutil", "tccutil"]);
 const REMOTE = new Set(["ssh", "scp", "sftp", "ftp", "telnet", "rsync", "plink", "pscp", "mstsc"]);
 const KILLERS = new Set(["taskkill", "stop-process", "kill", "pkill", "killall", "spps"]);
 const DELETERS = new Set(["rm", "del", "erase", "rmdir", "rd", "remove-item", "ri", "rimraf", "shred", "sdelete"]);
@@ -86,14 +109,28 @@ function escapes(arg, cwd, roots) {
 }
 
 /** Classifies one simple command (token list). */
-function classifyOne(tokens, { cwd, roots }) {
+function classifyOne(tokens, { cwd, roots, depth = 0 }) {
   let i = 0;
-  while (i < tokens.length && (/^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[i]) || WRAPPERS.has(program(tokens[i])))) i++;
+  while (i < tokens.length && (/^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[i]) || WRAPPERS.has(program(tokens[i])) || WRAPPERS.has(tokens[i].toLowerCase()))) i++;
+  // «cmd /c "git push"»: cmd and /c are skipped above, the quoted line is one token.
+  if (i > 0 && i === tokens.length - 1 && /\s/.test(tokens[i]) && SHELL_COMMAND_FLAG.test(tokens[i - 1]) && depth < 3) {
+    const hit = classifyShell(tokens[i], { cwd, roots, depth: depth + 1 });
+    return hit.redLine ? hit : null;
+  }
   const name = program(tokens[i]);
   const args = tokens.slice(i + 1);
   const lower = args.map((a) => a.toLowerCase());
   const sub = lower.find((a) => !a.startsWith("-")) || "";
   if (!name) return null;
+  if (SHELLS.has(name)) {
+    // The line a shell is given to run is judged like any other (Codex on macOS: «/bin/zsh -lc "…"»).
+    const at = args.findIndex((a) => SHELL_COMMAND_FLAG.test(a));
+    if (at >= 0 && args[at + 1] && depth < 3) {
+      const hit = classifyShell(args.slice(at + 1).join(" "), { cwd, roots, depth: depth + 1 });
+      if (hit.redLine) return hit;
+    }
+    return null;
+  }
   if (name === "git") {
     if (sub === "push") return red("git-push", "Publica tu rama en el repositorio remoto.", { durable: true });
     if (sub === "config" && lower.some((a) => a === "--global" || a === "--system")) return red("system", "Cambia tu configuración de Git para todo el ordenador.");
@@ -118,7 +155,8 @@ function classifyOne(tokens, { cwd, roots }) {
     return null;
   }
   if (name === "docker" && /^(push|login)$/.test(sub)) return red("publish", "Publica una imagen o entra en tu cuenta de Docker.");
-  if (SYSTEM.has(name)) return red("system", "Cambia la configuración de Windows o instala programas.");
+  if (SYSTEM.has(name)) return red("system", "Cambia la configuración del sistema o instala programas.");
+  if (name === "defaults" && /^(write|delete|import|rename)$/.test(sub)) return red("system", "Cambia la configuración del sistema o instala programas.");
   if (REMOTE.has(name)) return red("remote", "Se conecta a otro equipo.");
   if ((name === "pip" || name === "pip3") && sub === "install" && lower.includes("--user")) return red("global-install", "Instala para todo el ordenador, no solo en el proyecto.");
   if (KILLERS.has(name)) {
@@ -159,10 +197,10 @@ function redirectsOutside(line, cwd, roots) {
 }
 
 /** Classifies a whole shell command line. {redLine, rule, reason, durable?} */
-export function classifyShell(line, { cwd, roots = [cwd] } = {}) {
+export function classifyShell(line, { cwd, roots = [cwd], depth = 0 } = {}) {
   const all = roots.filter(Boolean);
   for (const tokens of splitCommands(line)) {
-    const hit = classifyOne(tokens, { cwd, roots: all });
+    const hit = classifyOne(tokens, { cwd, roots: all, depth });
     if (hit) return hit;
   }
   if (redirectsOutside(line, cwd, all)) return red("write-outside", "Escribe un archivo fuera del proyecto.");

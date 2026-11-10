@@ -38,14 +38,19 @@ export function probeCodex({ command = findCodexCli(), timeoutMs = 15000 } = {})
 const SANDBOX = { project: "workspace-write", ask: "read-only", full: "danger-full-access" };
 const SANDBOX_POLICY = { project: { type: "workspaceWrite", networkAccess: true }, ask: { type: "readOnly", networkAccess: true }, full: { type: "dangerFullAccess" } };
 
-/** «"…powershell.exe" -Command "…"» → the command itself (what the person reads and what is judged). */
+/**
+ * «"…powershell.exe" -Command "…"» (Windows) or «/bin/zsh -lc "…"» (macOS, Linux) → the command
+ * itself (what the person reads and what is judged).
+ */
 export function unwrapCommand(command) {
   const c = String(command || "").trim();
-  const m = /^"?[^"\s]*(?:powershell|pwsh|cmd)(?:\.exe)?"?\s+(?:-NoProfile\s+)?(?:-Command|\/c)\s+([\s\S]+)$/i.exec(c);
+  const win = /^"?[^"\s]*(?:powershell|pwsh|cmd)(?:\.exe)?"?\s+(?:-NoProfile\s+)?(?:-Command|\/c)\s+([\s\S]+)$/i.exec(c);
+  const m = win || /^"?(?:[^"\s]*\/)?(?:zsh|bash|sh|dash)"?\s+-l?c\s+([\s\S]+)$/.exec(c);
   if (!m) return c;
   const inner = m[1].trim();
   if (/^"[\s\S]*"$/.test(inner)) return inner.slice(1, -1).replace(/\\"/g, '"');
-  if (/^'[\s\S]*'$/.test(inner)) return inner.slice(1, -1).replace(/''/g, "'");
+  // A quote inside single quotes: '' in PowerShell, '\'' in a POSIX shell.
+  if (/^'[\s\S]*'$/.test(inner)) return inner.slice(1, -1).replace(win ? /''/g : /'\\''/g, "'");
   return inner;
 }
 
