@@ -138,7 +138,7 @@ test("without a substitute the chat shows «Limitado» with the renewal, and goe
   assert.equal(resumed.result, "Hecho tras renovarse");
   assert.equal(resumed.limited, null);
   assert.equal(resumed.limitResumes.length, 1);
-  assert.ok(runtime.steps(m.id)[0].history.some((x) => /Continúa donde lo dejaste, sin repetir/.test(String(x.content || ""))));
+  assert.ok(runtime.history(runtime.steps(m.id)[0]).some((x) => /Continúa donde lo dejaste, sin repetir/.test(String(x.content || ""))));
   assert.ok(store.list("messages").some((x) => x.missionId === m.id && /^ChatGPT ha renovado su límite de uso: el trabajo sigue\.$/.test(x.text)));
 });
 

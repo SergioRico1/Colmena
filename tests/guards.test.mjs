@@ -39,7 +39,7 @@ test("runtime: the third identical call carries a Spanish reminder and still run
   const m = runtime.create({ prompt: "Mira los archivos" });
   await runtime.launch(m.id);
   const step = runtime.steps(m.id)[0];
-  const outputs = store.get("steps", step.id).history.filter((x) => x.type === "function_call_output").map((x) => String(x.output));
+  const outputs = runtime.history(step.id).filter((x) => x.type === "function_call_output").map((x) => String(x.output));
   assert.equal(outputs.length, 5, "never blocked");
   assert.doesNotMatch(outputs[1], /aviso_repeticion/);
   assert.match(outputs[2], /aviso_repeticion/);

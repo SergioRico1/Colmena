@@ -1,6 +1,7 @@
 import { parseDocument } from "yaml";
 import { createHash } from "node:crypto";
 import { id, now } from "./store.mjs";
+import { stepHistory } from "./histories.mjs";
 import { forget } from "./forgotten.mjs";
 
 // SKILL.md in the agentskills.io / VoltAgent shape: YAML frontmatter with
@@ -191,7 +192,7 @@ export function skillsUsedByAutomations(store) {
   const automated = new Set(store.list("missions").filter((m) => m.automationId).map((m) => m.id));
   if (automated.size)
     for (const step of [...automated].flatMap((id) => store.where("steps", "missionId", id))) {
-      for (const item of step.history || []) {
+      for (const item of stepHistory(store, step) || []) {
         if (item.type !== "function_call" || !["read_skill", "skill_view"].includes(item.name)) continue;
         try { ids.add(JSON.parse(item.arguments).id); } catch {}
       }

@@ -31,6 +31,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { id, now } from "./store.mjs";
+import { hasHistory, historySize, setStepHistory, stepHistory } from "./histories.mjs";
 import { createMissionFile, readMissionFile, listMissionFiles, readMissionDocument, readMissionBytes, createUniqueFile, saveWorkFile, workFileName } from "./files.mjs";
 import { activateSkill, resolveSkillApproval, touchSkill, importSkill, parseSkill } from "./skills.mjs";
 import {
@@ -399,7 +400,6 @@ export class Runtime {
       kind,
       deps,
       status: "pending",
-      history: null,
       rounds: 0,
       pending: [],
       text: "",
@@ -638,7 +638,7 @@ export class Runtime {
       ...(working && (mode === "followup" || mode === "collect") ? { deliver: "after" } : {}),
     });
     // Several messages before the bot gets to them: one turn, not one per message.
-    const waitingTurn = botIds.length === 1 && mode !== "followup" && prior.find((s) => s.kind === "followup" && s.status === "pending" && !s.history && !s.chain && s.botId === botId && (s.replyTo || null) === (thread || null));
+    const waitingTurn = botIds.length === 1 && mode !== "followup" && prior.find((s) => s.kind === "followup" && s.status === "pending" && !hasHistory(s) && !s.chain && s.botId === botId && (s.replyTo || null) === (thread || null));
     if (waitingTurn) {
       this.store.patch("steps", waitingTurn.id, { request: waitingTurn.request + "\n\nY después escribe: «" + text + "»" + note, ackExtra: [...(waitingTurn.ackExtra || []), messageId], ...(effort ? { effort } : {}) });
       this.store.event(missionId, "user_message", { text: "Mensaje añadido al que ya esperaba respuesta" });
@@ -709,7 +709,10 @@ export class Runtime {
     for (const step of stalled) {
       this.countTurn(step.botId);
       const fresh = this.store.get("steps", step.id);
-      this.store.patch("steps", step.id, {
+      this.setHistory(step.id, [...(this.history(fresh) || []), {
+        role: "user",
+        content: go ? "La persona dice: «" + text + "». Sigue donde lo dejaste, sin repetir lo que ya falló." : "La persona responde: «" + text + "». Tenlo en cuenta y sigue.",
+      }], {
         stalled: null,
         status: "pending",
         rounds: 0,
@@ -718,10 +721,6 @@ export class Runtime {
         failures: {},
         ackOn: message.id,
         ackDone: false,
-        history: [...(fresh.history || []), {
-          role: "user",
-          content: go ? "La persona dice: «" + text + "». Sigue donde lo dejaste, sin repetir lo que ya falló." : "La persona responde: «" + text + "». Tenlo en cuenta y sigue.",
-        }],
       });
     }
     this.store.patch("missions", mission.id, { status: "queued", error: null });
@@ -780,7 +779,27 @@ export class Runtime {
   steps(missionId) {
     // Only this mission's steps, through the missionId index (T3 Code loads the slice a
     // caller needs): parsing every step of every mission cost ~20 ms and grew without end.
+    // Without their provider conversations: those are records of their own (history()).
     return this.store.where("steps", "missionId", missionId);
+  }
+  /** The provider conversation of a step (its id or its record): an array, null before it starts (histories.mjs). */
+  history(step) {
+    return stepHistory(this.store, step);
+  }
+  /** Writes the conversation of a step, with `changes` to its record in the same transaction. */
+  setHistory(stepId, items, changes = {}) {
+    return setStepHistory(this.store, stepId, items, changes);
+  }
+  /** A step with its conversation at hand (`history`), as the code that runs it works with it. */
+  liveStep(stepId) {
+    const step = this.store.get("steps", stepId);
+    return step ? { ...step, history: stepHistory(this.store, step) } : null;
+  }
+  /** store.patch for a live step: `history` in `changes` goes to its own record; the result keeps the conversation at hand. */
+  patchStep(step, changes) {
+    const { history, ...rest } = changes;
+    if (history === undefined) return { ...this.store.patch("steps", step.id, rest), history: step.history };
+    return { ...this.setHistory(step.id, history, rest), history };
   }
   launch(missionId) {
     if (this.active.has(missionId)) return this.missionJobs.get(missionId);
@@ -815,11 +834,8 @@ export class Runtime {
         continue;
       }
       for (const s of this.steps(m.id))
-        if (s.status === "running" && Array.isArray(s.history) && s.history.length)
-          this.store.patch("steps", s.id, {
-            status: "pending",
-            history: [...s.history, { role: "user", content: "Colmena se reinició mientras trabajabas. Antes de repetir algo que estaba a medias (un envío, un archivo, una acción en una web), comprueba si ya se hizo." }],
-          });
+        if (s.status === "running" && historySize(s))
+          this.setHistory(s.id, [...(this.history(s) || []), { role: "user", content: "Colmena se reinició mientras trabajabas. Antes de repetir algo que estaba a medias (un envío, un archivo, una acción en una web), comprueba si ya se hizo." }], { status: "pending" });
       this.store.patch("missions", m.id, { autoResumes: [...recent, now()], interrupted: null, error: null });
       this.store.event(m.id, "resumed", { text: "Sigue sola tras reiniciar Colmena" });
       this.launch(m.id);
@@ -867,8 +883,8 @@ export class Runtime {
       }
       const text = due ? engineName(l.engine) + " ha renovado su " + (l.label || "límite") + ": el trabajo sigue" : "Sigue con " + substitute.label + " mientras " + engineName(l.engine) + " renueva su límite";
       for (const s of this.steps(m.id))
-        if (s.status === "running" && Array.isArray(s.history) && s.history.length)
-          this.store.patch("steps", s.id, { history: [...s.history, { role: "user", content: "[Colmena] " + text + ". Continúa donde lo dejaste, sin repetir lo que ya está hecho." }] });
+        if (s.status === "running" && historySize(s))
+          this.setHistory(s.id, [...(this.history(s) || []), { role: "user", content: "[Colmena] " + text + ". Continúa donde lo dejaste, sin repetir lo que ya está hecho." }]);
       this.store.patch("missions", m.id, { limited: null, error: null, limitResumes: [...recent, new Date(time).toISOString()] });
       this.store.event(m.id, "resumed", { text });
       this.store.put("messages", { id: id(), missionId: m.id, role: "system", kind: "activity", text: text + ".", at: now() });
@@ -1358,7 +1374,7 @@ export class Runtime {
    */
   handoffTurns(mission, step) {
     const engine = this.engineOfModel(step.model);
-    const previous = [...this.steps(mission.id)].reverse().find((s) => s.id !== step.id && s.model && Array.isArray(s.history));
+    const previous = [...this.steps(mission.id)].reverse().find((s) => s.id !== step.id && s.model && hasHistory(s));
     if (!previous) return null;
     const before = previous.handedTo || this.engineOfModel(previous.model);
     if (before === engine) return null;
@@ -1427,7 +1443,7 @@ export class Runtime {
     // «Espera» / «Junta»: messages kept for after the work are not delivered now.
     const later = new Set(this.store.where("messages", "missionId", mission.id).filter((x) => x.deliver === "after").map((x) => "msg:" + x.id));
     const brief = later.size ? { ...full, entries: (full.entries || []).filter((e) => !later.has(e.key)), keys: full.keys.filter((k) => !later.has(k)) } : full;
-    if (!Array.isArray(step.seenBrief)) return this.store.patch("steps", step.id, { seenBrief: brief.keys });
+    if (!Array.isArray(step.seenBrief)) return this.patchStep(step, { seenBrief: brief.keys });
     const delta = briefDelta(brief, step.seenBrief, { forBotId: step.botId, stepId: step.id });
     if (!delta) return step;
     // The person wrote while this bot works and it now reads it: 👍 «recibido, lo tengo en
@@ -1435,7 +1451,7 @@ export class Runtime {
     const seen = new Set(step.seenBrief);
     for (const e of brief.entries || [])
       if (e.kind === "msg" && !e.forOthers && !seen.has(e.key)) try { addReaction(this.store, e.key.slice(4), ACK_TAKEN, step.botId); } catch {}
-    return this.store.patch("steps", step.id, {
+    return this.patchStep(step, {
       history: [...step.history, { role: "user", content: delta }],
       seenBrief: [...new Set([...step.seenBrief, ...brief.keys])].slice(-400),
     });
@@ -1465,7 +1481,7 @@ export class Runtime {
     if (!fresh.length) return step;
     const mine = (x) => !x.to?.length || x.to.includes(step.botId);
     for (const x of fresh.filter(mine)) try { addReaction(this.store, x.id, ACK_TAKEN, step.botId); } catch {}
-    return this.store.patch("steps", step.id, {
+    return this.patchStep(step, {
       history: [...step.history, ...fresh.map((x) => ({ role: "user", content: x.lateAnswer ? lateAnswerText(x.answersQuestion, x.text) : mine(x)
         ? "La persona acaba de escribir mientras trabajabas (tenlo en cuenta): «" + String(x.text).slice(0, 4000) + "»"
         : "La persona acaba de escribir a " + x.to.map((b) => this.bot(b)?.name || b).join(", ") + " (contexto; no es para ti): «" + String(x.text).slice(0, 4000) + "»" }))],
@@ -1497,10 +1513,10 @@ export class Runtime {
     const current = this.permissionState(mission, step.botId);
     if (!current) return step;
     const before = step.permissions;
-    if (!before) return this.store.patch("steps", step.id, { permissions: current });
+    if (!before) return this.patchStep(step, { permissions: current });
     if (JSON.stringify(before) === JSON.stringify(current)) return step;
     const note = permissionChangeNote(before, current);
-    return this.store.patch("steps", step.id, {
+    return this.patchStep(step, {
       permissions: current,
       ...(note ? { history: [...step.history, { role: "user", content: note }] } : {}),
     });
@@ -1510,7 +1526,7 @@ export class Runtime {
     const seen = new Set(step.seenHints || []);
     const fresh = this.userHints(step.missionId).filter((h) => !seen.has(h.id));
     if (!fresh.length) return step;
-    return this.store.patch("steps", step.id, {
+    return this.patchStep(step, {
       history: [...step.history, ...fresh.map((h) => ({ role: "user", content: "Nota de la persona en el hilo (tenla en cuenta): " + h.text }))],
       seenHints: [...seen, ...fresh.map((h) => h.id)],
     });
@@ -1541,7 +1557,7 @@ export class Runtime {
         outputs.push({ type: "function_call_output", call_id: call.call_id, output: this.modelOutput(step.missionId, step.id, call, result) });
       }
     }
-    return outputs.length ? this.store.patch("steps", step.id, { history: [...step.history, ...outputs] }) : step;
+    return outputs.length ? this.patchStep(step, { history: [...step.history, ...outputs] }) : step;
   }
   /**
    * message_bot: Atlas writes to a teammate that is working in this mission — its part of the
@@ -1583,8 +1599,7 @@ export class Runtime {
   injectRelays(step) {
     const notes = [...this.takeRelays(step.missionId, step.id), ...(step.overlapNotes || [])];
     if (!notes.length) return step;
-    const fresh = this.store.get("steps", step.id);
-    return this.store.patch("steps", step.id, { history: [...fresh.history, ...notes.map((content) => ({ role: "user", content }))], overlapNotes: [] });
+    return this.patchStep(step, { history: [...this.history(step.id), ...notes.map((content) => ({ role: "user", content }))], overlapNotes: [] });
   }
   /** The same for a helper of an ask_bot task (its input is not stored). */
   relayInput(missionId, helperId, input) {
@@ -1748,7 +1763,7 @@ export class Runtime {
         if (!force) patch.compactFailed = measure();
       }
     }
-    return Object.keys(patch).length ? this.store.patch("steps", step.id, patch) : step;
+    return Object.keys(patch).length ? this.patchStep(step, patch) : step;
   }
   /**
    * Before a long history is summarized (OpenClaw memory flush): one silent turn in which
@@ -1806,7 +1821,7 @@ export class Runtime {
   fetchedPages(missionId) {
     const pages = [];
     for (const step of this.steps(missionId))
-      for (const call of (step.history || []).filter((x) => x.type === "function_call" && x.name === "web_fetch")) {
+      for (const call of (this.history(step) || []).filter((x) => x.type === "function_call" && x.name === "web_fetch")) {
         const result = this.store.get("receipts", step.id + ":" + call.call_id)?.result;
         if (result && !result.error && typeof result.text === "string") pages.push({ url: result.url, finalUrl: result.finalUrl, text: result.text });
       }
@@ -1817,23 +1832,23 @@ export class Runtime {
     const bot = this.bot(initial.botId);
     if (!bot) throw Error("El bot de este paso ya no existe.");
     if (bot.usesChatGPT === false) throw Error(bot.name + " no tiene una cuenta de IA habilitada.");
-    let step = this.store.get("steps", initial.id);
+    let step = this.liveStep(initial.id);
     // One model and one effort per step: the provider's encrypted reasoning belongs to that
     // model, and a request that keeps them is continued on the warm socket.
-    if (!step.model) step = this.store.patch("steps", step.id, { model: this.stepModel(bot, step, mission, model) });
-    if (step.effort === undefined) step = this.store.patch("steps", step.id, { effort: this.effortForStep(bot, step, mission) });
+    if (!step.model) step = this.patchStep(step, { model: this.stepModel(bot, step, mission, model) });
+    if (step.effort === undefined) step = this.patchStep(step, { effort: this.effortForStep(bot, step, mission) });
     model = step.model;
     // The system prompt is fixed once per step (first round): memory written during the
     // step shows up in the next one, as in Hermes' frozen snapshot.
     const instructions = () => composeInstructions(this.store, bot, { mission, autonomy: this.autonomy(mission, bot), extra: mission.incognito ? INCOGNITO_NOTE : "" });
     if (!step.history)
-      step = this.store.patch("steps", step.id, {
+      step = this.patchStep(step, {
         history: this.initialHistory(mission, step),
         seenHints: this.userHints(missionId).map((h) => h.id),
         ...(this.usesBrief(mission, step) ? { seenBrief: this.missionBrief(missionId, { forBotId: bot.id, exceptStepId: step.id }).keys } : {}),
         instructions: instructions(),
       });
-    else if (!step.instructions) step = this.store.patch("steps", step.id, { instructions: instructions() });
+    else if (!step.instructions) step = this.patchStep(step, { instructions: instructions() });
     // Cut by a cancel, «Reintentar» or a close (not waiting for an OK): the calls it had
     // chosen and that never got a result get one now, so it decides again.
     if (["running", "pending"].includes(step.status)) step = this.settleInterrupted(step);
@@ -1864,7 +1879,7 @@ export class Runtime {
     try {
       for (;;) {
         signal.throwIfAborted();
-        step = this.store.get("steps", step.id);
+        step = this.liveStep(step.id);
         if (step.pending.length) {
           let looping = null, waiting = false;
           const shots = new Map(); // call_id → result with a screenshot (this round only)
@@ -1950,15 +1965,12 @@ export class Runtime {
           for (const call of step.pending) {
             const receipt = this.store.get("receipts", step.id + ":" + call.call_id);
             const answered = (h) => h.some((x) => x.type === "function_call_output" && x.call_id === call.call_id);
-            if (!receipt || receipt.result === undefined || answered(this.store.get("steps", step.id).history)) continue;
+            if (!receipt || receipt.result === undefined || answered(this.history(step.id))) continue;
             // Too big for the context: saved whole to a file, the model gets head, tail and where.
             const output = await spillOutput(this.root(missionId), step.id, call.name, this.modelOutput(missionId, step.id, call, receipt.result, shots.get(call.call_id)));
-            const latest = this.store.get("steps", step.id);
-            if (!answered(latest.history))
-              this.store.patch("steps", step.id, {
-                // Only the latest screenshot stays as an image; older ones become a note.
-                history: compactImages([...latest.history, { type: "function_call_output", call_id: call.call_id, output }]),
-              });
+            const latest = this.history(step.id);
+            // Only the latest screenshot stays as an image; older ones become a note.
+            if (!answered(latest)) this.setHistory(step.id, compactImages([...latest, { type: "function_call_output", call_id: call.call_id, output }]));
           }
           // A round where every call failed counts towards «stuck»; any success resets it.
           const batch = step.pending.map((c) => this.store.get("receipts", step.id + ":" + c.call_id)?.result);
@@ -1968,7 +1980,7 @@ export class Runtime {
           // BLOCKED_ROUNDS rounds in a row; varied failures mean it is still trying (hard cap 2×).
           const blocking = trackBlocking(step.blocking, lastError ? blockingKey(lastError.tool, lastError.error) : null);
           this.store.patch("steps", step.id, { pending: [], failedRounds: allFailed ? (step.failedRounds || 0) + 1 : 0, blocking });
-          step = this.store.get("steps", step.id);
+          step = this.liveStep(step.id);
           if (!looping && step.failedRounds >= STUCK_ROUNDS && (mayDeclareBlocked(blocking, { reason: lastError?.error }) || step.failedRounds >= STUCK_ROUNDS * 2)) {
             stall("loop", `Me he atascado: llevo ${step.failedRounds} intentos seguidos sin que nada funcione (el último, «${lastError.tool}»: «${String(lastError.error).slice(0, 160)}»). Paro para no gastar en balde; dime cómo seguir o «continúa» para intentarlo de otra forma.`);
             return;
@@ -1994,7 +2006,7 @@ export class Runtime {
         // A chat starts thinking «low»; once it turns into real work (two rounds of tools) it
         // thinks «medium» for the rest of the step (one full request, then continued again).
         if (step.effort === "low" && bot.thinking !== "rapido" && step.history.filter((x) => x.type === "function_call").length >= 2)
-          step = this.store.patch("steps", step.id, { effort: THINKING_EFFORT.equilibrado || "medium" });
+          step = this.patchStep(step, { effort: THINKING_EFFORT.equilibrado || "medium" });
         this.store.patch("steps", step.id, { rounds: step.rounds + 1, roundAt: now() });
         mission = this.store.get("missions", missionId);
         this.setActivity(bot.id, missionId, step.id, "conectando", "");
@@ -2078,7 +2090,7 @@ export class Runtime {
           // recovery); otherwise the error stops the turn as before («Continuar»).
           if (signal.aborted || overflowRetried || !isContextOverflow(error)) throw error;
           overflowRetried = true;
-          const before = this.store.get("steps", step.id);
+          const before = this.liveStep(step.id);
           const after = await this.manageContext(mission, before, bot, model, signal, { ...contextOptions, force: true });
           if (after === before || contextSize(after.history) >= contextSize(before.history)) throw error;
           this.store.event(missionId, "context_overflow", { botId: bot.id, stepId: step.id, text: bot.name + " ha hecho sitio en su contexto y lo intenta de nuevo" });
@@ -2097,8 +2109,7 @@ export class Runtime {
         const calls = output.filter((x) => x.type === "function_call");
         if (calls.some((c) => step.history.some((old) => old.type === "function_call" && old.call_id === c.call_id)))
           throw Error("OpenAI repitio un identificador de herramienta. No se ejecutará.");
-        this.store.patch("steps", step.id, {
-          history: [...this.store.get("steps", step.id).history, ...output],
+        this.setHistory(step.id, [...this.history(step.id), ...output], {
           pending: calls,
           pendingAt: now(),
           meter: counted > 0 ? { tokens: counted, items: step.history.length, at: now() } : null,
@@ -2110,10 +2121,10 @@ export class Runtime {
           const fresh = this.store.get("steps", step.id);
           const table = tools.some((t) => t.name === "apps_table");
           this.emit({ type: "delta", mission: missionId, stepId: step.id, botId: bot.id, text: "", reset: true });
-          this.store.patch("steps", step.id, {
+          this.patchStep(fresh, {
             finishNudges: (fresh.finishNudges || 0) + 1,
             ...(fresh.effort === "low" && bot.thinking !== "rapido" ? { effort: THINKING_EFFORT.equilibrado || "medium" } : {}),
-            history: [...fresh.history, { role: "user", content: partial
+            history: [...this.history(step.id), { role: "user", content: partial
               ? "[Colmena] apps_table avisó de que el resultado está INCOMPLETO y tu respuesta lo da como completo. Acota la búsqueda (remitente exacto, asunto) y vuelve a llamar a apps_table para cubrir todo el periodo; si de verdad no se puede, di claramente qué parte cubre y que el total es parcial."
               : "[Colmena] No termines diciendo lo que falta: hazlo ahora, en este mismo turno, con tus herramientas" +
               (table ? " (para muchos elementos usa apps_table: pagina, lee en paralelo, quita duplicados y suma en código)" : "") +
@@ -2156,7 +2167,7 @@ export class Runtime {
             const fresh = this.store.get("steps", step.id);
             this.emit({ type: "delta", mission: missionId, stepId: step.id, botId: bot.id, text: "", reset: true });
             if (!(fresh.schemaRepairs >= 1)) {
-              this.store.patch("steps", step.id, { schemaRepairs: (fresh.schemaRepairs || 0) + 1, history: [...fresh.history, { role: "user", content: repairNote(step.outputSchema, checked.errors) }] });
+              this.setHistory(step.id, [...this.history(step.id), { role: "user", content: repairNote(step.outputSchema, checked.errors) }], { schemaRepairs: (fresh.schemaRepairs || 0) + 1 });
               continue;
             }
             throw Error(bot.name + " no entregó los datos con el formato pedido (" + checked.errors.slice(0, 4).join("; ") + ").");
@@ -2175,10 +2186,7 @@ export class Runtime {
         if (calls.length) continue;
         if (step.kind === "plan" && !this.store.get("missions", missionId).plan?.approved) {
           if (nudges++ < 2) {
-            const fresh = this.store.get("steps", step.id);
-            this.store.patch("steps", step.id, {
-              history: [...fresh.history, { role: "user", content: "Llama a propose_plan con el reparto antes de terminar." }],
-            });
+            this.setHistory(step.id, [...this.history(step.id), { role: "user", content: "Llama a propose_plan con el reparto antes de terminar." }]);
             continue;
           }
           throw Error("Atlas no propuso un reparto. Vuelve a intentarlo.");
@@ -2957,7 +2965,7 @@ export class Runtime {
   }
   /** The step read content from outside (web, apps, the browser) before now: its memory writes are untrusted. */
   readOutside(step) {
-    const history = this.store.get("steps", step.id)?.history || step.history || [];
+    const history = this.history(step.id) || step.history || [];
     return history.some((x) => x?.type === "web_search_call" || (x?.type === "function_call" && isForeignSource(externalSourceOf(x.name))));
   }
   /** Next version of a deliverable with the same title in the mission. */

@@ -2,6 +2,7 @@ import { postSkillNotice, postMemoryNotice } from "./learned.mjs";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { id, now } from "./store.mjs";
+import { stepHistory } from "./histories.mjs";
 import { importSkill, activateSkill, parseSkill, patchSkill, curateSkills, applySkillEdits } from "./skills.mjs";
 import { readSoul, writeSoul, proposedSoul, lineDiff, autonomyOf } from "./soul.mjs";
 import { recordVersion, versionsView } from "./doc-history.mjs";
@@ -236,7 +237,7 @@ function missionSteps(store, missionId) {
   return store.where("steps", "missionId", missionId);
 }
 export function toolCalls(store, missionId) {
-  return missionSteps(store, missionId).flatMap((s) => (s.history || []).filter((x) => x.type === "function_call"));
+  return missionSteps(store, missionId).flatMap((s) => (stepHistory(store, s) || []).filter((x) => x.type === "function_call"));
 }
 const SKILL_READS = new Set(["read_skill", "skill_view"]);
 export function usedSkills(store, missionId) {
@@ -251,7 +252,7 @@ export function usedSkills(store, missionId) {
 export function toolOutcomes(store, missionId) {
   const out = new Map();
   for (const step of missionSteps(store, missionId))
-    for (const call of (step.history || []).filter((x) => x.type === "function_call")) {
+    for (const call of (stepHistory(store, step) || []).filter((x) => x.type === "function_call")) {
       const receipt = store.get("receipts", step.id + ":" + call.call_id);
       const entry = out.get(call.name) || { tool: call.name, llamadas: 0, exitos: 0, fallos: 0, ultimoError: null };
       entry.llamadas++;
@@ -522,7 +523,7 @@ export function evidenceOf(store, mission, plan) {
   for (const c of plan.earlier || []) add("c", "correccion", "messages", c.id, c.missionId, c.texto, true);
   const receipts = [];
   for (const step of store.where("steps", "missionId", mission.id))
-    for (const call of (step.history || []).filter((x) => x.type === "function_call")) {
+    for (const call of (stepHistory(store, step) || []).filter((x) => x.type === "function_call")) {
       const receipt = store.get("receipts", step.id + ":" + call.call_id);
       if (!receipt) continue;
       const error = receipt.result?.error || (receipt.result?.denied ? "no se hizo" : null);

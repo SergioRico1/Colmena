@@ -21,7 +21,7 @@ test("read-only calls in the same round run at the same time; outputs keep their
   await settle(runtime);
   assert.equal(peak, 3, "the three reads ran together");
   const step = runtime.steps(m.id)[0];
-  assert.deepEqual(step.history.filter((x) => x.type === "function_call_output").map((x) => x.call_id), ["a", "b", "c"]);
+  assert.deepEqual(runtime.history(step.id).filter((x) => x.type === "function_call_output").map((x) => x.call_id), ["a", "b", "c"]);
   assert.ok(store.get("receipts", step.id + ":a").ms >= 100, "each receipt records how long the tool took");
 });
 
@@ -61,7 +61,7 @@ test("the same page is fetched once: in parallel, and again within 15 minutes", 
   await runtime.launch(m.id);
   await settle(runtime);
   assert.equal(fetched, 2, "one download of /a and one of /refusa");
-  const out = Object.fromEntries(runtime.steps(m.id)[0].history.filter((x) => x.type === "function_call_output").map((x) => [x.call_id, JSON.parse(unwrapExternal(x.output) ?? x.output)]));
+  const out = Object.fromEntries(runtime.history(runtime.steps(m.id)[0]).filter((x) => x.type === "function_call_output").map((x) => [x.call_id, JSON.parse(unwrapExternal(x.output) ?? x.output)]));
   assert.equal(out.c.cachedMinutesAgo, 0);
   assert.match(out.e.error, /429.*prueba otra fuente/);
 });

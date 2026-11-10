@@ -276,7 +276,8 @@ export class Store {
     const row = this.sql("SELECT data FROM records WHERE kind=? AND id=?").get(kind, id);
     return row ? this.decode(kind, id, row.data) : null;
   }
-  put(kind, data) {
+  /** `silent`: no listener hears of it (bulk upkeep, and records nobody watches: histories.mjs). */
+  put(kind, data, { silent = false } = {}) {
     if (!data || typeof data.id !== "string" || !data.id) throw Error("Registro sin identificador.");
     const existed = !!this.sql("SELECT 1 AS x FROM records WHERE kind=? AND id=?").get(kind, data.id);
     if (this.cipher)
@@ -285,7 +286,7 @@ export class Store {
     else
       this.sql("INSERT INTO records(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data")
         .run(kind, data.id, JSON.stringify(data));
-    this.notify({ type: "record", kind, id: data.id, op: existed ? "update" : "insert", data });
+    if (!silent) this.notify({ type: "record", kind, id: data.id, op: existed ? "update" : "insert", data });
     return data;
   }
   /** Atomic read-modify-write. `changes` may be an object or a function of the current record. */
@@ -325,7 +326,8 @@ export class Store {
    * What a tool returned stays whole while it can matter (a step resumes from its receipts, the
    * person opens a recent card); after `days` a big one keeps a short preview (T3 Code caps
    * stored tool bodies at 32 KB and drops image bytes). Finished steps lose their old tool
-   * outputs the same way; messages, deliverables and the receipts' own fields stay.
+   * outputs the same way (their conversation is a record of its own, histories.mjs; an old
+   * step may still carry it); messages, deliverables and the receipts' own fields stay.
    */
   pruneReceipts(days = SLIM_AFTER_DAYS, time = Date.now(), { max = SLIM_MAX } = {}) {
     const cutoff = new Date(time - days * 86400000).toISOString();
@@ -333,18 +335,27 @@ export class Store {
       const text = typeof value === "string" ? value : JSON.stringify(value ?? null);
       return text.length <= max ? value : { recortado: true, nota: "Guardado en resumen al cabo de unos días.", vista: text.slice(0, PREVIEW_CHARS) };
     };
+    const slimItems = (items) => {
+      const next = items.map((x) => x?.type === "function_call_output" && String(x.output ?? "").length > max ? { ...x, output: JSON.stringify(slim(String(x.output))) } : x);
+      return next.some((x, i) => x !== items[i]) ? next : null;
+    };
+    const finished = (step) => ["completed", "failed", "cancelled"].includes(step?.status);
     let changed = 0;
     this.tx(() => {
-      for (const row of this.sql("SELECT kind, id, data FROM records WHERE kind IN ('receipts','approvals','steps') AND length(data) > ?").all(max)) {
+      for (const row of this.sql("SELECT kind, id, data FROM records WHERE kind IN ('receipts','approvals','steps','histories') AND length(data) > ?").all(max)) {
         const r = this.decode(row.kind, row.id, row.data);
         const at = r.at || r.updatedAt || r.completedAt || r.createdAt || "";
         if (!at || at >= cutoff) continue;
         let next = null;
         if (row.kind === "receipts" && JSON.stringify(r.result ?? null).length > max) next = { ...r, result: slim(r.result) };
         if (row.kind === "approvals" && r.status !== "pending" && JSON.stringify(r.result ?? null).length > max) next = { ...r, result: slim(r.result) };
-        if (row.kind === "steps" && ["completed", "failed", "cancelled"].includes(r.status) && Array.isArray(r.history)) {
-          const history = r.history.map((x) => x?.type === "function_call_output" && String(x.output ?? "").length > max ? { ...x, output: JSON.stringify(slim(String(x.output))) } : x);
-          if (history.some((x, i) => x !== r.history[i])) next = { ...r, history };
+        if (row.kind === "steps" && finished(r) && Array.isArray(r.history)) {
+          const history = slimItems(r.history);
+          if (history) next = { ...r, history };
+        }
+        if (row.kind === "histories" && Array.isArray(r.items) && finished(this.get("steps", row.id))) {
+          const items = slimItems(r.items);
+          if (items) next = { ...r, items };
         }
         if (!next) continue;
         const text = JSON.stringify(next);

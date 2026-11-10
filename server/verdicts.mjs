@@ -11,6 +11,7 @@
 // a revert in «Te necesitan». These signals are for measuring only: they never reach the
 // reflection or a SOUL proposal (learning.mjs, assertNoApprovalSignals).
 import { now } from "./store.mjs";
+import { stepHistory } from "./histories.mjs";
 import { primaryBot, usedSkills, toolOutcomes, tokens, jaccard } from "./learning.mjs";
 import { activateSkill } from "./skills.mjs";
 import { writeSoul } from "./soul.mjs";
@@ -73,7 +74,7 @@ export function missionSignals(store, missionId) {
   const providerRetries = steps.reduce((n, s) => n + (s.recovery || []).length, 0);
   let toolMs = 0;
   for (const step of steps)
-    for (const call of (step.history || []).filter((x) => x.type === "function_call"))
+    for (const call of (stepHistory(store, step) || []).filter((x) => x.type === "function_call"))
       toolMs += store.get("receipts", step.id + ":" + call.call_id)?.ms || 0;
   const spent = store.where("usage", "missionId", missionId).filter((u) => u.stepId).reduce((n, u) => n + (u.tokens || 0), 0);
   // «No me sirve» with a reason (feedback.mjs): which reasons, and on how many answers.

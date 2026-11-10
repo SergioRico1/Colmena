@@ -112,7 +112,7 @@ test("the Código task runs as a background job: independent parts go on and the
   code.finish("ct-1");
   await settle(runtime);
   assert.equal(store.get("missions", m.id).status, "completed");
-  const out = JSON.parse(runtime.steps(m.id).find((s) => s.key === "work-bruno").history.find((x) => x.type === "function_call_output").output);
+  const out = JSON.parse(runtime.history(runtime.steps(m.id).find((s) => s.key === "work-bruno")).find((x) => x.type === "function_call_output").output);
   assert.equal(out.ok, true);
   assert.equal(out.link, "/codigo/ct-1");
   assert.equal(out.summary, "He añadido el botón y pasan los tests.");
@@ -178,7 +178,7 @@ test("end to end with a fake Claude Code: a worktree, the files changed, and Có
     await runtime.launch(m.id);
     await settle(runtime);
     assert.equal(store.get("missions", m.id).status, "completed");
-    const out = JSON.parse(runtime.steps(m.id)[0].history.find((x) => x.type === "function_call_output").output);
+    const out = JSON.parse(runtime.history(runtime.steps(m.id)[0]).find((x) => x.type === "function_call_output").output);
     assert.equal(out.ok, true, JSON.stringify(out));
     assert.match(out.link, /^\/codigo\/ct-/);
     assert.equal(out.summary, "He escrito la nota.");
@@ -195,7 +195,7 @@ test("end to end with a fake Claude Code: a worktree, the files changed, and Có
     await until(() => runtime.activity.get("bruno")?.detail === "Código espera tu permiso");
     code.answer(ask.taskId, ask.id, { decision: "deny" });
     await settle(runtime);
-    const out2 = JSON.parse(runtime.steps(m2.id)[0].history.find((x) => x.type === "function_call_output").output);
+    const out2 = JSON.parse(runtime.history(runtime.steps(m2.id)[0]).find((x) => x.type === "function_call_output").output);
     assert.equal(out2.summary, "No lo he subido.");
   } finally {
     code.shutdown();

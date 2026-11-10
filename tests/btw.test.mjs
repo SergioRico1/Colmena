@@ -107,7 +107,7 @@ test("a /btw while the turn runs does not touch it: the turn goes on and its his
   await turn;
   const step = runtime.steps(m.id)[0];
   assert.equal(step.status, "completed");
-  assert.doesNotMatch(JSON.stringify(step.history), /Por dónde vas|Voy por la mitad/);
+  assert.doesNotMatch(JSON.stringify(runtime.history(step.id)), /Por dónde vas|Voy por la mitad/);
   assert.deepEqual(store.where("messages", "missionId", m.id).map((x) => x.text).filter((x) => /Por dónde vas|Voy por la mitad/.test(x)), []);
   const turnCall = calls.find((c) => !/Pregunta al margen/.test(c.instructions || ""));
   const sideCall = calls.find((c) => /Pregunta al margen/.test(c.instructions || ""));
