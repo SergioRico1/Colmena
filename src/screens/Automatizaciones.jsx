@@ -133,14 +133,14 @@ export default function Automatizaciones({ query = {} }) {
     setSelId(id);
     setDraft(a ? fromAutomation(a) : null);
     loadedFor.current = id;
-    setOpen(null); setConfirmDelete(false); setMsg(null); setDescribe(null);
+    setOpen(null); setMsg(null); setDescribe(null);
     navigate(`/automatizaciones?id=${encodeURIComponent(id)}`, { replace });
   };
   const startNew = (extra) => {
     setSelId(null);
     setDraft(blankDraft(extra));
     loadedFor.current = "new";
-    setOpen(null); setConfirmDelete(false); setMsg(null); setDescribe(null);
+    setOpen(null); setMsg(null); setDescribe(null);
   };
 
   // Entry points: ?desde=disparador (reference page), ?nueva=<texto> (Atlas describe), ?id=<rule>, default first rule.
@@ -373,7 +373,7 @@ export default function Automatizaciones({ query = {} }) {
           <section aria-labelledby="auto-t" style={{ flex: "1 1 440px", minWidth: "0", padding: "28px clamp(16px, 3vw, 32px) 48px", display: "flex", flexDirection: "column", gap: "18px" }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "12px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <h1 id="auto-t" style={{ margin: "0", font: "600 36px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", letterSpacing: "-0.02em" }}>{"Automatizaciones"}</h1>
+                <h1 id="auto-t" style={{ margin: "0", font: "600 36px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Automatizaciones"}</h1>
                 <p style={{ margin: "0", fontSize: "15px", color: "#5C606C" }}>{"Trabajo que pasa solo, a una hora o cuando ocurre algo."}</p>
               </div>
               <button type="button" onClick={() => { startNew(); navigate("/automatizaciones", { replace: true }); handled.current = JSON.stringify({}); }} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }}>
@@ -405,7 +405,7 @@ export default function Automatizaciones({ query = {} }) {
               <>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{isNew ? "Nueva automatización" : "Editar automatización"}</span>
-                  <h2 id="regla-t" style={{ margin: "0", font: "600 26px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", letterSpacing: "-0.015em" }}>
+                  <h2 id="regla-t" style={{ margin: "0", font: "600 26px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.015em" }}>
                     <input type="text" aria-label="Nombre de la automatización" value={draft.name} onChange={(e) => set({ name: e.target.value })} style={{ width: "100%", padding: "0", margin: "0", border: "0", background: "transparent", font: "inherit", letterSpacing: "inherit", color: "#12131A" }} />
                   </h2>
                 </div>

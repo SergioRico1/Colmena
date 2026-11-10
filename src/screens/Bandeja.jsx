@@ -481,7 +481,7 @@ function ApprovalCard({ a, on, bot, room, cardRef, onSelect, approveRef }) {
     );
   } else if (kind === "secret") {
     // A key is typed in its own masked box, never with A/Ctrl+Intro.
-    actions = <div style={{ flex: "1 1 100%" }}><SecretPrompt approval={a} bots={bots} compact /></div>;
+    actions = <div style={{ flex: "1 1 100%" }}><SecretPrompt approval={a} compact /></div>;
   } else if (kind === "plan") {
     actions = (
       <>

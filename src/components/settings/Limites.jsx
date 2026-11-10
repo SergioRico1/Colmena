@@ -78,7 +78,7 @@ export default function Limites() {
 
       <Card id="uso" title={`Uso de ${month}`} aside={percent !== null ? <span style={{ font: "600 13px/1 'Geist Mono', monospace", color: percent >= 80 ? "#8A6400" : "#5C606C" }}>{percent} %</span> : null}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "10px" }}>
-          <span style={{ font: "600 40px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", letterSpacing: "-0.02em" }}>{formatTokens(used)}</span>
+          <span style={{ font: "600 40px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{formatTokens(used)}</span>
           <span style={{ fontSize: "15px", color: "#5C606C" }}>{limit ? `de ${formatTokens(limit)} tokens` : "tokens · sin límite"}</span>
         </div>
         <span role="progressbar" aria-label="Uso del mes" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? 0} style={{ height: "14px", borderRadius: "7px", background: "#F4F4F0", overflow: "hidden", position: "relative" }}>

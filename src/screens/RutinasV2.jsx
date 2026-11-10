@@ -553,7 +553,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
       .map((s) => [low(s.name), s.description || "Usa lo que ya sabe hacer"]);
     return [...own, ...GENERIC_IDEAS].slice(0, 6);
   }, [skills, who?.id]);
-  const useCustom = () => { const t = b.custom.trim(); if (t) { set({ what: low(t).replace(/\.$/, ""), custom: "" }, "what"); setOpen("out"); } };
+  const applyCustom = () => { const t = b.custom.trim(); if (t) { set({ what: low(t).replace(/\.$/, ""), custom: "" }, "what"); setOpen("out"); } };
   const tokens = [["", whenText, "when"], [", ", who?.name || "alguien", "who"], [" ", b.what, "what"], [" y ", out.label, "out"], [", ", where, "where"]];
   const homeList = b.where.startsWith("sala:") && !homes.some((m) => "sala:" + m.id === b.where) ? [...homes, ...missions.filter((m) => "sala:" + m.id === b.where)] : homes;
 
@@ -649,8 +649,8 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
             ))}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.1)" }}>
-            <input type="text" aria-label="Otra cosa" value={b.custom} onChange={(e) => setB((x) => ({ ...x, custom: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") useCustom(); }} placeholder="Otra cosa: escríbelo con tus palabras" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, outline: "none", background: "transparent", fontSize: "15px" }} />
-            <button type="button" onClick={useCustom} disabled={!b.custom.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: b.custom.trim() ? INK : "rgba(18,19,26,.08)", color: b.custom.trim() ? "#FFFFFF" : "#8A8D96" }}>Usar</button>
+            <input type="text" aria-label="Otra cosa" value={b.custom} onChange={(e) => setB((x) => ({ ...x, custom: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") applyCustom(); }} placeholder="Otra cosa: escríbelo con tus palabras" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, outline: "none", background: "transparent", fontSize: "15px" }} />
+            <button type="button" onClick={applyCustom} disabled={!b.custom.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: b.custom.trim() ? INK : "rgba(18,19,26,.08)", color: b.custom.trim() ? "#FFFFFF" : "#8A8D96" }}>Usar</button>
           </div>
         </div>
       ) : null}

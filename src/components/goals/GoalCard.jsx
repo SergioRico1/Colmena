@@ -22,7 +22,7 @@ export default function GoalCard({ goal, bots }) {
         ) : null}
       </span>
       <span style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        <strong style={{ font: "600 20px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", letterSpacing: "-0.01em" }}>{goal.title}</strong>
+        <strong style={{ font: "600 20px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{goal.title}</strong>
         {goal.why ? <span style={{ fontSize: "14px", lineHeight: "1.45", color: "#5C606C", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{goal.why}</span> : null}
       </span>
       <span style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

@@ -94,7 +94,7 @@ export default function AjustesIA() {
   return (
     <SettingsShell section="ia" gap="24px" extraCss={css.replace(/^\*\{[^}]*\}\nbody\{[^}]*\}\n/, "") + EXTRA}>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxWidth: "720px" }}>
-        <h1 style={{ margin: "0", font: "600 36px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", letterSpacing: "-0.02em" }}>Cuentas de IA</h1>
+        <h1 style={{ margin: "0", font: "600 36px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Cuentas de IA</h1>
         <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.5", color: "#5C606C" }}>El «cerebro» con el que piensan tus bots. Entra con una cuenta que ya tengas: Colmena recibe un permiso, nunca tu contraseña.</p>
       </div>
       {error || note ? <div style={{ maxWidth: "860px" }}><Notice tone={error ? "error" : "ok"}>{error || note}</Notice></div> : null}
