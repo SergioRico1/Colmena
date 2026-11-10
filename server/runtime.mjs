@@ -655,7 +655,7 @@ export class Runtime {
       this.store.patch("missions", missionId, { steps: [...(m.steps || []), ...keys] });
       this.active.get(missionId)?.abort(Object.assign(Error("Interrumpido por tu mensaje."), { code: INTERRUPT_CODE }));
       this.store.event(missionId, "interrupted", { text: "Han parado para atender tu mensaje" });
-      this.relaunch(missionId);
+      this.wake(missionId);
       return message;
     }
     // «@Atlas» while the team works on its plan: Atlas answers now, beside them (it can write to
@@ -877,11 +877,21 @@ export class Runtime {
     }
     return resumed;
   }
-  relaunch(missionId) {
+  relaunch(missionId, { keepPaused = false } = {}) {
     // A run in progress looks again at once (the step you just approved starts beside the others).
     this.wakeups.get(missionId)?.();
     const prior = this.missionJobs.get(missionId);
-    void Promise.resolve(prior).then(() => this.launch(missionId));
+    void Promise.resolve(prior).then(() => {
+      if (keepPaused && this.store.get("missions", missionId)?.status === "paused") return;
+      return this.launch(missionId);
+    });
+  }
+  /**
+   * Goes on after something that was not you saying «sigue» (a question's wait ended, the
+   * reviewer or a rule approved, a retry): a mission you paused meanwhile stays paused.
+   */
+  wake(missionId) {
+    this.relaunch(missionId, { keepPaused: true });
   }
   runningStatus(missionId) {
     const m = this.store.get("missions", missionId);
@@ -930,11 +940,13 @@ export class Runtime {
       }
     } catch (error) {
       const current = this.store.get("missions", missionId);
+      if (!current) return; // deleted while it ran
       const limited = error?.code === LIMIT_CODE || error?.code === GOAL_LIMIT_CODE;
       // The provider did not answer after the retries: paused, continue later from the checkpoint.
       const unavailable = error?.code === UNAVAILABLE_CODE;
       if (controller.signal.reason?.code === INTERRUPT_CODE || controller.signal.reason?.code === RETRY_CODE) {
-        if (!["cancelled", "completed"].includes(current.status)) this.store.patch("missions", missionId, { status: "queued", error: null });
+        // «Pausar» right after «Reintentar» or an interrupting message: the pause stands.
+        if (!["cancelled", "completed", "paused"].includes(current.status)) this.store.patch("missions", missionId, { status: "queued", error: null });
         return;
       }
       // The AI's plan ran out and no substitute could answer: «Limitado» until it renews, then
@@ -2460,7 +2472,7 @@ export class Runtime {
     if (!controller) return this.launch(missionId);
     controller.abort(Object.assign(Error("Reintentando."), { code: RETRY_CODE }));
     this.store.event(missionId, "retry", { text: "Reintentando desde el último paso guardado" });
-    this.relaunch(missionId);
+    this.wake(missionId);
   }
   emitDelta(missionId, stepId, botId, text) {
     this.touch(missionId);
@@ -2870,7 +2882,7 @@ export class Runtime {
         resolution: "Aprobado por el revisor" + (reason ? ": " + reason : ""),
       });
       this.store.event(mission.id, "approval_decided", { text: "El revisor aprobó: " + approval.title });
-      this.relaunch(mission.id);
+      this.wake(mission.id);
     })().finally(() => {
       if (this.store.get("approvals", approval.id)?.reviewing) this.store.patch("approvals", approval.id, { reviewing: false });
     });
@@ -3197,7 +3209,7 @@ ${made.outline}`,
       && Date.parse(a.waitUntil) <= Date.now() && (!missionId || a.missionId === missionId));
     for (const missionId of new Set(due.map((a) => a.missionId))) {
       const m = this.store.get("missions", missionId);
-      if (m && !["cancelled", "completed"].includes(m.status) && !this.active.has(missionId)) this.relaunch(missionId);
+      if (m && !["cancelled", "completed"].includes(m.status) && !this.active.has(missionId)) this.wake(missionId);
     }
     return due.length;
   }
@@ -3666,7 +3678,7 @@ ${made.outline}`,
         if (other.status === "pending" && other.id !== a.id && other.botId === a.botId && other.tool === a.tool && (other.scope ?? null) === (a.scope ?? null) && other.canAlways &&
           !(other.stepId && this.flagged({ id: other.stepId }))) {
           this.store.patch("approvals", other.id, { status: "approved", decidedAt: now(), decidedBy: "regla", resolution: "Aprobado por una regla" });
-          this.relaunch(other.missionId);
+          this.wake(other.missionId);
         }
     }
     this.relaunch(a.missionId);
@@ -3792,17 +3804,20 @@ ${made.outline}`,
     job.finally(() => this.jobs.delete(job));
   }
   async learn(missionId, model, signal) {
+    // The conversation may be deleted while its review runs: then there is nothing to mark.
+    const mark = (changes) => { if (this.store.get("missions", missionId)) this.store.patch("missions", missionId, changes); };
+    if (!this.store.get("missions", missionId)) return;
     if (this.store.get("missions", missionId)?.incognito) {
-      this.store.patch("missions", missionId, { learningStatus: "incognito" });
+      mark({ learningStatus: "incognito" });
       return;
     }
     // A lesson («Enséñale») is always reviewed: you asked the bot to learn it.
     const teach = !!this.store.get("missions", missionId)?.teach;
     if (this.settings().learning === false && !teach) {
-      this.store.patch("missions", missionId, { learningStatus: "disabled" });
+      mark({ learningStatus: "disabled" });
       return;
     }
-    this.store.patch("missions", missionId, { learningStatus: "running" });
+    mark({ learningStatus: "running" });
     try {
       const result = await learnFromMission({
         store: this.store,
@@ -3813,9 +3828,9 @@ ${made.outline}`,
         infer: (params, meta) => this.infer(params, meta),
         force: teach,
       });
-      this.store.patch("missions", missionId, { learningStatus: result.status === "skipped" ? "skipped" : "completed" });
+      mark({ learningStatus: result.status === "skipped" ? "skipped" : "completed" });
     } catch (error) {
-      this.store.patch("missions", missionId, { learningStatus: "failed", learningError: error.message });
+      mark({ learningStatus: "failed", learningError: error.message });
     }
   }
   /**

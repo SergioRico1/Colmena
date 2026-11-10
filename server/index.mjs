@@ -44,7 +44,10 @@ delete process.env.ELECTRON_RUN_AS_NODE;
 const directory =
   process.env.COLMENA_DATA_DIR ||
   path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), ".local", "share"), "Colmena");
-const instance = lockInstance(directory);
+// A promise nobody awaited that fails (a record deleted under a background job, a tool that
+// went away) is written down; it must not take the server, and with it the app, down.
+process.on("unhandledRejection", (error) => console.error("Colmena: error en segundo plano: " + (error?.stack || error)));
+const instance = await lockInstance(directory);
 // The database key's slots (DPAPI / Keychain, db-key.mjs).
 const dbKeys = databaseKeys(directory);
 // A backup staged in Ajustes › Privacidad y datos goes into place before the store opens.
