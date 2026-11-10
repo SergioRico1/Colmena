@@ -4,6 +4,7 @@ import { Shape, sectionTitle } from "../components/v3/dia/parts.jsx";
 import { FILTERS, STATUS, filterRows, hrefOf, logCsv, logRows, since } from "../components/v3/dia/activityLog.js";
 import { needsOf } from "../components/v2/needs.js";
 import { useResource, useStore } from "../lib/store.jsx";
+import { useActivityMap } from "../lib/liveStore.js";
 import { download, post } from "../lib/api.js";
 import { time } from "../lib/format.js";
 import { reversible } from "../lib/undoToast.js";
@@ -33,7 +34,9 @@ function Feed({ id, onData }) {
 
 export default function Actividad() {
   const store = useStore();
-  const { bots, missions, approvals, paused, usage = {}, activity = {} } = store;
+  const { bots, missions, approvals, paused, usage = {} } = store;
+  // «hace 2 min» of a bot without a step comes from its latest frame: the whole map, as it moves.
+  const activity = useActivityMap();
   const [expert, setExpert] = useExpert();
   const [filter, setFilter] = useState("todo");
   const [botFilter, setBotFilter] = useState(null);

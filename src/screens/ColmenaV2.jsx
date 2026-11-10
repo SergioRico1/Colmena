@@ -6,6 +6,7 @@ import { InviteSheet } from "../components/v2/people/InviteSheets.jsx";
 import { LimitLine } from "../components/v2/LimitNotice.jsx";
 import { Shape, autonomyLabel } from "../components/v3/team/parts.jsx";
 import { useStore } from "../lib/store.jsx";
+import { useActivity } from "../lib/liveStore.js";
 import { useHidden } from "../lib/undoToast.js";
 import { navigate } from "../lib/router.jsx";
 import { useExpert } from "../lib/expert.js";
@@ -34,7 +35,7 @@ function NewBotPage() {
 }
 
 function Team() {
-  const { bots = [], activity = {}, approvals = [], peers = null } = useStore();
+  const { bots = [], approvals = [], peers = null } = useStore();
   const hiddenBot = useHidden("bot");
   const [expert] = useExpert();
   const [invite, setInvite] = useState(false);
@@ -65,7 +66,7 @@ function Team() {
             <span style={{ fontSize: "14px", color: "#5C606C" }}>{count}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(250px, 100%), 1fr))", gap: "12px" }}>
-            {team.map((b) => <BotCard key={b.id} bot={b} activity={activity[b.id]} approvals={approvals} expert={expert} />)}
+            {team.map((b) => <BotCard key={b.id} bot={b} approvals={approvals} expert={expert} />)}
             <a href="/equipo/nuevo" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px", padding: "20px", borderRadius: "22px", border: "1.5px dashed rgba(18,19,26,.2)", color: "#12131A", minHeight: "220px" }}>
               <span style={{ font: "600 20px/1.1 'Bricolage Grotesque', sans-serif" }}>{"Un bot nuevo"}</span>
               <span style={{ fontSize: "14px", lineHeight: "1.45", color: "#4A4D57" }}>{"Descríbelo como a un compañero nuevo, o empieza de una plantilla: contable, atención al cliente, investigador…"}</span>
@@ -80,7 +81,8 @@ function Team() {
   );
 }
 
-function BotCard({ bot, activity, approvals, expert }) {
+function BotCard({ bot, approvals, expert }) {
+  const activity = useActivity(bot.id);
   const work = bot.status === "trabaja";
   const wait = bot.status === "espera";
   const ask = wait ? approvals.find((a) => a.botId === bot.id && a.status === "pending") : null;

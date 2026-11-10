@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files as FilesIcon } from "lucide-react";
 import { useRevealMessage } from "../lib/reveal.js";
 import Shell from "../components/v2/Shell.jsx";
@@ -8,13 +8,12 @@ import Composer from "../components/v2/code/Composer.jsx";
 import { EngineMark } from "../components/v2/code/EngineModels.jsx";
 import Changes from "../components/v2/code/Changes.jsx";
 import Preview from "../components/v2/code/Preview.jsx";
-import TerminalPanel from "../components/v2/code/Terminal.jsx";
 import Files, { revealInTask } from "../components/v2/code/Files.jsx";
 import Processes from "../components/v2/code/Processes.jsx";
 import { buildRows, TimelineRow, withoutGoalMark, BOT_ROWS } from "../components/v2/code/Timeline.jsx";
 import { findingContext, findingsText, stepsOf } from "../components/v2/code/model.js";
 import { addContext } from "../components/v2/code/Extras.jsx";
-import { useCodeProjects, useCodeTask } from "../components/v2/code/useCode.js";
+import { useCodeLive, useCodeProjects, useCodeTask } from "../components/v2/code/useCode.js";
 import { C, HEAD, MONO, SHEET, CODE_CSS, BTN, BotShape, botOf } from "../components/v2/code/parts.jsx";
 import Markdown from "../components/room/Markdown.jsx";
 import { del, patch, post } from "../lib/api.js";
@@ -241,8 +240,26 @@ function blocksOf(rows) {
   return out;
 }
 
+// The text Bruno is writing: these two read it themselves (useCodeLive), so each piece that
+// arrives repaints them alone and the task screen stays as it is.
+/** Under his last block of work: the text so far and the caret. */
+function LiveTail({ taskId, color }) {
+  const live = useCodeLive(taskId);
+  if (!live) return null;
+  return <div style={{ color: C.body, whiteSpace: "pre-wrap" }}>{withoutGoalMark(live)}<span aria-hidden="true" style={{ display: "inline-block", width: "6px", height: "15px", marginLeft: "2px", verticalAlign: "-2px", background: color, animation: "caret 1s steps(1) infinite" }} /></div>;
+}
+/** The text so far, or `children` while there is none yet. */
+function LiveOr({ taskId, children }) {
+  const live = useCodeLive(taskId);
+  return live ? withoutGoalMark(live) : children;
+}
+
+// xterm is heavy and most tasks never open a terminal: loaded with the tab.
+const loadTerminal = () => import("../components/v2/code/Terminal.jsx");
+const TerminalPanel = lazy(loadTerminal);
+
 function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel, onWide, tab, setTab, turn, setTurn, reveal = null }) {
-  const { task, project, items, live, models, commands, error, reload } = useCodeTask(taskId);
+  const { task, project, items, models, commands, error, reload } = useCodeTask(taskId);
   // «Buscar en las tareas» opens /codigo/<task>?m=<item>: that message centred and lit up.
   useRevealMessage(reveal, { ready: items.length > 0 });
   const { bots } = useStore();
@@ -458,14 +475,14 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
                     <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "8px", fontSize: "14.5px", lineHeight: 1.5 }}>
                       <strong style={{ fontWeight: 600, lineHeight: "22px" }}>{name}</strong>
                       {b.rows.map((row) => <TimelineRow key={row.id} row={row} ctx={ctx} />)}
-                      {k === blocks.length - 1 && live ? <div style={{ color: C.body, whiteSpace: "pre-wrap" }}>{withoutGoalMark(live)}<span aria-hidden="true" style={{ display: "inline-block", width: "6px", height: "15px", marginLeft: "2px", verticalAlign: "-2px", background: bot?.color || C.bruno, animation: "caret 1s steps(1) infinite" }} /></div> : null}
+                      {k === blocks.length - 1 ? <LiveTail taskId={taskId} color={bot?.color || C.bruno} /> : null}
                     </div>
                   </div>
                 ) : <TimelineRow key={b.id} row={b.row} ctx={ctx} />)}
                 {running && (!blocks.length || !blocks.at(-1).bot) ? (
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                     <BotShape bot={bot} size={22} state="work" />
-                    <span style={{ fontSize: "14.5px", color: C.body, whiteSpace: "pre-wrap" }}>{live ? withoutGoalMark(live) : <span style={{ fontWeight: 500, background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>{name} está trabajando…</span>}</span>
+                    <span style={{ fontSize: "14.5px", color: C.body, whiteSpace: "pre-wrap" }}><LiveOr taskId={taskId}><span style={{ fontWeight: 500, background: "linear-gradient(90deg, #8A8D96 0%, #8A8D96 35%, #12131A 50%, #8A8D96 65%, #8A8D96 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>{name} está trabajando…</span></LiveOr></span>
                   </div>
                 ) : null}
                 {problem ? <p role="alert" style={{ margin: 0, fontSize: "13.5px", color: C.red }}>{problem}</p> : null}
@@ -506,7 +523,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
             </div>
             {tab === "plan" ? <PlanTab plan={plan} name={name} />
               : tab === "vista" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(18,19,26,.1)", background: C.white }}><Preview task={task} project={project} onAsk={(text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {})} /></div>
-                : tab === "terminal" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "14px", overflow: "hidden", background: C.ink }}><TerminalPanel task={task} /></div>
+                : tab === "terminal" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "14px", overflow: "hidden", background: C.ink }}><Suspense fallback={null}><TerminalPanel task={task} /></Suspense></div>
                   : tab === "archivos" ? <Files task={task} />
                     : tab === "procesos" ? <Processes task={task} name={name} />
                       : <Changes task={task} turn={turn} onTurn={setTurn} onCount={setCount} />}
@@ -568,7 +585,7 @@ export default function CodigoV2({ params = {}, query = {} }) {
     tabTerminal: () => { setPanel(true); setTab("terminal"); },
     tabFiles: () => { setPanel(true); setTab("archivos"); },
     tabProcesses: () => { setPanel(true); setTab("procesos"); },
-    newTerminal: () => { setPanel(true); setTab("terminal"); setTimeout(() => window.dispatchEvent(new Event("colmena:code-new-terminal")), 300); },
+    newTerminal: () => { setPanel(true); setTab("terminal"); loadTerminal().then(() => setTimeout(() => window.dispatchEvent(new Event("colmena:code-new-terminal")), 300), () => {}); },
     shortcuts: () => setSheet(true),
   });
   useEffect(() => { if (query.proyecto) setSelected(query.proyecto); }, [query.proyecto]);

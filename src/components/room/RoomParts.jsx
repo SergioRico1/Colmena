@@ -8,6 +8,7 @@ import { ReactTools, ReactionRow, useReactions } from "./Reactions.jsx";
 import { useFileDrop, dropOverlay } from "../../lib/useFileDrop.js";
 import { post, patch, pickFiles } from "../../lib/api.js";
 import { failSent, showSent, unshowSent, useAction, useStore } from "../../lib/store.jsx";
+import { useLiveSelector, useLiveStepIds, useLiveText } from "../../lib/liveStore.js";
 import { useDraft, useInputHistory } from "../../lib/composer.js";
 import LiveMarkdown, { markLive, wasLive } from "./LiveMarkdown.jsx";
 import { usePhrase, useSlowPhase, verbLabel } from "./working.js";
@@ -590,8 +591,7 @@ const cap = (t) => { const x = String(t || ""); return x ? x[0].toUpperCase() + 
 function LiveTurnCard({ step, bot }) {
   // Only what the bot really did (a page read, a document saved…), never its passing states
   // («pensando», «escribiendo»): the typing line under the room already says those.
-  const { live } = useStore();
-  const text = live?.[step.id]?.text || "";
+  const text = useLiveText(step.id);
   const log = realActions(step.activity);
   // Long work: the bot's own line («Ya tengo dos tarifas…») or, after 30 s, a hive phrase.
   const phrase = usePhrase(step.startedAt, !step.narration?.text && log.length > 0, step.id);
@@ -744,8 +744,7 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
   const fresh = freshness("room:" + (mission?.id || ""), visible.map((m) => m.id));
   // A message whose words were already on screen (live text, a part said) does not rise in.
   const isNew = (id) => fresh(id) && !wasLive(visible.find((m) => m.id === id)?.stepId);
-  const { live } = useStore();
-  markLive(Object.keys(live || {}));
+  markLive(useLiveStepIds());
   // Interactive answers know what you replied after them (to show «Respondiste: …»).
   const interactive = useContext(InteractiveContext);
   const repliedAfter = (i) => visible.slice(i + 1).filter((x) => x.role === "user").map((x) => String(x.text || ""));
@@ -1212,13 +1211,13 @@ function PanelHead({ title, sub, onClose, closeLabel }) {
 /** A message's thread (Slack «Respuestas»): the message, its replies and a reply box. */
 export function RepliesPanel({ mission, messages, steps = [], bots, parentId, onClose, bare = false }) {
   const resize = usePanelWidth("room");
-  const { live } = useStore();
   const [text, setText] = useState("");
   const { act, busy, error } = useAction();
   const parent = messages.find((m) => m.id === parentId);
   const replies = messages.filter((m) => m.replyTo === parentId);
   const writing = steps.filter((s) => s.replyTo === parentId && !["completed", "failed"].includes(s.status));
-  const streaming = writing.map((s) => ({ step: s, text: live?.[s.id]?.text || "" }));
+  const texts = useLiveSelector((live) => writing.map((s) => live[s.id]?.text || ""), (a, b) => a.length === b.length && a.every((t, i) => t === b[i]));
+  const streaming = writing.map((s, i) => ({ step: s, text: texts[i] || "" }));
   const send = async (e) => {
     e.preventDefault();
     const body = text.trim();

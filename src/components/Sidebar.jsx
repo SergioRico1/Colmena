@@ -1,6 +1,7 @@
 import { bump } from "../lib/motion.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { prefetch, useStore } from "../lib/store.jsx";
+import { useLiveSelector } from "../lib/liveStore.js";
 import { patch } from "../lib/api.js";
 import { Archive, Ellipsis, Plus } from "lucide-react";
 import Logo from "./Logo.jsx";
@@ -69,8 +70,9 @@ function useThrottled(value, ms) {
 }
 
 /** Under a room at work: what its bot says it is doing, or the latest thing it wrote. */
-function RoomNarration({ mission, live, bots }) {
-  const writing = Object.values(live || {}).filter((l) => l.mission === mission.id && l.text).at(-1);
+function RoomNarration({ mission, bots }) {
+  // Its own subscription (liveStore.js): the frames of a room repaint this line, not the sidebar.
+  const writing = useLiveSelector((live) => Object.values(live).filter((l) => l.mission === mission.id && l.text).at(-1));
   const who = (id) => bots.find((b) => b.id === id)?.name;
   const raw = mission.narration?.text
     ? (who(mission.narration.botId) ? who(mission.narration.botId) + ": " : "") + mission.narration.text
@@ -82,7 +84,7 @@ function RoomNarration({ mission, live, bots }) {
 }
 
 export default function Sidebar({ active = null, activeRoom = null, activeBot = null }) {
-  const { bots, missions, approvals, settings, people, ready, live } = useStore();
+  const { bots, missions, approvals, settings, people, ready } = useStore();
   const me = (people || []).find((p) => p.self);
   const pending = waitingOnYou(approvals).length;
   const open = missions.filter((m) => !["completed", "cancelled"].includes(m.status) && !m.conversation);
@@ -250,7 +252,7 @@ export default function Sidebar({ active = null, activeRoom = null, activeBot = 
             const row = <a key={m.id} {...dragProps(m)} {...warm(m)} href={roomUrl(m)} title={tip} style={{ ...base, color: news ? "#FFFFFF" : "#C9CCD6", fontWeight: news ? "600" : "400" }}><span style={{ color: "#9DA2B0" }}>#</span>{name}{mark}</a>;
             // Up to six rooms at work say, under their name, what is going on (OpenClaw narration).
             if (!working || narrated++ >= 6) return row;
-            return <div key={m.id}>{row}<RoomNarration mission={m} live={live} bots={bots} /></div>;
+            return <div key={m.id}>{row}<RoomNarration mission={m} bots={bots} /></div>;
           })}
           {ready && allRooms.length > rooms.length ? <a href="/misiones?vista=lista" style={quietRow}><span style={{ ...addIcon, border: "0" }}><Ellipsis size={16} strokeWidth={2.2} aria-hidden="true" /></span>{`Ver todas las salas (${allRooms.length})`}</a> : null}
           {ready && tucked ? <a href="/misiones?vista=lista&guardadas=1" style={quietRow}><span style={{ ...addIcon, border: "0" }}><Archive size={15} strokeWidth={2.2} aria-hidden="true" /></span>{`Pospuestas y archivadas (${tucked})`}</a> : null}

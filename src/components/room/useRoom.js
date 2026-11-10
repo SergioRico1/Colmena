@@ -1,15 +1,18 @@
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { useResource, useStore } from "../../lib/store.jsx";
+import { useMissionActivity, useMissionLive } from "../../lib/liveStore.js";
 import { useUnsent } from "../../lib/unsent.js";
 import { carryOver, joinPages, loadOlder, useOlderPages } from "../../lib/history.js";
 
-const RECENT_MS = 3 * 60 * 1000;
 const EMPTY = [];
 const NO_BRANCHES = {};
 
 /** Mission detail (/api/missions/:id, refreshed by SSE) merged with its summary from /api/state. */
 export function useRoom(id) {
   const store = useStore();
+  // This mission's live text and bots at work (liveStore.js): other missions' frames pass by.
+  const live = useMissionLive(id);
+  const activity = useMissionActivity(id);
   // A long conversation opens with its latest messages; scrolling up (or «Ver mensajes
   // anteriores») brings the pages before them (src/lib/history.js), one at a time.
   const { data, error, loading } = useResource(id ? `/missions/${id}` : null);
@@ -65,17 +68,10 @@ export function useRoom(id) {
     const thread = Array.isArray(data?.thread) ? data.thread : [];
     const proposals = Array.isArray(data?.proposals) ? data.proposals : [];
     const { artifacts, approvals, pending } = records;
-    const live = Object.entries(store.live)
-      .filter(([, v]) => v.mission === id)
-      .map(([stepId, v]) => ({ stepId, ...v }));
-    const now = Date.now();
-    const activity = Object.entries(store.activity)
-      .filter(([, v]) => v.mission === id && (!v.at || now - v.at < RECENT_MS))
-      .map(([botId, v]) => ({ botId, ...v }));
     const memberIds = [...new Set([...(mission?.botIds || []), ...steps.map((s) => s.botId).filter(Boolean)])];
     // Rooms show those lines as messages of the bot (as OpenClaw does in channels): spoken.
     return { mission, messages, spoken: all, steps, thread, proposals, artifacts, approvals, pending, live, activity, memberIds, error, loading: loading && !mission, notFound: !loading && !mission, olderCount, showOlder, loadingOlder: !!older?.loading, branches: data?.branches || NO_BRANCHES, olderError: older?.error || null };
-  }, [data, summary, error, loading, records, store.live, store.activity, id, showOlder, timeline, olderCount, older]);
+  }, [data, summary, error, loading, records, live, activity, id, showOlder, timeline, olderCount, older]);
 }
 
 export const ACTIVE_STEP = new Set(["running", "active", "working", "in_progress"]);
