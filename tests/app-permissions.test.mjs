@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { Store } from "../server/store.mjs";
-import { Connections, categoryOf, classify, runsWithoutAsking, AUTO_SEND_MS } from "../server/connections.mjs";
+import { Connections, categoryOf, classify, movesMoneyOrPublishes, runsWithoutAsking, AUTO_SEND_MS } from "../server/connections.mjs";
 import { describeAppAction, explicitlyAsked, isNo, isYes } from "../server/appactions.mjs";
 
 async function fixture(t) {
@@ -229,4 +229,35 @@ test("a send you cancelled stays cancelled in that turn; a draft written in the 
   assert.equal(connections.preparedHere("mi", "d1"), true);
   assert.equal(connections.preparedHere("mi", "d1", { before: at(0) }), false, "written after the bot last answered");
   assert.equal(connections.preparedHere("mi", "d1", { before: new Date(Date.now() + 1000).toISOString() }), true);
+});
+
+test("money and publishing are red lines by what the action is, in any app; reads are not", () => {
+  const act = (tool, toolkit = tool.split("_")[0].toLowerCase(), args = {}) => classify({ tool, toolkit, arguments: args });
+  const RED = [
+    "STRIPE_CREATE_PAYMENT_INTENT", "STRIPE_CONFIRM_PAYMENT_INTENT", "PAYPAL_CREATE_PAYMENT", "SHOPIFY_COMPLETE_CHECKOUT", "STRIPE_CREATE_SUBSCRIPTION",
+    "AMAZON_BUY_NOW", "BOOKING_CREATE_RESERVATION", "INSTAGRAM_CREATE_MEDIA_CONTAINER",
+    // The same families under other names, and in apps Colmena has no list for.
+    "STRIPE_CAPTURE_PAYMENT_INTENT", "SQUARE_CREATE_PAYMENTS", "TIENDANUBE_PLACE_ORDERS", "ACME_SUBSCRIBE_TO_PLAN", "OPENTABLE_RESERVE_TABLE", "CALENDLY_CREATE_BOOKING",
+    "INSTAGRAM_MEDIA_PUBLISH", "YOUTUBE_UPLOAD_VIDEO", "TWITCH_GO_LIVE", "TWITTER_CREATION_OF_A_POST", "LINKEDIN_CREATE_LINKED_IN_POST", "STRIPE_FINALIZE_INVOICE", "HOTEL_CHECK_OUT",
+    // A payments, shop or social app: a change that is not clearly a read asks.
+    "STRIPE_CREATE_CUSTOMER", "SHOPIFY_UPDATE_PRODUCT", "FACEBOOK_UPDATE_PAGE_SETTINGS",
+  ];
+  for (const tool of RED) {
+    const kind = act(tool);
+    assert.deepEqual(kind, { kind: "write", redLine: true }, tool);
+    assert.equal(runsWithoutAsking(kind, undefined), false, tool + " asks in an app without a permissions column");
+    assert.equal(runsWithoutAsking(kind, "escribe"), false, tool + " asks where the bot may write");
+  }
+  const NOT = [
+    "STRIPE_LIST_PAYMENT_INTENTS", "STRIPE_RETRIEVE_PAYMENT_INTENT", "PAYPAL_GET_PAYMENT", "STRIPE_LIST_SUBSCRIPTIONS", "STRIPE_LIST_CHECKOUT_SESSIONS", "BOOKING_SEARCH_RESERVATIONS",
+    "INSTAGRAM_GET_USER_MEDIA", "YOUTUBE_LIST_VIDEOS", "SHOPIFY_GET_PRODUCTS", "TWITTER_SEARCH_TWEETS", "AMAZON_SEARCH_PRODUCTS",
+    // Changes in your own account, in apps that are neither money nor public.
+    "GOOGLECALENDAR_CREATE_EVENT", "NOTION_CREATE_NOTION_PAGE", "GOOGLESHEETS_BATCH_UPDATE", "GMAIL_CREATE_EMAIL_DRAFT", "GOOGLEDOCS_CREATE_DOCUMENT", "TRELLO_CREATE_CARD",
+  ];
+  for (const tool of NOT) assert.equal(act(tool, undefined, { send_updates: "none" }).redLine, false, tool);
+  // A read the app marks as such is a read, whatever it is called.
+  assert.deepEqual(classify({ tool: "STRIPE_LIST_CHARGES", toolkit: "stripe", arguments: {}, read_scope: "charges" }), { kind: "read", redLine: false });
+  // The app's own name is not the action: a search in «booking» books nothing.
+  assert.equal(movesMoneyOrPublishes({ tool: "BOOKING_SEARCH_HOTELS", toolkit: "booking" }), false);
+  assert.equal(movesMoneyOrPublishes({ tool: "OUTLOOK_OUTLOOK_LIST_MESSAGES", toolkit: "outlook" }), false);
 });

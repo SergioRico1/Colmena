@@ -31,9 +31,53 @@ const parse = (s) => { try { return JSON.parse(s || '{}'); } catch { return {}; 
 //  write → changing something in your own account (create an event, a note, a row).
 //  send  → a Gmail send, reviewed and editable in full.
 // redLine: it leaves your account or cannot be undone (send, reply, invite, share, publish,
-// delete, pay, transfer): it always waits for your OK, whatever the bot may do.
+// delete, pay, buy, subscribe, reserve, transfer): it always waits for your OK, whatever the
+// bot may do — also in an app without a «Qué app usa cada bot» column (runsWithoutAsking).
 const RED_LINE_TOOL = /(?:^|_)(?:SEND|REPLY|FORWARD|INVITE|SHARE|PUBLISH|POST|TWEET|DELETE|REMOVE|TRASH|DESTROY|PURGE|ARCHIVE|PAY|PAYOUT|CHARGE|REFUND|TRANSFER|PURCHASE|ORDER|CANCEL)(?:_|$)/;
 const MESSAGE_TOOLKITS = new Set(['slack', 'microsoft_teams', 'discord', 'telegram', 'whatsapp', 'googlechat']);
+// Money and publishing by families of words, matched on the tokens of the action's name (its
+// app's own name aside: «BOOKING_SEARCH_…» is not a booking), singular or plural:
+//  · verbs that move money or publish, wherever they appear;
+//  · what money and publishing act on (a payment, a checkout, a subscription, a reservation, a
+//    media container…): a red line unless the action clearly only reads it (LIST/GET/RETRIEVE…).
+const MONEY_VERBS = new Set(['PAY', 'BUY', 'CHECKOUT', 'SUBSCRIBE', 'RESERVE', 'BOOK', 'DONATE', 'WITHDRAW', 'DEPOSIT', 'TOPUP', 'RETWEET', 'REPOST', 'BROADCAST']);
+const MONEY_NOUNS = new Set(['PAYMENT', 'CHECKOUT', 'SUBSCRIPTION', 'RESERVATION', 'BOOKING', 'PURCHASE', 'PAYOUT', 'REFUND', 'TRANSFER', 'CHARGE', 'ORDER', 'DONATION', 'WITHDRAWAL', 'TWEET', 'POST', 'LIVESTREAM']);
+const READ_VERBS = new Set(['LIST', 'GET', 'RETRIEVE', 'SEARCH', 'FETCH', 'FIND', 'READ', 'QUERY', 'LOOKUP', 'COUNT', 'VIEW', 'DESCRIBE', 'EXPORT', 'DOWNLOAD']);
+const WRITE_VERBS = new Set(['CREATE', 'UPDATE', 'CONFIRM', 'COMPLETE', 'FINALIZE', 'SUBMIT', 'PLACE', 'MAKE', 'ADD', 'SET', 'EDIT', 'PATCH', 'MODIFY', 'RENEW', 'UPLOAD', 'START', 'EXECUTE', 'APPROVE', 'ACCEPT']);
+// Apps where a change is money or is public: there, what is not clearly a read asks (fail closed).
+const MONEY_TOOLKITS = new Set(['stripe', 'paypal', 'square', 'shopify', 'woocommerce', 'bigcommerce', 'amazon', 'ebay', 'etsy', 'booking', 'airbnb', 'expedia', 'uber', 'doordash', 'instacart', 'wise', 'revolut', 'coinbase', 'binance', 'kraken', 'venmo', 'klarna', 'adyen', 'mollie', 'braintree', 'gumroad', 'lemonsqueezy', 'paddle', 'chargebee', 'recurly', 'razorpay', 'gocardless', 'plaid']);
+const SOCIAL_TOOLKITS = new Set(['instagram', 'facebook', 'twitter', 'x', 'linkedin', 'tiktok', 'youtube', 'reddit', 'pinterest', 'threads', 'mastodon', 'bluesky', 'medium', 'snapchat', 'twitch', 'wordpress']);
+const singular = (token) => (token.length > 3 && token.endsWith('S') && !token.endsWith('SS') ? token.slice(0, -1) : token);
+/** The words of an action's name, without its app's own name in front: «STRIPE_CREATE_PAYMENT_INTENT» → CREATE, PAYMENT, INTENT. */
+function actionTokens(tool, toolkit) {
+  let name = String(tool || '').toUpperCase();
+  const app = String(toolkit || '').toUpperCase();
+  while (app && name.startsWith(app + '_')) name = name.slice(app.length + 1);
+  return name.split(/[^A-Z0-9]+/).filter(Boolean).map(singular);
+}
+/** The action only looks: it starts with a reading verb and names no verb that changes anything. */
+function clearlyReads(tokens, tool) {
+  return READ_VERBS.has(tokens[0]) && !tokens.some(t => WRITE_VERBS.has(t)) && !RED_LINE_TOOL.test(String(tool || '').toUpperCase());
+}
+/**
+ * Money or publishing by the action's name and app: it pays, buys, subscribes, reserves,
+ * publishes or prepares something to publish; or it is a change in a payments, shop or social
+ * app. Reads (LIST/GET/RETRIEVE/SEARCH…) stay out.
+ */
+export function movesMoneyOrPublishes(p) {
+  const toolkit = String(p.toolkit || '').toLowerCase();
+  const tokens = actionTokens(p.tool, toolkit);
+  if (!tokens.length) return false;
+  const has = (...words) => words.every(w => tokens.includes(w));
+  // «Go live», «check out», a video upload, an invoice made final.
+  if (has('GO', 'LIVE') || has('CHECK', 'OUT') || has('UPLOAD', 'VIDEO') || has('INVOICE', 'FINALIZE')) return true;
+  // The same words name what a read looks at («LIST_CHECKOUT_SESSIONS», «GET_ORDER»): reads stay out.
+  if (clearlyReads(tokens, p.tool)) return false;
+  if (tokens.some(t => MONEY_VERBS.has(t) || MONEY_NOUNS.has(t))) return true;
+  // A media container is what Instagram publishes next.
+  if (has('MEDIA') && (has('CONTAINER') || has('PUBLISH'))) return true;
+  return MONEY_TOOLKITS.has(toolkit) || SOCIAL_TOOLKITS.has(toolkit);
+}
 
 /** Which «Qué app usa cada bot» column an app action belongs to (null: none of them). */
 export function categoryOf(p) {
@@ -84,7 +128,7 @@ export function classify(p) {
   // An event with guests notifies people outside your account.
   const guests = [args.attendees, args.attendee_emails, args.guests].some(v => Array.isArray(v) ? v.length : typeof v === 'string' && v.trim());
   const notifies = guests && !['none', 'false', false].includes(args.send_updates ?? args.sendUpdates ?? 'all');
-  const redLine = RED_LINE_TOOL.test(tool) || notifies || (MESSAGE_TOOLKITS.has(String(p.toolkit || '').toLowerCase()) && /MESSAGE|CHAT/.test(tool));
+  const redLine = RED_LINE_TOOL.test(tool) || movesMoneyOrPublishes(p) || notifies || (MESSAGE_TOOLKITS.has(String(p.toolkit || '').toLowerCase()) && /MESSAGE|CHAT/.test(tool));
   return {kind: 'write', redLine};
 }
 /** Kept for callers that only need the kind. */
