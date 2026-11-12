@@ -7,7 +7,7 @@
 // POST /api/peers/invites/accept {code}
 // PATCH /api/peers/contacts/:id {asks?, verified?}   DELETE /api/peers/contacts/:id
 // POST /api/peers/dm/:contact                  → the direct conversation with a contact
-// POST /api/peers/shares {title, members}      a group (up to 32 people)
+// POST /api/peers/shares {title, members, team?}   a group (up to 32 people); with `team`, a room of that team
 // POST /api/peers/shares/:id/members {members} POST /api/peers/shares/:id/leave
 // GET  /api/peers/shares/:id/messages?before=  POST /api/peers/shares/:id/messages {text, replyTo?}
 // POST /api/peers/shares/:id/seen              POST /api/peers/shares/:id/typing
@@ -67,8 +67,9 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
     return p.shareView(p.ensureDm(req.params.contact));
   }));
   app.post("/api/peers/shares", run((req, p) => {
-    const data = check(z.object({ title: z.string().trim().min(1).max(PEER_LIMITS.title), members: z.array(id).min(1).max(PEER_LIMITS.members - 1) }).strict(), req.body);
-    return p.createGroup(data.title, data.members);
+    // `team`: a room of that team (by invitation; its people need not be your contacts).
+    const data = check(z.object({ title: z.string().trim().min(1).max(PEER_LIMITS.title), members: z.array(id).min(1).max(PEER_LIMITS.members - 1), team: id.optional() }).strict(), req.body);
+    return p.createGroup(data.title, data.members, { teamId: data.team || null });
   }));
   app.post("/api/peers/shares/:id/members", run((req, p) => { const data = check(z.object({ members: z.array(id).min(1).max(PEER_LIMITS.members - 1), role: z.enum(["member", "guest"]).optional() }).strict(), req.body); return p.addMembers(req.params.id, data.members, data.role || "member"); }));
   app.post("/api/peers/shares/:id/leave", run((req, p) => p.leave(req.params.id)));

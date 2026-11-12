@@ -249,3 +249,39 @@ export function sameProof(a, b) {
   const x = Buffer.from(String(a)), y = Buffer.from(String(b));
   return x.length === y.length && timingSafeEqual(x, y);
 }
+
+// ------------------------------------------------------------------ teams
+// A team is one roster signed by whoever created it (server/peers/teams.mjs):
+//   {kind: "team", id, name, owner, version, room, at, members: [{id, role, box, name}], sig}
+// `owner` is the creator's address, so the signature is checked against the roster itself.
+// `kind` keeps it apart from a group's roster, signed with the same key. Everybody else
+// asks the creator's Colmena for a change (team.req); nobody else's signature is accepted.
+// As many people as a conversation holds: every team has a room with everyone in it.
+export const TEAM_MAX_MEMBERS = 32;
+export const TEAM_ROLES = Object.freeze(["owner", "admin", "member"]);
+export const isTeamId = (s) => typeof s === "string" && /^[A-Za-z0-9-]{8,64}$/.test(s);
+/** `roster` with the signature of `identity` over its canonical form. */
+export function signTeamRoster(identity, roster) {
+  const { sig: _old, ...unsigned } = roster;
+  return { ...unsigned, sig: signBytes(identity.sign, canonical(unsigned)) };
+}
+/**
+ * The roster if its creator signed exactly this and it is well formed: one owner (the
+ * creator), no one twice, every member with a box key, at most TEAM_MAX_MEMBERS; a closed
+ * team has nobody. Otherwise null.
+ */
+export function verifyTeamRoster(roster) {
+  if (!roster || typeof roster !== "object" || Array.isArray(roster) || roster.kind !== "team") return null;
+  if (!isTeamId(roster.id) || !isTeamId(roster.room) || !isAddress(roster.owner) || typeof roster.name !== "string") return null;
+  if (!Number.isSafeInteger(roster.version) || roster.version < 1 || !Array.isArray(roster.members) || roster.members.length > TEAM_MAX_MEMBERS) return null;
+  const { sig, ...unsigned } = roster;
+  if (typeof sig !== "string" || !verifyBytes(roster.owner, canonical(unsigned), sig)) return null;
+  const seen = new Set();
+  for (const m of roster.members) {
+    if (!m || !isAddress(m.id) || !isAddress(m.box) || seen.has(m.id) || !TEAM_ROLES.includes(m.role)) return null;
+    if ((m.role === "owner") !== (m.id === roster.owner)) return null;
+    seen.add(m.id);
+  }
+  if (roster.closed === true ? seen.size > 0 : !seen.has(roster.owner)) return null;
+  return roster;
+}

@@ -53,6 +53,8 @@ import { registerAutomationRoutes } from "./routes/automations.mjs";
 import { registerSuggestionRoutes } from "./routes/suggestions.mjs";
 import { registerFolderRoutes } from "./routes/folders.mjs";
 import { registerNotificationRoutes } from "./routes/notifications.mjs";
+import { registerTeamRoutes } from "./routes/teams.mjs";
+import { teamsList, teamsPending } from "./peers/teams.mjs";
 import { registerWikiRoutes, wikiImportParser } from "./routes/wiki.mjs";
 import { attachWikiTools } from "./wiki-tools.mjs";
 import { registerBlockRoutes } from "./routes/blocks.mjs";
@@ -238,6 +240,9 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const t1 = performance.now();
     const state = extendState(store, runtime, buildState(store, runtime, { session, authError, models, usage, accounts: connectorCache.get(), computer }));
     state.peers = safe(() => app.locals.peers?.identity ? app.locals.peers.stateView() : null); // «Personas» (server/peers/)
+    // Teams, light (server/peers/teams.mjs): id, name, counts and which one the sidebar shows; alone, one «solo» entry.
+    state.teams = safe(() => teamsList(store, app.locals.peers), []);
+    state.teamsPending = safe(() => teamsPending(app.locals.peers), []);
     state.blocks = safe(() => pinnedBlocksState(store), []); // the panel of Inicio: pinned blocks, light (server/blocks.mjs)
     const t2 = performance.now();
     res.set("Server-Timing", `models;dur=${tModels.toFixed(1)}, usage;dur=${tUsage.toFixed(1)}, build;dur=${(t2 - t1).toFixed(1)}, total;dur=${(t2 - t0).toFixed(1)}`);
@@ -448,6 +453,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerBackupRoutes(app, { backups: app.locals.backups, check, z }); // Ajustes › Privacidad y datos
   registerEncryptionRoutes(app, { encryption: app.locals.encryption, backups: app.locals.backups });
   registerPeerRoutes(app, { getPeers: () => app.locals.peers, check, z, HttpError }); // «Personas»: other people's Colmenas
+  registerTeamRoutes(app, { store, getPeers: () => app.locals.peers }); // «Equipos»: shared rosters of people
   registerWebhookRoutes(app, { getWebhooks: () => app.locals.webhooks, store, check, z, HttpError }); // «Cuando avisa otra app»: webhook triggers through the mailbox
   registerGoalRoutes(app, { store, runtime });
   registerCoreRoutes(app, { store, runtime });
