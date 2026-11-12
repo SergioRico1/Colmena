@@ -280,7 +280,11 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   const level = autonomy || autonomyOf(bot);
   const agents = fill(TEMPLATES.agents, { autonomy: AUTONOMY_LABELS[level] });
   const { personal, team, own, meters, profile } = memoryDigest(store, bot, MEMORY_BUDGET, { directory, missionId: mission?.id || null });
-  const tagged = [...personal, ...team, ...own].some((l) => /\[(?:compruébalo|cómo)\]/.test(l));
+  // A turn for another person's request (an errand, or a request in a shared room): what the
+  // owner's bots remember and the owner's standing orders stay out of the prompt. Telling the
+  // bot not to reveal them is not enough: what it never reads it cannot be talked into saying.
+  const forOther = !!mission?.peerErrand;
+  const tagged = !forOther && [...personal, ...team, ...own].some((l) => /\[(?:compruébalo|cómo)\]/.test(l));
   const skills = skillIndex(store, bot);
   const parts = [
     soul.trim(),
@@ -303,7 +307,7 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   );
   // Standing orders («Encargos» in the bot profile); red lines still apply.
   try {
-    const orders = standingOrdersText(store, bot?.id);
+    const orders = forOther ? "" : standingOrdersText(store, bot?.id);
     if (orders) parts.push(orders);
   } catch {}
   // Speed (Codex, Claude): independent lookups go out together, in one turn.
@@ -321,7 +325,8 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
     parts.push("# Mientras trabajas\nCuando vayas a usar herramientas para algo de varios pasos, escribe en el mismo turno, junto a las llamadas, una sola frase corta en primera persona (máximo 20 palabras) con lo que vas a hacer o lo que acabas de ver y por qué sigues: «Busco los correos de pedidos de Lumbre Home de los últimos 30 días.», «Hay pedidos repetidos; saco el total de cada uno.». La persona la ve mientras trabajas. No la escribas para una consulta rápida de un solo paso, no repitas la anterior y no cuentes lo que solo te sirve a ti (buscar tu cuenta, leer tus notas o tus habilidades). La respuesta completa va al final, cuando termines.");
   // What changes goes last: memory (when the bot remembers) and today's context.
   const person = [...(profile.length ? ["Perfil (USER.md):", ...profile] : []), ...personal];
-  parts.push(
+  if (forOther) parts.push("# Memoria\nEste trabajo te lo pide otra persona. Aquí no tienes delante lo que recuerdas de tu dueño ni del equipo, y no lo necesitas: responde solo con lo que te den en esta petición y lo que encuentres con tus herramientas.");
+  else parts.push(
     `# Lo que sabes de la persona [${meters.user.label}]\n` + (person.length ? person.join("\n") : "Todavía nada.") +
       `\n\n# Lo que sabe el equipo [${meters.memory.label}]\n` + (team.length ? team.join("\n") : "Todavía nada.") +
       `\n\n# Tu memoria propia [${meters.bot.label}]\n` + (own.length ? own.join("\n") : "Todavía nada.") +

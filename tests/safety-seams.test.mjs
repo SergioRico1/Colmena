@@ -314,3 +314,24 @@ test("an event that joins open work reaches the bot as outside content: at its n
   await settle(runtime);
   assert.deepEqual([inputs.length, store.get("missions", third).status, runtime.active.has(third)], [quiet, "paused", false]);
 });
+
+test("a turn for another person's request does not carry the owner's memory or standing orders in its prompt", async (t) => {
+  const { mkdtemp, rm } = await import("node:fs/promises");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { Store } = await import("../server/store.mjs");
+  const { composeInstructions } = await import("../server/soul.mjs");
+  const dir = await mkdtemp(path.join(os.tmpdir(), "colmena-forother-"));
+  const store = new Store(dir);
+  t.after(async () => { store.close(); await rm(dir, { recursive: true, force: true }); });
+  const bot = store.get("bots", "nora") || store.list("bots")[0];
+  store.put("memories", { id: "m1", botId: null, scope: "persona", text: "Su cuenta del banco acaba en 4471.", source: "dijiste", review: false, active: true, createdAt: new Date().toISOString() });
+  store.put("memories", { id: "m2", botId: bot.id, scope: "bot", text: "El margen con Acme es del 38 %.", source: "dijiste", review: false, active: true, createdAt: new Date().toISOString() });
+  const own = composeInstructions(store, bot, { mission: { id: "x" }, directory: dir });
+  assert.match(own, /4471/);
+  assert.match(own, /38 %/);
+  const other = composeInstructions(store, bot, { mission: { id: "x", peerErrand: "room:1" }, directory: dir });
+  assert.doesNotMatch(other, /4471/);
+  assert.doesNotMatch(other, /38 %/);
+  assert.match(other, /te lo pide otra persona/);
+});

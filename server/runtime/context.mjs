@@ -133,6 +133,8 @@ export class ContextMethods {
    */
   relatedNote(mission, step, request) {
     if (["plan", "critique", "delegate"].includes(step.kind)) return "";
+    // Another person's request never brings the owner's memories with it (soul.mjs).
+    if (mission?.peerErrand) return "";
     const bot = this.bot(step.botId);
     if (!bot) return "";
     try {
