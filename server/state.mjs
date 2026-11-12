@@ -102,6 +102,50 @@ export function memorySummary(m) {
   };
 }
 
+/** A pending note change as /api/state carries it: everything the card says at a glance, never the diff. */
+export function wikiAskSummary(wiki) {
+  return {
+    slug: wiki.slug ?? null, title: wiki.title ?? null, action: wiki.action ?? null, create: !!wiki.create, section: wiki.section ?? null,
+    added: wiki.added ?? 0, removed: wiki.removed ?? 0, truncated: !!wiki.truncated, outside: wiki.outside ? { suspicious: !!wiki.outside.suspicious } : null,
+  };
+}
+/** The diff of a pending note change, for GET /api/approvals/:id/wiki. */
+export function wikiAskDiff(wiki) {
+  return { patch: String(wiki?.patch || ""), added: wiki?.added ?? 0, removed: wiki?.removed ?? 0, truncated: !!wiki?.truncated };
+}
+
+/**
+ * The memories /api/state carries: what is always present (the core) and what waits for the
+ * person («por revisar», with the memory each one contradicts). The archive has no limit, so
+ * it travels as a count and is read by pages: GET /api/memories?tier=archive (routes/skills.mjs).
+ */
+export function memoriesState(store) {
+  const active = store.list("memories").filter((m) => m.active !== false);
+  const said = new Set(active.filter((m) => m.review && m.contradicts).map((m) => m.contradicts));
+  const shown = active.filter((m) => memoryTier(m) !== "archive" || m.review || said.has(m.id));
+  return { memories: shown.map(memorySummary), memoryArchive: { count: active.length - shown.length } };
+}
+/** How many archived memories one page of GET /api/memories brings, at most. */
+export const MEMORY_PAGE_MAX = 200;
+/**
+ * One page of the archive, newest first: {items, total, cursor}. `q` keeps the ones whose text
+ * has every word (accents and case folded); `cursor` is what the page before returned (null at
+ * the end). Only what /api/state leaves out: settled archive memories.
+ */
+export function memoryArchivePage(store, { q = "", cursor = null, limit = 50 } = {}) {
+  const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const active = store.list("memories").filter((m) => m.active !== false);
+  const said = new Set(active.filter((m) => m.review && m.contradicts).map((m) => m.contradicts));
+  const words = fold(q).split(/\s+/).filter(Boolean);
+  const all = active.filter((m) => memoryTier(m) === "archive" && !m.review && !said.has(m.id))
+    .filter((m) => { const text = fold(m.text); return words.every((w) => text.includes(w)); })
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || String(a.id).localeCompare(String(b.id)));
+  const from = Math.max(0, Math.min(all.length, Number.parseInt(cursor ?? "0", 10) || 0));
+  const size = Math.max(1, Math.min(MEMORY_PAGE_MAX, Math.round(Number(limit)) || 50));
+  const items = all.slice(from, from + size);
+  return { items: items.map(memorySummary), total: all.length, cursor: from + items.length < all.length ? String(from + items.length) : null };
+}
+
 // ---- Approvals bound to their exact content (OpenMuse actions.ts, MIT: licenses/OpenMuse.txt) ----
 /** Sends and outbound app actions must be decided within 30 minutes of being prepared. */
 export const APPROVAL_TTL_MS = 30 * 60 * 1000;
@@ -199,8 +243,9 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     // A key request: its name, why, for which sites and whether it replaces one (never a value).
     secret: kind === "secret" && a.secret ? { name: a.secret.name, reason: a.secret.reason, allowedHosts: a.secret.allowedHosts || [], existing: a.secret.existing || null } : null,
     email: kind === "send" ? email : null,
-    // A change to a note (wiki_write): which page, what it does and its diff (server/wiki-tools.mjs).
-    wiki: a.tool === "wiki_write" && a.wiki ? a.wiki : null,
+    // A change to a note (wiki_write): which page and what it does (server/wiki-tools.mjs). Its
+    // diff — up to 60 000 characters — is not here: GET /api/approvals/:id/wiki, when the card opens.
+    wiki: a.tool === "wiki_write" && a.wiki ? wikiAskSummary(a.wiki) : null,
     impact,
     edited: !!a.edited,
     canAlways: a.canAlways ?? (pending && ["write", "permission"].includes(kind)),
@@ -463,7 +508,8 @@ export function buildState(store, runtime, extras = {}) {
       .map((g) => ({ ...pick(g, ["id", "botId", "tool", "kind", "scope", "origin", "createdAt"]), label: grantLabel(g) })),
     // Skills forgotten with «Olvidar lo aprendido aquí» stay as records (their hash), out of sight.
     skills: store.list("skills").filter((s) => !s.removed).map(skillSummary),
-    memories: store.list("memories").filter((m) => m.active !== false).map(memorySummary),
+    // Core memories and what waits for review; the archive is a count (memoriesState).
+    ...memoriesState(store),
     // Without their bodies: a year of deliverables is megabytes the summary never reads.
     artifacts: store.listWithout("artifacts", ["content"]).map((a) => artifactSummary(a, ctx.missions)),
     folders,

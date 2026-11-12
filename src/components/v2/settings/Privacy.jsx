@@ -25,7 +25,8 @@ function Fact({ k, v, n, dot, anchor }) {
 }
 
 export default function PrivacySection() {
-  const { memories = [], run } = useStore();
+  const { memories = [], memoryArchive, run } = useStore();
+  const remembered = memories.length + (memoryArchive?.count || 0);
   const { settings, save, error } = useSettings();
   const backup = useResource("/backup");
   const enc = useResource("/encryption");
@@ -37,7 +38,16 @@ export default function PrivacySection() {
   const forgetAll = () => {
     const all = memories.map((m) => m.id);
     later({ id: "forget-all", keys: all.map((id) => "memory:" + id), ms: UNDO_MS, text: "Los bots lo olvidan todo", error: "No se pudo olvidar todo",
-      run: () => run(async () => { for (const id of all) await del(`/memories/${encodeURIComponent(id)}`); }) });
+      run: () => run(async () => {
+        // The archive is not in the state: its ids come by pages, before anything is deleted.
+        const archived = [];
+        for (let cursor = "", pages = 0; cursor !== null && pages < 500; pages++) {
+          const page = await get(`/memories?tier=archive&limit=200${cursor ? "&cursor=" + cursor : ""}`);
+          archived.push(...page.items.map((m) => m.id));
+          cursor = page.cursor;
+        }
+        for (const id of [...all, ...archived]) await del(`/memories/${encodeURIComponent(id)}`);
+      }) });
   };
   const toggle = (what) => setOpen(open === what ? null : what);
   return (
@@ -57,7 +67,7 @@ export default function PrivacySection() {
         <Row anchor="aprenden" title="Aprenden de lo que hablas" sub="Si lo apagas, siguen trabajando pero no guardan recuerdos ni habilidades nuevas. Un chat de incógnito nunca aprende." min="64px">
           <Switch on={settings.learning !== false} label="Aprenden de lo que hablas" onChange={(on) => save({ learning: on }, on ? "Vuelven a aprender" : "Ya no aprenden de lo que hablas", { learning: !on })} />
         </Row>
-        <Row anchor="recuerdos" title="Qué recuerda cada bot de ti" sub={memories.length ? `${memories.length} ${memories.length === 1 ? "recuerdo" : "recuerdos"}` : "Nada todavía"} min="64px">
+        <Row anchor="recuerdos" title="Qué recuerda cada bot de ti" sub={remembered ? `${remembered} ${remembered === 1 ? "recuerdo" : "recuerdos"}` : "Nada todavía"} min="64px">
           <Go to="/biblioteca/memoria" style={btn("outline", 32)}>Ver memoria</Go>
         </Row>
         <Row anchor="perfil-historial" title="Tu perfil y sus versiones" sub="Lo que saben de ti, resumido. Cada cambio queda guardado y puedes volver a cualquiera." min="64px">
@@ -79,7 +89,7 @@ export default function PrivacySection() {
           <h3 id="danger-t" style={h3}>Hacer que lo olviden todo</h3>
           <span style={{ fontSize: "13px", color: "#4A4D57" }}>Borra lo que recuerdan de ti. Los chats y los archivos se quedan. Tienes 10 segundos para deshacerlo.</span>
         </span>
-        <button type="button" disabled={!memories.length} onClick={forgetAll} style={{ ...btn("outline", 38), borderColor: "rgba(180,35,42,.35)", color: "#B4232A", fontSize: "14px", opacity: memories.length ? 1 : 0.5 }}>Olvidar todo…</button>
+        <button type="button" disabled={!remembered} onClick={forgetAll} style={{ ...btn("outline", 38), borderColor: "rgba(180,35,42,.35)", color: "#B4232A", fontSize: "14px", opacity: memories.length ? 1 : 0.5 }}>Olvidar todo…</button>
       </section>
     </>
   );

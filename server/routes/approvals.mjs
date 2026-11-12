@@ -1,7 +1,7 @@
 import { DENY_REASON_MAX } from "../denial.mjs";
 import { z } from "zod";
 import { now } from "../store.mjs";
-import { context, approvalView } from "../state.mjs";
+import { context, approvalView, wikiAskDiff } from "../state.mjs";
 import { HttpError, short, check } from "./shared.mjs";
 import { BATCH_MAX, approvalGroup } from "../approval-groups.mjs";
 import { isFlagged } from "../external-content.mjs";
@@ -74,6 +74,13 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
       }
     }
     res.json({ ok: results.every((r) => r.ok), results });
+  });
+  // The diff of a note change (wiki_write) that waits for the person: asked for when its card
+  // is opened, so /api/state does not carry up to 60 000 characters per request.
+  app.get("/api/approvals/:id/wiki", (req, res) => {
+    const a = mustGet("approvals", req.params.id, "Aviso");
+    if (a.tool !== "wiki_write" || !a.wiki) throw new HttpError(404, "Esta petición no cambia ninguna nota.");
+    res.json(wikiAskDiff(a.wiki));
   });
   app.post("/api/approvals/:id", async (req, res) => {
     const { decision, always, revision, reason } = check(z.object({ decision: z.enum(["approved", "denied"]), always: z.boolean().default(false), revision: revisionField, reason: z.string().trim().max(DENY_REASON_MAX).default("") }).strict(), req.body);

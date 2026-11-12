@@ -171,7 +171,7 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
         <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{a.summary}</p>
       ) : null}
       {/* A note of «Notas» the bot wants to write: which one, and the lines it adds and removes. */}
-      {a.wiki && !snoozed ? <NoteAsk wiki={a.wiki} compact={inline} /> : null}
+      {a.wiki && !snoozed ? <NoteAsk id={a.id} wiki={a.wiki} compact={inline} /> : null}
       {snoozed ? (
         <SnoozedLine items={[a]} onError={setError} />
       ) : isQuestion && a.questions?.length > 1 ? (

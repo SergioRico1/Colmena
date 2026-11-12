@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Archive, CircleHelp, Download, Globe, Handshake, Pin, PinOff, UserRound } from "lucide-react";
 import { shapeOf } from "../../v2/Presence.jsx";
 import { hrefOf } from "../dia/activityLog.js";
 import { useAction, useResource, useStore } from "../../../lib/store.jsx";
 import { del, patch, post } from "../../../lib/api.js";
-import { later } from "../../../lib/undoToast.js";
+import { later, useHidden } from "../../../lib/undoToast.js";
+import SkeletonList from "../../v2/Skeleton.jsx";
 import DocHistory from "../../v2/team/DocHistory.jsx";
 
 // Biblioteca › Memoria (design/V3Memoria.dc.html): what your bots know about you. A box to tell
@@ -16,6 +17,9 @@ import DocHistory from "../../v2/team/DocHistory.jsx";
 // memory says how far it is trusted and where it comes from, and can be pinned or archived.
 
 const UNDO_MS = 10000;
+/** The archive comes by pages of this many (GET /api/memories?tier=archive); «Ver más» asks for more. */
+const ARCHIVE_PAGE = 50;
+const ARCHIVE_MAX = 200;
 const day = (iso) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" }).replace(".", "") : "");
 const chipStyle = { flex: "none", display: "inline-flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 9px", borderRadius: "999px", background: "#F1F1EC", color: "#3D404A", fontSize: "12px", fontWeight: "500", whiteSpace: "nowrap" };
 /**
@@ -90,20 +94,34 @@ function Known({ m, bot, mission, expert }) {
 }
 
 export default function Memory({ memories, bots, missions = [], expert }) {
-  const { run } = useStore();
+  const { run, memoryArchive } = useStore();
   const act = useAction();
   const [text, setText] = useState("");
   const [answers, setAnswers] = useState({});
   const [versions, setVersions] = useState(false);
   const [tier, setTier] = useState("core");
+  // The archive has no limit, so the state only counts it: its memories are read here, a page
+  // at a time, newest first, and searched on the server.
+  const [find, setFind] = useState("");
+  const [shown, setShown] = useState(ARCHIVE_PAGE);
+  const query = find.trim();
+  const archive = useResource(tier === "archive" ? `/memories?tier=archive&limit=${shown}${query ? "&q=" + encodeURIComponent(query) : ""}` : null);
+  const hiddenMemory = useHidden("memory");
   const missionOf = (id) => (id ? missions.find((x) => x.id === id) || null : null);
   const profile = useResource("/user-profile/versions");
   const botOf = (id) => bots.find((b) => b.id === id) || null;
   const review = memories.filter((m) => m.review);
   const answered = Object.values(answers);
   const settled = memories.filter((m) => !m.review);
-  const count = { core: settled.filter((m) => m.tier !== "archive").length, archive: settled.filter((m) => m.tier === "archive").length };
-  const known = settled.filter((m) => (m.tier === "archive") === (tier === "archive")).sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0));
+  const count = { core: settled.filter((m) => m.tier !== "archive").length, archive: (memoryArchive?.count || 0) + settled.filter((m) => m.tier === "archive").length };
+  // While another page or search loads, the one before stays on screen.
+  const lastPage = useRef(null);
+  if (archive.data) lastPage.current = archive.data;
+  const page = tier === "archive" ? archive.data || lastPage.current : null;
+  const paged = (page?.items || []).filter((m) => !hiddenMemory(m.id));
+  const known = (tier === "archive" ? [...settled.filter((m) => m.tier === "archive"), ...paged] : settled.filter((m) => m.tier !== "archive")).sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0));
+  const archiveLoading = tier === "archive" && !page && !archive.error;
+  const more = page ? Math.max(0, page.total - page.items.length) : 0;
   // Grouped by who knows it: the whole team first, then each bot's own.
   const groups = [];
   const team = known.filter((m) => m.scope === "equipo" || !m.botId);
@@ -200,13 +218,24 @@ export default function Memory({ memories, bots, missions = [], expert }) {
           </div>
           <span style={{ fontSize: "13.5px", color: "#5C606C" }}>{tier === "core" ? "Lo tienen delante en cada conversación. Si se llena, lo que menos se usa pasa al archivo." : "No lo llevan siempre encima: lo recuerdan cuando viene a cuento."}</span>
         </div>
-        {!groups.length ? <p style={{ margin: 0, padding: "18px 20px", borderRadius: "20px", background: "#FFFFFF", fontSize: "15px", color: "#5C606C" }}>{tier === "archive" ? "El archivo está vacío. Aquí llega lo que ya no cabe entre lo siempre presente, y lo que tú archives." : "Todavía no saben nada de ti. Cuéntales algo arriba o tráelo de ChatGPT."}</p> : null}
+        {tier === "archive" && (count.archive > 0 || query) ? (
+          <input className="c-quiet" type="search" aria-label="Buscar en el archivo" value={find} maxLength={200} onChange={(e) => { setFind(e.target.value); setShown(ARCHIVE_PAGE); }} placeholder="Buscar en el archivo"
+            style={{ height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "12px", background: "#FFFFFF", fontSize: "15px" }} />
+        ) : null}
+        {archive.error && tier === "archive" ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{"No se pudo leer el archivo. " + archive.error}</p> : null}
+        {archiveLoading ? <SkeletonList rows={3} style={{ borderRadius: "20px" }} /> : !groups.length ? <p style={{ margin: 0, padding: "18px 20px", borderRadius: "20px", background: "#FFFFFF", fontSize: "15px", color: "#5C606C" }}>{tier === "archive" ? (query ? "Nada en el archivo con esas palabras." : "El archivo está vacío. Aquí llega lo que ya no cabe entre lo siempre presente, y lo que tú archives.") : "Todavía no saben nada de ti. Cuéntales algo arriba o tráelo de ChatGPT."}</p> : null}
         {groups.map((g) => (
           <div key={g.key} style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden" }}>
             <h3 style={{ margin: "0", padding: "14px 20px 6px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: "600", color: "#5C606C" }}><Mark bot={g.bot} />{g.title}</h3>
             {g.items.map((m) => <Known key={m.id} m={m} bot={botOf(m.botId)} mission={missionOf(m.missionId)} expert={expert} />)}
           </div>
         ))}
+        {more > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
+            {shown < ARCHIVE_MAX ? <button type="button" onClick={() => setShown((n) => Math.min(ARCHIVE_MAX, n + ARCHIVE_PAGE))} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "13.5px", cursor: "pointer" }}>{"Ver más"}</button> : null}
+            <span style={{ fontSize: "13.5px", color: "#5C606C" }}>{shown < ARCHIVE_MAX ? `Quedan ${more} más antiguos.` : `Hay ${more} más antiguos: búscalos por lo que dicen.`}</span>
+          </div>
+        ) : null}
       </section>
       <p style={{ margin: "0", fontSize: "13.5px", color: "#5C606C" }}>
         {"Lo que hablas en un chat privado no se guarda aquí. Para borrarlo todo de una vez: "}

@@ -16,7 +16,7 @@ const RevisionContext = createContext(0);
 
 const EMPTY = {
   account: null, provider: null, authError: null, models: [], settings: {}, usage: {}, paused: false,
-  bots: [], missions: [], approvals: [], automations: [], suggestions: [], skills: [], memories: [],
+  bots: [], missions: [], approvals: [], automations: [], suggestions: [], skills: [], memories: [], memoryArchive: { count: 0 },
   artifacts: [], folders: [], people: [], connectors: [], unread: 0, notifications: [],
 };
 

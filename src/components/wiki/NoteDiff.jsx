@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { diffModel, diffSummary, noteAskTitle, noteUrl } from "../../lib/wikiLinks.js";
+import { useResource } from "../../lib/store.jsx";
 
 // The changes of a note as lines: what is new in green with «+», what goes in red with «−»
 // (the sign says it too, not only the colour). Used by the conflict view, the history and
@@ -39,13 +40,28 @@ export default function NoteDiff({ diff, max = 400, label = "Cambios en la nota"
   );
 }
 
+const shine = { background: "linear-gradient(90deg,#ECECE7 0%,#F6F6F3 40%,#ECECE7 80%)", backgroundSize: "300% 100%", animation: "shimmer 1.6s ease-in-out infinite" };
+/** The diff while it loads: grey lines with the soft shimmer of every «Cargando» (Skeleton.jsx). */
+function DiffLoading() {
+  return (
+    <div role="status" aria-label="Cargando los cambios de la nota" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px", borderRadius: "12px", background: "#FBFBF9", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.06)" }}>
+      {["72%", "58%", "80%"].map((width, i) => <span key={i} aria-hidden="true" style={{ height: "10px", width, borderRadius: "6px", ...(i ? { background: "#F1F1EC" } : shine) }} />)}
+    </div>
+  );
+}
+
 /**
  * A bot's note write waiting for the person's OK (`approval.wiki`): which note, what it would
  * do, and the diff. `compact` folds the diff behind «Ver los cambios» (rows above the composer).
+ * The state carries only the summary (title, counts, the outside mark): the diff itself is
+ * asked for with the approval's `id` when it is shown (GET /api/approvals/:id/wiki).
  */
-export function NoteAsk({ wiki, compact = false, style = null }) {
+export function NoteAsk({ id = null, wiki, compact = false, style = null }) {
   const [open, setOpen] = useState(!compact);
+  const inline = typeof wiki?.patch === "string";
+  const loaded = useResource(open && wiki && !inline && id ? `/approvals/${encodeURIComponent(id)}/wiki` : null);
   if (!wiki) return null;
+  const diff = inline ? wiki : loaded.data ? { ...wiki, ...loaded.data } : null;
   const creates = wiki.create || wiki.action === "create";
   return (
     <div data-note-ask="" style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: 0, ...style }}>
@@ -55,7 +71,11 @@ export function NoteAsk({ wiki, compact = false, style = null }) {
         {compact ? <button type="button" className="rm-focus" aria-expanded={open} onClick={() => setOpen((v) => !v)} style={{ height: "28px", padding: "0 8px", border: "0", borderRadius: "8px", background: "transparent", color: "#1F4FD1", fontSize: "13.5px", cursor: "pointer" }}>{open ? "Ocultar los cambios" : `Ver los cambios (${diffSummary(wiki).toLowerCase()})`}</button> : null}
       </span>
       {wiki.outside ? <span style={{ fontSize: "13px", lineHeight: "1.45", color: "#8F1D22" }}>{wiki.outside.suspicious ? "Lo escribe después de leer un texto de fuera que intentaba darle órdenes. Léelo con calma antes de aprobar." : "Incluye texto copiado de fuera (una web, un correo o una app). La nota quedará marcada hasta que la revises."}</span> : null}
-      {open ? <NoteDiff diff={wiki} max={compact ? 80 : 200} label={creates ? "Texto de la nota nueva" : "Cambios en la nota"} empty="No cambia el texto de la nota." /> : null}
+      {!open ? null : diff
+        ? <NoteDiff diff={diff} max={compact ? 80 : 200} label={creates ? "Texto de la nota nueva" : "Cambios en la nota"} empty="No cambia el texto de la nota." />
+        : loaded.error
+          ? <p role="alert" style={{ margin: 0, fontSize: "13.5px", color: "#B4232A" }}>{"No se pudieron cargar los cambios. " + loaded.error}</p>
+          : <DiffLoading />}
     </div>
   );
 }

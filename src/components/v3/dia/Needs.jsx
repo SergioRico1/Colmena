@@ -147,7 +147,7 @@ export const ApprovalNeed = withRowBoundary(function ApprovalNeed({ a, bot, miss
         ) : a.summary && a.summary !== a.title ? <p style={body}>{a.summary}</p> : null}
       </div>
       {/* A note of «Notas» the bot wants to write: which one, and the lines it adds and removes. */}
-      {a.wiki ? <NoteAsk wiki={a.wiki} compact={!wide} /> : null}
+      {a.wiki ? <NoteAsk id={a.id} wiki={a.wiki} compact={!wide} /> : null}
       {isQuestion && a.questions?.length > 1 ? (
         // Several questions: one at a time (QuestionFlow.jsx).
         <>

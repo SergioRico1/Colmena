@@ -2,7 +2,7 @@ import { forget } from "../forgotten.mjs";
 import { z } from "zod";
 import { id, now } from "../store.mjs";
 import * as skillsModule from "../skills.mjs";
-import { skillSummary, memorySummary } from "../state.mjs";
+import { skillSummary, memorySummary, memoryArchivePage, MEMORY_PAGE_MAX } from "../state.mjs";
 import { registerMemoryImportRoutes } from "../memory-import.mjs";
 import { confirmMemory, memoryTarget, placeMemory, settleCore } from "../memory.mjs";
 import { notFound, short, check } from "./shared.mjs";
@@ -42,6 +42,15 @@ export function registerSkillRoutes(app, { store, mustGet, runtime, optional }) 
     const data = check(z.object({ content: z.string().min(20).max(60000), source: z.string().max(500).optional(), botId: short.nullable().optional() }).strict(), req.body);
     if (data.botId) mustGet("bots", data.botId, "Bot");
     res.status(201).json(skillSummary(skillsModule.importSkill(store, { ...data, botId: data.botId ?? null })));
+  });
+  // The archive by pages (it has no limit, so /api/state only counts it): newest first, with a
+  // search over the text. → {items, total, cursor}; `cursor` asks for the next page.
+  app.get("/api/memories", (req, res) => {
+    const { q, cursor, limit } = check(z.object({
+      tier: z.literal("archive"), q: z.string().trim().max(200).default(""), cursor: z.string().regex(/^\d{1,9}$/).optional(),
+      limit: z.coerce.number().int().min(1).max(MEMORY_PAGE_MAX).default(50),
+    }).strict(), { ...req.query });
+    res.json(memoryArchivePage(store, { q, cursor: cursor ?? null, limit }));
   });
   app.post("/api/memories", (req, res) => {
     const data = check(z.object({ text: z.string().trim().min(1).max(2000), botId: short.nullable().optional(), scope: z.enum(["bot", "equipo"]).optional() }).strict(), req.body);

@@ -80,6 +80,46 @@ test("/api/state stays under its budget with a big user's data, and carries no b
   assert.deepEqual(listed.filter((k) => PER_MISSION.has(k)), [], "no per-mission kind is listed whole");
 });
 
+test("/api/state carries neither the memory archive nor the diff of a pending note change: both are read on demand", async (t) => {
+  const { store, get } = await bigApp(t);
+  const before = (await get("/state")).bytes;
+  // An archive without a limit: thousands of memories that no longer fit among the ever-present ones.
+  const ARCHIVED = 3000;
+  for (let i = 0; i < ARCHIVED; i++)
+    store.put("memories", { id: "arch-" + i, botId: i % 2 ? "nora" : null, scope: i % 2 ? "bot" : "equipo", text: "Recuerdo archivado número " + i + ": el cliente " + (i % 7 ? "Acme" : "Lozano") + " prefiere que le escriban por la mañana.", source: "dedujo", review: false, active: true, tier: "archive", archivedAt: "2026-10-01T08:00:00.000Z", createdAt: new Date(Date.parse("2026-01-01T00:00:00.000Z") + i * 60_000).toISOString() });
+  // «En duda» (archived, waiting for the person) and what it contradicts stay in the state: the review needs both.
+  store.put("memories", { id: "said", botId: null, scope: "equipo", text: "Los viernes salgo a las 15:00.", source: "dijiste", review: false, active: true, tier: "archive", createdAt: "2026-02-01T00:00:00.000Z" });
+  store.put("memories", { id: "doubt", botId: "nora", scope: "bot", text: "Los viernes sale a las 17:00.", source: "dedujo", review: true, doubt: true, contradicts: "said", active: true, tier: "archive", createdAt: "2026-02-02T00:00:00.000Z" });
+  // A note change that waits, with the biggest diff an approval keeps.
+  const mission = store.list("missions")[0];
+  const patch = "@@ -1,1 +1,900 @@\n" + Array.from({ length: 900 }, (_, i) => "+Línea " + i + " del acta de la reunión con el cliente, con todo su detalle.").join("\n");
+  store.put("approvals", {
+    id: "note-ask", missionId: mission.id, botId: "nora", stepId: null, tool: "wiki_write", kind: "write", scope: "notas", status: "pending", title: "Cambiar la nota «Acta»", summary: "Nora quiere cambiar la nota «Acta».",
+    args: { page: "Acta", action: "replace", section: "", content: "x", revision: 1 }, canAlways: true, createdAt: new Date().toISOString(),
+    wiki: { slug: "acta", title: "Acta", action: "replace", create: false, section: null, baseRevision: 1, patch: patch.slice(0, 60000), added: 900, removed: 1, truncated: false, outside: { suspicious: false } },
+  });
+  const { bytes, json } = await get("/state");
+  assert.ok(bytes <= BUDGETS.stateBytes, `/api/state is ${Math.round(bytes / KB)} KB (budget ${BUDGETS.stateBytes / KB} KB): ${sizes(json)}`);
+  assert.ok(bytes - before < 4 * KB, `3000 archived memories and a 60 KB diff added ${bytes - before} bytes to /api/state`);
+  assert.deepEqual(json.memoryArchive, { count: ARCHIVED });
+  assert.ok(!json.memories.some((m) => m.id.startsWith("arch-")), "no settled archive memory in the state");
+  assert.deepEqual(["said", "doubt"].map((id) => !!json.memories.find((m) => m.id === id)), [true, true]);
+  const ask = json.approvals.find((a) => a.id === "note-ask");
+  assert.deepEqual(ask.wiki, { slug: "acta", title: "Acta", action: "replace", create: false, section: null, added: 900, removed: 1, truncated: false, outside: { suspicious: false } });
+  // The diff, when the card is opened.
+  const diff = (await get("/approvals/note-ask/wiki")).json;
+  assert.deepEqual([diff.patch.length, diff.added, diff.removed, diff.truncated], [Math.min(patch.length, 60000), 900, 1, false]);
+  // The archive, by pages (newest first) and by what it says.
+  const first = (await get("/memories?tier=archive")).json;
+  assert.deepEqual([first.items.length, first.total, first.items[0].id, first.items[0].tier], [50, ARCHIVED, "arch-" + (ARCHIVED - 1), "archive"]);
+  const second = (await get("/memories?tier=archive&limit=200&cursor=" + first.cursor)).json;
+  assert.deepEqual([second.items.length, second.items[0].id, second.cursor], [200, "arch-" + (ARCHIVED - 51), "250"]);
+  const found = (await get("/memories?tier=archive&q=" + encodeURIComponent("numero 2999 acme"))).json;
+  assert.deepEqual([found.total, found.items.map((m) => m.id), found.cursor], [1, ["arch-2999"], null]);
+  const last = (await get("/memories?tier=archive&cursor=" + (ARCHIVED - 10))).json;
+  assert.deepEqual([last.items.length, last.cursor], [10, null]);
+});
+
 test("opening a chat of 800 messages brings its latest page and stays under budget", async (t) => {
   const { get, longChatId } = await bigApp(t);
   const open = await get("/missions/" + longChatId);

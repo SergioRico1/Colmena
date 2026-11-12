@@ -64,7 +64,7 @@ function Row({ a, bots, note = null }) {
           <span style={{ fontSize: "15px", lineHeight: "1.45", color: "#12131A" }}>{a.summary || a.title}</span>
           {a.redLine && a.impact?.headline ? <span style={{ fontSize: "13px", lineHeight: "1.4", color: "#8F1D22" }}>{a.impact.headline}</span> : null}
           {/* A note of «Notas» the bot wants to write: which one, and its changes behind «Ver los cambios». */}
-          {a.wiki ? <NoteAsk wiki={a.wiki} compact /> : null}
+          {a.wiki ? <NoteAsk id={a.id} wiki={a.wiki} compact /> : null}
         </div>
         <ExpiryChip expiresAt={a.expiresAt} />
       </div>
