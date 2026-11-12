@@ -54,6 +54,8 @@ import { registerSuggestionRoutes } from "./routes/suggestions.mjs";
 import { registerFolderRoutes } from "./routes/folders.mjs";
 import { registerNotificationRoutes } from "./routes/notifications.mjs";
 import { registerTeamRoutes } from "./routes/teams.mjs";
+import { registerRoomRoutes } from "./routes/rooms.mjs";
+import { Rooms } from "./room.mjs";
 import { teamsList, teamsPending } from "./peers/teams.mjs";
 import { registerWikiRoutes, wikiImportParser } from "./routes/wiki.mjs";
 import { attachWikiTools } from "./wiki-tools.mjs";
@@ -138,6 +140,10 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     addMessage: (missionId, text) => runtime.addMessage(missionId, text),
   });
   app.locals.watcher = watcher;
+  // One room object over salas and conversations with people (server/room.mjs): made here so
+  // every sala and every group has its room before the first request.
+  const rooms = new Rooms({ store, runtime, getPeers: () => app.locals.peers }).start();
+  app.locals.rooms = rooms;
   // Encrypted backups (backup-service.mjs): index.mjs starts their schedule; tests pass their own.
   app.locals.backups = backups || new Backups({ store, vault: (dir) => windowsVault(dir), keys: dbKeys, appVersion: VERSION });
   // «Cifrar este ordenador» (encryption.mjs): prepared here, applied at the next start.
@@ -243,6 +249,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     // Teams, light (server/peers/teams.mjs): id, name, counts and which one the sidebar shows; alone, one «solo» entry.
     state.teams = safe(() => teamsList(store, app.locals.peers), []);
     state.teamsPending = safe(() => teamsPending(app.locals.peers), []);
+    // Rooms, light (server/room.mjs): id, title, team, links, unread and last activity; the sidebar follows it live.
+    state.rooms = safe(() => rooms.state(), []);
     state.blocks = safe(() => pinnedBlocksState(store), []); // the panel of Inicio: pinned blocks, light (server/blocks.mjs)
     const t2 = performance.now();
     res.set("Server-Timing", `models;dur=${tModels.toFixed(1)}, usage;dur=${tUsage.toFixed(1)}, build;dur=${(t2 - t1).toFixed(1)}, total;dur=${(t2 - t0).toFixed(1)}`);
@@ -417,7 +425,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     res.json({ ok: true, provider: providerStatus() });
   });
   registerSettingsRoutes(app, { listModels, store, runtime });
-  const { messageView, stepView, enabledBot } = registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued });
+  const { messageView, stepView, enabledBot, sendMessage, messageFields } = registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued });
   registerApprovalRoutes(app, { store, runtime, mustGet, connection, need, emailEdit });
   const { ask, parseJson } = registerBotRoutes(app, { store, runtime, optional, mustGet });
   registerSkillRoutes(app, { store, mustGet, runtime, optional });
@@ -454,6 +462,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerEncryptionRoutes(app, { encryption: app.locals.encryption, backups: app.locals.backups });
   registerPeerRoutes(app, { getPeers: () => app.locals.peers, check, z, HttpError }); // «Personas»: other people's Colmenas
   registerTeamRoutes(app, { store, getPeers: () => app.locals.peers }); // «Equipos»: shared rosters of people
+  registerRoomRoutes(app, { store, rooms, messageView, stepView, sendMessage, messageFields }); // «Salas»: one room over a sala and a conversation with people
   registerWebhookRoutes(app, { getWebhooks: () => app.locals.webhooks, store, check, z, HttpError }); // «Cuando avisa otra app»: webhook triggers through the mailbox
   registerGoalRoutes(app, { store, runtime });
   registerCoreRoutes(app, { store, runtime });

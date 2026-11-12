@@ -185,6 +185,8 @@ app.locals.webhooks = webhooks;
 // Teams: a roster of people signed by whoever created it, with a room of everyone. Listening
 // before the mailbox connects, so teammates who are not contacts hear «online» too.
 peers.teams = new Teams({ peers, store }).start();
+// Rooms listen to «Personas» from the start: a roster that arrives, a «please add», a roommate's bots.
+app.locals.rooms.attach(peers);
 peers.start().then(() => { webhooks.start(); return peers.announceProfile(); }).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
 // Your bots answer when they are mentioned in a conversation with people (no tools, no memory),
 // and agree meetings with other people's Colmenas looking only at free/busy.

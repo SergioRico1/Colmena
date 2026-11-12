@@ -216,19 +216,24 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
   const notAside = (text) => {
     if (btwQuestion(text) !== null) throw new HttpError(400, "«/btw» es una pregunta al margen: no entra en la conversación. Envíala con POST /api/missions/:id/btw.");
   };
-  app.post("/api/missions/:id/messages", async (req, res) => {
-    const { text, attachments, replyTo, mode, use, deep, refs } = check(z.object({ text: z.string().trim().min(1).max(20000), attachments: z.array(attachmentInput).max(5).default([]), replyTo: z.string().trim().min(1).max(200).optional(), mode: z.enum(QUEUE_MODES).optional(), use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional(), refs: refsInput.optional() }).strict(), req.body);
-    mustGet("missions", req.params.id, "Misión");
+  // What a message of yours may carry; a room adds whom it is for (routes/rooms.mjs).
+  const messageFields = { text: z.string().trim().min(1).max(20000), attachments: z.array(attachmentInput).max(5).default([]), replyTo: z.string().trim().min(1).max(200).optional(), mode: z.enum(QUEUE_MODES).optional(), use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional(), refs: refsInput.optional() };
+  /** Your message in a sala or a chat, and the turn that answers it. `to`: the bots it is for, when the sender says so. */
+  const sendMessage = async (missionId, { text, attachments = [], replyTo, mode, use, deep, refs, to }) => {
+    mustGet("missions", missionId, "Misión");
     notAside(text);
     const add = need("addMessage");
     // «@» picks: files or folders of this conversation, other conversations (mention-refs.mjs).
-    const picked = await referenceContext(store, { missionId: req.params.id, refs, rootOf });
-    if (!attachments.length && !replyTo && !use?.length && !deep && !picked.refs.length) {
-      const decided = await typedDecision(req.params.id, text);
-      if (decided) return res.json(decided);
+    const picked = await referenceContext(store, { missionId, refs, rootOf });
+    if (!attachments.length && !replyTo && !use?.length && !deep && !picked.refs.length && !to?.length) {
+      const decided = await typedDecision(missionId, text);
+      if (decided) return decided;
     }
-    const files = await writeAttachments(req.params.id, attachments);
-    res.json(await add(req.params.id, text, files, { ...(replyTo ? { replyTo } : {}), ...(mode ? { mode } : {}), ...(use?.length ? { use } : {}), ...(deep ? { deep } : {}), ...(picked.refs.length ? { refs: picked.refs, context: picked.note } : {}) }));
+    const files = await writeAttachments(missionId, attachments);
+    return add(missionId, text, files, { ...(replyTo ? { replyTo } : {}), ...(mode ? { mode } : {}), ...(use?.length ? { use } : {}), ...(deep ? { deep } : {}), ...(picked.refs.length ? { refs: picked.refs, context: picked.note } : {}), ...(to?.length ? { to } : {}) });
+  };
+  app.post("/api/missions/:id/messages", async (req, res) => {
+    res.json(await sendMessage(req.params.id, check(z.object(messageFields).strict(), req.body)));
   });
   // The queue of a conversation (server/queue.mjs): messages written while the bot works,
   // sent one by one when it finishes; «Pasárselo ya» gives one to it at its next step.
@@ -521,5 +526,5 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
     enabledBot(d.botId);
     return need("addMember")(missionId, d.botId);
   });
-  return { messageView, stepView, enabledBot };
+  return { messageView, stepView, enabledBot, sendMessage, messageFields };
 }
