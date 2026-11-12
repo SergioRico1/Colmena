@@ -324,6 +324,13 @@ export class Webhooks {
     } catch {
       return true; // not sealed for this Colmena: nothing to do with it
     }
+    // The mailbox delivers at least once (pushed and listed before the acknowledgement lands):
+    // the same sealed copy a second time is not a second request.
+    const copy = String(row.env?.n || "") + "|" + String(row.env?.epk || "");
+    this.handled ||= new Set();
+    if (this.handled.has(copy)) return true;
+    this.handled.add(copy);
+    if (this.handled.size > WEBHOOK_LIMITS.seen) this.handled.delete(this.handled.values().next().value);
     const rec = this.store.list("webhooks").find((r) => r.hookId && r.hookId === request.hook);
     const rule = rec ? this.store.get("automations", rec.id) : null;
     if (!rec || rule?.trigger?.type !== "webhook") return true; // an address you rotated or revoked
