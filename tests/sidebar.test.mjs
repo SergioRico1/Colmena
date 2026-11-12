@@ -67,6 +67,42 @@ test("rooms: every room of the team and every group with people, by name, withou
   assert.deepEqual(rooms.map((r) => r.href), ["/sala/m-camp", "/sala/m-fact", "/sala/m-q3", "/con/g-obra"]);
 });
 
+test("rooms come from the state's room list: a sala, a room with people or both under one row; tasks are not rooms", () => {
+  const s = snapshot();
+  // What the server says (server/room.mjs): private rooms name neither their sala (their own id) nor their title.
+  s.rooms = [
+    { id: "m-q3", lastAt: ago(10) },
+    { id: "m-camp", lastAt: ago(200), unread: 2 },
+    { id: "r-nueva", missionId: "m-fact", lastAt: ago(5) },
+    { id: "g-obra", title: "obra-nueva", shareId: "g-obra", unread: 4, lastAt: ago(2) },
+    { id: "r-plan", title: "Plan 2027", shareId: "r-plan", missionId: "m-plan", teamId: "t1", unread: 1, lastAt: ago(1) },
+    { id: "g-gen", title: "general", shareId: "g-gen", teamId: "t1", general: true, lastAt: ago(300) },
+    { id: "m-zzz", lastAt: ago(4), snoozedUntil: later(30) },
+  ];
+  s.missions.push({ id: "m-plan", room: "plan", botIds: ["vera"], conversation: false, status: "awaiting_plan", updatedAt: ago(1) }, { id: "m-zzz", room: "pospuesta", botIds: ["nora"], conversation: false, status: "completed", updatedAt: ago(4) });
+  s.approvals.push({ id: "ap-plan2", missionId: "m-plan", botId: "atlas", kind: "plan", status: "pending" });
+  const { rooms } = sidebarModel(s, { now: NOW });
+  assert.deepEqual(rooms.map((r) => [r.title, r.href]), [
+    ["campaña-primavera", "/sala/m-camp"], ["facturación", "/sala/m-fact"], ["general", "/con/g-gen"], ["informe-q3", "/sala/m-q3"], ["obra-nueva", "/con/g-obra"], ["Plan 2027", "/con/r-plan"],
+  ]);
+  const by = Object.fromEntries(rooms.map((r) => [r.id, r]));
+  // Unread is the room's own number; what waits for you is found through its sala.
+  assert.deepEqual([by["m-camp"].unread, by["m-camp"].waiting], [2, 1]);
+  assert.deepEqual([by["m-q3"].unread, by["m-q3"].waiting], [0, 3], "notices are not the room's unread any more");
+  assert.deepEqual([by["r-nueva"].waiting, by["g-obra"].unread, by["g-obra"].waiting], [1, 4, 0]);
+  assert.deepEqual([by["r-plan"].unread, by["r-plan"].waiting, by["r-plan"].withPeople], [1, 1, true], "one row for a room with a sala and people");
+  // A group is listed once (by its room), and directs stay in «Personas».
+  assert.equal(rooms.filter((r) => r.id === "g-obra").length, 1);
+  assert.deepEqual(sidebarModel(s, { now: NOW }).people.map((p) => p.name), ["Lucía Paz", "Marta Gil"]);
+  // By team: its rooms and the ones of no team.
+  assert.deepEqual(sidebarModel(s, { now: NOW, team: "t2" }).rooms.map((r) => r.id).sort(), ["g-obra", "m-camp", "m-q3", "r-nueva"]);
+  assert.ok(sidebarModel(s, { now: NOW + 31 * 60000 }).rooms.some((r) => r.title === "pospuesta"), "a room put off is back when its time comes");
+  // Without the list (an older server) a task is still told from a room by its kind.
+  const old = snapshot();
+  old.missions.find((m) => m.id === "m-fact").kind = "tarea";
+  assert.deepEqual(sidebarModel(old, { now: NOW }).rooms.map((r) => r.title), ["campaña-primavera", "informe-q3", "obra-nueva"]);
+});
+
 test("rooms: unread counts mentions and messages not opened; waiting counts what Inicio lists there", () => {
   const { rooms } = sidebarModel(snapshot(), { now: NOW });
   const by = Object.fromEntries(rooms.map((r) => [r.id, r]));

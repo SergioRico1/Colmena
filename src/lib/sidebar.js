@@ -7,6 +7,7 @@
 //     people: [{id, href, name, presence, status, unread}], waitingCount }
 import { needsCount, needsOf } from "../components/v2/needs.js";
 import { listRows } from "./threads.js";
+import { isBotChat, isSala, roomLinks } from "./rooms.js";
 
 /** Rooms shown before the quiet ones fold behind «Ver todas». */
 export const ROOMS_SHOWN = 8;
@@ -14,7 +15,6 @@ export const ROOMS_SHOWN = 8;
 export const STATE_WORD = { working: "trabajando", waiting: "te espera", free: "libre", paused: "en pausa", stuck: "atascado", limited: "en su límite" };
 export const STATUS_WORD = { dnd: "No molestar", away: "Fuera" };
 
-const isBotChat = (m) => !!m.conversation && m.botIds?.length === 1;
 const time = (v) => Date.parse(v || 0) || 0;
 const byName = (a, b) => String(a).localeCompare(String(b), "es", { sensitivity: "base", numeric: true });
 const initialsOf = (name) => String(name || "").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
@@ -52,8 +52,18 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
   }
 
   const rooms = [];
-  for (const m of listRows(missions)) {
-    if (isBotChat(m) || m.incognito || !inTeam(m)) continue;
+  // Rooms come from the one room list of the state (server/room.mjs): a sala, a conversation
+  // with people, or both under one row. A snapshot without it (an older server) is read as before.
+  const listed = Array.isArray(store.rooms) ? store.rooms : null;
+  for (const r of listed || []) {
+    if (!inTeam(r)) continue;
+    const { missionId, shareId, href, title } = roomLinks(r, missions);
+    const waiting = (missionId && waitingIn.get(missionId)) || 0;
+    if (!waiting && time(r.snoozedUntil) > now) continue;
+    rooms.push({ id: r.id, href, title, unread: r.unread || 0, waiting, at: time(r.lastAt), ...(shareId ? { withPeople: true } : {}) });
+  }
+  for (const m of listed ? [] : listRows(missions)) {
+    if (!isSala(m) || m.incognito || !inTeam(m)) continue;
     const waiting = waitingIn.get(m.id) || 0;
     // «Posponer» takes a room out until its time, unless it waits for you.
     if (!waiting && time(m.snoozedUntil) > now) continue;
@@ -65,6 +75,7 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
     if (s.removed || s.left || !inTeam(s)) continue;
     // Nothing in a conversation with people asks for your decision yet: requests to your bots
     // from other people will (the owner's rule, server/peers), and will count here.
+    if (s.kind !== "dm" && listed) continue;
     if (s.kind !== "dm") { rooms.push({ id: s.id, href: `/con/${s.id}`, title: s.title || "sala", unread: s.unread || 0, waiting: 0, at: time(s.lastAt), withPeople: true }); continue; }
     const other = (s.members || []).find((p) => !p.me) || null;
     talking.add(s.id);

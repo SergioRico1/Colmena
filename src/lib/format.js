@@ -1,4 +1,5 @@
 // Shared formatting + URL helpers (Spanish locale).
+// A room or a task of Trabajo (not a chat with a bot); `missionKind` in ./rooms.js tells the two apart.
 export const isRoom = (m) => !m.conversation && m.status !== "cancelled";
 export const needsYou = (m) => ["waiting", "awaiting_choice", "awaiting_plan"].includes(m.status) || m.pendingCount > 0 || m.watchAsks > 0;
 

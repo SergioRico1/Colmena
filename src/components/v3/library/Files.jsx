@@ -94,7 +94,7 @@ const BotMark = ({ bot }) => (bot
   ? <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", background: bot.color || "#C9CBD1", borderRadius: shapeOf(bot).radius, clipPath: shapeOf(bot).clip }} />
   : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "50%", background: "#12131A" }} />);
 
-const missionHref = (m) => (m ? (m.conversation && m.botIds?.length === 1 && !m.room ? `/chat/${encodeURIComponent(m.botIds[0])}?c=${encodeURIComponent(m.id)}` : m.room || m.conversation ? `/sala/${encodeURIComponent(m.id)}` : `/encargo/${encodeURIComponent(m.id)}`) : null);
+const missionHref = (m) => (m ? (m.conversation && m.botIds?.length === 1 && !m.room ? `/chat/${encodeURIComponent(m.botIds[0])}?c=${encodeURIComponent(m.id)}` : (m.room || m.conversation) && m.kind !== "tarea" ? `/sala/${encodeURIComponent(m.id)}` : `/encargo/${encodeURIComponent(m.id)}`) : null);
 
 export default function Files({ artifacts, bots, missions, ready, expert, initial = null }) {
   const [q, setQ] = useState("");

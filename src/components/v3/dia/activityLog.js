@@ -73,7 +73,7 @@ export function toolLine(name, calls) {
 
 // Where it happened: the chat's title (its bot is already the row's), the room or the task.
 export const placeOf = (m) => (!m ? "" : m.conversation ? m.title || "Chat" : m.room ? "#" + m.room : m.title || "Tarea");
-export const hrefOf = (m) => (!m ? null : m.conversation ? `/chat/${m.botIds?.[0]}?c=${m.id}` : m.room ? `/sala/${m.id}` : `/encargo/${m.id}`);
+export const hrefOf = (m) => (!m ? null : m.conversation ? `/chat/${m.botIds?.[0]}?c=${m.id}` : m.room && m.kind !== "tarea" ? `/sala/${m.id}` : `/encargo/${m.id}`);
 
 const APPROVAL_TEXT = {
   send: (a) => `quiere enviar ${a.email?.subject ? "«" + a.email.subject + "»" : a.title}`,

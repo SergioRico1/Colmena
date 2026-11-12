@@ -43,7 +43,7 @@ export function chatsFrom(missions = [], exclude = null) {
   return (missions || [])
     .filter((m) => m && m.id !== exclude && !m.incognito && !m.archived && (m.conversation || m.room))
     .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")))
-    .map((m) => ({ id: m.id, title: String(m.title || (m.room ? "#" + m.room : "") || "Conversación"), room: !!m.room && !m.conversation }));
+    .map((m) => ({ id: m.id, title: String(m.title || (m.room ? "#" + m.room : "") || "Conversación"), room: !!m.room && !m.conversation && m.kind !== "tarea" }));
 }
 
 /**

@@ -3,6 +3,7 @@ import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { needsYou } from "../../../lib/format.js";
 import { listRows } from "../../../lib/threads.js";
+import { isBotChat, isTask } from "../../../lib/rooms.js";
 import { patch } from "../../../lib/api.js";
 import { shareUrl } from "../../../lib/peers.js";
 import { exportConversation } from "../../../lib/exportConversation.jsx";
@@ -56,8 +57,9 @@ export default function ChatsHome() {
   const rows = useMemo(() => {
     const out = [];
     for (const m of listRows(missions)) {
-      // A chat with one bot (its thread or a private one); anything else is a room.
-      const isBot = !!m.conversation && m.botIds?.length === 1;
+      // A chat with one bot (its thread or a private one) or a room; a task lives in Trabajo (lib/rooms.js).
+      if (isTask(m)) continue;
+      const isBot = isBotChat(m);
       const b = isBot ? botOf(m.botIds[0]) : null;
       const href = isBot ? chatUrl(m) : salaUrl(m);
       const count = (m.botIds || []).length;
