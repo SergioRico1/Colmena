@@ -28,7 +28,10 @@ import { fixture, answer, call, settle } from "./fixtures/runtime-fixture.mjs";
 
 const KB = 1024;
 // Encrypted times are generous on purpose (a slow test machine): measured ~50 ms and ~130 ms on the big user.
-export const BUDGETS = Object.freeze({ stateBytes: 150 * KB, missionSummaryBytes: 900, roomBytes: 160, teamsAndRoomsBytes: 4 * KB, peersBytes: 70 * KB, chatOpenBytes: 120 * KB, chatPageBytes: 120 * KB, bootMs: 8000, encryptedStateMs: 1500, encryptedChatMs: 2000 });
+// stateBytes was 150 KB until 2026-11-12: the room list and the list of what waits for the person
+// (waiting.mjs) add about 2 KB to a big user. To win it back, drop what they duplicate from the
+// mission summaries once the room screen reads rooms (docs/ROOMS-CONTRACT.md).
+export const BUDGETS = Object.freeze({ stateBytes: 156 * KB, missionSummaryBytes: 900, roomBytes: 160, teamsAndRoomsBytes: 4 * KB, peersBytes: 70 * KB, chatOpenBytes: 120 * KB, chatPageBytes: 120 * KB, bootMs: 8000, encryptedStateMs: 1500, encryptedChatMs: 2000 });
 // Kinds read per mission through the missionId index (store.where): listing them all is the
 // regression this guards against (each one grows with every chat, step and tool call).
 const PER_MISSION = new Set(["messages", "steps", "receipts", "thread", "artifacts"]);
