@@ -64,6 +64,8 @@ const missionCreate = z
     dueAt: z.string().datetime({ offset: true }).nullable().optional(),
     // A private chat: deleted 24 h after it starts, no memory or learning (OpenClaw incognito).
     incognito: z.boolean().optional(),
+    // A room («sala») or a task of Trabajo; without it the server tells them apart (mission-kind.mjs).
+    kind: z.enum(["sala", "tarea"]).optional(),
     // «+» in the composer: tools or apps for this message, and «Pensar a fondo».
     use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional(),
     // «@» picks of past conversations (server/mention-refs.mjs); a new chat has no folder yet.

@@ -6,6 +6,7 @@
 // - «Duplicar desde aquí»: a new room with the conversation up to a message, to try another
 //   way without touching the original.
 import { id, now } from "./store.mjs";
+import { missionKind } from "./mission-kind.mjs";
 
 const NEEDS_YOU = new Set(["waiting", "awaiting_plan", "awaiting_choice", "failed"]);
 
@@ -100,7 +101,7 @@ export function forkRoom(store, missionId, messageId = null, { slug }) {
   const mission = store.tx(() => {
     const created = store.put("missions", {
       id: newId, title, room: slug(title, taken), prompt: src.prompt, mode: src.mode, botIds: src.botIds || [],
-      conversation: !!src.conversation, conversationOf: null, safety: src.safety || "avisar",
+      conversation: !!src.conversation, kind: missionKind(src), conversationOf: null, safety: src.safety || "avisar",
       status: "completed", createdAt: now(), completedAt: now(), error: null, steps: [], automationId: null,
       learningStatus: "skipped", priorMessages: [...(src.priorMessages || []), ...turns].slice(-30),
       chosenBotIds: src.chosenBotIds || [], plan: null, result: lastBot?.text || "",

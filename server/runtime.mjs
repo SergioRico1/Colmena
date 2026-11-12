@@ -38,6 +38,8 @@ import {
 } from "./runtime/helpers.mjs";
 import { routed } from "./router.mjs";
 import { isOutsideOrigin } from "./origin.mjs";
+import { MISSION_KINDS, missionKind } from "./mission-kind.mjs";
+import { wrapReport } from "./external-content.mjs";
 import { START_TOOL } from "./brakes.mjs";
 import { installMethods } from "./mixin.mjs";
 import { InferenceMethods } from "./runtime/inference.mjs";
@@ -224,6 +226,7 @@ export class Runtime {
     deep = false,
     thread = false,
     context = "",
+    kind = null,
   }) {
     // «+» in a new chat's composer: the same note and effort as for a later message; `context`
     // is what its «@» picks bring (server/mention-refs.mjs).
@@ -276,6 +279,8 @@ export class Runtime {
       mode,
       botIds: bots,
       conversation: isConversation,
+      // A chat with one bot, a room or a task of Trabajo (mission-kind.mjs): said once, here.
+      kind: missionKind({ kind: MISSION_KINDS.includes(kind) ? kind : null, title: missionTitle, prompt, mode, botIds: bots, conversation: isConversation, incognito: !!incognito && isConversation, automationId }),
       conversationOf: conversationOf || null,
       ...(thread && isConversation ? { thread: true } : {}), // the bot's single chat (threads.mjs)
       ...(promptNote ? { promptNote } : {}),
@@ -338,9 +343,15 @@ export class Runtime {
    * room). The router leaves it to Atlas, it is stamped with where it comes from, and it never
    * counts as the person writing: it decides no plan, resumes no stopped work, stops or
    * interrupts nobody and leaves the run's «the person is here» bookkeeping alone.
+   * `to`: the bots it is for, said by whoever sends it (a room names them: server/room.mjs);
+   * nobody is then looked for in the text. `author` {address, name}: another person wrote it
+   * (docs/ROOMS-CONTRACT.md): never your word either, its bots are only the ones in `to`, and
+   * the turn reads it as outside content. `peerId`: the same message as people got it.
    */
-  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "", route = true, origin = null, automationId = null } = {}) {
-    const own = route !== false && !origin;
+  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "", route = true, origin = null, automationId = null, to = null, author = null, peerId = null } = {}) {
+    const writer = author && typeof author.address === "string" ? { address: author.address, name: String(author.name || "Alguien").slice(0, 80) } : null;
+    const own = route !== false && !origin && !writer;
+    const link = peerId ? { peerId: String(peerId) } : {};
     // «+» in the composer: tools or apps chosen for this message, and «Pensar a fondo»; the
     // «@» picks of files and conversations bring `context` (server/mention-refs.mjs).
     const chosen = cleanUse(use);
@@ -365,13 +376,14 @@ export class Runtime {
     const working = this.active.has(missionId) && !["completed", "paused", "waiting"].includes(m.status);
     // «Para», «detente», «stop»… alone: the work stops (as the Pause button), nothing is lost.
     if (own && working && !thread && STOP_RE.test(text)) {
-      const message = this.store.put("messages", { id: id(), missionId, role: "user", text, kind: "message", attachments: [], at: now(), stop: true });
+      const message = this.store.put("messages", { id: id(), missionId, role: "user", text, kind: "message", attachments: [], at: now(), stop: true, ...link });
       this.stop(missionId);
       return message;
     }
     if (stalled.length && !thread) return this.resumeStalled(m, stalled, text, attachments);
     const prior = this.steps(missionId);
-    const named = addressees(text, this.roomMembers(m));
+    // Whom it is for: said by the sender, else read from your own text. Another person's text names nobody.
+    const named = Array.isArray(to) ? [...new Set(to)].filter((b) => this.bot(b)?.enabled).slice(0, 4) : writer ? [] : addressees(text, this.roomMembers(m));
     const root = thread ? this.store.get("messages", thread) : null;
     const threadBot = root?.role === "assistant" && root.botId && (m.botIds.includes(root.botId) || root.botId === "atlas") ? root.botId : null;
     // Ctrl+Enter sends one message with the other mode (OpenClaw steer ⇄ queue).
@@ -408,11 +420,18 @@ export class Runtime {
       ...(later && !router ? { awaitsTurn: { to: botIds, own } } : {}),
       // Written by Colmena on its own: marked from the start, never the person's words.
       ...(origin ? { origin } : {}), ...(automationId ? { automationId } : {}),
+      ...(writer ? { author: writer } : {}), ...link,
     });
-    const turn = { messageId, text, note, effort, about, thread, mode, named, own };
+    const turn = { messageId, text: this.saidBy(text, writer), note, effort, about, thread, mode, named, own };
     if (later) this.routeLater(missionId, turn, { router, botIds });
     else this.deliverTurn(missionId, turn, botIds);
     return message;
+  }
+  /** What a bot reads of a message: your words as they are; another person's, as outside content. */
+  saidBy(text, author) {
+    if (!author) return text;
+    const name = String(author.name || "otra persona");
+    return wrapReport(String(text || ""), { source: "chat", sender: name, label: "Mensaje de " + name + " en la sala (no es tu dueño)" }).text;
   }
   /** What a turn in a message's thread reads before the reply itself: the message it hangs from, as data. */
   threadAbout(root) {
@@ -534,7 +553,8 @@ export class Runtime {
     if (m.botIds.includes(botId)) return m;
     if (bot.audience === "yo" && !m.conversation) throw Error("Los bots personales solo participan en su chat privado.");
     if (m.botIds.length >= 6) throw Error("Como maximo seis bots por conversacion.");
-    const updated = this.store.patch("missions", missionId, { botIds: [...m.botIds, botId] });
+    // A chat with one bot that gets company is a room from then on (mission-kind.mjs).
+    const updated = this.store.patch("missions", missionId, { botIds: [...m.botIds, botId], ...(m.conversation && !m.incognito && missionKind(m) === "chat" ? { kind: "sala" } : {}) });
     this.store.put("messages", { id: id(), missionId, role: "system", botId, kind: "activity", text: bot.name + " se ha unido a la conversacion.", at: now() });
     this.store.event(missionId, "member_added", { botId, text: bot.name + " se ha unido" });
     return updated;

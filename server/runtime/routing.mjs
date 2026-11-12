@@ -137,13 +137,13 @@ export class RoutingMethods {
         // Whom it was for, if they are still here; nobody named (or nobody left): Atlas.
         const members = new Set(this.roomMembers(m).map((b) => b.id));
         const to = (waited?.to || []).filter((b) => members.has(b) && this.bot(b)?.enabled);
-        const own = waited ? waited.own !== false && !msg.origin : true;
+        const own = (waited ? waited.own !== false && !msg.origin : true) && !msg.author;
         const mode = msg.mode || m.queueMode || "steer";
         const root = waited && msg.replyTo ? this.store.get("messages", msg.replyTo) : null;
         if (waited) this.store.patch("messages", msg.id, { awaitsTurn: null });
         else this.store.patch("messages", msg.id, { routing: false, routed: routed(["atlas"], "atlas", messageId ? "No se pudo elegir ahora" : "Colmena se cerró mientras elegía") });
         this.deliverTurn(m.id, {
-          messageId: msg.id, text: String(msg.text || ""), note: turnNote(cleanUse(msg.use || []), { deep: !!msg.deep }), effort: msg.deep ? "high" : undefined,
+          messageId: msg.id, text: this.saidBy(String(msg.text || ""), msg.author || null), note: turnNote(cleanUse(msg.use || []), { deep: !!msg.deep }), effort: msg.deep ? "high" : undefined,
           about: root ? this.threadAbout(root) : "", thread: root ? msg.replyTo : null, mode: !own && mode === "interrupt" ? "steer" : mode, named: (msg.to || []).filter((b) => to.includes(b)), own,
         }, to.length ? to : ["atlas"]);
         recovered.push(msg.id);

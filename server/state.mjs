@@ -12,6 +12,7 @@ import { isFlagged, unwrapExternal } from "./external-content.mjs";
 import { FIND_TOOLS, USE_TOOL, wrappedCall } from "./tool-search.mjs";
 import { approvalGroup } from "./approval-groups.mjs";
 import { memoryProvenance, memoryTier } from "./memory.mjs";
+import { missionKind } from "./mission-kind.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
@@ -293,19 +294,26 @@ function activityLine(m, ctx) {
 // Fields of a mission summary that are usually empty: left out when null or false, so a
 // hundred finished missions do not fill /api/state with «"forkOf":null» (T3 Code keeps the
 // shell lean). The client reads them as optional (undefined is as falsy as null).
-const OPTIONAL_MISSION = ["conversationOf", "incognito", "expiresAt", "limited", "narration", "recap", "queuePaused", "quiet", "dueAt", "automationId", "error", "snoozedUntil", "archived", "forkOf", "nothingNew", "watch", "thread", "lastLine"];
+const OPTIONAL_MISSION = ["kind", "conversationOf", "incognito", "expiresAt", "limited", "narration", "recap", "queuePaused", "quiet", "dueAt", "automationId", "error", "snoozedUntil", "archived", "forkOf", "nothingNew", "watch", "thread", "lastLine"];
 const leanSummary = (view) => {
   for (const key of OPTIONAL_MISSION) if (view[key] === null || view[key] === false) delete view[key];
   return view;
 };
 
+const summaryKind = (m) => {
+  const kind = missionKind(m);
+  return kind === (m.conversation && (m.botIds || []).length === 1 ? "chat" : m.automationId ? "tarea" : "sala") ? null : kind;
+};
 export function missionSummary(m, ctx) {
   const steps = ctx.stepsByMission.get(m.id) || [];
   const pending = ctx.pendingByMission.get(m.id) || [];
   return leanSummary({
     // Lists show and search the start of the request; the whole of it comes with the mission (GET /api/missions/:id).
     id: m.id, title: m.title, room: missionRoom(m), prompt: String(m.prompt || "").slice(0, 120),
-    mode: m.mode || "solo", botIds: m.botIds || [], conversation: !!m.conversation, conversationOf: m.conversationOf ?? null,
+    // "chat" (with one bot), "sala" (a room) or "tarea" (Trabajo): the one answer to «is this a room»
+    // (mission-kind.mjs). Only said when it is not what the shape gives away (a conversation with
+    // one bot is a chat, a routine's run a task, anything else a room): src/lib/rooms.js reads it back.
+    mode: m.mode || "solo", kind: summaryKind(m), botIds: m.botIds || [], conversation: !!m.conversation, conversationOf: m.conversationOf ?? null,
     incognito: !!m.incognito, expiresAt: m.incognito ? m.expiresAt ?? null : null,
     status: m.status, statusLabel: m.status === "paused" && m.limited ? "Limitado" : MISSION_LABELS[m.status] || m.status, activityLine: activityLine(m, ctx),
     // Paused by an AI's usage limit: which one, when it renews, when the work goes on alone.
