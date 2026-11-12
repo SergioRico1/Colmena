@@ -184,3 +184,45 @@ test("a routine's message in a room is not the person writing: the run stays una
   assert.throws(() => delivered(store, runtime, room, trigger(), "Rutina «Pedidos»: sigue"), /trabajo detenido/);
   assert.ok(store.get("steps", step.id).stalled, "still stopped");
 });
+
+test("notes the person leaves in a 1:1 chat reach the bot's next turn, once: a hand-back note, and why they stopped it after «Descartar»", async (t) => {
+  const inputs = [];
+  let hang = null;
+  const { store, runtime } = await fixture(t, async ({ input, tools, signal }) => {
+    if (!tools?.length) return answer("Vale.");
+    inputs.push(JSON.stringify(input));
+    if (hang) { const started = hang; hang = null; started(); await new Promise((resolve, reject) => signal?.addEventListener("abort", () => reject(signal.reason), { once: true })); }
+    return answer("Hecho.");
+  });
+  const last = () => inputs.at(-1);
+  const chat = runtime.create({ prompt: "Hola", mode: "solo", botIds: ["nora"], conversation: true });
+  await runtime.launch(chat.id);
+  await settle(runtime);
+  // Left while no step is running (the browser handed back to the bot).
+  const note = runtime.threadHint(chat.id, "He iniciado sesión en la web del banco; ya puedes seguir.");
+  runtime.addMessage(chat.id, "Sigue con lo del banco");
+  await settle(runtime);
+  assert.match(last(), /Notas de la persona en el hilo: «He iniciado sesión en la web del banco/);
+  const turn = runtime.steps(chat.id).at(-1);
+  assert.deepEqual(turn.seenHints, [note.id], "seen is what it was given");
+  assert.equal(runtime.injectHints(runtime.liveStep(turn.id)).history.length, runtime.liveStep(turn.id).history.length, "a restart mid-step does not give it again");
+  // The next turn does not repeat it.
+  runtime.addMessage(chat.id, "¿Y ahora?");
+  await settle(runtime);
+  assert.doesNotMatch(last(), /He iniciado sesión/);
+
+  // Stopped, told why, and what was left half done discarded: the next turn still reads why.
+  const atWork = new Promise((resolve) => { hang = resolve; });
+  runtime.addMessage(chat.id, "Prepara el informe largo");
+  await atWork;
+  runtime.stop(chat.id);
+  await settle(runtime);
+  assert.equal(runtime.stopWhy(chat.id, "No uses los datos de 2024"), "No uses los datos de 2024");
+  runtime.discardStopped(chat.id);
+  runtime.addMessage(chat.id, "Hazlo otra vez");
+  await settle(runtime);
+  assert.match(last(), /La persona te paró y te dice por qué: «No uses los datos de 2024»/);
+  runtime.addMessage(chat.id, "Gracias");
+  await settle(runtime);
+  assert.doesNotMatch(last(), /te paró/, "a one-off note, read once");
+});

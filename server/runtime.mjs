@@ -969,14 +969,18 @@ export class Runtime {
     // The system prompt is fixed once per step (first round): memory written during the
     // step shows up in the next one, as in Hermes' frozen snapshot.
     const instructions = () => composeInstructions(this.store, bot, { mission, autonomy: this.autonomy(mission, bot), extra: mission.incognito ? INCOGNITO_NOTE : "" });
-    if (!step.history)
+    if (!step.history) {
+      // Seen is exactly what the first request carries: a note that is not in it is still new
+      // for this step's later rounds (injectHints), never silently marked as read.
+      const hints = this.startHints(mission, step);
       step = this.patchStep(step, {
-        history: this.initialHistory(mission, step),
-        seenHints: this.hintsRead(step, this.hintsFor(step), this.userHints(missionId).map((h) => h.id)),
+        history: this.initialHistory(mission, step, hints),
+        // (Those an earlier turn of a chat was given are settled too: they are not new here.)
+        seenHints: this.hintsRead(step, hints, this.hintsFor(step).map((h) => h.id)),
         ...(this.usesBrief(mission, step) ? { seenBrief: this.missionBrief(missionId, { forBotId: bot.id, exceptStepId: step.id }).keys } : {}),
         instructions: instructions(),
       });
-    else if (!step.instructions) step = this.patchStep(step, { instructions: instructions() });
+    } else if (!step.instructions) step = this.patchStep(step, { instructions: instructions() });
     // Cut by a cancel, «Reintentar» or a close (not waiting for an OK): the calls it had
     // chosen and that never got a result get one now, so it decides again.
     if (["running", "pending"].includes(step.status)) step = this.settleInterrupted(step);

@@ -26,6 +26,9 @@ import {
   MEMORY_FLUSH, COMPACT_INSTRUCTIONS, WEB_SEARCH_NOTE, THREAD_WINDOW, threadCut, DIRECTIONS, INCOGNITO_DENY, watchSourcesNote, BRIEF_KINDS,
 } from "./helpers.mjs";
 
+/** What goes before the person's notes of the thread in a step's first request. */
+const HINTS_LEAD = "Notas de la persona en el hilo: ";
+
 /** Runtime methods: what a step starts with and reads on the way (history, brief, hints, messages), its tools, and keeping its context within the model's window. */
 export class ContextMethods {
   attachmentList(attachments) {
@@ -91,6 +94,22 @@ export class ContextMethods {
   hintsFor(step) {
     return this.userHints(step.missionId).filter((h) => !h.once || !(h.readBy || []).some((r) => r.botId === step.botId && r.stepId !== step.id));
   }
+  /**
+   * The person's notes a step reads when it starts. In a chat every message is a new turn, so
+   * a turn gets only the notes no earlier turn of its bot was given (the conversation itself
+   * carries what those were told); a step of a team's work gets them all. What this returns
+   * is what goes into the step's first request, and only that is marked as seen (runStep).
+   */
+  startHints(mission, step) {
+    const hints = this.hintsFor(step);
+    if (!this.isChatTurn(mission, step) || !hints.length) return hints;
+    const given = new Set(this.steps(mission.id).filter((s) => s.id !== step.id && s.botId === step.botId && !s.skipped).flatMap((s) => s.seenHints || []));
+    return hints.filter((h) => !given.has(h.id));
+  }
+  /** A turn of a 1:1 chat (its first answer or a follow-up): it reads the conversation as turns, not a brief. */
+  isChatTurn(mission, step) {
+    return !!mission.conversation && (step.kind === "followup" || step.kind === "solo");
+  }
   /** Marks the one-off notes among `hints` as read by this step's bot; returns `ids` as given. */
   hintsRead(step, hints, ids = hints.map((h) => h.id)) {
     for (const h of hints)
@@ -120,12 +139,12 @@ export class ContextMethods {
       return "";
     }
   }
-  initialHistory(mission, step) {
+  initialHistory(mission, step, hints = this.startHints(mission, step)) {
     // The person's reactions since this bot's last turn: context, never a turn of their own.
     const reacted = [reactionNotices(this.store, mission.id, step.botId, (b) => this.bot(b)?.name || b), this.takenNote(step), this.restoredNote(mission.id, step.botId)].filter(Boolean).join("\n\n");
     // Several bots answering the same message: who else answers, and what they already said.
     const together = [step.chain && step.chainIndex === 0 ? chainLead(step.chainNames || []) : "", siblingNote(this.steps(mission.id), step, (b) => this.bot(b)?.name || b), this.passHint(mission, step)].filter(Boolean).join("\n\n");
-    if (mission.conversation && (step.kind === "followup" || step.kind === "solo")) {
+    if (this.isChatTurn(mission, step)) {
       const turns = step.kind === "followup" ? this.handoffTurns(mission, step) || this.conversationTurns(mission.id, { skipLastUser: true }) : [];
       const request = step.kind === "followup" ? step.request : mission.prompt + (mission.promptNote || "");
       // Drafts it left and emails it sent here: «envíalo» is that draft, never a search.
@@ -133,7 +152,9 @@ export class ContextMethods {
       return [
         ...(mission.priorMessages || []),
         ...turns,
-        { role: "user", content: [reacted, inGmail, request, this.relatedNote(mission, step, request), together, nowNote()].filter(Boolean).join("\n\n") },
+        // Notes the person left in the thread since this bot's last turn (why they stopped it,
+        // what they did in the browser): information, after the request.
+        { role: "user", content: [reacted, inGmail, request, hints.length ? HINTS_LEAD + hints.map((h) => "«" + h.text + "»").join(" ") : "", this.relatedNote(mission, step, request), together, nowNote()].filter(Boolean).join("\n\n") },
       ];
     }
     const steps = this.steps(mission.id);
@@ -153,8 +174,7 @@ export class ContextMethods {
     // deliverables and the bots' thread. Later rounds get only what is new (injectBrief).
     if (this.usesBrief(mission, step)) lines.push("", this.missionBrief(mission.id, { forBotId: step.botId, exceptStepId: step.id }).text, "");
     lines.push("Equipo: " + mission.botIds.join(", "));
-    const hints = this.hintsFor(step);
-    if (hints.length) lines.push("Notas de la persona en el hilo: " + hints.map((h) => "«" + h.text + "»").join(" "));
+    if (hints.length) lines.push(HINTS_LEAD + hints.map((h) => "«" + h.text + "»").join(" "));
     if (reacted) lines.push(reacted);
     if (together) lines.push("", together);
     if (mission.automationId) lines.push("", automationNote(this.store.get("automations", mission.automationId), { final: ["solo", "synthesis"].includes(step.kind) || !!step.final }));
