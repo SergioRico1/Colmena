@@ -7,6 +7,10 @@
 // - Someone else's mention only wakes it if you allow it for that person (Ajustes ›
 //   Personas › «Hablar con tus bots»: «Si los menciona» or «Nunca»).
 // - Bots never wake bots (no loops between Colmenas), at most a few answers per hour.
+// In a room with people (a group: server/room.mjs) what YOU ask one of your bots is your own
+// request: it takes the turn in the room's sala, with its tools, and its final answer goes to
+// everyone. Whether it does is decided here, in handle(), for every message whatever sent it;
+// what another person asks keeps the rules above (no tools).
 import { now } from "../store.mjs";
 import { readSoul, renderSoulTemplate, personalityHints } from "../soul.mjs";
 import { wrapReport } from "../external-content.mjs";
@@ -42,7 +46,7 @@ export class PeerBots {
   /** Resolves once every answer started so far has finished (tests). */
   async idle() { while (this.pending.size) await Promise.all([...this.pending]); }
 
-  async handle({ share, message, mine }) {
+  async handle({ share, message, mine, hint = null }) {
     if (!share || !message || message.bot || message.card) return; // bots never wake bots
     // A guest of a group (design/V2Personas.dc.html, paso roles) talks, but wakes no bot.
     if (share.kind === "group" && this.peers.roleOf?.(share, message.from) === "guest") return;
@@ -51,8 +55,10 @@ export class PeerBots {
     // Bots picked with «@» say exactly whose bot is meant («Vera de Sergio», not your Vera);
     // only a message without them is read for «@Nombre» of your own bots.
     const byName = mine && !message.mentions?.length ? mentionedByName(message.text, mineBots) : [];
-    const targets = [...new Set([...named, ...byName])].slice(0, PEER_BOT_LIMITS.perMessage);
-    if (!targets.length) return;
+    let targets = [...new Set([...named, ...byName])].slice(0, PEER_BOT_LIMITS.perMessage);
+    // Your own message in a room: the room decides which of your bots work on it (Rooms#ownTurn).
+    const rooms = mine && share.kind === "group" ? this.peers.rooms || null : null;
+    if (!targets.length && !(rooms && hint?.missionThread)) return;
     if (!mine) {
       const c = this.peers.contact(message.from);
       // Your setting for that person (a «known» member of a group counts as asking).
@@ -60,7 +66,7 @@ export class PeerBots {
     }
     // «@Atlas búscanos una hora…» from you: your bot organizes the meeting (meetings.mjs)
     // instead of answering in words. Only you can start one with your bots.
-    if (mine && this.peers.meetings && isMeetingRequest(message.text)) {
+    if (mine && targets.length && this.peers.meetings && isMeetingRequest(message.text)) {
       const bot = targets[0];
       const recent = this.store.where("peerMessages", "shareId", share.id).filter((m) => !m.local && m.id !== message.id && !m.card)
         .sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 10).map((m) => m.text);
@@ -69,6 +75,10 @@ export class PeerBots {
       this.pending.add(run);
       run.finally(() => this.pending.delete(run));
       return;
+    }
+    if (rooms) {
+      const taken = new Set(rooms.ownTurn(share, message, targets.map((b) => b.id), hint));
+      targets = targets.filter((b) => !taken.has(b.id));
     }
     for (const bot of targets) {
       const run = this.answer(share, message, bot, mine);
