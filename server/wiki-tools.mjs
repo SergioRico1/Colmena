@@ -24,6 +24,7 @@ import { deniedResult } from "./denial.mjs";
 import { findGrant } from "./learning.mjs";
 import { saidByYou } from "./preferences.mjs";
 import { detectInjection, sanitizeExternal, withoutExternal, wrapReport } from "./external-content.mjs";
+import { worksFromOutside } from "./origin.mjs";
 import {
   WIKI_LIMITS, applySection, backlinksOf, byView, cleanTitle, createPage, getPage, outgoingLinks, resolvePage, searchPages, updatePage, versionsOf,
 } from "./wiki.mjs";
@@ -202,8 +203,8 @@ async function wikiWrite(runtime, raw, ctx) {
     if (plan.problem) return plan.problem;
     // Injection phrases read in this step (or found in the text itself): only the person decides.
     const suspicious = !!runtime.flagged?.(step) || detectInjection(args.content).length > 0;
-    const fresh = store.get("steps", step.id) || step;
-    const readOutside = suspicious || ((!!runtime.readOutside?.(step) || !!fresh.wikiOutside) && !saidByYou(store, mission.id, args.content));
+    // Outside content it works from: read with a tool or in a marked note, or the event that started this turn (origin.mjs).
+    const readOutside = suspicious || (worksFromOutside(store, mission, step, { history: runtime.history?.(step.id) }) && !saidByYou(store, mission.id, args.content));
     const outside = readOutside ? { suspicious } : null;
     const autonomy = runtime.autonomy?.(mission, bot) || "sugiere";
     if (!suspicious && (personAskedForNotes(store, mission) || autonomy !== "sugiere")) return applyWrite(runtime, ctx, args, approvalId, outside);

@@ -13,7 +13,8 @@ import { buildWorkbook } from "../sheets/index.mjs";
 import { computer as desktopBridge } from "../computer/bridge.mjs";
 import { capRead, isAppToolName, retryRead, slimAppResult } from "../apptools.mjs";
 import { saidByYou } from "../preferences.mjs";
-import { externalSourceOf, isFlagged, isForeignSource, toolOutput, toolResultText } from "../external-content.mjs";
+import { externalSourceOf, isFlagged, readOutsideByTools, toolOutput, toolResultText } from "../external-content.mjs";
+import { worksFromOutside } from "../origin.mjs";
 import { toolOutputFor } from "../computer/tools.mjs";
 import { handleGoalTool } from "../goals.mjs";
 import path from "node:path";
@@ -410,7 +411,7 @@ export class EffectMethods {
   queueReview(approval, mission, bot, step = null) {
     if (!this.review || this.settings().autoReview === false || !REVIEWABLE.has(approval.tool)) return;
     // Proposed after reading outside content: the person asked for it or not, only they decide.
-    if (step && this.readOutside(step)) return;
+    if (step && this.fromOutside(mission, step)) return;
     const content = String(approval.args?.content || "");
     if (containsSecret(content) || containsSecret(approval.summary)) return;
     const model = cheapestModel(this.availableModels());
@@ -490,7 +491,7 @@ export class EffectMethods {
     // the person wrote in this chat (preferences.mjs): then it is theirs.
     // After reading injection phrases nothing counts as the person's own words.
     const suspicious = !approved && this.flagged(step);
-    const external = !approved && (suspicious || this.readOutside(step) && !memoryOps(args).every((op) => op.action === "remove" || saidByYou(this.store, mission.id, op.text)));
+    const external = !approved && (suspicious || this.fromOutside(mission, step) && !memoryOps(args).every((op) => op.action === "remove" || saidByYou(this.store, mission.id, op.text)));
     const { results, usage, archived } = applyMemoryOps(this.store, {
       ops: memoryOps(args), bot, mission, source: approved ? "acuerdo" : "dedujo", review: !approved, keyPrefix: effectId,
       ...(external ? { origin: "externo", sourceLabel: "Lo guardó " + bot.name + " tras leer contenido de fuera en «" + mission.title + "» · sin confirmar" } : {}),
@@ -511,8 +512,15 @@ export class EffectMethods {
   }
   /** The step read content from outside (web, apps, the browser) before now: its memory writes are untrusted. */
   readOutside(step) {
-    const history = this.history(step.id) || step.history || [];
-    return history.some((x) => x?.type === "web_search_call" || (x?.type === "function_call" && isForeignSource(externalSourceOf(x.name))));
+    return readOutsideByTools(this.history(step.id) || step.history || []);
+  }
+  /**
+   * The step works from outside content (origin.mjs worksFromOutside): it read some with its
+   * tools or from a marked note, or an outside event (a trigger, a webhook, the watcher)
+   * started its run or wrote the message it answers. What it writes keeps the outside mark.
+   */
+  fromOutside(mission, step) {
+    return worksFromOutside(this.store, mission, step, { history: this.history(step.id) || step.history || [] });
   }
   /** Next version of a deliverable with the same title in the mission. */
   nextVersion(missionId, title, effectId) {

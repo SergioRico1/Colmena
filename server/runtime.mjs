@@ -37,6 +37,7 @@ import {
   RESUME_WINDOW_MS, LIMIT_RESUMES, runsInParallel, PROGRESS_MAX, LIVE_AFTER, countWords,
 } from "./runtime/helpers.mjs";
 import { routed } from "./router.mjs";
+import { isOutsideOrigin, isPersonMessage as isOwnMessage } from "./origin.mjs";
 import { installMethods } from "./mixin.mjs";
 import { InferenceMethods } from "./runtime/inference.mjs";
 import { ContextMethods } from "./runtime/context.mjs";
@@ -490,6 +491,8 @@ export class Runtime {
         failures: {},
         ackOn: message.id,
         ackDone: false,
+        // It was answering what an outside event wrote: what it goes on to write keeps that mark.
+        ...(isOutsideOrigin(fresh.ackOn ? this.store.get("messages", fresh.ackOn) : null) ? { outsideOrigin: true } : {}),
       });
     }
     this.store.patch("missions", mission.id, { status: "queued", error: null });

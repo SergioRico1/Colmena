@@ -8,7 +8,7 @@
 //     file) never does, even if its wrapping were lost;
 //   · `depth` is how many self-started runs led to this one: rules that fire each other are cut
 //     at MAX_CHAIN_DEPTH (brakes.mjs).
-import { withoutExternal } from "./external-content.mjs";
+import { readOutsideByTools, withoutExternal } from "./external-content.mjs";
 
 export const ORIGIN_TYPES = Object.freeze(["automation", "trigger", "watch"]);
 /** Self-started runs in a row (A's output fires B, B's fires A…) before the chain is cut. */
@@ -45,4 +45,31 @@ export function chainDepth(message, mission = null) {
   if (isPersonMessage(message)) return 0;
   const depth = Number(message?.origin?.depth ?? mission?.origin?.depth ?? 0);
   return Number.isFinite(depth) && depth > 0 ? Math.round(depth) : 0;
+}
+
+/** Origins whose text carries what set them off (an email, a page, a webhook body): outside content. */
+const OUTSIDE_ORIGINS = new Set(["trigger", "watch"]);
+/** A mission or a message started by an outside event (a trigger — webhooks included — or the watcher). */
+export const isOutsideOrigin = (record) => isAutomated(record) && OUTSIDE_ORIGINS.has(record.origin.type);
+
+/**
+ * The one answer to «is this step working from outside content?», for everything that keeps
+ * the outside mark on what a bot writes (wiki_write, remember, block_post, the reviewer):
+ *   · it read outside content with its tools (`history`: the step's conversation), or a note
+ *     or block that carries the mark (`wikiOutside`);
+ *   · an outside event started its run (the mission's origin), or wrote the message this step
+ *     answers (`ackOn` / `ackExtra`): the payload travels inside the request text, not in a
+ *     tool call. Never the room's last message: the person may write while the step works.
+ * A step that goes on after the person's «continúa» keeps it (`outsideOrigin`).
+ */
+export function worksFromOutside(store, mission, step, { history = null } = {}) {
+  if (!step) return isOutsideOrigin(mission);
+  const fresh = (step.id && store?.get("steps", step.id)) || step;
+  if (fresh.wikiOutside || fresh.outsideOrigin) return true;
+  if (readOutsideByTools(history ?? fresh.history ?? step.history)) return true;
+  if (isOutsideOrigin(mission)) return true;
+  const asked = [fresh.ackOn, ...(fresh.ackExtra || [])].filter(Boolean);
+  if (asked.length) return asked.some((id) => isOutsideOrigin(store.get("messages", id)));
+  // A step that answers no message in particular (a conversation's first one): its latest request.
+  return !!mission?.id && isOutsideOrigin(store.where("messages", "missionId", mission.id).filter((m) => m.role === "user").at(-1));
 }

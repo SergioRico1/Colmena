@@ -174,6 +174,9 @@ export function externalSourceOf(name) {
 // Outside in the strict sense: someone else could have written it (not the person's own files or commands).
 const FOREIGN = new Set(["email", "app", "web", "mcp", "api", "browser", "screen"]);
 export const isForeignSource = (source) => FOREIGN.has(source);
+/** Whether a step's conversation shows it read outside content through its tools (the web, mail, an app, the browser). */
+export const readOutsideByTools = (history) =>
+  (Array.isArray(history) ? history : []).some((x) => x?.type === "web_search_call" || (x?.type === "function_call" && isForeignSource(externalSourceOf(x.name))));
 
 /**
  * A tool's result as the model reads it: Colmena's own data stays as JSON; outside content is
