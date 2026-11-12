@@ -1,3 +1,4 @@
+import { isSnoozed } from "../snooze.mjs";
 import { isYes, isNo } from "../appactions.mjs";
 import { CHAT_PAGE, MAX_PAGE, ROOM_PAGE, conversationMap, historyPage, stepsForPage, withoutSaidText } from "../history.mjs";
 import { referenceContext, refsInput } from "../mention-refs.mjs";
@@ -185,7 +186,9 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
   const typedDecision = async (missionId, text) => {
     const decision = isYes(text) ? "approved" : isNo(text) ? "denied" : null;
     if (!decision) return null;
-    const open = store.where("approvals", "missionId", missionId).filter((a) => a.status === "pending" && (a.tool === "apps_execute" || ["permission", "write", "memory"].includes(a.kind)));
+    // One put off with «Recordar después» is not what the person is answering: it waits for its
+    // time (or for its card), and a «sí» in the chat goes to the bot as an ordinary message.
+    const open = store.where("approvals", "missionId", missionId).filter((a) => a.status === "pending" && !isSnoozed(a) && (a.tool === "apps_execute" || ["permission", "write", "memory"].includes(a.kind)));
     if (open.length !== 1) return null;
     const a = open[0];
     if (decision === "approved" && a.kind === "send" && !/env[ií]a|manda|m[aá]ndal|env[ií]al/i.test(text)) return null;

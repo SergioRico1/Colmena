@@ -38,6 +38,7 @@ import {
 } from "./runtime/helpers.mjs";
 import { routed } from "./router.mjs";
 import { isOutsideOrigin } from "./origin.mjs";
+import { START_TOOL } from "./brakes.mjs";
 import { installMethods } from "./mixin.mjs";
 import { InferenceMethods } from "./runtime/inference.mjs";
 import { ContextMethods } from "./runtime/context.mjs";
@@ -616,6 +617,7 @@ export class Runtime {
    */
   resume(missionId) {
     if (!this.store.get("missions", missionId)) throw Error("Misión no encontrada.");
+    this.notProposed(missionId);
     this.turnCalls.delete(missionId);
     this.runOrigin.set(missionId, "go");
     return this.launch(missionId);
@@ -1451,7 +1453,16 @@ export class Runtime {
     this.store.patch("missions", missionId, { quiet: { since, botId: botId || null, verb: act?.verb || null, detail: act?.detail || null } });
   }
   /** «Reintentar»: drops the call in flight and starts again from the last saved step. */
+  /**
+   * Work a rule proposed instead of starting («<Bot> quiere empezar…», scheduler.mjs) stays
+   * proposed until its card is answered: «Continuar» or «Reintentar» do not start it.
+   */
+  notProposed(missionId) {
+    if (this.store.where("approvals", "missionId", missionId).some((a) => a.tool === START_TOOL && a.status === "pending"))
+      throw Object.assign(Error("Este trabajo está propuesto, no empezado. Responde antes a la tarjeta «quiere empezar»."), { status: 409 });
+  }
   retry(missionId) {
+    this.notProposed(missionId);
     const controller = this.active.get(missionId);
     if (!controller) return this.launch(missionId);
     controller.abort(Object.assign(Error("Reintentando."), { code: RETRY_CODE }));

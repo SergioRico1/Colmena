@@ -370,6 +370,11 @@ test("e) with the real runtime: «Adelante» starts the conversation, «Ahora no
   const first = store.get("automations", "go").lastMissionId;
   assert.equal(store.get("missions", first).status, "waiting");
   assert.equal(calls, 0, "nothing ran before your OK");
+  // «Continuar» or «Reintentar» on it do not start it either: it stays proposed until the card is answered.
+  assert.throws(() => runtime.resume(first), /propuesto, no empezado/);
+  assert.throws(() => runtime.retry(first), /propuesto, no empezado/);
+  await settle(runtime);
+  assert.deepEqual([calls, store.get("missions", first).status, store.get("approvals", "start:" + first).status], [0, "waiting", "pending"]);
   runtime.answer("start:" + first, { optionId: "go" });
   await settle(runtime);
   assert.equal(store.get("missions", first).status, "completed");

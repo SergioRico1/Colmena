@@ -332,3 +332,27 @@ test("a step flagged while a batch is being applied stops the items that are lef
   assert.deepEqual(calls, [ids[0]], "the rest was not decided");
   assert.deepEqual(ids.map((id) => store.get("approvals", id).status), ["approved", "pending", "pending"]);
 });
+
+test("a typed «sí» does not decide a request put off with «Recordar después»", async (t) => {
+  const { store, runtime, post, file } = await setup(t);
+  const id = file(1).id;
+  const decided = [], written = [];
+  runtime.approve = async (...args) => { decided.push(args); store.patch("approvals", args[0], { status: args[1] }); };
+  runtime.addMessage = (missionId, text) => { written.push(text); return store.put("messages", { id: "typed-" + written.length, missionId, role: "user", kind: "message", text, at: new Date().toISOString() }); };
+  // Snoozed: the «sí» is an ordinary message for the bot, the request keeps waiting.
+  store.patch("approvals", id, { snoozedUntil: new Date(Date.now() + 3600_000).toISOString() });
+  const put = await post("/missions/m1/messages", { text: "sí" });
+  assert.equal(put.status, 200);
+  assert.equal((await put.json()).approvalId, undefined);
+  assert.deepEqual([decided.length, written, store.get("approvals", id).status], [0, ["sí"], "pending"]);
+  // Back in «Te necesitan» (its time came): now the same «sí» answers it.
+  store.patch("approvals", id, { snoozedUntil: new Date(Date.now() - 1000).toISOString() });
+  const yes = await (await post("/missions/m1/messages", { text: "sí" })).json();
+  assert.equal(yes.approvalId, id);
+  assert.deepEqual(decided, [[id, "approved", {}]]);
+  // A snoozed one beside a visible one: the «sí» is for the one the person can see.
+  const other = file(2).id, hidden = file(3, { snoozedUntil: new Date(Date.now() + 3600_000).toISOString() }).id;
+  const again = await (await post("/missions/m1/messages", { text: "vale" })).json();
+  assert.equal(again.approvalId, other);
+  assert.equal(store.get("approvals", hidden).status, "pending");
+});
