@@ -9,14 +9,15 @@ import { roomUrl, time } from "../lib/format.js";
 import { cancel, schedule, useUndoable } from "../lib/undoable.js";
 import { later } from "../lib/undoToast.js";
 import { useExpert } from "../lib/expert.js";
-import { needsHold } from "../lib/holdApprove.js";
 import HoldButton from "../components/HoldButton.jsx";
+import { useApprovalCard } from "../components/ApprovalParts.jsx";
 
 // Colmena 3 · «Revisa antes de enviar» (design/V3Revisar.dc.html): the mail as a form you can
 // change in place (recipients, subject, text; attachments can be taken out), beside why it
 // asks you, what its bot checked and whom it affects. «Guardar sin enviar» keeps it pending;
-// «Aprobar y enviar» saves what you changed and waits 10 s with «Deshacer»; «No enviar» goes
-// with a 5 s notice. Other requests (permissions, plans, memories…) use the same page.
+// «Mantén para enviar» saves what you changed and waits 10 s with «Deshacer»; «No enviar» goes
+// with a 5 s notice. The verbs, the undo line and what happens at expiry come from
+// lib/approvalCard.js, the same as on every other surface. Other requests (permissions, plans, memories…) use the same page.
 const isMail = (v) => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(String(v || "").trim());
 const first = (e) => { const local = String(e).split("@")[0].replace(/[._]/g, " ").split(" ")[0]; return local.charAt(0).toUpperCase() + local.slice(1); };
 const EXT = { PDF: ["#FBE9EA", "#B4232A"], XLS: ["#E3F4EC", "#0B6B4A"], CSV: ["#E3F4EC", "#0B6B4A"], PPT: ["#FFE6F1", "#9C1F5C"], DOC: ["#E3EAFB", "#1F3F99"] };
@@ -24,7 +25,7 @@ const extOf = (name) => (String(name).split(".").pop() || "").toUpperCase().slic
 const sizeOf = (n) => (n == null ? "" : n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1).replace(".", ",")} MB`);
 const fromEmail = (e) => ({ to: [...(e?.to || [])], cc: [...(e?.cc || [])], cco: [...(e?.cco || [])], subject: e?.subject || "", body: e?.body || "", files: (e?.attachments || []).map((f) => (typeof f === "string" ? { name: f } : { ...f })) });
 const KIND_TITLE = { send: "Revisa antes de enviar", permission: "Revisa antes de dar permiso", plan: "Revisa el plan", question: "Una pregunta para ti", secret: "Te pide una clave", memory: "Revisa lo que quiere recordar", skill: "Revisa la habilidad nueva", soul: "Revisa el cambio de instrucciones", write: "Revisa antes de guardar" };
-const KIND_LEAD = { send: "Puedes cambiar lo que quieras. Nada sale hasta que pulses «Aprobar y enviar».", plan: "El equipo empieza cuando le des el OK en la sala.", question: "Respóndela en su chat o desde Inicio." };
+const KIND_LEAD = { send: "Puedes cambiar lo que quieras. Nada sale hasta que lo apruebes tú.", plan: "El equipo empieza cuando le des el OK en la sala.", question: "Respóndela en su chat o desde Inicio." };
 const day = (iso) => { const d = new Date(iso); const diff = Math.round((new Date(d.toDateString()) - new Date(new Date().toDateString())) / 864e5); return diff === 0 ? "hoy" : diff === 1 ? "mañana" : diff === -1 ? "ayer" : d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric" }); };
 
 export default function Revisar({ params = {} }) {
@@ -63,6 +64,9 @@ export default function Revisar({ params = {} }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [changes]);
 
+  // The same verbs, undo line and expiry line as on Inicio, in the chat and in a room.
+  const model = useApprovalCard(a?.status === "pending" ? a : null, bot?.name);
+
   if (!ready) return <Shell active="inicio"><div /></Shell>;
   if (!a || (a.status !== "pending" && !sent && !undo.waiting)) {
     return <NotFound title="Esta solicitud ya no está" text="Ya se resolvió o caducó. No se ha perdido nada de lo tuyo." />;
@@ -98,8 +102,11 @@ export default function Revisar({ params = {} }) {
       setSent(isSend ? `Enviado.${copy}` : `Aprobado a las ${time(new Date())}.`);
     });
   };
+  // Only what is approved on this page gets the approve button (a plan, a key and a question are not).
+  const canApprove = model?.primary?.action === "approve";
+  const denyLabel = model?.secondary.find((s) => s.id === "deny")?.label || "No permitir";
   const deny = () => {
-    later({ id: "deny:" + a.id, keys: [key], text: isSend ? "No se envía" : "No se permite", error: "No se pudo descartar", run: () => post(`/approvals/${a.id}`, { decision: "denied", revision: a.revision }) });
+    later({ id: "deny:" + a.id, keys: [key], text: model?.denyToast || "No se permite", error: "No se pudo descartar", run: () => post(`/approvals/${a.id}`, { decision: "denied", revision: a.revision }) });
     navigate("/");
   };
 
@@ -150,7 +157,7 @@ export default function Revisar({ params = {} }) {
             <h1 style={{ margin: "0", font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{KIND_TITLE[a.kind] || "Revisa antes de aprobar"}</h1>
             <p style={{ margin: "0", fontSize: "16px", color: "#4A4D57" }}>{KIND_LEAD[a.kind] || "Nada cambia hasta que pulses «Aprobar»."}</p>
           </div>
-          {sent ? null : <span style={{ height: "30px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFC93C", fontSize: "13px", fontWeight: "600" }}>{"Te necesita" + (a.expiresAt ? ` · caduca ${day(a.expiresAt)} ${time(a.expiresAt)}` : "")}</span>}
+          {sent ? null : <span style={{ height: "30px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFC93C", fontSize: "13px", fontWeight: "600" }}>{"Te necesita"}</span>}
         </header>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
@@ -257,14 +264,17 @@ export default function Revisar({ params = {} }) {
             </>
           ) : (
             <>
-              <span role="status" style={{ flex: "1", fontSize: "14px", color: "#5C606C" }}>
-                {saved && !changes ? "Cambios guardados. Aún no se ha enviado." : changes ? (changes === 1 ? "1 cambio sin guardar. " : `${changes} cambios sin guardar. `) + "Al aprobar se guardan y tendrás 10 segundos para deshacer." : "Al aprobar tendrás 10 segundos para deshacer."}
+              <span style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "14px", lineHeight: "1.4", color: "#5C606C" }}>
+                <span role="status">
+                  {saved && !changes ? "Cambios guardados. Aún no se ha enviado." : changes ? (changes === 1 ? "1 cambio sin guardar. " : `${changes} cambios sin guardar. `) + (canApprove ? "Al aprobar se guardan. " + model.undoLine : "") : canApprove ? model.undoLine : ""}
+                </span>
+                {model?.expiryLine ? <span role="timer" aria-live="off" style={{ color: model.expiryLine.urgent ? "#B4232A" : "#5C606C" }}>{model.expiryLine.text}</span> : null}
               </span>
-              <button type="button" disabled={busy} onClick={deny} style={{ height: "46px", padding: "0 14px", border: "0", background: "transparent", fontSize: "15px", fontWeight: "500", color: "#4A4D57", cursor: "pointer" }}>{isSend ? "No enviar" : "No permitir"}</button>
+              <button type="button" disabled={busy} onClick={deny} style={{ height: "46px", padding: "0 14px", border: "0", background: "transparent", fontSize: "15px", fontWeight: "500", color: "#4A4D57", cursor: "pointer" }}>{denyLabel}</button>
               {isSend ? <button type="button" disabled={busy || !changes || !d.to.length} onClick={keep} style={{ ...pill(false), opacity: changes && d.to.length ? 1 : 0.55, cursor: changes ? "pointer" : "default" }}>{busy ? "Guardando…" : "Guardar sin enviar"}</button> : null}
-              {a.kind === "plan" || a.kind === "secret" || a.kind === "question" ? null
-                : needsHold(a) ? <HoldButton disabled={busy || (isSend && !d.to.length)} onConfirm={approve} style={pill(true)}>{isSend ? "Aprobar y enviar" : "Aprobar"}</HoldButton>
-                : <button type="button" disabled={busy || (isSend && !d.to.length)} onClick={approve} style={pill(true)}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>}
+              {!canApprove ? null
+                : model.primary.hold ? <HoldButton disabled={busy || (isSend && !d.to.length)} onConfirm={approve} plainLabel={model.primary.plain} style={pill(true)}>{model.primary.label}</HoldButton>
+                : <button type="button" disabled={busy || (isSend && !d.to.length)} onClick={approve} style={pill(true)}>{model.primary.label}</button>}
             </>
           )}
         </div>

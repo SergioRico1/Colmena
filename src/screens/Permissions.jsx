@@ -228,8 +228,8 @@ export default function Permissions({ params, query = {} }) {
                 <button type="button" onClick={() => navigate("/bandeja")} style={{ flexGrow: "1", height: "46px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", fontWeight: "500" }}>Volver a Hoy</button>
               ) : (
                 <>
-                  <button type="button" disabled={disabled} onClick={() => decide("denied")} style={{ height: "46px", border: "0", padding: "0 18px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.1)", fontSize: "14px", fontWeight: "500" }}>Ahora no</button>
-                  <button type="button" disabled={disabled} onClick={() => decide("approved")} style={{ flexGrow: "1", height: "46px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", fontWeight: "500" }}>{busy ? "Un momento…" : "Permitir"}</button>
+                  <button type="button" disabled={disabled} onClick={() => decide("denied")} style={{ height: "46px", border: "0", padding: "0 18px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.1)", fontSize: "14px", fontWeight: "500" }}>No permitir</button>
+                  <button type="button" disabled={disabled} onClick={() => decide("approved")} style={{ flexGrow: "1", height: "46px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", fontWeight: "500" }}>{busy ? "Un momento…" : "Aprobar"}</button>
                 </>
               )}
             </div>

@@ -11,7 +11,7 @@ import { CONFIRM_MS, HINT_MS, HOLD_IDLE, HOLD_MS, holdLabel, holdNext } from "..
  * `onConfirm` runs once the hold (or the second step) completes. `fill`: the colour that
  * grows inside while held — light on a dark button, dark on a light one.
  */
-export default function HoldButton({ onConfirm, children, style, disabled = false, className, fill = "rgba(255,255,255,.26)", ...rest }) {
+export default function HoldButton({ onConfirm, children, plainLabel = null, style, disabled = false, className, fill = "rgba(255,255,255,.26)", ...rest }) {
   const [state, setState] = useState(HOLD_IDLE);
   const current = useRef(HOLD_IDLE);
   const confirm = useRef(onConfirm);
@@ -35,11 +35,15 @@ export default function HoldButton({ onConfirm, children, style, disabled = fals
   }, [disabled]);
 
   const holding = state.phase === "holding";
+  // Its label says it must be held («Mantén para enviar», lib/approvalCard.js). Where the hold
+  // is two steps instead («reduce motion») it shows `plainLabel` («Enviar»), then «Confirmar».
+  const twoStep = reducedMotion();
+  const label = twoStep && plainLabel ? plainLabel : children;
   const isKey = (e) => e.key === " " || e.key === "Enter";
   return (
     <button type="button" {...rest} className={className} disabled={disabled}
-      title={state.phase === "confirm" ? "Pulsa otra vez para confirmar" : "Mantén pulsado para confirmar"}
-      aria-description="Mantén pulsado para confirmar, o pulsa dos veces."
+      title={state.phase === "confirm" ? "Pulsa otra vez para confirmar" : twoStep ? "Pulsa dos veces para confirmar" : "Mantén pulsado para confirmar"}
+      aria-description={twoStep ? "Pulsa dos veces para confirmar." : "Mantén pulsado para confirmar, o pulsa dos veces."}
       onPointerDown={(e) => { if (e.button === 0) send({ type: "press", via: "pointer", reduced: reducedMotion() }); }}
       onPointerUp={() => send({ type: "release" })}
       onPointerLeave={() => { if (current.current.phase === "holding") send({ type: "cancel" }); }}
@@ -63,7 +67,7 @@ export default function HoldButton({ onConfirm, children, style, disabled = fals
       onClick={(e) => { if (e.detail === 0 && Date.now() - keyAt.current > 80) send({ type: "click" }); }}
       style={{ ...style, position: "relative", overflow: "hidden", userSelect: "none", touchAction: "none" }}>
       <span aria-hidden="true" style={{ position: "absolute", inset: "0", background: fill, transformOrigin: "left center", transform: holding ? "scaleX(1)" : "scaleX(0)", transition: holding ? `transform ${HOLD_MS}ms linear` : "transform 140ms ease-out", pointerEvents: "none" }} />
-      <span aria-live="polite" style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: "inherit" }}>{holdLabel(state, children)}</span>
+      <span aria-live="polite" style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: "inherit" }}>{holdLabel(state, label)}</span>
     </button>
   );
 }
