@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { css } from "../../design/V2Hoy.jsx";
 import Sidebar from "../v3/Sidebar.jsx";
 
@@ -10,6 +10,15 @@ export default function Shell({ active, children, background = "#F5F5F2", scroll
     document.documentElement.dataset.v2 = "1";
     return () => { delete document.documentElement.dataset.v2; };
   }, []);
+  // The sidebar's «Ir a la conversación» lands here. Screens that bring their own <main> keep it
+  // as the landmark; the ones that do not (the conversations) get it from this box.
+  const content = useRef(null);
+  useLayoutEffect(() => {
+    const el = content.current;
+    if (!el) return;
+    if (el.querySelector("main")) el.removeAttribute("role");
+    else el.setAttribute("role", "main");
+  });
   const desktop = typeof window !== "undefined" && !!window.colmenaWindow;
   return (
     <>
@@ -17,7 +26,7 @@ export default function Shell({ active, children, background = "#F5F5F2", scroll
       {extraCss ? <style>{extraCss}</style> : null}
       <div style={{ position: "relative", display: "flex", height: "100vh", overflow: "hidden", background }}>
         <Sidebar active={active} />
-        <div data-v2-content="" style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", overflowY: scroll ? "auto" : "hidden", overscrollBehavior: "contain" }}>
+        <div ref={content} id="contenido" data-v2-content="" style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", overflowY: scroll ? "auto" : "hidden", overscrollBehavior: "contain" }}>
           {children}
         </div>
         {desktop ? <div aria-hidden="true" style={{ position: "fixed", top: 0, left: "0", right: 0, height: "22px", zIndex: 30, WebkitAppRegion: "drag" }} /> : null}

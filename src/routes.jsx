@@ -18,8 +18,9 @@ export const routes = [
   { path: "/ordenador/:id", screen: "OrdenadorV2" },
   { path: "/debate/:id", screen: "DebateV2" },
   { path: "/revisar/:id", screen: "Revisar" },
-  { path: "/conversaciones", screen: "Conversacion" },
-  { path: "/chats", screen: "Conversacion" },
+  // «Chats» is no longer a place: its address opens the last conversation (src/screens/Chats.jsx).
+  { path: "/conversaciones", screen: "Chats" },
+  { path: "/chats", screen: "Chats" },
   { path: "/codigo", screen: "CodigoV2" },
   { path: "/codigo/comparar/:group", screen: "CodigoV2" },
   { path: "/codigo/compartida/:shared", screen: "CodigoV2" },

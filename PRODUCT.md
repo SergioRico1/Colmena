@@ -57,7 +57,9 @@ and the sidebar's six places name no people or channels.
   person's data folder; uninstalling does not delete them.
 - Works on the person's own AI account: ChatGPT, Claude (Claude Code, subscription token or API key)
   or OpenCode Go. Plan limits are real and shape behaviour (work pauses near the limit).
-- Six fixed places in the sidebar: Inicio, Chats, Trabajo, Código, Equipo, Biblioteca.
+- The sidebar names who you talk to: the team (or «Solo tú»), five fixed places (Inicio, Trabajo,
+  Código, Equipo, Biblioteca) and three live groups (Salas, Bots, Personas). «Chats» is no longer
+  a place; its address opens the last conversation.
 - Inicio shows what is waiting for the person («Te necesitan»), what is running and today's activity.
 - Work happens in 1:1 chats and in rooms with several bots; the person approves or answers through
   cards in the conversation and on Inicio.

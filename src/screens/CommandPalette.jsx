@@ -44,15 +44,10 @@ const iconTile = (Icon) => <Tile><Icon size={16} strokeWidth={2} /></Tile>;
 const botTile = (bot) => <Tile><Shape bot={bot} size={16} /></Tile>;
 const pathTile = (d) => <Tile><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg></Tile>;
 
-/** Waits for the chat list to be on screen, then opens «Nuevo chat» in it (Chats listens). */
+/** Opens «Nuevo chat»: the sidebar has the sheet on every screen; without one, Chats opens it. */
 function openNewChat() {
-  navigate("/chats");
-  let tries = 0;
-  const look = () => {
-    if (document.querySelector("[data-convlist], [data-chats-home]")) window.dispatchEvent(new Event("colmena:new-conversation"));
-    else if (tries++ < 40) setTimeout(look, 50);
-  };
-  look();
+  if (document.querySelector("[data-v3-sidebar]")) window.dispatchEvent(new Event("colmena:new-conversation"));
+  else navigate("/chats?nuevo=chat");
 }
 
 export default function CommandPalette() {
