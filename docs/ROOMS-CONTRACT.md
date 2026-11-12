@@ -110,6 +110,18 @@ missions) and the taskbar (`pendingCount`, raw approvals). None counts people-si
 
 Each item carries `roomId` and `botId`; every surface filters this list.
 
+## Teams as built (`server/peers/teams.mjs`, `docs/PEOPLE.md` › Equipos)
+
+- Store kinds `teams` (the last roster verified, signed by the creator) and `teamMemberships`
+  (your state in each); `settings.currentTeam`.
+- «general» is a `peerShares` group whose id is the team roster's `room`; its record and
+  `shareView` carry `teamId` and `general: true`. Other rooms of a team carry `teamId` only
+  (`createGroup(title, members, { teamId })`). Adopt them by those fields.
+- Decisions 1 and 2 below are done at team level: admins ask the creator (`team.req`), and
+  teammates who are not contacts get `team.profile` / `team.presence`, so `contact.bots`,
+  `peers.online()` and `contact.away` are filled for every teammate. No per-room `room.bots`
+  message was needed for rooms of a team; a room without a team still has none.
+
 ## Technical decisions
 
 1. Rosters stay owner-signed for launch. Others send a "please add" request to the owner; team

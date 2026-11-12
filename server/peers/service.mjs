@@ -56,13 +56,13 @@ export function cleanBot(b) {
   return { id: b.id, name, role: clip(b.role, 60), color: /^#[0-9A-Fa-f]{6}$/.test(b.color || "") ? b.color : "#8C8F99", shape: SHAPES.has(b.shape) ? b.shape : "circle" };
 }
 /** {mode, until} from someone's profile, checked (null: available). */
-const statusOf = (profile) => {
+export const statusOf = (profile) => {
   const st = profile?.status;
   if (!st || !["dnd", "away"].includes(st.mode)) return null;
   const until = st.until && Number.isFinite(Date.parse(st.until)) ? new Date(Date.parse(st.until)).toISOString() : null;
   return { mode: st.mode, until };
 };
-const botsOf = (profile) => (Array.isArray(profile?.bots) ? profile.bots.slice(0, 24).map(cleanBot).filter(Boolean) : []);
+export const botsOf = (profile) => (Array.isArray(profile?.bots) ? profile.bots.slice(0, 24).map(cleanBot).filter(Boolean) : []);
 // Search: accents and case out.
 const foldText = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 /** A line of `text` around the first word found: «…tenemos la reunión del lunes en…». */
@@ -263,6 +263,8 @@ export class Peers extends EventEmitter {
       // The face of the row: the last other person who wrote (or the first one), then «+N».
       face: (others.find((m) => m.id === s.lastFromOther) || others[0]) || null, more: Math.max(0, others.length - 1),
       left: !!s.leftAt, removed: !!s.removedAt, typing: this.typingIn(s.id), thinking: this.typingIn(s.id, true), createdAt: s.createdAt,
+      // A room of a team, and whether it is the one with everyone (teams.mjs).
+      ...(s.teamId ? { teamId: s.teamId } : {}), ...(s.general ? { general: true } : {}),
     };
   }
   stateView() {
@@ -307,7 +309,9 @@ export class Peers extends EventEmitter {
     return this.store.put("peerOutbox", { id: env.id, to, env, messageId, attempts: 0, nextAt: 0, createdAt: now() });
   }
   async flushOutbox() {
-    if (!this.client || this.client.status !== "online" || this.flushing) return;
+    if (!this.client || this.client.status !== "online") return;
+    // Queued while a round is going out: one more round right after it, not at the next tick.
+    if (this.flushing) return void (this.flushAgain = true);
     this.flushing = true;
     try {
       const due = this.store.list("peerOutbox").filter((o) => (o.nextAt || 0) <= this.clock());
@@ -329,6 +333,10 @@ export class Peers extends EventEmitter {
       }
     } finally {
       this.flushing = false;
+      if (this.flushAgain) {
+        this.flushAgain = false;
+        if (!this.stopped) void this.flushOutbox();
+      }
     }
   }
   delivered(messageId, to) {
@@ -359,6 +367,7 @@ export class Peers extends EventEmitter {
       this.lastPresenceTo.set(c.id, this.clock());
       this.ephemeral(c.id, { type: "presence", state }, { always: true });
     }
+    this.emit("presence-out", { state, everyone }); // teammates who are not contacts (teams.mjs)
   }
   heartbeat() { if (this.client?.status === "online") this.broadcastPresence("online", { everyone: false }); }
   /**
@@ -376,21 +385,22 @@ export class Peers extends EventEmitter {
   }
 
   // ---------------------------------------------------------------- invitations
-  async createInvite(name, { room = null, role = "member" } = {}) {
+  async createInvite(name, { room = null, role = "member", team = null } = {}) {
     this.requireRelay();
     const label = clip(name, PEER_LIMITS.name);
     if (!label) throw new PeerError("Escribe cómo se llama.");
-    // An invitation can also put them straight into a group of yours, with a role.
+    // An invitation can also put them straight into a group of yours, with a role, or into a
+    // team you administer (`team`: what teams.mjs puts on the card).
     const group = room ? this.ownGroup(room) : null;
     const open = this.store.list("peerInvites").filter((i) => i.status === "open" && Date.parse(i.expiresAt) > this.clock());
     if (open.length >= PEER_LIMITS.invitesOpen) throw new PeerError("Tienes demasiadas invitaciones sin aceptar. Cancela alguna.");
     const code = newInviteCode();
     const lookup = inviteLookup(code);
     const expiresAt = this.clock() + PEER_LIMITS.inviteHours * 3600000;
-    const card = { v: 1, addr: this.address, box: this.identity.box.pub, name: this.myName(), ...(group ? { room: group.title } : {}) };
+    const card = { v: 1, addr: this.address, box: this.identity.box.pub, name: this.myName(), ...(group ? { room: group.title } : {}), ...(team ? { team } : {}) };
     await this.client.putInvite(lookup, sealInvite(code, card), expiresAt);
-    const record = this.store.put("peerInvites", { id: randomUUID(), code, lookup, name: label, status: "open", createdAt: now(), expiresAt: new Date(expiresAt).toISOString(), ...(group ? { room: group.id, roomTitle: group.title, role: role === "guest" ? "guest" : "member" } : {}) });
-    return { id: record.id, code: formatInviteCode(code), name: label, expiresAt: record.expiresAt, room: group ? group.title : null, text: inviteText(label, this.myName(), formatInviteCode(code), group?.title), download: DOWNLOAD_URL };
+    const record = this.store.put("peerInvites", { id: randomUUID(), code, lookup, name: label, status: "open", createdAt: now(), expiresAt: new Date(expiresAt).toISOString(), ...(group ? { room: group.id, roomTitle: group.title, role: role === "guest" ? "guest" : "member" } : {}), ...(team ? { team: team.id } : {}) });
+    return { id: record.id, code: formatInviteCode(code), name: label, expiresAt: record.expiresAt, room: group ? group.title : null, team: team ? team.name : null, text: inviteText(label, this.myName(), formatInviteCode(code), group?.title, team?.name), download: DOWNLOAD_URL };
   }
   async cancelInvite(id) {
     const inv = this.store.get("peerInvites", id);
@@ -414,23 +424,25 @@ export class Peers extends EventEmitter {
     if (card.addr === this.address) throw new PeerError("Esa invitación la has creado tú: mándasela a la otra persona.");
     this.previews.set(code, card);
     const already = this.contact(card.addr);
-    return { name: clip(card.name, PEER_LIMITS.name), words: safetyWords(this.address, card.addr), expiresAt: new Date(found.expiresAt).toISOString(), already: already?.status === "active", room: card.room ? clip(card.room, PEER_LIMITS.title) : null };
+    return { name: clip(card.name, PEER_LIMITS.name), words: safetyWords(this.address, card.addr), expiresAt: new Date(found.expiresAt).toISOString(), already: already?.status === "active", room: card.room ? clip(card.room, PEER_LIMITS.title) : null, team: card.team && typeof card.team === "object" ? clip(card.team.name, PEER_LIMITS.title) || "Equipo" : null };
   }
   async acceptInvite(text) {
     const code = parseInviteCode(text);
     if (!code) throw new PeerError("Ese código no parece una invitación de Colmena.");
     if (!this.previews.has(code)) await this.previewInvite(code);
     const card = this.previews.get(code);
+    // An invitation to a team: noted as «joining» before saying hello (teams.mjs; it may refuse).
+    const team = card.team && this.teams ? this.teams.joining(card) : null;
     this.previews.delete(code);
     const existing = this.contact(card.addr);
     this.store.put("peerContacts", {
       ...(existing || {}), id: card.addr, box: card.box, name: clip(card.name, PEER_LIMITS.name) || "Alguien",
       status: existing?.status === "active" ? "active" : "pending", via: "invitation", addedAt: existing?.addedAt || now(), asks: existing?.asks || { ...ASK_DEFAULTS },
     });
-    this.enqueue(card.addr, { type: "hello", invite: inviteLookup(code), proof: inviteProof(code, this.address, card.addr), profile: this.myProfile() });
+    this.enqueue(card.addr, { type: "hello", invite: inviteLookup(code), proof: inviteProof(code, this.address, card.addr), profile: this.myProfile(), ...(team ? { team } : {}) });
     this.ensureDm(card.addr);
     void this.flushOutbox();
-    return { contact: this.contactView(this.contact(card.addr)), dm: dmId(this.address, card.addr) };
+    return { contact: this.contactView(this.contact(card.addr)), dm: dmId(this.address, card.addr), ...(team ? { team } : {}) };
   }
 
   // ---------------------------------------------------------------- contacts
@@ -450,6 +462,7 @@ export class Peers extends EventEmitter {
     this.store.patch("peerContacts", id, { status: "removed", removedAt: now() });
     const dm = this.store.get("peerShares", dmId(this.address, id));
     if (dm) this.store.patch("peerShares", dm.id, { removedAt: now() });
+    this.teams?.keep(id); // still a teammate: no direct line, but heard in the rooms you share
     void this.flushOutbox();
     return { ok: true };
   }
@@ -478,10 +491,17 @@ export class Peers extends EventEmitter {
    * (owner, member, guest). Signed with the owner's key besides the envelope, so the list
    * holds wherever it travels.
    */
-  roster(s) {
-    const r = { id: s.id, kind: "group", title: s.title, owner: s.owner, version: s.version, members: s.members.map((m) => ({ id: m.id, role: m.role, box: m.id === this.address ? this.identity.box.pub : this.contact(m.id)?.box, name: m.id === this.address ? this.myName() : this.contact(m.id)?.name })) };
+  roster(s, changes = null) {
+    const r = {
+      id: s.id, kind: "group", title: s.title, owner: s.owner, version: s.version, members: s.members.map((m) => ({ id: m.id, role: m.role, box: m.id === this.address ? this.identity.box.pub : this.contact(m.id)?.box, name: m.id === this.address ? this.myName() : this.contact(m.id)?.name })),
+      // A room of a team says which (and whether it is the one with everyone): extra fields an
+      // older Colmena verifies with the rest and does not keep.
+      ...(s.teamId ? { teamId: s.teamId } : {}), ...(s.general ? { general: true } : {}), ...(changes || {}),
+    };
     return s.owner === this.address ? { ...r, sig: signBytes(this.identity.sign, canonical(r)) } : r;
   }
+  /** Who can be put in a group: someone you talk to, or a teammate in a room of that team. */
+  canAdd(id, teamId = null) { return this.contact(id)?.status === "active" || !!(teamId && this.teams?.teammate(id, teamId)); }
   /** Sends the group's new list to everyone in it (and to whoever just left it). */
   sendRoster(s, extra = []) {
     for (const id of [...new Set([...this.others(s), ...extra])]) if (id !== this.address) this.enqueue(id, { type: "share", share: this.roster(s) });
@@ -491,6 +511,8 @@ export class Peers extends EventEmitter {
     const s = this.share(shareId);
     if (s.kind !== "group" || s.owner !== this.address) throw new PeerError("Solo quien creó la conversación puede cambiar esto.", 403);
     if (s.leftAt || s.removedAt) throw new PeerError("Esta conversación ya está cerrada.", 409);
+    // The room of everyone follows its team (teams.mjs): nothing is changed by hand.
+    if (s.general) throw new PeerError("En «general» está todo el equipo: esto se cambia desde el equipo.", 409);
     return s;
   }
   /** Changes the name of a group of yours. */
@@ -520,17 +542,19 @@ export class Peers extends EventEmitter {
     return this.shareView(next);
   }
   roleOf(s, address) { return s?.members?.find((m) => m.id === address)?.role || null; }
-  createGroup(title, memberIds) {
+  /** A group; with `teamId` it is a room of that team (by invitation: teammates need not be contacts). */
+  createGroup(title, memberIds, { teamId = null } = {}) {
     this.requireRelay();
     const name = clip(title, PEER_LIMITS.title);
     if (!name) throw new PeerError("Ponle un nombre a la conversación.");
     const ids = [...new Set(memberIds)].filter((x) => x !== this.address);
     if (ids.length < 1) throw new PeerError("Elige al menos a una persona.");
     if (ids.length + 1 > PEER_LIMITS.members) throw new PeerError("Como mucho " + PEER_LIMITS.members + " personas por conversación.");
-    for (const id of ids) if (this.contact(id)?.status !== "active") throw new PeerError("Solo puedes añadir a personas con las que ya hablas.");
+    if (teamId && !this.teams?.teammate(this.address, teamId)) throw new PeerError("No estás en ese equipo.", 404);
+    for (const id of ids) if (!this.canAdd(id, teamId)) throw new PeerError("Solo puedes añadir a personas con las que ya hablas.");
     const s = this.store.put("peerShares", {
       id: randomUUID(), kind: "group", title: name, owner: this.address, version: 1, createdAt: now(), lastAt: now(), unread: 0,
-      members: [{ id: this.address, role: "owner" }, ...ids.map((id) => ({ id, role: "member" }))],
+      members: [{ id: this.address, role: "owner" }, ...ids.map((id) => ({ id, role: "member" }))], ...(teamId ? { teamId } : {}),
     });
     for (const id of ids) this.enqueue(id, { type: "share", share: this.roster(s) });
     void this.flushOutbox();
@@ -539,21 +563,28 @@ export class Peers extends EventEmitter {
   addMembers(shareId, memberIds, role = "member") {
     const s = this.share(shareId);
     if (s.kind !== "group" || s.owner !== this.address) throw new PeerError("Solo quien creó la conversación puede añadir personas.", 403);
+    if (s.general) throw new PeerError("En «general» entra quien entra en el equipo.", 409);
     const as = role === "guest" ? "guest" : "member";
     const have = new Set(s.members.map((m) => m.id));
     const add = [...new Set(memberIds)].filter((id) => !have.has(id));
-    for (const id of add) if (this.contact(id)?.status !== "active") throw new PeerError("Solo puedes añadir a personas con las que ya hablas.");
+    for (const id of add) if (!this.canAdd(id, s.teamId)) throw new PeerError("Solo puedes añadir a personas con las que ya hablas.");
     if (have.size + add.length > PEER_LIMITS.members) throw new PeerError("Como mucho " + PEER_LIMITS.members + " personas por conversación.");
     const next = this.store.patch("peerShares", shareId, { members: [...s.members, ...add.map((id) => ({ id, role: as, addedAt: now() }))], version: s.version + 1 });
     this.sendRoster(next);
     return this.shareView(next);
   }
-  leave(shareId) {
+  /** `team`: the team itself is being left or closed (teams.mjs); otherwise «general» is not left alone. */
+  leave(shareId, { team = false } = {}) {
     const s = this.share(shareId);
     if (s.kind !== "group") throw new PeerError("Para dejar de hablar con alguien, quítalo en Ajustes › Personas.");
+    if (s.general && !team) throw new PeerError("De «general» se sale saliendo del equipo.", 409);
     if (s.owner === this.address) {
-      // The owner closes it for everyone: nobody left to sign who is in it.
-      for (const id of this.others(s)) this.enqueue(id, { type: "share", share: { ...this.roster(s), version: s.version + 1, members: [], closed: true } });
+      // The owner closes it for everyone: nobody left to sign who is in it. Signed as it goes
+      // (the last list with nobody), or a Colmena that checks the signature would ignore it.
+      const closed = this.roster(s, { version: s.version + 1, members: [], closed: true });
+      for (const id of this.others(s)) this.enqueue(id, { type: "share", share: closed });
+    } else if (s.general) {
+      // The team's creator takes us out of «general» with the team: nothing to tell the others.
     } else {
       for (const id of this.others(s)) this.enqueue(id, { type: "leave", share: s.id });
     }
@@ -791,7 +822,7 @@ export class Peers extends EventEmitter {
     } catch (error) {
       this.log("Mensaje de " + (c?.name || "alguien") + " ignorado: " + error.message);
     }
-    if (!["typing", "presence", "code.view", "code.viewers"].includes(body.type)) this.store.put("peerSeen", { id: env.id, at: now() });
+    if (!["typing", "presence", "team.presence", "code.view", "code.viewers"].includes(body.type)) this.store.put("peerSeen", { id: env.id, at: now() });
     if (c) this.touch(from);
     return true;
   }
@@ -824,6 +855,8 @@ export class Peers extends EventEmitter {
     if (room && room.owner === this.address && !room.leftAt && !room.members.some((m) => m.id === from)) {
       try { this.addMembers(room.id, [from], inv.role); } catch (error) { this.log("No se pudo añadir a la sala: " + error.message); }
     }
+    // Invited to a team: teams.mjs puts them in (or asks its creator to) and says who joined.
+    if (inv.team) return void this.emit("joined", { invite: inv, from });
     this.notify({ title: name + " ya está en tus personas", text: room ? "Aceptó tu invitación y ya está en «" + room.title + "»." : "Aceptó tu invitación. Ya podéis escribiros.", shareId: room ? room.id : dmId(this.address, from) });
   }
   dispatch(c, body) {
@@ -841,6 +874,7 @@ export class Peers extends EventEmitter {
         this.store.patch("peerContacts", from, { status: "removed", removedAt: now() });
         const dm = this.store.get("peerShares", dmId(this.address, from));
         if (dm) this.store.patch("peerShares", dm.id, { removedAt: now() });
+        this.teams?.keep(from);
         return;
       }
       case "presence": {
@@ -881,6 +915,8 @@ export class Peers extends EventEmitter {
           const next = this.store.get("peerShares", s.id);
           for (const id of this.others(next)) this.enqueue(id, { type: "share", share: this.roster(next) });
           void this.flushOutbox();
+          // An older Colmena leaving «general» is leaving the team: it knows no other way.
+          if (s.general) this.teams?.leftGeneral(s, from);
         }
         return;
       }
@@ -930,6 +966,8 @@ export class Peers extends EventEmitter {
         else if (/^code\.[a-z]+(\.[a-z]+)?$/.test(body.type)) this.emit("code", { from: c, body });
         // An errand for one of your bots, or the answer to one of theirs (errands.mjs checks who).
         else if (/^errand\.[a-z]+$/.test(body.type)) this.emit("errand", { from: c, body });
+        // A team's roster, a request to its creator, a teammate's profile or presence (teams.mjs checks who).
+        else if (/^team\.[a-z]+$/.test(body.type)) this.emit("team", { from: c, body });
         return;
     }
   }
@@ -955,7 +993,7 @@ export class Peers extends EventEmitter {
     if (!inIt) {
       if (current && !current.removedAt) {
         this.store.patch("peerShares", current.id, { removedAt: now(), version: roster.version });
-        if (!roster.closed && !current.leftAt) this.notify({ title: c.name + " te ha quitado de «" + current.title + "»", text: "Lo que os escribisteis se queda en tu Colmena.", shareId: current.id });
+        if (!roster.closed && !current.leftAt && !current.general) this.notify({ title: c.name + " te ha quitado de «" + current.title + "»", text: "Lo que os escribisteis se queda en tu Colmena.", shareId: current.id });
       }
       return;
     }
@@ -969,6 +1007,8 @@ export class Peers extends EventEmitter {
     const record = {
       ...(current || { createdAt: now(), lastAt: now(), unread: 0 }), id: roster.id, kind: "group", title: clip(roster.title, PEER_LIMITS.title) || "Conversación", owner: c.id, version: roster.version,
       members: members.filter((m) => isAddress(m.id)).map((m) => ({ id: m.id, role: m.id === c.id ? "owner" : m.role === "guest" ? "guest" : "member" })),
+      // A room of one of your teams: kept only if that team says so (teams.mjs).
+      ...(this.teams?.tieOf(roster) || {}),
     };
     this.store.put("peerShares", record);
     if (!current) this.notify({ title: c.name + " te ha añadido a «" + record.title + "»", text: "Una conversación con " + (record.members.length - 1) + " personas.", shareId: record.id });
@@ -1034,15 +1074,16 @@ export class Peers extends EventEmitter {
     if (this.config().announced === signature) return;
     this.store.put("peerConfig", { ...this.config(), announced: signature });
     for (const c of this.contacts().filter((x) => x.status === "active")) this.enqueue(c.id, { type: "profile", name, bots, status });
+    this.emit("profile-out", { name, bots, status }); // teammates who are not contacts (teams.mjs)
     void this.flushOutbox();
   }
 }
 
 /** The text you copy and send yourself (WhatsApp, mail…). */
-export function inviteText(to, from, code, room = null) {
+export function inviteText(to, from, code, room = null, team = null) {
   const first = String(to).split(/\s+/)[0] || "";
   return [
-    room ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito a la conversación «${room}» en Colmena.` : `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena.`,
+    team ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito al equipo «${team}» en Colmena.` : room ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito a la conversación «${room}» en Colmena.` : `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena.`,
     `1. Si aún no la tienes, descárgala gratis: ${DOWNLOAD_URL}`,
     "2. En Colmena, abre Chats › Nueva › «Tengo una invitación» y pega este código:",
     code,

@@ -37,6 +37,7 @@ import { connectedCalendar } from "./peers/calendar.mjs";
 import { CodeShare } from "./peers/codeshare.mjs";
 import { PeerFiles, artifactSource } from "./peers/files.mjs";
 import { Errands } from "./peers/errands.mjs";
+import { Teams } from "./peers/teams.mjs";
 import { Webhooks } from "./webhooks.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -181,6 +182,9 @@ app.locals.peers = peers;
 // the brakes of self-started work like any other trigger (server/webhooks.mjs).
 const webhooks = new Webhooks({ store, peers, secrets: runtime.secrets, enqueue: (ruleId, event) => scheduler.enqueue(ruleId, event) });
 app.locals.webhooks = webhooks;
+// Teams: a roster of people signed by whoever created it, with a room of everyone. Listening
+// before the mailbox connects, so teammates who are not contacts hear «online» too.
+peers.teams = new Teams({ peers, store }).start();
 peers.start().then(() => { webhooks.start(); return peers.announceProfile(); }).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
 // Your bots answer when they are mentioned in a conversation with people (no tools, no memory),
 // and agree meetings with other people's Colmenas looking only at free/busy.
