@@ -21,6 +21,7 @@ import { focusBox, shouldRefocus } from "../lib/composition.js";
 import Timeline, { useStableRows } from "../components/v2/chat/Timeline.jsx";
 import { promise as toastWork } from "../lib/undoToast.js";
 import StoppedCard from "../components/v2/chat/StoppedCard.jsx";
+import { CompletionNote } from "../components/v3/dia/Completion.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
 import Receipt from "../components/v2/chat/Receipt.jsx";
 import { receiptKey, receiptOf } from "../lib/receipts.js";
@@ -445,6 +446,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     if (mission?.limited) rows.push({ key: "error", kind: "error", limited: true, error: null, mission, name: bot?.name });
     else if (mission?.stopped && !turn) rows.push({ key: "stopped", kind: "stopped", stopped: mission.stopped, status: mission.status, name: bot?.name });
     else if (mission?.error) rows.push({ key: "error", kind: "error", limited: false, error: mission.error, mission: null, name: bot?.name });
+    // A visible end when the work finishes while you are here (lib/completion.js); it shows nothing otherwise.
+    if (mission?.status === "completed" && !turn && !isOlder) rows.push({ key: "done", kind: "done", missionId: mission.id });
     if (followUps.length) rows.push({ key: "follow", kind: "follow", list: followUps });
     if (showBrowser) rows.push({ key: "browser", kind: "browser", missionId: mission.id, bot: findBot(bots, now.botId), verb: now.verb, active: mission.status === "running" });
     return rows;
@@ -559,6 +562,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} head={row.head} narration={row.narration} onStop={() => acts.current.stop()} />;
       case "need": return <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />;
       case "needs": return <NeedGroupCard group={row.group} bot={row.bot} mission={row.mission} inline />;
+      case "done": return <CompletionNote missionId={row.missionId} />;
       case "follow": return <FollowUps list={row.list} onPick={(t) => { setText(t); requestAnimationFrame(() => focusBox(inputRef.current)); }} />;
       case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={(why) => acts.current.control(row.status === "blocked" ? "retry" : "resume", why)} onDiscard={(why) => acts.current.control("discard", why)} onReason={(why) => acts.current.stopWhy(why)} />;
       case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "16px 18px", background: "#FBE7DF", borderRadius: "20px", fontSize: "15px", lineHeight: "1.5" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;

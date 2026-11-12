@@ -1,21 +1,32 @@
 // «Tu semana con el equipo»: what the last seven days were, from the /api/state snapshot.
 // Pure: no React, no network.
+import { completable } from "./completion.js";
 
 const ts = (x) => Date.parse(x || 0) || 0;
 const firstSentence = (t) => (t ? (String(t).match(/^[^.!?\n]+[.!?]?/) || [""])[0].replace(/[.]$/, "").trim() : "");
 const WEEK_MS = 7 * 864e5;
 
-/** A task that finished in the window: work with a plan and a delivery, not a chat. */
-export const finishedInWeek = (m, since, now) => !m.conversation && m.status === "completed" && ts(m.completedAt) > since && ts(m.completedAt) <= now;
+/**
+ * Work that finished in the window: a task, or a chat that delivered something in it. The
+ * card used to count tasks only, so a week whose work was asked in chats read «0 tareas
+ * terminadas» beside «Nora terminó…». The bot that watches your apps and routine runs with
+ * nothing new are not finished work (lib/completion.js completable).
+ */
+export function finishedInWeek(m, since, now, artifacts = []) {
+  const end = ts(m.completedAt || (m.status === "completed" ? m.updatedAt : null));
+  // Archived work still finished this week: only the moment on screen skips it.
+  if (!completable({ ...m, archived: false }) || !(end > since && end <= now)) return false;
+  return !m.conversation || artifacts.some((a) => a.missionId === m.id && ts(a.createdAt) > since);
+}
 
 /**
  * { from, to, done, approved, skills, happened[], soon[] } for the seven days up to `now`.
  * `done`: finished work · `approved`: what you approved or answered yourself · `skills`: new
  * skills waiting for your review · `happened`: up to three sentences · `soon`: goal milestones.
  */
-export function weekSummary({ missions = [], approvals = [], skills = [], goals = [] } = {}, now = Date.now()) {
+export function weekSummary({ missions = [], approvals = [], skills = [], goals = [], artifacts = [] } = {}, now = Date.now()) {
   const since = now - WEEK_MS;
-  const done = missions.filter((m) => finishedInWeek(m, since, now));
+  const done = missions.filter((m) => finishedInWeek(m, since, now, artifacts));
   const approved = approvals.filter((a) => a.decidedBy === "tú" && ts(a.decidedAt) > since);
   const pendingSkills = (skills || []).filter((s) => s.status === "pending");
   const happened = done.filter((m) => m.recap?.text).slice(0, 3).map((m) => firstSentence(m.recap.text) + ".");

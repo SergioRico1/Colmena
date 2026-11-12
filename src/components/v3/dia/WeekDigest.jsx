@@ -7,10 +7,10 @@ import { weekRange, weekSummary } from "../../../lib/week.js";
 // team did is told): what the last seven days were and what comes, once per week («Leído»).
 const weekKey = () => { const d = new Date(); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); return d.toISOString().slice(0, 10); };
 
-export default function WeekDigest({ missions, approvals, skills, usage, bots, goals }) {
+export default function WeekDigest({ missions, approvals, skills, usage, bots, goals, artifacts }) {
   const key = "colmena:digest:" + weekKey();
   const [dismissed, setDismissed] = useState(() => { try { return localStorage.getItem(key) === "1"; } catch { return false; } });
-  const week = useMemo(() => weekSummary({ missions, approvals, skills, goals }), [missions, approvals, skills, goals]);
+  const week = useMemo(() => weekSummary({ missions, approvals, skills, goals, artifacts }), [missions, approvals, skills, goals, artifacts]);
   if (dismissed || (!week.done && !week.approved && !week.skills)) return null;
   const spend = usage?.percent != null ? { n: usage.percent + " %", label: "del gasto del mes" } : { n: formatTokens(usage?.monthTokens || 0), label: "tokens este mes" };
   const atlas = bots.find((b) => b.id === "atlas") || { shape: "hex", color: "#12131A" };
@@ -42,7 +42,7 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
         <button type="button" onClick={() => { try { localStorage.setItem(key, "1"); } catch {} setDismissed(true); }} style={{ ...pill, border: "0", background: "rgba(255,255,255,.1)", color: "#FFFFFF", cursor: "pointer" }}>{"Leído"}</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "10px" }}>
-        {stat(week.done, week.done === 1 ? "tarea terminada" : "tareas terminadas")}
+        {stat(week.done, week.done === 1 ? "trabajo terminado" : "trabajos terminados")}
         {stat(week.approved, week.approved === 1 ? "cosa aprobaste tú" : "cosas aprobaste tú")}
         {stat(week.skills, week.skills === 1 ? "habilidad nueva por revisar" : "habilidades nuevas por revisar")}
         {stat(spend.n, spend.label)}

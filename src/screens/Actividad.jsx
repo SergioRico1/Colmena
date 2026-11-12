@@ -206,7 +206,7 @@ export default function Actividad() {
         </section>
 
         {/* What the week was, once per week («Leído»): it lived at the foot of Inicio. */}
-        <WeekDigest missions={missions} approvals={approvals} skills={store.skills} usage={usage} bots={bots} goals={goals} />
+        <WeekDigest missions={missions} approvals={approvals} skills={store.skills} usage={usage} bots={bots} goals={goals} artifacts={store.artifacts} />
 
         <section aria-labelledby="log-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>

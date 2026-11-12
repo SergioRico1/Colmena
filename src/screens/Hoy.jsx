@@ -5,6 +5,7 @@ import { BotPresence } from "../components/v2/Presence.jsx";
 import { needsOf } from "../components/v2/needs.js";
 import { ApprovalNeed, ChoiceNeed, ErrandNeed, GroupNeed, SnoozedNeeds, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
 import NeedRows from "../components/v3/dia/NeedRows.jsx";
+import { CompletionCards } from "../components/v3/dia/Completion.jsx";
 import { needEntries } from "../components/v3/dia/needRows.js";
 import { Shape, sectionTitle, srOnly } from "../components/v3/dia/parts.jsx";
 import { routeOf } from "../components/v3/dia/route.js";
@@ -228,6 +229,9 @@ export default function Hoy({ query = {} }) {
           {/* What you put off with «Recordar después»: out of the count, one click away. */}
           <SnoozedNeeds items={snoozed} bots={bots} />
         </section>
+
+        {/* What finished while you were here: what it delivered, how long it took, «Abrir». */}
+        <CompletionCards />
 
         <section id="pedir" aria-label="Pedir algo" style={{ scrollMarginTop: "40px", display: "flex", flexDirection: "column", gap: "12px" }}>
           <div className="c-ring" style={{ background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 28px 64px -34px rgba(18,19,26,.35)", padding: "8px 8px 0 22px" }}>
