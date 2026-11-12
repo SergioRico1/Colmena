@@ -21,6 +21,21 @@ export const isMute = (text) => {
   return /\bno (quiere|quiero|le|me)\b[^.]{0,40}\b(avis|notific|inform|resum|recib)/.test(t) || /\bsin avisos?\b/.test(t);
 };
 
+/** The numbers in a text, each without its separators («1.200,50» → «120050»; «900 €» → «900»). */
+const numbersIn = (text) => (String(text || "").match(/\d+(?:[.,]\d+)*/g) || []).map((n) => n.replace(/[.,]/g, ""));
+/** Proper names: capitalised words that do not open a sentence, folded («la gestoría Ruiz» → «ruiz»). */
+function namesIn(text) {
+  const out = [];
+  const whole = String(text || "");
+  for (const m of whole.matchAll(/\p{Lu}[\p{L}\d'’-]{2,}/gu)) {
+    const before = whole.slice(0, m.index);
+    if (/[\p{L}\d]$/u.test(before)) continue; // inside a word («iPhone»)
+    if (/(?:^|[.!?¿¡:;\n«"“(])\s*$/.test(before)) continue; // the first word of a sentence, a quote or a line
+    out.push(fold(m[0]));
+  }
+  return out;
+}
+
 /** Everything you wrote in a mission, folded (an automation's wrapped trigger email is not yours). */
 function yourWords(store, missionId) {
   if (!missionId) return "";
@@ -46,6 +61,12 @@ export function saidByYou(store, missionId, text) {
   const digits = said.replace(/[\s.-]+/g, "");
   const anchors = fold(text).match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+|https?:\/\/[^\s)»"]+|\b[a-z]{2}\d{2}(?:\s?[a-z0-9]{4}){3,7}\b|\+?\d[\d\s.-]{7,}\d/g) || [];
   if (anchors.some((a) => (/[@/]/.test(a) ? !said.includes(a) : !digits.includes(a.replace(/[\s.-]+/g, ""))))) return false;
+  // Nor is a value you never gave: a figure, an amount or a date («cobra 900 € al mes») or a
+  // proper name. Sharing the subject («cuánto cobra la gestoría») is asking, not saying: the
+  // answer came from what the bot read, so it keeps its origin.
+  const yourNumbers = new Set(numbersIn(said));
+  if (numbersIn(fold(text)).some((n) => !yourNumbers.has(n))) return false;
+  if (namesIn(text).some((name) => !said.includes(name))) return false;
   const yours = wordsYouSaid(store, missionId, text);
   return yours.length / all.length >= 0.6 || (isMute(text) && yours.length > 0);
 }
