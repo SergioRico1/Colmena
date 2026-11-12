@@ -24,7 +24,7 @@ import { deniedResult } from "./denial.mjs";
 import { findGrant } from "./learning.mjs";
 import { saidByYou } from "./preferences.mjs";
 import { detectInjection, sanitizeExternal, withoutExternal, wrapReport } from "./external-content.mjs";
-import { worksFromOutside } from "./origin.mjs";
+import { isPersonMessage, worksFromOutside } from "./origin.mjs";
 import {
   WIKI_LIMITS, applySection, backlinksOf, byView, cleanTitle, createPage, getPage, outgoingLinks, resolvePage, searchPages, updatePage, versionsOf,
 } from "./wiki.mjs";
@@ -78,15 +78,21 @@ const NOTE_VERB = /\b(apunta|anota|documenta)(?:r|lo|la|los|las|me|melo|mela|sel
 // Words that ask for a change. The short ones only as an order («pon», «ponlo»), never «pone» or «pasó».
 const WRITE_VERB = /\b(?:(?:apunt|anot|guard|escrib|anad|agreg|actualiz|document|registr|edit|corrig|corrij|complet|modific|cambi|ampli|redact|recog)\w*|crea(?:r|me|la|lo|las|los)?|(?:pon|mete|haz|pasa|deja|prepara)(?:me|lo|la|le|los|las|melo|mela)?)\b/;
 const NEGATED = /\b(no|nunca|todavia no|aun no|ni|sin)\s+(?:\w+\s+){0,3}?(apunt|anot|guard|escrib|anad|agreg|actualiz|cre[ae]|document|toqu|toc|edit|modific|cambi|pon|met)\w*/;
-const personMessages = (store, mission) =>
-  store.where("messages", "missionId", mission.id)
-    .filter((m) => m.role === "user" && (!m.kind || m.kind === "message") && !m.approvalId && typeof m.text === "string")
-    .map((m) => foldText(withoutExternal(m.text)));
+const spoken = (store, mission) =>
+  store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && (!m.kind || m.kind === "message") && !m.approvalId && typeof m.text === "string");
+// What was said in the conversation, whoever wrote it (only to decide which tools to list).
+const saidMessages = (store, mission) => spoken(store, mission).map((m) => foldText(withoutExternal(m.text)));
+// The person's own typed messages: never one a routine, a trigger or the watcher wrote
+// (origin.mjs). Stricter than the send guards on purpose: there the rule's standing
+// instruction counts as asked for; here a routine's prompt never does (as in a run of its own,
+// below), so neither does the same prompt when the rule delivers into a room.
+const personMessages = (store, mission) => spoken(store, mission).filter(isPersonMessage).map((m) => foldText(withoutExternal(m.text)));
 /**
  * Whether the person asked, in this conversation and with their own words, for something to be
  * written in the notes: the latest message of theirs that talks about notes decides («apúntalo
- * en la nota de Acme» yes; «no toques las notas» no). Never a routine's prompt, another
- * person's errand, a watcher or outside content quoted in a message.
+ * en la nota de Acme» yes; «no toques las notas» no). Never a routine's prompt (in a run of its
+ * own or delivered into a room), another person's errand, a watcher or outside content quoted
+ * in a message.
  */
 export function personAskedForNotes(store, mission) {
   if (!mission || mission.automationId || mission.peerErrand || mission.watch || mission.incognito) return false;
@@ -102,7 +108,7 @@ export function notesInPlay(store, mission) {
   if (!mission || mission.peerErrand) return false;
   const key = mission.id + ":" + (mission.updatedAt || "");
   if (inPlay.has(key)) return inPlay.get(key);
-  const value = NOTES.test(foldText(mission.prompt || "")) || (!mission.automationId && personMessages(store, mission).some((t) => NOTES.test(t)));
+  const value = NOTES.test(foldText(mission.prompt || "")) || (!mission.automationId && saidMessages(store, mission).some((t) => NOTES.test(t)));
   if (inPlay.size > 400) inPlay.clear();
   inPlay.set(key, value);
   return value;
