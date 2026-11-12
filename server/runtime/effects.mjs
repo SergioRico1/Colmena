@@ -27,6 +27,7 @@ import {
   TOOL_ALIASES, markExternal,
 } from "../tools.mjs";
 import { scopeOfCall } from "../writescopes.mjs";
+import { FIND_TOOLS, isMetaTool, findTools, resolveToolUse } from "../tool-search.mjs";
 import { runCodeTask } from "../code/missions.mjs";
 import { canCreateImages, createImage } from "../images.mjs";
 import { inspectPdf, fillPdf } from "../pdfforms.mjs";
@@ -136,6 +137,18 @@ export class EffectMethods {
       mission = this.store.get("missions", mission.id) || mission;
       const name = TOOL_ALIASES[call.name] || call.name;
       const offered = this.toolsForStep(mission, step, bot);
+      // Tools on demand (tool-search.mjs). find_tools only reads the bot's own list. A valid
+      // use_tool call never gets here: it became the real call when the model's answer was
+      // read (Runtime#unwrapToolUse), so it is checked and run below like any direct call.
+      // One that is still use_tool did not name one of this bot's tools, or its arguments do
+      // not fit: nothing runs and the bot reads why.
+      if (isMetaTool(call.name) && this.toolSplit(mission, step, bot, offered).active) {
+        if (call.name === FIND_TOOLS) {
+          const { query } = z.object({ query: z.string().max(400) }).strict().parse(JSON.parse(call.arguments || "{}"));
+          return findTools(query, offered, { listed: this.listedTools(mission, step, bot, offered) });
+        }
+        throw Error(resolveToolUse(call.arguments, offered).error || "No se pudo preparar la llamada: repite use_tool con el mismo nombre y argumentos.");
+      }
       if (!offered.some((t) => t.name === call.name || t.name === name)) throw Error("Herramienta no disponible.");
       // Before the first change to files in this turn: a restore point of what it may touch.
       if (this.checkpoints && changesFiles(name)) {

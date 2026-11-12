@@ -89,7 +89,7 @@ export const THREAD_WINDOW = 24, THREAD_STEP = 16;
 export const threadCut = (n) => (n > THREAD_WINDOW ? Math.floor((n - THREAD_WINDOW) / THREAD_STEP) * THREAD_STEP : 0);
 const watchSourcesNote = (m) => !m.watch || !Array.isArray(m.sources) || !m.sources.length ? "" :
   "\n\n(Fuentes de este aviso, como dato: " + m.sources.slice(0, 6).map((s) => `${s.fuente || "Correo"} «${String(s.titulo || s.asunto || "sin título").slice(0, 120)}»${s.de ? " de " + String(s.de).slice(0, 100) : ""} · cuenta ${s.cuenta || ""}${s.accountId ? " (" + s.accountId + ")" : ""} · id ${s.id}${s.hilo ? " · hilo " + s.hilo : ""}${s.url ? " · " + s.url : ""}`).join("; ") + ")";
-const PARALLEL_TOOLS = new Set(["web_fetch", "read_file", "read_folder_file", "list_files", "list_folder", "read_deliverable", "search_history", "read_thread", "recall", "read_skill", "list_skills", "pdf_fields", "mission_brief", "apps_accounts", "apps_search", "apps_describe"]);
+const PARALLEL_TOOLS = new Set(["web_fetch", "read_file", "read_folder_file", "list_files", "list_folder", "read_deliverable", "search_history", "read_thread", "recall", "read_skill", "list_skills", "pdf_fields", "mission_brief", "apps_accounts", "apps_search", "apps_describe", "find_tools"]);
 // Direct app tools that only look (gmail_fetch_emails, googlecalendar_events_list…) run together too.
 const DIRECT_READ = /^(gmail|googlecalendar|googlesheets|googledrive|googledocs|notion|slack|outlook)_\w*(fetch|list|get|find|search|download|batch_get|info|history)\w*$/;
 const runsInParallel = (name) => PARALLEL_TOOLS.has(name) || (DIRECT_READ.test(name) && !/(create|update|send|reply|delete|draft|insert|move)/.test(name));

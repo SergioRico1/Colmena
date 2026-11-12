@@ -3,7 +3,7 @@
 // y editado 2 archivos» — and the steps themselves show only when you unfold it.
 
 // How the bot finds its way (which accounts, which tools, its own notes): not work for you.
-export const PLUMBING = new Set(["apps_accounts", "apps_search", "apps_describe", "mcp_tools", "list_skills", "read_skill", "mission_brief", "recall", "react", "remember"]);
+export const PLUMBING = new Set(["apps_accounts", "apps_search", "apps_describe", "mcp_tools", "find_tools", "list_skills", "read_skill", "mission_brief", "recall", "react", "remember"]);
 const HIDDEN = new Set(["question", "retry"]);
 
 const n = (count, one, many) => (count === 1 ? `${one}` : `${count} ${many}`);

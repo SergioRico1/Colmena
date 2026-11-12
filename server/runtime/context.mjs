@@ -8,6 +8,7 @@ import { id, now } from "../store.mjs";
 import { hasHistory } from "../histories.mjs";
 import { schemas, toolsFor, capabilitiesOf, buildMissionBrief, briefDelta, canDelegateCode } from "../tools.mjs";
 import { schemaNote } from "../structured.mjs";
+import { FIND_TOOLS, USE_TOOL, TOOL_SEARCH, splitTools, toolsNote, resolveToolUse } from "../tool-search.mjs";
 import { composeInstructions, nowNote } from "../soul.mjs";
 import { addReaction, reactionNotices, ACK_TAKEN } from "../reactions.mjs";
 import { CONTEXT, contextBudget, estimateTokens, trimHistory, compactHistory, compactCut, interruptedResult, unansweredCalls } from "../context.mjs";
@@ -332,6 +333,37 @@ export class ContextMethods {
     });
     // Incognito (OpenClaw): nothing of this conversation goes into memory, skills or the soul.
     return mission?.incognito ? tools.filter((t) => !INCOGNITO_DENY.has(t.name)) : tools;
+  }
+  /**
+   * Tools on demand (tool-search.mjs): what the model is shown in this step ({listed}) and
+   * what waits behind find_tools/use_tool ({deferred}), out of `all` — everything the bot may
+   * call (toolsForStep), which stays the only authority on what it can run. With few tools,
+   * or with Ajustes `toolSearch: false`, `listed` is `all`.
+   */
+  toolSplit(mission, step, bot, all = this.toolsForStep(mission, step, bot)) {
+    return splitTools(all, { enabled: this.settings().toolSearch !== false, promoted: Array.isArray(step?.promotedTools) ? step.promotedTools : [] });
+  }
+  listedTools(mission, step, bot, all = this.toolsForStep(mission, step, bot)) {
+    return this.toolSplit(mission, step, bot, all).listed;
+  }
+  /** The paragraph added to the system prompt when some of `all` is not in `listed`. */
+  toolsNote(all, listed) {
+    const shown = new Set(listed.map((t) => t.name));
+    if (!shown.has(FIND_TOOLS)) return "";
+    return toolsNote(all.filter((t) => !shown.has(t.name)), { apps: shown.has("apps_search") });
+  }
+  /** Tools this bot ran through use_tool in its earlier steps of the mission, the latest ones (listed directly from now on). */
+  toolsUsedBefore(step) {
+    const earlier = this.steps(step.missionId)
+      .filter((s) => s.botId === step.botId && s.id !== step.id && Array.isArray(s.usedTools) && s.usedTools.length)
+      .sort((a, b) => String(a.startedAt || "").localeCompare(String(b.startedAt || "")));
+    return [...new Set(earlier.flatMap((s) => s.usedTools).reverse())].slice(0, TOOL_SEARCH.promoted);
+  }
+  /** A use_tool call that names one of the bot's tools (`all`) with arguments that fit its schema → that call; anything else stays as it is and is answered with the reason (EffectMethods#tool). */
+  unwrapToolUse(call, all) {
+    if (call?.name !== USE_TOOL) return call;
+    const real = resolveToolUse(call.arguments, all);
+    return real.error ? call : { ...call, name: real.name, arguments: real.arguments };
   }
   /**
    * {window, maxOutput} of a model in tokens: the catalogue's or the account's (the provider

@@ -9,6 +9,7 @@ import { TOOL_KEYS } from "./store.mjs";
 import { extraToolCard, documentCardExtras, webSearchToolCall, recoveryToolCalls } from "./tools.mjs";
 import { isProjectTool, projectToolCard } from "./projects/tools.mjs";
 import { unwrapExternal } from "./external-content.mjs";
+import { FIND_TOOLS, USE_TOOL, wrappedCall } from "./tool-search.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
@@ -519,6 +520,13 @@ const listCount = (r) => {
 /** Small, safe description of one tool call for its card (never the full page or file). */
 export function toolCard(name, args, result, bots) {
   const r = result && typeof result === "object" ? result : {};
+  // Tools on demand (tool-search.mjs). A use_tool that ran is stored as the real call; one
+  // that was refused still shows the tool it was aiming at, never «use_tool».
+  if (name === USE_TOOL) {
+    const aimed = wrappedCall(args);
+    return aimed ? toolCard(aimed.name, aimed.args, result, bots) : { type: "other" };
+  }
+  if (name === FIND_TOOLS) return { type: "search", query: clipText(args.query, 120) || null, count: Array.isArray(r.tools) ? r.tools.length : null };
   if (name === "web_fetch") return { type: "web", url: r.finalUrl || args.url || null, domain: hostOf(r.finalUrl || args.url), title: clipText(r.title, 140) || null, excerpt: clipText(r.text, 260) || null };
   if (name === "read_file") return { type: "file", name: baseName(args.path), path: args.path || null, chars: typeof r.content === "string" ? r.content.length : null, ...(r.pages > 1 ? { page: r.page, pages: r.pages } : {}), ...documentCardExtras(r) };
   if (name === "read_folder_file") return { type: "file", name: r.name || baseName(args.path), path: args.path || null, page: r.page ?? args.page ?? null, pages: r.pages ?? null, ...documentCardExtras(r) };
@@ -582,7 +590,10 @@ function callView(call, result, step, bots) {
     ? result?.uncertain ? "uncertain" : result?.error ? "error" : result?.waiting ? "waiting" : "done"
     : step.status === "waiting" ? "waiting" : ["running", "queued", "active"].includes(step.status) ? "running" : "error";
   const error = has && result?.error ? clipText(result.error, 240) : !has && status === "error" ? "Se interrumpió antes de terminar." : null;
-  return { id: call.call_id, name: call.name, status, error, card: toolCard(String(call.name || ""), callArgs(call.arguments), has ? result : null, bots) };
+  const args = callArgs(call.arguments);
+  // The room names the tool a refused use_tool was aiming at (a valid one already carries it).
+  const name = call.name === USE_TOOL ? wrappedCall(args)?.name || call.name : call.name;
+  return { id: call.call_id, name, status, error, card: toolCard(String(call.name || ""), args, has ? result : null, bots) };
 }
 /**
  * The latest tool calls of a provider conversation, small enough to live in the step record
