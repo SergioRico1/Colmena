@@ -112,25 +112,40 @@ export class RoutingMethods {
     return job;
   }
   /**
-   * A message of the person left «eligiendo quién responde» with no turn — Colmena closed
-   * during the pick, or the pick failed without a word — is queued for Atlas (the fallback),
-   * once: the message keeps `routed.by: "atlas"` and stops being `routing`, so a second look
-   * finds nothing to do. Without arguments it looks at every team room (on startup, before
-   * the interrupted work goes on); with them, at that one message. Returns the ids it queued.
+   * A message left with no turn — Colmena closed during the pick, or the pick failed without a
+   * word — gets one, once, in the order the messages were written:
+   *   · one left «eligiendo quién responde» (`routing`) is queued for Atlas (the fallback): it
+   *     keeps `routed.by: "atlas"` and stops being `routing`;
+   *   · one that waited behind it (`awaitsTurn`: an @mention, a reply in a thread, a routine's
+   *     message) goes to whom it was for — a named bot stays named — or to Atlas when none of
+   *     them is in the room any more.
+   * A second look finds nothing to do. Without arguments it looks at every team room (on
+   * startup, before the interrupted work goes on); with them, at that one message. Returns the
+   * ids it queued.
    */
   recoverRouting({ missionId = null, messageId = null } = {}) {
     const recovered = [];
     const rooms = missionId ? [this.store.get("missions", missionId)].filter(Boolean) : this.store.list("missions").filter((m) => m.mode === "equipo" && !m.conversation);
     for (const m of rooms) {
       if (m.status === "cancelled" || (!messageId && this.routes.has(m.id))) continue;
-      const lost = this.store.where("messages", "missionId", m.id).filter((x) => x.role === "user" && x.routing === true && (!messageId || x.id === messageId));
+      const lost = this.store.where("messages", "missionId", m.id).filter((x) => x.role === "user" && (x.routing === true || x.awaitsTurn) && (!messageId || x.id === messageId));
       for (const msg of lost) {
         // Read again for each one: the turn of the one before is already in the room.
         const answered = this.steps(m.id).some((s) => s.ackOn === msg.id || (s.ackExtra || []).includes(msg.id));
-        if (answered) { this.store.patch("messages", msg.id, { routing: false }); continue; }
-        this.store.patch("messages", msg.id, { routing: false, routed: routed(["atlas"], "atlas", messageId ? "No se pudo elegir ahora" : "Colmena se cerró mientras elegía") });
+        if (answered) { this.store.patch("messages", msg.id, { routing: false, ...(msg.awaitsTurn ? { awaitsTurn: null } : {}) }); continue; }
+        const waited = msg.routing === true ? null : msg.awaitsTurn;
+        // Whom it was for, if they are still here; nobody named (or nobody left): Atlas.
+        const members = new Set(this.roomMembers(m).map((b) => b.id));
+        const to = (waited?.to || []).filter((b) => members.has(b) && this.bot(b)?.enabled);
+        const own = waited ? waited.own !== false && !msg.origin : true;
         const mode = msg.mode || m.queueMode || "steer";
-        this.deliverTurn(m.id, { messageId: msg.id, text: String(msg.text || ""), note: turnNote(cleanUse(msg.use || []), { deep: !!msg.deep }), effort: msg.deep ? "high" : undefined, about: "", thread: null, mode, named: [] }, ["atlas"]);
+        const root = waited && msg.replyTo ? this.store.get("messages", msg.replyTo) : null;
+        if (waited) this.store.patch("messages", msg.id, { awaitsTurn: null });
+        else this.store.patch("messages", msg.id, { routing: false, routed: routed(["atlas"], "atlas", messageId ? "No se pudo elegir ahora" : "Colmena se cerró mientras elegía") });
+        this.deliverTurn(m.id, {
+          messageId: msg.id, text: String(msg.text || ""), note: turnNote(cleanUse(msg.use || []), { deep: !!msg.deep }), effort: msg.deep ? "high" : undefined,
+          about: root ? this.threadAbout(root) : "", thread: root ? msg.replyTo : null, mode: !own && mode === "interrupt" ? "steer" : mode, named: (msg.to || []).filter((b) => to.includes(b)), own,
+        }, to.length ? to : ["atlas"]);
         recovered.push(msg.id);
       }
     }

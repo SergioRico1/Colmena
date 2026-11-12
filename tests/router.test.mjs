@@ -388,3 +388,43 @@ test("a pick that fails without a word is not lost: Atlas gets the message, once
   assert.equal(r.turns().length, 1);
 });
 
+
+test("messages that waited behind one being routed are not lost by a close: each gets its turn, in order, for whom it was", async (t) => {
+  const r = await room(t, () => pick("tomas"));
+  // The pick never ends before the close: nothing is delivered by the running app.
+  let open = null;
+  const closed = new Promise((resolve) => { open = resolve; });
+  r.runtime.routeAndDeliver = () => closed;
+  const first = r.runtime.addMessage(r.mission.id, "¿Cuánto costó el stand?");
+  const named = r.runtime.addMessage(r.mission.id, "@Nora mira el presupuesto");
+  const origin = { type: "automation", id: "r1", depth: 0, instruction: "Resume la semana" };
+  const routine = r.runtime.addMessage(r.mission.id, "Rutina «Semana»: Resume la semana", [], { route: false, origin, automationId: "r1" });
+  assert.equal(first.routing, true);
+  assert.deepEqual(named.awaitsTurn, { to: ["nora"], own: true }, "it waits behind the first one, and says so");
+  assert.deepEqual(routine.awaitsTurn, { to: ["atlas"], own: false });
+  assert.equal(r.turns().length, 0);
+  // Colmena closes here: the chain in memory is gone. On startup:
+  r.runtime.routes.clear();
+  r.runtime.resumeInterrupted();
+  assert.deepEqual(r.turns().map((s) => [s.botId, s.ackOn]), [["atlas", first.id], ["nora", named.id], ["atlas", routine.id]], "in the order they were written; the named bot stays named");
+  for (const m of [first, named, routine]) assert.ok(!r.store.get("messages", m.id).awaitsTurn && r.store.get("messages", m.id).routing !== true);
+  assert.equal(r.store.get("messages", named.id).routed, undefined, "nobody picked for a message that named its bot");
+  assert.deepEqual(r.runtime.recoverRouting(), [], "a second look finds nothing");
+  open();
+  await settle(r.runtime);
+  assert.equal(r.turns().length, 3, "one turn each, never two");
+});
+
+test("a message that waited behind another loses its mark when its turn is queued", async (t) => {
+  let release = null;
+  const r = await room(t, () => new Promise((resolve) => { release = () => resolve(pick("tomas")); }));
+  const first = r.runtime.addMessage(r.mission.id, "¿Cuánto costó el stand?");
+  const named = r.runtime.addMessage(r.mission.id, "@Nora mira el presupuesto");
+  assert.ok(named.awaitsTurn);
+  for (let i = 0; i < 50 && !release; i++) await new Promise((resolve) => setImmediate(resolve));
+  release();
+  await settle(r.runtime);
+  assert.equal(r.store.get("messages", named.id).awaitsTurn, null);
+  assert.deepEqual(r.turns().map((s) => [s.botId, s.ackOn]), [["tomas", first.id], ["nora", named.id]]);
+  assert.deepEqual(r.runtime.recoverRouting(), []);
+});

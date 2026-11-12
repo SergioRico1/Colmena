@@ -388,7 +388,7 @@ export class Runtime {
     const later = behind || (router && !decided);
     const botIds = named.length ? named : decided ? decided.to : [threadBot
       || (m.mode === "solo" ? m.botIds[0] : m.mode === "debate" && m.chosenBotIds?.length === 1 ? m.chosenBotIds[0] : "atlas")];
-    const about = root ? "Responde en el hilo del mensaje de " + (root.role === "user" ? "la persona" : this.bot(root.botId)?.name || "un bot") + " (dato): «" + String(root.text || "").slice(0, 1500) + "»\n\nLa persona escribe: " : "";
+    const about = this.threadAbout(root);
     if (m.suggestions) this.store.patch("missions", missionId, { suggestions: null });
     const messageId = id();
     const message = this.store.put("messages", {
@@ -401,6 +401,10 @@ export class Runtime {
       ...(working && (mode === "followup" || mode === "collect") ? { deliver: "after" } : {}),
       // Who the router gave it to, or «Eligiendo quién responde…» while it decides.
       ...(decided ? { routed: decided } : router ? { routing: true } : {}),
+      // Its turn is queued later (it waits behind a message still being routed): said on the
+      // message itself, so a close in that window does not leave it without a turn
+      // (recoverRouting). Cleared when the turn exists (deliverTurn).
+      ...(later && !router ? { awaitsTurn: { to: botIds, own } } : {}),
       // Written by Colmena on its own: marked from the start, never the person's words.
       ...(origin ? { origin } : {}), ...(automationId ? { automationId } : {}),
     });
@@ -409,6 +413,10 @@ export class Runtime {
     else this.deliverTurn(missionId, turn, botIds);
     return message;
   }
+  /** What a turn in a message's thread reads before the reply itself: the message it hangs from, as data. */
+  threadAbout(root) {
+    return root ? "Responde en el hilo del mensaje de " + (root.role === "user" ? "la persona" : this.bot(root.botId)?.name || "un bot") + " (dato): «" + String(root.text || "").slice(0, 1500) + "»\n\nLa persona escribe: " : "";
+  }
   /**
    * Queues the turn that answers a message of the person already in the room: `botIds` are
    * who it is for (named, routed, or the room's default). Read with the mission as it is now:
@@ -416,6 +424,7 @@ export class Runtime {
    */
   deliverTurn(missionId, { messageId, text, note, effort, about, thread, mode, named, own = true }, botIds) {
     const m = this.store.get("missions", missionId);
+    if (this.store.get("messages", messageId)?.awaitsTurn) this.store.patch("messages", messageId, { awaitsTurn: null });
     const prior = this.steps(missionId);
     const working = this.active.has(missionId) && !["completed", "paused", "waiting"].includes(m.status);
     const botId = botIds[0];
