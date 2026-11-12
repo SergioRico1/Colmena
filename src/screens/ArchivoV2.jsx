@@ -69,7 +69,7 @@ export default function ArchivoV2({ params = {}, query = {} }) {
         </nav>
         {tab === "archivos" ? <Files artifacts={artifacts} bots={bots} missions={missions} ready={ready} expert={expert} initial={query.abrir || query.archivo || query.artefacto || null} /> : null}
         {tab === "habilidades" ? <Skills skills={skills} bots={bots} expert={expert} note={note} /> : null}
-        {tab === "memoria" ? <Memory memories={memories} bots={bots} expert={expert} /> : null}
+        {tab === "memoria" ? <Memory memories={memories} bots={bots} missions={missions} expert={expert} /> : null}
       </main>
       {importing ? <MemoryImport onClose={() => setImporting(false)} /> : null}
     </Shell>

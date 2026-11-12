@@ -4,6 +4,7 @@ import { id, now } from "../store.mjs";
 import * as skillsModule from "../skills.mjs";
 import { skillSummary, memorySummary } from "../state.mjs";
 import { registerMemoryImportRoutes } from "../memory-import.mjs";
+import { confirmMemory, memoryTarget, placeMemory, settleCore } from "../memory.mjs";
 import { notFound, short, check } from "./shared.mjs";
 
 /** Skills and memories. */
@@ -47,14 +48,28 @@ export function registerSkillRoutes(app, { store, mustGet, runtime, optional }) 
     if (data.botId) mustGet("bots", data.botId, "Bot");
     const scope = data.scope || (data.botId ? "bot" : "equipo");
     if (scope === "bot" && !data.botId) throw Error("Elige de qué bot es este recuerdo.");
-    const memory = store.put("memories", { id: id(), text: data.text, botId: data.botId ?? null, scope, source: "dijiste", review: false, missionId: null, active: true, createdAt: now() });
+    const memory = store.tx(() => {
+      const saved = store.put("memories", { id: id(), text: data.text, botId: data.botId ?? null, scope, source: "dijiste", origin: "persona", review: false, missionId: null, active: true, tier: "core", createdAt: now() });
+      // A full store makes room: what was least recently useful goes to the archive.
+      settleCore(store, memoryTarget(saved), saved.botId, { keep: [saved.id] });
+      return store.get("memories", saved.id);
+    });
     res.json(memorySummary(memory));
   });
   registerMemoryImportRoutes(app, { store, runtime, z, check });
   app.patch("/api/memories/:id", (req, res) => {
-    const data = check(z.object({ text: z.string().trim().min(1).max(2000), review: z.boolean() }).partial().strict(), req.body);
+    // pinned / tier: «Fijar», «Archivar», «Traer del archivo». replaces (with review:false on
+    // one «en duda»): it takes the place of what you had said.
+    const data = check(z.object({ text: z.string().trim().min(1).max(2000), review: z.boolean(), pinned: z.boolean(), tier: z.enum(["core", "archive"]), replaces: z.boolean() }).partial().strict(), req.body);
     mustGet("memories", req.params.id, "Recuerdo");
-    res.json(memorySummary(store.patch("memories", req.params.id, data)));
+    const { pinned, tier, replaces, ...fields } = data;
+    const memory = store.tx(() => {
+      if (Object.keys(fields).length) store.patch("memories", req.params.id, fields);
+      if (fields.review === false) confirmMemory(store, req.params.id, { replaces: replaces === true });
+      if (pinned !== undefined || tier !== undefined) placeMemory(store, req.params.id, { pinned, tier });
+      return store.get("memories", req.params.id);
+    });
+    res.json(memorySummary(memory));
   });
   app.delete("/api/memories/:id", (req, res) => {
     const memory = store.get("memories", req.params.id);

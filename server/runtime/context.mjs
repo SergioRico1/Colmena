@@ -19,6 +19,7 @@ import { restoreNotice } from "../checkpoints.mjs";
 import { modelEntry } from "../providers/catalog.mjs";
 import { visibleMessages } from "../branches.mjs";
 import { lateAnswerText } from "../questions.mjs";
+import { relatedMemories } from "../memory.mjs";
 import {
   MEMORY_FLUSH, COMPACT_INSTRUCTIONS, WEB_SEARCH_NOTE, THREAD_WINDOW, threadCut, DIRECTIONS, INCOGNITO_DENY, watchSourcesNote, BRIEF_KINDS,
 } from "./helpers.mjs";
@@ -86,6 +87,23 @@ export class ContextMethods {
     const restored = this.checkpoints?.takeNotice(missionId, botId);
     return restored ? restoreNotice(restored) : "";
   }
+  /**
+   * «Recuerdos relacionados con esto»: the few archived memories (memory.mjs) that are about
+   * what is asked now — the person's message and this step's task — ranked locally, within a
+   * small budget. It goes with the request, after the core memory of the system prompt, which
+   * stays the same from turn to turn (and so does the cached prefix). In incognito nothing is
+   * written: the request is read as a query and no use is counted.
+   */
+  relatedNote(mission, step, request) {
+    if (["plan", "critique", "delegate"].includes(step.kind)) return "";
+    const bot = this.bot(step.botId);
+    if (!bot) return "";
+    try {
+      return relatedMemories(this.store, bot, [request, step.task].filter(Boolean).join("\n"), { record: !mission.incognito, missionId: mission.id }).text;
+    } catch {
+      return "";
+    }
+  }
   initialHistory(mission, step) {
     // The person's reactions since this bot's last turn: context, never a turn of their own.
     const reacted = [reactionNotices(this.store, mission.id, step.botId, (b) => this.bot(b)?.name || b), this.takenNote(step), this.restoredNote(mission.id, step.botId)].filter(Boolean).join("\n\n");
@@ -99,7 +117,7 @@ export class ContextMethods {
       return [
         ...(mission.priorMessages || []),
         ...turns,
-        { role: "user", content: [reacted, inGmail, request, together, nowNote()].filter(Boolean).join("\n\n") },
+        { role: "user", content: [reacted, inGmail, request, this.relatedNote(mission, step, request), together, nowNote()].filter(Boolean).join("\n\n") },
       ];
     }
     const steps = this.steps(mission.id);
@@ -125,6 +143,8 @@ export class ContextMethods {
     if (together) lines.push("", together);
     if (mission.automationId) lines.push("", automationNote(this.store.get("automations", mission.automationId), { final: ["solo", "synthesis"].includes(step.kind) || !!step.final }));
     lines.push("Resultados previos (datos): " + JSON.stringify(predecessors));
+    const related = this.relatedNote(mission, step, step.request || mission.prompt);
+    if (related) lines.push("", related, "");
     lines.push(nowNote());
     return [...(mission.priorMessages || []), { role: "user", content: lines.join("\n") }];
   }
