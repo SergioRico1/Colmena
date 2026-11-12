@@ -12,7 +12,8 @@ import { autonomyLabel, Seg } from "../../v3/team/parts.jsx";
 // shape, colour, instructions, skills, what it can use), 3 Prueba (a private test chat;
 // nothing is saved or sent) — with «Así se verá» beside them. Honey is not offered as a
 // colour (it means «te necesita») and ink belongs to Atlas.
-const SHAPE_LIST = [["hex", "hexágono"], ["circle", "círculo"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"]];
+// No circle: circles are people (src/lib/identity.js). A bot that already has one is drawn as a rounded square.
+const SHAPE_LIST = [["hex", "hexágono"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"]];
 const COLORS = [["#0E7C86", "verde azulado"], ["#2F6BFF", "azul"], ["#7B4DFF", "violeta"], ["#FF5CA8", "rosa"], ["#FF7A1A", "naranja"], ["#0B8A5F", "verde"], ["#B4236E", "frambuesa"]];
 const EXAMPLES = [
   ["Contable", "Que lea las facturas de proveedores que llegan al correo, las apunte en la hoja de gastos y me avise si alguna pasa de 500 € o vence esta semana. Que nunca pague nada."],
@@ -70,7 +71,7 @@ export default function NewBot({ onClose, onHired }) {
       const r = await post("/bots/prepare", { description: desc.trim(), audience, materials: files.filter((f) => typeof f.content === "string").map(({ name, content }) => ({ name, content })) });
       const color = /^#[0-9a-f]{6}$/i.test(r.color || "") && !["#FFC93C", "#12131A"].includes(r.color.toUpperCase()) ? r.color : COLORS[0][0];
       setD({
-        name: r.name || "", role: r.role || "", instructions: r.instructions || desc.trim(), shape: SHAPES[r.shape] && r.shape !== "hex" ? r.shape : "leaf", color,
+        name: r.name || "", role: r.role || "", instructions: r.instructions || desc.trim(), shape: SHAPES[r.shape] && r.shape !== "hex" && r.shape !== "circle" ? r.shape : "leaf", color,
         skills: (r.skills || []).map((s) => ({ name: s.name, description: s.description || "" })), tools: { ...(r.permissions || {}) }, autonomy: r.autonomy || "sugiere",
       });
       setStep(1);

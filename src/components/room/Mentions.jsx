@@ -5,6 +5,9 @@ import { createComposition } from "../../lib/composition.js";
 import { chatsFrom, mentionItems, MENTION_LIMITS, refBody } from "../../lib/mentionMenu.js";
 import { useStore } from "../../lib/store.jsx";
 import { BotMark } from "../v2/chat/Mark.jsx";
+import { PersonAvatar } from "./Author.jsx";
+import { mentionGroups } from "../../lib/roomView.js";
+import { firstName } from "../../lib/identity.js";
 
 // The tints of the attachment tiles (v2/chat/Parts.jsx, which shows these chips: kept here so
 // neither imports the other).
@@ -57,7 +60,7 @@ export function RefChips({ refs = [], align = "flex-end" }) {
  * become chips (`chips`, `removeRef`) and go with the message as `refs` (`refsBody()`).
  * Returns props for the textarea/input and the menu element (render it inside a `position: relative` box).
  */
-export function useMentions({ value, setValue, bots, inputRef, sources = null }) {
+export function useMentions({ value, setValue, bots, inputRef, sources = null, room = null }) {
   const store = useStore();
   const [query, setQuery] = useState(null);
   // While an input method composes («é», kana…) the text is not final: no list opens with it.
@@ -66,6 +69,8 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null })
   const [dir, setDir] = useState("");
   const [files, setFiles] = useState({ missionId: null, list: null });
   const [refs, setRefs] = useState([]);
+  // In a room with people (`room`: its view): who you picked with «@», to send with the message.
+  const [picks, setPicks] = useState([]);
   const missionId = sources?.missionId || null;
   const withSources = !!sources;
   useEffect(() => { setRefs([]); setDir(""); }, [missionId]);
@@ -84,10 +89,10 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null })
     try { return chatsFrom(store?.missions, missionId); } catch { return null; }
   }, [withSources, store?.missions, missionId]);
   const items = useMemo(() => (query == null ? [] : mentionItems({
-    query, bots, dir,
+    query, bots, dir, who: room ? mentionGroups({ view: room, query, limit: query ? 8 : 4 }) : null,
     files: withSources && files.missionId === missionId ? files.list : null,
     chats,
-  })), [query, bots, dir, withSources, files, missionId, chats]);
+  })), [query, bots, dir, withSources, files, missionId, chats, room]);
   const options = items.filter((x) => x.type !== "head");
   const open = query != null && options.length > 0;
   const current = Math.min(index, Math.max(0, options.length - 1));
@@ -119,8 +124,15 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null })
 
   const choose = (item) => {
     if (!item) return;
-    if (item.type === "bot") {
-      replaceTrigger(`@${item.bot.name} `);
+    if (item.type === "bot" || item.type === "peerbot" || item.type === "person") {
+      // A first name two people here share is written in full.
+      const label = item.type !== "person" ? item.bot.name
+        : (room?.people || []).filter((p) => firstName(p.name).toLowerCase() === firstName(item.person.name).toLowerCase()).length > 1 ? item.person.name : firstName(item.person.name);
+      replaceTrigger(`@${label} `);
+      if (room) {
+        const pick = item.type === "person" ? { type: "person", id: item.person.address, label } : { type: item.type, id: item.bot.id, owner: item.owner?.address || null, ownerName: item.owner?.name || null, label };
+        setPicks((list) => (list.some((x) => x.type === pick.type && x.id === pick.id && x.owner === pick.owner) ? list : [...list, pick]));
+      }
       setQuery(null);
       return;
     }
@@ -180,7 +192,8 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null })
   };
 
   const row = (item, selected) => {
-    if (item.type === "bot") return [<BotMark key="g" bot={item.bot} size={18} />, item.bot.name, item.bot.role || "bot"];
+    if (item.type === "bot" || item.type === "peerbot") return [<BotMark key="g" bot={item.bot} size={18} />, item.bot.name, item.bot.role || "bot"];
+    if (item.type === "person") return [<PersonAvatar key="g" person={item.person} size={20} ring="#FFFFFF" />, item.person.name, item.person.presence === "online" ? "en línea" : "persona"];
     if (item.type === "file") return [<RefGlyph key="g" kind="file" name={item.name} />, item.name, "archivo"];
     if (item.type === "folder") return [<RefGlyph key="g" kind="folder" />, item.name, <span key="k" style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>{"carpeta"}<ChevronRight {...I} style={{ opacity: selected ? 1 : 0.6 }} /></span>];
     if (item.type === "up") return [<span key="g" aria-hidden="true" style={tile("transparent")}><ChevronLeft size={14} strokeWidth={2.3} /></span>, "Atrás", ""];
@@ -190,7 +203,7 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null })
 
   let n = -1;
   const menu = open ? (
-    <div id="rm-mentions" role="listbox" aria-label={withSources ? "Mencionar" : "Mencionar a un bot"} style={MENU}>
+    <div id="rm-mentions" role="listbox" aria-label={withSources || room ? "Mencionar" : "Mencionar a un bot"} style={MENU}>
       {items.map((item) => {
         if (item.type === "head") return <span key={item.key} role="presentation" style={HEAD}>{item.label}</span>;
         n++;
@@ -212,6 +225,7 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null })
   const removeRef = (key) => setRefs((list) => list.filter((r) => r.key !== key));
   return {
     inputProps, handleKey, menu, start, composing: (e) => ime.key(e?.nativeEvent || e),
+    picks, clearPicks: () => setPicks([]), restorePicks: setPicks,
     refs, chips, removeRef, isRef: (key) => String(key || "").startsWith("ref:"),
     refsBody: () => (refs.length ? { refs: refBody(refs) } : {}), clearRefs: () => setRefs([]), restoreRefs: setRefs,
   };

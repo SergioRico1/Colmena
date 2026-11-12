@@ -2,6 +2,7 @@
 // with a soft gloss — no letters, no labels. It breathes while it works, stays still while it
 // rests and glows honey when it waits for you. People are neutral circles with initials.
 import { portraitOf } from "../../lib/bots.js";
+import { botShape } from "../../lib/identity.js";
 
 export const SHAPES = {
   hex: { clip: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", radius: "0" },
@@ -11,7 +12,8 @@ export const SHAPES = {
   leaf: { clip: "none", radius: "50% 12% 50% 12%" },
   arch: { clip: "none", radius: "50% 50% 14% 14%" },
 };
-export const shapeOf = (bot) => SHAPES[bot?.shape] || SHAPES.circle;
+// Circles are people: a bot whose shape is a circle (or unknown) is a rounded square (lib/identity.js).
+export const shapeOf = (bot) => SHAPES[botShape(bot?.shape)];
 export const gloss = (color) => `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${color || "#C9CBD1"}`;
 
 /** «trabaja» → work, «espera» → wait, everything else rests. */

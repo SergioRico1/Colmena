@@ -31,6 +31,6 @@ export function PersonMark({ name, size = 32, me = false, tint = "#E6E7EC", ring
 export function RowTile({ bot = null, state = "rest", person = null, room = false }) {
   const tile = { flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "12px" };
   if (bot) return <span aria-hidden="true" style={{ ...tile, background: "#F6F6F3" }}><BotMark bot={bot} size={20} state={state} /></span>;
-  if (person) return <span aria-hidden="true" style={{ ...tile, background: "#E6E7EC", fontSize: "12px", fontWeight: 600, color: "#12131A" }}>{initialsOf(person)}</span>;
+  if (person) return <span aria-hidden="true" style={{ ...tile, borderRadius: "50%", background: "#E6E7EC", fontSize: "12px", fontWeight: 600, color: "#12131A" }}>{initialsOf(person)}</span>;
   return <span aria-hidden="true" style={{ ...tile, background: "#F1F1EC", fontSize: "12px", fontWeight: 600, color: "#12131A" }}>{room ? "#" : ""}</span>;
 }

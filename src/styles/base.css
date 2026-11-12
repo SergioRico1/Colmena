@@ -210,3 +210,4 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 @keyframes drift{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes develop{from{filter:blur(18px) saturate(.4);transform:scale(1.04)}to{filter:blur(0) saturate(1);transform:none}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.msg:hover .msg-gutter-time{opacity:1}

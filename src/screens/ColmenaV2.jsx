@@ -2,6 +2,7 @@ import { useState } from "react";
 import Shell from "../components/v2/Shell.jsx";
 import NewBot from "../components/v2/team/NewBot.jsx";
 import EquipoPeople from "../components/v3/team/People.jsx";
+import TeamSection from "../components/v3/team/TeamSection.jsx";
 import { InviteSheet } from "../components/v2/people/InviteSheets.jsx";
 import { LimitLine } from "../components/v2/LimitNotice.jsx";
 import { Shape, autonomyLabel } from "../components/v3/team/parts.jsx";
@@ -67,6 +68,8 @@ function Team() {
             </a>
           </div>
         </header>
+        {/* Your team as everyone in it sees it: people, roles and each one's bots (or «Solo tú»). */}
+        <TeamSection />
         <section aria-labelledby="bots-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: "12px" }}>
             <h2 id="bots-t" style={{ margin: "0", font: "600 24px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Bots"}</h2>

@@ -2,14 +2,18 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useStore, useResource } from "../../lib/store.jsx";
 import { navigate, useRouter } from "../../lib/router.jsx";
-import { get, patch } from "../../lib/api.js";
+import { patch, put } from "../../lib/api.js";
 import { BotPresence, shapeOf } from "../v2/Presence.jsx";
 import { WindowDots } from "../v2/Rail.jsx";
 import { NewConversation } from "../v2/chat/ConvList.jsx";
 import { AcceptSheet, InviteSheet } from "../v2/people/InviteSheets.jsx";
+import NewRoomSheet from "./team/NewRoomSheet.jsx";
+import TeamSheets from "./team/TeamSheets.jsx";
 import { useExpert } from "../../lib/expert.js";
 import { reducedMotion } from "../../lib/motion.js";
 import { statusText } from "../../lib/peers.js";
+import { failure } from "../../lib/undoToast.js";
+import { realTeams } from "../../lib/teams.js";
 import { STATE_WORD, STATUS_WORD, conversationPath, foldRooms, rememberConversation, rowLabel, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md): it names who you
@@ -50,34 +54,11 @@ const menuItem = { display: "flex", alignItems: "center", gap: "10px", minHeight
 const initials = (name) => String(name || "Tú").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "TÚ";
 
 // What the sidebar remembers between screens (each screen mounts its own): which groups are
-// folded (also across sessions), whether every room shows, how far it was scrolled, the teams.
-const GROUPS_KEY = "colmena:sidebar-groups", TEAM_KEY = "colmena:sidebar-team";
+// folded (also across sessions), whether every room shows, how far it was scrolled.
+const GROUPS_KEY = "colmena:sidebar-groups";
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const writeJson = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
-let allRooms = false, scrolled = 0, teamsSeen = null, teamsJob = null;
-
-/**
- * Your teams: `GET /api/teams` → [{id, name, people, bots, admin, current}]. Until the Teams
- * server exists the address answers 404, which reads as no teams («Solo tú»).
- */
-function useTeams() {
-  const [teams, setTeams] = useState(teamsSeen || []);
-  useEffect(() => {
-    let alive = true;
-    const show = (list) => { if (alive) setTeams(list); };
-    // One request however many sidebars mount while it is on its way.
-    const load = () => {
-      teamsJob = get("/teams").then((list) => (Array.isArray(list) ? list : [])).catch(() => []).then((list) => { teamsSeen = list; teamsJob = null; return list; });
-      return teamsJob.then(show);
-    };
-    if (teamsJob) teamsJob.then(show);
-    else if (!teamsSeen) load();
-    const onChanged = (e) => { if ((e.detail?.kinds || []).some((k) => k === "teams" || k === "peerTeams")) load(); };
-    window.addEventListener("colmena:changed", onChanged);
-    return () => { alive = false; window.removeEventListener("colmena:changed", onChanged); };
-  }, []);
-  return teams;
-}
+let allRooms = false, scrolled = 0;
 
 /** Turns an address you pinned that no group shows (a Código task, a bot's page) into a row. */
 function pinnedEntry(href, { bots }) {
@@ -112,10 +93,10 @@ export default function Sidebar({ active = "inicio" }) {
   const [expert, setExpert] = useExpert();
   const [menu, setMenu] = useState(null); // "new" | "team"
   const [sheet, setSheet] = useState(null); // "chat" | "sala" | "invitar" | "aceptar"
+  const [teamSheet, setTeamSheet] = useState(null); // {kind: "create" | "join" | "invite", team?} (team/TeamSheets.jsx)
   const [folded, setFoldedState] = useState(!!settings.sidebarFolded);
   const [closed, setClosed] = useState(() => readJson(GROUPS_KEY, {}));
   const [showAll, setShowAll] = useState(allRooms);
-  const [chosenTeam, setChosenTeam] = useState(() => readJson(TEAM_KEY, null));
   const newRef = useRef(null), teamRef = useRef(null), scroller = useRef(null);
   useEffect(() => setFoldedState(!!settings.sidebarFolded), [settings.sidebarFolded]);
   const setFolded = (v) => { setFoldedState(v); run(() => patch("/settings", { sidebarFolded: v })).catch(() => {}); };
@@ -132,8 +113,12 @@ export default function Sidebar({ active = "inicio" }) {
     if (a.top < b.top || a.bottom > b.bottom) row.scrollIntoView({ block: "nearest" });
   }, [folded, here]);
 
-  const teams = useTeams();
-  const team = teamHeader(teams, { bots: bots.filter((b) => b.enabled !== false).length, chosen: chosenTeam });
+  // The team comes from the state (`teams`, the same list as GET /api/teams; kept live by
+  // /api/events like everything else). Alone, the server sends one «solo» entry: that is no team.
+  const teams = useMemo(() => realTeams(store.teams), [store.teams]);
+  const joining = store.teamsPending || [];
+  const team = teamHeader(teams, { bots: bots.filter((b) => b.enabled !== false).length });
+  const teamRow = teams.find((t) => t.id === team.id) || null;
   const model = useMemo(() => sidebarModel(store, { team: team.id }), [store, team.id]);
   const rooms = foldRooms(model.rooms, { current: here, all: showAll });
   const canFold = showAll ? foldRooms(model.rooms, { current: here }).hidden > 0 : rooms.hidden > 0;
@@ -150,8 +135,13 @@ export default function Sidebar({ active = "inicio" }) {
 
   const toggleGroup = (id) => setClosed((c) => { const next = { ...c, [id]: !c[id] }; writeJson(GROUPS_KEY, next); return next; });
   const toggleAll = () => { allRooms = !showAll; setShowAll(allRooms); };
-  // Until the Teams server keeps it, the team you look at is remembered in this window.
-  const pickTeam = (id) => { writeJson(TEAM_KEY, id); setChosenTeam(id); setMenu(null); teamRef.current?.querySelector("button[aria-haspopup]")?.focus(); };
+  // The team the bar shows is kept by the server (PUT /api/teams/current), the same in every window.
+  const pickTeam = (id) => {
+    setMenu(null);
+    teamRef.current?.querySelector("button[aria-haspopup]")?.focus();
+    run(() => put("/teams/current", { id })).catch((e) => failure("No se pudo cambiar de equipo", e?.message));
+  };
+  const openTeamSheet = (kind) => { setMenu(null); setTeamSheet({ kind, team: teamRow }); };
   // «Nuevo chat» / «Nueva sala» open here, over whatever screen you are on. Chats' own list
   // (when it is on screen) has the same sheet and answers the event itself.
   const openNew = (kind) => {
@@ -220,26 +210,41 @@ export default function Sidebar({ active = "inicio" }) {
     </div>
   ) : null;
 
-  // The team menu. Only what works today is listed. Still to come with the Teams server, each
-  // with the address it will call: «Crear un equipo» (POST /api/teams), «Unirme a un equipo con
-  // un código» (POST /api/teams/join), «Ajustes del equipo» (PATCH /api/teams/:id, admins only)
-  // and inviting INTO the team (POST /api/teams/:id/invites). Today's invitation connects you
-  // with one person, or lets you into one room, through the «Personas» mailbox.
+  // The team menu (server/routes/teams.mjs): change team (PUT /api/teams/current), «Invitar al
+  // equipo» (POST /api/teams/:id/invite; whoever does not administer it is told who does),
+  // «Ajustes del equipo» (Equipo, where admins rename, name admins and take people out),
+  // «Crear un equipo» (POST /api/teams) and «Unirme con un código» (one field for a team's, a
+  // room's or a person's code). Inviting one person to talk stays on the «+» of Personas.
+  const menuLine = <span aria-hidden="true" style={{ height: "1px", margin: "6px 4px", background: "rgba(18,19,26,.08)" }} />;
   const teamMenu = menu === "team" ? (
     <div role="menu" aria-label={team.solo ? "Tu Colmena" : `Equipo ${team.name}`} onKeyDown={menuKeys} style={{ ...menuBox, top: "48px", right: folded ? "auto" : "-6px", width: folded ? "260px" : "auto" }}>
       {team.others.length ? <>
         <span style={{ padding: "6px 10px 4px", fontSize: "12px", fontWeight: "600", color: MUTED }}>{"Cambiar de equipo"}</span>
         <button type="button" role="menuitemradio" aria-checked="true" onClick={() => setMenu(null)} className="v3-menuitem" style={{ ...menuItem, fontWeight: "600" }}><span style={ellipsis}>{team.name}</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4 4 10-10" /></svg></button>
         {team.others.map((t) => <button key={t.id} type="button" role="menuitemradio" aria-checked="false" onClick={() => pickTeam(t.id)} className="v3-menuitem" style={menuItem}><span style={ellipsis}>{t.name}</span></button>)}
-        <span aria-hidden="true" style={{ height: "1px", margin: "6px 4px", background: "rgba(18,19,26,.08)" }} />
+        {menuLine}
       </> : null}
+      {team.solo ? null : <>
+        {peopleOff ? null : <button type="button" role="menuitem" onClick={() => openTeamSheet("invite")} className="v3-menuitem" style={menuItem}>{"Invitar al equipo"}</button>}
+        <a role="menuitem" href="/equipo#equipo" onClick={() => setMenu(null)} className="v3-menuitem" style={menuItem}>{team.admin ? "Ajustes del equipo" : "Ver el equipo"}</a>
+        {menuLine}
+      </>}
       {peopleOff ? (
         <a role="menuitem" href="/ajustes/personas" onClick={() => setMenu(null)} className="v3-menuitem" style={menuItem}>{"Conectar con otras personas"}</a>
       ) : <>
-        <button type="button" role="menuitem" onClick={() => { setMenu(null); setSheet("invitar"); }} className="v3-menuitem" style={menuItem}>{"Invitar a alguien"}</button>
-        <button type="button" role="menuitem" onClick={() => { setMenu(null); setSheet("aceptar"); }} className="v3-menuitem" style={menuItem}>{"Unirme con un código"}</button>
+        <button type="button" role="menuitem" onClick={() => openTeamSheet("create")} className="v3-menuitem" style={menuItem}>{team.solo ? "Crear un equipo" : "Crear otro equipo"}</button>
+        <button type="button" role="menuitem" onClick={() => openTeamSheet("join")} className="v3-menuitem" style={menuItem}>{"Unirme con un código"}</button>
       </>}
-      <a role="menuitem" href="/equipo" onClick={() => setMenu(null)} className="v3-menuitem" style={menuItem}>{team.solo ? "Ver tus bots y personas" : "Ver el equipo"}</a>
+      {team.solo ? <a role="menuitem" href="/equipo" onClick={() => setMenu(null)} className="v3-menuitem" style={menuItem}>{"Ver tus bots y personas"}</a> : null}
+      {joining.length ? <>
+        {menuLine}
+        {joining.map((p) => (
+          <a key={p.id} role="menuitem" href="/equipo#equipo" onClick={() => setMenu(null)} className="v3-menuitem" style={{ ...menuItem, alignItems: "flex-start", flexDirection: "column", gap: "1px" }}>
+            <span style={{ ...ellipsis, flex: "none", maxWidth: "100%" }}>{p.name}</span>
+            <span style={{ fontSize: "12px", fontWeight: "400", color: MUTED }}>{p.state === "refused" ? "No has podido entrar" : "Pendiente: has pedido entrar"}</span>
+          </a>
+        ))}
+      </> : null}
     </div>
   ) : null;
 
@@ -381,9 +386,12 @@ export default function Sidebar({ active = "inicio" }) {
     </>
   );
 
-  const sheets = sheet === "chat" || sheet === "sala" ? <NewConversation mode={sheet} onClose={() => setSheet(null)} onPeople={(which) => setSheet(which)} />
-    : sheet === "invitar" ? <InviteSheet onClose={() => setSheet(null)} />
-      : sheet === "aceptar" ? <AcceptSheet onClose={() => setSheet(null)} /> : null;
+  // «Sala» is its own small sheet (name, team or private, people, bots → POST /api/rooms).
+  const sheets = teamSheet ? <TeamSheets sheet={teamSheet} onClose={() => setTeamSheet(null)} onSheet={setTeamSheet} />
+    : sheet === "sala" ? <NewRoomSheet onClose={() => setSheet(null)} />
+      : sheet === "chat" ? <NewConversation mode="chat" onClose={() => setSheet(null)} onPeople={(which) => setSheet(which)} />
+        : sheet === "invitar" ? <InviteSheet onClose={() => setSheet(null)} />
+          : sheet === "aceptar" ? <AcceptSheet onClose={() => setSheet(null)} /> : null;
 
   return (
     <nav aria-label="Colmena: equipo, sitios y conversaciones" data-v3-sidebar={folded ? "folded" : "open"} style={{ position: "relative", zIndex: "40", boxSizing: "border-box", flex: "none", width: width + "px", height: "100%", minHeight: "0", display: "flex", flexDirection: "column", gap: "10px", padding: "12px 12px 10px", background: "#ECECE7", borderRight: "1px solid rgba(18,19,26,.07)", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitFontSmoothing: "antialiased", WebkitAppRegion: "drag", transition: "width .18s ease" }}>

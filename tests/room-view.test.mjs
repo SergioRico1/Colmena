@@ -1,0 +1,257 @@
+// The one room screen's model (src/lib/roomView.js, src/lib/identity.js): who wrote a row, how
+// rows group, the quiet lines about other owners' bots, the member panel, the invite sheet's
+// candidates and what «@» lists. Pure functions: no browser, no server.
+import test from "node:test";
+import assert from "node:assert/strict";
+import { botShape, firstName, initialsOf, listNames } from "../src/lib/identity.js";
+import {
+  askChoices, authorKey, authorOf, authorView, continues, durationText, groupFlags, handoffLine, inviteCandidates, inviteTruth, itemType, joinItems,
+  memberPanel, mentionGroups, mentionTargets, newsLine, requestHint, presenceWord, roomPlace, roomRole, stackLabel, stateWord, statusLine,
+} from "../src/lib/roomView.js";
+import { mentionItems } from "../src/lib/mentionMenu.js";
+import { roomLinks } from "../src/lib/rooms.js";
+
+const ME = "me-address", LUCIA = "lucia-address", MARTA = "marta-address";
+const sergio = { address: ME, name: "Sergio Rico", you: true };
+const lucia = { address: LUCIA, name: "Lucía Martín", you: false };
+const vera = { id: "vera", name: "Vera", role: "Redacción", shape: "leaf", color: "#7B4DFF" };
+const at = (min) => new Date(Date.parse("2026-11-12T10:00:00Z") + min * 60000).toISOString();
+const view = () => ({
+  id: "room-1", title: "lanzamiento", private: false, mine: true, teamId: "t1", missionId: "m1", shareId: "room-1",
+  people: [
+    { address: MARTA, name: "Marta Soler", role: "guest", presence: "offline", status: { mode: "available" }, you: false },
+    { address: LUCIA, name: "Lucía Martín", role: "member", presence: "online", status: { mode: "dnd" }, you: false },
+    { address: ME, name: "Sergio Rico", role: "owner", presence: "online", status: { mode: "available" }, you: true },
+  ],
+  bots: [
+    { owner: lucia, bots: [{ id: "vera", name: "Vera", role: "Legal", shape: "circle", color: "#0E7C86" }, { id: "leo", name: "Leo", role: "Datos", shape: "hex", state: "working" }] },
+    { owner: sergio, bots: [{ id: "atlas", name: "Atlas", role: "Coordinador", shape: "hex" }, vera, { id: "nora", name: "Nora", role: "Investigación", shape: "circle" }] },
+  ],
+});
+
+test("circles are people: a bot that is a circle, or has no known shape, is a rounded square", () => {
+  assert.equal(botShape("circle"), "square");
+  assert.equal(botShape(undefined), "square");
+  assert.equal(botShape("blob"), "square");
+  for (const s of ["hex", "diamond", "square", "leaf", "arch"]) assert.equal(botShape(s), s);
+  assert.equal(initialsOf("Lucía Martín Gómez"), "LM");
+  assert.equal(initialsOf(""), "?");
+  assert.equal(firstName("Lucía Martín"), "Lucía");
+  assert.equal(listNames(["Ana"]), "Ana");
+  assert.equal(listNames(["Ana", "Luis", "Marta"]), "Ana, Luis y Marta");
+});
+
+test("the author of a row: a person, a bot of yours, a bot of someone else", () => {
+  // A row of the sala alone.
+  assert.deepEqual(authorView(authorOf({ role: "user", text: "hola" })), { kind: "person", you: true, name: "Tú", sub: "", label: "Tú" });
+  const own = authorView(authorOf({ role: "assistant", botId: "vera" }, [vera]));
+  assert.equal(own.name, "Vera");
+  assert.equal(own.sub, "Redacción"); // your own bot does not say «bot tuyo» on every row
+  assert.equal(own.label, "Vera, bot tuyo"); // …but its text alternative says what it is
+  // A timeline item brings its author; someone else's bot says whose it is.
+  const theirs = authorView(authorOf({ engine: "peer", author: { kind: "bot", botId: { owner: LUCIA, bot: "vera" }, name: "Vera", role: "Legal", owner: lucia } }));
+  assert.equal(theirs.sub, "Legal · bot de Lucía");
+  assert.equal(theirs.label, "Vera, bot de Lucía");
+  assert.equal(authorView(authorOf({ engine: "peer", author: { kind: "person", ...lucia } })).label, "Lucía Martín, persona");
+  // A message of a conversation with people (the direct chat): from / author / bot.
+  assert.equal(authorView(authorOf({ from: "me", author: { name: "Sergio" } })).name, "Tú");
+  assert.equal(authorView(authorOf({ from: LUCIA, author: { name: "Lucía Martín" }, bot: { id: "leo", name: "Leo", role: "Datos" } })).sub, "Datos · bot de Lucía");
+  assert.equal(authorView(authorOf({ from: LUCIA, author: { name: "Lucía Martín" }, bot: { id: "leo", name: "Leo" } })).sub, "bot de Lucía");
+  // Notes of the system have no author.
+  assert.equal(authorView(authorOf({ role: "system" })).kind, "system");
+  assert.equal(authorKey(authorOf({ role: "system" })), null);
+  // Two «Vera» of two owners are two authors.
+  assert.notEqual(authorKey(authorOf({ role: "assistant", botId: "vera" }, [vera])), authorKey({ kind: "bot", botId: { owner: LUCIA, bot: "vera" }, name: "Vera", owner: lucia }));
+});
+
+test("consecutive messages by one author within five minutes share a header", () => {
+  const mine = (min, extra = {}) => ({ id: "u" + min, role: "user", text: "x", at: at(min), ...extra });
+  const theirs = (min, extra = {}) => ({ id: "p" + min, engine: "peer", from: LUCIA, author: { kind: "person", ...lucia }, text: "x", at: at(min), ...extra });
+  assert.equal(continues(mine(0), mine(4)), true);
+  assert.equal(continues(mine(0), mine(5)), false, "five minutes later is a new group");
+  assert.equal(continues(mine(0), theirs(1)), false, "another author");
+  assert.equal(continues(theirs(0), theirs(1)), true, "people group the same way as your own rows");
+  assert.equal(continues(mine(0), mine(1), { hasReplies: true }), false, "a thread under the first one breaks the group");
+  assert.equal(continues(mine(0), mine(1, { kind: "question" })), false, "a card is never a continuation");
+  assert.equal(continues(theirs(0), theirs(1, { errand: { id: "e" } })), false);
+  assert.equal(continues({ ...mine(0), at: "2026-11-12T23:58:00" }, { ...mine(1), at: "2026-11-13T00:01:00" }), false, "midnight starts again");
+  assert.equal(continues(null, mine(0)), false);
+  // A bot's progress lines group with its answer; the same bot of another owner does not.
+  const bot = (min, extra = {}) => ({ id: "b" + min, role: "assistant", botId: "vera", text: "x", at: at(min), ...extra });
+  assert.equal(continues(bot(0, { kind: "progress" }), bot(1), { bots: [vera] }), true);
+  assert.equal(continues(bot(0), { id: "pb", engine: "peer", author: { kind: "bot", botId: { owner: LUCIA, bot: "vera" }, name: "Vera", owner: lucia }, text: "x", at: at(1) }, { bots: [vera] }), false);
+  assert.deepEqual(groupFlags([mine(0), mine(1), theirs(2), theirs(3), mine(4)]), [false, true, false, true, false]);
+});
+
+test("the status line of another owner's bot, for every state, in neutral words", () => {
+  const item = (state, extra = {}) => ({ kind: "status", id: "s", at: at(0), owner: { address: "x", name: "Sergio Rico", you: false }, bot: vera, state, ...extra });
+  assert.equal(statusLine(item("thinking")), "Vera está pensando");
+  assert.equal(statusLine(item("working")), "Vera está trabajando");
+  assert.equal(statusLine(item("done", { tools: 4, ms: 12 * 60000 })), "Vera usó 4 herramientas · 12 min");
+  assert.equal(statusLine(item("done", { tools: 1 })), "Vera usó 1 herramienta");
+  assert.equal(statusLine(item("done")), "Vera ha terminado");
+  assert.equal(statusLine(item("done", { ms: 45000 })), "Vera ha terminado · 45 s");
+  assert.equal(statusLine(item("waiting")), "Vera espera el OK de Sergio");
+  assert.equal(statusLine(item("declined")), "Sergio ha dicho que ahora no");
+  assert.equal(statusLine(item("stopped")), "Sergio ha parado a Vera");
+  assert.equal(statusLine(item("limited")), "Vera está en pausa: límite del plan de Sergio");
+  assert.equal(statusLine(item("failed")), "Vera no ha podido terminar");
+  assert.equal(statusLine(item("away")), "Sergio no está; Vera seguirá cuando vuelva");
+  // When the owner is you the line says so (the honey card is separate: this stays a line).
+  const own = (state) => statusLine({ ...item(state), owner: sergio });
+  assert.equal(own("waiting"), "Vera espera tu OK");
+  assert.equal(own("declined"), "Has dicho que ahora no");
+  assert.equal(own("stopped"), "Has parado a Vera");
+  assert.equal(own("limited"), "Vera está en pausa: límite de tu plan");
+  // A state this Colmena does not know is not drawn; missing fields never throw.
+  assert.equal(statusLine(item("teleporting")), null);
+  assert.equal(statusLine({}), null);
+  assert.equal(statusLine({ state: "working" }), "El bot está trabajando");
+  assert.equal(durationText(0), "");
+  assert.equal(durationText(65 * 60000), "1 h 5 min");
+  assert.equal(durationText(120 * 60000), "2 h");
+  assert.equal(statusLine(item("throttled")), "Vera está en pausa un momento: demasiadas peticiones seguidas");
+  // As built the server writes the sentence: it is used as it comes, whatever the state.
+  assert.equal(statusLine({ engine: "line", kind: "status", state: "done", text: "Vera usó 4 herramientas · 12 min", bot: vera }), "Vera usó 4 herramientas · 12 min");
+  assert.equal(statusLine({ engine: "line", kind: "status", state: "a-new-state", text: "Vera espera tu OK" }), "Vera espera tu OK");
+  // A handoff as built: the bot that hands over is `bot`.
+  const hand = handoffLine({ engine: "line", kind: "handoff", bot: vera, to: { id: "atlas", name: "Atlas" }, text: "Vera ⇄ Atlas" });
+  assert.deepEqual([hand.from, hand.to, hand.label, hand.fromBot.id, hand.toBot.id], ["Vera", "Atlas", "Vera pasa el trabajo a Atlas", "vera", "atlas"]);
+  assert.equal(handoffLine({ from: { name: "Vera" }, to: { name: "Atlas" } }).label, "Vera pasa el trabajo a Atlas");
+  assert.equal(handoffLine({ from: { name: "Vera" } }), null);
+});
+
+test("unknown kinds of timeline items are left out, known ones go to who draws them", () => {
+  assert.equal(itemType({ engine: "mission", role: "user", kind: "message" }), "mission");
+  assert.equal(itemType({ engine: "mission", role: "assistant", kind: "plan" }), "mission");
+  assert.equal(itemType({ role: "assistant" }), "mission");
+  assert.equal(itemType({ engine: "peer", from: "me", text: "hola" }), "peer");
+  assert.equal(itemType({ kind: "status", state: "working", bot: vera, owner: lucia }), "status");
+  assert.equal(itemType({ kind: "status", state: "who-knows" }), null);
+  assert.equal(itemType({ kind: "handoff", from: vera, to: { name: "Atlas" } }), "handoff");
+  assert.equal(itemType({ kind: "handoff", from: vera }), null);
+  assert.equal(itemType({ engine: "mission", kind: "hologram" }), null);
+  assert.equal(itemType({ engine: "line", kind: "status", role: "system", state: "done", text: "Vera ha terminado", bot: vera, owner: lucia }), "status");
+  assert.equal(itemType({ engine: "line", kind: "handoff", role: "system", bot: vera, to: { name: "Atlas" }, text: "Vera ⇄ Atlas" }), "handoff");
+  assert.equal(itemType({ engine: "line", kind: "a-line-of-tomorrow", role: "system", text: "?" }), null, "a line this Colmena does not know is not drawn as a message");
+  assert.equal(itemType({ engine: "peer", kind: "poll" }), null);
+  assert.equal(itemType(null), null);
+});
+
+test("the member panel: people with their role and presence in words, bots grouped by owner", () => {
+  const panel = memberPanel(view(), { working: ["vera"], waiting: ["atlas"], activity: [{ owner: lucia, bot: { id: "vera" }, state: "waiting" }] });
+  assert.deepEqual(panel.people.map((p) => [p.name, p.roleWord, p.presenceWord]), [
+    ["Sergio Rico", "creaste la sala", "aquí"],
+    ["Lucía Martín", "miembro", "No molestar"],
+    ["Marta Soler", "invitado", "sin conexión"],
+  ]);
+  assert.deepEqual(panel.groups.map((g) => g.label), ["Tus bots", "Bots de Lucía"]);
+  assert.deepEqual(panel.groups[0].bots.map((b) => [b.name, b.stateWord]), [["Atlas", "te espera"], ["Vera", "trabajando"], ["Nora", "libre"]]);
+  // What waits for someone else is said in neutral words, never «te espera».
+  assert.deepEqual(panel.groups[1].bots.map((b) => [b.name, b.role, b.stateWord]), [["Vera", "Legal", "espera a Lucía"], ["Leo", "Datos", "trabajando"]]);
+  assert.equal(panel.botCount, 5);
+  assert.equal(stackLabel(panel), "Personas: tú, Lucía Martín y Marta Soler. Bots: Atlas, Vera, Nora, Vera (de Lucía) y Leo (de Lucía)");
+  assert.equal(roomRole({ role: "owner", you: false }), "creó la sala");
+  assert.equal(presenceWord({ presence: "online", status: { mode: "away" } }), "Fuera");
+  assert.equal(stateWord("limited"), "en pausa");
+  assert.equal(stateWord("done"), "libre");
+  // A private room: Atlas coordinates; an empty view never throws.
+  const solo = memberPanel({ private: true, people: [{ address: ME, name: "Sergio", role: "owner", you: true }], bots: [{ owner: sergio, bots: [{ id: "atlas", name: "Atlas" }] }] });
+  assert.equal(solo.groups[0].bots[0].stateWord, "coordina");
+  assert.deepEqual(memberPanel(null), { people: [], groups: [], botCount: 0 });
+  assert.deepEqual(roomPlace({ private: true }), { text: "Privada", private: true, hint: "Solo tú y tus bots" });
+  assert.equal(roomPlace(view(), [{ id: "t1", name: "Acme" }]).text, "Acme");
+  assert.equal(roomPlace({ ...view(), teamId: null }).text, "Por invitación");
+});
+
+test("the invite sheet: teammates and contacts, each once, never you nor who is already in", () => {
+  const team = { members: [{ address: ME, name: "Sergio Rico", you: true }, { address: LUCIA, name: "Lucía Martín", presence: "online" }, { address: "pablo", name: "Pablo Ruiz", presence: "offline" }, { address: "alvaro", name: "Álvaro Gil", presence: "online" }] };
+  const contacts = [{ id: "pablo", name: "Pablo Ruiz", status: "active", online: true }, { id: "zoe", name: "Zoe Lara", status: "active" }, { id: "pending", name: "Sin aceptar", status: "pending" }, { id: MARTA, name: "Marta Soler", status: "active" }];
+  const list = inviteCandidates({ view: view(), team, contacts });
+  assert.deepEqual(list.map((p) => [p.name, p.source, p.presence]), [["Álvaro Gil", "equipo", "online"], ["Pablo Ruiz", "equipo", "offline"], ["Zoe Lara", "contacto", "offline"]]);
+  assert.deepEqual(inviteCandidates({ view: view(), team, contacts, query: "ALVARO" }).map((p) => p.name), ["Álvaro Gil"]);
+  assert.deepEqual(inviteCandidates({ view: view(), team, contacts, query: "nadie" }), []);
+  assert.deepEqual(inviteCandidates({ view: { people: [] }, contacts }).map((p) => p.name), ["Marta Soler", "Pablo Ruiz", "Zoe Lara"]);
+  // The truth, said before adding; whoever did not make the room asks its owner.
+  assert.deepEqual(inviteTruth(view()), { asks: false, owner: null, line: "Verá lo que se escriba a partir de ahora, no lo anterior.", ask: null });
+  const notMine = { ...view(), mine: false, people: [{ address: LUCIA, name: "Lucía Martín", role: "owner", you: false }, { address: ME, name: "Sergio", role: "member", you: true }] };
+  assert.equal(inviteTruth(notMine).asks, true);
+  assert.equal(inviteTruth(notMine).ask, "Se lo pediremos a Lucía");
+  assert.equal(inviteTruth({ private: true, mine: true, people: [] }).asks, false);
+});
+
+test("«@» lists your bots first, then the people, then each owner's bots", () => {
+  const groups = mentionGroups({ view: view() });
+  assert.deepEqual(groups.map((g) => g.label), ["Tus bots", "Personas", "Bots de Lucía"]);
+  assert.deepEqual(groups[0].items.map((x) => [x.type, x.bot.name]), [["bot", "Atlas"], ["bot", "Vera"], ["bot", "Nora"]]);
+  assert.deepEqual(groups[1].items.map((x) => x.person.name), ["Lucía Martín", "Marta Soler"], "never you");
+  assert.deepEqual(groups[2].items.map((x) => [x.type, x.bot.name, x.owner.address]), [["peerbot", "Vera", LUCIA], ["peerbot", "Leo", LUCIA]]);
+  // What you type narrows every group; a surname finds a person.
+  assert.deepEqual(mentionGroups({ view: view(), query: "ve" }).map((g) => [g.label, g.items.length]), [["Tus bots", 1], ["Bots de Lucía", 1]]);
+  assert.deepEqual(mentionGroups({ view: view(), query: "sol" }).map((g) => g.items[0].person.name), ["Marta Soler"]);
+  assert.deepEqual(mentionGroups({ view: view(), limit: 1 }).map((g) => g.items.length), [1, 1, 1]);
+  assert.deepEqual(mentionGroups({ view: null }), []);
+  // The composer's menu takes these groups in place of its plain «Bots» one.
+  const menu = mentionItems({ query: "", bots: [vera], who: groups });
+  assert.deepEqual(menu.filter((x) => x.type === "head").map((x) => x.label), ["Tus bots", "Personas", "Bots de Lucía"]);
+  assert.deepEqual(mentionItems({ query: "", bots: [vera] }).filter((x) => x.type === "head").map((x) => x.label), ["Bots"]);
+});
+
+test("what a message names travels structured: your bots, other people's bots, people", () => {
+  const picks = [
+    { type: "bot", id: "vera", owner: ME, label: "Vera" },
+    { type: "peerbot", id: "leo", owner: LUCIA, label: "Leo" },
+    { type: "person", id: LUCIA, label: "Lucía" },
+    { type: "person", id: MARTA, label: "Marta" },
+  ];
+  assert.deepEqual(mentionTargets("@Vera y @Leo, mirad esto. @lucia, ¿te va?", picks), { to: ["vera"], mentions: [{ owner: LUCIA, bot: "leo" }], people: [LUCIA] });
+  // A pick whose «@name» was deleted does not count; «@Veranito» is not «@Vera».
+  assert.deepEqual(mentionTargets("@Veranito hola", picks), {});
+  assert.deepEqual(mentionTargets("nada", picks), {});
+  assert.deepEqual(mentionTargets("@Vera @Vera", [picks[0], picks[0]]), { to: ["vera"] });
+});
+
+test("naming someone else's bot is a request to its owner, said once; the owner's four answers", () => {
+  const leo = { type: "peerbot", id: "leo", owner: LUCIA, ownerName: "Lucía Martín", label: "Leo" };
+  const veraL = { type: "peerbot", id: "vera", owner: LUCIA, ownerName: "Lucía Martín", label: "Vera" };
+  const mine = { type: "bot", id: "atlas", owner: ME, label: "Atlas" };
+  assert.equal(requestHint("@Leo mira esto", [leo, mine]), "Leo es de Lucía: le llegará a Lucía para que decida");
+  assert.equal(requestHint("@Leo y @Vera", [leo, veraL]), "Leo y Vera son de Lucía: le llegará a Lucía para que decida");
+  assert.equal(requestHint("@Leo y @Tom", [leo, { type: "peerbot", id: "tom", owner: MARTA, ownerName: "Marta Soler", label: "Tom" }]), "Esos bots son de otras personas: le llegará a cada una para que decida");
+  assert.equal(requestHint("@Atlas hola", [mine, leo]), "", "your own bot, or a pick no longer written, says nothing");
+  assert.deepEqual(askChoices({ from: { name: "Lucía Martín" } }), [["go", "Adelante"], ["later", "Ahora no"], ["always", "Siempre para Lucía"], ["never", "Nunca para Lucía"]]);
+  // The member panel reads the live states as built (`activity` with `text`), throttled included.
+  const panel = memberPanel(view(), { activity: [{ owner: lucia, bot: { id: "leo", name: "Leo" }, state: "throttled", text: "Leo está en pausa" }] });
+  assert.equal(panel.groups[1].bots.find((b) => b.id === "leo").stateWord, "en pausa");
+});
+
+test("new rows are announced once, in one sentence, never your own", () => {
+  const rows = [
+    { id: "1", role: "user", text: "mío" },
+    { id: "2", engine: "peer", author: { kind: "person", ...lucia }, text: "hola" },
+    { id: "3", engine: "peer", author: { kind: "person", ...lucia }, text: "otra" },
+    { id: "4", role: "assistant", botId: "vera", text: "hecho" },
+  ];
+  assert.equal(newsLine(rows, { bots: [vera] }), "3 mensajes nuevos de Lucía Martín y Vera");
+  assert.equal(newsLine([rows[1]]), "Mensaje nuevo de Lucía Martín");
+  assert.equal(newsLine([rows[0]]), "");
+  assert.equal(newsLine([], { waiting: 1 }), "Algo te espera en esta sala");
+  assert.equal(newsLine([rows[3]], { bots: [vera], waiting: 2 }), "Mensaje nuevo de Vera. 2 cosas te esperan en esta sala");
+});
+
+test("pages of the timeline join into one list, each row once, in order", () => {
+  const older = [{ id: "a", at: at(0) }, { id: "b", at: at(1) }];
+  const latest = [{ id: "b", at: at(1), text: "editado" }, { id: "c", at: at(2) }];
+  const attached = [{ id: "p", at: at(1.5), kind: "progress" }];
+  assert.deepEqual(joinItems(older, latest, attached).map((m) => m.id), ["a", "b", "p", "c"]);
+  assert.equal(joinItems(older, latest).find((m) => m.id === "b").text, "editado", "the newest copy wins");
+  // Rows of the same instant keep the order the server gave them (the sala before the people).
+  assert.deepEqual(joinItems([{ id: "m", at: at(0), engine: "mission" }, { id: "q", at: at(0), engine: "peer" }]).map((m) => m.id), ["m", "q"]);
+  assert.deepEqual(joinItems(null, undefined, [{ at: at(0) }]), []);
+});
+
+test("every room opens at /sala/:id, private or with people", () => {
+  assert.equal(roomLinks({ id: "r1", shareId: "r1", title: "general" }).href, "/sala/r1");
+  assert.equal(roomLinks({ id: "r2", missionId: "m9", shareId: "r2", title: "x" }).href, "/sala/r2");
+  assert.deepEqual(roomLinks({ id: "m1" }, [{ id: "m1", room: "informe" }]), { missionId: "m1", shareId: null, title: "informe", href: "/sala/m1" });
+});

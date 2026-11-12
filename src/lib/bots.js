@@ -1,4 +1,6 @@
 // Visual identity of bots: shape + colour + initial (never colour alone).
+import { botShape } from "./identity.js";
+
 const LIGHT_INK = new Set(["#FFC93C", "#FF5CA8", "#FF7A1A", "#FFE08A", "#3DDC97"]);
 
 /** Inline style fragment for a bot avatar of `size` px (matches the mockups' radii). */
@@ -9,15 +11,12 @@ export function avatarStyle(bot, size = 24) {
   const base = portrait
     ? { background: `${color} url("${portrait}") center / cover no-repeat`, color: "transparent" }
     : { background: color, color: LIGHT_INK.has(color.toUpperCase()) ? "#12131A" : "#FFFFFF" };
-  switch (bot?.shape) {
+  // Circles are people: a circle (or no shape) is drawn as a rounded square (lib/identity.js).
+  switch (botShape(bot?.shape)) {
     case "hex":
       return { ...base, clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" };
     case "diamond":
       return { ...base, clipPath: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)" };
-    case "circle":
-      return { ...base, borderRadius: "50%" };
-    case "square":
-      return { ...base, borderRadius: Math.round(size * 0.23) + "px" };
     case "arch": {
       const r = Math.round(size * 0.2) + "px";
       return { ...base, borderRadius: `50% 50% ${r} ${r}` };
@@ -27,7 +26,7 @@ export function avatarStyle(bot, size = 24) {
       return { ...base, borderRadius: `50% ${r} 50% ${r}` };
     }
     default:
-      return { ...base, borderRadius: "50%" };
+      return { ...base, borderRadius: Math.round(size * 0.23) + "px" };
   }
 }
 

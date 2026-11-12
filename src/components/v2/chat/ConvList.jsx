@@ -10,6 +10,7 @@ import { shareUrl } from "../../../lib/peers.js";
 import { PeerAvatar, ShareFace } from "../people/PeerAvatar.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import PeopleIntro from "../people/PeopleIntro.jsx";
+import NewRoomSheet from "../../v3/team/NewRoomSheet.jsx";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // «Chats» column of Colmena 2.0 (the boards call the place «Conversaciones»; the rail fits one line) (design/V2Conversacion.dc.html): rooms (#) and chats
@@ -100,7 +101,8 @@ export default function ConvList({ current = null }) {
           );
         })}
       </div>
-      {sheet ? <NewConversation mode={sheet === "sala" ? "sala" : "chat"} onClose={() => setSheet(false)} onPeople={(which) => { setSheet(false); setPeerSheet(which); }} /> : null}
+      {/* «Nueva sala» is the small sheet of v3/team/NewRoomSheet.jsx (POST /api/rooms). */}
+      {sheet === "sala" ? <NewRoomSheet onClose={() => setSheet(false)} /> : sheet ? <NewConversation mode="chat" onClose={() => setSheet(false)} onPeople={(which) => { setSheet(false); setPeerSheet(which); }} /> : null}
       {peerSheet === "invitar" ? <InviteSheet onClose={() => setPeerSheet(null)} /> : null}
       {peerSheet === "aceptar" ? <AcceptSheet onClose={() => setPeerSheet(null)} /> : null}
     </aside>

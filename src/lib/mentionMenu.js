@@ -50,7 +50,7 @@ export function chatsFrom(missions = [], exclude = null) {
  * The menu as a flat list: {type: "head"} lines and the items you can pick — «bot», «file»,
  * «folder» (opens it), «here» (the open folder itself), «up» and «chat».
  */
-export function mentionItems({ query = "", bots = [], files = null, chats = null, dir = "" } = {}) {
+export function mentionItems({ query = "", bots = [], files = null, chats = null, dir = "", who = null } = {}) {
   const q = fold(query);
   const out = [];
   // Inside a folder only its files show; with nothing typed yet each group keeps to a few,
@@ -58,7 +58,10 @@ export function mentionItems({ query = "", bots = [], files = null, chats = null
   const few = !q && !dir;
   const limit = (name) => (few ? Math.min(MENTION_LIMITS[name], 4) : MENTION_LIMITS[name]);
   const group = (label, items) => { if (items.length) out.push({ type: "head", key: "head:" + label, label }, ...items); };
-  if (!dir) group("Bots", (bots || []).filter((b) => fold(b.name).startsWith(q)).slice(0, limit("bots")).map((bot) => ({ type: "bot", key: "bot:" + bot.id, bot })));
+  // In a room with people «@» lists who is there, in groups (lib/roomView.js › mentionGroups):
+  // your bots, the people, each owner's bots. They replace the plain «Bots» group.
+  if (!dir && Array.isArray(who)) for (const g of who) group(g.label, g.items);
+  else if (!dir) group("Bots", (bots || []).filter((b) => fold(b.name).startsWith(q)).slice(0, limit("bots")).map((bot) => ({ type: "bot", key: "bot:" + bot.id, bot })));
   if (Array.isArray(files)) {
     if (q) {
       const hits = [
