@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { workSteps, workSummary } from "../../../lib/worklog.js";
+import { turnSummary, workSteps, workSummary } from "../../../lib/worklog.js";
 import { Detail, Status, collapseRepeats, groupTools, headline } from "../../room/ToolCards.jsx";
 import { useExpert } from "../../../lib/expert.js";
 import RowBoundary from "../../RowBoundary.jsx";
@@ -9,6 +9,9 @@ import RowBoundary from "../../RowBoundary.jsx";
 // words under it; in expert mode the same card lists each call with its name and arguments
 // (read_file(…)) and unfolds what it gave back — detail is added, nothing moves. A command
 // still running streams its output there (server/command-output.mjs), only while it is open.
+// A finished turn folds to one line, «Usó 4 herramientas · 12 min» (`fold`, worklog.js
+// turnSummary): today's steps are one click away, a lone quick read that only fed the answer
+// shows no line at all, and a call that failed keeps it open («1 no salió»).
 
 const MONO = { font: "400 12.5px/1.55 'Geist Mono', monospace" };
 
@@ -134,36 +137,43 @@ function ToolRow({ tool, stepId, first }) {
 /**
  * The work of a step (or of one line of its trail) as a card that unfolds. Renders nothing
  * until something is done. `stepId` lets a running command stream its output; `seconds`
- * (the turn's time) goes in its title.
+ * (the turn's time) goes in its title. `fold`: the work of a finished turn, as one line.
  */
-export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenArtifact = null, seconds = null }) {
+export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenArtifact = null, seconds = null, fold = false }) {
   const [expert] = useExpert();
-  const [open, setOpen] = useState(false);
+  const turn = fold ? turnSummary(tools, seconds) : null;
+  // What did not work stays in sight: a folded turn with a failed call opens unfolded.
+  const [open, setOpen] = useState(() => !!turn?.failed);
   const summary = workSummary(tools);
-  if (!summary) return null;
+  if (!summary || turn?.quiet) return null;
   const steps = collapseRepeats(groupTools(workSteps(tools)));
-  if (expert) {
+  const rows = () => steps.map((t, i) => <RowBoundary key={t.id || i} label={STEP_FAILED} resetKey={t.status}><ToolRow tool={t} stepId={stepId} first={i === 0} /></RowBoundary>);
+  if (expert && !turn) {
     return (
       <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderRadius: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", overflow: "hidden", animation: "fade .4s ease-out", minWidth: 0 }}>
-        {steps.map((t, i) => <RowBoundary key={t.id || i} label={STEP_FAILED} resetKey={t.status}><ToolRow tool={t} stepId={stepId} first={i === 0} /></RowBoundary>)}
+        {rows()}
       </div>
     );
   }
   const bad = summary.failed && !summary.steps;
   const time = durationText(seconds);
+  // Folded: «Usó 4 herramientas» and, in grey, how long it took and what did not work.
+  const [title, ...rest] = turn ? turn.text.split(" · ") : [bad ? "No salió" : steps.length === 1 ? "Hecho en 1 paso" : `Hecho en ${steps.length} pasos`, summary.text, ...(time ? [time] : [])];
   return (
-    <div style={{ display: "flex", flexDirection: "column", borderRadius: "16px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", animation: "fade .4s ease-out", minWidth: 0 }}>
-      <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={open ? "Ocultar los pasos" : `Ver los ${steps.length} pasos`}
+    <div data-work-fold={turn ? "" : undefined} style={{ display: "flex", flexDirection: "column", borderRadius: "16px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", animation: "fade .4s ease-out", minWidth: 0 }}>
+      <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={open ? "Ocultar los pasos" : steps.length === 1 ? "Ver el paso" : `Ver los ${steps.length} pasos`}
         style={{ minHeight: "46px", display: "flex", alignItems: "center", gap: "10px", padding: "8px 16px", border: 0, background: "transparent", textAlign: "left", cursor: "pointer", fontSize: "14px", color: "#12131A" }}>
         <span aria-hidden="true" style={{ color: bad ? "#B4232A" : "#0B6B4A", fontWeight: 600 }}>{bad ? "!" : "✓"}</span>
         <span style={{ flex: "1", minWidth: 0 }}>
-          <strong style={{ fontWeight: 600 }}>{bad ? "No salió" : steps.length === 1 ? "Hecho en 1 paso" : `Hecho en ${steps.length} pasos`}</strong>
-          <span style={{ color: "#5C606C" }}>{" · " + summary.text + (time ? " · " + time : "")}</span>
+          <strong style={{ fontWeight: 600 }}>{title}</strong>
+          {rest.length ? <span style={{ color: "#5C606C" }}>{" · " + rest.join(" · ")}</span> : null}
         </span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="2.2" aria-hidden="true" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}><path d="m6 9 6 6 6-6" /></svg>
       </button>
-      {open ? (
-        <ol aria-label="Pasos" style={{ margin: 0, padding: "0 16px 14px", listStyle: "none", display: "flex", flexDirection: "column", borderTop: "1px solid rgba(18,19,26,.06)", animation: "rise .25s ease-out" }}>
+      {open && turn && summary.text ? <p style={{ margin: 0, padding: "10px 16px 0", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "13.5px", lineHeight: "1.45", color: "#5C606C" }}>{summary.text}</p> : null}
+      {open && expert ? <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderTop: "1px solid rgba(18,19,26,.06)", animation: "rise .25s ease-out" }}>{rows()}</div> : null}
+      {open && !expert ? (
+        <ol aria-label="Pasos" style={{ margin: 0, padding: "0 16px 14px", listStyle: "none", display: "flex", flexDirection: "column", borderTop: turn && summary.text ? 0 : "1px solid rgba(18,19,26,.06)", animation: "rise .25s ease-out" }}>
           {steps.map((t, i) => <RowBoundary key={t.id || i} label={STEP_FAILED} resetKey={t.status}><WorkStep tool={t} bots={bots} stepId={stepId} onOpenArtifact={onOpenArtifact} /></RowBoundary>)}
         </ol>
       ) : null}

@@ -14,7 +14,7 @@ import { BotPresence } from "../Presence.jsx";
 import { BotMark } from "./Mark.jsx";
 import { BranchPicker } from "./Versions.jsx";
 import WorkLog, { CommandOutput, durationText } from "./WorkLog.jsx";
-import { workSummary } from "../../../lib/worklog.js";
+import { turnSummary, workSummary } from "../../../lib/worklog.js";
 import { useExpert } from "../../../lib/expert.js";
 import { useStore } from "../../../lib/store.jsx";
 import { dragOutProps, workFileUrl } from "../../../lib/dragOut.js";
@@ -88,8 +88,8 @@ export function AnswerHead({ bot, at = null, note = null, state = "rest" }) {
 }
 
 /** What the bot already did for this answer: the «Hecho en N pasos» card (WorkLog.jsx). */
-export function DoneSteps({ tools = [], bots = [], stepId = null, seconds = null }) {
-  return <WorkLog tools={tools} bots={bots} stepId={stepId} seconds={seconds} />;
+export function DoneSteps({ tools = [], bots = [], stepId = null, seconds = null, fold = false }) {
+  return <WorkLog tools={tools} bots={bots} stepId={stepId} seconds={seconds} fold={fold} />;
 }
 
 const ANSWER = { fontSize: "15.5px", lineHeight: "1.6", color: "#12131A" };
@@ -97,22 +97,28 @@ const secondsOf = (message, step) => message?.summary?.seconds ?? (step?.started
 
 /**
  * What the bot said while it worked, as Claude Desktop shows it: plain answer text, each
- * line with what it did right after it. Finished work with more than three lines folds into
- * «Cómo lo hizo» (as Codex does), so long chats stay short.
+ * line with what it did right after it. A finished turn folds to one line — «Usó 4
+ * herramientas · 12 min» (worklog.js turnSummary), or «Cómo lo hizo» when it only spoke — so
+ * long chats stay short; a lone quick read that only fed the answer shows nothing, and a
+ * call that failed keeps it open. A turn still running is never folded.
  */
-export function WorkTrail({ step, bots = [], running = false, ticks = true }) {
+export function WorkTrail({ step, bots = [], running = false, ticks = true, seconds = null }) {
   const lines = step?.progress || [];
-  const [open, setOpen] = useState(false);
-  if (!lines.length) return null;
+  const turn = running || step?.status === "running" ? null : turnSummary(step?.tools || [], seconds);
+  const [open, setOpen] = useState(() => !!turn?.failed);
+  if (!lines.length || turn?.quiet) return null;
   const groups = trailGroups(lines, step?.tools || []);
-  const folded = !running && lines.length > 3 && !open;
-  // Folded, the whole work reads as one line: «Ha leído 5 correos y editado 2 archivos».
+  // Without tools, a few lines of what it said stay as they are.
+  const folds = !running && (!!turn || lines.length > 3);
+  const folded = folds && !open;
+  // Unfolded, the whole work reads as one line: «Ha leído 5 correos y editado 2 archivos».
   const summary = workSummary(step?.tools || []);
-  const toggle = !running && lines.length > 3 ? (
-    <button type="button" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)}
+  const [title, ...rest] = turn ? turn.text.split(" · ") : ["Cómo lo hizo", summary ? summary.text : `${lines.length} pasos`];
+  const toggle = folds ? (
+    <button type="button" className="rm-focus" data-work-fold="" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={open ? "Ocultar cómo lo hizo" : "Ver cómo lo hizo"}
       style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: "10px", minHeight: "46px", padding: "8px 16px", border: "1px solid rgba(18,19,26,.07)", borderRadius: "16px", background: "#FFFFFF", cursor: "pointer", fontSize: "14px", color: "#12131A", textAlign: "left" }}>
       <span aria-hidden="true" style={{ color: "#0B6B4A", fontWeight: 600 }}>{"✓"}</span>
-      <span style={{ flex: "1", minWidth: 0 }}><strong style={{ fontWeight: 600 }}>{open ? "Ocultar cómo lo hizo" : "Cómo lo hizo"}</strong><span style={{ color: "#5C606C" }}>{open ? "" : " · " + (summary ? summary.text : `${lines.length} pasos`)}</span></span>
+      <span style={{ flex: "1", minWidth: 0 }}><strong style={{ fontWeight: 600 }}>{title}</strong>{rest.length ? <span style={{ color: "#5C606C" }}>{" · " + rest.join(" · ")}</span> : null}</span>
       <ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#4A4D57", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
     </button>
   ) : null;
@@ -138,7 +144,7 @@ export function BotAnswer({ message, bot, step, bots, trail = true, head = true,
   return (
     <div data-message-id={message.id} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "14px" }}>
       {head ? <AnswerHead bot={bot} at={message.at} /> : null}
-      {!trail ? null : step?.progress?.length ? <WorkTrail step={step} bots={bots} /> : <DoneSteps tools={step?.tools || []} bots={bots} stepId={step?.id} seconds={secondsOf(message, step)} />}
+      {!trail ? null : step?.progress?.length ? <WorkTrail step={step} bots={bots} seconds={secondsOf(message, step)} /> : <DoneSteps tools={step?.tools || []} bots={bots} stepId={step?.id} seconds={secondsOf(message, step)} fold={step?.status !== "running"} />}
       {message.text ? <Markdown text={message.text} size={16} style={ANSWER} /> : null}
       {children}
     </div>

@@ -30,7 +30,7 @@ import { engineName, PROVIDER_LIMIT_CODE, UNKNOWN_RESET_MS } from "./limits.mjs"
 import { Admission } from "./admission.mjs";
 import { Checkpoints } from "./checkpoints.mjs";
 import { primaryBot, bumpLearningCounter } from "./learning.mjs";
-import { stopReason, stoppedRecord, isContextOverflow } from "./stopped.mjs";
+import { stopReason, stoppedRecord, isContextOverflow, cleanStopWhy, stopWhyText } from "./stopped.mjs";
 import {
   STUCK_ROUNDS, WEB_SEARCH_NOTE, QUEUE_MODES, INCOGNITO_MS, PARTIAL_CODE, PARALLEL_STEPS, QUIET_MS, IDLE_ABORT_MS, AUTO_RESUMES, leavesWorkUndone,
   partialTableUnsaid, titleFromPrompt, clipWords, roomSlug, appsLabel, ACTIVE, INCOGNITO_NOTE, INTERRUPT_CODE, stepLabel, MISSION_WIDE, RETRY_CODE,
@@ -601,6 +601,8 @@ export class Runtime {
    * team is paused. Returns the ids it resumed.
    */
   resumeInterrupted() {
+    // A message the close caught while the router was choosing goes to Atlas (routing.mjs).
+    try { this.recoverRouting(); } catch (error) { console.warn("Colmena: no se pudo recuperar un mensaje sin enrutar: " + (error?.message || error)); }
     if (this.settings().paused) return [];
     const resumed = [];
     for (const m of this.store.list("missions")) {
@@ -944,7 +946,7 @@ export class Runtime {
     if (!step.history)
       step = this.patchStep(step, {
         history: this.initialHistory(mission, step),
-        seenHints: this.userHints(missionId).map((h) => h.id),
+        seenHints: this.hintsRead(step, this.hintsFor(step), this.userHints(missionId).map((h) => h.id)),
         ...(this.usesBrief(mission, step) ? { seenBrief: this.missionBrief(missionId, { forBotId: bot.id, exceptStepId: step.id }).keys } : {}),
         instructions: instructions(),
       });
@@ -1553,6 +1555,23 @@ export class Runtime {
         this.store.patch("approvals", a.id, { status: "denied", decidedAt: now(), decidedBy: "tú", resolution: "Misión cancelada" });
     this.store.event(missionId, cancel ? "cancelled" : "paused", { text: cancel ? "Misión cancelada" : "Misión pausada" });
     if (cancel) this.learnSoon(missionId);
+  }
+  /**
+   * «Dile por qué lo has parado» on the «Se paró» card: the reason stays on the stop (the
+   * card shows it) and reaches each bot of the conversation once, at its next turn, as a note
+   * of the person in the thread — information, never a chat message (stopped.mjs stopWhyText).
+   * Returns what was kept, or null when there is no stop of yours to keep it on.
+   */
+  stopWhy(missionId, text) {
+    const m = this.store.get("missions", missionId);
+    if (!m) throw Error("Misión no encontrada.");
+    const why = cleanStopWhy(text);
+    if (!why || m.stopped?.reason !== "cancelled") return null;
+    if (m.stopped.why === why) return why;
+    this.store.patch("missions", missionId, { stopped: { ...m.stopped, why } });
+    this.addThread({ missionId, from: "user", to: null, text: stopWhyText(why), once: true, about: "stop" });
+    this.store.event(missionId, "stop_reason", { text: "Le dijiste por qué lo paraste: «" + why + "»" });
+    return why;
   }
   /**
    * «Descartar» on a stopped turn: what it left half done is dropped (its pending steps end

@@ -108,6 +108,40 @@ export function workSummary(tools = []) {
   return { text: text.charAt(0).toUpperCase() + text.slice(1), steps, failed };
 }
 
+/** «40 s», «12 min», «1 h 5 min»: how long a turn took, rounded as a person would say it. */
+export function shortDuration(seconds) {
+  const s = Math.round(Number(seconds) || 0);
+  if (s <= 0) return "";
+  if (s < 60) return `${s} s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} min`;
+  return m % 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${Math.floor(m / 60)} h`;
+}
+
+// Looking something up: when that is all a turn did, and it was quick, it only fed the answer.
+const READS = new Set(["leído", "buscado", "mirado"]);
+const QUICK_MS = 5000;
+const QUICK_TURN_S = 30;
+
+/**
+ * A finished turn's work folded to one line: «Usó 4 herramientas · 12 min», with
+ * «· 1 no salió» when a call failed. `seconds` is how long the turn took (its step's
+ * timestamps). { text, count, failed, quiet } or null when it used no tool:
+ * - `quiet`: a lone quick read that only fed the answer — no line at all;
+ * - `failed` > 0: the line opens unfolded, so what did not work is in sight.
+ * Calls still running or waiting for you are left out (a running turn is never folded).
+ */
+export function turnSummary(tools = [], seconds = null) {
+  const done = tools.filter((t) => ["done", "uncertain", "error"].includes(t.status) && classify(t) !== null);
+  if (!done.length) return null;
+  const failed = done.filter((t) => t.status === "error").length;
+  const time = shortDuration(seconds);
+  const only = done.length === 1 && !failed ? done[0] : null;
+  const quick = only && (only.card?.ms != null ? only.card.ms <= QUICK_MS : seconds == null || seconds <= QUICK_TURN_S);
+  const text = [done.length === 1 ? "Usó 1 herramienta" : `Usó ${done.length} herramientas`, time, failed ? (failed === 1 ? "1 no salió" : `${failed} no salieron`) : ""].filter(Boolean).join(" · ");
+  return { text, count: done.length, failed, quiet: !!(quick && READS.has(classify(only).verb)) };
+}
+
 /** The steps you can unfold: the calls that are work for you, in order. */
 export function workSteps(tools = []) {
   return tools.filter((t) => classify(t) !== null);
