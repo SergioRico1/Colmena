@@ -508,7 +508,7 @@ export function blocksPromoted(store, missionId) {
     const key = mission.id + ":" + (mission.updatedAt || "");
     if (inPlay.has(key)) return inPlay.get(key);
     const said = PANEL.test(foldText(mission.prompt || "")) ||
-      store.where("messages", "missionId", mission.id).some((m) => m.role === "user" && (!m.kind || m.kind === "message") && typeof m.text === "string" && PANEL.test(foldText(m.text)));
+      store.where("messages", "missionId", mission.id).some((m) => m.role === "user" && !m.author && (!m.kind || m.kind === "message") && typeof m.text === "string" && PANEL.test(foldText(m.text)));
     const routine = said ? null : routineOf(store, mission);
     const value = said || (!!routine && store.list("blocks").some((b) => b.automationId === routine)) ? [...BLOCK_TOOLS] : [];
     if (inPlay.size > 400) inPlay.clear();

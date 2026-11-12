@@ -121,9 +121,10 @@ const ACTION_OF_TOOL = [[/(?:^|_)(?:DELETE|REMOVE|TRASH|DESTROY|PURGE)(?:_|$)/, 
  * answer, a routine's prompt, another person's errand or outside content quoted in it.
  */
 export function personTurnText(store, mission, step) {
-  if (!mission || mission.automationId || mission.peerErrand || mission.watch) return "";
+  if (!mission || mission.automationId || mission.peerErrand || mission.watch || step?.roomAsk) return "";
   // What a routine or a trigger wrote in a room is stored as «user» too (origin.mjs): never yours.
-  const messages = store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && !m.origin && (!m.kind || m.kind === "message") && !m.approvalId && typeof m.text === "string");
+  // Nor what another person asked one of your bots in a room (`author`): their word approves nothing.
+  const messages = store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && !m.origin && !m.author && (!m.kind || m.kind === "message") && !m.approvalId && typeof m.text === "string");
   const ids = [step?.ackOn, ...(step?.ackExtra || [])].filter(Boolean);
   const picked = ids.length ? messages.filter((m) => ids.includes(m.id))
     : !step || ["solo", "work", "plan", "synthesis"].includes(step.kind) ? messages.slice(0, 1) : [];

@@ -43,6 +43,8 @@ export const TOOL_SEARCH = Object.freeze({
 export const CORE_TOOLS = new Set([
   // Answering and asking the person; reacting instead of an empty message.
   "ask_user", "react",
+  // Asking whoever made the request, in a turn for another person (server/room-work.mjs).
+  "ask_room",
   // Memory and skills: the system prompt tells every bot to use them by name.
   "recall", "remember", "list_skills", "read_skill",
   // The files and deliverables of the mission, and the conversation itself.

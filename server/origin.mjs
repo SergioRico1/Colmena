@@ -28,14 +28,22 @@ export function makeOrigin({ type, id, depth = 0, signature = null, instruction 
 /** Written by Colmena on its own (a routine, a trigger, the watcher), not by the person. */
 export const isAutomated = (record) => !!record?.origin && ORIGIN_TYPES.includes(record.origin.type);
 
-/** A message the person wrote: role «user» and no origin marker. */
-export const isPersonMessage = (message) => message?.role === "user" && !isAutomated(message);
+/**
+ * Written by ANOTHER person (a request to one of your bots in a room you share: server/room-work.mjs).
+ * Stored as a «user» message with `author: {address, name}`. Never the owner's words: it asks for
+ * no send, no note and no block, approves nothing, and whatever answers it works from outside content.
+ */
+export const isOtherPerson = (record) => typeof record?.author?.address === "string" && !!record.author.address;
+
+/** A message the person wrote: role «user», no origin marker and no other author. */
+export const isPersonMessage = (message) => message?.role === "user" && !isAutomated(message) && !isOtherPerson(message);
 
 /**
  * What the person is taken to have said in `message`: its text without the outside content
  * wrapped in it; for an automation-written message only the rule's standing instruction.
  */
 export function personWords(message) {
+  if (isOtherPerson(message)) return "";
   if (!isAutomated(message)) return withoutExternal(message?.text);
   return typeof message.origin.instruction === "string" ? withoutExternal(message.origin.instruction) : "";
 }
@@ -50,7 +58,7 @@ export function chainDepth(message, mission = null) {
 /** Origins whose text carries what set them off (an email, a page, a webhook body): outside content. */
 const OUTSIDE_ORIGINS = new Set(["trigger", "watch"]);
 /** A mission or a message started by an outside event (a trigger — webhooks included — or the watcher). */
-export const isOutsideOrigin = (record) => isAutomated(record) && OUTSIDE_ORIGINS.has(record.origin.type);
+export const isOutsideOrigin = (record) => isOtherPerson(record) || (isAutomated(record) && OUTSIDE_ORIGINS.has(record.origin.type));
 
 /**
  * The one answer to «is this step working from outside content?», for everything that keeps
@@ -59,13 +67,15 @@ export const isOutsideOrigin = (record) => isAutomated(record) && OUTSIDE_ORIGIN
  *     or block that carries the mark (`wikiOutside`);
  *   · an outside event started its run (the mission's origin), or wrote the message this step
  *     answers (`ackOn` / `ackExtra`): the payload travels inside the request text, not in a
- *     tool call. Never the room's last message: the person may write while the step works.
+ *     tool call. Never the room's last message: the person may write while the step works;
+ *   · another person wrote the message it answers, or it is a turn for their request (`roomAsk`).
  * A step that goes on after the person's «continúa» keeps it (`outsideOrigin`).
  */
 export function worksFromOutside(store, mission, step, { history = null } = {}) {
   if (!step) return isOutsideOrigin(mission);
   const fresh = (step.id && store?.get("steps", step.id)) || step;
-  if (fresh.wikiOutside || fresh.outsideOrigin) return true;
+  // A turn that answers another person's request (and whatever it hands on) is outside work throughout.
+  if (fresh.wikiOutside || fresh.outsideOrigin || fresh.roomAsk) return true;
   if (readOutsideByTools(history ?? fresh.history ?? step.history)) return true;
   if (isOutsideOrigin(mission)) return true;
   const asked = [fresh.ackOn, ...(fresh.ackExtra || [])].filter(Boolean);

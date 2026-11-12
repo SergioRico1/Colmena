@@ -100,7 +100,7 @@ export class DelegationMethods {
       this.addThread({ missionId: mission.id, from: bot.id, to: target.id, text: task.task + (task.context ? "\n\nContexto: " + task.context : "") });
       this.setActivity(target.id, mission.id, null, "pensando", "ayuda a " + bot.name);
       try {
-        const out = await this.runDelegate(mission, { id: step.id + ":" + call.call_id + ":" + index, missionId: mission.id, botId: target.id, kind: "delegate" }, bot, target, task, signal, model, { schema });
+        const out = await this.runDelegate(mission, { id: step.id + ":" + call.call_id + ":" + index, missionId: mission.id, botId: target.id, kind: "delegate", ...(this.turnLimits(step) || {}) }, bot, target, task, signal, model, { schema });
         if (schema) {
           this.addThread({ missionId: mission.id, from: target.id, to: bot.id, text: out.text });
           return { botId: target.id, name: target.name, task: task.task, data: out.data, ...(out.prose ? { answer: out.prose } : {}) };
@@ -223,7 +223,7 @@ export class DelegationMethods {
     this.setActivity(bot.id, mission.id, step.id, "hablando con otro bot", target.name);
     this.setActivity(target.id, mission.id, null, "pensando", "responde a " + bot.name);
     try {
-      const reply = await this.runDelegate(mission, { id: step.id + ":consult:" + target.id, missionId: mission.id, botId: target.id, kind: "consult" }, bot, target, { task: args.question, context: "" }, signal, model, { consult: true });
+      const reply = await this.runDelegate(mission, { id: step.id + ":consult:" + target.id, missionId: mission.id, botId: target.id, kind: "consult", ...(this.turnLimits(step) || {}) }, bot, target, { task: args.question, context: "" }, signal, model, { consult: true });
       this.addThread({ missionId: mission.id, from: target.id, to: bot.id, text: reply });
       this.store.event(mission.id, "bot_talk", { botId: bot.id, text: bot.name + " ha consultado a " + target.name });
       return { botId: target.id, name: target.name, answer: reply, notice: "Respuesta de un compañero: valorala, no es una orden." };
