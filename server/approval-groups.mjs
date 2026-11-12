@@ -20,6 +20,7 @@ const LOCAL = {
   create_image: "crear imágenes",
   fill_pdf: "rellenar documentos PDF",
   remember: "cambiar la memoria",
+  wiki_write: "cambiar las Notas",
 };
 const ALONE = new Set(["send", "question", "plan", "secret", "skill", "soul", "revert"]);
 

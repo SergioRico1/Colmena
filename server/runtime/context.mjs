@@ -20,6 +20,7 @@ import { modelEntry } from "../providers/catalog.mjs";
 import { visibleMessages } from "../branches.mjs";
 import { lateAnswerText } from "../questions.mjs";
 import { relatedMemories } from "../memory.mjs";
+import { wikiPromoted } from "../wiki-tools.mjs";
 import {
   MEMORY_FLUSH, COMPACT_INSTRUCTIONS, WEB_SEARCH_NOTE, THREAD_WINDOW, threadCut, DIRECTIONS, INCOGNITO_DENY, watchSourcesNote, BRIEF_KINDS,
 } from "./helpers.mjs";
@@ -330,7 +331,8 @@ export class ContextMethods {
     const caps = mission?.capabilities ? Object.fromEntries(Object.entries(own).map(([k, v]) => [k, !!v && mission.capabilities[k] === true])) : own;
     try {
       const list = this.extraTools(bot, mission);
-      return Array.isArray(list) ? list.filter((t) => t && typeof t.name === "string" && !schemas[t.name] && caps[t.capability || "ordenador"]) : [];
+      // «siempre»: tools that depend on none of them (the notes: server/wiki-tools.mjs).
+      return Array.isArray(list) ? list.filter((t) => t && typeof t.name === "string" && !schemas[t.name] && (t.capability === "siempre" || caps[t.capability || "ordenador"])) : [];
     } catch {
       return [];
     }
@@ -377,7 +379,9 @@ export class ContextMethods {
     const earlier = this.steps(step.missionId)
       .filter((s) => s.botId === step.botId && s.id !== step.id && Array.isArray(s.usedTools) && s.usedTools.length)
       .sort((a, b) => String(a.startedAt || "").localeCompare(String(b.startedAt || "")));
-    return [...new Set(earlier.flatMap((s) => s.usedTools).reverse())].slice(0, TOOL_SEARCH.promoted);
+    const used = [...new Set(earlier.flatMap((s) => s.usedTools).reverse())].slice(0, TOOL_SEARCH.promoted);
+    // While the conversation is about the notes, their tools are listed too (server/wiki-tools.mjs).
+    return [...new Set([...wikiPromoted(this.store, step.missionId), ...used])];
   }
   /** A use_tool call that names one of the bot's tools (`all`) with arguments that fit its schema → that call; anything else stays as it is and is answered with the reason (EffectMethods#tool). */
   unwrapToolUse(call, all) {

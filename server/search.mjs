@@ -1,6 +1,7 @@
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { missionRoom, MISSION_LABELS } from "./state.mjs";
+import { searchPages } from "./wiki.mjs";
 
 // Palette search: accent- and case-insensitive, at most 8 results per group.
 const LIMIT = 8;
@@ -32,10 +33,10 @@ async function missionFiles(root, mission, query, out) {
   }
 }
 
-/** Returns { bots, missions, artifacts, files, messages }. `rootOf(missionId)` locates mission files. */
+/** Returns { bots, missions, artifacts, files, messages, notes }. `rootOf(missionId)` locates mission files. */
 export async function search(store, q, { rootOf = null } = {}) {
   const query = fold(q).trim();
-  const empty = { bots: [], missions: [], artifacts: [], files: [], messages: [] };
+  const empty = { bots: [], missions: [], artifacts: [], files: [], messages: [], notes: [] };
   if (!query) return empty;
   const has = (...values) => values.some((v) => fold(v).includes(query));
   const missions = store.list("missions").sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
@@ -62,6 +63,9 @@ export async function search(store, q, { rootOf = null } = {}) {
     .reverse()
     .slice(0, LIMIT)
     .map((m) => ({ id: m.id, missionId: m.missionId, missionTitle: byId.get(m.missionId)?.title ?? null, botId: m.botId ?? null, role: m.role, snippet: snippet(m.text, query), at: m.at }));
+  // «Notas» (server/wiki.mjs): ranked by title, aliases and text; archived ones stay out.
+  result.notes = searchPages(store, q, { limit: LIMIT })
+    .map(({ page, snippet: text }) => ({ slug: page.slug, title: page.title, folder: page.folder || "", snippet: text, updatedAt: page.updatedAt }));
   if (rootOf) for (const m of missions.slice(0, 200)) {
     if (result.files.length >= LIMIT) break;
     await missionFiles(rootOf(m.id), m, query, result.files);

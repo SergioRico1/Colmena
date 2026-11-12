@@ -9,6 +9,7 @@ import { IMAGE_SIZES } from "./images.mjs";
 import { deckSchema, LAYOUTS, THEMES, CHART_TYPES } from "./slides/spec.mjs";
 import { documentSchema, BLOCKS, COVERS, TONES, PAPER_THEMES } from "./docs/spec.mjs";
 import { workbookSchema, COLUMN_TYPES, TOTALS, RULES, STYLES } from "./sheets/spec.mjs";
+import { wikiToolCard } from "./wiki.mjs";
 
 // Tool catalogue for bots. Definitions follow the Responses API strict function
 // format; zod schemas re-validate every argument before the runtime dispatches.
@@ -456,7 +457,8 @@ export const READ_TOOLS = new Set(["read_file", "read_folder_file", "web_fetch",
 export function verbFor(name, args = {}) {
   if (["read_file", "read_folder_file", "web_fetch", "search_history", "read_thread", "recall", "list_folder", "list_files", "read_skill", "skill_view", "list_skills", "skills_list", "pdf_fields", "web_search", "mission_brief", "read_deliverable"].includes(name)) return "leyendo";
   if (name === "create_image") return "creando imagen";
-  if (name === "fill_pdf" || name === "create_document") return "escribiendo";
+  if (name === "fill_pdf" || name === "create_document" || name === "wiki_write") return "escribiendo";
+  if (name === "wiki_search" || name === "wiki_read") return "leyendo";
   if (name === "create_spreadsheet") return "calculando";
   // Projects (server/projects): editing is «programando», running and previewing say so.
   if (name === "project_files") return "leyendo";
@@ -767,6 +769,8 @@ export function extraToolCard(name, args = {}, r = {}) {
     const filled = Array.isArray(r.fields) ? r.fields : Object.keys(args.values || {}).map((k) => ({ name: k }));
     return { type: "fill_pdf", title: clip(args.title, 120), source: String(args.path || "").split(/[\\/]/).pop() || null, artifactId: r.artifactId || null, count: filled.length, fields: filled.slice(0, 6).map((f) => clip(f.name, 60)) };
   }
+  // «Notas» (server/wiki.mjs): {type: 'note', action, title, slug…}; a search is a search card.
+  if (name.startsWith("wiki_")) return wikiToolCard(name, args, r);
   return null;
 }
 
