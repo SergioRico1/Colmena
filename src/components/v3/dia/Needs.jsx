@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Calendar, FileText, Folder, Mail, MessageSquare } from "lucide-react";
 import QuestionFlow from "../../v2/chat/QuestionFlow.jsx";
 import { QuestionReply } from "../../room/QuestionReply.jsx";
@@ -6,13 +6,19 @@ import { post } from "../../../lib/api.js";
 import { roomUrl, time } from "../../../lib/format.js";
 import { cancel, schedule, useUndoable } from "../../../lib/undoable.js";
 import { later } from "../../../lib/undoToast.js";
+import { failureText, groupLine, groupShown, groupTitle } from "../../../lib/approvalGroups.js";
+import { needsHold } from "../../../lib/holdApprove.js";
+import { decideBatch, useBatchFailures } from "../../../lib/useApprovalBatch.js";
+import HoldButton from "../../HoldButton.jsx";
 import { NeedLabel, Shape, UndoBar, btn } from "./parts.jsx";
 
 // «Te necesitan» on Inicio (design/V3Inicio.dc.html): white cards ringed in honey, the oldest
 // first. A send shows who gets what; «Aprobar y enviar» waits 10 s with «Deshacer»; «No
 // enviar» goes with a 5 s notice. A question offers its options as buttons (your pick also
 // waits 10 s) and a free answer. Rooms waiting for a choice or a plan and the questions of
-// the bot that watches your apps («Te avisa de lo importante») use the same card.
+// the bot that watches your apps («Te avisa de lo importante») use the same card. Several
+// requests of the same kind in a row fold into one card with «Aprobar todas» (GroupNeed);
+// a send or any other red line is approved by holding its button (HoldButton.jsx).
 
 const RING = "0 0 0 1.5px #FFC93C, 0 18px 40px -28px rgba(138,90,0,.45)";
 const RING_SM = "0 0 0 1.5px #FFC93C";
@@ -68,6 +74,7 @@ export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) 
   const [error, setError] = useState(null);
   const [choice, setChoice] = useState(null);
   const [free, setFree] = useState(false);
+  const failures = useBatchFailures(); // why «Aprobar todas» could not decide this one
   useEffect(() => {
     const onFail = (e) => { if (e.detail?.id === key) setError(e.detail.message || "No se pudo completar. Vuelve a intentarlo."); };
     window.addEventListener("colmena:undo-failed", onFail);
@@ -143,7 +150,9 @@ export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) 
           {a.kind === "plan" ? <a href={a.missionId ? `/sala/${a.missionId}#plan` : `/revisar/${a.id}`} style={btn.dark}>{"Revisar el plan"}</a>
             : a.kind === "secret" ? <a href={`/revisar/${a.id}`} style={btn.dark}>{"Revisar"}</a>
               : <>
-                <button type="button" onClick={approve} style={btn.dark}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>
+                {needsHold(a)
+                  ? <HoldButton onConfirm={approve} style={btn.dark}>{isSend ? "Aprobar y enviar" : "Aprobar"}</HoldButton>
+                  : <button type="button" onClick={approve} style={btn.dark}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>}
                 <a href={`/revisar/${a.id}`} style={btn.line}>{isSend ? "Revisar y editar" : "Revisar"}</a>
                 <button type="button" onClick={deny} style={btn.text}>{isSend ? "No enviar" : "No permitir"}</button>
               </>}
@@ -152,6 +161,89 @@ export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) 
               {outside ? <><Lock />{"Sale de tu empresa: siempre te pregunta"}</> : a.impact.headline}
             </span>
           ) : null}
+        </div>
+      )}
+      {error || failures.get(a.id) ? <span role="alert" style={{ fontSize: "14px", color: "#B4232A" }}>{error || failures.get(a.id)}</span> : null}
+    </article>
+  );
+}
+
+/**
+ * Several requests of the same kind from one bot, one after another, as one card: what each
+ * one is, «Aprobar todas» (10 s with «Deshacer», like any approval here), «Ver cada una» (the
+ * usual cards, each decided alone) and «No permitir» for all of them. Never a red line.
+ */
+export function GroupNeed({ group, bot, mission, wide = false }) {
+  const key = "approvals:" + group.id;
+  const { waiting } = useUndoable(key);
+  const failures = useBatchFailures();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState(null);
+  const toggle = useRef(null);
+  const moved = useRef(false);
+  useEffect(() => {
+    const onFail = (e) => { if (e.detail?.id === key) setError(e.detail.message || "No se pudo completar. Vuelve a intentarlo."); };
+    window.addEventListener("colmena:undo-failed", onFail);
+    return () => window.removeEventListener("colmena:undo-failed", onFail);
+  }, [key]);
+  // «Ver cada una» ↔ «Ver juntas» swap places: the keyboard stays on the one that replaced it.
+  useEffect(() => {
+    if (!moved.current) return;
+    moved.current = false;
+    toggle.current?.focus();
+  }, [open]);
+  const flip = () => { moved.current = true; setOpen((v) => !v); };
+  const items = group.items;
+  const heading = groupTitle(group, bot?.name);
+  const listed = groupShown(items);
+  const approve = () => {
+    setError(null);
+    schedule(key, async () => {
+      const left = await decideBatch(items, "approved");
+      if (left) throw Error(failureText(left, "approved"));
+      remember({ ...items[0], id: group.id, title: heading }, `Aprobadas a las ${time(new Date())}.`);
+    });
+  };
+  const deny = () => {
+    setError(null);
+    later({
+      id: "deny:" + group.id, keys: items.map((a) => "approval:" + a.id), text: "No se permiten", error: "No se pudieron descartar",
+      run: async () => { const left = await decideBatch(items, "denied"); if (left) throw Error(failureText(left, "denied")); },
+    });
+  };
+  if (open) {
+    return (
+      <div role="group" aria-label={heading} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ ...row, padding: "0 6px" }}>
+          <span style={{ flex: "1", minWidth: 0, fontSize: "14.5px", fontWeight: "600" }}>{heading}</span>
+          <button ref={toggle} type="button" aria-expanded="true" onClick={flip} style={btn.text}>{"Ver juntas"}</button>
+        </div>
+        {items.map((a) => <ApprovalNeed key={a.id} a={a} bot={bot} mission={mission} />)}
+      </div>
+    );
+  }
+  return (
+    <article aria-label={heading} style={card(wide, waiting ? CALM : wide ? RING : RING_SM)}>
+      <Head bot={bot} where={where(mission)} at={items[0].createdAt} label="Aprobar" />
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <h3 style={title(wide)}>{heading}</h3>
+        <ul style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "4px" }}>
+          {listed.shown.map((a) => (
+            <li key={a.id} style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "14.5px", lineHeight: "1.45", color: "#4A4D57" }}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{groupLine(a, bot?.name, group.label)}</span>
+              {failures.has(a.id) ? <span style={{ fontSize: "13.5px", color: "#B4232A" }}>{failures.get(a.id)}</span> : null}
+            </li>
+          ))}
+          {listed.more ? <li style={{ fontSize: "13.5px", color: "#5C606C" }}>{`y ${listed.more} más`}</li> : null}
+        </ul>
+      </div>
+      {waiting ? (
+        <div style={row}><UndoBar id={key} text="Se aprueban en" onUndo={() => cancel(key)} /></div>
+      ) : (
+        <div style={row}>
+          <button type="button" onClick={approve} style={btn.dark}>{"Aprobar todas"}</button>
+          <button ref={toggle} type="button" aria-expanded="false" onClick={flip} style={btn.line}>{"Ver cada una"}</button>
+          <button type="button" onClick={deny} style={btn.text}>{"No permitir"}</button>
         </div>
       )}
       {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4232A" }}>{error}</span> : null}

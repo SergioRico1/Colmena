@@ -3,6 +3,7 @@ import { z } from "zod";
 import { now } from "../store.mjs";
 import { context, approvalView } from "../state.mjs";
 import { HttpError, short, check } from "./shared.mjs";
+import { BATCH_MAX } from "../approval-groups.mjs";
 
 /** Approvals: what the person reviews and decides. */
 export function registerApprovalRoutes(app, { store, runtime, mustGet, connection, need, emailEdit }) {
@@ -17,9 +18,8 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
     if (view.status === "expired" && !allowExpired) throw new HttpError(409, EXPIRED);
     return view;
   };
-  app.post("/api/approvals/:id", async (req, res) => {
-    const { decision, always, revision, reason } = check(z.object({ decision: z.enum(["approved", "denied"]), always: z.boolean().default(false), revision: revisionField, reason: z.string().trim().max(DENY_REASON_MAX).default("") }).strict(), req.body);
-    const a = mustGet("approvals", req.params.id, "Aviso");
+  /** One decision, bound to what the person saw. The single route and each item of a batch run this. */
+  const decide = async (a, { decision, always = false, revision, reason = "" }) => {
     reviewed(a, revision, { allowExpired: decision === "denied" });
     // The reason travels with the denial: the bot reads it on its next turn.
     if (decision === "denied" && reason) store.patch("approvals", a.id, { denyReason: reason });
@@ -29,7 +29,46 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
       await connection().decide(a.id, { decision, revision, remember: always });
       const prior = runtime.missionJobs?.get(a.missionId);
       void Promise.resolve(prior).then(() => runtime.launch(a.missionId));
-    } else await need("approve")(req.params.id, decision, { always });
+    } else await need("approve")(a.id, decision, { always });
+  };
+  // «Aprobar todas» / «No permitir»: several requests of one group (approval-groups.mjs) in
+  // one call. Each goes through the same decision as alone, once, in order; one that fails
+  // does not stop the rest and comes back with its reason. Red lines, sends, questions and
+  // anything else decided alone are refused before anything runs. Never «Siempre».
+  app.post("/api/approvals/batch", async (req, res) => {
+    const { decision, items, reason } = check(z.object({
+      decision: z.enum(["approved", "denied"]), reason: z.string().trim().max(DENY_REASON_MAX).default(""),
+      items: z.array(z.object({ id: z.string().trim().min(1).max(300), revision: revisionField }).strict()).min(1).max(BATCH_MAX),
+    }).strict(), req.body);
+    if (new Set(items.map((x) => x.id)).size !== items.length) throw new HttpError(400, "Hay peticiones repetidas.");
+    const ctx = context(store, runtime);
+    const found = items.map((x) => ({ ...x, a: store.get("approvals", x.id) }));
+    const keys = new Set();
+    for (const { a } of found) {
+      if (!a || a.status !== "pending") continue; // already settled: reported below, nothing to protect
+      const group = approvalView(a, ctx).group;
+      if (!group) throw new HttpError(400, "«" + String(a.title || "Esta petición").slice(0, 120) + "» se decide de una en una. Ábrela y revísala.");
+      keys.add(group.key);
+    }
+    if (keys.size > 1) throw new HttpError(400, "Estas peticiones no son del mismo tipo. Decídelas por separado.");
+    const results = [];
+    for (const { id, revision, a } of found) {
+      try {
+        if (!a) throw new HttpError(404, "Esta petición ya no existe.");
+        // Read again: an earlier item of this batch may have settled it (a rule, the same step).
+        const fresh = store.get("approvals", id);
+        if (!fresh || fresh.status !== "pending") throw new HttpError(409, "Esta solicitud ya está resuelta.");
+        await decide(fresh, { decision, always: false, revision, reason });
+        results.push({ id, ok: true });
+      } catch (e) {
+        results.push({ id, ok: false, error: e?.message || "No se pudo completar.", ...(e?.revision ? { revision: e.revision } : {}) });
+      }
+    }
+    res.json({ ok: results.every((r) => r.ok), results });
+  });
+  app.post("/api/approvals/:id", async (req, res) => {
+    const { decision, always, revision, reason } = check(z.object({ decision: z.enum(["approved", "denied"]), always: z.boolean().default(false), revision: revisionField, reason: z.string().trim().max(DENY_REASON_MAX).default("") }).strict(), req.body);
+    await decide(mustGet("approvals", req.params.id, "Aviso"), { decision, always, revision, reason });
     res.json({ ok: true });
   });
   app.post("/api/approvals/:id/answer", async (req, res) => {

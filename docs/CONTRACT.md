@@ -94,6 +94,7 @@ Mission + {
 ```
 Acciones:
 - `POST /api/approvals/:id` `{ decision: 'approved'|'denied', always?: bool }`
+- `POST /api/approvals/batch` `{ decision, items: [{ id, revision }], reason? }` → `{ ok, results: [{ id, ok, error?, revision? }] }` («Aprobar todas»): cada petición pasa por la misma decisión que sola, una vez; solo las que comparten `approval.group.key` (`server/approval-groups.mjs`: misma misión, bot y herramienta; nunca líneas rojas, envíos ni preguntas → 400 sin decidir nada). Sin «Siempre».
 - `POST /api/approvals/:id/answer` `{ optionId?, text? }` (preguntas)
 - `PATCH /api/approvals/:id/email` `{ to, cc, cco, subject, body }` (Editar envío; vuelve a pendiente)
 

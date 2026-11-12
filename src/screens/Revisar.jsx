@@ -9,6 +9,8 @@ import { roomUrl, time } from "../lib/format.js";
 import { cancel, schedule, useUndoable } from "../lib/undoable.js";
 import { later } from "../lib/undoToast.js";
 import { useExpert } from "../lib/expert.js";
+import { needsHold } from "../lib/holdApprove.js";
+import HoldButton from "../components/HoldButton.jsx";
 
 // Colmena 3 · «Revisa antes de enviar» (design/V3Revisar.dc.html): the mail as a form you can
 // change in place (recipients, subject, text; attachments can be taken out), beside why it
@@ -261,6 +263,7 @@ export default function Revisar({ params = {} }) {
               <button type="button" disabled={busy} onClick={deny} style={{ height: "46px", padding: "0 14px", border: "0", background: "transparent", fontSize: "15px", fontWeight: "500", color: "#4A4D57", cursor: "pointer" }}>{isSend ? "No enviar" : "No permitir"}</button>
               {isSend ? <button type="button" disabled={busy || !changes || !d.to.length} onClick={keep} style={{ ...pill(false), opacity: changes && d.to.length ? 1 : 0.55, cursor: changes ? "pointer" : "default" }}>{busy ? "Guardando…" : "Guardar sin enviar"}</button> : null}
               {a.kind === "plan" || a.kind === "secret" || a.kind === "question" ? null
+                : needsHold(a) ? <HoldButton disabled={busy || (isSend && !d.to.length)} onConfirm={approve} style={pill(true)}>{isSend ? "Aprobar y enviar" : "Aprobar"}</HoldButton>
                 : <button type="button" disabled={busy || (isSend && !d.to.length)} onClick={approve} style={pill(true)}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>}
             </>
           )}

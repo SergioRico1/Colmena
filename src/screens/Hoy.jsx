@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { needsOf } from "../components/v2/needs.js";
-import { ApprovalNeed, ChoiceNeed, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
+import { ApprovalNeed, ChoiceNeed, GroupNeed, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
+import { groupApprovals } from "../lib/approvalGroups.js";
 import { Shape, sectionTitle, srOnly } from "../components/v3/dia/parts.jsx";
 import { routeOf } from "../components/v3/dia/route.js";
 import { useResource, useStore } from "../lib/store.jsx";
@@ -116,11 +117,14 @@ export default function Hoy({ query = {} }) {
   // Everything that needs you, the oldest first; the first card is the large one.
   const settled = recentlyDone().filter((d) => !asks.some((a) => a.id === d.approval.id));
   const needs = [
-    ...asks.map((a) => ({ key: a.id, at: a.createdAt, el: (wide) => <ApprovalNeed key={a.id} a={a} wide={wide} bot={botOf(a.botId)} mission={missions.find((m) => m.id === a.missionId)} /> })),
+    // Requests of the same kind in a row from one bot share a card («Aprobar todas»).
+    ...groupApprovals([...asks].sort((a, b) => ts(a.createdAt) - ts(b.createdAt))).map((e) => (e.type === "group"
+      ? { key: e.id, at: e.items[0].createdAt, el: (wide) => <GroupNeed key={e.id} group={e} wide={wide} bot={botOf(e.botId)} mission={missions.find((m) => m.id === e.missionId)} /> }
+      : { key: e.a.id, at: e.a.createdAt, el: (wide) => <ApprovalNeed key={e.a.id} a={e.a} wide={wide} bot={botOf(e.a.botId)} mission={missions.find((m) => m.id === e.a.missionId)} /> })),
     ...notes.map((x) => ({ key: x.id, at: x.createdAt, el: (wide) => <WatchNeed key={x.id} n={x} wide={wide} bot={botOf(x.botId)} /> })),
     ...choices.map((m) => ({ key: m.id, at: m.updatedAt || m.createdAt, el: (wide) => <ChoiceNeed key={m.id} m={m} wide={wide} bots={bots} /> })),
   ].sort((a, b) => ts(a.at) - ts(b.at));
-  const n = needs.length;
+  const n = asks.length + notes.length + choices.length; // every request counts, also inside a shared card
   const [first, ...rest] = needs;
 
   const running = missions.filter((m) => !m.conversation && !m.archived && WORKING.has(m.status))
