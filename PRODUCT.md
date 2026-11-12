@@ -20,7 +20,11 @@ Two audiences, equally important (confirmed by the owner, 2026-11-12):
   routines, tools and «Modo experto».
 
 Day-to-day screens must be usable by the first without jargon; «Código» and «Modo experto» are core
-parts of the product, not extras. One person per installation: Colmena is single-user.
+parts of the product, not extras.
+
+They do not work alone. Colmena is also where a team's people talk to each other, as they would in
+Slack, alongside their bots (stated by the owner, 2026-11-12). Each person runs Colmena on their own
+computer with their own bots; people reach each other through «Personas».
 
 ## Product Purpose
 
@@ -35,8 +39,17 @@ asked for.
 A team, not one bot (confirmed by the owner as the thing to protect). Several bots with roles share
 the work and collaborate as a team the person directs: a coordinator (Atlas) plans and splits jobs,
 specialists answer what is theirs, they can consult and hand off to each other, and the person sees
-who is doing what. This is neither a single-assistant chat nor a multi-person workspace with agents
-added: there is one human, and the team is made of bots.
+who is doing what.
+
+It is a team chat for people and their bots, not only a chat with bots that work among themselves
+(corrected by the owner, 2026-11-12): the people of a team talk to each other and to each other's
+bots in the same place. The closest competitor is agentes.chat, a self-hosted server where people
+and agents share channels. Colmena differs in where it runs: on each person's own computer, on
+their own AI plan, with their data kept there.
+
+Current state versus this position (a fact for design work, not a commitment): today a person's
+conversations with other people live in «Personas», apart from their chats and rooms with bots,
+and the sidebar's six places name no people or channels.
 
 ## Operating Context
 
