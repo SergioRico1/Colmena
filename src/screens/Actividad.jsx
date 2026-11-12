@@ -4,6 +4,7 @@ import { Shape, sectionTitle } from "../components/v3/dia/parts.jsx";
 import { FILTERS, STATUS, filterRows, hrefOf, logCsv, logRows, since } from "../components/v3/dia/activityLog.js";
 import { needsOf } from "../components/v2/needs.js";
 import { sidebarModel } from "../lib/sidebar.js";
+import WeekDigest from "../components/v3/dia/WeekDigest.jsx";
 import { useResource, useStore } from "../lib/store.jsx";
 import { useActivityMap } from "../lib/liveStore.js";
 import { download, post } from "../lib/api.js";
@@ -47,6 +48,7 @@ export default function Actividad() {
   const [error, setError] = useState(null);
   const onData = useCallback((id, d) => setDetails((all) => (all[id] === d ? all : { ...all, [id]: d })), []);
   const today = useResource("/usage/overview?days=1").data;
+  const goals = useResource("/goals").data;
   const from = startOf(range);
   const botOf = (id) => bots.find((b) => b.id === id) || null;
 
@@ -202,6 +204,9 @@ export default function Actividad() {
             );
           })}
         </section>
+
+        {/* What the week was, once per week («Leído»): it lived at the foot of Inicio. */}
+        <WeekDigest missions={missions} approvals={approvals} skills={store.skills} usage={usage} bots={bots} goals={goals} />
 
         <section aria-labelledby="log-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>

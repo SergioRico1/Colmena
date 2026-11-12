@@ -4,8 +4,9 @@ import { useExpert } from "../../lib/expert.js";
 import { navigate } from "../../lib/router.jsx";
 
 // Colmena 3 app states (design/V3Estados.dc.html) that live inside a screen:
-//  - NoAccountNotice: the bots cannot think (no AI account, or its sign-in failed). The only
-//    app-level «te necesita», so it goes in honey; one way out, to Ajustes › Cuentas de IA.
+//  - NoAccountNotice: the bots cannot think (no AI account, or its sign-in failed). A system
+//    notice, in neutral: honey is kept for what is on the list of what waits for you
+//    (server/waiting.mjs), and this is not on it. One way out, to Ajustes › Cuentas de IA.
 //  - StuckBotCard: a bot that got stuck — red ring around its shape, the reason in words, the
 //    technical detail only in expert mode, «Reintentar» and «Hablar con …».
 // For loading see v2/Skeleton.jsx; for plan limits,
@@ -22,7 +23,7 @@ export function aiConnected(state) {
 
 /**
  * «Tus bots no pueden pensar ahora». Renders nothing while an account is connected and works.
- * `style` merges into the honey card.
+ * `style` merges into the card.
  */
 export function NoAccountNotice({ style = null }) {
   const state = useStore();
@@ -34,7 +35,7 @@ export function NoAccountNotice({ style = null }) {
     ? `No se pudo entrar en tu cuenta de IA (${String(authError.message || authError).replace(/\.$/, "")}). Vuelve a entrar y siguen donde lo dejaron.`
     : "Aún no has conectado tu cuenta de IA. Conéctala una vez y se ponen a trabajar.";
   return (
-    <div role="status" style={{ display: "flex", gap: "14px", padding: "18px", borderRadius: "18px", background: "#FFF6DC", ...style }}>
+    <div role="status" style={{ display: "flex", gap: "14px", padding: "18px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.1)", ...style }}>
       <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", background: INK, clipPath: HEX }} />
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={{ fontSize: "15.5px", fontWeight: "600" }}>{"Tus bots no pueden pensar ahora"}</span>

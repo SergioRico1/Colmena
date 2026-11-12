@@ -474,7 +474,7 @@ function Memory({ bot, store, learning, data, expert }) {
           {METERS.map(([k, label]) => {
             const u = learning.memory[k];
             if (!u) return null;
-            const tone = u.percent >= 90 ? "#B4232A" : u.percent >= 70 ? "#8A5A00" : "#0B8A5F";
+            const tone = u.percent >= 90 ? "#B4232A" : u.percent >= 70 ? "#4A4D57" : "#0B8A5F";
             return (
               <span key={k} style={{ display: "flex", flexDirection: "column", gap: "5px", padding: "8px 10px", borderRadius: "12px", background: "#F6F6F3" }}>
                 <span style={{ display: "flex", justifyContent: "space-between", gap: "6px", fontSize: "12px" }}><strong style={{ fontWeight: "600" }}>{label}</strong><span style={{ font: "500 11px/1.4 'Geist Mono', monospace", color: TEXT3 }}>{`${u.used}/${u.limit}`}</span></span>

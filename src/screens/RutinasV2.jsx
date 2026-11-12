@@ -809,7 +809,7 @@ function ReminderForm() {
         </label>
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-        <span role="status" style={{ fontSize: "13px", color: act.error ? "#B4232A" : touched && !ready ? "#8A5A00" : FAINT }}>{act.error || (touched && !ready ? "Escribe al menos una palabra o frase en cada lado." : "Palabras o frases separadas por comas.")}</span>
+        <span role="status" style={{ fontSize: "13px", color: act.error ? "#B4232A" : touched && !ready ? INK : FAINT }}>{act.error || (touched && !ready ? "Escribe al menos una palabra o frase en cada lado." : "Palabras o frases separadas por comas.")}</span>
         <button type="button" onClick={add} disabled={!ready || act.busy} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
       </div>
     </section>

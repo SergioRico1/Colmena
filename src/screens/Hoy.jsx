@@ -1,27 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LayoutGrid } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { needsOf } from "../components/v2/needs.js";
 import { ApprovalNeed, ChoiceNeed, ErrandNeed, GroupNeed, SnoozedNeeds, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
-import { groupApprovals } from "../lib/approvalGroups.js";
+import NeedRows from "../components/v3/dia/NeedRows.jsx";
+import { needEntries } from "../components/v3/dia/needRows.js";
 import { Shape, sectionTitle, srOnly } from "../components/v3/dia/parts.jsx";
 import { routeOf } from "../components/v3/dia/route.js";
 import { useResource, useStore } from "../lib/store.jsx";
 import { pickFiles, post } from "../lib/api.js";
 import { greeting, needsYou, time } from "../lib/format.js";
 import { reversible } from "../lib/undoToast.js";
-import { formatTokens } from "../components/settings/format.jsx";
 import { navigate } from "../lib/router.jsx";
 import { NoAccountNotice } from "../components/v3/States.jsx";
 import { PlanLimitNotice } from "../components/v2/LimitNotice.jsx";
 import { scrollBehavior } from "../lib/motion.js";
 import { pauseLine } from "../lib/pauseReason.js";
-import Panel from "../components/blocks/Panel.jsx";
 
-// Colmena 3 · Inicio (design/V3Inicio.dc.html): one sentence says how many things need you, a
-// box asks your team for anything (Atlas decides who does it, or you pick the bot), then what
-// needs you in honey (the oldest first, the first one larger), what is under way and today's
-// timeline: what finished, «Ahora» and what comes later. «Pausar a todo el equipo» stays at hand.
+// Colmena 3 · Inicio does one thing: one sentence says how many things need you, then they
+// come first as compact rows in honey (the oldest first; three on screen, «Ver las N» for the
+// rest; a row opens its full card in place), then a box asks your team for anything (Atlas
+// decides who does it, or you pick the bot), then what is under way beside today's timeline.
+// «Pausar a todo el equipo» stays at hand. The panel of live blocks has its own page (/panel,
+// «Panel» in the header) and the weekly card lives in Actividad.
 const COUNT = ["Nada te necesita", "Una cosa te necesita", "Dos cosas te necesitan", "Tres cosas te necesitan", "Cuatro cosas te necesitan", "Cinco cosas te necesitan", "Seis cosas te necesitan", "Siete cosas te necesitan", "Ocho cosas te necesitan", "Nueve cosas te necesitan", "Diez cosas te necesitan"];
 const WORKING = new Set(["running", "queued", "planning", "waiting", "awaiting_plan", "awaiting_choice", "blocked", "paused"]);
 const IDEAS = ["Prepárame la reunión de mañana", "Resume mis correos de hoy", "Prepara mi semana", "Compara las ventas con el mes pasado"];
@@ -41,16 +43,16 @@ const dueLabel = (iso) => {
 const when = (iso) => (dayDiff(iso) === 0 ? time(iso) : new Date(iso).toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "") + " " + time(iso));
 const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const firstSentence = (t) => (t ? (String(t).match(/^[^.!?\n]+[.!?]?/) || [""])[0].replace(/[.]$/, "").trim() : "");
-const weekKey = () => { const d = new Date(); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); return d.toISOString().slice(0, 10); };
 const ts = (x) => Date.parse(x || 0) || 0;
 
 export default function Hoy({ query = {} }) {
   const store = useStore();
   // Links of v1 (/bandeja?aprobacion=…) open that request in Revisar.
   useEffect(() => { if (query.aprobacion) navigate(`/revisar/${encodeURIComponent(query.aprobacion)}`, { replace: true }); }, [query.aprobacion]);
-  const { bots, missions, approvals, automations = [], skills, usage, settings = {}, paused } = store;
+  const { bots, missions, approvals, automations = [], settings = {}, paused, blocks = [] } = store;
   const goals = useResource("/goals").data;
-  const { asks, choices, notes, errands, snoozed, items } = needsOf(store);
+  const needs = needsOf(store);
+  const { asks, snoozed, items } = needs;
   const [ask, setAsk] = useState("");
   const [files, setFiles] = useState([]);
   const [picked, setPicked] = useState(null); // a bot chosen by hand in «… decide quién lo hace»
@@ -115,20 +117,20 @@ export default function Hoy({ query = {} }) {
     } catch (e) { setError(e.message); }
   };
 
-  // Everything that needs you, the oldest first; the first card is the large one.
+  // Everything that needs you, the oldest first, as rows; requests of the same kind in a row
+  // from one bot share a row and a card («Aprobar todas»). A row opens its full card in place.
   const settled = recentlyDone().filter((d) => !asks.some((a) => a.id === d.approval.id));
-  const needs = [
-    // Requests of the same kind in a row from one bot share a card («Aprobar todas»).
-    ...groupApprovals([...asks].sort((a, b) => ts(a.createdAt) - ts(b.createdAt))).map((e) => (e.type === "group"
-      ? { key: e.id, at: e.items[0].createdAt, el: (wide) => <GroupNeed key={e.id} group={e} wide={wide} bot={botOf(e.botId)} mission={missions.find((m) => m.id === e.missionId)} /> }
-      : { key: e.a.id, at: e.a.createdAt, el: (wide) => <ApprovalNeed key={e.a.id} a={e.a} wide={wide} bot={botOf(e.a.botId)} mission={missions.find((m) => m.id === e.a.missionId)} /> })),
-    ...notes.map((x) => ({ key: x.id, at: x.createdAt, el: (wide) => <WatchNeed key={x.id} n={x} wide={wide} bot={botOf(x.botId)} /> })),
-    ...choices.map((m) => ({ key: m.id, at: m.updatedAt || m.createdAt, el: (wide) => <ChoiceNeed key={m.id} m={m} wide={wide} bots={bots} /> })),
-    ...errands.map((x) => ({ key: x.id, at: x.at, el: (wide) => <ErrandNeed key={x.id} item={x} wide={wide} bot={botOf(x.botId)} /> })),
-  ].sort((a, b) => ts(a.at) - ts(b.at));
-  // The one count of what waits for you (server/waiting.mjs): every request counts, also inside a shared card.
+  const entries = needEntries(needs);
+  const cardOf = (e) => {
+    const mission = missions.find((m) => m.id === e.missionId);
+    if (e.type === "group") return <GroupNeed group={e.group} wide bot={botOf(e.botId)} mission={mission} />;
+    if (e.type === "approval") return <ApprovalNeed a={e.a} wide bot={botOf(e.botId)} mission={mission} />;
+    if (e.type === "note") return <WatchNeed n={e.note} wide bot={botOf(e.botId)} />;
+    if (e.type === "choice") return <ChoiceNeed m={e.mission} wide bots={bots} />;
+    return <ErrandNeed item={e.item} wide bot={botOf(e.botId)} />;
+  };
+  // The one count of what waits for you (server/waiting.mjs): every request counts, also inside a shared row.
   const n = items.length;
-  const [first, ...rest] = needs;
 
   const running = missions.filter((m) => !m.conversation && !m.archived && WORKING.has(m.status))
     .sort((a, b) => Number(needsYou(b)) - Number(needsYou(a)) || ts(b.updatedAt || b.createdAt) - ts(a.updatedAt || a.createdAt))
@@ -177,24 +179,55 @@ export default function Hoy({ query = {} }) {
 
   return (
     <Shell active="inicio">
-      <main style={{ maxWidth: "1040px", margin: "0 auto", padding: "40px clamp(20px, 4vw, 52px) 72px", display: "flex", flexDirection: "column", gap: "44px" }}>
+      <main style={{ maxWidth: "1040px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 52px) 72px", display: "flex", flexDirection: "column", gap: "36px" }}>
         <header style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "rise .5s ease-out" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
             <span style={{ fontSize: "15px", color: "#5C606C" }}>{capital(now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }))}</span>
+            <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
+            {/* The live blocks you pinned have their own page; here it is one click away. */}
+            <a href="/panel" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate("/panel"); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.14)", fontSize: "13.5px", fontWeight: "500", color: "#3D404A" }}>
+              <LayoutGrid size={14} strokeWidth={2.1} aria-hidden="true" />{"Panel"}{blocks.length ? <span style={{ color: "#5C606C", fontVariantNumeric: "tabular-nums" }}>{blocks.length}</span> : null}
+            </a>
             <button type="button" onClick={togglePause} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.14)", fontSize: "13.5px", fontWeight: "500", color: "#3D404A", cursor: "pointer" }}>
               {paused
                 ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" /></svg>{"Reanudar al equipo"}</>
                 : <><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>{"Pausar a todo el equipo"}</>}
             </button>
+            </span>
           </div>
-          <h1 style={{ margin: "0", maxWidth: "900px", font: "600 clamp(40px, 4.8vw, 64px)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em", textWrap: "balance" }}>
+          <h1 style={{ margin: "0", maxWidth: "900px", font: "600 clamp(36px, 3.9vw, 54px)/1.02 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em", textWrap: "balance" }}>
             {hello + " "}<span style={{ color: "#8A8D96" }}>{(COUNT[n] || `${n} cosas te necesitan`) + (paused ? "; el equipo está en pausa." : "; lo demás va solo.")}</span>
           </h1>
         </header>
 
-        {/* «Sin cuenta de IA» is the only app-level «te necesita»; the plan limit says the bots go on with the backup. Both hide themselves. */}
+        {/* System notices, in neutral: «Sin cuenta de IA» and the plan limit are not on the list of what waits for you. Both hide themselves. */}
         <NoAccountNotice />
         <PlanLimitNotice />
+
+        <section aria-labelledby="need-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <h2 id="need-t" style={sectionTitle}>{"Te necesitan"}</h2>
+            {n ? <span style={{ minWidth: "24px", height: "24px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "12px", background: "#FFC93C", fontSize: "12.5px", fontWeight: "600" }}>{n}</span> : null}
+            <span style={{ marginLeft: "auto", fontSize: "13.5px", color: "#5C606C" }}>{n > 1 ? "Lo más antiguo, primero" : n ? "" : "Al día"}</span>
+          </div>
+          {!n && !settled.length ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "20px 22px", background: "#FFFFFF", borderRadius: "20px", animation: "rise .4s ease-out" }}>
+              <span style={{ animation: "drift 5s ease-in-out infinite" }}><BotPresence bot={botOf("atlas") || { shape: "hex", color: "#12131A" }} size={36} state="rest" /></span>
+              <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <strong style={{ fontSize: "16.5px", fontWeight: "600" }}>{"Nada te espera."}</strong>
+                <span style={{ fontSize: "14.5px", color: "#4A4D57" }}>{"Tu equipo sigue trabajando. Solo te avisaremos si hace falta."}</span>
+              </span>
+            </div>
+          ) : null}
+          {entries.length ? <NeedRows entries={entries} card={cardOf} botOf={botOf} /> : null}
+          {settled.length ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))", gap: "14px", alignItems: "start" }}>
+              {settled.map((d) => <ApprovalNeed key={"done" + d.approval.id} a={d.approval} bot={botOf(d.approval.botId)} mission={missions.find((m) => m.id === d.approval.missionId)} settled={d.text} />)}
+            </div>
+          ) : null}
+          {/* What you put off with «Recordar después»: out of the count, one click away. */}
+          <SnoozedNeeds items={snoozed} bots={bots} />
+        </section>
 
         <section id="pedir" aria-label="Pedir algo" style={{ scrollMarginTop: "40px", display: "flex", flexDirection: "column", gap: "12px" }}>
           <div className="c-ring" style={{ background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 28px 64px -34px rgba(18,19,26,.35)", padding: "8px 8px 0 22px" }}>
@@ -252,32 +285,6 @@ export default function Hoy({ query = {} }) {
               <button key={label} type="button" onClick={() => { setAsk(label); setSent(null); input.current?.focus(); }} style={{ height: "34px", padding: "0 14px", background: "transparent", border: "0", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", borderRadius: "999px", cursor: "pointer", fontSize: "13.5px", color: "#3D404A" }}>{label}</button>
             ))}
           </div>
-        </section>
-
-        <section aria-labelledby="need-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <h2 id="need-t" style={sectionTitle}>{"Te necesitan"}</h2>
-            {n ? <span style={{ minWidth: "24px", height: "24px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "12px", background: "#FFC93C", fontSize: "12.5px", fontWeight: "600" }}>{n}</span> : null}
-            <span style={{ marginLeft: "auto", fontSize: "13.5px", color: "#5C606C" }}>{n > 1 ? "Lo más antiguo, primero" : n ? "" : "Al día"}</span>
-          </div>
-          {!n && !settled.length ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "20px 22px", background: "#FFFFFF", borderRadius: "20px", animation: "rise .4s ease-out" }}>
-              <span style={{ animation: "drift 5s ease-in-out infinite" }}><BotPresence bot={botOf("atlas") || { shape: "hex", color: "#12131A" }} size={36} state="rest" /></span>
-              <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <strong style={{ fontSize: "16.5px", fontWeight: "600" }}>{"Nada te espera."}</strong>
-                <span style={{ fontSize: "14.5px", color: "#4A4D57" }}>{"Tu equipo sigue trabajando. Solo te avisaremos si hace falta."}</span>
-              </span>
-            </div>
-          ) : null}
-          {first ? first.el(true) : null}
-          {rest.length || settled.length ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))", gap: "14px", alignItems: "start" }}>
-              {rest.map((x) => x.el(false))}
-              {settled.map((d) => <ApprovalNeed key={"done" + d.approval.id} a={d.approval} bot={botOf(d.approval.botId)} mission={missions.find((m) => m.id === d.approval.missionId)} settled={d.text} />)}
-            </div>
-          ) : null}
-          {/* What you put off with «Recordar después»: out of the count, one click away. */}
-          <SnoozedNeeds items={snoozed} bots={bots} />
         </section>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))", gap: "40px 28px", alignItems: "start" }}>
@@ -338,8 +345,6 @@ export default function Hoy({ query = {} }) {
           </section>
         </div>
 
-        <WeekDigest missions={missions} approvals={approvals} skills={skills} usage={usage} bots={bots} goals={goals} />
-        <Panel />
       </main>
     </Shell>
   );
@@ -354,74 +359,5 @@ function Moment({ item, done = false }) {
       <span aria-hidden="true" style={{ flex: "none", width: "14px", color: done ? "#0B6B4A" : "#8A8D96", fontWeight: "700" }}>{done ? "✓" : "○"}</span>
       {item.href ? <a href={item.href} style={{ color: "inherit", minWidth: 0 }}>{text}</a> : text}
     </li>
-  );
-}
-
-/** «Tu semana con la colmena»: on a new week, what happened and what comes, once («Leído»). */
-function WeekDigest({ missions, approvals, skills, usage, bots, goals }) {
-  const key = "colmena:digest:" + weekKey();
-  const [dismissed, setDismissed] = useState(() => { try { return localStorage.getItem(key) === "1"; } catch { return false; } });
-  const from = new Date(); from.setDate(from.getDate() - 7);
-  const week = useMemo(() => {
-    const since = from.getTime();
-    const done = missions.filter((m) => !m.conversation && m.status === "completed" && ts(m.completedAt) > since);
-    const approved = approvals.filter((a) => a.decidedBy === "tú" && ts(a.decidedAt) > since);
-    const pendingSkills = (skills || []).filter((s) => s.status === "pending");
-    const happened = done.filter((m) => m.recap?.text).slice(0, 3).map((m) => firstSentence(m.recap.text) + ".");
-    const soon = [];
-    for (const g of Array.isArray(goals) ? goals : []) if (g.next?.dueAt && ts(g.next.dueAt) - Date.now() < 21 * 864e5 && ts(g.next.dueAt) > Date.now()) soon.push(`El objetivo «${g.title}» tiene un hito el ${new Date(g.next.dueAt).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}.`);
-    const awaiting = missions.filter((m) => m.status === "awaiting_choice").length;
-    if (awaiting) happened.push(awaiting === 1 ? "Hay una propuesta esperando tu decisión." : `Hay ${awaiting} propuestas esperando tu decisión.`);
-    return { done: done.length, approved: approved.length, skills: pendingSkills.length, happened: happened.slice(0, 3), soon: soon.slice(0, 3) };
-  }, [missions, approvals, skills, goals]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (dismissed || (!week.done && !week.approved && !week.skills)) return null;
-  const to = new Date(); to.setDate(to.getDate() - 1);
-  const range = `Del ${from.getDate()} al ${to.getDate()} de ${to.toLocaleDateString("es-ES", { month: "long" })}`;
-  const spend = usage?.percent != null ? { n: usage.percent + " %", label: "del gasto del mes" } : { n: formatTokens(usage?.monthTokens || 0), label: "tokens este mes" };
-  const atlas = bots.find((b) => b.id === "atlas") || { shape: "hex", color: "#12131A" };
-  const stat = (value, label) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "16px", background: "rgba(255,255,255,.08)" }}>
-      <span style={{ font: "600 28px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{value}</span>
-      <span style={{ fontSize: "13px", color: "#B8BBC4" }}>{label}</span>
-    </div>
-  );
-  const list = (head, items) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <span style={{ fontSize: "13px", fontWeight: "500", color: "#B8BBC4" }}>{head}</span>
-      <ul style={{ margin: "0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "14.5px", lineHeight: "1.5", color: "#E6E7EC" }}>
-        {items.map((t, i) => <li key={i}>{t}</li>)}
-      </ul>
-    </div>
-  );
-  const pill = { display: "inline-flex", alignItems: "center", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "14px", fontWeight: "600" };
-  return (
-    <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "24px 28px", borderRadius: "26px", background: "#12131A", color: "#FFFFFF", animation: "rise .5s ease-out" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <BotPresence bot={atlas} size={26} state="rest" />
-          <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-            <h2 id="wk-t" style={{ margin: "0", font: "600 20px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Tu semana con el equipo"}</h2>
-            <span style={{ fontSize: "13px", color: "#B8BBC4" }}>{range + " · te lo resume " + (atlas.name || "Atlas")}</span>
-          </div>
-        </div>
-        <button type="button" onClick={() => { try { localStorage.setItem(key, "1"); } catch {} setDismissed(true); }} style={{ ...pill, border: "0", background: "rgba(255,255,255,.1)", color: "#FFFFFF", cursor: "pointer" }}>{"Leído"}</button>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "10px" }}>
-        {stat(week.done, week.done === 1 ? "tarea terminada" : "tareas terminadas")}
-        {stat(week.approved, week.approved === 1 ? "cosa aprobaste tú" : "cosas aprobaste tú")}
-        {stat(week.skills, week.skills === 1 ? "habilidad nueva por revisar" : "habilidades nuevas por revisar")}
-        {stat(spend.n, spend.label)}
-      </div>
-      {week.happened.length || week.soon.length ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "18px" }}>
-          {week.happened.length ? list("Lo que ha pasado", week.happened) : null}
-          {week.soon.length ? list("Lo que viene", week.soon) : null}
-        </div>
-      ) : null}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        {week.skills ? <a href="/biblioteca/habilidades" style={{ ...pill, background: "#FFFFFF", color: "#12131A" }}>{"Revisar las habilidades"}</a> : null}
-        <a href="/trabajo/objetivos" style={{ ...pill, background: "rgba(255,255,255,.1)", color: "#FFFFFF" }}>{"Ver objetivos"}</a>
-      </div>
-    </section>
   );
 }

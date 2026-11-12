@@ -5,6 +5,7 @@ export const routes = [
   // Objetivos), Código, Equipo, Biblioteca (Archivos, Notas, Habilidades, Memoria) — plus Actividad and Ajustes.
   { path: "/", screen: "Hoy" },
   { path: "/inicio", screen: "Hoy" },
+  { path: "/panel", screen: "PanelInicio" }, // Inicio › Panel: the live blocks you pinned
   { path: "/actividad", screen: "Actividad" },
   { path: "/trabajo", screen: "Tareas" },
   { path: "/trabajo/tareas", screen: "Tareas" },

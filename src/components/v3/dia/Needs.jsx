@@ -44,6 +44,17 @@ export const recentlyDone = () => {
   return [...done.values()];
 };
 
+/**
+ * Approves one request with the 10 s to undo, wherever the click comes from (its card, or its
+ * row on Inicio): the same wait, the same confirmation afterwards. `model`: its approvalCard.
+ */
+export function scheduleApproval(a, model, always = false) {
+  schedule("approval:" + a.id, async () => {
+    await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision, ...(always ? { always: true } : {}) });
+    remember(a, a.kind === "send" ? `Enviado a las ${time(new Date())}. Lo encontrarás en la Biblioteca.` : `${model.doneText} a las ${time(new Date())}.`);
+  });
+}
+
 const card = (wide, ring) => ({ display: "flex", flexDirection: "column", gap: wide ? "14px" : "12px", padding: "20px 22px", background: "#FFFFFF", borderRadius: "20px", boxShadow: ring, transition: "box-shadow .4s ease", animation: "rise .4s ease-out" });
 const title = (wide) => (wide ? { margin: "0", fontSize: "18px", fontWeight: "600", letterSpacing: "-0.01em", lineHeight: "1.3" } : { margin: "0", fontSize: "16.5px", fontWeight: "600", lineHeight: "1.35" });
 const body = { margin: "0", fontSize: "14.5px", lineHeight: "1.5", color: "#4A4D57", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" };
@@ -95,16 +106,12 @@ export const ApprovalNeed = withRowBoundary(function ApprovalNeed({ a, bot, miss
     window.addEventListener("colmena:undo-failed", onFail);
     return () => window.removeEventListener("colmena:undo-failed", onFail);
   }, [key]);
-  const isSend = a.kind === "send";
   const isQuestion = a.kind === "question";
   // The same verbs, undo line and expiry line as in the chat, a room and Revisar.
   const model = useApprovalCard(a, bot?.name, { excerpt: wide ? 220 : 140 });
   const approve = (always = false) => {
     setError(null);
-    schedule(key, async () => {
-      await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision, ...(always ? { always: true } : {}) });
-      remember(a, isSend ? `Enviado a las ${time(new Date())}. Lo encontrarás en la Biblioteca.` : `${model.doneText} a las ${time(new Date())}.`);
-    });
+    scheduleApproval(a, model, always);
   };
   const deny = () => {
     setError(null);

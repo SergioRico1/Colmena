@@ -123,13 +123,13 @@ export function PlanLimitNotice({ style = null }) {
   );
 }
 
-/** One line for a bot's card: «Limitado · vuelve hoy a las 15:40». */
+/** One line for a bot's card: «Limitado · vuelve hoy a las 15:40». Neutral: it goes on by itself, it does not wait for you. */
 export function LimitLine({ limited, style = null }) {
   const now = useMinuteClock();
   if (!limited) return null;
   const when = renewText(limited.resetsAt || limited.resumeAt || limited.until, now);
   return (
-    <span title={limited.plan ? `Queda poco del plan de ${engineName(limited.engine)}: su trabajo largo espera a que se renueve` : `${engineName(limited.engine)} ha llegado a su ${limited.label || "límite de uso"}`} style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#8A5A00", minWidth: 0, ...style }}>
+    <span title={limited.plan ? `Queda poco del plan de ${engineName(limited.engine)}: su trabajo largo espera a que se renueve` : `${engineName(limited.engine)} ha llegado a su ${limited.label || "límite de uso"}`} style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#4A4D57", minWidth: 0, ...style }}>
       <Hourglass size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(limited.plan ? "En pausa" : "Limitado") + (when ? (limited.plan ? " · sigue " : " · vuelve ") + when : "")}</span>
     </span>
