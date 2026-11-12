@@ -6,7 +6,8 @@ import { describeAppAction } from "./appactions.mjs";
 //   - never a red line (it sends, buys, publishes, pays, deletes or leaves your account), nor
 //     a send, a question, a plan, a key, a skill, a personality change or a revert;
 //   - never what a routine left for later, a send about to leave on its own, a computer or
-//     project action, nor anything proposed after reading content with injection phrases;
+//     project action, nor anything proposed after reading content with injection phrases, nor
+//     a note change that carries outside content;
 //   - only the internal writes of server/runtime/effects.mjs and the non-red-line actions in
 //     a connected app (server/connections.mjs `classify`).
 
@@ -36,6 +37,9 @@ export function approvalGroup(a, { flagged = false } = {}) {
   if (!a || a.status !== "pending" || !a.missionId || !a.botId || !a.tool) return null;
   if (a.redLine || a.external || a.deferred || a.autoSendAt || a.computer || a.project || a.secret || a.email || flagged) return null;
   if (ALONE.has(a.kind) || ALONE.has(a.uiKind)) return null;
+  // A note change written from outside content, or with injection phrases in its own text
+  // (wiki-tools.mjs: no «Siempre»): the person reads that diff by itself.
+  if (a.tool === "wiki_write" && (a.canAlways === false || a.wiki?.outside)) return null;
   // «<Bot> quiere empezar…» (work a rule would start by itself, scheduler.mjs): decided alone, always.
   if (a.startWork || a.tool === "start_work") return null;
   if (a.tool === "apps_execute") {

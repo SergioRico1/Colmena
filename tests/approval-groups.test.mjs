@@ -121,6 +121,8 @@ test("the server groups only internal writes and non-red-line app actions", () =
     ["computer", stored({ tool: "run_command", kind: "permission", computer: { program: "git" } })], ["project", stored({ tool: "project_run", kind: "permission", project: { name: "web" } })],
     ["external", stored({ external: true })], ["unknown tool", stored({ tool: "mcp_notion_create", kind: "permission" })],
     ["permission kind on a write tool", stored({ kind: "permission" })], ["app without action", event({ review: { toolkit: "googlecalendar" } })],
+    ["note change with injection phrases", stored({ tool: "wiki_write", canAlways: false, wiki: { title: "Acme" } })],
+    ["note change from outside content", stored({ tool: "wiki_write", canAlways: true, wiki: { title: "Acme", outside: { suspicious: false } } })],
     ["settled", stored({ status: "approved" })], ["flagged step", stored(), { flagged: true }], ["no mission", stored({ missionId: null })],
   ]) assert.equal(approvalGroup(a, opts), null, why);
 });
@@ -308,4 +310,25 @@ test("reduced motion and assistive clicks: two plain steps, and a double click i
   assert.equal(run([{ type: "click", at: 0 }, { type: "click", at: 100 }]).fired, 0);
   // Unknown events change nothing.
   assert.deepEqual(holdNext(HOLD_IDLE, { type: "nope" }), { state: HOLD_IDLE, fire: false });
+});
+
+test("a step flagged while a batch is being applied stops the items that are left", async (t) => {
+  const { store, runtime, post, get, file } = await setup(t);
+  const ids = [1, 2, 3].map((n) => file(n).id);
+  const state = await get("/state");
+  assert.ok(approvalGroup(stored({ tool: "wiki_write", canAlways: true, wiki: { title: "Acme", outside: null } })), "a clean note change may still go with others");
+  const calls = [];
+  // Approving the first lets the bot go on: it reads a page with injection phrases.
+  runtime.approve = async (id, decision) => {
+    calls.push(id);
+    store.patch("approvals", id, { status: decision });
+    store.patch("steps", "m1:answer", { suspicious: [{ tool: "web_fetch", found: ["ignorar instrucciones"] }] });
+  };
+  const r = await post("/approvals/batch", { decision: "approved", items: itemsOf(state, ids) });
+  assert.equal(r.status, 200);
+  const body = await r.json();
+  assert.deepEqual(body.results.map((x) => x.ok), [true, false, false]);
+  assert.match(body.results[1].error, /de una en una/);
+  assert.deepEqual(calls, [ids[0]], "the rest was not decided");
+  assert.deepEqual(ids.map((id) => store.get("approvals", id).status), ["approved", "pending", "pending"]);
 });

@@ -3,7 +3,8 @@ import { z } from "zod";
 import { now } from "../store.mjs";
 import { context, approvalView } from "../state.mjs";
 import { HttpError, short, check } from "./shared.mjs";
-import { BATCH_MAX } from "../approval-groups.mjs";
+import { BATCH_MAX, approvalGroup } from "../approval-groups.mjs";
+import { isFlagged } from "../external-content.mjs";
 import { createSnoozeWaker, snoozeProblem } from "../snooze.mjs";
 
 /** Approvals: what the person reviews and decides. */
@@ -35,7 +36,8 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
   // «Aprobar todas» / «No permitir»: several requests of one group (approval-groups.mjs) in
   // one call. Each goes through the same decision as alone, once, in order; one that fails
   // does not stop the rest and comes back with its reason. Red lines, sends, questions and
-  // anything else decided alone are refused before anything runs. Never «Siempre».
+  // anything else decided alone are refused before anything runs, and each item is checked
+  // again just before it is decided. Never «Siempre».
   app.post("/api/approvals/batch", async (req, res) => {
     const { decision, items, reason } = check(z.object({
       decision: z.enum(["approved", "denied"]), reason: z.string().trim().max(DENY_REASON_MAX).default(""),
@@ -52,6 +54,7 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
       keys.add(group.key);
     }
     if (keys.size > 1) throw new HttpError(400, "Estas peticiones no son del mismo tipo. Decídelas por separado.");
+    const [key] = keys;
     const results = [];
     for (const { id, revision, a } of found) {
       try {
@@ -59,6 +62,11 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
         // Read again: an earlier item of this batch may have settled it (a rule, the same step).
         const fresh = store.get("approvals", id);
         if (!fresh || fresh.status !== "pending") throw new HttpError(409, "Esta solicitud ya está resuelta.");
+        // Checked again as it is now, not as it was when the batch began: deciding an earlier
+        // item lets the bot go on, and what it reads meanwhile (injection phrases) may leave
+        // the rest to be decided one by one.
+        if (approvalGroup(fresh, { flagged: isFlagged(store, fresh.stepId) })?.key !== key)
+          throw new HttpError(409, "Esta petición ahora se decide de una en una. Ábrela y revísala.");
         await decide(fresh, { decision, always: false, revision, reason });
         results.push({ id, ok: true });
       } catch (e) {
