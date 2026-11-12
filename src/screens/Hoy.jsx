@@ -15,6 +15,7 @@ import { navigate } from "../lib/router.jsx";
 import { NoAccountNotice } from "../components/v3/States.jsx";
 import { PlanLimitNotice } from "../components/v2/LimitNotice.jsx";
 import { scrollBehavior } from "../lib/motion.js";
+import Panel from "../components/blocks/Panel.jsx";
 
 // Colmena 3 · Inicio (design/V3Inicio.dc.html): one sentence says how many things need you, a
 // box asks your team for anything (Atlas decides who does it, or you pick the bot), then what
@@ -336,6 +337,7 @@ export default function Hoy({ query = {} }) {
         </div>
 
         <WeekDigest missions={missions} approvals={approvals} skills={skills} usage={usage} bots={bots} goals={goals} />
+        <Panel />
       </main>
     </Shell>
   );

@@ -21,6 +21,7 @@ import { visibleMessages } from "../branches.mjs";
 import { lateAnswerText } from "../questions.mjs";
 import { relatedMemories } from "../memory.mjs";
 import { wikiPromoted } from "../wiki-tools.mjs";
+import { blocksPromoted } from "../blocks.mjs";
 import {
   MEMORY_FLUSH, COMPACT_INSTRUCTIONS, WEB_SEARCH_NOTE, THREAD_WINDOW, threadCut, DIRECTIONS, INCOGNITO_DENY, watchSourcesNote, BRIEF_KINDS,
 } from "./helpers.mjs";
@@ -396,7 +397,7 @@ export class ContextMethods {
       .sort((a, b) => String(a.startedAt || "").localeCompare(String(b.startedAt || "")));
     const used = [...new Set(earlier.flatMap((s) => s.usedTools).reverse())].slice(0, TOOL_SEARCH.promoted);
     // While the conversation is about the notes, their tools are listed too (server/wiki-tools.mjs).
-    return [...new Set([...wikiPromoted(this.store, step.missionId), ...used])];
+    return [...new Set([...wikiPromoted(this.store, step.missionId), ...blocksPromoted(this.store, step.missionId), ...used])];
   }
   /** A use_tool call that names one of the bot's tools (`all`) with arguments that fit its schema → that call; anything else stays as it is and is answered with the reason (EffectMethods#tool). */
   unwrapToolUse(call, all) {

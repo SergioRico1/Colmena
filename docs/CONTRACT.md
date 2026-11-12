@@ -435,3 +435,59 @@ Herramientas (detrás de `find_tools` cuando el bot tiene muchas; en la lista mi
 - `/biblioteca/notas/<slug>` (vale el slug, el título o un nombre anterior; la dirección se corrige al slug): la nota, quién la cambió, la marca de contenido de fuera con «Marcar como revisado», «Aparece en» y «Enlaza con». `?ver=editar` (texto en Markdown, `[[` ofrece títulos, Ctrl+S, aviso al salir con cambios y, ante un `409`, los dos textos con su diff: juntarlos a mano, guardar el mío o quedarme con el guardado), `?ver=historial&v=<revisión>` (versiones, qué cambiaría, «Volver a esta versión») y `?ver=mapa` (sus alrededores, 1–3 saltos).
 - Los `[[enlaces]]` son enlaces en cualquier Markdown (`components/room/Markdown.jsx`), en tus propios mensajes (`UserText`) y en los entregables; los que no existen salen con línea discontinua («por crear»). Las tarjetas `type: 'note'` enlazan con la nota y las peticiones con `wiki` enseñan su diff (`components/wiki/NoteDiff.jsx`).
 - Tiempo real: las listas y la nota abierta se vuelven a pedir con `wikiPages`; la pantalla de edición avisa si la nota cambia mientras escribes. `lib/store.jsx` repite cada `changed` como el evento de ventana `colmena:changed` (`detail.kinds`).
+
+## 17. «Bloques vivos»: datos que un bot deja y una rutina actualiza en su sitio
+`server/blocks.mjs` (modelo, validación, herramientas de los bots), `server/routes/blocks.mjs` (lo que hace la persona), `Scheduler#refreshNow` (`server/scheduler.mjs`). En la interfaz: `src/lib/blocks.js` (formato, sparkline, «sin actualizar»), `src/components/blocks/` (`BlockCard`, `ChatBlock`, `Panel`). Un bloque es un dato pequeño (las ventas de ayer, los tickets abiertos, un saldo, el estado de un despliegue) que el bot manda como una especificación declarativa y la app dibuja. Las ejecuciones siguientes lo **actualizan en su sitio** en vez de publicar otro mensaje. Es un dato, no una acción: no pide aprobación, no concede nada y no lleva botones.
+
+Tiempo real: `GET /api/events` avisa con `changed` y `kinds` que incluye `blocks`; la pantalla vuelve a pedir lo que muestra. `GET /api/state` trae `blocks` = solo los fijados, ligeros y en el orden del panel: `[{ id, title, type, updatedAt }]` (sin valores).
+
+### Block
+```js
+{ id, key,              // «ventas-ayer»: única; la misma key actualiza el mismo bloque
+  title, type,          // 'kpi' | 'list' | 'table' | 'progress' | 'status'
+  spec,                 // ver «Spec»; ya validada
+  delta: null | { previous, change, percent, direction: 'up'|'down'|'flat', good: bool|null },   // solo kpi
+  sparkline: null | [number],        // solo kpi: la suya o, si no, su historial (≥ 2 valores, máx. 30)
+  history: [{ at, value }],          // valores anteriores de kpi y progress, uno por ejecución, máx. 30
+  source: { botId, botName, automationId, routine, routineGone, missionId, missionTitle,
+            gone },                  // gone: la conversación donde se dejó ya no existe
+  createdAt, updatedAt,              // updatedAt: la última vez que el bot lo publicó
+  staleAfterMs, stale,               // sin actualizar: más del doble del intervalo habitual de su rutina, o 48 h sin rutina
+  canRefresh,                        // pertenece a una rutina que existe: tiene «Actualizar»
+  outside,                           // incluye datos de fuera (web, correo, app, webhook): se queda marcado
+  pinned, order }
+```
+
+### Spec (se valida entera en el servidor; lo que no cumple no se guarda y el bot lee qué corregir)
+```js
+{ type: 'kpi', label, value: number, unit?, previous?: number, upIsGood?: bool, asOf?: ISO, sparkline?: [number] (≤30), url? }
+{ type: 'list', rows: [{ label, value?: string|number|null, status?: 'ok'|'atencion'|'fallo', url? }] (1–10), url? }
+{ type: 'table', columns: [string] (1–6), rows: [[string|number|null]] (≤20, cada fila tantas celdas como columnas), url? }
+{ type: 'progress', label, value: number ≥ 0, max: number > 0, unit?, url? }
+{ type: 'status', label, state: 'ok'|'atencion'|'fallo', note?, url? }
+```
+- Campos desconocidos y tipos desconocidos se rechazan. Límites: título y etiquetas 80, unidad 12, celdas 120, nota 240, la spec entera 8000 caracteres.
+- Todo el texto es texto sin formato: se rechaza HTML, entidades numéricas, `javascript:`/`data:`, enlaces de Markdown y caracteres de control. La interfaz lo pinta siempre como texto.
+- `url`: solo `http`/`https`, sin usuario ni contraseña, máx. 2000; se muestra como un enlace externo normal (`target=_blank rel="noreferrer noopener nofollow"`).
+- Los números viajan como números; la interfaz los escribe en es-ES (`src/lib/blocks.js`). Nunca se acepta un número ya formateado.
+- `delta`: contra `previous` si viene; si no, contra el valor anterior del historial. `good` sale de `upIsGood` (por defecto subir es bueno).
+
+### Herramientas de los bots
+- `block_post({ key, title, spec, where: 'chat'|'panel' })` → `{ saved, created, id, key, pinned, updatedAt, previous?, outside?, notice }`. Crea el bloque o, si la key ya existe y es suyo, lo actualiza. Si la key es de otro: `{ saved: false, taken: true, message }`. Máx. 60 bloques por bot.
+- `block_read({ key })` → `{ found, id, key, title, type, spec, updatedAt, stale, delta?, history, owner, mine, routine?, pinned, outside? }`. Cualquier bot puede leer. Un bloque marcado como «de fuera» se entrega entre marcas de contenido externo.
+- **Dueño**: el bot que lo creó, o cualquier ejecución de la rutina a la que pertenece. Una rutina del mismo bot que actualiza un bloque hecho a mano en un chat se lo queda (`automationId`), y desde entonces tiene «Actualizar».
+- **Dónde aparece**: al crearlo, un mensaje `{ id: 'block:<id>', role: 'system', kind: 'block' }` en la conversación donde se publicó (la tarjeta; sus valores se piden a `GET /api/blocks/:id`). Al actualizarlo cambia esa misma tarjeta y queda como mucho una línea de actividad «Actualizado «título»» por ejecución, en la conversación de esa ejecución (`id: 'block-note:<id>:<ejecución>'`). Nunca un segundo mensaje ni una segunda tarjeta.
+- `where: 'panel'` además lo fija en el Panel de Inicio, salvo que lleve datos de fuera, que el panel esté lleno (24) o que la persona lo haya quitado antes del panel.
+- **Datos de fuera**: si el paso leyó una web, un correo, una app o el navegador, o la ejecución la empezó un disparador o el vigilante, los textos se limpian (sin tokens de plantilla, marcas, bidi ni caracteres de control), se quitan los enlaces y el bloque queda con `outside: true` para siempre. La interfaz lo dice en el menú del bloque («Incluye datos de fuera»).
+- Las conversaciones de incógnito no publican bloques (la herramienta no se ofrece y se niega). Los encargos de otra persona no tienen estas herramientas.
+- Van detrás de `find_tools` (`server/tool-search.mjs`) salvo que la conversación hable de un panel, un indicador o un dato en vivo, o que la rutina de la ejecución ya mantenga un bloque.
+- Tarjetas de herramienta (`toolCalls[].card`): `block_post` → `{ type: 'block', action: 'post'|'update', key, title, kind, blockId, saved, pinned, outside }`; `block_read` → `{ type: 'block', action: 'read', key, title, kind, blockId, found }`. Nunca llevan los valores.
+
+### Endpoints (lo que hace la persona; ninguno cambia los datos de un bloque)
+- `GET /api/blocks?pinned=1` (el panel, en su orden) · `?missionId=` (los de una conversación) · sin parámetros (todos, máx. 200) → `{ blocks: [Block], limits: { pinned: 24 } }`.
+- `GET /api/blocks/:id` → `Block` (404 si ya no existe).
+- `POST /api/blocks/:id/pin { pinned: bool }` → `{ block, blocks }` (`blocks` = el panel). 409 con el panel lleno. Quitar del panel un bloque cuya conversación ya no existe lo borra (`block: null`).
+- `POST /api/blocks/:id/move { direction: 'up'|'down' }` → `{ blocks }`: un puesto arriba o abajo (la forma de teclado). `POST /api/blocks/order { ids }` → `{ blocks }`: el orden entero.
+- `POST /api/blocks/:id/refresh {}` → 202 `{ missionId, automationId }`: pone en marcha ahora la rutina del bloque como una ejecución de verdad (no una «Prueba»): lleva la marca de origen de la rutina, respeta la pausa de todo el equipo y una regla parada por un freno, no se solapa con la ejecución en curso, y en una regla de eventos pasa por los frenos de lo que empieza solo (cadena, trabajo abierto, límite de repeticiones, propuesta por coste). Cada llamada al modelo pasa por la puerta de admisión (pausa por plan) como siempre. 409 con el motivo si no puede; 409 también si el bloque no tiene rutina.
+- `DELETE /api/blocks/:id` → `{ ok, blocks }`: quita el bloque y su tarjeta de la conversación.
+- Borrar una conversación quita sus bloques sin fijar; los fijados siguen en el panel con `source.gone: true`.

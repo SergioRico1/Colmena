@@ -76,6 +76,7 @@ function classify(t) {
       if (["start", "stop", "status", "logs"].includes(c.step)) return { verb: "arrancado", thing: () => "el servidor de " + (c.project || "el proyecto") };
       return { verb: "mirado", thing: () => "los archivos de " + (c.project || "el proyecto") };
     }
+    case "block": return c.action === "read" ? { verb: "leído", key: "block-read", thing: units("un dato del panel", "datos del panel") } : { verb: "actualizado", key: "block", thing: units("un dato en vivo", "datos en vivo"), once: c.key || null };
     default: return { verb: "dado", key: "other", thing: units("un paso más", "pasos más") };
   }
 }

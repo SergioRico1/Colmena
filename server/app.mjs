@@ -55,6 +55,8 @@ import { registerFolderRoutes } from "./routes/folders.mjs";
 import { registerNotificationRoutes } from "./routes/notifications.mjs";
 import { registerWikiRoutes, wikiImportParser } from "./routes/wiki.mjs";
 import { attachWikiTools } from "./wiki-tools.mjs";
+import { registerBlockRoutes } from "./routes/blocks.mjs";
+import { attachBlockTools, pinnedBlocksState } from "./blocks.mjs";
 export { HttpError, zodMessage, critiqueAbout } from "./routes/shared.mjs";
 
 const APP_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -236,6 +238,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const t1 = performance.now();
     const state = extendState(store, runtime, buildState(store, runtime, { session, authError, models, usage, accounts: connectorCache.get(), computer }));
     state.peers = safe(() => app.locals.peers?.identity ? app.locals.peers.stateView() : null); // «Personas» (server/peers/)
+    state.blocks = safe(() => pinnedBlocksState(store), []); // the panel of Inicio: pinned blocks, light (server/blocks.mjs)
     const t2 = performance.now();
     res.set("Server-Timing", `models;dur=${tModels.toFixed(1)}, usage;dur=${tUsage.toFixed(1)}, build;dur=${(t2 - t1).toFixed(1)}, total;dur=${(t2 - t0).toFixed(1)}`);
     res.json(state);
@@ -421,6 +424,9 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   // «Notas»: the wiki the person and the bots share (server/wiki.mjs); the bots get wiki_search, wiki_read and wiki_write.
   registerWikiRoutes(app, { store, validateFolder });
   attachWikiTools(runtime);
+  // «Bloques vivos» (server/blocks.mjs): data a bot posts and a routine refreshes in place; block_post and block_read.
+  registerBlockRoutes(app, { store, scheduler });
+  attachBlockTools(runtime);
 
   registerLearningRoutes(app, { store, runtime, computerAvailable: () => !!computer?.available });
   // Password vault: the runtime's (the bots sign in with it), or one of its own in tests.

@@ -172,6 +172,7 @@ export function headline(tool, bots) {
       if (c.step === "do" && !running) return <>{"En "}<strong>{where}</strong>{", " + (DO_VERB[c.action] || "actuó")}{c.typed ? <> {"«"}{c.typed}{"»"}</> : null}</>;
       return <>{running ? now : past}<strong>{where}</strong></>;
     }
+    case "block": return <>{c.action === "read" ? (running ? "Leyendo el dato " : "Leyó el dato ") : c.action === "update" ? (running ? "Actualizando el dato " : "Actualizó el dato ") : running ? "Dejando el dato " : "Dejó el dato "}<strong>{`«${c.title || c.key || "sin título"}»`}</strong></>; // a live block (server/blocks.mjs)
     default:
       return <>{tool.name || "Paso"}</>;
   }

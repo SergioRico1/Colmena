@@ -36,6 +36,7 @@ import { ListenButton, MicButton, appendDictation } from "../interaction/Voice.j
 import UndoChanges from "../v2/chat/UndoChanges.jsx";
 import ChangedFiles, { TurnFileLinks } from "../v2/chat/ChangedFiles.jsx";
 import { workFileUrl } from "../../lib/dragOut.js";
+import ChatBlock from "../blocks/ChatBlock.jsx";
 
 // Pieces shared by Sala (design/Sala.dc.html) and En directo (design/EnVivo.dc.html).
 
@@ -734,10 +735,11 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
     else if (m.kind === "guard" || m.kind === "fork") out.push(<GuardLine key={m.id || i} message={m} entering={isNew(m.id)} />);
     else if (m.kind === "secret") out.push(<SecretLine key={m.id || i} message={m} approval={approvals.find((a) => a.id === m.approvalId)} bots={bots} />);
     else if (m.kind === "learned") out.push(<LearnedLine key={m.id || i} message={m} bot={m.botId ? findBot(bots, m.botId) : null} entering={isNew(m.id)} />);
+    else if (m.kind === "block") out.push(<ChatBlock key={m.id || i} message={m} />); // a live block (server/blocks.mjs)
     else if (m.role === "system" || m.kind === "activity") {
       // Consecutive actions of the same bot (browser clicks, reads…) fold into one line.
       const prevItem = visible[i - 1];
-      const isActivity = (x) => x && !["learned", "guard", "fork"].includes(x.kind) && (x.role === "system" || x.kind === "activity");
+      const isActivity = (x) => x && !["learned", "guard", "fork", "block"].includes(x.kind) && (x.role === "system" || x.kind === "activity");
       if (isActivity(prevItem) && prevItem.botId && prevItem.botId === m.botId) return;
       const run = [m];
       for (let j = i + 1; j < visible.length && isActivity(visible[j]) && m.botId && visible[j].botId === m.botId; j++) run.push(visible[j]);

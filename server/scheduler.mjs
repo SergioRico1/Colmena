@@ -346,6 +346,36 @@ export class Scheduler {
     return this.fire(rule, { event: timed ? null : rule.lastEvent, test: true });
   }
   /**
+   * «Actualizar» on a live block (blocks.mjs): one more run of its routine now. Unlike «Probar
+   * ahora» it is a real run, not a test: it carries the routine's origin marker, respects the
+   * pause of the whole team and a rule a brake stopped, never overlaps the run under way, and
+   * an event rule goes through the brakes of self-started work (chain, open work, the loop
+   * limit, the cost proposal). Every model call of the run passes the admission gate as usual.
+   * → the run's mission (the open one when the same thing is already being worked on).
+   */
+  refreshNow(ruleId) {
+    const rule = this.store.get("automations", ruleId);
+    if (!rule) throw Object.assign(Error("La rutina de este dato ya no existe."), { status: 404 });
+    const time = this.clock();
+    const refuse = (text) => Object.assign(Error(text), { status: 409 });
+    if (this.store.get("settings", "main")?.paused) throw refuse("El equipo está en pausa. Reanúdalo para actualizar este dato.");
+    if (rule.stoppedBy) throw refuse(rule.error || "Esta rutina está parada. Reanúdala en Rutinas para actualizar este dato.");
+    const missing = missingFor(rule, { bots: this.store.list("bots"), accounts: this.accounts });
+    if (missing) throw refuse(missing);
+    const last = this.current(rule);
+    if (last && !TERMINAL.has(last.status) && !this.dead(rule, last))
+      throw refuse(ACTIVE.has(last.status) ? "Ya se está actualizando. Espera a que termine." : "La rutina de este dato está " + (LABEL[last.status] || "ocupada") + ". Atiéndela y vuelve a probar.");
+    if (!safe(this.isConnected)) throw refuse("Conecta una cuenta de IA en Ajustes › Cuentas de IA para actualizar este dato.");
+    if (isTimed(rule)) return this.fire(rule, { time, queue: rule.queue, test: rule.trigger?.type === "vez" });
+    if (!rule.lastEvent) throw refuse("Todavía no ha llegado nada que ponga en marcha esta rutina. Se actualizará sola con lo próximo que llegue.");
+    const signature = rule.lastEvent.signature || signatureOf(rule.id, rule.lastEvent);
+    if ((Number(rule.lastEvent.chain) || 0) > MAX_CHAIN_DEPTH) throw refuse(CHAIN_TEXT);
+    const open = this.openRun(rule, signature);
+    if (open) return open;
+    if (startsOf(rule, signature, time) >= LOOP.limit) throw refuse("Esta rutina ya se ha puesto en marcha " + LOOP.limit + " veces hoy por lo mismo. Vuelve a probar mañana.");
+    return this.fire(rule, { event: { ...rule.lastEvent, signature }, time, queue: rule.queue });
+  }
+  /**
    * An event of a rule (from TriggerEngine or a webhook), through the brakes (brakes.mjs), in
    * this order: a chain of rules firing each other is cut; an event about work that is still
    * open joins it; the same thing for the fourth time in a day stops the rule; a rule that

@@ -10,6 +10,7 @@ import { deckSchema, LAYOUTS, THEMES, CHART_TYPES } from "./slides/spec.mjs";
 import { documentSchema, BLOCKS, COVERS, TONES, PAPER_THEMES } from "./docs/spec.mjs";
 import { workbookSchema, COLUMN_TYPES, TOTALS, RULES, STYLES } from "./sheets/spec.mjs";
 import { wikiToolCard } from "./wiki.mjs";
+import { blockToolCard } from "./blocks.mjs";
 
 // Tool catalogue for bots. Definitions follow the Responses API strict function
 // format; zod schemas re-validate every argument before the runtime dispatches.
@@ -771,6 +772,7 @@ export function extraToolCard(name, args = {}, r = {}) {
   }
   // «Notas» (server/wiki.mjs): {type: 'note', action, title, slug…}; a search is a search card.
   if (name.startsWith("wiki_")) return wikiToolCard(name, args, r);
+  if (name.startsWith("block_")) return blockToolCard(name, args, r); // «Bloques vivos» (server/blocks.mjs)
   return null;
 }
 
