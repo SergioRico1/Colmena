@@ -4,9 +4,9 @@ import { fixture, answer, call, outputs, settle } from "./fixtures/runtime-fixtu
 import { toolsFor } from "../server/tools.mjs";
 import { computerToolDefs } from "../server/computer/tools.mjs";
 import { projectToolDefs } from "../server/projects/tools.mjs";
-import { toFunction } from "../server/apptools.mjs";
+import { CURATED, toFunction } from "../server/apptools.mjs";
 import { toolCalls, toolDigest } from "../server/state.mjs";
-import { CORE_TOOLS, TOOL_SEARCH, FIND_TOOLS, USE_TOOL, rankTools, findTools, resolveToolUse, splitTools, toolsNote, paramSummary, schemaProblems } from "../server/tool-search.mjs";
+import { CORE_TOOLS, TOOL_SEARCH, FIND_TOOLS, USE_TOOL, rankTools, findTools, resolveToolUse, splitTools, toolsNote, paramSummary, schemaProblems, sendsFromApp } from "../server/tool-search.mjs";
 
 // The definitions a bot with everything gets: built-ins, computer, projects and a few app tools.
 const appTool = (slug, description) => {
@@ -91,7 +91,8 @@ test("with many tools the core stays listed, the rest goes behind find_tools and
   for (const n of ["browser_open", "browser_submit", "project_write", "create_spreadsheet", "fill_pdf"]) assert.ok(!names.includes(n) && split.deferred.some((x) => x.name === n), n + " is found on demand");
   assert.deepEqual(names.slice(-2), [FIND_TOOLS, USE_TOOL]);
   assert.equal(new Set(names).size, names.length);
-  assert.equal(names.filter((n) => /^(gmail|googlecalendar|googlesheets|notion)_/.test(n)).length, TOOL_SEARCH.directApps, "the most used app tools stay at hand");
+  assert.equal(names.filter((n) => /^(gmail|googlecalendar|googlesheets|notion)_/.test(n) && !sendsFromApp(n)).length, TOOL_SEARCH.directApps, "the most used app tools stay at hand");
+  assert.ok(names.includes("gmail_send_email"), "and what sends is always listed, besides them");
   assert.ok(JSON.stringify(split.listed).length < JSON.stringify(EVERYTHING).length / 2, "the definitions are less than half");
   // Listed + deferred is everything the bot had: nothing is lost, nothing is added but the two tools.
   assert.deepEqual([...names.slice(0, -2), ...split.deferred.map((x) => x.name)].sort(), EVERYTHING.map((x) => x.name).sort());
@@ -325,4 +326,24 @@ test("a built-in reached through use_tool runs like the direct call, and what a 
   assert.equal(runtime.toolsNote(all, all), "");
   const refused = await runtime.tool(m, { ...first, kind: "solo" }, { name: FIND_TOOLS, arguments: JSON.stringify({ query: "x" }), call_id: "z" }, new AbortController().signal, "fixture");
   assert.equal(refused.error, "Herramienta no disponible.");
+});
+
+test("a Gmail bot above the threshold keeps the tools that send and reply listed, not only the draft ones", () => {
+  // The direct Gmail tools in the order the bot gets them (apptools.mjs CURATED): reads and drafts come first.
+  const gmail = CURATED.gmail.map((slug) => appTool(slug, "Gmail: " + slug));
+  const all = [...toolsFor("solo", { connections: true, images: true }), ...computerToolDefs({ id: "nora" }, { available: true, settings: {} }), ...projectToolDefs(), ...gmail];
+  assert.ok(all.length > TOOL_SEARCH.threshold);
+  const split = splitTools(all);
+  assert.equal(split.active, true);
+  const listed = new Set(split.listed.map((x) => x.name));
+  for (const name of ["gmail_send_draft", "gmail_send_email", "gmail_reply_to_thread"]) assert.ok(listed.has(name), name + " is listed");
+  // The draft tools still are, so each has its counterpart beside it.
+  for (const name of ["gmail_create_email_draft", "gmail_update_draft", "gmail_fetch_emails"]) assert.ok(listed.has(name), name);
+  // By what the tool does, not by where it is in the list: with the sends last and many reads before.
+  const many = [...all.filter((x) => !x.name.startsWith("gmail_")), ...["GOOGLESHEETS_BATCH_GET", "GOOGLEDRIVE_FIND_FILE", "NOTION_FETCH_DATA", "GOOGLECALENDAR_EVENTS_LIST", "GOOGLEDOCS_GET_DOCUMENT_BY_ID"].map((s) => appTool(s, s)), appTool("SLACK_SEND_MESSAGE", "Slack"), appTool("OUTLOOK_OUTLOOK_SEND_EMAIL", "Outlook"), ...gmail.slice().reverse()];
+  const names = new Set(splitTools(many).listed.map((x) => x.name));
+  for (const name of ["gmail_send_draft", "gmail_send_email", "gmail_reply_to_thread", "slack_send_message", "outlook_outlook_send_email"]) assert.ok(names.has(name), name);
+  assert.equal(sendsFromApp("gmail_create_email_draft"), false);
+  assert.equal(sendsFromApp("send_report"), false, "only the direct tools of connected apps");
+  assert.ok(!names.has("googledocs_get_document_by_id"), "the rest still waits behind find_tools");
 });

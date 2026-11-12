@@ -32,7 +32,7 @@ export const isMetaTool = (name) => name === FIND_TOOLS || name === USE_TOOL;
 export const TOOL_SEARCH = Object.freeze({
   threshold: 32,     // up to this many tools nothing changes: everything is listed
   minDeferred: 6,    // fewer than this behind the search is not worth two more tools
-  directApps: 4,     // direct tools of connected apps that stay listed (the most used first)
+  directApps: 4,     // direct tools of connected apps that stay listed besides the ones that send (the most used first)
   promoted: 8,       // tools used through use_tool that stay listed in the bot's next steps
   results: 6,        // matches per search
   detailChars: 7000, // full description + schema for the best matches, up to this many characters
@@ -56,6 +56,14 @@ export const CORE_TOOLS = new Set([
   // Commands always wait for the person, and the prompt («Código») names the tool.
   "run_command",
 ]);
+
+/**
+ * A direct app tool that makes something leave (send, reply, forward): always listed when the
+ * bot has it. A bot that sees the draft tools but not the ones that send answers «contesta a
+ * Ana» with a draft; what stays at hand is decided by what a tool does, not by its place in
+ * the list.
+ */
+export const sendsFromApp = (name) => isAppToolName(name) && /(?:^|_)(?:send|reply|forward)(?:_|$)/.test(String(name).toLowerCase());
 
 /** The two definitions, written for the tools that are not listed in this step. */
 export function metaToolDefs(deferred, { apps = false, mcp = false } = {}) {
@@ -94,8 +102,10 @@ export function splitTools(all, { enabled = true, promoted = [], limits = TOOL_S
   let apps = 0;
   const direct = (tool) => {
     if (CORE_TOOLS.has(tool.name) || keep.has(tool.name)) return true;
-    // Connected apps put their most used action first (apptools.mjs): a few stay at hand.
-    return isAppToolName(tool.name) && apps++ < limits.directApps;
+    if (!isAppToolName(tool.name)) return false;
+    // What sends or replies is always at hand (it is the other half of the draft tools); of
+    // the rest, connected apps put their most used action first (apptools.mjs): a few stay.
+    return sendsFromApp(tool.name) || apps++ < limits.directApps;
   };
   const listed = [], deferred = [];
   for (const tool of list) (direct(tool) ? listed : deferred).push(tool);
