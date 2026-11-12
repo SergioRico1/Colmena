@@ -36,10 +36,10 @@ export const routes = [
   { path: "/bandeja", screen: "Hoy" },
   { path: "/bandeja/:id/editar", screen: "Revisar" },
   { path: "/chat/:bot", screen: "Conversacion" },
-  { path: "/sala/:id", screen: "SalaV2" },
-  { path: "/con/:id", screen: "PeopleChat" }, // a conversation with people (server/peers/)
+  { path: "/sala/:id", screen: "Room" }, // every room, private or with people (docs/CONTRACT.md §18)
+  { path: "/con/:id", screen: "PeopleChat" }, // a direct conversation with a person; a group opens as its room (/sala/:id)
   { path: "/personas/como-funciona", screen: "PeopleHelp" },
-  { path: "/sala/:id/directo", screen: "SalaV2" },
+  { path: "/sala/:id/directo", screen: "Room" },
   { path: "/sala/:id/debate", screen: "DebateV2" },
   { path: "/misiones", screen: "Misiones" },
   { path: "/misiones/:id", screen: "Encargo" },

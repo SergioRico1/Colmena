@@ -64,7 +64,7 @@ function snapshot() {
 test("rooms: every room of the team and every group with people, by name, without chats, archives or routines", () => {
   const { rooms } = sidebarModel(snapshot(), { now: NOW });
   assert.deepEqual(rooms.map((r) => r.title), ["campaña-primavera", "facturación", "informe-q3", "obra-nueva"]);
-  assert.deepEqual(rooms.map((r) => r.href), ["/sala/m-camp", "/sala/m-fact", "/sala/m-q3", "/con/g-obra"]);
+  assert.deepEqual(rooms.map((r) => r.href), ["/sala/m-camp", "/sala/m-fact", "/sala/m-q3", "/sala/g-obra"]);
 });
 
 test("rooms come from the state's room list: a sala, a room with people or both under one row; tasks are not rooms", () => {
@@ -83,7 +83,7 @@ test("rooms come from the state's room list: a sala, a room with people or both 
   s.approvals.push({ id: "ap-plan2", missionId: "m-plan", botId: "atlas", kind: "plan", status: "pending" });
   const { rooms } = sidebarModel(s, { now: NOW });
   assert.deepEqual(rooms.map((r) => [r.title, r.href]), [
-    ["campaña-primavera", "/sala/m-camp"], ["facturación", "/sala/m-fact"], ["general", "/con/g-gen"], ["informe-q3", "/sala/m-q3"], ["obra-nueva", "/con/g-obra"], ["Plan 2027", "/con/r-plan"],
+    ["campaña-primavera", "/sala/m-camp"], ["facturación", "/sala/m-fact"], ["general", "/sala/g-gen"], ["informe-q3", "/sala/m-q3"], ["obra-nueva", "/sala/g-obra"], ["Plan 2027", "/sala/r-plan"],
   ]);
   const by = Object.fromEntries(rooms.map((r) => [r.id, r]));
   // Unread is the room's own number; what waits for you is found through its sala.
@@ -233,7 +233,7 @@ test("/chats opens the last conversation, else the first room, else nothing", ()
   assert.equal(chatsTarget(model, "/sala/m-q3"), "/sala/m-q3");
   assert.equal(chatsTarget(model, "/chat/nora"), "/chat/nora", "a chat with a bot");
   assert.equal(chatsTarget(model, "/con/dm-lucia"), "/con/dm-lucia", "a person");
-  assert.equal(chatsTarget(model, "/con/g-obra"), "/con/g-obra", "a room with people");
+  assert.equal(chatsTarget(model, "/sala/g-obra"), "/sala/g-obra", "a room with people");
   assert.equal(chatsTarget(model, "/sala/m-old"), "/sala/m-camp", "archived since: the first room");
   assert.equal(chatsTarget(model, "/chat/off"), "/sala/m-camp", "a bot switched off");
   assert.equal(chatsTarget(model, null), "/sala/m-camp");

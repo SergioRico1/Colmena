@@ -37,10 +37,12 @@ import UndoChanges from "../v2/chat/UndoChanges.jsx";
 import ChangedFiles, { TurnFileLinks } from "../v2/chat/ChangedFiles.jsx";
 import { workFileUrl } from "../../lib/dragOut.js";
 import ChatBlock from "../blocks/ChatBlock.jsx";
+import { AuthorAvatar, AuthorHead } from "./Author.jsx";
+import { authorOf, continues, mentionTargets, requestHint } from "../../lib/roomView.js";
+import { listNames } from "../../lib/identity.js";
 
 // Pieces shared by Sala (design/Sala.dc.html) and En directo (design/EnVivo.dc.html).
 
-const TAG = { font: "600 10px/1 'Geist Mono', monospace", padding: "3px 5px", background: "#EEF0F4", borderRadius: "4px", color: "#4A4F5C", letterSpacing: "0.04em" };
 
 /* ───────────── header ───────────── */
 
@@ -138,13 +140,17 @@ function toLabel(to, bots) {
 }
 
 // Colmena 2.0 (design/V2Sala.dc.html): «Atlas · para Marta · 09:06»; no «BOT» labels.
-function Head({ name, at, to = null }) {
-  return (
-    <span style={{ fontSize: "14px", lineHeight: "1.3", marginBottom: "-2px" }}>
-      <strong style={{ fontWeight: "600" }}>{name}</strong>
-      {" "}<span style={{ color: "#6B6F7A" }}>{[to ? "para " + to : null, at ? time(at) : null].filter(Boolean).map((x) => "· " + x).join(" ")}</span>
-    </span>
-  );
+// The header itself is AuthorHead (Author.jsx): the same for a person and for a bot everywhere.
+
+/** How a row of the sala travelled to the people of a shared room: «Enviando…», «Visto por …». */
+function TravelLine({ peer }) {
+  if (!peer) return null;
+  const style = { fontSize: "12.5px", lineHeight: "1.3", color: "#5C606C" };
+  if (peer.deleted) return <span style={style}>{"Borrado para todos"}</span>;
+  if (peer.status === "sending") return <span role="status" style={style}>{"Enviando…"}</span>;
+  if (peer.status === "failed") return <span role="alert" style={{ ...style, color: "#B4372A" }}>{"No ha salido hacia los demás. Colmena lo reintenta sola."}</span>;
+  if (peer.seenBy?.length) return <span style={style}>{"Visto por " + listNames(peer.seenBy)}</span>;
+  return null;
 }
 
 /** Slack-style hover toolbar: shown when the pointer (or keyboard focus) is on the message. */
@@ -276,10 +282,15 @@ function RoutedLine({ message, bots }) {
 export function UserMessage({ message, padding = null, replies = null, bots = [], onReply = null, repliesOpen = false, continued = false, entering = false, receipt = null }) {
   const [reactions, react] = useReactions(message);
   const resend = useResend(message);
+  // In a room with people a row of the sala can be someone else's words: their round avatar and
+  // name, and plain text (never Markdown: it came from another computer).
+  const author = authorOf(message, bots);
+  const mine = author.kind !== "person" || author.you;
   return (
-    <MessageRow mine messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<UserAvatar size={40} />} continued={continued} at={message.at} padding={padding} actions={<><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} /><ForkButton message={message} /></>}>
-      {continued ? null : <Head name="Tú" at={message.at} />}
-      <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
+    <MessageRow mine={mine} messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<AuthorAvatar author={author} size={40} />} continued={continued} at={message.at} padding={padding} actions={<><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} />{mine ? <ForkButton message={message} /> : null}</>}>
+      {continued ? null : <AuthorHead author={author} at={message.at} />}
+      {mine ? <UserText text={message.text} messageId={message.optimistic ? null : message.id} /> : <p style={{ margin: 0, fontSize: "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{message.text}</p>}
+      <TravelLine peer={message.peer} />
       <RefChips refs={message.refs} align="flex-start" />
       <RoutedLine message={message} bots={bots} />
       {/* Sent while the bots worked: it waits for a pause, was read, or waits for your OK (lib/receipts.js). */}
@@ -477,7 +488,7 @@ export function ThreadSummary({ thread, summary, bots, pressed, onClick }) {
   );
 }
 
-function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], onOpenArtifact, openArtifactId, threadSlot, questionAnchor, padding = null, extraArtifacts = [], replies = null, onReply = null, repliesOpen = false, continued = false, entering = false }) {
+function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], onOpenArtifact, openArtifactId, shareSlot = null, threadSlot, questionAnchor, padding = null, extraArtifacts = [], replies = null, onReply = null, repliesOpen = false, continued = false, entering = false }) {
   const bot = findBot(bots, message.botId || "atlas");
   const kind = message.kind || "message";
   const approval = message.approvalId ? approvals.find((a) => a.id === message.approvalId) : null;
@@ -490,7 +501,7 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
   const mood = (isQuestion && approval?.status === "pending") || (kind === "plan" && mission?.status === "awaiting_plan") ? "duda" : message.phase === "synthesis" ? "feliz" : null;
   return (
     <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} entering={entering} avatar={<BotAvatar bot={bot} size={40} mood={mood} />} continued={continued} at={message.at} padding={padding} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{kind !== "plan" && message.text ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "#4A4F5C" }} /><ForkButton message={message} /></> : null}</>}>
-      {continued ? null : <Head name={bot.name} at={message.at} to={toLabel(message.to, bots)} />}
+      {continued ? null : <AuthorHead author={authorOf(message, bots)} at={message.at} to={toLabel(message.to, bots)} />}
         {step?.tools?.length && (!message.part || message.summary) ? <ActivityLog bot={findBot(bots, message.botId)} summary={message.summary} activity={step.activity || []} tools={step.tools} bots={bots} onOpenArtifact={onOpenArtifact} /> : null}
         {isQuestion ? (
           <QuestionCard approval={approval} text={message.text} bots={bots} variant="room" />
@@ -500,11 +511,13 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
         {step?.tools?.length && message.text ? <Sources text={message.text} tools={step.tools} /> : null}
         {kind === "plan" ? <PlanBlock mission={mission} message={message} bots={bots} /> : null}
         {artifact ? <DeliverableCard artifact={artifact} variant="room" pressed={openArtifactId === artifact.id} onOpen={() => onOpenArtifact(artifact.id)} /> : null}
+        {artifact && shareSlot ? shareSlot(artifact) : null}
         {extraArtifacts.filter(Boolean).map((aid) => {
           const extra = artifacts.find((a) => a.id === aid) || { id: aid, title: "Entregable" };
           return <DeliverableCard key={aid} artifact={extra} variant="room" pressed={openArtifactId === aid} onOpen={() => onOpenArtifact(aid)} />;
         })}
         <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} explain={explain} />
+        <TravelLine peer={message.peer} />
         <RepliesLink replies={replies} bots={bots} onOpen={onReply} pressed={repliesOpen} />
         {threadSlot}
     </MessageRow>
@@ -537,9 +550,8 @@ function LiveTurnCard({ step, bot }) {
     return (
       <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
         <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
-          <strong style={{ fontSize: "15px" }}>{bot.name}</strong>
-          <span style={TAG}>{"BOT"}</span>
-          <span style={{ fontSize: "12px", color: "#555A68" }}>{"escribiendo…"}</span>
+          <strong style={{ fontSize: "14px", fontWeight: 600 }}>{bot.name}</strong>
+          <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[bot.role, "escribiendo…"].filter(Boolean).join(" · ")}</span>
         </div>
         <div aria-live="polite"><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div>
       </MessageRow>
@@ -553,9 +565,8 @@ function LiveTurnCard({ step, bot }) {
   return (
     <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
-        <strong style={{ fontSize: "15px" }}>{bot.name}</strong>
-        <span style={TAG}>{"BOT"}</span>
-        <span style={{ fontSize: "12px", color: "#555A68" }}>{"trabajando…"}</span>
+        <strong style={{ fontSize: "14px", fontWeight: 600 }}>{bot.name}</strong>
+        <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[bot.role, "trabajando…"].filter(Boolean).join(" · ")}</span>
       </div>
       <div role="status" aria-live="polite" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "#F7F8FA", border: "1px solid #E6E8EE", borderRadius: "12px", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
         {step.kind === "work" && step.title ? <span style={{ fontSize: "13px", fontWeight: "600", color: "#12131A" }}>{plain(step.title).replace(new RegExp("^" + bot.name + ": "), "")}</span> : null}
@@ -671,10 +682,16 @@ function ActivityLine({ run, bot }) {
   );
 }
 
-export function RoomMessages({ mission, messages, thread, bots, approvals, artifacts, steps = [], onOpenArtifact, openArtifactId, threadOpen, onToggleThread, skip, padding, days = true, showThread = true, onOpenReplies = null, openRepliesId = null }) {
+/**
+ * `foreign(m)` says a row is not the sala's own (a message of the people of the room, a status
+ * line about someone else's bot): `renderForeign(m, {continued, entering})` draws it, in its
+ * place and grouped with its neighbours like any other row.
+ */
+export function RoomMessages({ mission, messages, thread, bots, approvals, artifacts, steps = [], onOpenArtifact, openArtifactId, threadOpen, onToggleThread, skip, padding, days = true, showThread = true, onOpenReplies = null, openRepliesId = null, foreign = null, renderForeign = null, shareSlot = null }) {
+  const isForeign = (m) => !!(foreign && renderForeign && foreign(m));
   const repliesOf = new Map();
-  for (const m of messages) if (m.replyTo) repliesOf.set(m.replyTo, [...(repliesOf.get(m.replyTo) || []), m]);
-  const visible = messages.filter((m) => !m.replyTo && !(skip && skip(m)));
+  for (const m of messages) if (m.replyTo && !isForeign(m)) repliesOf.set(m.replyTo, [...(repliesOf.get(m.replyTo) || []), m]);
+  const visible = messages.filter((m) => isForeign(m) || (!m.replyTo && !(skip && skip(m))));
   const fresh = freshness("room:" + (mission?.id || ""), visible.map((m) => m.id));
   // A message whose words were already on screen (live text, a part said) does not rise in.
   const isNew = (id) => fresh(id) && !wasLive(visible.find((m) => m.id === id)?.stepId);
@@ -683,14 +700,10 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
   const interactive = useContext(InteractiveContext);
   const repliedAfter = (i) => visible.slice(i + 1).filter((x) => x.role === "user").map((x) => String(x.text || ""));
   // Slack grouping: the same author again within 5 minutes → no avatar or name again.
-  const author = (m) => (m.role === "user" ? "user" : m.role === "assistant" ? "bot:" + (m.botId || "atlas") : null);
-  // What a bot says while working groups with its answer, as consecutive messages do.
-  const plainKind = (m) => ["message", "progress"].includes(m.kind || "message");
+  // What a bot says while working groups with its answer, as consecutive messages do (lib/roomView.js).
   const continuedAt = (i) => {
-    const m = visible[i], prev = visible[i - 1];
-    if (!prev || !author(m) || author(prev) !== author(m) || !plainKind(prev) || !plainKind(m) || !m.at || !prev.at) return false;
-    if (repliesOf.get(prev.id)?.length) return false;
-    return Date.parse(m.at) - Date.parse(prev.at) < 5 * 60e3 && new Date(m.at).toDateString() === new Date(prev.at).toDateString();
+    const prev = visible[i - 1];
+    return continues(prev, visible[i], { bots, hasReplies: !!(prev && (repliesOf.get(prev.id)?.length || prev.replies?.count)) });
   };
   // Receipts of what you write while they work (lib/receipts.js).
   const working = ["running", "planning", "queued"].includes(mission?.status);
@@ -731,7 +744,8 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
       out.push(<DaySeparator key={`d-${day}-${i}`} label={dayLabel(m.at)} />);
       lastDay = day;
     }
-    if (m.role === "user") out.push(<UserMessage key={m.id || i} message={m} padding={padding} bots={bots} continued={continuedAt(i)} entering={isNew(m.id) && !m.settled} receipt={receiptKey(receiptOf(m, { steps, working, held }))} {...threadProps(m)} />);
+    if (isForeign(m)) out.push(renderForeign(m, { continued: continuedAt(i), entering: isNew(m.id) }));
+    else if (m.role === "user") out.push(<UserMessage key={m.id || i} message={m} padding={padding} bots={bots} continued={continuedAt(i)} entering={isNew(m.id) && !m.settled} receipt={receiptKey(receiptOf(m, { steps, working, held }))} {...threadProps(m)} />);
     else if (m.kind === "guard" || m.kind === "fork") out.push(<GuardLine key={m.id || i} message={m} entering={isNew(m.id)} />);
     else if (m.kind === "secret") out.push(<SecretLine key={m.id || i} message={m} approval={approvals.find((a) => a.id === m.approvalId)} bots={bots} />);
     else if (m.kind === "learned") out.push(<LearnedLine key={m.id || i} message={m} bot={m.botId ? findBot(bots, m.botId) : null} entering={isNew(m.id)} />);
@@ -770,6 +784,7 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
           onOpenArtifact={onOpenArtifact}
           openArtifactId={openArtifactId}
           questionAnchor={m === firstPendingQuestion}
+          shareSlot={shareSlot}
           threadSlot={showThread && i === planIndex ? threadButton : null}
           padding={padding}
           continued={continuedAt(i)}
@@ -899,7 +914,10 @@ export function typingInfo({ mission, activity, live, bots, steps = [] }) {
 const SEND_LABEL = { steer: "Reconducir", followup: "En cola", collect: "En cola", interrupt: "Interrumpir" };
 
 // `tools` (Colmena 3 Sala: «Toda la sala | Solo yo y un bot») goes first in the toolbar; `placeholder` replaces «Mensaje a #sala».
-export function RoomComposer({ mission, bots, memberIds, variant = "sala", typing, workingCount, onSent = null, messages = [], below = false, onJump = null, secrets = [], approvals = [], tools = null, placeholder = null }) {
+// `shared` ({roomId, view, onTyping, onSent(result), onFiles(FileList), disabled, typingLine}): the room has
+// people. The message goes to `POST /api/rooms/:id/messages` with who «@» named (`to`, `mentions`,
+// `people`); files travel sealed, each on its own (`onFiles`); `mission` may still be null.
+export function RoomComposer({ mission, bots, memberIds, variant = "sala", typing, workingCount, onSent = null, messages = [], below = false, onJump = null, secrets = [], approvals = [], tools = null, placeholder = null, shared = null }) {
   const [text, setText] = useState("");
   useWarmOnType(mission?.id, text);
   // «Nora está preparando el contexto» only when it lasts; her own line when she wrote one.
@@ -918,12 +936,13 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
   const { act, busy, error } = useAction();
   const inputRef = useRef(null);
   const ordered = [...memberIds.map((id) => findBot(bots, id)), ...bots.filter((b) => b.enabled !== false && !memberIds.includes(b.id))];
-  const mentions = useMentions({ value: text, setValue: setText, bots: ordered, inputRef, sources: mission?.id ? { missionId: mission.id } : null });
+  const mentions = useMentions({ value: text, setValue: setText, bots: ordered, inputRef, sources: mission?.id ? { missionId: mission.id } : null, room: shared?.view || null });
+  const filePicker = useRef(null);
   const room = mission?.room || "sala";
 
   const [launched, setLaunched] = useState(0);
   // What you were writing in this room comes back; ↑ brings back what you sent before.
-  useDraft(variant === "sala" && mission?.id ? "room:" + mission.id : null, text, setText);
+  useDraft(variant === "sala" && (shared?.roomId || mission?.id) ? "room:" + (shared?.roomId || mission.id) : null, text, setText);
   const historyKey = useInputHistory(messages, text, setText);
   const working = WORKING.includes(mission?.status);
   const roomMode = mission?.queueMode || "steer";
@@ -932,8 +951,30 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
   const send = async (e, { other = false } = {}) => {
     e?.preventDefault();
     const body = text.trim();
-    if (!body || busy) return;
+    if (!body || busy || shared?.disabled) return;
     setLaunched((n) => n + 1);
+    if (shared) {
+      // With people: it leaves through the room (the mailbox), naming who «@» picked.
+      const who = mentions.picks, pickedRefs = mentions.refs, kept = chosen;
+      const targets = mentionTargets(body, who);
+      setText("");
+      setChosen([]);
+      mentions.clearRefs();
+      mentions.clearPicks();
+      onSent?.();
+      await act(async () => {
+        try {
+          shared.onSent?.(await post(`/rooms/${encodeURIComponent(shared.roomId)}/messages`, { text: body, ...targets, ...(other && working ? { mode: otherMode } : {}), ...turnBody(kept), ...(pickedRefs.length ? { refs: mentions.refsBody().refs } : {}) }));
+        } catch (error) {
+          setText(body);
+          setChosen(kept);
+          mentions.restoreRefs(pickedRefs);
+          mentions.restorePicks(who);
+          throw error;
+        }
+      });
+      return;
+    }
     // Shown at once and the box is free again. If it fails it stays, marked «No se envió»
     // with Reintentar (with attachments, they go back to the box).
     const sent = files;
@@ -959,7 +1000,13 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
       }
     });
   };
-  const stopAll = () => act(() => post(`/missions/${mission.id}/control`, { action: "pause" }));
+  const stopAll = () => (mission?.id ? act(() => post(`/missions/${mission.id}/control`, { action: "pause" })) : undefined);
+  // With people a file travels sealed, on its own (never as an attachment of the message).
+  const shareFiles = (list) => { if (list?.length) shared?.onFiles?.([...list].slice(0, 5)); };
+  const sharedDrop = shared ? {
+    onDragOver: (e) => { if ([...(e.dataTransfer?.types || [])].includes("Files")) e.preventDefault(); },
+    onDrop: (e) => { if (!e.dataTransfer?.files?.length) return; e.preventDefault(); shareFiles(e.dataTransfer.files); },
+  } : null;
   useEffect(() => {
     const onQuote = (e) => {
       if (e.detail?.missionId !== mission?.id) return;
@@ -1038,11 +1085,13 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
   }
 
   return (
-    <form onSubmit={send} {...drop.props} style={{ position: "sticky", bottom: "0", padding: "4px clamp(16px, 3vw, 28px) 20px", background: "transparent" }}>
+    <form onSubmit={send} {...(sharedDrop || drop.props)} style={{ position: "sticky", bottom: "0", padding: "4px clamp(16px, 3vw, 28px) 20px", background: "transparent" }}>
+      {shared ? <input ref={filePicker} type="file" multiple hidden accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.docx,.xlsx,.pptx,.txt,.md,.csv" onChange={(e) => { shareFiles(e.target.files); e.target.value = ""; }} /> : null}
       <NewBelow show={below} onClick={onJump} />
       {secrets.map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
       <InlineApprovals approvals={approvals} bots={bots} />
       <Suggestions list={suggestions} onPick={pickSuggestion} />
+      {shared?.above || null}
       {typing || WORKING.includes(mission?.status) ? (
         <div style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#5C606C", minHeight: "26px" }}>
           {typing ? (
@@ -1056,8 +1105,8 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <QueueModeHint mission={mission} />
         </div>
       ) : null}
-      <div className="c-ring" style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "22px" : "28px", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "22px" : "28px" }}>Suelta aquí para adjuntar</div> : null}
-        {plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /> : mentions.menu}
+      <div className="c-ring" style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "22px" : "28px", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging && !shared ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "22px" : "28px" }}>Suelta aquí para adjuntar</div> : null}
+        {plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={shared ? () => filePicker.current?.click() : attach} onCapture={shared ? null : (file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /> : mentions.menu}
         {mentions.chips.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {mentions.chips.map((ch) => (
@@ -1092,17 +1141,18 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
           {/* «@Vera» as a pill while you write (MentionMirror behind the textarea). */}
           {pills ? <MentionMirror ref={mirror} value={text} bots={bots} style={{ padding: "8px 0 4px", fontSize: "16px", lineHeight: "1.5" }} /> : null}
-          <textarea className="c-bare" ref={inputRef} rows={tools ? 2 : 1} placeholder={placeholder || `Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown}
+          <textarea className="c-bare" ref={inputRef} rows={tools ? 2 : 1} placeholder={placeholder || `Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} disabled={shared?.disabled || undefined} maxLength={shared ? 8000 : undefined}
+            onInput={shared?.onTyping ? () => shared.onTyping() : undefined}
             onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
             style={{ position: "relative", flex: "1", resize: "none", border: "0", fontSize: "16px", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
         </label>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: tools ? "-8px" : 0 }}>
           {tools}
-          <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title="Añadir archivos, herramientas o apps" onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "#12131A" : "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", color: plusOpen ? "#FFFFFF" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
+          <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title={shared ? "Compartir un archivo, o elegir herramientas para tus bots" : "Añadir archivos, herramientas o apps"} onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "#12131A" : "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", color: plusOpen ? "#FFFFFF" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
             <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
           </button>
           <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={40} style={{ borderRadius: "50%", background: "rgba(18,19,26,.05)", color: "#3D404A" }} />
-          <button type="button" className="rm-focus" aria-label="Mencionar a un bot" title="Mencionar a un bot (@)" onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", font: "600 17px/1 'Geist', sans-serif", color: "#3D404A" }}>{"@"}</button>
+          <button type="button" className="rm-focus" aria-label={shared ? "Mencionar a alguien" : "Mencionar a un bot"} title={shared ? "Mencionar a una persona o a un bot (@)" : "Mencionar a un bot (@)"} onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", font: "600 17px/1 'Geist', sans-serif", color: "#3D404A" }}>{"@"}</button>
           <span style={{ flex: "1", textAlign: "right", fontSize: "12px", color: "#555A68", paddingRight: "4px" }}>
             {text.trim()
               ? working ? `Intro: ${SEND_LABEL[roomMode].toLowerCase()} · Ctrl+Intro: ${SEND_LABEL[otherMode].toLowerCase()}` : "Enter para enviar · Mayús+Enter, nueva línea"
@@ -1114,6 +1164,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           </button>
         </div>
       </div>
+      {shared && requestHint(text, mentions.picks) ? <p role="status" style={{ margin: "8px 4px 0", fontSize: "12.5px", color: "#5C606C" }}>{requestHint(text, mentions.picks) + "."}</p> : null}
       <ErrorLine style={{ marginTop: "8px" }}>{error || fileError}</ErrorLine>
     </form>
   );

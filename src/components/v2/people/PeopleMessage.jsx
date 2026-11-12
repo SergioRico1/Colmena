@@ -7,6 +7,8 @@ import { FileCard } from "./PeerFiles.jsx";
 import ErrandCard from "./ErrandCard.jsx";
 import { mentionSegments } from "../../../lib/mentions.js";
 import { copyRealSecrets, SecretText } from "../../room/SecretText.jsx";
+import { AuthorAvatar, AuthorHead } from "../../room/Author.jsx";
+import { authorOf } from "../../../lib/roomView.js";
 
 // One message of a conversation with people (design/V2Personas.dc.html, pasos sala and hilo):
 // plain text (never HTML or Markdown: it comes from someone else), «@» pills for bots and
@@ -49,11 +51,16 @@ export function messageParts(m, botOf) {
   return mentionSegments(m.text, named);
 }
 
-export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread = false, onMeeting = null, onOpenFile = null, onReact, onRetry, onThread, onEdit, onDelete, onError }) {
+// The row's author is drawn as everywhere (room/Author.jsx): a person is a circle with a name; a
+// bot its shape, its name, its role and «bot de Lucía» when it is not yours. `continued`: it
+// follows another message of the same author within minutes, so no avatar or name again.
+export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread = false, continued = false, onMeeting = null, onOpenFile = null, onReact, onRetry, onThread, onEdit, onDelete, onError }) {
   const [picker, setPicker] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const mine = m.from === "me";
+  const author = authorOf(m);
+  const face = inThread ? 32 : 40;
   const named = (m.people || []).some((p) => p.me);
   const react = (e) => onReact(m.id, e).catch((x) => onError(x.message));
   const save = async () => {
@@ -65,7 +72,7 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
   // An errand for one of your bots: only its card (it is for you, not a message to anyone).
   if (m.errand) return <div data-message-id={m.id} style={{ display: "flex", padding: "10px 0 10px 54px" }}><ErrandCard errand={m.errand} /></div>;
   return (
-    <div className="msg" data-message-id={m.id} style={{ position: "relative", display: "grid", gridTemplateColumns: inThread ? "32px 1fr" : "40px 1fr", gap: inThread ? "12px" : "14px", padding: named ? "10px 12px" : "10px 0", margin: named ? "0 -12px" : 0, borderRadius: "18px", background: named ? "rgba(255,201,60,.13)" : "transparent" }}>
+    <div className="msg" data-message-id={m.id} style={{ position: "relative", display: "grid", gridTemplateColumns: inThread ? "32px 1fr" : "40px 1fr", gap: inThread ? "12px" : "14px", padding: named ? (continued ? "2px 12px" : "8px 12px 2px") : continued ? "2px 0" : "8px 0 2px", margin: named ? "0 -12px" : 0, borderRadius: "18px", background: named ? "rgba(255,201,60,.13)" : "transparent" }}>
       {m.deleted || editing !== null ? null : (
         <div className="msg-tools" role="toolbar" aria-label="Acciones del mensaje" style={{ position: "absolute", top: "-16px", right: "12px", zIndex: 6, display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "#FFFFFF", borderRadius: "14px", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 12px 28px -12px rgba(18,19,26,.35)" }}>
           {QUICK.map((e) => <button key={e} type="button" aria-label={"Reaccionar " + e} onClick={() => react(e)} style={{ ...tool, fontSize: "18px", lineHeight: 1 }}>{e}</button>)}
@@ -76,19 +83,13 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
           {mine && m.card?.kind !== "meeting" ? <button type="button" aria-label="Borrar para todos" title="Borrar para todos" onClick={() => onDelete(m)} style={{ ...tool, color: "#B4231A" }}><Trash2 size={16} strokeWidth={1.9} aria-hidden="true" /></button> : null}
         </div>
       )}
-      {m.bot ? (
-        // A bot of the author (on its owner's computer), with the owner's face beside it.
-        <span aria-hidden="true" style={{ position: "relative", width: inThread ? "32px" : "40px", height: inThread ? "32px" : "40px", display: "grid", placeItems: "center" }}>
-          <BotPresence bot={m.bot} size={inThread ? 26 : 32} state="rest" />
-          <span style={{ position: "absolute", right: "-3px", bottom: "-3px" }}><PeerAvatar person={mine ? { me: true } : { initials: m.author.initials, color: m.author.color }} size={16} /></span>
-        </span>
-      ) : <PeerAvatar person={mine ? { me: true } : { initials: m.author.initials, color: m.author.color }} size={inThread ? 32 : 40} />}
+      {continued ? <span className="msg-gutter-time" aria-hidden="true">{hhmm(m.at)}</span> : <AuthorAvatar author={author} size={face} />}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
-        <span style={{ fontSize: "14px" }}>
-          <strong style={{ fontWeight: 600 }}>{m.bot ? m.bot.name : mine ? "Tú" : m.author.name}</strong>{" "}
-          <span style={{ color: "#6B6F7A" }}>{(m.bot ? (mine ? "· tu bot" : "· bot de " + m.author.name.split(" ")[0]) + (m.local ? " · solo lo ves tú" : "") + " " : "") + "· " + hhmm(m.at)}</span>
-          {m.edited && !m.deleted ? <span title={"Editado " + when(m.edited)} style={{ color: "#8C8F99" }}>{" · editado"}</span> : null}
-        </span>
+        {continued ? (m.edited && !m.deleted ? <span title={"Editado " + when(m.edited)} style={{ fontSize: "12.5px", color: "#5C606C" }}>{"editado"}</span> : null) : (
+          <AuthorHead author={author} at={m.at} note={m.local ? "solo lo ves tú" : null}>
+            {m.edited && !m.deleted ? <span title={"Editado " + when(m.edited)} style={{ color: "#5C606C" }}>{" · editado"}</span> : null}
+          </AuthorHead>
+        )}
         {m.deleted ? (
           <p style={{ margin: 0, fontSize: "15px", fontStyle: "italic", color: "#8C8F99" }}>{mine ? "Borraste este mensaje" : "Mensaje borrado"}</p>
         ) : editing !== null ? (

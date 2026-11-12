@@ -9,7 +9,7 @@ export const isTask = (m) => missionKind(m) === "tarea";
 
 /**
  * The links of a room of /api/state (`rooms`, server/room.mjs): its sala (`missionId`), its
- * conversation with people (`shareId`), its name and where today's screens open it. The state
+ * conversation with people (`shareId`), its name and where it opens: every room at /sala/:id. The state
  * is lean: a private room leaves `missionId` out when it is the room's own id, and its
  * `title`, which is its sala's name (`missions`: the snapshot's missions).
  */
@@ -17,5 +17,5 @@ export function roomLinks(room, missions = []) {
   const shareId = room?.shareId || null;
   const missionId = room?.missionId ?? (shareId ? null : room?.id ?? null);
   const sala = room?.title || !missionId ? null : missions.find((m) => m.id === missionId);
-  return { missionId, shareId, title: room?.title || sala?.room || sala?.title || "sala", href: shareId ? `/con/${shareId}` : `/sala/${missionId}` };
+  return { missionId, shareId, title: room?.title || sala?.room || sala?.title || "sala", href: shareId ? `/sala/${room?.id || shareId}` : `/sala/${missionId}` };
 }

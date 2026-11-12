@@ -16,9 +16,11 @@ import { FileViewer } from "../components/v2/people/PeerFiles.jsx";
 import RoomSheet from "../components/v2/people/RoomSheet.jsx";
 import { navigate } from "../lib/router.jsx";
 import NotFound from "./NotFound.jsx";
+import { continues } from "../lib/roomView.js";
 
-// A conversation with people (design/V3Personas.dc.html; V2Personas for persona, sala, hilo, buscar):
-// one per contact, or a group of up to 32. Messages are plain text (never rendered as HTML or
+// A direct conversation with a person (design/V3Personas.dc.html; V2Personas for persona, hilo,
+// buscar). A group is a room: its address opens the one room screen (/sala/:id, screens/Room.jsx).
+// The rows are the same as in a room (people/PeopleMessage.jsx + room/Author.jsx). Messages are plain text (never rendered as HTML or
 // Markdown: they come from someone else); threads open beside it; your own messages can be
 // edited or deleted for everyone (only your Colmena can: the change is signed by you).
 const dayLabel = (iso) => {
@@ -30,7 +32,7 @@ const dayLabel = (iso) => {
 
 export default function PeopleChat({ params = {}, query = {} }) {
   const id = params.id;
-  const { peers, bots: myBots = [], artifacts = [] } = useStore();
+  const { peers, bots: myBots = [], artifacts = [], rooms = [] } = useStore();
   const [viewing, setViewing] = useState(null); // a shared file open in the viewer
   const [sending, setSending] = useState([]); // names of files being sealed and sent
   const closeViewer = useCallback(() => setViewing(null), []);
@@ -43,6 +45,13 @@ export default function PeopleChat({ params = {}, query = {} }) {
   const threadId = query.hilo || null;
   useEffect(() => { setError(null); setSearching(false); }, [id]);
   const share = chat.share;
+  // A group is a room: the same address, on the room screen (it accepts the conversation's id).
+  const isRoom = !String(id).startsWith("dm-") && (rooms.some((r) => r.id === id || r.shareId === id) || (!!share && share.kind !== "dm"));
+  useEffect(() => {
+    if (!isRoom) return;
+    const qs = [query.hilo ? "hilo=" + encodeURIComponent(query.hilo) : null, query.m ? "m=" + encodeURIComponent(query.m) : null].filter(Boolean).join("&");
+    navigate("/sala/" + encodeURIComponent(id) + (qs ? "?" + qs : ""), { replace: true });
+  }, [isRoom, id]); // eslint-disable-line react-hooks/exhaustive-deps
   const relay = peers?.relay?.status || "off";
   const others = useMemo(() => (share?.members || []).filter((m) => !m.me), [share]);
   // Bots you can name here: yours, then each person's (what their Colmena announced). Each one
@@ -64,6 +73,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
   useRevealMessage(threadId ? null : query.m || null, { ready: !chat.loading && !!share, olderCount: chat.more ? chat.messages.length : 0, showOlder: chat.older });
   const openThread = useCallback((m) => navigate("/con/" + id + "?hilo=" + encodeURIComponent(m.id)), [id]);
   const closeThread = useCallback(() => navigate("/con/" + id, { replace: true }), [id]);
+  if (isRoom) return null;
   if (chat.error === "missing") return <NotFound active="chats" title="Esta conversación ya no está" text="Puede que la otra persona la cerrara. No se ha perdido nada de lo tuyo." />;
   const dm = share?.kind === "dm";
   const other = dm ? others[0] : null;
@@ -140,14 +150,14 @@ export default function PeopleChat({ params = {}, query = {} }) {
                   <span style={{ fontSize: "15px", lineHeight: 1.55, color: "#4A4D57" }}>{dm && other?.status === "pending" ? `En cuanto ${other.name.split(" ")[0]} abra Colmena quedaréis conectados. Lo que escribas ahora le llegará entonces.` : "Cada mensaje sale cerrado con llave desde este ordenador y solo lo abren los de quienes estáis aquí."}</span>
                 </div>
               ) : null}
-              {shown.map((m) => {
+              {shown.map((m, i) => {
                 const day = dayLabel(m.at);
                 const showDay = day !== lastDay;
                 lastDay = day;
                 return (
                   <div key={m.id}>
                     {showDay ? <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 10px", fontSize: "12.5px", color: "#5C606C" }}><span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} />{day}<span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} /></div> : null}
-                    <PeopleMessage m={m} dm={dm} botOf={botOf} shared={shared} lastSeen={m.id === lastSeenMine} onMeeting={chat.updateMeeting}
+                    <PeopleMessage m={m} dm={dm} botOf={botOf} shared={shared} lastSeen={m.id === lastSeenMine} onMeeting={chat.updateMeeting} continued={!showDay && continues(shown[i - 1], m, { hasReplies: !!shown[i - 1]?.replies })}
                       onReact={chat.react} onRetry={chat.retry} onEdit={chat.edit} onDelete={remove} onThread={m.local ? null : openThread} onOpenFile={setViewing} onError={setError} />
                   </div>
                 );

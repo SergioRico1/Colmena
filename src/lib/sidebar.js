@@ -8,6 +8,7 @@
 import { needsCount, needsOf } from "../components/v2/needs.js";
 import { listRows } from "./threads.js";
 import { isBotChat, isSala, roomLinks } from "./rooms.js";
+import { botShape } from "./identity.js";
 
 /** Rooms shown before the quiet ones fold behind «Ver todas». */
 export const ROOMS_SHOWN = 8;
@@ -23,7 +24,7 @@ const initialsOf = (name) => String(name || "").trim().split(/\s+/).slice(0, 2).
  * Circles are people. A bot whose shape is a circle (or unknown) is drawn in the sidebar as a
  * rounded square, so nobody takes it for a person.
  */
-export const sidebarShape = (shape) => (["hex", "diamond", "square", "leaf", "arch"].includes(shape) ? shape : "square");
+export const sidebarShape = botShape;
 
 /**
  * What the sidebar shows, from a store snapshot. `team` narrows rooms and people to one team once
@@ -76,7 +77,7 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
     // Nothing in a conversation with people asks for your decision yet: requests to your bots
     // from other people will (the owner's rule, server/peers), and will count here.
     if (s.kind !== "dm" && listed) continue;
-    if (s.kind !== "dm") { rooms.push({ id: s.id, href: `/con/${s.id}`, title: s.title || "sala", unread: s.unread || 0, waiting: 0, at: time(s.lastAt), withPeople: true }); continue; }
+    if (s.kind !== "dm") { rooms.push({ id: s.id, href: `/sala/${s.id}`, title: s.title || "sala", unread: s.unread || 0, waiting: 0, at: time(s.lastAt), withPeople: true }); continue; }
     const other = (s.members || []).find((p) => !p.me) || null;
     talking.add(s.id);
     people.push(personRow({ id: other?.id || s.id, href: `/con/${s.id}`, name: s.title || other?.name, person: other, unread: s.unread || 0 }));
