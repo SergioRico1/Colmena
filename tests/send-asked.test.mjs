@@ -163,3 +163,34 @@ test("naming a recipient: no regex from the address, no verbs or common words, n
   store.put("messages", { id: "u1", missionId: "m", role: "user", kind: "message", text: "Redacta una respuesta para ana@ejemplo.com y envíala", at: new Date().toISOString() });
   assert.equal(ask(["ana@ejemplo.com"]), true);
 });
+
+test("a draft request stays a draft whatever its content says: only an order to send addressed to the bot sends", async (t) => {
+  const store = await storeWith(t, "x");
+  const TO = ["ana@ejemplo.com"];
+  const says = (text) => {
+    store.put("messages", { id: "u1", missionId: "m", role: "user", kind: "message", text, at: new Date().toISOString() });
+    return [saysSend(store, "m"), explicitlyAsked(store, "m", TO)];
+  };
+  const DRAFT = [
+    "Prepárame un borrador para ana@ejemplo.com: dile que el envío sale el lunes",
+    "Escribe un borrador para ana@ejemplo.com sobre el envío",
+    "Redacta un borrador para ana@ejemplo.com: los envíos de marzo ya están enviados",
+    "Prepara un borrador para ana@ejemplo.com: dile que el mandato termina en junio y que yo mando en esa reunión",
+    "Prepárame un borrador para ana@ejemplo.com avisando de que el reenvío llegará tarde",
+    "Hazme un borrador para ana@ejemplo.com, pregúntale si recibió lo enviado",
+    // Unclear whether it should leave: with a draft asked for, it is a draft.
+    "Prepara un borrador para enviar a ana@ejemplo.com",
+  ];
+  for (const text of DRAFT) assert.deepEqual(says(text), [false, false], text);
+  const SEND = [
+    "Prepara un borrador para ana@ejemplo.com y envíalo",
+    "Redacta la respuesta para ana@ejemplo.com y mándasela",
+    "Prepara un correo para ana@ejemplo.com: dile que el envío sale el lunes. Envíaselo ya",
+    "Redacta un correo para ana@ejemplo.com y luego lo envías",
+    "Prepara la respuesta a ana@ejemplo.com y envía",
+    // No draft asked for: as before.
+    "Dile a ana@ejemplo.com que el envío sale el lunes",
+    "Envía el informe a ana@ejemplo.com",
+  ];
+  for (const text of SEND) assert.deepEqual(says(text), [true, true], text);
+});

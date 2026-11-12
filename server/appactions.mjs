@@ -66,7 +66,7 @@ export const isYes = (text) => fold(text).length <= 60 && YES.test(fold(text));
 export const isNo = (text) => fold(text).length <= 40 && NO.test(fold(text));
 // «Envía», but also «pídele a Pablo…», «dile a Ana…», «pregúntale…»: asking someone for
 // something by email is asking for the email to go out.
-const SEND_VERB = /\b(?:envia|enviale|envialo|enviala|envialos|envie|enviar|enviame|enviamelo|enviamela|enviaselo|enviasela|mandame|mandamelo|mandamela|mandaselo|reenviame|reenviamelo|manda|mandale|mandales|mandalo|mandala|mandar|responde|respondele|responder|contesta|contestale|contestar|reenvia|reenviale|reenviar|escribe|escribele|escribeles|escribir|pide|pidele|pideles|pedir|pregunta|preguntale|preguntales|preguntar|dile|diles|avisa|avisale|avisales|avisar|recuerdale|recuerdales|solicita|solicitale|comunica|comunicale|informa|informale|reclama|reclamale)\b/;
+const SEND_VERB = /\b(?:envia|envias|mandas|enviale|envialo|enviala|envialos|envie|enviar|enviame|enviamelo|enviamela|enviaselo|enviasela|enviaselos|enviaselas|envialas|mandame|mandamelo|mandamela|mandaselo|mandasela|mandaselos|mandaselas|mandalos|mandalas|reenviame|reenviamelo|manda|mandale|mandales|mandalo|mandala|mandar|responde|respondele|responder|contesta|contestale|contestar|reenvia|reenviale|reenviar|escribe|escribele|escribeles|escribir|pide|pidele|pideles|pedir|pregunta|preguntale|preguntales|preguntar|dile|diles|avisa|avisale|avisales|avisar|recuerdale|recuerdales|solicita|solicitale|comunica|comunicale|informa|informale|reclama|reclamale)\b/;
 
 /**
  * The names an address goes by in what the bot read in this step («Pablo Ferrán
@@ -124,9 +124,13 @@ const DECIDES = /^(?:si|sip|vale|ok|okey|okay|de acuerdo|perfecto|claro|adelante
 const ACK_WORDS = /\b(?:si|sip|vale|ok|okey|okay|de acuerdo|perfecto|claro|adelante|venga|genial|dale|hecho|gracias|muchas|mil|bien|muy|estupendo|entendido|anotado|visto|por favor|porfa)\b/g;
 // The bot's last message offered to answer the email («¿Le confirmo…?», «¿Respondo que sí?»).
 const OFFERS_REPLY = /¿[^?]*\b(?:respond|contest|confirm|envi|mand|dig|dec|acept|rechaz|declin|escrib)\w*[^?]*\?/;
-// «Prepárame un borrador», «redacta una respuesta»: you want to see it first. A plain
-// «envíalo» in the same words still sends.
-const asksDraft = (text) => /\b(?:borrador\w*|draft|prepar\w+|redact\w+)\b/.test(text) && !/\b(?:envi|mand|reenvi)\w+/.test(text);
+// «Prepárame un borrador», «redacta una respuesta»: you want to see it first. Only an order
+// to send addressed to the bot in the same words still sends: the verb with what it sends
+// («envíalo», «mándaselo», «envíaselo ya») or after «y» («…y envía», «y luego lo mandas»).
+// A word that merely starts like one — «el envío sale el lunes», «el mandato», «enviado» —
+// is part of what the draft says, and when it is unclear it is a draft.
+const ORDERS_SEND = /\b(?:envia|manda|reenvia)(?:lo|la|los|las|selo|sela|selos|selas|melo|mela|melos|melas|le|les)\b|\by\s+(?:(?:luego|despues|entonces|ya|ahora)\s+)?(?:se\s+)?(?:(?:lo|la|los|las)\s+)?(?:envia|envias|manda|mandas|reenvia|reenvias)\b/;
+const asksDraft = (text) => /\b(?:borrador\w*|draft|prepar\w+|redact\w+)\b/.test(text) && !ORDERS_SEND.test(text);
 // One bare address («ana@x.es»): never «Raúl <x@evil.com>» or two in one field.
 export const bareAddress = (r) => { const a = fold(r).trim(); return /^[^\s<>,;:"'()]+@[^\s<>,;:"'()@]+\.[a-z]{2,}$/.test(a) ? a : ""; };
 // Words too common to name anyone («envía un correo…» does not name correo@…).
