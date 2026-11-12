@@ -9,6 +9,7 @@ import { navigate, useRouter } from "../lib/router.jsx";
 import { ago, isRoom } from "../lib/format.js";
 import { later, useHidden } from "../lib/undoToast.js";
 import { scrollBehavior } from "../lib/motion.js";
+import WebhookPanel, { HOOK_DEFAULT } from "../components/rutinas/WebhookPanel.jsx";
 
 // Colmena 3 · Trabajo › Rutinas (design/V3Rutinas.dc.html): what repeats. «Nueva rutina» reads
 // as a sentence you tap to change (?nueva=1 opens it, with ?texto= and ?bot= from a chat).
@@ -101,8 +102,11 @@ const TRIGGER_CARDS = {
   dia: ["Cada día", "a una hora, laborables o todos"], semana: ["Cada semana", "un día y una hora"], vez: ["Una vez", "un día y hora"], cada: ["Cada cierto tiempo", "cada N minutos u horas"],
   correo: ["Llega un correo", "de alguien o de cualquiera"], archivo: ["Se sube un archivo", "en una carpeta"], evento: ["Evento del calendario", "antes de una reunión"],
   sala: ["Mensaje en una sala", "una mención o cualquier mensaje"], hoja: ["Cambia una hoja", "una fila o una columna"],
+  webhook: ["Avisa otra app", "GitHub, Sentry u otra que mande avisos"],
 };
-const EVENT_TYPES = ["correo", "archivo", "evento", "sala", "hoja"];
+const EVENT_TYPES = ["correo", "archivo", "evento", "sala", "hoja", "webhook"];
+// «Cuando …» of a webhook trigger, as server/triggers.mjs words it.
+const HOOK_WHEN = { github_pr: "se abra una pull request en GitHub", github_check: "falle una comprobación en GitHub", sentry: "aparezca un error nuevo en Sentry" };
 const FILTERS = [["todas", "Todas"], ["hora", "Por horario"], ["algo", "Cuando pasa algo"], ["recordatorio", "Recordatorios"], ["encargo", "Encargos"]];
 const sel = (on) => (on ? INK : "rgba(18,19,26,.1)");
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
@@ -132,6 +136,7 @@ export default function RutinasV2() {
   const [editing, setEditing] = useState(null);
   // The routine being changed inline, and a counter to reload it with what is saved now.
   const [changing, setChanging] = useState(null);
+  const [changingPart, setChangingPart] = useState(null);
   const [reloads, setReloads] = useState(0);
   const act = useAction();
 
@@ -145,7 +150,7 @@ export default function RutinasV2() {
   const atlas = team.find((b) => b.id === "atlas") || team.find((b) => /coordin/i.test(b.role || "")) || team[0];
   const botOf = (id) => team.find((b) => b.id === id) || null;
   const openNew = () => { setChanging(null); setOpen(true); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: scrollBehavior() })); };
-  const openChange = (ruleId) => { setOpen(false); setChanging(ruleId); setReloads((n) => n + 1); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: scrollBehavior() })); };
+  const openChange = (ruleId, part = null) => { setOpen(false); setChangingPart(part); setChanging(ruleId); setReloads((n) => n + 1); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: scrollBehavior() })); };
   const changingRule = changing ? automations.find((a) => a.id === changing) || null : null;
 
   const rows = [
@@ -161,8 +166,8 @@ export default function RutinasV2() {
     <Shell active="trabajo">
       <main style={trabajoMain("1140px")}>
         <TrabajoHeader tab="rutinas" action={{ label: "Nueva rutina", onClick: openNew }} />
-        {open ? <RoutineBuilder team={team} skills={skills} missions={missions} initialWhat={query.texto || ""} initialWho={query.bot || null} onClose={() => setOpen(false)} /> : null}
-        {changingRule ? <RoutineBuilder key={changing + ":" + reloads} team={team} skills={skills} missions={missions} rule={changingRule} onReload={() => setReloads((n) => n + 1)} onClose={() => setChanging(null)} /> : null}
+        {open ? <RoutineBuilder team={team} skills={skills} missions={missions} initialWhat={query.texto || ""} initialWho={query.bot || null} onClose={() => setOpen(false)} onSaved={(id) => openChange(id, "when")} /> : null}
+        {changingRule ? <RoutineBuilder key={changing + ":" + reloads} team={team} skills={skills} missions={missions} rule={changingRule} initialOpen={changingPart} onReload={() => setReloads((n) => n + 1)} onClose={() => setChanging(null)} /> : null}
 
         <section aria-labelledby="act-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
@@ -210,17 +215,20 @@ function ruleRow(a, bot, act, missions, openChange) {
   const account = blocked && /cuenta de ia/i.test(a.error || "");
   const app = blocked && !account && /conect/i.test(a.error || "");
   const where = whereOf(a);
-  const meta = blocked && a.error ? a.error
+  // Stopped by a brake (it fired too often for the same thing, or you said «nunca»): it says why, and waits for you.
+  const stopped = !a.enabled && !!a.stoppedBy;
+  const meta = (blocked || stopped) && a.error ? a.error
     : [a.nextRun && a.enabled ? "Próxima: " + when(a.nextRun) : !TIME_TYPES.includes(type) ? a.trigger?.sentence || a.subtitle : null, a.lastRun ? "última: " + ago(a.lastRun) : null, where !== "nueva" ? whereLabel(where, missions) : null].filter(Boolean).join(" · ") || a.subtitle || "";
-  const status = !a.enabled ? ["En pausa", "#F1F1EC", MUTED] : account ? ["Falta la cuenta de IA", "#FFC93C", INK] : app ? ["Falta una app", "#FFC93C", INK] : blocked ? ["Atascada", "#FBE9EA", "#B4232A"] : a.state === "running" ? ["En marcha", "#EEF0F4", "#1F4FD1"] : null;
+  const status = stopped && a.stoppedBy === "loop" ? ["Parada: te necesita", "#FFC93C", INK] : !a.enabled ? ["En pausa", "#F1F1EC", MUTED] : account ? ["Falta la cuenta de IA", "#FFC93C", INK] : app ? ["Falta una app", "#FFC93C", INK] : blocked ? ["Atascada", "#FBE9EA", "#B4232A"] : a.state === "running" ? ["En marcha", "#EEF0F4", "#1F4FD1"] : null;
   const id = encodeURIComponent(a.id);
   return {
     key: "a:" + a.id, f: TIME_TYPES.includes(type) ? "hora" : "algo", bot, work: a.state === "running", text: a.name, meta, status, on: a.enabled,
     label: (a.enabled ? "Pausar: " : "Activar: ") + a.name,
     toggle: () => act.act(() => patch(`/automations/${id}`, { enabled: !a.enabled })),
     menu: [
+      stopped ? ["Reanudar", () => act.act(() => patch(`/automations/${id}`, { enabled: true }))] : null,
       ["Cambiar la rutina", () => openChange(a.id)],
-      ["Ver y cambiar los detalles", () => navigate(`/automatizaciones?id=${id}`)],
+      ["Ver y cambiar los detalles", () => (type === "webhook" ? openChange(a.id, "when") : navigate(`/automatizaciones?id=${id}`))],
       ["Probar ahora", () => act.act(() => post(`/automations/${id}/test`, {}))],
       a.lastMissionId ? ["Ver la última vez", () => navigate(`/encargo/${encodeURIComponent(a.lastMissionId)}`)] : null,
       ["Borrar", () => later({ id: "automation:" + a.id, keys: ["automation:" + a.id], text: "Rutina borrada", error: "No se pudo borrar la rutina", run: () => act.act(() => del(`/automations/${id}`)) })],
@@ -371,6 +379,7 @@ function whenOf(b, dates) {
     evento: `${{ "15 minutos": "Quince minutos", "1 hora": "Una hora", "1 día": "Un día" }[b.before]} antes de ${b.meetWord.trim() ? "cada reunión de «" + b.meetWord.trim() + "»" : "cada reunión"}`,
     sala: `Cuando ${b.roomMode === "mencion" ? "te mencionen" : "alguien escriba"} en ${b.room ? "#" + b.room : "cualquier sala"}`,
     hoja: `Cuando cambie ${b.col.trim() ? "«" + b.col.trim() + "»" : "una fila"} en ${b.sheet.trim() || "la hoja"}`,
+    webhook: `Cuando ${HOOK_WHEN[b.hook?.servicio] || "avise otra app"}`,
   }[b.type];
 }
 /** The routine's name; the default «una conversación nueva cada vez» is left out. */
@@ -388,7 +397,7 @@ function shownAsIs(a) {
   if (t?.type === "dia") return ["1,2,3,4,5", "0,1,2,3,4,5,6"].includes([...(c.dias || [])].sort().join()) && (c.festivo || "saltar") === "saltar" && hour(c.hora);
   if (t?.type === "semana") return String(c.semCada ?? "1") === "1" && hour(c.semHora);
   if (t?.type === "vez") return hour(c.vezHora);
-  return t?.type === "cada";
+  return t?.type === "cada" || t?.type === "webhook";
 }
 
 /** The builder's state for a saved routine (best effort: parts it cannot show keep their text). */
@@ -405,13 +414,14 @@ function fromRule(a, dates) {
     roomMode: c.salaModo === "todo" ? "todo" : "mencion", sheet: c.hoja || "", col: c.cambio === "columna" ? c.columna || "" : "",
     who: a.botId, what: low((lines[0] || a.name || "").replace(/\.$/, "")), custom: "", out: out.id,
     extra: lines.slice(1).filter((l) => l !== out.prompt), where: whereOf(a),
+    hook: a.trigger?.type === "webhook" ? { ...HOOK_DEFAULT, ...Object.fromEntries(Object.keys(HOOK_DEFAULT).filter((k) => c[k] !== undefined).map((k) => [k, c[k]])) } : HOOK_DEFAULT,
   };
 }
 
 // «Hacerlo una rutina» from a chat's «+»: what you wrote and who you wrote to come filled in.
 // With `rule`, the same sentence changes a saved routine: only the parts you touch are sent, with
 // the version it loaded (editedAt), so two editors never overwrite each other.
-function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", initialWho = null, rule = null, onReload }) {
+function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", initialWho = null, rule = null, onReload, onSaved = null, initialOpen = null }) {
   const { run } = useStore();
   const editing = !!rule;
   const [loaded] = useState(rule);
@@ -428,10 +438,10 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
   const [b, setB] = useState(() => loaded ? fromRule(loaded, dates) : {
     type: "semana", hour: "09:00", workdays: true, dow: 1, date: dates[0][0], everyN: 1, everyUnit: "horas",
     from: "", folder: "", before: "1 hora", meetWord: "", room: rooms[0]?.title || "", roomMode: "mencion", sheet: "", col: "",
-    who: firstBot?.id || null, what: initialWhat.trim() ? low(initialWhat.trim().replace(/\.$/, "")) : GENERIC_IDEAS[0][0], custom: "", out: "hoy", extra: [], where: "nueva",
+    who: firstBot?.id || null, what: initialWhat.trim() ? low(initialWhat.trim().replace(/\.$/, "")) : GENERIC_IDEAS[0][0], custom: "", out: "hoy", extra: [], where: "nueva", hook: HOOK_DEFAULT,
   });
   const [dirty, setDirty] = useState({});
-  const [open, setOpen] = useState(editing ? null : "when");
+  const [open, setOpen] = useState(editing ? initialOpen : "when");
   const [msg, setMsg] = useState(null);
   const [savedId, setSavedId] = useState(null);
   const act = useAction();
@@ -469,6 +479,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
       evento: { antelacion: { "15 minutos": "15", "1 hora": "1", "1 día": "1" }[b.before], unidad: { "15 minutos": "minutos", "1 hora": "horas", "1 día": "días" }[b.before], ...(b.meetWord.trim() ? { eventoFiltro: "palabra", eventoPalabra: b.meetWord.trim() } : { eventoFiltro: "todos" }) },
       sala: { sala: b.room || "cualquier sala", salaModo: b.roomMode },
       hoja: { hoja: b.sheet.trim(), ...(b.col.trim() ? { cambio: "columna", columna: b.col.trim() } : { cambio: "fila" }) },
+      webhook: { ...b.hook, filtros: (b.hook.filtros || []).filter((f) => f.ruta.trim()).map((f) => ({ ruta: f.ruta.trim(), op: f.op, valor: f.valor })) },
     }[t];
     return { type: t, config, sentence: whenText };
   };
@@ -477,6 +488,8 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
     : b.type === "archivo" && !b.folder.trim() ? "Escribe en qué carpeta mira."
     : b.type === "hoja" && !b.sheet.trim() ? "Escribe qué hoja vigila."
     : tooOften ? "Como poco, cada 15 minutos."
+    : b.type === "webhook" && b.hook.firma === "hmac" && !b.hook.cabeceraFirma ? "Escribe el nombre de la cabecera que trae la firma."
+    : b.type === "webhook" && b.hook.eventos.trim() && !b.hook.cabeceraEvento ? "Escribe la cabecera que dice el tipo de aviso."
     : b.where.startsWith("sala:") && !missions.some((m) => m.id === b.where.slice(5)) ? "Esa conversación ya no existe. Elige otra."
     : null;
   const delivery = () => (b.where.startsWith("sala:") ? { mode: "sala", missionId: b.where.slice(5) } : { mode: b.where });
@@ -535,6 +548,11 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
     const res = await post(`/automations/${encodeURIComponent(id)}/test`, {});
     setMsg({ text: res?.message || res?.summary || (res?.missionId ? `${who.name} ya está en ello.${editing ? "" : " Queda en pausa hasta que la actives."}` : "Prueba lanzada."), missionId: res?.missionId || null });
   });
+  // A webhook routine gets its address when it is saved: saved paused, then opened to go on with it.
+  const onCreateAddress = () => act.act(async () => {
+    const id = await save(false);
+    if (id) onSaved?.(id);
+  });
   const onActivate = () => act.act(async () => {
     const id = await save(true);
     if (id) onClose();
@@ -546,6 +564,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
     || (editing && !dirty.when ? (loaded.nextRun && loaded.enabled ? `Próxima vez: ${when(loaded.nextRun)}.` : "Cambia la parte que quieras; lo demás se queda como está.")
       : b.type === "vez" ? `Se hará ${dates.find(([k]) => k === b.date)?.[1]} a las ${hourLabel(b.hour)} y se apagará sola.`
       : b.type === "cada" ? (tooOften ? "Como poco, cada 15 minutos." : `Próximas veces: ${listJoin(times.map((d) => (ymd(d) === ymd(new Date()) ? "" : dateLabel(d) + " a las ") + clock(d)))}.`)
+      : b.type === "webhook" ? (editing ? "Pega la dirección en esa app; cada aviso que encaje pondrá en marcha la rutina." : "Crea la dirección, pégala en esa app y actívala cuando quieras.")
       : timeBased ? `Próximas veces: ${listJoin(times.map((d, i) => (i === 0 && ymd(d) === ymd(new Date()) ? "hoy" : dateLabel(d))))}, a las ${hourLabel(b.hour)}.`
       : "Pruébala ahora para ver qué haría; se queda en pausa hasta que la actives.");
 
@@ -621,6 +640,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
               <Field label="Columna que vigilar (vacío: cualquier fila nueva)" value={b.col} onChange={(v) => setWhen({ col: v })} placeholder="Importe" />
             </>
           ) : null}
+          {b.type === "webhook" ? <WebhookPanel hook={b.hook} onChange={(p) => setWhen({ hook: { ...b.hook, ...p } })} ruleId={editing && loaded.trigger?.type === "webhook" ? loaded.id : null} onCreate={onCreateAddress} busy={act.busy} /> : null}
         </div>
       ) : null}
 

@@ -122,7 +122,8 @@ const ACTION_OF_TOOL = [[/(?:^|_)(?:DELETE|REMOVE|TRASH|DESTROY|PURGE)(?:_|$)/, 
  */
 export function personTurnText(store, mission, step) {
   if (!mission || mission.automationId || mission.peerErrand || mission.watch) return "";
-  const messages = store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && (!m.kind || m.kind === "message") && !m.approvalId && typeof m.text === "string");
+  // What a routine or a trigger wrote in a room is stored as «user» too (origin.mjs): never yours.
+  const messages = store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && !m.origin && (!m.kind || m.kind === "message") && !m.approvalId && typeof m.text === "string");
   const ids = [step?.ackOn, ...(step?.ackExtra || [])].filter(Boolean);
   const picked = ids.length ? messages.filter((m) => ids.includes(m.id))
     : !step || ["solo", "work", "plan", "synthesis"].includes(step.kind) ? messages.slice(0, 1) : [];

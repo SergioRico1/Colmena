@@ -22,6 +22,8 @@ import { isMute, muted, watchPreferences } from "./preferences.mjs";
 import { botThread } from "./threads.mjs";
 import { SOURCES, SOURCE_IDS, availability, asText, clip, listOf, nameOf } from "./watch-sources.mjs";
 import { EXTERNAL_NOTICE, cleanHeader, sanitizeExternal, sanitizeValue, wrapReport } from "./external-content.mjs";
+import { makeOrigin } from "./origin.mjs";
+import { isNo } from "./appactions.mjs";
 
 // Each item reaches the model as an isolated block of outside data (OpenClaw hooks/gmail):
 // its own random marks, sender and subject cleaned, injection phrases logged and warned about.
@@ -46,7 +48,8 @@ export function itemsInput(items, recent, onSuspicious = () => {}) {
 export { availability, gmailUrl, ownAddress } from "./watch-sources.mjs";
 export const WATCH_DEFAULTS = Object.freeze({ enabled: true, level: "importante", everyMinutes: 10, botId: null, checklist: "", sources: {} });
 export const WATCH_LEVELS = ["urgente", "importante"];
-export const MAX_FAILURES = 3; // then that source (or the whole look) stops until you press «Mirar ahora»
+export const MAX_FAILURES = 3; // then that source (or the whole look) stops; it tells you once and waits for your «sí» (or «Mirar ahora»)
+const RESUME_REPLY = "Sí, vuelve a intentarlo";
 const KEY = "watch";
 const MINUTE = 60000;
 const SEEN_KEEP = 400;
@@ -221,6 +224,11 @@ export class Watcher {
         target = last ? open.find((n) => n.messageId === last.id) : null;
       }
       if (target) this.store.patch("watchNotes", target.id, { status: "answered", answeredAt: now() });
+      // «He dejado de mirar… ¿vuelvo a intentarlo?», answered by writing in the chat: anything but a no resumes it.
+      if (target?.resume && !isNo(message.text)) {
+        this.resume(target.resume);
+        void this.tick({ force: true }).catch(() => null);
+      }
     });
   }
   due(time = this.clock()) {
@@ -288,7 +296,7 @@ export class Watcher {
     }
     const mems = this.mems(st);
     const ctx = { store: this.store, time, bot, read: (tool, account, args) => this.read(bot, tool, account, args) };
-    const fresh = [], connected = [], problems = [];
+    const fresh = [], connected = [], problems = [], stopped = [];
     for (const source of SOURCES) {
       const targets = source.local ? source.available(ctx) : accounts.filter((a) => source.toolkits.includes(String(a.toolkit).toLowerCase()));
       if (!targets.length) continue;
@@ -304,6 +312,8 @@ export class Watcher {
           items = await source.collect(ctx, target, mem);
         } catch (error) {
           mems[key] = { ...mem, failures: (mem.failures || 0) + 1, error: clip(error?.message || error, 200), unavailable: !!error?.unavailable };
+          // The failure that stops this source for good: said once, below, with a way back.
+          if (mems[key].failures === MAX_FAILURES) stopped.push({ key, label: source.label, error: mems[key].error });
           problems.push(source.label + ": " + clip(error?.message || error, 120));
           continue;
         }
@@ -318,6 +328,7 @@ export class Watcher {
     }
     const held = Array.isArray(st.held) ? st.held : [];
     const save = (extra) => this.save({ version: STATE_VERSION, lastAt: new Date(time).toISOString(), mems, connected, failures: 0, retryAt: null, lastError: problems.join(" · ") || null, held, ...extra });
+    if (stopped.length) this.tellStopped({ sources: [...new Set(stopped.map((x) => x.label))], keys: stopped.map((x) => x.key), error: stopped[0].error });
     if (!connected.length) { save({ lastResult: "sin fuentes" }); return { ran: false, reason: "sin fuentes" }; }
     const quiet = !!main.quietHours && isQuietTime(new Date(time));
     const digestDue = (h) => h.length && !quiet && (!st.lastPostAt || h.length >= DIGEST_AT || time - Date.parse(st.lastDigestAt || st.lastPostAt) >= DIGEST_MS);
@@ -440,7 +451,7 @@ export class Watcher {
     const question = typeof note.pregunta === "string" && note.pregunta.trim() ? clip(note.pregunta, 300) : null;
     const replies = question ? (Array.isArray(note.respuestas) ? note.respuestas : []).map((r) => clip(r, 60)).filter(Boolean).slice(0, 3) : [];
     const at = new Date(time).toISOString();
-    const message = this.store.put("messages", { id: randomUUID(), missionId: chat.id, role: "assistant", botId: bot.id, text, kind: "message", at, watch: true, sources });
+    const message = this.store.put("messages", { id: randomUUID(), missionId: chat.id, role: "assistant", botId: bot.id, text, kind: "message", at, watch: true, sources, origin: makeOrigin({ type: "watch", id: bot.id }) });
     const record = this.store.put("watchNotes", {
       id: randomUUID(), missionId: chat.id, messageId: message.id, botId: bot.id, text: clip(String(note.texto).replace(/[*_#>`]/g, ""), 900),
       title: clip(note.titulo || points[0]?.hechos || "Novedades", 90), question, replies, sources: sources.slice(0, 6),
@@ -465,12 +476,61 @@ export class Watcher {
     const failures = (st.failures || 0) + 1;
     const wait = Math.min(60, 10 * 2 ** (failures - 1)) * MINUTE;
     this.save({ lastAt: new Date(time).toISOString(), failures, retryAt: new Date(time + wait).toISOString(), lastResult: "error", lastError: clip(error?.message || error, 200) });
+    // The failure that stops the whole look for good (due()): said once, with a way back.
+    if (failures === MAX_FAILURES) this.tellStopped({ error: clip(error?.message || error, 200), time });
     return { ran: false, reason: "error", error: String(error?.message || error) };
+  }
+  /**
+   * It stopped looking after MAX_FAILURES failures in a row — everything (`sources` null) or
+   * some places. Without this it just went quiet. One note in its chat and in Hoy, written by
+   * Colmena (no model call), that asks whether to try again; «sí» resumes it (reply, onChange).
+   */
+  tellStopped({ sources = null, keys = [], error = null, time = this.clock() } = {}) {
+    const bot = watchBot(this.store);
+    if (!bot) return null;
+    const what = !sources?.length ? "lo nuevo de tus apps y carpetas" : sources.length === 1 ? sources[0] : sources.slice(0, -1).join(", ") + " y " + sources.at(-1);
+    const text = "He dejado de mirar " + what + ": ha fallado " + MAX_FAILURES + " veces seguidas" + (error ? " («" + cleanHeader(error, 160) + "»)" : "") + ". No lo vuelvo a intentar hasta que me lo digas.";
+    const question = "¿Vuelvo a intentarlo?";
+    const chat = watchChat(this.store, bot);
+    const at = new Date(time).toISOString();
+    const message = this.store.put("messages", { id: randomUUID(), missionId: chat.id, role: "assistant", botId: bot.id, text: text + "\n\n" + question, kind: "message", at, watch: true, origin: makeOrigin({ type: "watch", id: bot.id }) });
+    const record = this.store.put("watchNotes", {
+      id: randomUUID(), missionId: chat.id, messageId: message.id, botId: bot.id, text, title: clip("He dejado de mirar " + what, 90), question, replies: [RESUME_REPLY],
+      sources: [], urgent: false, status: "open", createdAt: at, resume: { all: !sources?.length, keys },
+    });
+    this.store.patch("missions", chat.id, { updatedAt: at, completedAt: at, suggestions: { list: [RESUME_REPLY], at } });
+    try {
+      this.notifier?.notify({ kind: "question", missionId: chat.id, botId: bot.id, title: bot.name + ": " + record.title, text: clip(text + " " + question, 220), url: `/chat/${bot.id}?c=${chat.id}` });
+    } catch {}
+    return record;
+  }
+  /** Looks again where it had stopped: everything (`all`) or the places in `keys` («gmail:<account>»). */
+  resume({ all = true, keys = [] } = {}) {
+    const st = this.state();
+    const mems = { ...(st.mems || {}) };
+    for (const key of all ? Object.keys(mems) : keys) if (mems[key]) mems[key] = { ...mems[key], failures: 0, error: null };
+    this.save({ mems, failures: 0, retryAt: null, lastError: null });
+    return this.view();
+  }
+  /** Your answer to «¿Vuelvo a intentarlo?» from Hoy: written in the chat, and it looks again unless you said no. */
+  resumeReply(n, text) {
+    const said = clip(text, 200);
+    const message = this.store.put("messages", { id: randomUUID(), missionId: n.missionId, role: "user", text: said, kind: "message", at: now() });
+    this.store.patch("watchNotes", n.id, { status: "answered", answeredAt: now(), answer: said });
+    const yes = !isNo(text);
+    if (yes) this.resume(n.resume);
+    const at = now();
+    this.store.put("messages", { id: randomUUID(), missionId: n.missionId, role: "assistant", botId: n.botId, kind: "message", at, watch: true, origin: makeOrigin({ type: "watch", id: n.botId }),
+      text: yes ? "Vale, vuelvo a mirar ahora." : "De acuerdo, lo dejo parado. Pulsa «Mirar ahora» en Ajustes cuando quieras que vuelva." });
+    this.store.patch("missions", n.missionId, { updatedAt: at, completedAt: at, suggestions: null });
+    if (yes) void this.tick({ force: true }).catch(() => null);
+    return message;
   }
   /** Your answer from Hoy («Sí, contéstale»): said in the chat, as if you had typed it. */
   async reply(noteId, text) {
     const n = this.store.get("watchNotes", noteId);
     if (!n) throw Object.assign(Error("Ese aviso ya no existe."), { status: 404 });
+    if (n.resume) return this.resumeReply(n, text);
     if (!this.addMessage) throw Error("No puedo responder ahora.");
     // The message this puts in the chat answers this card only (see onChange).
     (this.answering ??= new Map()).set(n.missionId, n.id);
@@ -523,6 +583,13 @@ export function registerWatchRoutes(app, { store, watcher, check, z, HttpError }
     store.put("settings", { ...main, watch: { ...prev, ...data, ...(data.sources ? { sources: { ...(prev.sources || {}), ...data.sources } } : {}), ...(data.checklist !== undefined ? { checklist: data.checklist.trim() } : {}) } });
     if (data.enabled) watcher.save({ failures: 0, retryAt: null }); // turned on again: it tries again
     res.json(watcher.view());
+  });
+  // «Reanudar» after it stopped by itself: the failure counts go and it looks now.
+  app.post("/api/watch/resume", async (req, res) => {
+    check(z.object({}).strict(), req.body || {});
+    watcher.resume({ all: true });
+    const result = await watcher.tick({ force: true });
+    res.json({ ...result, ...watcher.view() });
   });
   app.post("/api/watch/run", async (_req, res) => {
     const result = await watcher.tick({ force: true });

@@ -36,6 +36,8 @@ export function approvalGroup(a, { flagged = false } = {}) {
   if (!a || a.status !== "pending" || !a.missionId || !a.botId || !a.tool) return null;
   if (a.redLine || a.external || a.deferred || a.autoSendAt || a.computer || a.project || a.secret || a.email || flagged) return null;
   if (ALONE.has(a.kind) || ALONE.has(a.uiKind)) return null;
+  // «<Bot> quiere empezar…» (work a rule would start by itself, scheduler.mjs): decided alone, always.
+  if (a.startWork || a.tool === "start_work") return null;
   if (a.tool === "apps_execute") {
     const toolkit = String(a.review?.toolkit || "").toLowerCase();
     const action = String(a.review?.tool || "").toUpperCase();

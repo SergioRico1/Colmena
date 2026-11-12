@@ -19,6 +19,10 @@ class_name = "Invite"
 name = "BLOB"
 class_name = "Blob"
 
+[[durable_objects.bindings]]
+name = "HOOK"
+class_name = "Hook"
+
 # SQLite-backed Durable Objects (available on the Workers Free plan).
 [[migrations]]
 tag = "v1"
@@ -28,6 +32,11 @@ new_sqlite_classes = ["Mailbox", "Invite"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["Blob"]
+
+# Webhook addresses (hooks.js): one object per address, with its owner and its box key.
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["Hook"]
 
 [observability]
 enabled = false

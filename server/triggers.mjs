@@ -6,10 +6,17 @@ import { z } from "zod";
 import { now } from "./store.mjs";
 import { validateWebUrl, webFetch } from "./web.mjs";
 import { LoopGuard, ROOM_LOOP_GUARD, postGuardNotice } from "./loops.mjs";
+import { chainDepth, isPersonMessage } from "./origin.mjs";
 
 // Trigger types and their config mirror design/Disparador.dc.html (class Logic).
 export const TIME_TYPES = new Set(["dia", "semana", "vez", "cada"]);
-export const TRIGGER_TYPES = ["dia", "semana", "vez", "cada", "correo", "archivo", "evento", "sala", "hoja", "web"];
+export const TRIGGER_TYPES = ["dia", "semana", "vez", "cada", "correo", "archivo", "evento", "sala", "hoja", "web", "webhook"];
+// «Cuando avisa otra app» (webhook): which service, how its requests are signed, and the
+// filters applied here, with no model call, before anything starts (server/webhooks.mjs). The
+// address and the shared secret are never part of the trigger: they live apart.
+export const WEBHOOK_SERVICES = ["github_pr", "github_check", "sentry", "generico"];
+export const WEBHOOK_SIGNATURES = ["ninguna", "github", "stripe", "hmac"];
+const headerName = z.string().trim().max(80).regex(/^[A-Za-z0-9-]*$/, "El nombre de la cabecera solo lleva letras, números y guiones.");
 export const CONNECTOR_OF = { correo: "correo", evento: "calendario", hoja: "hojas" };
 export const CONNECTOR_NAMES = {
   correo: "Correo", calendario: "Calendario", carpeta: "Carpeta compartida", hojas: "Hojas de cálculo",
@@ -49,6 +56,9 @@ const configFields = z
     url: text(2000), condicion: z.enum(["cambia", "contiene", "precio_bajo"]), texto: text(200),
     precio: z.union([z.string().trim().max(20), z.number().min(0).max(1e9)]), frecuencia: z.enum(["15m", "1h", "1d"]),
     probado: z.boolean(),
+    servicio: z.enum(WEBHOOK_SERVICES), firma: z.enum(WEBHOOK_SIGNATURES), cabeceraFirma: headerName, cabeceraEvento: headerName, eventos: text(300),
+    filtros: z.array(z.object({ ruta: text(120).min(1, "Escribe el campo del filtro."), op: z.enum(["igual", "contiene"]), valor: text(200) }).strict()).max(5),
+    asuntoRuta: text(120),
   })
   .partial()
   .strict();
@@ -66,6 +76,7 @@ const DEFAULTS = {
   sala: { sala: "cualquier sala", salaModo: "mencion", palabras: "", deQuien: "personas" },
   hoja: { hoja: "", pestana: "", cambio: "fila", columna: "", valor: "" },
   web: { url: "", condicion: "cambia", texto: "", precio: "", frecuencia: "1h" },
+  webhook: { servicio: "generico", firma: "ninguna", cabeceraFirma: "", cabeceraEvento: "", eventos: "", filtros: [], asuntoRuta: "" },
 };
 
 // The live editor (src/components/Disparador.jsx) uses short field names; the
@@ -133,6 +144,11 @@ export function normalizeTrigger(input) {
     out.precio = out.precio === "" ? "" : String(out.precio).replace(",", ".");
     if (out.condicion === "contiene" && !out.texto) throw Error("Escribe el texto que tiene que aparecer en la página.");
     if (out.condicion === "precio_bajo" && !(Number(out.precio) > 0)) throw Error("Escribe el precio límite (por ejemplo 50).");
+  }
+  if (type === "webhook") {
+    if (out.firma === "hmac" && !out.cabeceraFirma) throw Error("Escribe el nombre de la cabecera que trae la firma.");
+    out.eventos = out.eventos.split(",").map((e) => e.trim()).filter(Boolean).join(", ");
+    if (out.eventos && !out.cabeceraEvento) throw Error("Escribe la cabecera que dice el tipo de aviso.");
   }
   const trigger = { type, config: out };
   return { ...trigger, sentence: sentence(trigger) };
@@ -207,6 +223,8 @@ export function sentence({ type, config }) {
     return "alguien escriba «" + s.palabras + "» en " + sala;
   }
   if (type === "web") return webSentence(s);
+  if (type === "webhook")
+    return { github_pr: "se abra una pull request en GitHub", github_check: "falle una comprobación en GitHub", sentry: "aparezca un error nuevo en Sentry" }[s.servicio] || "avise otra app";
   if (s.cambio === "fila") return "se añada una fila a " + s.hoja + " › " + s.pestana;
   if (s.cambio === "columna") return "cambie la columna " + s.columna + " de " + s.hoja + " › " + s.pestana;
   return "el " + String(s.columna).toLowerCase() + " supere " + s.valor + " en " + s.hoja + " › " + s.pestana;
@@ -452,6 +470,7 @@ export function triggerLabel({ type, config }) {
     sala: c.sala === "cualquier sala" ? "Cuando escriben en una sala" : "Cuando escriben en #" + c.sala,
     hoja: "Cuando cambia una hoja",
     web: "Cuando cambia una página",
+    webhook: "Cuando avisa otra app",
   }[type];
 }
 
@@ -464,7 +483,7 @@ export function subtitle(rule, reference = new Date()) {
   else if (rule.state === "waiting") tail = "Te espera";
   else if (rule.state === "running") tail = "En marcha";
   else if (rule.lastRun) {
-    const ok = !["blocked", "cancelled", "failed"].includes(rule.lastStatus);
+    const ok = !["blocked", "cancelled", "failed", "paused"].includes(rule.lastStatus);
     const when = !rule.trigger || (TIME_TYPES.has(rule.trigger.type) && rule.trigger.type !== "cada") ? dayLabel(rule.lastRun, reference) : capital(ago(rule.lastRun, reference.getTime()));
     tail = when + (ok ? " ✓" : " ✗");
   } else if (rule.nextRun) {
@@ -546,8 +565,15 @@ export class TriggerEngine {
       if (change.kind === "automations" && change.op === "insert") setImmediate(() => this.pollDue());
     }
   }
-  /** Sala: a user (or bot) message in the configured room. */
-  onMessage(message) {
+  /**
+   * Sala: a message in the configured room. Only what the person wrote counts as theirs: a
+   * bot's answer and what a routine or a trigger wrote there (stored as «user», marked with
+   * its origin) go through the loop guard and carry how deep in a chain of rules they are.
+   */
+  onMessage(inserted) {
+    // As it is now: whoever wrote it for an automation marks it right after inserting it.
+    const message = (inserted?.id && this.store.get("messages", inserted.id)) || inserted;
+    const person = isPersonMessage(message);
     if (!message.missionId || !["user", "assistant"].includes(message.role) || ["activity", "plan"].includes(message.kind)) return;
     const mission = this.store.get("missions", message.missionId);
     if (!mission) return;
@@ -555,8 +581,9 @@ export class TriggerEngine {
     for (const rule of this.rules("sala")) {
       const c = rule.trigger.config;
       if (mission.automationId === rule.id) continue; // its own runs never retrigger it
+      if ((message.origin?.id || message.automationId) === rule.id) continue; // nor what it wrote in a room
       if (message.botId && message.botId === rule.botId) continue;
-      if (c.deQuien === "personas" && message.role !== "user") continue;
+      if (c.deQuien === "personas" && !person) continue;
       if (c.sala === "cualquier sala" ? mission.conversation : fold(c.sala) !== room) continue;
       const body = fold(message.text);
       if (c.salaModo === "mencion") {
@@ -569,7 +596,7 @@ export class TriggerEngine {
       }
       // Bots answering bots (two room rules waking each other) rest a minute; a person's
       // message always goes through.
-      if (message.role !== "user") {
+      if (!person) {
         const verdict = this.loopGuard.hit("sala:" + rule.id);
         if (!verdict.ok) {
           if (verdict.fresh)
@@ -585,7 +612,9 @@ export class TriggerEngine {
         id: message.id,
         at: message.at || now(),
         summary: "Mensaje en #" + (mission.room || mission.title),
-        data: { sala: mission.room || mission.title, missionId: mission.id, de: message.role === "user" ? "persona" : message.botId, texto: clip(message.text, 2000) },
+        data: { sala: mission.room || mission.title, missionId: mission.id, de: person ? "persona" : message.botId || "rutina", texto: clip(message.text, 2000) },
+        // One more link in a chain of self-started runs (cut at MAX_CHAIN_DEPTH, origin.mjs); the person starts at 0.
+        ...(person ? {} : { chain: chainDepth(message, mission) + 1 }),
       });
     }
   }
@@ -728,7 +757,7 @@ export class TriggerEngine {
         id: String(m.messageId || m.id || ""),
         at: m.messageTimestamp || now(),
         summary: "Correo: " + clip(m.subject, 120),
-        data: { de: clip(m.sender || m.from), asunto: clip(m.subject), adjuntos: (m.attachmentList || []).map((a) => clip(a.filename, 200)).slice(0, 10), extracto: clip(m.preview?.body || m.messageText, 1500) },
+        data: { de: clip(m.sender || m.from), asunto: clip(m.subject), ...(m.threadId || m.thread_id ? { hilo: clip(m.threadId || m.thread_id, 120) } : {}), adjuntos: (m.attachmentList || []).map((a) => clip(a.filename, 200)).slice(0, 10), extracto: clip(m.preview?.body || m.messageText, 1500) },
       })).filter((e) => e.id));
     }
     // evento

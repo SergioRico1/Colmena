@@ -1,11 +1,19 @@
-import { now } from "./store.mjs";
+import { id as newId, now } from "./store.mjs";
 import { TIME_TYPES, TriggerEngine, intervalMs, nextRun } from "./triggers.mjs";
 import { Notifier } from "./notifications.mjs";
 import { missingFor } from "./quiet.mjs";
 import { watchRooms, wakeDue } from "./rooms.mjs";
-import { detectInjection, sanitizeValue, wrapExternal } from "./external-content.mjs";
+import { cleanHeader, detectInjection, sanitizeValue, wrapExternal } from "./external-content.mjs";
+import { MAX_CHAIN_DEPTH, makeOrigin } from "./origin.mjs";
+import { isNo } from "./appactions.mjs";
+import {
+  CHAIN_TEXT, COST, LOOP, LOOP_TEXT, NEVER_TEXT, OPEN_STATUSES, START_OPTIONS, START_TOOL,
+  costGate, digestNow, signatureOf, startsOf, withArrival, withDigest, withStart,
+} from "./brakes.mjs";
 
-const EVENT_SOURCE = { correo: "email", web: "web", evento: "calendar", hoja: "app", archivo: "file", sala: "chat" };
+const EVENT_SOURCE = { correo: "email", web: "web", evento: "calendar", hoja: "app", archivo: "file", sala: "chat", webhook: "webhook" };
+const NOTES_KEPT = 30;
+const INTERRUPTED_GRACE_MS = 15 * 60_000;
 
 const ACCOUNTS_MS = 5 * 60 * 1000;
 
@@ -32,8 +40,12 @@ export const deliveryMode = (rule) => (ROOM_MODES.has(rule?.delivery?.mode) ? ru
  * still busy, are delivered once (the latest), never replayed one by one.
  */
 export class Scheduler {
-  constructor(store, runtime, isConnected = () => true, { connections = null, interval = 10000, pollMs, fetchPage, notifier } = {}) {
+  constructor(store, runtime, isConnected = () => true, { connections = null, interval = 10000, pollMs, fetchPage, notifier, clock = Date.now } = {}) {
     this.store = store;
+    this.clock = clock;
+    // The person's answer to «<Bot> quiere empezar…» (a question card) reaches the rule here.
+    this.listener = (change) => this.onChange(change);
+    store.listeners.add(this.listener);
     this.runtime = runtime;
     this.isConnected = isConnected;
     this.interval = interval;
@@ -113,7 +125,7 @@ export class Scheduler {
     }
     return { scheduledAt: new Date(at).toISOString(), missed };
   }
-  tick(time = Date.now()) {
+  tick(time = this.clock()) {
     if (this.ticking) return; // reentrancy guard: listeners may call tick while a tick runs
     this.ticking = true;
     try {
@@ -160,6 +172,8 @@ export class Scheduler {
     if (!last) return { state: "scheduled" };
     if (ACTIVE.has(last.status)) return { state: "running" };
     if (TERMINAL.has(last.status)) return { state: "scheduled", lastStatus: last.status };
+    // A run that failed or was left paused no longer holds the rule: the next one supersedes it.
+    if (this.dead(rule, last)) return { state: "scheduled", lastStatus: last.status };
     const since = Date.parse(last.updatedAt || last.createdAt);
     const stale = time - since > STALE_MS;
     const room = deliveryMode(rule) !== "nueva";
@@ -177,19 +191,38 @@ export class Scheduler {
     if (deliveryMode(rule) !== "nueva") return this.target(rule);
     return rule.lastMissionId ? this.store.get("missions", rule.lastMissionId) : null;
   }
+  /**
+   * The «one run at a time» policy. A later run waits only while the previous one is truly
+   * running (queued, planning, running) or waits on you (a question, a plan, a choice). A
+   * previous run that failed («blocked») or, for a rule that opens a conversation per run, was
+   * left paused (parked by the plan, paused by you) no longer holds the rule: `dead`.
+   * Two exceptions: a room you paused stays yours (a routine never wakes it), and work cut by
+   * a close gets INTERRUPTED_GRACE_MS to go on by itself (Runtime#resumeInterrupted) first.
+   */
+  dead(rule, last) {
+    if (!last) return false;
+    if (last.status === "blocked") return true;
+    if (last.status !== "paused" || deliveryMode(rule) !== "nueva") return false;
+    return !(last.interrupted && this.clock() - Date.parse(last.interrupted.at || 0) < INTERRUPTED_GRACE_MS);
+  }
   process(rule, time, settings, isConnected) {
     const last = this.current(rule);
+    this.settleProposal(last);
+    // Stopped by a brake and switched on again by you: it starts counting from now.
+    if (rule.enabled && rule.stoppedBy) rule = this.set(rule, { stoppedBy: null, loopResetAt: new Date(time).toISOString(), ...(rule.stoppedBy === "never" ? { costSnoozeUntil: null } : {}) });
     if (!rule.enabled) return this.set(rule, { state: "paused" });
     if (["connector", "folder"].includes(rule.blockedBy)) return this.set(rule, { state: "blocked" });
     const checked = this.precheck(rule);
     if (checked.missing) return checked.rule;
     rule = checked.rule;
-    const busy = last && !TERMINAL.has(last.status);
+    const busy = last && !TERMINAL.has(last.status) && !this.dead(rule, last);
     const view = this.observed(rule, last, time);
     const timed = isTimed(rule);
     // Rules saved without a schedule (older data) get one instead of staying idle.
     if (timed && !rule.nextRun && rule.trigger) rule = this.set(rule, { nextRun: this.next(rule, new Date(time)) });
-    const due = timed ? rule.nextRun && Date.parse(rule.nextRun) <= time : (rule.queue || []).length > 0;
+    // Events held for a digest (they came too often) go together when their wait ends.
+    const digestDue = !timed && rule.digest?.events?.length > 0 && Date.parse(rule.digest.dueAt) <= time;
+    const due = timed ? rule.nextRun && Date.parse(rule.nextRun) <= time : (rule.queue || []).length > 0 || digestDue;
     if (!due) {
       if (rule.blockedBy === "provider" && isConnected()) return this.set(rule, { ...view, blockedBy: null, error: view.error ?? null });
       if (rule.blockedBy) return rule;
@@ -205,25 +238,42 @@ export class Scheduler {
     if (timed) return this.fire(rule, { time, queue: rule.queue });
     // Into one conversation, the events that piled up while it was busy go together.
     const queue = rule.queue || [];
+    if (!queue.length) return this.fire(rule, { events: rule.digest.events, time, queue, digest: { count: rule.digest.events.length, dropped: rule.digest.dropped || 0 } });
     const together = deliveryMode(rule) !== "nueva" ? queue.length : 1;
     return this.fire(rule, { events: queue.slice(0, together), time, queue: queue.slice(together) });
   }
   /** Creates and launches the mission of one run, or delivers it into the rule's conversation. */
-  fire(rule, { event = null, events = event ? [event] : [], time = Date.now(), queue = rule.queue, test = false } = {}) {
+  fire(rule, { event = null, events = event ? [event] : [], time = Date.now(), queue = rule.queue, test = false, digest = null } = {}) {
     const timed = isTimed(rule);
+    const previous = test ? null : this.current(rule);
     const schedule = test ? {} : timed
       ? rule.trigger.type === "vez"
         ? { nextRun: null, enabled: false }
         : { nextRun: this.next(rule, new Date(time)) }
-      : { queue: queue || [] };
+      : { queue: queue || [], ...(digest ? { digest: null } : {}) };
     const caught = timed && !test ? this.catchUp(rule, time) : { scheduledAt: null, missed: 0 };
     const roomMode = deliveryMode(rule) !== "nueva";
     const room = roomMode ? this.target(rule) : null;
     let mission;
     let messageId = null;
+    // What this run is: a routine on its schedule or a trigger's event, how deep in a chain of
+    // self-started runs, and what it is about (brakes.mjs). Never the person's words (origin.mjs).
+    const signature = digest ? rule.id + ":digest" : events[0]?.signature || (events[0] ? signatureOf(rule.id, events[0]) : rule.id + ":" + (timed ? "hora" : "prueba"));
+    const origin = makeOrigin({ type: timed ? "automation" : "trigger", id: rule.id, depth: Math.max(0, ...events.map((e) => Number(e.chain) || 0)), signature, instruction: rule.prompt || rule.name || "" });
+    // Costly work a trigger starts for the first time is proposed, not started (a new conversation only).
+    let cost = !test && !timed && !roomMode ? costGate(this.store, rule, time) : null;
+    if (cost?.adopt) {
+      rule = this.store.patch("automations", rule.id, { costOk: { team: cost.team, monthly: cost.monthly } });
+      cost = null;
+    }
+    if (cost && Date.parse(rule.costSnoozeUntil || "") > time) {
+      // «Ahora no»: quiet until tomorrow; what arrives meanwhile is not started.
+      this.note(rule.id, { kind: "snoozed", text: (events.length === 1 ? "Un aviso sin empezar" : events.length + " avisos sin empezar") + ": dijiste «Ahora no»" });
+      return this.store.patch("automations", rule.id, { ...schedule });
+    }
     try {
       const team = rule.botId === "atlas" ? { mode: "equipo", botIds: [] } : { mode: "solo", botIds: [rule.botId] };
-      const context = eventContext(rule, events);
+      const context = eventContext(rule, events, digest);
       const found = events.length ? detectInjection(JSON.stringify(events)) : [];
       if (found.length) console.warn(`[security] Posible inyección en el disparador de «${rule.name}»: ${found.join(", ")}`);
       const prompt = (rule.prompt || rule.name || "Automatización") + context + lateNote(caught, time);
@@ -231,7 +281,7 @@ export class Scheduler {
         // Not the person's message: the router (router.mjs) leaves it to whoever takes the room's messages.
         const message = this.runtime.addMessage(room.id, "Rutina «" + rule.name + "»: " + prompt, [], { route: false });
         messageId = message?.id || null;
-        if (messageId && this.store.get("messages", messageId)) this.store.patch("messages", messageId, { automationId: rule.id });
+        if (messageId && this.store.get("messages", messageId)) this.store.patch("messages", messageId, { automationId: rule.id, origin });
         mission = this.store.get("missions", room.id) || room;
       } else {
         mission = this.runtime.create({
@@ -241,6 +291,8 @@ export class Scheduler {
           automationId: rule.id,
           safety: "preguntar",
         });
+        this.mark(mission, origin, digest);
+        mission = this.store.get("missions", mission.id) || mission;
       }
       // The whole run read it: nothing it proposes is approved on its own (external-content.mjs isFlagged).
       if (found.length && this.store.get("missions", mission.id))
@@ -250,8 +302,10 @@ export class Scheduler {
       throw error;
     }
     const merged = caught.missed + Math.max(0, events.length - 1);
+    if (previous && previous.id !== mission.id && this.dead(rule, previous)) this.supersede(rule, previous, mission);
     this.store.patch("automations", rule.id, (r) => ({
       ...schedule,
+      ...(test ? {} : { starts: withStart(r, digest ? [] : events.map((e) => e.signature || signatureOf(rule.id, e)), time) }),
       state: rule.trigger?.type === "vez" && !test ? "paused" : "running",
       blockedBy: null,
       error: null,
@@ -263,8 +317,9 @@ export class Scheduler {
       // The conversation is created once, then reused; a chosen room that was deleted is replaced
       // by a new one the same way.
       ...(roomMode && !room ? { delivery: { mode: "misma", missionId: mission.id } } : {}),
-      ...(room ? { deliveries: [...(r.deliveries || []), { at: now(), missionId: room.id, messageId, scheduledAt: caught.scheduledAt, merged, ...(test ? { test: true } : {}) }].slice(-DELIVERIES_KEPT) } : {}),
+      ...(room ? { deliveries: [...(r.deliveries || []), { at: now(), missionId: room.id, messageId, scheduledAt: caught.scheduledAt, merged, ...(digest ? { digest: digest.count } : {}), ...(test ? { test: true } : {}) }].slice(-DELIVERIES_KEPT) } : {}),
     }));
+    if (cost && !room) return this.propose(rule, mission, cost);
     if (!room) {
       try {
         this.runtime.launch?.(mission.id);
@@ -290,24 +345,196 @@ export class Scheduler {
       throw Error("Todavía no ha llegado nada que encaje con esta regla, así que no hay con qué probarla. Se probará sola con lo próximo que llegue.");
     return this.fire(rule, { event: timed ? null : rule.lastEvent, test: true });
   }
-  enqueue(ruleId, event) {
+  /**
+   * An event of a rule (from TriggerEngine or a webhook), through the brakes (brakes.mjs), in
+   * this order: a chain of rules firing each other is cut; an event about work that is still
+   * open joins it; the same thing for the fourth time in a day stops the rule; a rule that
+   * fires too often collects the rest for one digest run. → {status}: 'queued' | 'joined' |
+   * 'digest' | 'stopped' | 'chain' | 'duplicate' | 'off'.
+   */
+  enqueue(ruleId, incoming) {
     const rule = this.store.get("automations", ruleId);
-    if (!rule?.enabled) return;
-    if ((rule.queue || []).some((e) => e.id === event.id)) return;
-    this.store.patch("automations", ruleId, (r) => ({ queue: [...(r.queue || []), event].slice(-20), lastEvent: event, lastEventAt: now() }));
+    if (!rule?.enabled) return { status: "off" };
+    if ((rule.queue || []).some((e) => e.id === incoming.id) || (rule.digest?.events || []).some((e) => e.id === incoming.id)) return { status: "duplicate" };
+    const time = this.clock();
+    const signature = signatureOf(rule.id, incoming);
+    const event = { ...incoming, signature };
+    const seen = { lastEvent: event, lastEventAt: now() };
+    if ((Number(event.chain) || 0) > MAX_CHAIN_DEPTH) {
+      this.store.patch("automations", ruleId, seen);
+      this.note(ruleId, { kind: "chain", text: CHAIN_TEXT }, { once: 3600_000 });
+      return { status: "chain" };
+    }
+    const open = this.openRun(rule, signature);
+    if (open) {
+      this.store.patch("automations", ruleId, seen);
+      this.join(rule, open, event);
+      return { status: "joined", missionId: open.id };
+    }
+    if (startsOf(rule, signature, time) >= LOOP.limit) {
+      this.stopForLoop(rule, event, time);
+      return { status: "stopped" };
+    }
+    if (digestNow(rule, time)) {
+      this.store.patch("automations", ruleId, (r) => ({ ...seen, arrivals: withArrival(r, time), digest: withDigest(r, event, time) }));
+      return { status: "digest" };
+    }
+    // The same thing again while its turn has not come: the newest stands for both.
+    this.store.patch("automations", ruleId, (r) => ({ ...seen, arrivals: withArrival(r, time), queue: [...(r.queue || []).filter((e) => e.signature !== signature), event].slice(-20) }));
     setImmediate(() => this.tick());
+    return { status: "queued" };
+  }
+  /** The rule's run about the same thing that is still open (running or waiting on the person), or null. */
+  openRun(rule, signature) {
+    if (deliveryMode(rule) !== "nueva") return null;
+    return this.store.where("missions", "automationId", rule.id)
+      .find((m) => m.origin?.signature === signature && (OPEN_STATUSES.has(m.status) || (m.status === "paused" && !!m.limited))) || null;
+  }
+  /** Adds an event to open work as one activity line instead of starting a second mission. */
+  join(rule, mission, event) {
+    const what = cleanHeader(event.summary || "un aviso nuevo", 160);
+    this.store.put("messages", {
+      id: newId(), missionId: mission.id, role: "system", kind: "activity", at: now(),
+      text: "Ha llegado algo más sobre lo mismo (" + what + "). Lo sumo a este trabajo en vez de empezar otro.",
+      origin: makeOrigin({ type: "trigger", id: rule.id, depth: Number(event.chain) || 0, signature: event.signature }),
+    });
+    this.store.patch("missions", mission.id, (m) => ({ joined: [...(m.joined || []), { at: now(), id: event.id, summary: what }].slice(-20) }));
+    this.note(rule.id, { kind: "joined", missionId: mission.id, text: "Sumado a «" + (mission.title || rule.name) + "»: " + what });
+  }
+  /** The same thing a fourth time in a day: the rule stops and you are told once, with «Reanudar». */
+  stopForLoop(rule, event, time) {
+    this.store.patch("automations", rule.id, {
+      enabled: false, autoPaused: true, state: "paused", stoppedBy: "loop", stoppedAt: new Date(time).toISOString(), error: LOOP_TEXT,
+      lastEvent: event, lastEventAt: now(), queue: (rule.queue || []).filter((e) => e.signature !== event.signature),
+    });
+    this.note(rule.id, { kind: "loop", text: "Parada: «" + cleanHeader(event.summary || "lo mismo", 120) + "» la disparó más de " + LOOP.limit + " veces en un día" });
+    try {
+      this.notifier.notify({ kind: "needs", botId: rule.botId, title: "He parado «" + rule.name + "»", text: LOOP_TEXT, url: "/automatizaciones?id=" + rule.id, extra: { resume: { automationId: rule.id } } });
+    } catch {}
+  }
+  /** Switches a rule stopped by a brake back on («Reanudar»); it counts again from now. */
+  resume(ruleId) {
+    const rule = this.store.get("automations", ruleId);
+    if (!rule) throw Object.assign(Error("Automatización no encontrada."), { status: 404 });
+    const at = new Date(this.clock());
+    return this.store.patch("automations", ruleId, {
+      enabled: true, autoPaused: false, state: "scheduled", stoppedBy: null, blockedBy: null, error: null, webFailures: 0, lastPollAt: null,
+      loopResetAt: at.toISOString(), costSnoozeUntil: null, ...(isTimed(rule) ? { nextRun: this.next(rule, at) } : {}),
+    });
+  }
+  /** One line in the rule's history for something a brake did (shown with its runs). */
+  note(ruleId, { kind, text, missionId = null }, { once = 0 } = {}) {
+    const rule = this.store.get("automations", ruleId);
+    if (!rule) return;
+    const last = (rule.notes || []).findLast((n) => n.kind === kind);
+    if (once && last && this.clock() - Date.parse(last.at) < once) return;
+    this.store.patch("automations", ruleId, (r) => ({ notes: [...(r.notes || []), { at: new Date(this.clock()).toISOString(), kind, text, missionId }].slice(-NOTES_KEPT) }));
+  }
+  /** Stamps a new run and its first message (stored as «user») with where they come from. */
+  mark(mission, origin, digest = null) {
+    if (!this.store.get("missions", mission.id)) return;
+    this.store.patch("missions", mission.id, { origin, ...(digest ? { digest: digest.count } : {}) });
+    const first = this.store.where("messages", "missionId", mission.id).find((m) => m.role === "user");
+    if (first) this.store.patch("messages", first.id, { automationId: origin.id, origin });
+  }
+  /**
+   * A new run starts although the previous one failed or was left paused, and the history says
+   * so. A routine on a schedule does the same job again, so the new run replaces the old one:
+   * it never resumes by itself (you can still press «Continuar»). A trigger's previous run was
+   * about something else: it is left as it was (parked work goes on when the plan renews).
+   */
+  supersede(rule, old, mission) {
+    const failed = old.status === "blocked";
+    const before = failed ? "La vez anterior falló" : "La vez anterior se quedó en pausa";
+    if (!isTimed(rule)) return this.note(rule.id, { kind: "superseded", missionId: old.id, text: before + ": sigue con lo nuevo sin esperarla" });
+    this.store.patch("missions", old.id, {
+      supersededBy: mission.id, limited: null, interrupted: null,
+      error: (failed ? "Esta ejecución falló" : "Esta ejecución se quedó en pausa") + " y la rutina ha vuelto a ponerse en marcha con una nueva. Pulsa «Continuar» si aun así quieres terminarla.",
+    });
+    this.store.put("messages", { id: newId(), missionId: old.id, role: "system", kind: "activity", text: "La rutina «" + rule.name + "» ha empezado una ejecución nueva; esta se queda como estaba.", at: now() });
+    this.note(rule.id, { kind: "superseded", missionId: old.id, text: before + ": la sustituye una nueva" });
+  }
+  /**
+   * Costly work proposed instead of started: the run's conversation is created, waits, and a
+   * question card asks «<Bot> quiere empezar: …» (Adelante / Ahora no / Nunca / Siempre). The
+   * answer is an ordinary answer to a question (Runtime#answer), heard in onChange.
+   */
+  propose(rule, mission, cost) {
+    const botId = rule.botId;
+    const name = this.store.get("bots", botId)?.name || "Un bot";
+    const title = (name + " quiere empezar: " + rule.name).slice(0, 140);
+    const summary = title + "\n\n" + cost.reasons.map((r) => r.text).join(" ") + "\n\nLo pone en marcha la regla «" + rule.name + "» y es la primera vez que haría algo así.";
+    const approvalId = "start:" + mission.id;
+    const options = START_OPTIONS.map((o) => ({ ...o }));
+    this.store.put("approvals", {
+      id: approvalId, missionId: mission.id, botId, stepId: null, callId: null, tool: START_TOOL, kind: "question",
+      title, summary, context: name + " · " + rule.name, blocks: 1, options, email: null, canAlways: false, status: "pending", createdAt: now(),
+      decidedAt: null, decidedBy: null, resolution: null, startWork: { ruleId: rule.id, team: cost.team, monthly: cost.monthly, reasons: cost.reasons.map((r) => r.id) },
+    });
+    this.store.put("messages", { id: "question:" + approvalId, missionId: mission.id, botId, role: "assistant", kind: "question", text: summary, options, approvalId, stepId: null, at: now() });
+    const why = { team: "trabajo en equipo", monthly: "muchas veces al mes", budget: "presupuesto del bot" };
+    this.note(rule.id, { kind: "proposed", missionId: mission.id, text: "Te pregunta antes de empezar: " + cost.reasons.map((r) => why[r.id]).join(", ") });
+    const waiting = this.store.patch("missions", mission.id, { status: "waiting", error: null });
+    this.store.patch("automations", rule.id, { state: "waiting", lastStatus: "waiting", costAsked: true });
+    return waiting;
+  }
+  onChange(change) {
+    if (change?.type !== "record" || change.kind !== "approvals" || !change.data) return;
+    const a = change.data;
+    if (a.tool !== START_TOOL || a.status === "pending" || a.startHandled) return;
+    try {
+      this.decideStart(a);
+    } catch (error) {
+      console.warn("Propuesta de «" + (a.title || a.id) + "»: " + error.message);
+    }
+  }
+  /** Your answer to «quiere empezar»: go on (once or always), not now, or never for this rule. */
+  decideStart(a) {
+    const said = String(a.answer?.text || "").trim();
+    const picked = a.status !== "answered" ? "later" : START_OPTIONS.find((o) => o.id === a.answer?.optionId)?.id
+      || START_OPTIONS.find((o) => o.label.toLowerCase() === said.toLowerCase())?.id || (isNo(said) ? "later" : "go");
+    const label = START_OPTIONS.find((o) => o.id === picked).label;
+    this.store.patch("approvals", a.id, { startHandled: true, startChoice: picked, resolution: label });
+    const ruleId = a.startWork?.ruleId;
+    const rule = ruleId ? this.store.get("automations", ruleId) : null;
+    const time = this.clock();
+    if (picked === "go" || picked === "always") {
+      if (rule) this.store.patch("automations", rule.id, { costOk: { team: !!a.startWork.team, monthly: a.startWork.monthly || 0 }, costSnoozeUntil: null, ...(picked === "always" ? { costly: "siempre" } : {}) });
+      return; // the runtime relaunches the conversation: the work starts
+    }
+    // Not started: the conversation closes before the runtime looks at it again.
+    const mission = this.store.get("missions", a.missionId);
+    if (mission && !TERMINAL.has(mission.status)) this.store.patch("missions", mission.id, { status: "cancelled", completedAt: now(), error: null });
+    if (!rule) return;
+    if (picked === "never")
+      this.store.patch("automations", rule.id, { enabled: false, autoPaused: true, state: "paused", stoppedBy: "never", error: NEVER_TEXT, queue: [], digest: null });
+    else this.store.patch("automations", rule.id, { costSnoozeUntil: new Date(time + COST.snoozeMs).toISOString(), queue: [], digest: null });
+    this.note(rule.id, { kind: picked, missionId: a.missionId, text: picked === "never" ? "Dijiste «Nunca para esta regla»" : "Dijiste «Ahora no»: hasta mañana no vuelve a preguntar" });
+  }
+  /** A proposal whose conversation went on some other way (you wrote in it, or it was cancelled) is closed. */
+  settleProposal(last) {
+    if (!last || last.status === "waiting") return;
+    const a = this.store.get("approvals", "start:" + last.id);
+    if (!a || a.status !== "pending") return;
+    const gone = last.status === "cancelled";
+    this.store.patch("approvals", a.id, {
+      status: gone ? "dismissed" : "answered", startHandled: true, decidedAt: now(), decidedBy: "tú",
+      resolution: gone ? "Sin empezar" : "Empezó porque escribiste en su conversación", ...(gone ? {} : { answer: { optionId: "go", label: "Adelante", text: null } }),
+    });
   }
   /** Runs of a rule, newest first: [{ at, missionId, title, status }]. */
   runs(ruleId) {
     const own = this.store
       .where("missions", "automationId", ruleId)
-      .map((m) => ({ at: m.createdAt, missionId: m.id, title: m.title, status: m.status, ...(m.nothingNew ? { statusLabel: "Sin novedades" } : {}) }));
+      .map((m) => ({ at: m.createdAt, missionId: m.id, title: m.title, status: m.status, ...(m.nothingNew ? { statusLabel: "Sin novedades" } : m.digest ? { statusLabel: "Resumen de " + m.digest + " avisos" } : m.supersededBy ? { statusLabel: "Sustituida" } : {}) }));
     // Deliveries into an existing conversation: one row per message, with the conversation's state.
     const delivered = (this.store.get("automations", ruleId)?.deliveries || []).map((d) => {
       const m = this.store.get("missions", d.missionId);
-      return { at: d.at, missionId: d.missionId, messageId: d.messageId, title: m?.title || "Conversación borrada", status: m?.status || "cancelled", ...(d.merged ? { merged: d.merged, statusLabel: "Juntaba " + (d.merged + 1) } : {}) };
+      return { at: d.at, missionId: d.missionId, messageId: d.messageId, title: m?.title || "Conversación borrada", status: m?.status || "cancelled", ...(d.digest ? { statusLabel: "Resumen de " + d.digest + " avisos" } : d.merged ? { merged: d.merged, statusLabel: "Juntaba " + (d.merged + 1) } : {}) };
     });
-    return [...own, ...delivered].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 50);
+    // What the brakes did (joined to open work, stopped, cut, superseded): a line each, no run of its own.
+    const notes = (this.store.get("automations", ruleId)?.notes || []).map((n) => ({ at: n.at, missionId: n.missionId || null, title: n.text, status: "note", statusLabel: "Aviso", note: n.kind }));
+    return [...own, ...delivered, ...notes].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 50);
   }
   start() {
     this.timer = setInterval(() => this.tick(), this.interval);
@@ -326,6 +553,7 @@ export class Scheduler {
     setTimeout(learn, 60e3).unref?.();
   }
   stop() {
+    this.store.listeners.delete(this.listener);
     clearInterval(this.learnTimer);
     clearInterval(this.accountsTimer);
     this.unwatchRooms?.();
@@ -340,12 +568,15 @@ const isTimed = (rule) => !rule.trigger || TIME_TYPES.has(rule.trigger.type);
 // The event is outside content (an email, a page, a calendar change): wrapped as data, its
 // sender and subject cleaned, so neither the model nor «what you said» (preferences.mjs,
 // appactions.mjs) takes it for the person's words.
-function eventContext(rule, events) {
+function eventContext(rule, events, digest = null) {
   if (!events.length) return "";
   const wrap = (event) => wrapExternal(JSON.stringify(sanitizeValue({ tipo: event.kind, resumen: event.summary, ...event.data })), {
     source: EVENT_SOURCE[event.kind] || "trigger", label: rule.name,
     sender: event.data?.de || null, subject: event.data?.asunto || null,
   });
+  if (digest)
+    return "\n\nQué lo ha puesto en marcha (" + (digest.count + digest.dropped) + " avisos seguidos; Colmena los ha juntado en una sola vez porque llegaban demasiado a menudo" +
+      (digest.dropped ? ", y solo te pasa los " + digest.count + " últimos" : "") + "). Atiéndelos juntos, una vez:\n" + events.map(wrap).join("\n");
   if (events.length === 1) return "\n\nQué lo ha puesto en marcha:\n" + wrap(events[0]);
   return "\n\nQué lo ha puesto en marcha (" + events.length + " avisos juntos, llegaron mientras la conversación estaba ocupada):\n" + events.map(wrap).join("\n");
 }

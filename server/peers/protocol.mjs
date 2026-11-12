@@ -124,6 +124,30 @@ export function open(identity, env, opts = {}) {
   }
 }
 
+// ------------------------------------------------------------------ webhooks
+// A request another service left at /h/<hook> (relay/cloudflare/hooks.js): the mailbox sealed
+// it to this install's box key as it arrived, bound to the hook and to this address. It is
+// not an envelope: nobody signed it, so what it says is outside content, never a contact.
+/** A new hook id: 32 random bytes (256 bits), the unguessable part of the address. */
+export const newHookId = () => b64u(randomBytes(32));
+export const isHookId = (s) => typeof s === "string" && ADDRESS_RE.test(s);
+/** Opens {v, hook, epk, n, ct} sealed by the mailbox for `identity`; returns the request. */
+export function openHook(identity, sealed) {
+  try {
+    if (!sealed || sealed.v !== 1 || !isHookId(sealed.hook) || !isAddress(sealed.epk)) throw new ProtocolError("malformed");
+    const shared = diffieHellman({ privateKey: boxPriv(identity.box), publicKey: boxPub(sealed.epk) });
+    const key = Buffer.from(hkdfSync("sha256", shared, Buffer.concat([fromB64u(sealed.epk), fromB64u(identity.box.pub)]), Buffer.from(`colmena-aviso-v1|${sealed.hook}|${identity.sign.pub}`), 32));
+    const data = fromB64u(sealed.ct);
+    const decipher = createDecipheriv("aes-256-gcm", key, fromB64u(sealed.n));
+    decipher.setAuthTag(data.subarray(data.length - 16));
+    const body = JSON.parse(Buffer.concat([decipher.update(data.subarray(0, data.length - 16)), decipher.final()]).toString("utf8"));
+    if (!body || typeof body !== "object" || body.hook !== sealed.hook) throw new ProtocolError("malformed");
+    return body;
+  } catch {
+    throw new ProtocolError("malformed", "No se pudo abrir el aviso.");
+  }
+}
+
 // ------------------------------------------------------------------ mailbox requests
 // Every request to the mailbox is signed: «Colmena <address>.<ts>.<nonce>.<sig>» over
 // method, path, time, nonce and the body hash. No accounts, no passwords.

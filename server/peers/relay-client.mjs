@@ -81,6 +81,9 @@ export class RelayClient {
     return Buffer.from(await res.arrayBuffer());
   }
   deleteBlob(id) { return this.request("DELETE", "/v1/blobs/" + id).catch(() => null); }
+  /** A webhook address of yours: what arrives at /h/<id> is sealed to `box` and left in your mailbox. */
+  putHook(id, box) { return this.request("PUT", "/v1/hooks/" + id, { box }); }
+  deleteHook(id) { return this.request("DELETE", "/v1/hooks/" + id); }
   async health() {
     const res = await this.fetch(this.url + "/v1/health", { signal: AbortSignal.timeout(8000) });
     return res.ok ? res.json() : null;

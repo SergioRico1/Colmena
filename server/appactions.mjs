@@ -1,7 +1,7 @@
 // How Colmena says, in plain Spanish, what a bot wants to do in one of your apps
 // («crear un evento en Google Calendar: «Renovar PlayStation Plus», 11 nov.»), from the
 // prepared action (tool slug like GOOGLECALENDAR_CREATE_EVENT, toolkit and arguments).
-import { withoutExternal } from "./external-content.mjs";
+import { personWords } from "./origin.mjs";
 import { stepHistory } from "./histories.mjs";
 
 const VERBS = [
@@ -53,9 +53,11 @@ export function describeAppAction(a, args = {}) {
 
 // ---- Your words in the chat count ------------------------------------------------------
 const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-// Your words in a message, without the outside content wrapped in it (an automation's trigger
-// email quoted in its first message never asks for a send).
-const yours = (m) => fold(withoutExternal(m?.text));
+// Your words in a message, without the outside content wrapped in it. A message a routine or
+// a trigger wrote (origin.mjs) counts only for the rule's own standing instruction, as a
+// routine's prompt always did; what set it off (an email, a webhook body, a file) never asks
+// for a send, wrapped or not.
+const yours = (m) => fold(personWords(m));
 const YES = /^\s*(?:(?:si|vale|ok|okay|okey|adelante|dale|claro|perfecto|de acuerdo|hazlo|venga)\b[\s,.!]*)+(?:(?:hazlo|adelante|por favor|porfa|claro|estas autorizad[oa]|te autorizo|autorizado|puedes|envialo|mandalo|enviala|mandala)\b[\s,.!]*)*$|^\s*(?:estas autorizad[oa]|te autorizo|autorizado|tienes permiso|envialo|mandalo|enviala|mandala)[\s,.!]*$/;
 const NO = /^\s*(?:no|ahora no|mejor no|no lo hagas|no lo envies|cancela|para)[\s,.!]*$/;
 /** «sí», «vale, hazlo», «estás autorizado»… (short, nothing else in the message). */

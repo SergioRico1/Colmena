@@ -16,7 +16,7 @@ import { randomBytes } from "node:crypto";
 export const SOURCE_LABELS = Object.freeze({
   email: "Correo", app: "App conectada", web: "Página web", file: "Archivo", mcp: "Herramienta MCP",
   browser: "Navegador", screen: "Pantalla del ordenador", command: "Salida de un comando", api: "Respuesta de una API",
-  trigger: "Aviso de una automatización", calendar: "Agenda", chat: "Mensajes de chat", room: "Mensaje de fuera",
+  trigger: "Aviso de una automatización", webhook: "Aviso de otra app", calendar: "Agenda", chat: "Mensajes de chat", room: "Mensaje de fuera",
   text: "Texto pegado", external: "Contenido de fuera",
 });
 

@@ -37,6 +37,7 @@ import { connectedCalendar } from "./peers/calendar.mjs";
 import { CodeShare } from "./peers/codeshare.mjs";
 import { PeerFiles, artifactSource } from "./peers/files.mjs";
 import { Errands } from "./peers/errands.mjs";
+import { Webhooks } from "./webhooks.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 // The installed app runs this server on Electron's Node (desktop/main.cjs); the programs it
@@ -175,7 +176,12 @@ const ownName = () => {
 const relayEnv = process.env.COLMENA_RELAY_URL;
 const peers = new Peers({ store, directory, relayUrl: relayEnv === "off" ? null : relayEnv || DEFAULT_RELAY, nameOf: ownName, notifier: scheduler.notifier });
 app.locals.peers = peers;
-peers.start().then(() => peers.announceProfile()).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
+// «Cuando avisa otra app»: webhook triggers. A service posts to a secret address at the same
+// mailbox; what arrives is sealed to this Colmena, delivered when it is on, and goes through
+// the brakes of self-started work like any other trigger (server/webhooks.mjs).
+const webhooks = new Webhooks({ store, peers, secrets: runtime.secrets, enqueue: (ruleId, event) => scheduler.enqueue(ruleId, event) });
+app.locals.webhooks = webhooks;
+peers.start().then(() => { webhooks.start(); return peers.announceProfile(); }).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
 // Your bots answer when they are mentioned in a conversation with people (no tools, no memory),
 // and agree meetings with other people's Colmenas looking only at free/busy.
 peers.meetings = new Meetings({ peers, store, calendar: connectedCalendar(connections) }).start();
@@ -258,6 +264,7 @@ async function close() {
   closing = true;
   scheduler.stop();
   app.locals.watcher?.stop();
+  webhooks.stop();
   peers.stop();
   desktop.close();
   runtime.projects?.servers.shutdown();
