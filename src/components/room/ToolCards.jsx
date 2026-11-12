@@ -1,5 +1,6 @@
-import { Brain, CircleHelp, Compass, FileText, Folder, FolderCode, Globe, Image as ImageIcon, MessagesSquare, Monitor, Plug, RotateCw, Save, Search, SquareTerminal, Wrench } from "lucide-react";
+import { Brain, CircleHelp, Compass, FileText, Folder, FolderCode, Globe, Image as ImageIcon, MessagesSquare, Monitor, NotebookText, Plug, RotateCw, Save, Search, SquareTerminal, Wrench } from "lucide-react";
 import { plural } from "../../lib/format.js";
+import { noteUrl } from "../../lib/wikiLinks.js";
 import RowBoundary from "../RowBoundary.jsx";
 import WorkingDots from "./Dots.jsx";
 import { BotAvatar, findBot } from "./common.jsx";
@@ -33,7 +34,7 @@ export function groupTools(tools = []) {
 }
 
 // A semantic icon per kind of step; hovering shows the exact tool (OpenClaw).
-export const ICONS = { web: Globe, websearch: Search, file: FileText, folder: Folder, search: Search, deliverable: Save, bot: MessagesSquare, question: CircleHelp, app: Plug, browser: Compass, command: SquareTerminal, memory: Brain, image: ImageIcon, pdf_fields: FileText, fill_pdf: FileText, retry: RotateCw, desktop: Monitor, project: FolderCode };
+export const ICONS = { web: Globe, websearch: Search, file: FileText, folder: Folder, search: Search, deliverable: Save, bot: MessagesSquare, question: CircleHelp, app: Plug, browser: Compass, command: SquareTerminal, memory: Brain, image: ImageIcon, pdf_fields: FileText, fill_pdf: FileText, retry: RotateCw, desktop: Monitor, project: FolderCode, note: NotebookText };
 const DESKTOP = { windows: ["Mirando las ventanas", "Miró las ventanas abiertas"], open: ["Abriendo ", "Abrió "], look: ["Mirando ", "Miró "], do: ["Usando ", "Usó "] };
 const DO_VERB = { click: "hizo clic", double_click: "hizo doble clic", right_click: "abrió el menú", type: "escribió", key: "pulsó una tecla", hotkey: "usó un atajo", set_value: "rellenó un campo", scroll: "se desplazó" };
 
@@ -110,7 +111,16 @@ export function headline(tool, bots) {
     case "folder":
       return <>{"Miró la carpeta"}{c.path ? <> <strong>{c.path}</strong></> : null}{c.count != null ? ` · ${plural(c.count, "elemento", "elementos")}` : ""}</>;
     case "search":
-      return <>{tool.name === "recall" ? "Buscó en la memoria" : "Buscó en el historial"}{c.query ? <> <strong>{`«${c.query}»`}</strong></> : null}{c.count != null ? ` · ${plural(c.count, "resultado", "resultados")}` : ""}</>;
+      return <>{tool.name === "recall" ? "Buscó en la memoria" : tool.name === "wiki_search" ? "Buscó en las notas" : "Buscó en el historial"}{c.query ? <> <strong>{`«${c.query}»`}</strong></> : null}{c.count != null ? ` · ${plural(c.count, "resultado", "resultados")}` : ""}</>;
+    case "note": {
+      // «Notas» (wiki_read, wiki_write): which note it read or wrote, as a link to it.
+      const name = c.slug ? <a href={noteUrl(c.slug)} style={{ color: "inherit", fontWeight: "700", textDecoration: "underline", textUnderlineOffset: "3px" }}>{`«${c.title || "una nota"}»`}</a> : <strong>{`«${c.title || "una nota"}»`}</strong>;
+      if (c.action === "read") return c.found === false && !running ? <>{"Buscó la nota "}{name}{" y no existe"}</> : <>{running ? "Leyendo la nota " : "Leyó la nota "}{name}</>;
+      const waiting = tool.status === "waiting";
+      const [now, ask, past] = c.action === "create" || c.created ? ["Creando la nota ", "Quiere crear la nota ", "Creó la nota "] : c.action === "append" ? ["Añadiendo a la nota ", "Quiere añadir a la nota ", "Añadió a la nota "] : ["Cambiando la nota ", "Quiere cambiar la nota ", "Cambió la nota "];
+      if (!running && !waiting && c.saved === false) return <>{"No cambió la nota "}{name}</>;
+      return <>{running ? now : waiting ? ask : past}{name}{c.action === "section" && c.section ? ` · «${c.section}»` : ""}</>;
+    }
     case "deliverable":
       return <>{running ? "Guardando " : "Guardó "}<strong>{`«${c.title || "Entregable"}»`}</strong>{c.version > 1 ? ` (versión ${c.version})` : ""}</>;
     case "bot": {
@@ -189,6 +199,7 @@ export function Detail({ tool, bots, onOpenArtifact, liveOutput = null }) {
       );
     }
   }
+  if (c.type === "note" && c.action !== "read" && c.outside) parts.push(<span key="no" style={MUTED}>{"Incluye texto de fuera: la nota queda marcada hasta que la revises."}</span>);
   if (c.type === "question" && c.question) parts.push(<p key="q" style={{ ...MUTED, margin: "0" }}>{`«${c.question}»`}</p>);
   if (c.type === "memory" && c.text) parts.push(<p key="m" style={{ ...MUTED, margin: "0" }}>{`«${c.text}»`}</p>);
   if (c.type === "file") {

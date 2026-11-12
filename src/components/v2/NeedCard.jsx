@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { NoteAsk } from "../wiki/NoteDiff.jsx";
 import QuestionFlow from "./chat/QuestionFlow.jsx";
 import { QuestionReply } from "../room/QuestionReply.jsx";
 import { post } from "../../lib/api.js";
@@ -169,6 +170,8 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
       ) : !isQuestion && a.summary ? (
         <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{a.summary}</p>
       ) : null}
+      {/* A note of «Notas» the bot wants to write: which one, and the lines it adds and removes. */}
+      {a.wiki && !snoozed ? <NoteAsk wiki={a.wiki} compact={inline} /> : null}
       {snoozed ? (
         <SnoozedLine items={[a]} onError={setError} />
       ) : isQuestion && a.questions?.length > 1 ? (

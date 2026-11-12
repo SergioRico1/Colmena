@@ -16,6 +16,7 @@ import HoldButton from "../../HoldButton.jsx";
 import { withRowBoundary } from "../../RowBoundary.jsx";
 import SnoozeMenu, { snooze } from "../../v2/SnoozeMenu.jsx";
 import { NeedLabel, Shape, UndoBar, btn } from "./parts.jsx";
+import { NoteAsk } from "../../wiki/NoteDiff.jsx";
 
 // «Te necesitan» on Inicio (design/V3Inicio.dc.html): white cards ringed in honey, the oldest
 // first. A send shows who gets what; «Aprobar y enviar» waits 10 s with «Deshacer»; «No
@@ -145,6 +146,8 @@ export const ApprovalNeed = withRowBoundary(function ApprovalNeed({ a, bot, miss
           </p>
         ) : a.summary && a.summary !== a.title ? <p style={body}>{a.summary}</p> : null}
       </div>
+      {/* A note of «Notas» the bot wants to write: which one, and the lines it adds and removes. */}
+      {a.wiki ? <NoteAsk wiki={a.wiki} compact={!wide} /> : null}
       {isQuestion && a.questions?.length > 1 ? (
         // Several questions: one at a time (QuestionFlow.jsx).
         <>

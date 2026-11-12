@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, Keyboard, ListChecks, MessageCircle, MessageSquareText, Pause, Play, Settings2, Sparkles, Stethoscope, Target, Undo2, UsersRound } from "lucide-react";
+import { ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, Keyboard, ListChecks, MessageCircle, MessageSquareText, NotebookText, Pause, Play, Settings2, Sparkles, Stethoscope, Target, Undo2, UsersRound } from "lucide-react";
+import { plainLinks } from "../lib/wikiLinks.js";
 import { Highlight, matchBots, mentionAt, mentionedBots } from "../components/home/shared.jsx";
 import { Shape } from "../components/v3/dia/parts.jsx";
 import { ATLAS_FALLBACK, likelyBot } from "../components/v3/dia/route.js";
@@ -211,6 +212,13 @@ export default function CommandPalette() {
       preview: { kind: "Archivo · " + word, title: name, desc: a.summary || (a.room ? `De la sala #${a.room}.` : ""), facts: [["Lo hizo", owner?.name || "—"], a.version ? ["Versiones", String(a.version)] : null, ["Dónde", "Biblioteca › Archivos"]], cta: "Abrir el archivo" },
     };
   };
+  // A page of «Notas» (GET /api/search → notes): opens the note.
+  const noteRow = (n) => ({
+    key: "n:" + n.slug, scope: "archivos", group: "Notas", name: n.title, icon: iconTile(NotebookText),
+    title: <Highlight text={n.title} query={plain} />, meta: ["Nota", n.folder, shortDate(n.updatedAt)].filter(Boolean).join(" · "),
+    run: () => go("/biblioteca/notas/" + encodeURIComponent(n.slug)),
+    preview: { kind: "Nota", title: n.title, desc: plainLinks(n.snippet || ""), facts: [n.folder ? ["Carpeta", n.folder] : null, ["Dónde", "Biblioteca › Notas"]].filter(Boolean), cta: "Abrir la nota" },
+  });
   const botRow = (b) => ({
     key: "b:" + b.id, scope: "bots", group: "Bots", name: b.name, icon: botTile(b),
     title: <Highlight text={b.name} query={plain} />, meta: [b.role, String(b.statusLabel || "").toLowerCase()].filter(Boolean).join(" · "),
@@ -315,6 +323,7 @@ export default function CommandPalette() {
   const placeItems = () => [
     ...PLACES.map((p, i) => ({ key: "p:" + p.id, scope: "comandos", group: "Lugares", name: p.label, icon: pathTile(p.icon), title: p.label, meta: `Ctrl ${i + 1}`, terms: [p.label], run: () => go(p.href), preview: { kind: "Lugar", title: p.label, desc: "", facts: [["Atajo", `Ctrl ${i + 1}`]], cta: "Ir" } })),
     { key: "p:actividad", scope: "comandos", group: "Lugares", name: "Actividad", icon: pathTile("M3 12h4l2.5-6 5 12 2.5-6H21"), title: "Actividad", meta: "Qué hace cada bot ahora", terms: ["Actividad"], run: () => go("/actividad"), preview: { kind: "Lugar", title: "Actividad", desc: "Qué hace cada bot ahora, qué ha hecho y lo que ha costado.", facts: [], cta: "Ir" } },
+    { key: "p:notas", scope: "archivos", group: "Lugares", name: "Notas", icon: iconTile(NotebookText), title: "Notas", meta: "Biblioteca › Notas", terms: ["Notas", "wiki apuntes páginas"], run: () => go("/biblioteca/notas"), preview: { kind: "Lugar", title: "Notas", desc: "Lo que tú y tus bots tenéis escrito: clientes, proyectos, cómo se hace cada cosa.", facts: [["Dónde", "Biblioteca"]], cta: "Ir" } },
     { key: "p:ajustes", scope: "ajustes", group: "Lugares", name: "Ajustes", icon: iconTile(Settings2), title: "Ajustes", meta: "Cuenta, IA, permisos, avisos…", terms: ["Ajustes"], run: () => go("/ajustes"), preview: { kind: "Lugar", title: "Ajustes", desc: "Todas las secciones, con buscador.", facts: [], cta: "Ir" } },
   ];
   const sectionRows = () => SECTIONS.filter((s) => !s.hidden && (!s.expert || expert)).map((s) => ({ key: "p:s:" + s.id, scope: "ajustes", group: "Ajustes", name: s.label, icon: iconTile(s.icon), title: s.label, meta: s.lead, terms: [s.label, s.lead], run: () => go("/ajustes/" + s.id), preview: { kind: "Ajustes", title: s.label, desc: s.lead, facts: [["Sección", s.label]], cta: "Ir a la sección" } }));
@@ -404,6 +413,7 @@ export default function CommandPalette() {
       });
     }
     groups.push({ title: "Archivos", items: files });
+    groups.push({ title: "Notas", items: (src.notes || []).slice(0, 5).map(noteRow) });
     groups.push({ title: "Bots", items: (src.bots || []).slice(0, 3).map((b) => botRow(botById(bots, b.id) || b)) });
     groups.push({ title: "Rutinas", items: rank(automations, plain, (r) => [r.name, r.prompt, r.subtitle]).slice(0, 3).map(routineRow) });
     groups.push({

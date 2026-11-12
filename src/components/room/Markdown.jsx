@@ -9,6 +9,8 @@ import { MentionLink } from "../v2/MentionPill.jsx";
 import { InlineCitation, useCitation } from "../v2/chat/SourceChips.jsx";
 import { useStore } from "../../lib/store.jsx";
 import { FileHref, FileLink, linkFiles, useCodeFile, useFileLinks } from "../v2/chat/fileLinks.jsx";
+import NoteLink from "../wiki/NoteLink.jsx";
+import { NOTE_HREF, linkifyNotes, noteOfHref } from "../../lib/wikiLinks.js";
 
 /** A link that is one of the answer's sources shows as an inline citation (SourceChips.jsx). */
 function CitedLink({ href, ...props }) {
@@ -44,7 +46,10 @@ const make = (size) => ({
       ? <MentionLink href={href}>{props.children}</MentionLink>
       : String(href || "").startsWith("#file:")
         ? <FileHref href={href}>{props.children}</FileHref>
-        : <CitedLink href={href} {...props} />,
+        // `[[Nota]]` (lib/wikiLinks.js linkifyNotes): a link to that note, or «por crear».
+        : String(href || "").startsWith(NOTE_HREF)
+          ? <NoteLink target={noteOfHref(href)}>{props.children}</NoteLink>
+          : <CitedLink href={href} {...props} />,
   pre: ({ node, ...props }) => {
     // ```mermaid blocks are drawn as diagrams.
     const code = node?.children?.find((c) => c.tagName === "code");
@@ -156,7 +161,7 @@ function Markdown({ text, size = 16, style, mentions = NO_MENTIONS }) {
   const body = useMemo(() => {
     const who = names ? names.split("\n") : NO_MENTIONS;
     const parts = splitInteractive(String(text || ""));
-    const renderText = (md, key) => <ReactMarkdown key={key} remarkPlugins={GFM} components={size >= 16 ? BODY : size <= 14 ? TINY : SMALL} skipHtml>{withMentions(linkFiles(md, fileLinks), who)}</ReactMarkdown>;
+    const renderText = (md, key) => <ReactMarkdown key={key} remarkPlugins={GFM} components={size >= 16 ? BODY : size <= 14 ? TINY : SMALL} skipHtml>{linkifyNotes(withMentions(linkFiles(md, fileLinks), who))}</ReactMarkdown>;
     return parts.some((p) => p.kind !== "md") ? <AnswerLayout parts={parts} renderText={renderText} /> : renderText(String(text || ""), "all");
   }, [text, size, names, fileLinks]);
   return (

@@ -1,0 +1,61 @@
+import { useMemo, useState } from "react";
+import { diffModel, diffSummary, noteAskTitle, noteUrl } from "../../lib/wikiLinks.js";
+
+// The changes of a note as lines: what is new in green with «+», what goes in red with «−»
+// (the sign says it too, not only the colour). Used by the conflict view, the history and
+// the approval cards of a bot's note write (approval.wiki).
+
+const MONO = "'Geist Mono', monospace";
+const TONE = { add: ["#E3F4EC", "#0B6B4A", "+"], del: ["#FBE9EA", "#B4232A", "−"], ctx: ["transparent", "#3D404A", " "] };
+const WORD = { add: "Línea nueva", del: "Línea quitada" };
+
+/** `diff` is `{patch, added, removed, truncated}` (or the patch alone). `max` rows before «Ver todo». */
+export default function NoteDiff({ diff, max = 400, label = "Cambios en la nota", empty = "Los dos textos son iguales.", style = null }) {
+  const model = useMemo(() => diffModel(diff), [diff]);
+  const [all, setAll] = useState(false);
+  if (model.same) return <p style={{ margin: 0, fontSize: "13.5px", color: "#5C606C", ...style }}>{empty}</p>;
+  const rows = all ? model.rows : model.rows.slice(0, max);
+  return (
+    <div role="group" aria-label={`${label}: ${diffSummary(model)}`} style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0, ...style }}>
+      <div tabIndex={0} aria-label={label} style={{ maxHeight: "360px", overflow: "auto", borderRadius: "12px", background: "#FBFBF9", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.06)", font: `400 12.5px/1.6 ${MONO}` }}>
+        {rows.map((r, i) => {
+          if (r.type === "gap") return <div key={i} aria-hidden="true" style={{ padding: "2px 12px", color: "#8A8D97" }}>{"⋯"}</div>;
+          const [bg, ink, sign] = TONE[r.type];
+          return (
+            <div key={i} style={{ display: "flex", gap: "8px", padding: "0 12px", background: bg, color: ink }}>
+              <span aria-hidden="true" style={{ flex: "none", width: "10px", userSelect: "none" }}>{sign}</span>
+              {WORD[r.type] ? <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{WORD[r.type] + ": "}</span> : null}
+              <span style={{ flex: "1", minWidth: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{r.text || " "}</span>
+            </div>
+          );
+        })}
+      </div>
+      <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 10px", fontSize: "12.5px", color: "#5C606C" }}>
+        {diffSummary(model)}
+        {model.truncated ? <span>{"· Es un cambio largo: aquí solo se ve una parte."}</span> : null}
+        {!all && model.rows.length > max ? <button type="button" onClick={() => setAll(true)} style={{ height: "28px", padding: "0 8px", border: "0", background: "transparent", color: "#1F4FD1", fontSize: "12.5px", cursor: "pointer" }}>{"Ver todo"}</button> : null}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * A bot's note write waiting for the person's OK (`approval.wiki`): which note, what it would
+ * do, and the diff. `compact` folds the diff behind «Ver los cambios» (rows above the composer).
+ */
+export function NoteAsk({ wiki, compact = false, style = null }) {
+  const [open, setOpen] = useState(!compact);
+  if (!wiki) return null;
+  const creates = wiki.create || wiki.action === "create";
+  return (
+    <div data-note-ask="" style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: 0, ...style }}>
+      <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 10px", fontSize: "14px", color: "#3D404A" }}>
+        <span>{noteAskTitle(wiki)}</span>
+        {!creates && wiki.slug ? <a href={noteUrl(wiki.slug)} style={{ color: "#1F4FD1", fontSize: "13.5px" }}>{"Ver la nota"}</a> : null}
+        {compact ? <button type="button" className="rm-focus" aria-expanded={open} onClick={() => setOpen((v) => !v)} style={{ height: "28px", padding: "0 8px", border: "0", borderRadius: "8px", background: "transparent", color: "#1F4FD1", fontSize: "13.5px", cursor: "pointer" }}>{open ? "Ocultar los cambios" : `Ver los cambios (${diffSummary(wiki).toLowerCase()})`}</button> : null}
+      </span>
+      {wiki.outside ? <span style={{ fontSize: "13px", lineHeight: "1.45", color: "#8F1D22" }}>{wiki.outside.suspicious ? "Lo escribe después de leer un texto de fuera que intentaba darle órdenes. Léelo con calma antes de aprobar." : "Incluye texto copiado de fuera (una web, un correo o una app). La nota quedará marcada hasta que la revises."}</span> : null}
+      {open ? <NoteDiff diff={wiki} max={compact ? 80 : 200} label={creates ? "Texto de la nota nueva" : "Cambios en la nota"} empty="No cambia el texto de la nota." /> : null}
+    </div>
+  );
+}

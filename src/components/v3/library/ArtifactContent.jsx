@@ -1,6 +1,15 @@
 import ReactMarkdown from "react-markdown";
 import { SlideViewer, isDeck } from "../../v2/SlideDeck.jsx";
 import { DocViewer, SheetViewer, isWordDoc, isWorkbook } from "../../v2/OfficeFiles.jsx";
+import NoteLink from "../../wiki/NoteLink.jsx";
+import { NOTE_HREF, linkifyNotes, noteOfHref } from "../../../lib/wikiLinks.js";
+
+// `[[Nota]]` in a deliverable is a link to that note (docs/CONTRACT.md §16).
+const MD = {
+  a: ({ node, href, ...props }) => (String(href || "").startsWith(NOTE_HREF)
+    ? <NoteLink target={noteOfHref(href)}>{props.children}</NoteLink>
+    : <a href={href} {...props} />),
+};
 
 function parseCsv(text) {
   const rows = [];
@@ -48,6 +57,6 @@ export function ArtifactContent({ a, loading = false, error = null }) {
     );
   }
   if (a.format === "html") return <iframe title={a.title} sandbox="" srcDoc={content} style={{ width: "100%", height: "70vh", border: "1px solid #E6E8EE", borderRadius: "12px", background: "#FFFFFF" }} />;
-  if (a.format === "md" || a.format === "txt" || a.kind === "document" || a.kind === "slides") return <div className="colmena-md"><ReactMarkdown>{content}</ReactMarkdown></div>;
+  if (a.format === "md" || a.format === "txt" || a.kind === "document" || a.kind === "slides") return <div className="colmena-md"><ReactMarkdown components={MD}>{linkifyNotes(content)}</ReactMarkdown></div>;
   return <pre style={{ margin: 0, padding: "16px", background: "#12131A", color: "#E6E8EE", borderRadius: "12px", overflow: "auto", font: "400 13px/1.6 'Geist Mono', monospace" }}>{content}</pre>;
 }

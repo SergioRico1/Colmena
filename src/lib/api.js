@@ -1,9 +1,10 @@
 let token = null;
 
 export class ApiError extends Error {
-  constructor(message, status) {
+  constructor(message, status, data = null) {
     super(message);
     this.status = status;
+    this.data = data; // the whole answer: {error, fields?, revision?, details?}
   }
 }
 
@@ -31,7 +32,7 @@ export async function api(path, method = "GET", body) {
   }
   if (!response.ok) {
     if (response.status === 403) token = null;
-    throw new ApiError(data?.error || "No se pudo completar la operación.", response.status);
+    throw new ApiError(data?.error || "No se pudo completar la operación.", response.status, data);
   }
   return data;
 }
