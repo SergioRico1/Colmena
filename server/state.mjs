@@ -10,6 +10,7 @@ import { extraToolCard, documentCardExtras, webSearchToolCall, recoveryToolCalls
 import { isProjectTool, projectToolCard } from "./projects/tools.mjs";
 import { unwrapExternal } from "./external-content.mjs";
 import { FIND_TOOLS, USE_TOOL, wrappedCall } from "./tool-search.mjs";
+import { memoryProvenance, memoryTier } from "./memory.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
@@ -78,7 +79,10 @@ export function memorySummary(m) {
   const source = m.source && SOURCE_LABELS[m.source] ? m.source : m.missionId ? "dedujo" : "dijiste";
   const review = m.review ?? false;
   const date = m.createdAt ? new Date(m.createdAt) : null;
-  const sourceLabel = origin === "externo" && review
+  const { trust } = memoryProvenance(m);
+  const sourceLabel = m.doubt
+    ? "En duda · no coincide con lo que dijiste"
+    : origin === "externo" && review
     ? "Viene de una web, un correo o una app · confírmalo para que lo usen"
     : review
     ? SOURCE_LABELS[source] + " · revisar"
@@ -88,6 +92,12 @@ export function memorySummary(m) {
   return {
     id: m.id, text: m.text, botId: m.botId ?? null, scope, source, sourceLabel, review, origin, missionId: m.missionId ?? null, createdAt: m.createdAt ?? null,
     ...(m.verdict ? { verdict: m.verdict } : {}), ...(m.consolidated ? { consolidated: true } : {}), ...(m.nature ? { nature: m.nature } : {}),
+    // Tiers and provenance (memory.mjs), only what is not the default, so a big memory
+    // stays light in /api/state: no `tier` is 'core', no `trust` is 'confirmed'. What the
+    // chip says comes from `source` and `origin`, as for records from before these fields.
+    ...(memoryTier(m) === "archive" ? { tier: "archive" } : {}), ...(m.pinned ? { pinned: true } : {}),
+    ...(trust !== "confirmed" ? { trust } : {}), ...(m.uses ? { uses: m.uses } : {}),
+    ...(m.doubt && m.contradicts ? { contradicts: m.contradicts } : {}),
   };
 }
 

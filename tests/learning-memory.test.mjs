@@ -44,21 +44,20 @@ test("memory ops: add, replace and remove in one batch; facts only; duplicates s
   assert.throws(() => applyMemoryOps(store, { bot, ops: [{ action: "remove", target: "persona", old: "en euros" }] }), /escribió la persona/);
 });
 
-test("memory limits: a batch that does not fit fails with the current entries; merging in the same batch fits", async (t) => {
+test("memory limits: a batch that does not fit sends the oldest entry to the archive; the core stays within its limit", async (t) => {
   const { store } = await fixture(t, async () => answer("x"));
   const bot = store.get("bots", "nora");
   applyMemoryOps(store, { bot, ops: Array.from({ length: 9 }, (_, i) => ({ action: "add", target: "persona", text: fact(i, 150) })), maxAdds: 20 });
   assert.equal(memoryUsage(store, "user").used, 1350);
-  let error;
-  try {
-    applyMemoryOps(store, { bot, ops: [{ action: "add", target: "persona", text: fact(9, 120) }] });
-  } catch (e) { error = e; }
-  assert.match(error.message, /1470\/1400.*Libera al menos 70 en la MISMA llamada/s);
-  assert.match(error.message, /Prefiere tablas en los informes/);
-  applyMemoryOps(store, { bot, ops: [
-    { action: "remove", target: "persona", old: "Prefiere tablas" },
-    { action: "add", target: "persona", text: fact(9, 120) },
-  ] });
+  // 1470/1400 would not fit: nothing is refused (tests/memory-relevance.test.mjs has the rest).
+  const r = applyMemoryOps(store, { bot, ops: [{ action: "add", target: "persona", text: fact(9, 120) }] });
+  assert.equal(r.results[0].action, "add");
+  assert.deepEqual(r.archived.map((m) => m.text.slice(0, 31)), ["Prefiere tablas en los informes"]);
+  assert.equal(store.list("memories").find((m) => m.text.startsWith("Prefiere tablas")).tier, "archive");
+  assert.equal(memoryUsage(store, "user").used, 1320);
+  // An archived entry can still be merged or removed by its text.
+  applyMemoryOps(store, { bot, ops: [{ action: "remove", target: "persona", old: "Prefiere tablas" }] });
+  assert.equal(store.list("memories").find((m) => m.text.startsWith("Prefiere tablas")).active, false);
   assert.equal(memoryUsage(store, "user").used, 1320);
   assert.equal(memoryUsage(store, "user").label, "94 % — 1320/1400");
   assert.equal(MEMORY_LIMITS.memory, 2200);

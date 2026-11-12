@@ -122,7 +122,11 @@ Resumen: `{ id, name, description, botId|null, status: 'pending'|'active'|'disab
 
 ### Memory
 `{ id, text, botId|null, scope: 'bot'|'equipo', source: 'dijiste'|'dedujo'|'acuerdo'|'documento', sourceLabel, review: bool, missionId, createdAt }`
-`POST /api/memories { text, botId?, scope }`, `PATCH /api/memories/:id { text?, review? }`, `DELETE /api/memories/:id`.
+`POST /api/memories { text, botId?, scope }`, `PATCH /api/memories/:id { text?, review?, pinned?, tier?, replaces? }`, `DELETE /api/memories/:id`.
+
+Dos niveles (`server/memory.mjs`): **núcleo** (`tier` ausente o `'core'`: va en todos los prompts, con los límites de siempre: persona 1400, equipo 2200, cada bot 1400 caracteres) y **archivo** (`tier: 'archive'`: sin límite; a cada paso solo llegan los recuerdos que tienen que ver con lo que se pide, por BM25 local, y `recall` lo busca). Si el núcleo se llena, lo menos usado que no esté fijado pasa al archivo; nada se rechaza ni se borra.
+Campos opcionales de Memory (solo se envían si no son el valor por defecto): `tier: 'archive'`, `pinned: true`, `trust: 'unverified'|'doubt'` (ausente = confirmado), `uses`, `contradicts` (id del recuerdo de la persona al que contradice uno «en duda»). La procedencia sale de `source`, `origin` (`'persona'|'bot'|'externo'`), `missionId` (la conversación) y `createdAt`.
+`PATCH`: `pinned: true` lo fija en el núcleo (400 si lo fijado ya lo llena), `pinned: false` lo suelta, `tier: 'archive'|'core'` lo mueve; `review: false` lo confirma, y con `replaces: true` sobre uno «en duda» sustituye a lo que dijo la persona.
 
 ### Artifact
 `{ id, missionId, botId, title, kind: 'document'|'table'|'slides'|'design'|'code'|'sheet', format: 'md'|'csv'|'svg'|'html'|'py'|..., status: 'final'|'borrador'|'en curso', version, room, createdAt }`

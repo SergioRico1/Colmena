@@ -35,7 +35,7 @@ import { checkLimit, record as recordUsage } from "../usage.mjs";
 import { readThread } from "../handoff.mjs";
 import { changesFiles } from "../checkpoints.mjs";
 import { findGrant, containsSecret, normalizeText, proposeSoulChange, tokens, jaccard, proposeAutomationSuggestion, rememberWhy } from "../learning.mjs";
-import { applyMemoryOps, normalizeMemoryOp, MEMORY_LABELS, TARGET_OF } from "../memory.mjs";
+import { applyMemoryOps, normalizeMemoryOp, MEMORY_LABELS, TARGET_OF, memoryTier, noteMemoryUse, searchArchive } from "../memory.mjs";
 import { REVIEWABLE, REVIEW_INSTRUCTIONS, memoryOps, LOOP_LIMIT, WEB_CACHE, RUNNABLE } from "./helpers.mjs";
 
 /** Runtime methods: running a tool call of a step — guards, approvals of effects, the effects themselves and what the model reads back. */
@@ -229,12 +229,20 @@ export class EffectMethods {
           return { id: skill.id, name: skill.name, content: skill.content, version: skill.version };
         }
         case "recall": {
+          // Both tiers: what is always present (as before) and the archive by relevance
+          // (memory.mjs searchArchive). What is «en duda» is never handed back as a fact.
           const q = normalizeText(args.query);
-          return this.store.list("memories")
-            .filter((m) => m.active !== false && (m.scope !== "bot" || m.botId === bot.id))
-            .filter((m) => !q || normalizeText(m.text).includes(q) || jaccard(tokens(q), tokens(m.text)) > 0.2)
-            .slice(-12)
-            .map(({ id, text, scope, source, review }) => ({ id, text, scope, source, review }));
+          const mine = this.store.list("memories").filter((m) => m.active !== false && !m.doubt && (m.scope !== "bot" || m.botId === bot.id));
+          const literal = mine.filter((m) => !q || normalizeText(m.text).includes(q) || jaccard(tokens(q), tokens(m.text)) > 0.2);
+          const core = literal.filter((m) => memoryTier(m) === "core").slice(-12);
+          const ranked = q ? searchArchive(this.store, bot, args.query, { max: 12 }).map((x) => x.memory) : [];
+          const archive = [...ranked, ...literal.filter((m) => memoryTier(m) === "archive" && !ranked.some((r) => r.id === m.id)).reverse()].slice(0, q ? 12 : 0);
+          // Half for each tier when both have plenty; either may use what the other leaves.
+          const room = 12, fromCore = core.slice(-Math.max(room - archive.length, room / 2));
+          const found = [...fromCore, ...archive.slice(0, room - fromCore.length)];
+          // Incognito leaves no trace of what was searched.
+          if (q && found.length && !mission.incognito) noteMemoryUse(this.store, found.map((m) => m.id));
+          return found.map((m) => ({ id: m.id, text: m.text, scope: m.scope, source: m.source, review: m.review, ...(memoryTier(m) === "archive" ? { archivo: true } : {}) }));
         }
         case "read_thread":
           return readThread(this.store, mission.id, args, { who: (m) => (m.role === "user" ? "persona" : this.bot(m.botId)?.name || m.botId || "bot") });
@@ -483,7 +491,7 @@ export class EffectMethods {
     // After reading injection phrases nothing counts as the person's own words.
     const suspicious = !approved && this.flagged(step);
     const external = !approved && (suspicious || this.readOutside(step) && !memoryOps(args).every((op) => op.action === "remove" || saidByYou(this.store, mission.id, op.text)));
-    const { results, usage } = applyMemoryOps(this.store, {
+    const { results, usage, archived } = applyMemoryOps(this.store, {
       ops: memoryOps(args), bot, mission, source: approved ? "acuerdo" : "dedujo", review: !approved, keyPrefix: effectId,
       ...(external ? { origin: "externo", sourceLabel: "Lo guardó " + bot.name + " tras leer contenido de fuera en «" + mission.title + "» · sin confirmar" } : {}),
     });
@@ -495,9 +503,11 @@ export class EffectMethods {
     // «Aprendido: …» with «Deshacer» in the room (approved changes were already seen in the Bandeja).
     if (approved) this.announce(mission.id, bot, bot.name + " ha actualizado su memoria", effectId);
     else postMemoryNotice(this.store, { missionId: mission.id, bot, changes: results, key: effectId, pending: external, why: rememberWhy(this.store, mission, done) });
+    // A full store made room: say what left for the archive (nothing is lost).
+    const moved = archived?.length ? { archivados: archived.length, aviso: "Para que cupiera, " + (archived.length === 1 ? "un recuerdo menos usado pasó" : archived.length + " recuerdos menos usados pasaron") + " al archivo: siguen ahí y se encuentran con recall." } : {};
     return external
-      ? { saved: true, results, usage, notice: "Guardado como «por revisar»: lo escribiste después de leer contenido de fuera (una web, un correo o una app). No se usará hasta que la persona lo confirme." }
-      : { saved: true, results, usage };
+      ? { saved: true, results, usage, ...moved, notice: "Guardado como «por revisar»: lo escribiste después de leer contenido de fuera (una web, un correo o una app). No se usará hasta que la persona lo confirme." }
+      : { saved: true, results, usage, ...moved };
   }
   /** The step read content from outside (web, apps, the browser) before now: its memory writes are untrusted. */
   readOutside(step) {

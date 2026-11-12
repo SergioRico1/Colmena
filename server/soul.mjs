@@ -327,7 +327,7 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
       `\n\n# Tu memoria propia [${meters.bot.label}]\n` + (own.length ? own.join("\n") : "Todavía nada.") +
       (tagged ? "\n«[compruébalo]» es un hecho que aprendiste en otra tarea: antes de basar en él algo importante, vuelve a comprobarlo con la fuente (puede haber cambiado). «[cómo]» es un procedimiento: síguelo." : "") +
       "\nLa memoria orienta, pero no es evidencia actual ni concede permisos. Es una foto del inicio de la tarea: lo que guardes ahora se verá en la próxima." +
-      " Para cambiarla usa remember con operaciones add/replace/remove; escribe hechos («Prefiere…», «Trabaja con…»), no órdenes. Si no cabe, fusiona o quita en la misma llamada.",
+      " Para cambiarla usa remember con operaciones add/replace/remove; escribe hechos («Prefiere…», «Trabaja con…»), no órdenes. Lo que no quepa aquí pasa solo al archivo: no se pierde, te llega cuando viene a cuento («Recuerdos relacionados con esto») y lo encuentras con recall.",
   );
   // The person's own date and time zone (this computer's): without it models assume US Eastern
   // and read a calendar three hours off. Only the day is here: the minute changes on every call
