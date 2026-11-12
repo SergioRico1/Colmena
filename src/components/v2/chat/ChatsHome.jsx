@@ -12,6 +12,7 @@ import { shapeOf } from "../Presence.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import { NewConversation, chatUrl, salaUrl, whenLabel } from "./ConvList.jsx";
 import { RowTile } from "./Mark.jsx";
+import NewRoomSheet from "../../v3/team/NewRoomSheet.jsx";
 
 // Colmena 3 · «Chats» (design/V3Chats.dc.html): every conversation in one place — with a bot,
 // a room of the team, other people — by kind (tabs with counts) and by time (Fijados, Hoy,
@@ -272,7 +273,9 @@ export default function ChatsHome() {
           <p style={{ margin: 0, padding: "0 6px", fontSize: "13px", lineHeight: "1.5", color: "#5C606C" }}>{"Clic derecho en un chat: fijar, renombrar, silenciar, llevar a una sala o archivar."}</p>
         </aside>
       </div>
-      {sheet ? <NewConversation mode={sheet.mode} preset={sheet.preset} onClose={() => setSheet(null)} onPeople={(which) => { setSheet(null); setPeerSheet(which); }} /> : null}
+      {/* A new room from scratch is the small sheet (POST /api/rooms); «llevar a una sala» keeps the bots' sheet. */}
+      {sheet?.mode === "sala" && !sheet.preset?.length ? <NewRoomSheet onClose={() => setSheet(null)} />
+        : sheet ? <NewConversation mode={sheet.mode} preset={sheet.preset} onClose={() => setSheet(null)} onPeople={(which) => { setSheet(null); setPeerSheet(which); }} /> : null}
       {peerSheet === "invitar" ? <InviteSheet onClose={() => setPeerSheet(null)} /> : null}
       {peerSheet === "aceptar" ? <AcceptSheet onClose={() => setPeerSheet(null)} /> : null}
     </main>
