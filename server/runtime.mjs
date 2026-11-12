@@ -36,6 +36,7 @@ import {
   partialTableUnsaid, titleFromPrompt, clipWords, roomSlug, appsLabel, ACTIVE, INCOGNITO_NOTE, INTERRUPT_CODE, stepLabel, MISSION_WIDE, RETRY_CODE,
   RESUME_WINDOW_MS, LIMIT_RESUMES, runsInParallel, PROGRESS_MAX, LIVE_AFTER, countWords,
 } from "./runtime/helpers.mjs";
+import { routed } from "./router.mjs";
 import { installMethods } from "./mixin.mjs";
 import { InferenceMethods } from "./runtime/inference.mjs";
 import { ContextMethods } from "./runtime/context.mjs";
@@ -43,6 +44,7 @@ import { SideJobMethods } from "./runtime/sidejobs.mjs";
 import { EffectMethods } from "./runtime/effects.mjs";
 import { ApprovalMethods } from "./runtime/approvals.mjs";
 import { DelegationMethods } from "./runtime/delegation.mjs";
+import { RoutingMethods } from "./runtime/routing.mjs";
 export {
   STUCK_ROUNDS, SUGGEST_INSTRUCTIONS, TITLE_INSTRUCTIONS, MEMORY_FLUSH, COMPACT_INSTRUCTIONS, WEB_SEARCH_NOTE, QUEUE_MODES, INCOGNITO_MS,
   PARTIAL_CODE, PARALLEL_STEPS, QUIET_MS, IDLE_ABORT_MS, AUTO_RESUMES, THREAD_WINDOW, THREAD_STEP, threadCut, leavesWorkUndone, partialTableUnsaid,
@@ -93,7 +95,7 @@ export class Runtime {
    * 'ordenador' is on. It returns [{name, description, parameters, strict?, run(args, ctx)}];
    * `run` receives {mission, step, bot, call, signal, runtime} and may return {waiting:true}.
    */
-  constructor(store, provider, connections = null, { web = webFetch, extraTools = null, retryDelays = null, context = null, seed = !process.env.NODE_TEST_CONTEXT, sleep = null, idleAbortMs = IDLE_ABORT_MS, quietMs = QUIET_MS, suggest = !process.env.NODE_TEST_CONTEXT, review = !process.env.NODE_TEST_CONTEXT, autoTitle = !process.env.NODE_TEST_CONTEXT, narrate = !process.env.NODE_TEST_CONTEXT, recaps = !process.env.NODE_TEST_CONTEXT, speech = !process.env.NODE_TEST_CONTEXT, loopGuard = LOOP_GUARD, checkpoints = !process.env.NODE_TEST_CONTEXT } = {}) {
+  constructor(store, provider, connections = null, { web = webFetch, extraTools = null, retryDelays = null, context = null, seed = !process.env.NODE_TEST_CONTEXT, sleep = null, idleAbortMs = IDLE_ABORT_MS, quietMs = QUIET_MS, suggest = !process.env.NODE_TEST_CONTEXT, review = !process.env.NODE_TEST_CONTEXT, autoTitle = !process.env.NODE_TEST_CONTEXT, narrate = !process.env.NODE_TEST_CONTEXT, recaps = !process.env.NODE_TEST_CONTEXT, speech = !process.env.NODE_TEST_CONTEXT, loopGuard = LOOP_GUARD, checkpoints = !process.env.NODE_TEST_CONTEXT, routing = !process.env.NODE_TEST_CONTEXT, routerTimeoutMs = 4000 } = {}) {
     this.store = store;
     this.provider = provider;
     this.connections = connections;
@@ -128,6 +130,10 @@ export class Runtime {
     this.narrate = narrate; // one-line «what I am doing» during long work (cheapest model)
     this.speech = speech; // long answers in rooms said in parts
     this.narrating = new Set();
+    // Who answers a message that names nobody in a team room (router.mjs; off in tests unless asked).
+    this.routerOn = routing;
+    this.routerTimeoutMs = routerTimeoutMs;
+    this.routes = new Map(); // missionId → the messages of that room still being routed, one after another
     // Restore points of the files each turn changes («Deshacer cambios», server/checkpoints.mjs).
     this.checkpoints = checkpoints ? new Checkpoints(store, { ...(typeof checkpoints === "object" ? checkpoints : {}), root: (missionId) => this.root(missionId) }) : null;
     useDataDirectory(store.directory, store);
@@ -324,7 +330,8 @@ export class Runtime {
     });
     return keys;
   }
-  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "" } = {}) {
+  /** `route: false`: the message is not the person's (a routine writing in its room), so the router leaves it to Atlas. */
+  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "", route = true } = {}) {
     // «+» in the composer: tools or apps chosen for this message, and «Pensar a fondo»; the
     // «@» picks of files and conversations bring `context` (server/mention-refs.mjs).
     const chosen = cleanUse(use);
@@ -351,17 +358,25 @@ export class Runtime {
     }
     const stalled = this.steps(missionId).filter((s) => s.stalled);
     if (stalled.length && !thread) return this.resumeStalled(m, stalled, text, attachments);
-    const prior = this.steps(missionId), key = "followup-" + id();
+    const prior = this.steps(missionId);
     const named = addressees(text, this.roomMembers(m));
     const root = thread ? this.store.get("messages", thread) : null;
     const threadBot = root?.role === "assistant" && root.botId && (m.botIds.includes(root.botId) || root.botId === "atlas") ? root.botId : null;
-    const botIds = named.length ? named : [threadBot
-      || (m.mode === "solo" ? m.botIds[0] : m.mode === "debate" && m.chosenBotIds?.length === 1 ? m.chosenBotIds[0] : "atlas")];
-    const botId = botIds[0];
-    const about = root ? "Responde en el hilo del mensaje de " + (root.role === "user" ? "la persona" : this.bot(root.botId)?.name || "un bot") + " (dato): «" + String(root.text || "").slice(0, 1500) + "»\n\nLa persona escribe: " : "";
-    for (const b of botIds) this.countTurn(b);
     // Ctrl+Enter sends one message with the other mode (OpenClaw steer ⇄ queue).
     const mode = QUEUE_MODES.includes(forcedMode) ? forcedMode : QUEUE_MODES.includes(m.queueMode) ? m.queueMode : "steer";
+    // A message that names nobody in a team room with several specialists: the router picks
+    // who answers (router.mjs) instead of always Atlas. Its rules decide at once; when the
+    // model has to pick, or an earlier message of this room is still being routed, the turn
+    // is queued when that is settled (routeLater), so the message itself never waits.
+    const router = route !== false && !named.length && !thread && this.routerApplies(m, prior);
+    const behind = this.routes.has(missionId);
+    const decided = router && !behind
+      ? this.routeByRules(m, text) || (working && mode === "interrupt" ? routed(["atlas"], "atlas", "Interrumpes: Atlas lo atiende ya") : null)
+      : null;
+    const later = behind || (router && !decided);
+    const botIds = named.length ? named : decided ? decided.to : [threadBot
+      || (m.mode === "solo" ? m.botIds[0] : m.mode === "debate" && m.chosenBotIds?.length === 1 ? m.chosenBotIds[0] : "atlas")];
+    const about = root ? "Responde en el hilo del mensaje de " + (root.role === "user" ? "la persona" : this.bot(root.botId)?.name || "un bot") + " (dato): «" + String(root.text || "").slice(0, 1500) + "»\n\nLa persona escribe: " : "";
     if (m.suggestions) this.store.patch("missions", missionId, { suggestions: null });
     const messageId = id();
     const message = this.store.put("messages", {
@@ -372,13 +387,31 @@ export class Runtime {
       ...(refs?.length ? { refs } : {}),
       // «Espera» / «Junta»: the bots at work do not see it until they finish.
       ...(working && (mode === "followup" || mode === "collect") ? { deliver: "after" } : {}),
+      // Who the router gave it to, or «Eligiendo quién responde…» while it decides.
+      ...(decided ? { routed: decided } : router ? { routing: true } : {}),
     });
+    const turn = { messageId, text, note, effort, about, thread, mode, named };
+    if (later) this.routeLater(missionId, turn, { router, botIds });
+    else this.deliverTurn(missionId, turn, botIds);
+    return message;
+  }
+  /**
+   * Queues the turn that answers a message of the person already in the room: `botIds` are
+   * who it is for (named, routed, or the room's default). Read with the mission as it is now:
+   * a routed message gets here a moment after it was written.
+   */
+  deliverTurn(missionId, { messageId, text, note, effort, about, thread, mode, named }, botIds) {
+    const m = this.store.get("missions", missionId);
+    const prior = this.steps(missionId);
+    const working = this.active.has(missionId) && !["completed", "paused", "waiting"].includes(m.status);
+    const botId = botIds[0];
+    for (const b of botIds) this.countTurn(b);
     // Several messages before the bot gets to them: one turn, not one per message.
     const waitingTurn = botIds.length === 1 && mode !== "followup" && prior.find((s) => s.kind === "followup" && s.status === "pending" && !hasHistory(s) && !s.chain && s.botId === botId && (s.replyTo || null) === (thread || null));
     if (waitingTurn) {
       this.store.patch("steps", waitingTurn.id, { request: waitingTurn.request + "\n\nY después escribe: «" + text + "»" + note, ackExtra: [...(waitingTurn.ackExtra || []), messageId], ...(effort ? { effort } : {}) });
       this.store.event(missionId, "user_message", { text: "Mensaje añadido al que ya esperaba respuesta" });
-      return message;
+      return;
     }
     // «Interrumpe»: what they were doing stops and this message is answered now.
     if (working && mode === "interrupt" && !thread) {
@@ -392,7 +425,7 @@ export class Runtime {
       this.active.get(missionId)?.abort(Object.assign(Error("Interrumpido por tu mensaje."), { code: INTERRUPT_CODE }));
       this.store.event(missionId, "interrupted", { text: "Han parado para atender tu mensaje" });
       this.wake(missionId);
-      return message;
+      return;
     }
     // «@Atlas» while the team works on its plan: Atlas answers now, beside them (it can write to
     // a teammate at work with message_bot), instead of after the whole plan. Its answer is an
@@ -405,7 +438,7 @@ export class Runtime {
       this.store.patch("missions", missionId, { steps: [...(m.steps || []), key] });
       this.store.event(missionId, "user_message", { text: "Atlas te responde ahora; el equipo sigue con lo suyo." });
       this.wakeups.get(missionId)?.();
-      return message;
+      return;
     }
     // Queue a dependent turn without interrupting a tool call or changing its approval.
     const keys = this.queueTurns(missionId, botIds, prior.map((s) => s.key), { request: about + text + note, ackOn: messageId, replyTo: thread, effort });
@@ -417,7 +450,6 @@ export class Runtime {
     if (m.status === "completed" && this.active.has(missionId)) {
       void Promise.resolve(this.missionJobs.get(missionId)).then(() => this.launch(missionId));
     } else if (!this.active.has(missionId) && !["paused", "waiting"].includes(m.status)) this.launch(missionId);
-    return message;
   }
   /**
    * «Otra respuesta»: the bot answers `userMessage` again, without a new message of yours (the
@@ -1631,3 +1663,4 @@ installMethods(Runtime, SideJobMethods);
 installMethods(Runtime, EffectMethods);
 installMethods(Runtime, ApprovalMethods);
 installMethods(Runtime, DelegationMethods);
+installMethods(Runtime, RoutingMethods);

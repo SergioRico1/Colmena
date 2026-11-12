@@ -254,6 +254,22 @@ export function FailedLine({ error, onRetry, onDiscard }) {
   );
 }
 
+/**
+ * «Para Nora · elegido por el contexto» under a message of yours that named nobody: who the
+ * room's router gave it to (server/router.mjs), with the reason on hover; «Eligiendo quién
+ * responde…» while it decides.
+ */
+function RoutedLine({ message, bots }) {
+  const style = { fontSize: "12.5px", lineHeight: "1.3", color: "#6B6F7A" };
+  if (message.routing) return <span role="status" style={style}>{"Eligiendo quién responde…"}</span>;
+  const routed = message.routed;
+  const who = toLabel(routed?.to, bots);
+  if (!who) return null;
+  const atlas = routed.to[0] === "atlas";
+  const how = routed.by === "modelo" ? "elegido por el contexto" : routed.by === "regla" ? (atlas ? "él lo reparte" : "por la conversación") : "él decide quién lo hace";
+  return <span title={routed.why || undefined} style={style}>{`Para ${who} · ${how}`}</span>;
+}
+
 export function UserMessage({ message, padding = null, replies = null, bots = [], onReply = null, repliesOpen = false, continued = false, entering = false }) {
   const [reactions, react] = useReactions(message);
   const resend = useResend(message);
@@ -262,6 +278,7 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
       {continued ? null : <Head name="Tú" at={message.at} />}
       <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
       <RefChips refs={message.refs} align="flex-start" />
+      <RoutedLine message={message} bots={bots} />
       {message.failed ? <FailedLine error={message.failed} onRetry={resend.retry} onDiscard={resend.discard} /> : null}
       {(message.attachments || []).map((f, i) => <FileChip key={i} file={f} dragUrl={message.missionId && f?.name ? workFileUrl(message.missionId, f.name) : null} />)}
       <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />

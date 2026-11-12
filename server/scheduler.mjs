@@ -228,7 +228,8 @@ export class Scheduler {
       if (found.length) console.warn(`[security] Posible inyección en el disparador de «${rule.name}»: ${found.join(", ")}`);
       const prompt = (rule.prompt || rule.name || "Automatización") + context + lateNote(caught, time);
       if (room) {
-        const message = this.runtime.addMessage(room.id, "Rutina «" + rule.name + "»: " + prompt);
+        // Not the person's message: the router (router.mjs) leaves it to whoever takes the room's messages.
+        const message = this.runtime.addMessage(room.id, "Rutina «" + rule.name + "»: " + prompt, [], { route: false });
         messageId = message?.id || null;
         if (messageId && this.store.get("messages", messageId)) this.store.patch("messages", messageId, { automationId: rule.id });
         mission = this.store.get("missions", room.id) || room;

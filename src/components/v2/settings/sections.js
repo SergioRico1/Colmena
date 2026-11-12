@@ -41,6 +41,7 @@ export const SECTIONS = [
       ["modo-experto", "Modo experto", "experto avanzado herramientas tokens registros detalle técnico"],
       ["narracion", "Te cuentan en qué están", "narración qué está haciendo progreso"],
       ["sugerencias", "Respuestas sugeridas", "sugerencias botones respuesta rápida"],
+      ["quien-responde", "Elegir solo quién responde en las salas", "enrutador quién responde sala atlas reparte mención"],
       ["personas", "Personas del espacio", "miembros compañeros invitar equipo"],
       ["atajos", "Atajos de teclado", "ctrl k teclado shortcuts paleta"],
     ],
