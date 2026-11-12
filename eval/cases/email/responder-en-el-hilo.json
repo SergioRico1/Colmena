@@ -1,0 +1,37 @@
+{
+  "id": "responder-en-el-hilo",
+  "area": "email",
+  "title": "«Contesta a Hugo…» sale como respuesta dentro de su hilo, no se queda en borrador",
+  "why": "La queja principal: pides contestar y lo deja en Borradores. server/apptools.mjs (USAGE de GMAIL_REPLY_TO_THREAD y GMAIL_CREATE_EMAIL_DRAFT) y server/connections.mjs (explicitlyAsked → autoSend) dicen que pedir contestar es enviar, en el hilo.",
+  "tags": ["gmail", "envio", "queja-principal"],
+  "setup": {
+    "chat": "vera",
+    "apps": {
+      "gmail": {
+        "account": { "id": "ca_gmail_eval", "alias": "Gmail trabajo", "email": "marina@nubaria.es" },
+        "messages": [
+          { "id": "19a1f0c2d3e4b501", "threadId": "19a1f0c2d3e4b500", "from": "Hugo Vidal <hugo@finora.com>", "to": "marina@nubaria.es", "subject": "Reunión de seguimiento Finora", "date": "2026-11-11T09:12:00Z", "body": "Hola Marina:\n\n¿Te va bien que hagamos la reunión de seguimiento el jueves a las 10:00? Si no, dime otra hora.\n\nUn saludo,\nHugo" },
+          { "id": "19a1f0c2d3e4b601", "threadId": "19a1f0c2d3e4b600", "from": "Sesame <no-reply@sesametime.com>", "to": "marina@nubaria.es", "subject": "Recuerda fichar la salida", "date": "2026-11-11T18:00:00Z", "body": "No has fichado la salida de hoy." }
+        ]
+      }
+    }
+  },
+  "turns": [
+    { "say": "Contesta a Hugo Vidal que sí, que el jueves a las 10 me va bien." }
+  ],
+  "checks": [
+    { "name": "responde en el hilo de Hugo y sale sin un segundo OK", "approval": { "tool": "GMAIL_REPLY_TO_THREAD", "kind": "send", "auto": true, "status": "executed", "to": { "$contains": "hugo@finora.com" }, "args": { "thread_id": "19a1f0c2d3e4b500" } } },
+    { "name": "la respuesta llegó a Gmail", "effect": { "tool": "GMAIL_REPLY_TO_THREAD", "ok": true } },
+    { "name": "no manda un correo nuevo fuera del hilo", "noEffect": { "tool": "GMAIL_SEND_EMAIL" } },
+    { "name": "no deja ningún borrador", "drafts": 0 },
+    { "status": "completed" },
+    { "name": "dice que lo ha enviado", "text": { "re": "enviad|respondid|contestad|confirmad|le he dicho|ya (lo|le) " } }
+  ],
+  "dry": {
+    "script": [
+      { "call": "gmail_fetch_emails", "args": { "query": "from:hugo" } },
+      { "call": "gmail_reply_to_thread", "args": { "thread_id": "19a1f0c2d3e4b500", "recipient_email": "hugo@finora.com", "message_body": "Hola Hugo:\n\nSí, el jueves a las 10:00 me va bien.\n\nUn saludo,\nMarina" } },
+      { "say": "Enviado: le he contestado a Hugo en su hilo que el jueves a las 10:00 te va bien." }
+    ]
+  }
+}

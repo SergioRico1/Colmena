@@ -1,0 +1,32 @@
+{
+  "id": "encuentra-hoja-de-calculo",
+  "area": "tools",
+  "title": "Cuando la herramienta no está en la lista (create_spreadsheet), el bot la busca y la usa",
+  "why": "server/tool-search.mjs (splitTools: por encima de 32 herramientas solo se lista el núcleo; find_tools / use_tool) y server/runtime.mjs (unwrapToolUse: use_tool es la llamada de verdad): pedir un Excel tiene que acabar en un Excel.",
+  "tags": ["herramientas", "excel"],
+  "setup": {
+    "chat": "tomas",
+    "apps": {
+      "gmail": { "account": { "id": "ca_gmail_eval", "alias": "Gmail trabajo", "email": "marina@nubaria.es" }, "messages": [] },
+      "googlecalendar": { "account": { "id": "ca_calendar_eval", "alias": "Calendario" }, "events": [] }
+    }
+  },
+  "turns": [
+    { "say": "Hazme un Excel con los gastos fijos del mes: alquiler 1.200 €, luz 180 €, internet 60 € y gestoría 240 €, con el total abajo." }
+  ],
+  "checks": [
+    { "name": "la herramienta no estaba en la lista (había que buscarla)", "notOffered": ["create_spreadsheet"] },
+    { "name": "tenía el buscador", "offered": ["find_tools", "use_tool"] },
+    { "name": "crea la hoja de cálculo", "called": "create_spreadsheet", "ok": true },
+    { "name": "el Excel queda en la Biblioteca", "observe": "artifacts", "count": { "$gte": 1 } },
+    { "name": "no lo sustituye por un archivo de texto", "notCalled": ["write_file"] },
+    { "status": "completed" }
+  ],
+  "dry": {
+    "script": [
+      { "call": "find_tools", "args": { "query": "crear hoja de cálculo Excel" } },
+      { "call": "use_tool", "args": { "name": "create_spreadsheet", "arguments": { "title": "Gastos fijos del mes", "sheets": [{ "name": "Gastos", "columns": [{ "header": "Concepto", "type": "text" }, { "header": "Importe", "type": "currency", "total": "sum" }], "rows": [["Alquiler", 1200], ["Luz", 180], ["Internet", 60], ["Gestoría", 240]] }] } } },
+      { "say": "Hecho: «Gastos fijos del mes» está en la Biblioteca, con el total (1.680 €) calculado con una fórmula." }
+    ]
+  }
+}

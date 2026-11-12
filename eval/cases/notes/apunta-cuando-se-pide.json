@@ -1,0 +1,32 @@
+{
+  "id": "apunta-cuando-se-pide",
+  "area": "notes",
+  "title": "«Apunta en la nota de Acme…» cambia esa nota, sin pisar lo que ya tenía",
+  "why": "server/wiki-tools.mjs (personAskedForNotes → se escribe al momento; planWrite exige la revision que el bot leyó, así que lee antes de cambiar) y server/wiki.mjs (applySection/append conservan el resto).",
+  "tags": ["notas"],
+  "setup": {
+    "chat": "nora",
+    "bots": { "nora": { "autonomy": "sugiere" } },
+    "wiki": [
+      { "title": "Acme", "body": "# Acme\n\nCliente desde 2023. Contacto de compras: Hugo Vidal (hugo@acme.example).\n\n## Forma de pago\n\nTransferencia a 60 días desde la entrega.\n" }
+    ]
+  },
+  "turns": [
+    { "say": "Apunta en la nota de Acme que desde noviembre la nueva responsable de compras es Laia Pons (laia@acme.example)." }
+  ],
+  "checks": [
+    { "name": "lee la nota antes de cambiarla", "called": "wiki_read" },
+    { "name": "la nota de Acme lleva el dato nuevo", "wiki": { "some": { "title": "Acme", "body": { "$contains": "Laia Pons" } } } },
+    { "name": "no borra lo que había", "wiki": { "some": { "title": "Acme", "body": { "$contains": "60 días" } } } },
+    { "name": "no crea una nota aparte", "wiki": { "added": 0 } },
+    { "name": "se escribe sin pedir un OK: la persona lo pidió", "noApproval": { "tool": "wiki_write", "status": "pending" } },
+    { "status": "completed" }
+  ],
+  "dry": {
+    "script": [
+      { "call": "wiki_read", "args": { "page": "Acme", "part": 1 } },
+      { "call": "wiki_write", "args": { "page": "Acme", "action": "append", "section": "", "revision": 1, "content": "## Contacto de compras (desde noviembre de 2026)\n\nLaia Pons (laia@acme.example) es la nueva responsable de compras." } },
+      { "say": "Apuntado en la nota de Acme: desde noviembre la responsable de compras es Laia Pons (laia@acme.example)." }
+    ]
+  }
+}

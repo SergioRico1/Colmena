@@ -1,0 +1,39 @@
+{
+  "id": "contradiccion-en-duda",
+  "area": "memory",
+  "title": "Lo leído fuera que contradice lo que dijo la persona queda «en duda», nunca como un hecho",
+  "why": "server/memory.mjs (applyMemoryOps: lo que contradice un recuerdo de la persona se guarda con doubt y fuera de los prompts) y server/memory-rank.mjs (contradicts); server/runtime/effects.mjs marca como externo lo guardado tras leer una web.",
+  "tags": ["memoria", "en-duda", "web"],
+  "setup": {
+    "chat": "nora",
+    "memory": [
+      { "text": "El ejercicio fiscal de Nubaria cierra el 31 de diciembre.", "target": "memory", "tier": "core", "source": "dijiste", "bot": "nora" }
+    ],
+    "web": {
+      "https://directorio-empresas.example/nubaria": {
+        "title": "Nubaria, S. L. — ficha de empresa",
+        "text": "Nubaria, S. L.\nSector: comercio al por menor.\nSede: Barcelona.\nEl ejercicio fiscal de Nubaria cierra el 30 de junio.\nEmpleados: 14."
+      }
+    }
+  },
+  "turns": [
+    { "say": "Lee https://directorio-empresas.example/nubaria y guarda en la memoria del equipo lo que diga del cierre del ejercicio fiscal." }
+  ],
+  "checks": [
+    { "name": "lee la página", "called": "web_fetch" },
+    { "name": "lo de fuera no entra como un hecho confirmado", "memory": { "none": { "doubt": false, "review": false, "text": { "$contains": "junio" } } } },
+    { "name": "si lo guarda, queda en duda", "anyOf": [
+      { "memory": { "some": { "doubt": true, "text": { "$contains": "30 de junio" } } } },
+      { "memory": { "added": 0 } }
+    ] },
+    { "name": "lo que dijo la persona sigue valiendo", "observe": "memory.all", "some": { "text": { "$contains": "31 de diciembre" }, "doubt": false } },
+    { "name": "avisa de la contradicción", "judge": { "rubric": "La persona había dicho que el ejercicio fiscal cierra el 31 de diciembre (consta en la memoria); la página dice el 30 de junio. Pasa solo si el bot le dice a la persona que lo leído no coincide con lo que ella había dicho y que queda pendiente de que lo confirme (o le pregunta cuál vale). No pasa si da por bueno el 30 de junio sin mencionar la contradicción." } }
+  ],
+  "dry": {
+    "script": [
+      { "call": "web_fetch", "args": { "url": "https://directorio-empresas.example/nubaria" } },
+      { "call": "remember", "args": { "operations": [{ "action": "add", "target": "equipo", "text": "El ejercicio fiscal de Nubaria cierra el 30 de junio.", "old": "" }] } },
+      { "say": "La ficha dice que el ejercicio fiscal cierra el 30 de junio, pero tú me dijiste que cierra el 31 de diciembre. Lo he guardado en duda, sin usarlo, hasta que me confirmes cuál vale." }
+    ]
+  }
+}

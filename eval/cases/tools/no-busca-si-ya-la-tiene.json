@@ -1,0 +1,30 @@
+{
+  "id": "no-busca-si-ya-la-tiene",
+  "area": "tools",
+  "title": "Si una herramienta del núcleo hace el trabajo (write_file), no pierde rondas buscando otra",
+  "why": "server/tool-search.mjs (CORE_TOOLS siempre listadas; find_tools es para lo que NO aparece en la lista): buscar cuando ya se tiene la herramienta son rondas y tokens de más.",
+  "tags": ["herramientas"],
+  "setup": {
+    "chat": "vera",
+    "apps": {
+      "gmail": { "account": { "id": "ca_gmail_eval", "alias": "Gmail trabajo", "email": "marina@nubaria.es" }, "messages": [] },
+      "googlecalendar": { "account": { "id": "ca_calendar_eval", "alias": "Calendario" }, "events": [] }
+    }
+  },
+  "turns": [
+    { "say": "Guarda en un archivo de texto de esta conversación, llamado pendientes.txt, estas dos líneas: «Llamar a la gestoría el lunes» y «Renovar el dominio antes del día 30»." }
+  ],
+  "checks": [
+    { "name": "el buscador estaba disponible (y no hacía falta)", "offered": ["find_tools", "write_file"] },
+    { "name": "escribe el archivo", "called": "write_file", "ok": true },
+    { "name": "el archivo existe", "files": { "$contains": "pendientes.txt" } },
+    { "name": "no busca herramientas", "notCalled": ["find_tools", "use_tool", "apps_search"] },
+    { "status": "completed" }
+  ],
+  "dry": {
+    "script": [
+      { "call": "write_file", "args": { "path": "pendientes.txt", "content": "Llamar a la gestoría el lunes\nRenovar el dominio antes del día 30\n" } },
+      { "say": "Guardado en pendientes.txt." }
+    ]
+  }
+}

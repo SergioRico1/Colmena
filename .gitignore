@@ -69,3 +69,6 @@ desktop.ini
 
 # Agent worktrees (Claude Code)
 .claude/worktrees/
+
+# Behaviour eval reports (npm run eval): local output, never committed
+eval/report/

@@ -29,7 +29,8 @@
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:dir": "npm run build && electron-builder --dir",
-    "lint": "eslint server desktop src tests scripts",
+    "lint": "eslint server desktop src tests scripts eval",
+    "eval": "node eval/run.mjs",
     "verify": "npm run lint && npm run check && npm run build && npm test"
   },
   "engines": {

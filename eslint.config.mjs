@@ -33,7 +33,7 @@ export default [
   // Disable comments for rules this config does not load (react-hooks outside src/) stay quiet.
   { linterOptions: { reportUnusedDisableDirectives: "off" } },
   {
-    files: ["server/**/*.mjs", "tests/**/*.mjs", "scripts/**/*.mjs", "*.mjs"],
+    files: ["server/**/*.mjs", "tests/**/*.mjs", "scripts/**/*.mjs", "eval/**/*.mjs", "*.mjs"],
     languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: { ...globals.node } },
     rules: bugs,
   },
