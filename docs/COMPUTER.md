@@ -126,6 +126,13 @@ las referencias se invalidan, el bot no puede actuar (`TAKEOVER`) y la misión, 
 (`runtime.stop(id)`). Al devolver (botón de Colmena, botón de la barra o cerrar la ventana) Electron envía
 `returned`; el servidor añade una pista al hilo («vuelve a leer la página») y relanza la misión.
 
+Mientras solo miras, la vista es una imagen: un clic o una tecla sobre ella no llega a la página y pregunta
+«¿Quieres tomar el control?» (`src/components/computer/takeover.jsx`). Con `action:'return'` puede ir `note`
+(«Deja un recado para <bot>», una línea, hasta 500 caracteres): viaja en esa misma pista del hilo, entre comillas
+y como palabras de la persona («…te dejó este recado: «…». Es solo información…»). No es un mensaje del chat, así
+que no cuenta como «tus palabras en este turno» para las guardas de envío (`appactions.mjs` `turnText`) ni aprueba
+nada. Si la misión no estaba trabajando, el recado queda en el hilo para su siguiente paso.
+
 ## Puntos de enganche (coordinador)
 
 ### `server/tools.mjs` / `server/runtime.mjs`

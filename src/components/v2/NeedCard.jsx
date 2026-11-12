@@ -8,14 +8,23 @@ import { later } from "../../lib/undoToast.js";
 import { failureText, groupLine, groupShown, groupTitle } from "../../lib/approvalGroups.js";
 import { needsHold } from "../../lib/holdApprove.js";
 import { decideBatch, useBatchFailures } from "../../lib/useApprovalBatch.js";
+import { letterOf, letterStyle, useChoiceKeys } from "../../lib/choiceKeys.js";
+import { isSnoozed, snoozeWhen } from "../../lib/snooze.js";
+import { useStore } from "../../lib/store.jsx";
 import HoldButton from "../HoldButton.jsx";
+import { withRowBoundary } from "../RowBoundary.jsx";
 import { BotPresence } from "./Presence.jsx";
+import SnoozeMenu, { snooze } from "./SnoozeMenu.jsx";
 
 // «Te necesitan» cards of Colmena 2.0 (design/V2Hoy.dc.html): the only honey on the screen.
 // A send shows what goes out and to whom; «Aprobar y enviar» waits 10 s with «Deshacer».
 // A question shows its options; your choice also waits 10 s before it is given.
 // Several requests of the same kind in a row fold into one card with «Aprobar todas»
 // (NeedGroupCard); a send or any other red line is approved by holding its button.
+// «Recordar después» (SnoozeMenu.jsx) puts a request off until a time unless a deadline would
+// pass first; a card put off turns calm and says when it comes back. A question's options
+// read A, B, C… and the letter key answers (lib/choiceKeys.js). A card that fails to draw
+// becomes one muted pill (RowBoundary.jsx).
 export const HONEY = "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)";
 export const CALM = "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)";
 
@@ -25,6 +34,7 @@ const tag = (label) => (
     {label}
   </span>
 );
+const QUIET = { height: "50px", padding: "0 14px", border: "0", background: "transparent", cursor: "pointer", fontSize: "15px", fontWeight: "500", color: "#5C606C" };
 const APPROVE = { flex: "1", height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "#FFC93C", cursor: "pointer", fontSize: "15px", fontWeight: "600" };
 const ext = (name) => (String(name || "").split(".").pop() || "").slice(0, 4).toUpperCase();
 const EXT_TINT = { PDF: ["#FBE7DF", "#8E2A1F"], XLSX: ["#E1F4EC", "#0B5A3E"], CSV: ["#E1F4EC", "#0B5A3E"], DOCX: ["#E3EAFB", "#1F3F99"], PPTX: ["#FBEADF", "#8A3B12"] };
@@ -70,8 +80,29 @@ function Sent({ text }) {
   );
 }
 
+/** «Pospuesto: vuelve mañana a las 9:00 · Traer de vuelta» on a card you put off. */
+function SnoozedLine({ items, onError }) {
+  const { run } = useStore();
+  const [busy, setBusy] = useState(false);
+  const back = async () => {
+    if (busy) return;
+    setBusy(true);
+    onError(null);
+    try { await run(() => snooze(items, null)); } catch (e) { onError(e?.message || "No se pudo traer de vuelta."); } finally { setBusy(false); }
+  };
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
+      <span role="status" style={{ flex: "1", minWidth: "200px", fontSize: "15px", color: "#5C606C" }}>{`${items.length > 1 ? "Pospuestas: vuelven" : "Pospuesto: vuelve"} ${snoozeWhen(items[0].snoozedUntil)}.`}</span>
+      <button type="button" disabled={busy} onClick={back} style={{ height: "40px", padding: "0 18px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>{"Traer de vuelta"}</button>
+    </div>
+  );
+}
+
+// A request that cannot be drawn is still decided in Revisar.
+const guard = { label: "No se ha podido mostrar esta petición", action: ({ a }) => (a?.id && a.status === "pending" && a.kind !== "question" ? { href: `/revisar/${a.id}`, text: "Abrir en Revisar" } : null), resetKey: ({ a }) => `${a?.id}:${a?.revision}:${a?.status}` };
+
 /** One approval (send, permission, plan…) or question waiting for you. */
-export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
+export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, settled = null, inline = false }) {
   const key = "approval:" + a.id;
   const { waiting } = useUndoable(key);
   const [error, setError] = useState(null);
@@ -102,6 +133,10 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
   const label = isSend ? "Aprobar" : isQuestion ? "Decidir" : a.kind === "plan" ? "Revisar" : "Aprobar";
   const options = a.options || [];
   const primary = Math.max(0, options.findIndex((o) => o.primary));
+  const snoozed = isSnoozed(a);
+  // A, B, C… answer while this is the question in focus (or the last one waiting on screen).
+  const single = isQuestion && !(a.questions?.length > 1);
+  const keys = useChoiceKeys({ count: options.length, enabled: single && !settled && !waiting && !snoozed, onChoose: (i) => pick(options[i]) });
 
   if (settled) {
     return (
@@ -113,8 +148,8 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
     );
   }
   return (
-    <article style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
-      {inline ? tag("Te necesita") : <Header bot={bot} who={a.external ? "fuera de tu empresa" : null} mission={mission} at={a.createdAt} label={label} />}
+    <article ref={keys} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
+      {inline ? (snoozed ? null : tag("Te necesita")) : <Header bot={bot} who={a.external ? "fuera de tu empresa" : null} mission={mission} at={a.createdAt} label={snoozed ? null : label} />}
       <h3 style={{ margin: "0", font: inline ? "600 22px/1.25 'Bricolage Grotesque', sans-serif" : "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{isSend && email?.subject ? `Enviar «${email.subject}»` : isQuestion && a.questions?.length > 1 ? `${bot?.name || "El bot"} tiene ${a.questions.length} preguntas` : a.title}</h3>
       {isSend && email ? (
         <div style={{ padding: "18px", background: "#F6F6F3", borderRadius: "20px", display: "flex", flexDirection: "column", gap: "10px", fontSize: "15px", lineHeight: "1.55" }}>
@@ -134,9 +169,14 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
       ) : !isQuestion && a.summary ? (
         <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{a.summary}</p>
       ) : null}
-      {isQuestion && a.questions?.length > 1 ? (
+      {snoozed ? (
+        <SnoozedLine items={[a]} onError={setError} />
+      ) : isQuestion && a.questions?.length > 1 ? (
         // Several questions: one at a time (QuestionFlow.jsx).
-        <QuestionFlow approval={a} />
+        <>
+          <QuestionFlow approval={a} />
+          <div style={{ display: "flex" }}><SnoozeMenu items={[a]} style={{ ...QUIET, height: "40px", padding: "0 10px" }} onError={setError} /></div>
+        </>
       ) : isQuestion ? (
         <>
           {a.summary && a.summary !== a.title ? <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{a.summary}</p> : null}
@@ -144,15 +184,21 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
             {options.map((o, i) => {
               const on = choice === o.id;
               return (
-                <button key={o.id || i} type="button" role="radio" aria-checked={on ? "true" : "false"} disabled={waiting && !on} onClick={() => (on ? undo() : pick(o))}
+                <button key={o.id || i} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-keyshortcuts={letterOf(i) || undefined} disabled={waiting && !on} onClick={() => (on ? undo() : pick(o))}
                   style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "56px", padding: "0 18px", textAlign: "left", borderRadius: "18px", cursor: "pointer", transition: "all .25s ease", background: on ? "#12131A" : "#F6F6F3", color: on ? "#FFFFFF" : "#12131A", border: on ? "1px solid #12131A" : "1px solid transparent" }}>
+                  {letterOf(i) ? <span aria-hidden="true" style={letterStyle(on, 24)}>{letterOf(i)}</span> : null}
                   <span style={{ flex: "1", fontSize: "15px", fontWeight: "600" }}>{o.label}</span>
                   {i === primary && options.length > 1 ? <span style={{ fontSize: "13px", opacity: ".7" }}>{"Recomendada"}</span> : null}
                 </button>
               );
             })}
           </div>
-          {waiting ? <Countdown id={key} onUndo={undo} text="Se decide en" /> : <QuestionReply approval={a} />}
+          {waiting ? <Countdown id={key} onUndo={undo} text="Se decide en" /> : (
+            <>
+              <QuestionReply approval={a} />
+              <div style={{ display: "flex" }}><SnoozeMenu items={[a]} style={{ ...QUIET, height: "40px", padding: "0 10px" }} onError={setError} /></div>
+            </>
+          )}
         </>
       ) : waiting ? (
         <Countdown id={key} onUndo={undo} text={isSend ? "Se envía en" : "Se aprueba en"} />
@@ -164,19 +210,20 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
           ) : (
             <button type="button" onClick={approve} style={APPROVE}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>
           )}
+          <SnoozeMenu items={[a]} style={QUIET} onError={setError} />
         </div>
       )}
       {error || failures.get(a.id) ? <span role="alert" style={{ fontSize: "14px", color: "#B4372A" }}>{error || failures.get(a.id)}</span> : null}
     </article>
   );
-}
+}, guard);
 
 /**
  * Several requests of the same kind from one bot, one after another, as one card: what each
  * one is, «Aprobar todas» (10 s with «Deshacer»), «Ver cada una» (the usual cards, each
  * decided alone) and «No permitir» for all of them. Never a red line.
  */
-export function NeedGroupCard({ group, bot, mission, inline = false }) {
+export const NeedGroupCard = withRowBoundary(function NeedGroupCard({ group, bot, mission, inline = false }) {
   const key = "approvals:" + group.id;
   const { waiting } = useUndoable(key);
   const failures = useBatchFailures();
@@ -199,6 +246,7 @@ export function NeedGroupCard({ group, bot, mission, inline = false }) {
   const items = group.items;
   const heading = groupTitle(group, bot?.name);
   const listed = groupShown(items);
+  const snoozed = items.every((a) => isSnoozed(a));
   const approve = () => {
     setError(null);
     schedule(key, async () => {
@@ -213,7 +261,7 @@ export function NeedGroupCard({ group, bot, mission, inline = false }) {
       run: async () => { const left = await decideBatch(items, "denied"); if (left) throw Error(failureText(left, "denied")); },
     });
   };
-  const quiet = { height: "50px", padding: "0 14px", border: "0", background: "transparent", cursor: "pointer", fontSize: "15px", fontWeight: "500", color: "#5C606C" };
+  const quiet = QUIET;
   if (open) {
     return (
       <div role="group" aria-label={heading} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -226,8 +274,8 @@ export function NeedGroupCard({ group, bot, mission, inline = false }) {
     );
   }
   return (
-    <article aria-label={heading} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
-      {inline ? tag("Te necesita") : <Header bot={bot} mission={mission} at={items[0].createdAt} label="Aprobar" />}
+    <article aria-label={heading} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
+      {inline ? (snoozed ? null : tag("Te necesita")) : <Header bot={bot} mission={mission} at={items[0].createdAt} label={snoozed ? null : "Aprobar"} />}
       <h3 style={{ margin: "0", font: inline ? "600 22px/1.25 'Bricolage Grotesque', sans-serif" : "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{heading}</h3>
       <ul style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
         {listed.shown.map((a) => (
@@ -238,19 +286,22 @@ export function NeedGroupCard({ group, bot, mission, inline = false }) {
         ))}
         {listed.more ? <li style={{ fontSize: "14px", color: "#6B6F7A" }}>{`y ${listed.more} más`}</li> : null}
       </ul>
-      {waiting ? (
+      {snoozed ? (
+        <SnoozedLine items={items} onError={setError} />
+      ) : waiting ? (
         <Countdown id={key} onUndo={() => cancel(key)} text="Se aprueban en" />
       ) : (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
           <button ref={toggle} type="button" aria-expanded="false" onClick={flip} style={{ height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "15px", fontWeight: "600" }}>{"Ver cada una"}</button>
           <button type="button" onClick={approve} style={APPROVE}>{"Aprobar todas"}</button>
           <button type="button" onClick={deny} style={quiet}>{"No permitir"}</button>
+          <SnoozeMenu items={items} style={quiet} onError={setError} />
         </div>
       )}
       {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4372A" }}>{error}</span> : null}
     </article>
   );
-}
+}, { label: "No se han podido mostrar estas peticiones", resetKey: ({ group }) => group?.id + ":" + group?.items?.length });
 
 /** A room that waits for you to pick a proposal or approve a plan. */
 export function ChoiceCard({ m, bots }) {

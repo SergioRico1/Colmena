@@ -13,6 +13,8 @@ import { RouterProvider, navigate, useRouter } from "./lib/router.jsx";
 import { StoreProvider, useStore } from "./lib/store.jsx";
 import { routes } from "./routes.jsx";
 import WindowChrome from "./components/WindowChrome.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import { logCaught } from "./lib/boundary.js";
 import ContextMenuLayer from "./components/ContextMenu.jsx";
 import LightboxLayer from "./components/room/Lightbox.jsx";
 import LinkPreviewLayer from "./components/room/LinkPreview.jsx";
@@ -92,12 +94,17 @@ installDragOut();
 watchFocusModality();
 // «Ha terminado» and «te necesita» each sound their own way (Ajustes › Avisos).
 listenForNoticeSounds();
-createRoot(document.body.appendChild(Object.assign(document.createElement("div"), { id: "root" }))).render(
+// An error a boundary catches is written to the console once (lib/boundary.js).
+createRoot(document.body.appendChild(Object.assign(document.createElement("div"), { id: "root" })), { onCaughtError: logCaught }).render(
   <StrictMode>
-    <RouterProvider routes={routes}>
-      <StoreProvider>
-        <App />
-      </StoreProvider>
-    </RouterProvider>
+    {/* Outermost: a render error anywhere (or a screen whose code no longer loads) shows the
+        crash screen, with the window buttons, instead of a blank frameless window. */}
+    <ErrorBoundary>
+      <RouterProvider routes={routes}>
+        <StoreProvider>
+          <App />
+        </StoreProvider>
+      </RouterProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );

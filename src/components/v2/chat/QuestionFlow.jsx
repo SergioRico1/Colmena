@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUp } from "lucide-react";
 import { post } from "../../../lib/api.js";
 import { useAction } from "../../../lib/store.jsx";
+import { choiceIndex, letterOf, useChoiceKeys } from "../../../lib/choiceKeys.js";
 
 // Several questions from a bot, one at a time (after shadcn's Questionnaire and assistant-ui
-// question-flow): «Pregunta 2 de 3», the options with their number (keys 1/2/3 choose), a
+// question-flow): «Pregunta 2 de 3», the options with their letter (keys A/B/C choose, for
+// the question you are on; 1/2/3 still work with the focus inside the card), a
 // free answer beside them, «Saltar» on the optional ones, and the focus moving to the next
 // question. The answers go together at the end (server/questions.mjs).
 
@@ -16,7 +18,6 @@ export default function QuestionFlow({ approval }) {
   const [answers, setAnswers] = useState({}); // id → { optionId?, text?, skipped? }
   const { act, busy, error } = useAction();
   const heading = useRef(null);
-  const root = useRef(null);
   const first = useRef(true);
   const q = questions[step];
   const current = answers[q?.id] || {};
@@ -26,6 +27,9 @@ export default function QuestionFlow({ approval }) {
     if (first.current) { first.current = false; return; }
     heading.current?.focus({ preventScroll: true });
   }, [step]);
+  // A, B, C… answer the question you are on, while this card has the focus or is the last
+  // question waiting on screen, and you are not typing (lib/choiceKeys.js).
+  const root = useChoiceKeys({ count: q?.options?.length || 0, enabled: !busy, onChoose: (i) => choose(q.options[i]) });
   if (!q) return null;
   const set = (patch) => setAnswers((all) => ({ ...all, [q.id]: { ...patch } }));
   const answered = (a) => !!(a?.optionId || String(a?.text || "").trim() || a?.skipped);
@@ -48,7 +52,10 @@ export default function QuestionFlow({ approval }) {
   const onKeyDown = (e) => {
     if (e.target?.tagName === "INPUT" || e.altKey || e.ctrlKey || e.metaKey) return;
     const n = Number(e.key);
-    if (Number.isInteger(n) && n >= 1 && n <= q.options.length) { e.preventDefault(); choose(q.options[n - 1]); }
+    if (Number.isInteger(n) && n >= 1 && n <= q.options.length) { e.preventDefault(); choose(q.options[n - 1]); return; }
+    // The letters, here too: the page-level listener leaves a key already handled alone.
+    const at = choiceIndex(e, q.options.length);
+    if (at >= 0) { e.preventDefault(); choose(q.options[at]); }
   };
   return (
     <div ref={root} role="group" aria-label={`Pregunta ${step + 1} de ${questions.length}`} onKeyDown={onKeyDown} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -65,9 +72,9 @@ export default function QuestionFlow({ approval }) {
           {q.options.map((o, i) => {
             const on = current.optionId === o.id;
             return (
-              <button key={o.id} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-keyshortcuts={String(i + 1)} onClick={() => choose(o)} className="rm-focus"
+              <button key={o.id} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-keyshortcuts={letterOf(i) || String(i + 1)} onClick={() => choose(o)} className="rm-focus"
                 style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "52px", padding: "0 16px", textAlign: "left", borderRadius: "16px", cursor: "pointer", transition: "all .2s ease", background: on ? "#12131A" : "#F6F6F3", color: on ? "#FFFFFF" : "#12131A", border: 0 }}>
-                <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "8px", background: on ? "rgba(255,255,255,.16)" : "#FFFFFF", font: "600 12px/1 'Geist Mono', monospace", color: on ? "#FFFFFF" : "#5C606C" }}>{i + 1}</span>
+                <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "8px", background: on ? "rgba(255,255,255,.16)" : "#FFFFFF", font: "600 12px/1 'Geist Mono', monospace", color: on ? "#FFFFFF" : "#5C606C" }}>{letterOf(i) || i + 1}</span>
                 <span style={{ flex: "1", fontSize: "15px", fontWeight: 600 }}>{o.label}</span>
               </button>
             );

@@ -7,6 +7,7 @@ import { groupApprovals, groupLine, groupShown, groupTitle } from "../../lib/app
 import { needsHold } from "../../lib/holdApprove.js";
 import { useApprovalBatch, useBatchFailures } from "../../lib/useApprovalBatch.js";
 import HoldButton from "../HoldButton.jsx";
+import RowBoundary from "../RowBoundary.jsx";
 import { useCountdown } from "./Dots.jsx";
 import { BotAvatar, ErrorLine, findBot } from "./common.jsx";
 
@@ -17,7 +18,8 @@ import { BotAvatar, ErrorLine, findBot } from "./common.jsx";
 // «sí» in the chat also approves the one pending request (server: messages route).
 // Several requests of the same kind in a row fold into one row with «Aprobar todas»
 // (lib/approvalGroups.js); a red line is never folded, and its «Sí, hazlo» is held to approve
-// (HoldButton.jsx).
+// (HoldButton.jsx). A row that fails to draw becomes one muted pill with the way to Revisar
+// (RowBoundary.jsx); the others keep working.
 const INLINE = new Set(["permission", "write", "memory", "read"]);
 const I = { size: 14, strokeWidth: 2.3, "aria-hidden": "true" };
 
@@ -192,7 +194,9 @@ export default function InlineApprovals({ approvals = [], bots = [] }) {
   const more = list.length - shown.reduce((n, e) => n + (e.type === "group" ? e.items.length : 1), 0);
   return (
     <section aria-label="Necesitan tu OK" style={{ display: "flex", flexDirection: "column", gap: "6px", margin: "0 0 10px" }}>
-      {shown.map((e) => (e.type === "group" ? <GroupRow key={e.id} group={e} bots={bots} /> : <Row key={e.a.id} a={e.a} bots={bots} note={failures.get(e.a.id) || null} />))}
+      {shown.map((e) => (e.type === "group"
+        ? <RowBoundary key={e.id} label="No se han podido mostrar estas peticiones" resetKey={e.id + ":" + e.items.length}><GroupRow group={e} bots={bots} /></RowBoundary>
+        : <RowBoundary key={e.a.id} label="No se ha podido mostrar esta petición" action={{ href: `/revisar/${encodeURIComponent(e.a.id)}`, text: "Abrir en Revisar" }} resetKey={e.a.revision}><Row a={e.a} bots={bots} note={failures.get(e.a.id) || null} /></RowBoundary>))}
       {more > 0 ? <a href="/" style={{ fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>{`Y ${more} más en Hoy`}</a> : null}
     </section>
   );

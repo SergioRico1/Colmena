@@ -9,7 +9,12 @@ import { later } from "../../../lib/undoToast.js";
 import { failureText, groupLine, groupShown, groupTitle } from "../../../lib/approvalGroups.js";
 import { needsHold } from "../../../lib/holdApprove.js";
 import { decideBatch, useBatchFailures } from "../../../lib/useApprovalBatch.js";
+import { letterOf, letterStyle, useChoiceKeys } from "../../../lib/choiceKeys.js";
+import { snoozeWhen, snoozedLabel } from "../../../lib/snooze.js";
+import { useStore } from "../../../lib/store.jsx";
 import HoldButton from "../../HoldButton.jsx";
+import { withRowBoundary } from "../../RowBoundary.jsx";
+import SnoozeMenu, { snooze } from "../../v2/SnoozeMenu.jsx";
 import { NeedLabel, Shape, UndoBar, btn } from "./parts.jsx";
 
 // «Te necesitan» on Inicio (design/V3Inicio.dc.html): white cards ringed in honey, the oldest
@@ -19,6 +24,10 @@ import { NeedLabel, Shape, UndoBar, btn } from "./parts.jsx";
 // the bot that watches your apps («Te avisa de lo importante») use the same card. Several
 // requests of the same kind in a row fold into one card with «Aprobar todas» (GroupNeed);
 // a send or any other red line is approved by holding its button (HoldButton.jsx).
+// «Recordar después» (v2/SnoozeMenu.jsx) puts a request off until a time, unless it has a
+// deadline that would pass first; SnoozedNeeds lists what is put off («2 pospuestos») and
+// brings one back. A question's options read A, B, C… and the letter key answers
+// (lib/choiceKeys.js). A card that fails to draw becomes one muted pill (RowBoundary.jsx).
 
 const RING = "0 0 0 1.5px #FFC93C, 0 18px 40px -28px rgba(138,90,0,.45)";
 const RING_SM = "0 0 0 1.5px #FFC93C";
@@ -67,8 +76,11 @@ const Lock = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" s
 const where = (mission) => (mission && !mission.conversation ? <>{"en "}<a href={roomUrl(mission)}>{mission.room ? "#" + mission.room : mission.title}</a></> : mission?.conversation ? "en el chat" : null);
 const LABEL = { send: "Aprobar un envío", question: "Decidir", plan: "Revisar el plan", permission: "Dar permiso", secret: "Revisar", memory: "Revisar", skill: "Revisar", soul: "Revisar", write: "Aprobar" };
 
+// A request that cannot be drawn is still decided in Revisar.
+const guard = { label: "No se ha podido mostrar esta petición", action: ({ a }) => (a?.id && a.status === "pending" && a.kind !== "question" ? { href: `/revisar/${a.id}`, text: "Abrir en Revisar" } : null), resetKey: ({ a }) => `${a?.id}:${a?.revision}:${a?.status}` };
+
 /** One approval (send, permission, plan…) or question waiting for you. `wide`: the first, larger card. */
-export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) {
+export const ApprovalNeed = withRowBoundary(function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) {
   const key = "approval:" + a.id;
   const { waiting } = useUndoable(key);
   const [error, setError] = useState(null);
@@ -105,6 +117,9 @@ export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) 
   const undo = () => { cancel(key); setChoice(null); };
   const options = a.options || [];
   const primary = Math.max(0, options.findIndex((o) => o.primary));
+  // A, B, C… answer while this is the question in focus (or the last one waiting on screen).
+  const single = isQuestion && !(a.questions?.length > 1);
+  const keys = useChoiceKeys({ count: options.length, enabled: single && !settled && !waiting, onChoose: (i) => pick(options[i]) });
   const heading = isSend && email?.subject ? `Enviar «${email.subject}»` : isQuestion && a.questions?.length > 1 ? `${bot?.name || "El bot"} tiene ${a.questions.length} preguntas` : a.title;
   const outside = a.external || a.redLine || a.impact?.tone === "external";
 
@@ -118,7 +133,7 @@ export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) 
     );
   }
   return (
-    <article aria-label={heading} style={card(wide, waiting ? CALM : wide ? RING : RING_SM)}>
+    <article ref={keys} aria-label={heading} style={card(wide, waiting ? CALM : wide ? RING : RING_SM)}>
       <Head bot={bot} where={where(mission)} at={a.createdAt} label={LABEL[a.kind] || "Aprobar"} />
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         <h3 style={title(wide)}>{heading}</h3>
@@ -132,22 +147,29 @@ export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) 
       </div>
       {isQuestion && a.questions?.length > 1 ? (
         // Several questions: one at a time (QuestionFlow.jsx).
-        <QuestionFlow approval={a} />
+        <>
+          <QuestionFlow approval={a} />
+          <div style={row}><SnoozeMenu items={[a]} style={btn.text} onError={setError} /></div>
+        </>
       ) : waiting ? (
         <div style={row}><UndoBar id={key} text={isSend ? "Se envía en" : isQuestion ? "Se decide en" : "Se aprueba en"} onUndo={undo} /></div>
       ) : isQuestion ? (
         <>
           <div role="group" aria-label={a.title} style={row}>
             {options.map((o, i) => (
-              <button key={o.id || i} type="button" aria-pressed={choice === o.id ? "true" : "false"} onClick={() => pick(o)} style={i === primary ? btn.dark : btn.line}>{o.label}</button>
+              <button key={o.id || i} type="button" aria-pressed={choice === o.id ? "true" : "false"} aria-keyshortcuts={letterOf(i) || undefined} onClick={() => pick(o)} style={{ ...(i === primary ? btn.dark : btn.line), gap: "8px", paddingLeft: "10px" }}>
+                {letterOf(i) ? <span aria-hidden="true" style={letterStyle(i === primary)}>{letterOf(i)}</span> : null}
+                {o.label}
+              </button>
             ))}
             <button type="button" aria-expanded={free ? "true" : "false"} onClick={() => setFree(!free)} style={btn.text}>{options.length ? "Otra respuesta" : "Responder"}</button>
+            <SnoozeMenu items={[a]} style={btn.text} onError={setError} />
           </div>
           {free || !options.length ? <QuestionReply approval={a} /> : null}
         </>
       ) : (
         <div style={row}>
-          {a.kind === "plan" ? <a href={a.missionId ? `/sala/${a.missionId}#plan` : `/revisar/${a.id}`} style={btn.dark}>{"Revisar el plan"}</a>
+          {a.kind === "plan" ? <><a href={a.missionId ? `/sala/${a.missionId}#plan` : `/revisar/${a.id}`} style={btn.dark}>{"Revisar el plan"}</a><SnoozeMenu items={[a]} style={btn.text} onError={setError} /></>
             : a.kind === "secret" ? <a href={`/revisar/${a.id}`} style={btn.dark}>{"Revisar"}</a>
               : <>
                 {needsHold(a)
@@ -155,6 +177,7 @@ export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) 
                   : <button type="button" onClick={approve} style={btn.dark}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>}
                 <a href={`/revisar/${a.id}`} style={btn.line}>{isSend ? "Revisar y editar" : "Revisar"}</a>
                 <button type="button" onClick={deny} style={btn.text}>{isSend ? "No enviar" : "No permitir"}</button>
+                <SnoozeMenu items={[a]} style={btn.text} onError={setError} />
               </>}
           {wide && (outside || a.impact?.headline) ? (
             <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#5C606C" }}>
@@ -166,14 +189,14 @@ export function ApprovalNeed({ a, bot, mission, wide = false, settled = null }) 
       {error || failures.get(a.id) ? <span role="alert" style={{ fontSize: "14px", color: "#B4232A" }}>{error || failures.get(a.id)}</span> : null}
     </article>
   );
-}
+}, guard);
 
 /**
  * Several requests of the same kind from one bot, one after another, as one card: what each
  * one is, «Aprobar todas» (10 s with «Deshacer», like any approval here), «Ver cada una» (the
  * usual cards, each decided alone) and «No permitir» for all of them. Never a red line.
  */
-export function GroupNeed({ group, bot, mission, wide = false }) {
+export const GroupNeed = withRowBoundary(function GroupNeed({ group, bot, mission, wide = false }) {
   const key = "approvals:" + group.id;
   const { waiting } = useUndoable(key);
   const failures = useBatchFailures();
@@ -244,10 +267,64 @@ export function GroupNeed({ group, bot, mission, wide = false }) {
           <button type="button" onClick={approve} style={btn.dark}>{"Aprobar todas"}</button>
           <button ref={toggle} type="button" aria-expanded="false" onClick={flip} style={btn.line}>{"Ver cada una"}</button>
           <button type="button" onClick={deny} style={btn.text}>{"No permitir"}</button>
+          <SnoozeMenu items={items} style={btn.text} onError={setError} />
         </div>
       )}
       {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4232A" }}>{error}</span> : null}
     </article>
+  );
+}, { label: "No se han podido mostrar estas peticiones", resetKey: ({ group }) => group?.id + ":" + group?.items?.length });
+
+/**
+ * What you put off with «Recordar después»: a discreet «2 pospuestos» that unfolds into one
+ * line per request — what it is, when it comes back — with «Traer de vuelta».
+ */
+export function SnoozedNeeds({ items = [], bots = [] }) {
+  const { run } = useStore();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(null);
+  const [error, setError] = useState(null);
+  const toggle = useRef(null);
+  if (!items.length) return null;
+  const back = async (a) => {
+    if (busy) return;
+    setBusy(a.id);
+    setError(null);
+    try {
+      await run(() => snooze([a], null));
+      // The row is gone: the keyboard stays on the toggle (or leaves with the list).
+      toggle.current?.focus({ preventScroll: true });
+    } catch (e) {
+      setError(e?.message || "No se pudo traer de vuelta.");
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <button ref={toggle} type="button" aria-expanded={open ? "true" : "false"} aria-controls="snoozed-needs" onClick={() => setOpen((v) => !v)} style={{ ...btn.text, alignSelf: "flex-start", height: "32px", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13.5px", color: "#5C606C" }}>
+        {snoozedLabel(items.length)}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+      {open ? (
+        <ul id="snoozed-needs" aria-label="Pospuestos" style={{ margin: "0", padding: "4px 18px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", animation: "fade .2s ease-out" }}>
+          {items.map((a, i) => {
+            const bot = bots.find((b) => b.id === a.botId) || null;
+            return (
+              <li key={a.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", padding: "10px 0", borderTop: i ? "1px solid rgba(18,19,26,.06)" : "0" }}>
+                <Shape bot={bot} size={14} />
+                <span style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <span style={{ fontSize: "14.5px", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</span>
+                  <span style={{ fontSize: "13px", color: "#5C606C" }}>{`${bot?.name || "Un bot"} · vuelve ${snoozeWhen(a.snoozedUntil)}`}</span>
+                </span>
+                <button type="button" disabled={busy === a.id} onClick={() => back(a)} style={{ ...btn.line, height: "34px", padding: "0 14px", fontSize: "13.5px" }}>{"Traer de vuelta"}</button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4232A" }}>{error}</span> : null}
+    </div>
   );
 }
 

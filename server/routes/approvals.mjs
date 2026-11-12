@@ -4,6 +4,7 @@ import { now } from "../store.mjs";
 import { context, approvalView } from "../state.mjs";
 import { HttpError, short, check } from "./shared.mjs";
 import { BATCH_MAX } from "../approval-groups.mjs";
+import { createSnoozeWaker, snoozeProblem } from "../snooze.mjs";
 
 /** Approvals: what the person reviews and decides. */
 export function registerApprovalRoutes(app, { store, runtime, mustGet, connection, need, emailEdit }) {
@@ -109,6 +110,22 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
     const message = await need("addMessage")(a.missionId,
       "Vuelve a preparar «" + view.title + "»: la revisión anterior caducó sin hacerse (pasaron más de 30 minutos). Prepárala otra vez con los datos actuales para que la revise.", []);
     res.json({ ok: true, messageId: message?.id ?? null });
+  });
+  // «Recordar después»: the request leaves «Te necesitan» and its counts until `until`, then
+  // comes back by itself; `until: null` brings it back now. It decides nothing (no revision):
+  // the bot keeps waiting. Refused when the request has a deadline that would pass first.
+  const waker = createSnoozeWaker(store);
+  waker.schedule();
+  app.post("/api/approvals/:id/snooze", (req, res) => {
+    const { until } = check(z.object({ until: z.string().max(40).refine((v) => !Number.isNaN(Date.parse(v)), "Esa hora no es válida.").nullable() }).strict(), req.body);
+    const a = mustGet("approvals", req.params.id, "Aviso");
+    if (until) {
+      const problem = snoozeProblem(a, until);
+      if (problem) throw new HttpError(409, problem);
+    }
+    const updated = store.patch("approvals", a.id, { snoozedUntil: until ? new Date(until).toISOString() : null });
+    waker.schedule();
+    res.json({ ok: true, snoozedUntil: updated.snoozedUntil ?? null });
   });
   app.patch("/api/approvals/:id/email", async (req, res) => {
     const { attachments, revision, ...data } = check(emailEdit.extend({ revision: revisionField.optional(), attachments: z.array(z.object({ name: z.string().max(255), size: z.number().int().min(0).nullable().optional() }).strict()).max(20).optional() }).strict(), req.body);

@@ -195,6 +195,8 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     // {key, label} when it may be decided together with its neighbours of the same key
     // («Aprobar todas», approval-groups.mjs); null for red lines and anything decided alone.
     group: pending && !expired ? approvalGroup(a, { flagged: flagged ? flagged(a.stepId) : true }) : null,
+    // «Recordar después» (snooze.mjs): out of «Te necesitan» and its counts until this time.
+    snoozedUntil: pending && !expired && a.snoozedUntil && Date.parse(a.snoozedUntil) > reference ? a.snoozedUntil : null,
     createdAt: a.createdAt ?? null, decidedAt: a.decidedAt ?? null,
     decidedBy: a.decidedBy ?? (a.decidedAt ? "tú" : null), resolution: a.resolution ?? null,
     denyReason: a.denyReason ?? null, reviewing: !!a.reviewing, reviewNote: a.reviewNote ?? null,

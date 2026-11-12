@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { needsOf } from "../components/v2/needs.js";
-import { ApprovalNeed, ChoiceNeed, GroupNeed, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
+import { ApprovalNeed, ChoiceNeed, GroupNeed, SnoozedNeeds, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
 import { groupApprovals } from "../lib/approvalGroups.js";
 import { Shape, sectionTitle, srOnly } from "../components/v3/dia/parts.jsx";
 import { routeOf } from "../components/v3/dia/route.js";
@@ -49,7 +49,7 @@ export default function Hoy({ query = {} }) {
   useEffect(() => { if (query.aprobacion) navigate(`/revisar/${encodeURIComponent(query.aprobacion)}`, { replace: true }); }, [query.aprobacion]);
   const { bots, missions, approvals, automations = [], skills, usage, settings = {}, paused } = store;
   const goals = useResource("/goals").data;
-  const { asks, choices, notes } = needsOf(store);
+  const { asks, choices, notes, snoozed } = needsOf(store);
   const [ask, setAsk] = useState("");
   const [files, setFiles] = useState([]);
   const [picked, setPicked] = useState(null); // a bot chosen by hand in «… decide quién lo hace»
@@ -273,6 +273,8 @@ export default function Hoy({ query = {} }) {
               {settled.map((d) => <ApprovalNeed key={"done" + d.approval.id} a={d.approval} bot={botOf(d.approval.botId)} mission={missions.find((m) => m.id === d.approval.missionId)} settled={d.text} />)}
             </div>
           ) : null}
+          {/* What you put off with «Recordar después»: out of the count, one click away. */}
+          <SnoozedNeeds items={snoozed} bots={bots} />
         </section>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(400px, 100%), 1fr))", gap: "40px 28px", alignItems: "start" }}>
