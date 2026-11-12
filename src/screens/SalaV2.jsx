@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FileText, FolderOpen, Globe, ListChecks, MessageCircleQuestion, MessageSquareReply, MessagesSquare, SquareTerminal, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import Composer from "../components/v2/chat/Composer.jsx";
+import NowBar from "../components/v2/chat/NowBar.jsx";
 import { BotMark, PersonMark } from "../components/v2/chat/Mark.jsx";
 import { patch, post } from "../lib/api.js";
 import { InteractiveContext } from "../components/room/Interactive.jsx";
@@ -318,10 +319,14 @@ function Room({ id, query }) {
                       <OlderMessages count={room.olderCount} onShow={room.showOlder} />
                       <RoomMessages mission={mission} messages={withOrphanQuestions(room.spoken || messages, pending)} thread={thread} bots={bots} approvals={approvals} artifacts={artifacts} steps={steps} onOpenArtifact={openDoc} openArtifactId={null} showThread={false} onOpenReplies={openReplies} />
                       {mission?.limited ? <LimitBanner mission={mission} botName={mission.limited.botIds?.length === 1 ? findBot(bots, mission.limited.botIds[0])?.name : null} /> : null}
+                      {/* Where the bots' live work shows: «qué está haciendo ahora» appears when this is out of view. */}
+                      <span aria-hidden="true" data-room-end="" style={{ display: "block", height: "1px", marginTop: "-1px" }} />
                     </div>
                   </div>
                   <PositionRail scroller={scroller} items={railItems(messages, (b) => findBot(bots, b || "atlas").name)} version={messages.length} />
                   <div style={{ width: "100%", maxWidth: "860px", margin: "0 auto", padding: "0 10px" }}>
+                    <NowBar missionId={id} active={["running", "planning"].includes(mission.status) && (activity.length > 0 || live.length > 0)} steps={steps} bots={bots} scroller={scroller} selector="[data-live-turn], [data-room-end]"
+                      onShow={follow.toEnd} onStop={() => { post(`/missions/${id}/control`, { action: "pause" }).catch(() => {}); }} style={{ margin: "0 16px 6px" }} />
                     <RoomComposer mission={mission} bots={bots} memberIds={memberIds} typing={typing} messages={messages} below={follow.below} onJump={follow.toEnd} onSent={follow.toEnd} secrets={pending.filter((a) => a.kind === "secret")} approvals={pending.filter((a) => a.kind !== "secret" && a.kind !== "question" && !messages.some((m) => m.approvalId === a.id))}
                       tools={audience} placeholder={`Mensaje en #${mission.room || mission.title} · @ para pedir algo a un bot`} />
                   </div>

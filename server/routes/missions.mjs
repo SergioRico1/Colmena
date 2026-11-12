@@ -73,6 +73,8 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
     // «Ya tengo dos tarifas; me falta la de Iberdrola» (only while it works).
     narration: s.status === "running" && s.narration?.text ? { text: s.narration.text, at: s.narration.at } : null,
     round: s.round ?? 1, quietReply: !!s.quietReply,
+    // The messages of the person this turn answers (their receipts: src/lib/receipts.js).
+    ...(s.ackOn || s.ackExtra?.length ? { acks: [s.ackOn, ...(s.ackExtra || [])].filter(Boolean), ...(s.skipped ? { skipped: true } : {}) } : {}),
   });
   // A message as the client gets it. Its optional links (artifact, approval, plan, step, reply…)
   // only travel when set: an 800-message chat pages in without a wall of «null» (T3 Code payload
@@ -403,8 +405,10 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
     res.json({ id: updated.id, reactions: reactionsOf(updated).map(reactionView) });
   });
   app.post("/api/missions/:id/control", async (req, res) => {
-    const { action } = check(z.object({ action: z.enum(["pause", "resume", "cancel", "retry", "discard"]) }).strict(), req.body);
+    const { action, reason } = check(z.object({ action: z.enum(["pause", "resume", "cancel", "retry", "discard"]), reason: z.string().trim().max(600).optional() }).strict(), req.body);
     mustGet("missions", req.params.id, "Misión");
+    // «Dile por qué lo has parado», typed before «Continuar» or «Descartar»: it goes along.
+    if (reason && ["resume", "retry", "discard"].includes(action)) need("stopWhy")(req.params.id, reason);
     // «Descartar» on the «Se paró» card: what was left half done goes; the chat is ready again.
     if (action === "discard") need("discardStopped")(req.params.id);
     else if (action === "retry") need("retry")(req.params.id);
@@ -506,6 +510,8 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
       res.json((await run(req.params.id, data)) ?? { ok: true });
     });
   missionAction("plan", z.object({ decision: z.enum(["approved", "changes"]), note: z.string().trim().max(4000).optional() }).strict(), (missionId, d) => need("planDecision")(missionId, d.decision, d.note));
+  // «Dile por qué lo has parado» on its own (the «Se paró» card): kept for the bot's next turn.
+  missionAction("stop-reason", z.object({ text: z.string().trim().min(1).max(600) }).strict(), (missionId, d) => ({ ok: true, why: need("stopWhy")(missionId, d.text) }));
   missionAction("thread", z.object({ text: z.string().trim().min(1).max(4000) }).strict(), (missionId, d) => need("threadHint")(missionId, d.text));
   missionAction("choose", z.object({ botIds: z.array(short).min(1).max(2) }).strict(), (missionId, d) => need("choose")(missionId, [...new Set(d.botIds)]));
   missionAction("members", z.object({ botId: short }).strict(), (missionId, d) => {

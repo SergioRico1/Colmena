@@ -1,6 +1,7 @@
 import { cheapestModel } from "../checkins.mjs";
 import { visibleMessages } from "../branches.mjs";
 import { now } from "../store.mjs";
+import { cleanUse, turnNote } from "../turnoptions.mjs";
 import { ROUTER_INSTRUCTIONS, coordinationAsk, lastExchange, parsePick, quotedBot, routed, routerInput, spokenLines } from "../router.mjs";
 
 /** «Atlas está eligiendo quién responde» while the model picks (the room's typing line). */
@@ -97,7 +98,11 @@ export class RoutingMethods {
   routeLater(missionId, turn, { router, botIds }) {
     const prior = this.routes.get(missionId) || Promise.resolve();
     const job = prior.then(() => this.routeAndDeliver(missionId, turn, { router, botIds }))
-      .catch((error) => console.warn("Colmena: no se pudo entregar un mensaje enrutado: " + (error?.message || error)));
+      .catch((error) => {
+        console.warn("Colmena: no se pudo entregar un mensaje enrutado: " + (error?.message || error));
+        // The pick failed without a word: the message is not lost, Atlas takes it.
+        try { this.recoverRouting({ missionId, messageId: turn.messageId }); } catch (again) { console.warn("Colmena: tampoco se pudo dejar a Atlas: " + (again?.message || again)); }
+      });
     this.routes.set(missionId, job);
     this.jobs.add(job);
     void job.finally(() => {
@@ -105,6 +110,31 @@ export class RoutingMethods {
       if (this.routes.get(missionId) === job) this.routes.delete(missionId);
     });
     return job;
+  }
+  /**
+   * A message of the person left «eligiendo quién responde» with no turn — Colmena closed
+   * during the pick, or the pick failed without a word — is queued for Atlas (the fallback),
+   * once: the message keeps `routed.by: "atlas"` and stops being `routing`, so a second look
+   * finds nothing to do. Without arguments it looks at every team room (on startup, before
+   * the interrupted work goes on); with them, at that one message. Returns the ids it queued.
+   */
+  recoverRouting({ missionId = null, messageId = null } = {}) {
+    const recovered = [];
+    const rooms = missionId ? [this.store.get("missions", missionId)].filter(Boolean) : this.store.list("missions").filter((m) => m.mode === "equipo" && !m.conversation);
+    for (const m of rooms) {
+      if (m.status === "cancelled" || (!messageId && this.routes.has(m.id))) continue;
+      const lost = this.store.where("messages", "missionId", m.id).filter((x) => x.role === "user" && x.routing === true && (!messageId || x.id === messageId));
+      for (const msg of lost) {
+        // Read again for each one: the turn of the one before is already in the room.
+        const answered = this.steps(m.id).some((s) => s.ackOn === msg.id || (s.ackExtra || []).includes(msg.id));
+        if (answered) { this.store.patch("messages", msg.id, { routing: false }); continue; }
+        this.store.patch("messages", msg.id, { routing: false, routed: routed(["atlas"], "atlas", messageId ? "No se pudo elegir ahora" : "Colmena se cerró mientras elegía") });
+        const mode = msg.mode || m.queueMode || "steer";
+        this.deliverTurn(m.id, { messageId: msg.id, text: String(msg.text || ""), note: turnNote(cleanUse(msg.use || []), { deep: !!msg.deep }), effort: msg.deep ? "high" : undefined, about: "", thread: null, mode, named: [] }, ["atlas"]);
+        recovered.push(msg.id);
+      }
+    }
+    return recovered;
   }
   async routeAndDeliver(missionId, turn, { router, botIds }) {
     const live = () => {

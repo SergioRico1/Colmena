@@ -83,6 +83,20 @@ export class ContextMethods {
   userHints(missionId) {
     return this.thread(missionId).filter((t) => t.from === "user");
   }
+  /**
+   * The person's notes this step has to read: all of them, except a one-off note (why they
+   * stopped a bot: stopped.mjs) that another turn of the same bot already read.
+   */
+  hintsFor(step) {
+    return this.userHints(step.missionId).filter((h) => !h.once || !(h.readBy || []).some((r) => r.botId === step.botId && r.stepId !== step.id));
+  }
+  /** Marks the one-off notes among `hints` as read by this step's bot; returns `ids` as given. */
+  hintsRead(step, hints, ids = hints.map((h) => h.id)) {
+    for (const h of hints)
+      if (h.once && !(h.readBy || []).some((r) => r.stepId === step.id))
+        this.store.patch("thread", h.id, { readBy: [...(h.readBy || []), { botId: step.botId, stepId: step.id }] });
+    return ids;
+  }
   /** Files you put back since this bot last worked here: it reads that once, in its next turn. */
   restoredNote(missionId, botId) {
     const restored = this.checkpoints?.takeNotice(missionId, botId);
@@ -138,7 +152,7 @@ export class ContextMethods {
     // deliverables and the bots' thread. Later rounds get only what is new (injectBrief).
     if (this.usesBrief(mission, step)) lines.push("", this.missionBrief(mission.id, { forBotId: step.botId, exceptStepId: step.id }).text, "");
     lines.push("Equipo: " + mission.botIds.join(", "));
-    const hints = this.userHints(mission.id);
+    const hints = this.hintsFor(step);
     if (hints.length) lines.push("Notas de la persona en el hilo: " + hints.map((h) => "«" + h.text + "»").join(" "));
     if (reacted) lines.push(reacted);
     if (together) lines.push("", together);
@@ -287,8 +301,9 @@ export class ContextMethods {
   /** Adds hints written in the thread after the step started. */
   injectHints(step) {
     const seen = new Set(step.seenHints || []);
-    const fresh = this.userHints(step.missionId).filter((h) => !seen.has(h.id));
+    const fresh = this.hintsFor(step).filter((h) => !seen.has(h.id));
     if (!fresh.length) return step;
+    this.hintsRead(step, fresh);
     return this.patchStep(step, {
       history: [...step.history, ...fresh.map((h) => ({ role: "user", content: "Nota de la persona en el hilo (tenla en cuenta): " + h.text }))],
       seenHints: [...seen, ...fresh.map((h) => h.id)],

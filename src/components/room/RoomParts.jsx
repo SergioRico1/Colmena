@@ -26,6 +26,8 @@ import QuestionCard from "./QuestionCard.jsx";
 import DeliverableCard from "./DeliverableCard.jsx";
 import ActivityLog, { PLUMBING } from "./ActivityLog.jsx";
 import PlusMenu, { chosenChips, turnBody } from "../v2/chat/PlusMenu.jsx";
+import Receipt from "../v2/chat/Receipt.jsx";
+import { receiptKey, receiptOf } from "../../lib/receipts.js";
 import { MentionMirror, MentionPill, findMentions } from "../v2/MentionPill.jsx";
 import WorkingDots from "./Dots.jsx";
 import { RefChips, useMentions } from "./Mentions.jsx";
@@ -151,9 +153,9 @@ function Actions({ children }) {
 
 /** A row in the conversation: hover highlight; a continued message (same author, minutes
  *  later) has no avatar or header, only its time in the gutter on hover. */
-function MessageRow({ id, messageId = null, avatar, continued, at, padding, children, actions, mine = false, entering = false, sending = false }) {
+function MessageRow({ id, messageId = null, avatar, continued, at, padding, children, actions, mine = false, entering = false, sending = false, live = false }) {
   return (
-    <div id={id} data-message-id={messageId || undefined} className={"msg-row" + (mine ? " msg-row--mine" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ display: "grid", gridTemplateColumns: "40px 1fr", gap: "12px", padding: padding || (continued ? "2px 16px" : "8px 16px"), margin: "0 -16px", opacity: sending ? 0.65 : 1, transition: "opacity .2s ease" }}>
+    <div id={id} data-message-id={messageId || undefined} data-live-turn={live ? "" : undefined} className={"msg-row" + (mine ? " msg-row--mine" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ display: "grid", gridTemplateColumns: "40px 1fr", gap: "12px", padding: padding || (continued ? "2px 16px" : "8px 16px"), margin: "0 -16px", opacity: sending ? 0.65 : 1, transition: "opacity .2s ease" }}>
       {continued ? <span className="msg-gutter-time" aria-hidden="true">{at ? time(at) : ""}</span> : avatar}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "0" }}>{children}</div>
       {actions ? <Actions>{actions}</Actions> : null}
@@ -270,7 +272,7 @@ function RoutedLine({ message, bots }) {
   return <span title={routed.why || undefined} style={style}>{`Para ${who} · ${how}`}</span>;
 }
 
-export function UserMessage({ message, padding = null, replies = null, bots = [], onReply = null, repliesOpen = false, continued = false, entering = false }) {
+export function UserMessage({ message, padding = null, replies = null, bots = [], onReply = null, repliesOpen = false, continued = false, entering = false, receipt = null }) {
   const [reactions, react] = useReactions(message);
   const resend = useResend(message);
   return (
@@ -279,6 +281,8 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
       <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
       <RefChips refs={message.refs} align="flex-start" />
       <RoutedLine message={message} bots={bots} />
+      {/* Sent while the bots worked: it waits for a pause, was read, or waits for your OK (lib/receipts.js). */}
+      {receipt ? <Receipt receipt={receipt} bots={bots} /> : null}
       {message.failed ? <FailedLine error={message.failed} onRetry={resend.retry} onDiscard={resend.discard} /> : null}
       {(message.attachments || []).map((f, i) => <FileChip key={i} file={f} dragUrl={message.missionId && f?.name ? workFileUrl(message.missionId, f.name) : null} />)}
       <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />
@@ -530,7 +534,7 @@ function LiveTurnCard({ step, bot }) {
   if (!log.length) {
     // Only writing: its words as they come, where the answer will stay.
     return (
-      <MessageRow avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
+      <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
         <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
           <strong style={{ fontSize: "15px" }}>{bot.name}</strong>
           <span style={TAG}>{"BOT"}</span>
@@ -546,7 +550,7 @@ function LiveTurnCard({ step, bot }) {
   const row = { display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", lineHeight: "1.45", color: "#2B2D36" };
   const spin = <WorkingDots style={{ flex: "none", marginTop: "4px", color: "#12131A" }} />;
   return (
-    <MessageRow avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
+    <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
         <strong style={{ fontSize: "15px" }}>{bot.name}</strong>
         <span style={TAG}>{"BOT"}</span>
@@ -687,6 +691,9 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
     if (repliesOf.get(prev.id)?.length) return false;
     return Date.parse(m.at) - Date.parse(prev.at) < 5 * 60e3 && new Date(m.at).toDateString() === new Date(prev.at).toDateString();
   };
+  // Receipts of what you write while they work (lib/receipts.js).
+  const working = ["running", "planning", "queued"].includes(mission?.status);
+  const held = (approvals || []).some((a) => a.status === "pending" && !["question", "secret"].includes(a.kind));
   const threadProps = (m) => (onOpenReplies && m.id ? { replies: repliesOf.get(m.id) || null, onReply: () => onOpenReplies(m.id), repliesOpen: openRepliesId === m.id } : {});
   const planIndex = (() => {
     for (let i = visible.length - 1; i >= 0; i--) if (visible[i].kind === "plan") return i;
@@ -723,7 +730,7 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
       out.push(<DaySeparator key={`d-${day}-${i}`} label={dayLabel(m.at)} />);
       lastDay = day;
     }
-    if (m.role === "user") out.push(<UserMessage key={m.id || i} message={m} padding={padding} bots={bots} continued={continuedAt(i)} entering={isNew(m.id) && !m.settled} {...threadProps(m)} />);
+    if (m.role === "user") out.push(<UserMessage key={m.id || i} message={m} padding={padding} bots={bots} continued={continuedAt(i)} entering={isNew(m.id) && !m.settled} receipt={receiptKey(receiptOf(m, { steps, working, held }))} {...threadProps(m)} />);
     else if (m.kind === "guard" || m.kind === "fork") out.push(<GuardLine key={m.id || i} message={m} entering={isNew(m.id)} />);
     else if (m.kind === "secret") out.push(<SecretLine key={m.id || i} message={m} approval={approvals.find((a) => a.id === m.approvalId)} bots={bots} />);
     else if (m.kind === "learned") out.push(<LearnedLine key={m.id || i} message={m} bot={m.botId ? findBot(bots, m.botId) : null} entering={isNew(m.id)} />);

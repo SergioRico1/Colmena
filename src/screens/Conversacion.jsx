@@ -21,6 +21,10 @@ import { focusBox, shouldRefocus } from "../lib/composition.js";
 import Timeline, { useStableRows } from "../components/v2/chat/Timeline.jsx";
 import { promise as toastWork } from "../lib/undoToast.js";
 import StoppedCard from "../components/v2/chat/StoppedCard.jsx";
+import NowBar from "../components/v2/chat/NowBar.jsx";
+import Receipt from "../components/v2/chat/Receipt.jsx";
+import { receiptKey, receiptOf } from "../lib/receipts.js";
+import { landingRow, underWay } from "../lib/landingRow.js";
 import FollowUps from "../components/v2/chat/FollowUps.jsx";
 import { BranchPicker, EditButton, EditMessage } from "../components/v2/chat/Versions.jsx";
 import { forgetOlder } from "../lib/history.js";
@@ -95,6 +99,9 @@ function stepFor(message, steps) {
 }
 // A first guess of each row's height (Timeline measures the real one as it shows it).
 const estimateRow = (row) => ({ head: row?.newChat ? 420 : 40, user: 96, answer: 360, question: 220, note: 30, now: 140, trail: 120, need: 220, needs: 260, error: 90, browser: 320 }[row?.kind] ?? 120);
+// «Nuevos» (Timeline.jsx, src/lib/unseen.js): what counts as a new message when it arrives
+// while you are not looking at the end — answers, questions and what needs you; never yours.
+const unseenOf = (row) => (row.kind === "user" ? "own" : ["answer", "question", "secret", "need", "needs"].includes(row.kind) ? "new" : null);
 const WHILE_WORKING_KEY = "colmena:while-working";
 // «/» in the composer (V3Chat «Comandos»): only what this chat really does.
 const SLASH = [
@@ -350,6 +357,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   // The timeline rows (Timeline.jsx): plain records, built only from what each row shows, so a
   // bot streaming its answer repaints the live row alone and the rest stay as they are.
   const missionCard = useMemo(() => mission, [mission?.id, mission?.conversation, mission?.room, mission?.title]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Something waits for your OK: what you wrote meanwhile is held behind it.
+  const held = needs.some((a) => a.kind !== "question");
   const olderKey = older.map((m) => m.id + ":" + (m.updatedAt || "")).join(",");
   const headRow = useMemo(() => ({ key: "head", kind: "head", newChat: !c, opening: !!c && room.loading, older, showOlder, incognito, isOlder, bot }), [c, room.loading, olderKey, showOlder, incognito, isOlder, bot]); // eslint-disable-line react-hooks/exhaustive-deps
   // Restore points of the turns that changed files (server/checkpoints.mjs), oldest first.
@@ -368,7 +377,9 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       if (m.role === "user") {
         // Your message: «Editar» opens another version from here (branches), «‹ 1/3 ›» moves between them.
         const editable = !!c && !turn && !isOlder && !m.optimistic && !m.failed;
-        rows.push({ key, kind: "user", m, mark, branch: branches[m.id] || null, editable, editing: editing === m.id, canRestore: editing === m.id && checkpoints.some((cp) => String(cp.at || "") >= String(m.at || "")) });
+        // Sent while the bot worked: whether it waits for a pause, was read, or waits for your OK (receipts.js).
+        const receipt = receiptKey(receiptOf(m, { steps, working: turn, held }));
+        rows.push({ key, kind: "user", m, mark, branch: branches[m.id] || null, editable, editing: editing === m.id, canRestore: editing === m.id && checkpoints.some((cp) => String(cp.at || "") >= String(m.at || "")), receipt });
         prevUser = m;
         continue;
       }
@@ -411,7 +422,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       }
     }
     return rows;
-  }, [messages, steps, artifacts, approvals, bots, botId, lastAssistant, turn, missionCard, checkpoints, branches, editing, isOlder]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [messages, steps, artifacts, approvals, bots, botId, lastAssistant, turn, missionCard, checkpoints, branches, editing, isOlder, held]); // eslint-disable-line react-hooks/exhaustive-deps
   const showBrowser = !!mission && !!now && !dock.isVisible("navegador") && ["navegando", "rellenando un formulario", "usando el ordenador", "ejecutando una tarea"].includes(now.verb);
   const tailRows = useMemo(() => {
     const rows = [];
@@ -435,16 +446,22 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     if (followUps.length) rows.push({ key: "follow", kind: "follow", list: followUps });
     if (showBrowser) rows.push({ key: "browser", kind: "browser", missionId: mission.id, bot: findBot(bots, now.botId), verb: now.verb, active: mission.status === "running" });
     return rows;
-  }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, mission?.stopped?.at, turn, showBrowser, mission?.status, bot?.name, followUps.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, mission?.stopped?.at, mission?.stopped?.why, turn, showBrowser, mission?.status, bot?.name, followUps.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
   // What comes before the chat (older chats, «Conversación anterior») shows once you reach its
   // start: while pages remain, the oldest message is the first row (the anchor when one loads).
   // Versions of the conversation (server/branches.mjs): another version brings other messages,
   // so the older pages cached for this chat go and the timeline follows the new end.
   const versions = (url, body) => run(async () => { const r = await post(url, body); forgetOlder(c); return r; }).then((r) => { follow.toEnd(); return r; });
   const rows = useStableRows([...(room.olderCount > 0 ? [] : [headRow]), ...messageRows, ...tailRows]);
+  // Long answers open at their first line (followScroll.js landing, landingRow.js): the row
+  // whose start stays in view is the latest answer that came while you had this chat open.
+  const opened = useRef(null);
+  if (!opened.current || opened.current.c !== c) opened.current = { c, openedAt: Date.now(), under: null };
+  if (opened.current.under === null && c && mission && !room.loading) opened.current.under = underWay(live);
+  const land = landingRow(rows, opened.current);
   // A row repaints only when its record changes: what it calls is read here, always current.
   const acts = useRef(null);
-  acts.current = { resend, retry, toggleDoc, stop: () => stopTurn(), control: (action) => run(() => post(`/missions/${c}/control`, { action })), edit: setEditing, sendEdit: (messageId, text, restore) => versions(`/missions/${c}/edit`, { messageId, text, ...(restore ? { restore: true } : {}) }).then(() => setEditing(null)), regenerate: (messageId) => versions(`/missions/${c}/regenerate`, { messageId }), version: (messageId) => versions(`/missions/${c}/branch`, { messageId }) };
+  acts.current = { resend, retry, toggleDoc, stop: () => stopTurn(), control: (action, reason) => run(() => post(`/missions/${c}/control`, { action, ...(reason ? { reason } : {}) })), stopWhy: (text) => post(`/missions/${c}/stop-reason`, { text }), edit: setEditing, sendEdit: (messageId, text, restore) => versions(`/missions/${c}/edit`, { messageId, text, ...(restore ? { restore: true } : {}) }).then(() => setEditing(null)), regenerate: (messageId) => versions(`/missions/${c}/regenerate`, { messageId }), version: (messageId) => versions(`/missions/${c}/branch`, { messageId }) };
   const renderRow = (row) => {
     const body = rowBody(row);
     return row.mark ? <><TimeMark at={row.mark} />{body}</> : body;
@@ -501,6 +518,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           <UserBubble message={m}>
             {attachments.length ? <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px" }}>{attachments.map((f, i) => <AttachmentChip key={i} name={f.name || String(f)} missionId={c} />)}</span> : null}
             {m.failed ? <FailedLine error={m.failed} onRetry={() => acts.current.resend(m)} onDiscard={() => unshowSent(`/missions/${c}`, m.id)} /> : null}
+            {row.receipt ? <Receipt receipt={row.receipt} bots={bots} /> : null}
             {row.editable || row.branch ? (
               <span style={{ display: "flex", alignItems: "center", gap: "2px", color: "#5C606C" }}>
                 <BranchPicker branch={row.branch} disabled={!row.editable} onShow={(id) => acts.current.version(id)} align="flex-end" />
@@ -539,7 +557,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "need": return <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />;
       case "needs": return <NeedGroupCard group={row.group} bot={row.bot} mission={row.mission} inline />;
       case "follow": return <FollowUps list={row.list} onPick={(t) => { setText(t); requestAnimationFrame(() => focusBox(inputRef.current)); }} />;
-      case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={() => acts.current.control(row.status === "blocked" ? "retry" : "resume")} onDiscard={() => acts.current.control("discard")} />;
+      case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={(why) => acts.current.control(row.status === "blocked" ? "retry" : "resume", why)} onDiscard={(why) => acts.current.control("discard", why)} onReason={(why) => acts.current.stopWhy(why)} />;
       case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "16px 18px", background: "#FBE7DF", borderRadius: "20px", fontSize: "15px", lineHeight: "1.5" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;
       case "browser": return <BrowserLive missionId={row.missionId} bot={row.bot} verb={row.verb} missionActive={row.active} />;
       default: return null;
@@ -686,7 +704,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
             <div style={{ flex: "1", minHeight: 0, display: "flex" }}>
               {c ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(c, t)} onAsk={(t) => { askAsideAbout(c, t); dock.open(ASIDE_TAB); }} /> : null}
               <Timeline key={c || "nuevo:" + botId} listKey={c || "nuevo:" + botId} handle={timeline} rows={rows} renderRow={renderRow} estimate={estimateRow}
-                hasOlder={room.olderCount > 0} loadingOlder={room.loadingOlder} olderError={room.olderError} onReachTop={room.showOlder}
+                hasOlder={room.olderCount > 0} loadingOlder={room.loadingOlder} olderError={room.olderError} onReachTop={room.showOlder} landKey={land?.key || null} landTurn={land?.turn || null} unseenOf={unseenOf}
                 scrollerRef={scroller} contentRef={scope} style={{ WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)" }} />
             </div>
             {c ? <ConversationMap missionId={c} version={messages.length + ":" + (messages[messages.length - 1]?.id || "")} scroller={scroller} ownerOf={ownerOf} onJump={mapJump} /> : null}
@@ -699,6 +717,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               working={turn} onStop={stopTurn} files={files} onRemoveFile={(i) => setFiles(files.filter((_, j) => j !== i))} onInlinePasted={(i) => { const f = files[i]; setFiles(files.filter((_, j) => j !== i)); setText((t) => (t.trim() ? t.replace(/\s*$/, "\n\n") : "") + f.content); }}
               onAttach={() => { setSlashOpen(false); setPlusOpen((v) => !v); }} drop={drop} busy={send.busy} tools={composerTools}
               above={<>
+                {c ? <NowBar missionId={c} active={turn} steps={steps} bots={bots} scroller={scroller} fallbackBotId={botId} onShow={follow.toEnd} onStop={stopTurn} /> : null}
                 <DraftOffer offer={draft.offer} onRecover={() => { draft.recover(); requestAnimationFrame(() => focusBox(inputRef.current)); }} onLater={draft.later} onDiscard={draft.discard} />
                 {pending.filter((a) => a.kind === "secret").map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
                 <BtwNotes btw={btw} botName={bot?.name} nameOf={(id) => findBot(bots, id)?.name} />

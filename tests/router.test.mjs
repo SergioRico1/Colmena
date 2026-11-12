@@ -336,3 +336,55 @@ test("a stop word stops the work at once while a message is still being routed; 
   assert.deepEqual([turn.botId, turn.status], ["tomas", "pending"]);
 });
 
+test("a message left «choosing» with no turn when Colmena closed goes to Atlas on startup, once", async (t) => {
+  const r = await room(t, () => pick("tomas"));
+  // As the close left it: written, marked «routing», and no turn queued for it.
+  const lost = r.asked("¿Cuánto costó el stand?", { routing: true });
+  const fine = r.asked("@Nora mira el presupuesto", { to: ["nora"] });
+  assert.equal(r.turns().length, 0);
+  // Startup, where the interrupted work is resumed.
+  r.runtime.resumeInterrupted();
+  const after = r.store.get("messages", lost.id);
+  assert.equal(after.routing, false);
+  assert.deepEqual([after.routed.to, after.routed.by], [["atlas"], "atlas"]);
+  assert.equal(r.calls.length, 0, "the router is not asked again");
+  assert.deepEqual(r.turns().map((s) => [s.botId, s.ackOn]), [["atlas", lost.id]]);
+  assert.equal(r.store.get("messages", fine.id).routed, undefined, "a message that was never waiting is left alone");
+  await settle(r.runtime);
+  // A second start, or a second look: nothing left to do.
+  assert.deepEqual(r.runtime.recoverRouting(), []);
+  r.runtime.resumeInterrupted();
+  await settle(r.runtime);
+  assert.equal(r.turns().filter((s) => s.ackOn === lost.id).length, 1);
+  assert.equal(r.store.get("missions", r.mission.id).status, "completed");
+  assert.match(r.store.where("messages", "missionId", r.mission.id).at(-1).text, /Hecho/);
+});
+
+test("a «routing» message that already has its turn is only unmarked; a cancelled room is left alone", async (t) => {
+  const r = await room(t);
+  const had = r.asked("¿Qué falta?", { routing: true });
+  r.runtime.queueTurns(r.mission.id, ["nora"], [], { request: "¿Qué falta?", ackOn: had.id });
+  assert.deepEqual(r.runtime.recoverRouting(), []);
+  assert.equal(r.store.get("messages", had.id).routing, false);
+  assert.equal(r.turns().length, 1);
+  const gone = r.asked("¿Y esto?", { routing: true });
+  r.store.patch("missions", r.mission.id, { status: "cancelled" });
+  assert.deepEqual(r.runtime.recoverRouting(), []);
+  assert.equal(r.store.get("messages", gone.id).routing, true);
+});
+
+test("a pick that fails without a word is not lost: Atlas gets the message, once", async (t) => {
+  const r = await room(t, () => pick("tomas"));
+  const warn = console.warn;
+  console.warn = () => {};
+  t.after(() => { console.warn = warn; });
+  // The delivery itself breaks after the 4 s pick (nothing reaches the person).
+  r.runtime.routeAndDeliver = async () => { throw Error("se rompió al entregar"); };
+  const message = await r.send("¿Cuánto costó el stand?");
+  assert.equal(message.routing, false);
+  assert.deepEqual([message.routed.to, message.routed.by], [["atlas"], "atlas"]);
+  assert.deepEqual(r.turns().map((s) => [s.botId, s.ackOn]), [["atlas", message.id]]);
+  assert.deepEqual(r.runtime.recoverRouting({ missionId: r.mission.id, messageId: message.id }), []);
+  assert.equal(r.turns().length, 1);
+});
+

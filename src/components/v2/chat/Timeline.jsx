@@ -3,6 +3,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown } from "lucide-react";
 import { flash } from "../../../lib/reveal.js";
 import { createFollowScroll } from "../../../lib/followScroll.js";
+import { NO_UNSEEN, arrivals, inView, jumpTarget, unseenAfter, unseenLabel } from "../../../lib/unseen.js";
+import RowBoundary from "../../RowBoundary.jsx";
 
 // The messages of a conversation as a virtual list (T3 Code MessagesTimeline): only the rows
 // on screen (and a few around them) are in the page, so a chat of thousands of messages opens
@@ -11,8 +13,13 @@ import { createFollowScroll } from "../../../lib/followScroll.js";
 // page before (onReachTop). Prepending a page keeps the first row you see exactly where it
 // was (anchorTo «end», as T3's timelineScrollAnchoring). Each chat remembers where you left
 // it and the real height of every row it measured. Following the end is not the list's job:
-// src/lib/followScroll.js decides it from what the reader does (assistant-ui auto-scroll).
+// src/lib/followScroll.js decides it from what the reader does (assistant-ui auto-scroll) —
+// and a long answer opens at its first line: the row `landKey` names is never pushed out of
+// view while the list follows. What arrives while you are not looking at the end is counted
+// and marked with a «Nuevos» divider (src/lib/unseen.js). A row that fails to draw becomes a
+// muted pill (RowBoundary.jsx) and the rest of the list keeps working.
 const AT_END_PX = 24; // within this of the end it keeps following
+const TOP_PAD = 36; // the room over the row a jump or a landing leaves at the top
 const places = new Map(); // listKey → { key, offset, atEnd }
 const heights = new Map(); // listKey → Map(rowKey → px)
 
@@ -50,10 +57,14 @@ export function useStableRows(rows) {
 /**
  * `rows`: [{ key, ids?: [message ids in the row], … }] oldest first; `renderRow(row)` draws
  * one; `estimate(row)` guesses its height before it is measured. `handle` receives
- * { toEnd(), locate(id), rail: { at(id), jump(id) } }.
+ * { toEnd(), locate(id), rail: { at(id), jump(id) } }. `landKey`: the key of the latest
+ * answer that arrived while you were here (the one being written, then the finished one),
+ * whose start stays in view, and `landTurn` what names that answer across both rows. `unseenOf(row)`: "new" for a row that counts as a new message,
+ * "own" for one of yours, null for the rest.
  */
-export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder = false, loadingOlder = false, olderError = null, onReachTop, onBelow, handle, scrollerRef, contentRef, style }) {
+export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder = false, loadingOlder = false, olderError = null, onReachTop, handle, scrollerRef, contentRef, style, landKey = null, landTurn = null, unseenOf = null }) {
   const scroller = useRef(null);
+  const content = useRef(null);
   const known = useMemo(() => { if (!heights.has(listKey)) heights.set(listKey, new Map()); return heights.get(listKey); }, [listKey]);
   const getItemKey = useCallback((i) => rows[i]?.key ?? i, [rows]);
   const estimateSize = useCallback((i) => known.get(rows[i]?.key) ?? estimate(rows[i]), [rows, known, estimate]);
@@ -75,9 +86,20 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
 
+  const indexOf = useCallback((id) => rowsRef.current.findIndex((r) => r.key === id || r.ids?.includes(id)), []);
+  const rowNode = useCallback((at) => (at < 0 ? null : content.current?.querySelector(`:scope > [data-index="${at}"]`) || null), []);
   // «Ir al final» shows whenever the end is out of view.
   const [atBottom, setAtBottom] = useState(true);
-  const follow = useMemo(() => createFollowScroll({ onAtBottomChange: setAtBottom }), []);
+  const land = useRef(null);
+  land.current = { key: landKey, turn: landTurn };
+  const follow = useMemo(() => createFollowScroll({
+    onAtBottomChange: setAtBottom,
+    pad: TOP_PAD,
+    // The start of the latest answer, once its row is in the page.
+    anchor: () => { const node = land.current.key ? rowNode(indexOf(land.current.key)) : null; return node ? { top: node.offsetTop, id: land.current.turn } : null; },
+  }), [indexOf, rowNode]);
+  // The answer being written became the finished one: it lands on its start again.
+  useLayoutEffect(() => { if (landKey) follow.reland(); }, [landKey, follow]);
   // Hidden until it has taken its place, so the first paint never jumps.
   const [placed, setPlaced] = useState(false);
   // Opens where you left this chat, or at its latest message.
@@ -112,17 +134,6 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
     if (places.size > 100) places.delete(places.keys().next().value);
   }, [listKey]);
 
-  // «Mensajes nuevos ↓»: something new arrived at the end while you read further up.
-  const lastKey = rows[rows.length - 1]?.key ?? null;
-  const prevLast = useRef(lastKey);
-  const below = useRef(false);
-  const [freshBelow, setFreshBelow] = useState(false);
-  const setBelow = useCallback((value) => { if (below.current !== value) { below.current = value; setFreshBelow(value); onBelow?.(value); } }, [onBelow]);
-  useEffect(() => {
-    if (prevLast.current !== lastKey && !follow.isAtBottom) setBelow(true);
-    prevLast.current = lastKey;
-  }, [lastKey, setBelow, follow]);
-
   const items = virtualizer.getVirtualItems();
   // The page before loads when you scroll near the top (never while the chat is still taking
   // its place at the end), or at once when the loaded messages do not fill the screen.
@@ -134,20 +145,54 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
     if (paging.current.can && rows.length > 1 && viewport && total <= viewport) paging.current.reach?.();
   }, [total, viewport, rows.length, hasOlder, loadingOlder, olderError]);
 
+  // A short chat sits at the bottom, by the composer (as before).
+  const lift = Math.max(0, viewport - total);
+  const liftRef = useRef(lift);
+  liftRef.current = lift;
+
+  // «Nuevos»: what arrived while you were not looking at the end (reading further up, or
+  // with the window hidden) is counted, and a divider goes before the first of it. What a
+  // chat opens with, and the pages before it, are history; your own messages never count.
+  const [unseen, setUnseen] = useState(NO_UNSEEN);
+  const counted = useMemo(() => (unseenOf ? rows.flatMap((r) => { const kind = unseenOf(r); return kind ? [{ key: r.key, own: kind === "own" }] : []; }) : []), [rows, unseenOf]);
+  const before = useRef(null);
+  // Before the list follows the new content (its observers run after this).
+  useLayoutEffect(() => {
+    const prev = before.current;
+    before.current = counted;
+    if (!prev || (prev.length === counted.length && prev[prev.length - 1]?.key === counted[counted.length - 1]?.key)) return;
+    const came = arrivals(prev, counted);
+    if (came === null) { setUnseen(NO_UNSEEN); return; }
+    if (!came.length) return;
+    const el = scroller.current;
+    const shown = typeof document === "undefined" || !document.hidden;
+    const view = el ? { scrollTop: el.scrollTop, clientHeight: el.clientHeight } : null;
+    const marks = came.map((row) => {
+      const m = v.current.measurementsCache?.[indexOf(row.key)];
+      const onScreen = follow.following || (!!m && !!view && inView({ start: m.start + liftRef.current, size: m.size }, view));
+      return { row, seen: shown && onScreen };
+    });
+    const atEnd = shown && follow.isAtBottom;
+    setUnseen((state) => marks.reduce((s, { row, seen }) => unseenAfter(s, [row], { seen, atEnd }), state));
+  }, [counted, follow, indexOf]);
+  // The divider goes with its row; if that row is gone, so is the mark.
+  const markAt = unseen.first ? rows.findIndex((r) => r.key === unseen.first) : -1;
+  const read = useCallback(() => setUnseen((s) => (s.count ? NO_UNSEEN : s)), []);
+
   // React's scroll event comes before the list updates itself: read the element, not the list.
   const onScroll = useCallback(() => {
     remember();
     const el = scroller.current;
     if (!el) return;
-    if (el.scrollHeight - el.scrollTop - el.clientHeight <= AT_END_PX * 2) setBelow(false);
+    // Read: you are at the end, looking (a hidden window following the end has read nothing).
+    if (el.scrollHeight - el.scrollTop - el.clientHeight <= AT_END_PX * 2) { if (typeof document === "undefined" || !document.hidden) read(); }
     else if (paging.current.can && el.scrollTop < el.clientHeight * 1.5) paging.current.reach?.();
-  }, [remember, setBelow]);
+  }, [remember, read]);
 
-  const indexOf = useCallback((id) => rowsRef.current.findIndex((r) => r.key === id || r.ids?.includes(id)), []);
   const nodeOf = (id) => scroller.current?.querySelector(`[data-message-id="${CSS.escape(id)}"]`) || null;
   const api = useMemo(() => ({
     toEnd() {
-      setBelow(false);
+      read();
       places.delete(listKey);
       const el = scroller.current;
       const far = el && el.scrollHeight - el.scrollTop > el.clientHeight * 3;
@@ -158,6 +203,8 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
     locate(id) {
       const at = indexOf(id);
       if (at < 0) return false;
+      // You asked for that message: the list lets go of the answer's start it was holding.
+      if (follow.pinned) follow.hold();
       if (!nodeOf(id)) v.current.scrollToIndex(at, { align: "center" });
       return true;
     },
@@ -172,6 +219,7 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
       jump(id) {
         const at = indexOf(id);
         if (at < 0) return;
+        if (follow.pinned) follow.hold();
         v.current.scrollToIndex(at, { align: "center" });
         // Rows above may measure taller than guessed: settle on the real place, then light it.
         requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -182,16 +230,27 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
         }));
       },
     },
-  }), [indexOf, listKey, setBelow, follow]);
+  }), [indexOf, listKey, read, follow]);
   useImperativeHandle(handle, () => api, [api]);
 
-  // A short chat sits at the bottom, by the composer (as before).
-  const lift = Math.max(0, viewport - total);
+  // The button: to the «Nuevos» divider when the new messages do not fit a screen, else to the end.
+  const jump = () => {
+    const el = scroller.current;
+    const m = markAt >= 0 ? v.current.measurementsCache?.[markAt] : null;
+    if (!el || !m || jumpTarget({ dividerTop: m.start + lift, scrollTop: el.scrollTop, clientHeight: el.clientHeight }) !== "divider") { api.toEnd(); return; }
+    const calm = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const far = m.start + lift - el.scrollTop > el.clientHeight * 3;
+    follow.hold();
+    el.scrollTo({ top: Math.max(0, m.start + lift - TOP_PAD), behavior: calm || far ? "auto" : "smooth" });
+    // Rows on the way may measure taller than guessed: settle on the divider itself.
+    if (calm || far) requestAnimationFrame(() => requestAnimationFrame(() => { const node = rowNode(markAt); if (node) el.scrollTop = Math.max(0, node.offsetTop - TOP_PAD); }));
+  };
+
   return (
     <div style={{ flex: "1", minWidth: 0, minHeight: "0", position: "relative", display: "flex" }}>
     <div ref={(el) => { scroller.current = el; if (typeof scrollerRef === "function") scrollerRef(el); else if (scrollerRef) scrollerRef.current = el; }} onScroll={onScroll} tabIndex={-1}
       style={{ flex: "1", minWidth: 0, minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", overflowAnchor: "none", ...style }}>
-      <div ref={contentRef} role="log" aria-live="off" style={{ position: "relative", width: "100%", height: total + lift + "px", visibility: placed ? "visible" : "hidden" }}>
+      <div ref={(el) => { content.current = el; if (typeof contentRef === "function") contentRef(el); else if (contentRef) contentRef.current = el; }} role="log" aria-live="off" style={{ position: "relative", width: "100%", height: total + lift + "px", visibility: placed ? "visible" : "hidden" }}>
         {loadingOlder || olderError ? (
           <div style={{ position: "absolute", top: lift + 8 + "px", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 1 }}>
             {olderError
@@ -203,26 +262,40 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
           </div>
         ) : null}
         {items.map((item) => (
-          <div key={item.key} data-index={item.index} ref={virtualizer.measureElement} style={{ position: "absolute", left: 0, width: "100%", top: item.start + lift + "px" }}>
+          <div key={item.key} data-index={item.index} data-kind={rows[item.index]?.kind || undefined} ref={virtualizer.measureElement} style={{ position: "absolute", left: 0, width: "100%", top: item.start + lift + "px" }}>
             <div style={{ width: "100%", maxWidth: "820px", margin: "0 auto", padding: "0 clamp(20px, 4vw, 44px) 26px", display: "flex", flexDirection: "column", gap: "26px" }}>
-              <Row row={rows[item.index]} render={renderRow} />
+              {item.index === markAt ? <NewMark /> : null}
+              <RowBoundary resetKey={rows[item.index]}><Row row={rows[item.index]} render={renderRow} /></RowBoundary>
             </div>
           </div>
         ))}
       </div>
     </div>
-    {placed && !atBottom ? <ToEnd fresh={freshBelow} onClick={() => api.toEnd()} /> : null}
+    {placed && !atBottom ? <ToEnd count={unseen.count} onClick={jump} /> : null}
     </div>
   );
 }
 
-/** «Ir al final» over the bottom of the list; «Mensajes nuevos» when something arrived there. */
-function ToEnd({ fresh, onClick }) {
+/** «Nuevos»: a thin line before the first message that arrived while you were not looking. */
+function NewMark() {
+  const line = { flex: "1", height: "1px", background: "rgba(31,79,209,.28)" };
   return (
-    <button type="button" className="rm-focus" onClick={onClick} aria-label={fresh ? "Ir a los mensajes nuevos" : "Ir al final de la conversación"}
-      style={{ position: "absolute", left: "50%", bottom: "14px", transform: "translateX(-50%)", zIndex: 5, display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: fresh ? "0 14px 0 12px" : "0", width: fresh ? "auto" : "36px", justifyContent: "center", border: 0, borderRadius: "999px", background: "#FFFFFF", color: "#12131A", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 10px 24px -12px rgba(18,19,26,.45)", cursor: "pointer", fontSize: "13px", fontWeight: 600, animation: "rise .2s ease-out" }}>
+    <div role="separator" aria-label="Mensajes nuevos" data-unseen-mark="" style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12.5px", fontWeight: 600, color: "#1F4FD1", animation: "fade .2s ease-out" }}>
+      <span style={line} />
+      {"Nuevos"}
+      <span style={line} />
+    </div>
+  );
+}
+
+/** «Ir al final» over the bottom of the list; «3 mensajes nuevos» when they arrived while you read further up. */
+function ToEnd({ count, onClick }) {
+  const fresh = count > 0;
+  return (
+    <button type="button" className="rm-focus" onClick={onClick} aria-label={fresh ? `Ir a los mensajes nuevos: ${unseenLabel(count)}` : "Ir al final de la conversación"}
+      style={{ position: "absolute", left: "50%", bottom: "14px", transform: "translateX(-50%)", zIndex: 5, display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: fresh ? "0 14px 0 12px" : "0", width: fresh ? "auto" : "36px", justifyContent: "center", border: 0, borderRadius: "999px", background: "#FFFFFF", color: "#12131A", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 10px 24px -12px rgba(18,19,26,.45)", cursor: "pointer", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", animation: "rise .2s ease-out" }}>
       <ArrowDown size={16} strokeWidth={2.4} aria-hidden="true" />
-      {fresh ? "Mensajes nuevos" : null}
+      {fresh ? unseenLabel(count) : null}
     </button>
   );
 }
