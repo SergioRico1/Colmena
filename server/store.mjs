@@ -137,6 +137,11 @@ export class Store {
         "CREATE INDEX IF NOT EXISTS events_mission ON events(mission, seq);" +
         "CREATE INDEX IF NOT EXISTS records_mission ON records(kind, json_extract(data,'$.missionId'));",
     );
+    // Conversations with people are read by pages: (kind, shareId, at) walks one conversation in
+    // order without touching the rest. Encrypted, the index reads the readable `meta` (db-crypto.mjs).
+    // Made here for databases of any age; an older Colmena keeps it up to date without using it.
+    const src = this.cipher ? "meta" : "data";
+    this.db.exec(`CREATE INDEX IF NOT EXISTS records_share ON records(kind, json_extract(${src},'$.shareId'), json_extract(${src},'$.at'));`);
     this.listeners = new Set();
     this.depth = 0;
     this.queued = [];
@@ -239,7 +244,7 @@ export class Store {
       .all(kind)
       .map((r) => this.decode(kind, r.id, r.data));
   }
-  /** Records of a kind whose top-level `field` equals `value` (indexed for missionId). */
+  /** Records of a kind whose top-level `field` equals `value` (indexed for missionId and shareId). */
   where(kind, field, value) {
     if (!/^[A-Za-z0-9_]+$/.test(field)) throw Error("Campo no válido.");
     // Encrypted: the index fields are readable in `meta`; any other field is filtered after decrypting.
@@ -247,6 +252,38 @@ export class Store {
     return this.sql(`SELECT id, data FROM records WHERE kind=? AND json_extract(${this.cipher ? "meta" : "data"},'$.${field}')=? ORDER BY rowid`)
       .all(kind, value)
       .map((r) => this.decode(kind, r.id, r.data));
+  }
+  /**
+   * Records of a kind whose top-level `field` equals `value`, in the order of their `at` (then
+   * id): newest first, or oldest first with `asc`. `before` / `after` {at, id}: only what comes
+   * below / above that row; `lacks` / `has`: a top-level field that must be unset / set;
+   * `limit` 0: no limit.
+   * For shareId it is one walk of the (kind, shareId, at) index: a page of a long conversation
+   * reads its own rows only.
+   */
+  ordered(kind, field, value, { before = null, after = null, limit = 0, asc = false, lacks = null, has = null } = {}) {
+    if (![field, lacks, has].every((f) => f === null || /^[A-Za-z0-9_]+$/.test(f))) throw Error("Campo no válido.");
+    const cursor = (c) => (c && typeof c.at === "string" ? { at: c.at, id: String(c.id ?? "") } : null);
+    const lo = cursor(after), hi = cursor(before), max = Math.max(0, Math.floor(limit) || 0);
+    // Encrypted and not an index field: filtered and sorted after decrypting.
+    if (this.cipher && ![field, lacks, has, "at"].every((f) => f === null || isMetaField(f))) {
+      const cmp = (a, b) => String(a.at ?? "").localeCompare(String(b.at ?? "")) || String(a.id).localeCompare(String(b.id));
+      const rows = this.list(kind).filter((r) => r[field] === value && typeof r.at === "string" && (!lacks || r[lacks] == null) && (!has || r[has] != null) && (!hi || cmp(r, hi) < 0) && (!lo || cmp(r, lo) > 0)).sort(cmp);
+      if (!asc) rows.reverse();
+      return max ? rows.slice(0, max) : rows;
+    }
+    const src = this.cipher ? "meta" : "data";
+    const at = `json_extract(${src},'$.at')`;
+    const args = [kind, value];
+    let text = `SELECT id, data FROM records WHERE kind=? AND json_extract(${src},'$.${field}')=?`;
+    if (lacks) text += ` AND json_extract(${src},'$.${lacks}') IS NULL`;
+    if (has) text += ` AND json_extract(${src},'$.${has}') IS NOT NULL`;
+    if (hi) { text += ` AND (${at} < ? OR (${at} = ? AND id < ?))`; args.push(hi.at, hi.at, hi.id); }
+    else text += ` AND ${at} IS NOT NULL`;
+    if (lo) { text += ` AND (${at} > ? OR (${at} = ? AND id > ?))`; args.push(lo.at, lo.at, lo.id); }
+    text += asc ? ` ORDER BY ${at} ASC, id ASC` : ` ORDER BY ${at} DESC, id DESC`;
+    if (max) { text += " LIMIT ?"; args.push(max); }
+    return this.sql(text).all(...args).map((r) => this.decode(kind, r.id, r.data));
   }
   /** Selected top-level fields of every record of a kind, without parsing the full JSON in JS. */
   columns(kind, fields) {

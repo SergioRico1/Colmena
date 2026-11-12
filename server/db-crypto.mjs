@@ -117,6 +117,8 @@ export function encryptDatabase(file, key, { checkpoint = true, beforeChecks = n
       db.exec("DROP TABLE records; ALTER TABLE records_enc RENAME TO records;");
       db.exec("DROP TABLE events; ALTER TABLE events_enc RENAME TO events;");
       db.exec("CREATE INDEX records_mission ON records(kind, json_extract(meta,'$.missionId')); CREATE INDEX events_mission ON events(mission, seq);");
+      // Conversations with people by pages (store.mjs `ordered`): the same index, over `meta`.
+      db.exec("CREATE INDEX records_share ON records(kind, json_extract(meta,'$.shareId'), json_extract(meta,'$.at'))");
       db.exec("CREATE TABLE IF NOT EXISTS colmena_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
       const meta = db.prepare("INSERT INTO colmena_meta(key, value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value");
       meta.run("encryption", ENCRYPTION);
