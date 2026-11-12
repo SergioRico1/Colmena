@@ -5,7 +5,7 @@
 // («No quiero que me notifiques de ningún correo más de Marketplace»), it is yours: it counts.
 // A «don't tell me about X» preference is also a hard rule for the watcher (watch.mjs): the
 // items that match never reach the model.
-import { withoutExternal } from "./external-content.mjs";
+import { personWords } from "./origin.mjs";
 
 const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 // Words that say nothing about the subject of a preference.
@@ -24,7 +24,7 @@ export const isMute = (text) => {
 /** Everything you wrote in a mission, folded (an automation's wrapped trigger email is not yours). */
 function yourWords(store, missionId) {
   if (!missionId) return "";
-  return store.where("messages", "missionId", missionId).filter((m) => m.role === "user").map((m) => fold(withoutExternal(m.text))).join(" \n ");
+  return store.where("messages", "missionId", missionId).filter((m) => m.role === "user").map((m) => fold(personWords(m))).join(" \n ");
 }
 
 /** The subject words of `text` that you also used in that mission. */

@@ -488,6 +488,8 @@ export function automationView(r, reference = Date.now()) {
     createdAt: r.createdAt ?? null, editedAt: r.editedAt ?? null,
     delivery: { mode: r.delivery?.mode || "nueva", missionId: r.delivery?.missionId ?? null },
     lastMerged: r.lastMerged || 0,
+    // Stopped by a brake of self-started work (scheduler.mjs): "loop" | "never"; switching it on resumes it.
+    stoppedBy: r.stoppedBy ?? null,
   };
 }
 

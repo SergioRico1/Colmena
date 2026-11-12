@@ -2,7 +2,10 @@
 // each other without end burn the person's plan for nothing. Bot-to-bot exchanges (ask_bot,
 // delegation) and room automations woken by bot messages are counted per pair in a sliding
 // window; past the limit that pair is silenced for a minute and the room says so once.
-// The person's own messages are never counted nor held back.
+// The person's own messages are never counted nor held back. What a routine or a trigger wrote
+// (stored as «user», marked with its origin: origin.mjs) is not the person: it is counted.
+// Work that starts by itself has its own, longer brakes on top of this one (brakes.mjs): the
+// same thing more than 3 times a day, rules that fire each other, digests and proposals.
 import { now } from "./store.mjs";
 
 export const LOOP_GUARD = Object.freeze({ windowMs: 10 * 60000, limit: 6, cooldownMs: 60000 });

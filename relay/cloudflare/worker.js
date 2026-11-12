@@ -9,8 +9,13 @@
 //   PUT|GET|DELETE /v1/invites/:lookup   an encrypted invitation card (25 h at most)
 //   PUT /v1/blobs/:id/:n · GET /v1/blobs/:id/:n · DELETE /v1/blobs/:id
 //                                        sealed parts of a shared file (7 days); see relay/server.mjs
+//   PUT|DELETE /v1/hooks/:id · POST /h/:id
+//                                        a webhook address of one Colmena (hooks.js): what a
+//                                        service posts there is sealed to its owner on arrival
+//                                        and waits in its mailbox (72 h at most)
 // Signatures are the ones of server/peers/protocol.mjs, checked here with WebCrypto Ed25519.
 import { DurableObject } from "cloudflare:workers";
+import { HOOK_LIMITS, sealRequest, validBox } from "./hooks.js";
 
 // perSenderDay: envelopes one sender may leave in one mailbox per day (kept in that mailbox);
 // livePerMinute: typing/presence notes per sender and mailbox; sendsPerMinute: per sender, best
@@ -79,7 +84,40 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     try {
-      if (path === "/v1/health" && request.method === "GET") return json({ ok: true, service: "colmena-buzon", version: 1, stream: "ws", blobs: { part: LIMITS.blobPart - 64, parts: LIMITS.blobParts, keepDays: LIMITS.blobKeepDays } });
+      if (path === "/v1/health" && request.method === "GET") return json({ ok: true, service: "colmena-buzon", version: 1, stream: "ws", blobs: { part: LIMITS.blobPart - 64, parts: LIMITS.blobParts, keepDays: LIMITS.blobKeepDays }, hooks: { body: HOOK_LIMITS.body, perMinute: HOOK_LIMITS.perMinute, queue: HOOK_LIMITS.queue, keepHours: HOOK_LIMITS.keepHours } });
+      // A webhook: anyone with the address may post; the body is sealed to its owner right here.
+      const incoming = /^\/h\/([A-Za-z0-9_-]{43})$/.exec(path);
+      if (incoming) {
+        if (request.method !== "POST") return fail(405, "Solo POST.");
+        if (Number(request.headers.get("Content-Length") || 0) > HOOK_LIMITS.body) return fail(413, "Demasiado grande.");
+        const bytes = new Uint8Array(await request.arrayBuffer());
+        if (bytes.length > HOOK_LIMITS.body) return fail(413, "Demasiado grande.");
+        const door = env.HOOK.get(env.HOOK.idFromName(incoming[1]));
+        const pass = await door.fetch("https://hook/pass", { method: "POST" });
+        if (!pass.ok) return pass.status === 429 ? new Response(JSON.stringify({ error: "Demasiados avisos seguidos." }), { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60", "Cache-Control": "no-store" } }) : fail(404, "No existe.");
+        const hook = await pass.json();
+        const row = await sealRequest({ id: incoming[1], owner: hook.owner, box: hook.box }, { method: request.method, headers: [...request.headers], bytes, limited: hook.limited });
+        const kept = await env.MAILBOX.get(env.MAILBOX.idFromName(hook.owner)).fetch("https://box/hook-deliver", { method: "POST", body: JSON.stringify({ id: row.id, hook: incoming[1], env: row.sealed }) });
+        if (!kept.ok) {
+          // The owner's Colmena has not been on for a while and its queue is full: said as 429, and counted.
+          await door.fetch("https://hook/limited?n=" + ((hook.limited || 0) + 1), { method: "POST" });
+          return new Response(JSON.stringify({ error: "Hay demasiados avisos esperando." }), { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "3600", "Cache-Control": "no-store" } });
+        }
+        return json({ ok: true }, 202);
+      }
+      const registration = /^\/v1\/hooks\/([A-Za-z0-9_-]{43})$/.exec(path);
+      if (registration && (request.method === "PUT" || request.method === "DELETE")) {
+        const body = request.method === "PUT" ? await request.text() : "";
+        const owner = await checkAuth(request.headers.get("Authorization"), request.method, path, body);
+        if (!owner) return fail(401, "Firma no válida.");
+        if (limited("hook:" + owner, HOOK_LIMITS.registrationsPerMinute)) return fail(429, "Demasiados cambios seguidos.");
+        const door = env.HOOK.get(env.HOOK.idFromName(registration[1]));
+        if (request.method === "PUT") return door.fetch("https://hook/put", { method: "POST", body: JSON.stringify({ owner, box: JSON.parse(body || "{}").box }) });
+        const gone = await door.fetch("https://hook/delete", { method: "POST", body: JSON.stringify({ owner }) });
+        // What was still waiting for that address goes with it.
+        if (gone.ok) await env.MAILBOX.get(env.MAILBOX.idFromName(owner)).fetch("https://box/hook-drop", { method: "POST", body: JSON.stringify({ hook: registration[1] }) });
+        return gone;
+      }
       // A sealed file: parts kept by one Durable Object per file; the uploader's mailbox counts its bytes per day.
       const blob = /^\/v1\/blobs\/([A-Za-z0-9_-]{22,43})(?:\/(\d{1,2}))?$/.exec(path);
       if (blob) {
@@ -163,6 +201,8 @@ export class Mailbox extends DurableObject {
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
   waiting(limit = LIMITS.batch) {
+    // Webhook requests (sender «hook:<id>») are kept a short time only: an old one is never delivered.
+    this.sql.exec("DELETE FROM mail WHERE sender LIKE 'hook:%' AND at < ?", Date.now() - HOOK_LIMITS.keepHours * 3600000);
     return this.sql.exec("SELECT id, sender, env FROM mail ORDER BY at, rowid LIMIT ?", limit).toArray().map((r) => ({ id: r.id, from: r.sender, env: JSON.parse(r.env) }));
   }
   push(row) {
@@ -196,6 +236,23 @@ export class Mailbox extends DurableObject {
       if (added) this.sql.exec("INSERT INTO quota (sender, day, n) VALUES (?, ?, 1) ON CONFLICT (sender, day) DO UPDATE SET n = n + 1", row.from, day);
       if (added && !(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(Date.now() + 86400000);
       return json({ ok: true, delivered: added ? this.push({ id: row.id, from: row.from, env: row.env }) : false, stored: true });
+    }
+    // A webhook request, already sealed to this mailbox's owner (hooks.js). Kept apart from
+    // people's envelopes: its own queue cap per address, its own short life, no sender quota.
+    if (path === "/hook-deliver") {
+      const row = await request.json();
+      const sender = "hook:" + row.hook;
+      this.sql.exec("DELETE FROM mail WHERE sender = ? AND at < ?", sender, Date.now() - HOOK_LIMITS.keepHours * 3600000);
+      if (this.sql.exec("SELECT COUNT(*) AS n FROM mail WHERE sender = ?", sender).one().n >= HOOK_LIMITS.queue) return fail(429, "Hay demasiados avisos esperando.");
+      if (this.sql.exec("SELECT COUNT(*) AS n FROM mail").one().n >= LIMITS.perRecipient) return fail(429, "El buzón está lleno.");
+      const added = this.sql.exec("INSERT OR IGNORE INTO mail (id, sender, env, at) VALUES (?, ?, ?, ?)", row.id, sender, JSON.stringify(row.env), Date.now()).rowsWritten > 0;
+      if (added && !(await this.ctx.storage.getAlarm())) await this.ctx.storage.setAlarm(Date.now() + 86400000);
+      return json({ ok: true, delivered: added ? this.push({ id: row.id, from: sender, env: row.env }) : false, stored: true });
+    }
+    if (path === "/hook-drop") {
+      const { hook } = await request.json().catch(() => ({}));
+      if (typeof hook === "string") this.sql.exec("DELETE FROM mail WHERE sender = ?", "hook:" + hook);
+      return json({ ok: true });
     }
     if (path === "/ws") {
       if (this.ctx.getWebSockets().length >= 4) return fail(429, "Demasiadas conexiones.");
@@ -233,6 +290,7 @@ export class Mailbox extends DurableObject {
   }
   async alarm() {
     this.sql.exec("DELETE FROM mail WHERE at < ?", Date.now() - LIMITS.keepDays * 86400000);
+    this.sql.exec("DELETE FROM mail WHERE sender LIKE 'hook:%' AND at < ?", Date.now() - HOOK_LIMITS.keepHours * 3600000);
     this.sql.exec("DELETE FROM quota WHERE day < ?", new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10));
     if (this.sql.exec("SELECT COUNT(*) AS n FROM mail").one().n || this.sql.exec("SELECT COUNT(*) AS n FROM quota").one().n) await this.ctx.storage.setAlarm(Date.now() + 86400000);
   }
@@ -287,6 +345,51 @@ export class Blob extends DurableObject {
     return fail(404, "No existe.");
   }
   async alarm() { await this.ctx.storage.deleteAll(); }
+}
+
+// ---- one webhook address ----------------------------------------------------------------
+// Whose it is and the box key its requests are sealed to. It also counts: at most
+// HOOK_LIMITS.perMinute requests a minute, and how many were refused since the last one that
+// got through (its owner sees them as «limitado»). Deleting it is revoking the address.
+export class Hook extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.times = [];
+  }
+  async fetch(request) {
+    const url = new URL(request.url);
+    const hook = await this.ctx.storage.get("hook");
+    if (url.pathname === "/pass") {
+      if (!hook) return fail(404, "No existe.");
+      const t = Date.now();
+      this.times = this.times.filter((x) => t - x < 60000);
+      if (this.times.length >= HOOK_LIMITS.perMinute) {
+        await this.ctx.storage.put("limited", ((await this.ctx.storage.get("limited")) || 0) + 1);
+        return fail(429, "Demasiados avisos seguidos.");
+      }
+      this.times.push(t);
+      const limited = (await this.ctx.storage.get("limited")) || 0;
+      if (limited) await this.ctx.storage.put("limited", 0);
+      return json({ owner: hook.owner, box: hook.box, limited });
+    }
+    if (url.pathname === "/limited") {
+      if (hook) await this.ctx.storage.put("limited", Math.max(0, Number(url.searchParams.get("n")) || 0));
+      return json({ ok: true });
+    }
+    const data = await request.json().catch(() => ({}));
+    if (url.pathname === "/put") {
+      if (!validBox(data.box) || !ADDRESS.test(data.owner)) return fail(400, "Dirección no válida.");
+      if (hook && hook.owner !== data.owner) return fail(409, "Esa dirección ya está en uso.");
+      await this.ctx.storage.put("hook", { owner: data.owner, box: data.box, createdAt: hook?.createdAt || Date.now() });
+      return json({ ok: true });
+    }
+    if (url.pathname === "/delete") {
+      if (hook && hook.owner !== data.owner) return fail(403, "Esa dirección no es tuya.");
+      await this.ctx.storage.deleteAll();
+      return json({ ok: true });
+    }
+    return fail(404, "No existe.");
+  }
 }
 
 // ---- one invitation card ----------------------------------------------------------------

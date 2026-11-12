@@ -34,6 +34,7 @@ import { registerInteractionRoutes, extendState } from "./interject.mjs";
 import { Watcher, registerWatchRoutes } from "./watch.mjs";
 import { registerVoiceLiveRoutes } from "./voice-live.mjs";
 import { registerPeerRoutes, peerFileParser } from "./peers/routes.mjs";
+import { registerWebhookRoutes } from "./webhooks.mjs";
 import { registerBtwRoutes } from "./btw.mjs";
 import { Backups, registerBackupRoutes } from "./backup-service.mjs";
 import { Encryption, registerEncryptionRoutes } from "./encryption.mjs";
@@ -435,6 +436,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerBackupRoutes(app, { backups: app.locals.backups, check, z }); // Ajustes › Privacidad y datos
   registerEncryptionRoutes(app, { encryption: app.locals.encryption, backups: app.locals.backups });
   registerPeerRoutes(app, { getPeers: () => app.locals.peers, check, z, HttpError }); // «Personas»: other people's Colmenas
+  registerWebhookRoutes(app, { getWebhooks: () => app.locals.webhooks, store, check, z, HttpError }); // «Cuando avisa otra app»: webhook triggers through the mailbox
   registerGoalRoutes(app, { store, runtime });
   registerCoreRoutes(app, { store, runtime });
   registerUsageRoutes(app, { store, runtime });

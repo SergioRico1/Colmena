@@ -11,6 +11,9 @@
 //                                          many parts and the hash of the read token)
 //   GET  /v1/blobs/:id/:n                  a part, for whoever has the read token (X-Blob-Token)
 //   DELETE /v1/blobs/:id                   the uploader takes it away before it expires
+//   PUT|DELETE /v1/hooks/:id               a webhook address of yours (signed): register, revoke
+//   POST /h/:id                            what a service posts there: sealed to you as it arrives
+//                                          (relay/cloudflare/hooks.js) and kept 72 h at most
 // Run: node relay/server.mjs [--port 4390] [--host 127.0.0.1] [--data ./.relay-data]
 import http from "node:http";
 import path from "node:path";
@@ -20,12 +23,15 @@ import { pathToFileURL } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
 import express from "express";
 import { checkAuth, checkEnvelope, isAddress, MAX_ENVELOPE, ProtocolError } from "../server/peers/protocol.mjs";
+import { HOOK_ID, HOOK_LIMITS, sealRequest, validBox } from "./cloudflare/hooks.js";
 
 export const RELAY_LIMITS = Object.freeze({
   keepDays: 7, perRecipient: 5000, perSenderDay: 3000, livePerMinute: 120, sendsPerMinute: 600, invitesPerMinute: 30, inviteBytes: 4096, inviteHours: 25, streamsPerAddress: 4,
   // Files (sealed by each Colmena with a key only the recipients get): 1 MiB parts, 25 MiB per
   // file, 7 days, 200 MiB a day per uploader, 4 GiB in all on this server.
   blobPart: 1024 * 1024 + 64, blobParts: 26, blobKeepDays: 7, blobBytesDay: 200 * 1024 * 1024, blobTotal: 4 * 1024 * 1024 * 1024, blobReadsPerMinute: 600,
+  // Webhooks (relay/cloudflare/hooks.js): 256 KB a request, 60 a minute and 100 waiting per address, 72 h.
+  hookBody: HOOK_LIMITS.body, hookPerMinute: HOOK_LIMITS.perMinute, hookQueue: HOOK_LIMITS.queue, hookKeepHours: HOOK_LIMITS.keepHours, hookRegistrationsPerMinute: HOOK_LIMITS.registrationsPerMinute,
 });
 
 export function createRelay({ directory, now = () => Date.now(), log = () => {}, limits = {} } = {}) {
@@ -41,7 +47,10 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
       "CREATE TABLE IF NOT EXISTS quota (sender TEXT NOT NULL, rcpt TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (sender, rcpt, day));" +
       "CREATE TABLE IF NOT EXISTS blobs (id TEXT PRIMARY KEY, owner TEXT NOT NULL, parts INTEGER NOT NULL, read TEXT NOT NULL, bytes INTEGER NOT NULL, expires INTEGER NOT NULL);" +
       "CREATE TABLE IF NOT EXISTS blob_parts (id TEXT NOT NULL, n INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY (id, n));" +
-      "CREATE TABLE IF NOT EXISTS blob_quota (owner TEXT NOT NULL, day TEXT NOT NULL, bytes INTEGER NOT NULL, PRIMARY KEY (owner, day));",
+      "CREATE TABLE IF NOT EXISTS blob_quota (owner TEXT NOT NULL, day TEXT NOT NULL, bytes INTEGER NOT NULL, PRIMARY KEY (owner, day));" +
+      // Webhook addresses: whose each one is, the box key its requests are sealed to, and how
+      // many were refused (429) since the last one that got through.
+      "CREATE TABLE IF NOT EXISTS hooks (id TEXT PRIMARY KEY, owner TEXT NOT NULL, box TEXT NOT NULL, limited INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL);",
   );
   const q = {
     put: db.prepare("INSERT OR IGNORE INTO mail(id, rcpt, sender, env, at) VALUES (?,?,?,?,?)"),
@@ -68,6 +77,13 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
     blobUsed: db.prepare("SELECT bytes FROM blob_quota WHERE owner=? AND day=?"),
     blobCount: db.prepare("INSERT INTO blob_quota(owner, day, bytes) VALUES (?,?,?) ON CONFLICT(owner, day) DO UPDATE SET bytes = bytes + excluded.bytes"),
     blobQuotaOld: db.prepare("DELETE FROM blob_quota WHERE day < ?"),
+    hookGet: db.prepare("SELECT owner, box, limited FROM hooks WHERE id=?"),
+    hookPut: db.prepare("INSERT INTO hooks(id, owner, box, limited, created) VALUES (?,?,?,0,?) ON CONFLICT(id) DO UPDATE SET box=excluded.box WHERE hooks.owner=excluded.owner"),
+    hookDel: db.prepare("DELETE FROM hooks WHERE id=? AND owner=?"),
+    hookLimited: db.prepare("UPDATE hooks SET limited=? WHERE id=?"),
+    hookWaiting: db.prepare("SELECT COUNT(*) AS n FROM mail WHERE rcpt=? AND sender=?"),
+    hookDrop: db.prepare("DELETE FROM mail WHERE rcpt=? AND sender=?"),
+    hookOld: db.prepare("DELETE FROM mail WHERE sender LIKE 'hook:%' AND at < ?"),
   };
   const streams = new Map(); // address → Set<res>
   const nonces = new Map(); // nonce → expiry
@@ -82,6 +98,7 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
   const sweep = () => {
     const t = now();
     q.old.run(t - L.keepDays * 864e5);
+    q.hookOld.run(t - L.hookKeepHours * 36e5);
     q.quotaOld.run(new Date(t - 2 * 864e5).toISOString().slice(0, 10));
     q.invitesOld.run(t);
     for (const { id } of q.blobsOld.all(t)) { q.partsDel.run(id); q.blobDel.run(id); }
@@ -96,6 +113,8 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
   app.disable("x-powered-by");
   // File parts are bytes; everything else is JSON text.
   app.use("/v1/blobs", express.raw({ type: () => true, limit: L.blobPart }));
+  // A webhook's body is kept byte for byte: its signature is checked over it, in Colmena.
+  app.use("/h", express.raw({ type: () => true, limit: L.hookBody }));
   app.use(express.text({ type: () => true, limit: MAX_ENVELOPE * 2 }));
   app.use((_req, res, next) => { res.set({ "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }); next(); });
   const fail = (res, status, error) => res.status(status).json({ error });
@@ -113,7 +132,46 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
     return (streams.get(address)?.size || 0) > 0;
   };
 
-  app.get("/v1/health", (_req, res) => res.json({ ok: true, service: "colmena-buzon", version: 1, stream: "sse", blobs: { part: L.blobPart - 64, parts: L.blobParts, keepDays: L.blobKeepDays } }));
+  app.get("/v1/health", (_req, res) => res.json({ ok: true, service: "colmena-buzon", version: 1, stream: "sse", blobs: { part: L.blobPart - 64, parts: L.blobParts, keepDays: L.blobKeepDays }, hooks: { body: L.hookBody, perMinute: L.hookPerMinute, queue: L.hookQueue, keepHours: L.hookKeepHours } }));
+
+  // Webhooks: the address is the secret. Anyone who has it may post; nobody else finds it.
+  const tooMany = (res, error, retry) => res.status(429).set("Retry-After", String(retry)).json({ error });
+  app.post("/h/:id", async (req, res) => {
+    const id = req.params.id;
+    const hook = HOOK_ID.test(id) ? q.hookGet.get(id) : null;
+    if (!hook) return fail(res, 404, "No existe.");
+    const refuse = (error, retry) => { q.hookLimited.run(q.hookGet.get(id).limited + 1, id); return tooMany(res, error, retry); };
+    if (limited("in:" + id, L.hookPerMinute)) return refuse("Demasiados avisos seguidos.", 60);
+    const sender = "hook:" + id;
+    q.hookOld.run(now() - L.hookKeepHours * 36e5);
+    if (q.hookWaiting.get(hook.owner, sender).n >= L.hookQueue || q.count.get(hook.owner).n >= L.perRecipient) return refuse("Hay demasiados avisos esperando.", 3600);
+    const bytes = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    const row = await sealRequest({ id, owner: hook.owner, box: hook.box }, { method: req.method, headers: Object.entries(req.headers), bytes, at: now(), limited: hook.limited });
+    if (hook.limited) q.hookLimited.run(0, id);
+    // The same delivery again while it waits is one row.
+    const added = q.put.run(row.id, hook.owner, sender, JSON.stringify(row.sealed), now()).changes > 0;
+    if (added) push(hook.owner, { id: row.id, from: sender, env: row.sealed });
+    res.status(202).json({ ok: true });
+  });
+  app.put("/v1/hooks/:id", (req, res) => {
+    const owner = who(req, res);
+    if (!owner) return;
+    if (limited("hook:" + owner, L.hookRegistrationsPerMinute)) return fail(res, 429, "Demasiados cambios seguidos.");
+    const box = json(req)?.box;
+    if (!HOOK_ID.test(req.params.id) || !validBox(box)) return fail(res, 400, "Dirección no válida.");
+    if (!q.hookPut.run(req.params.id, owner, box, now()).changes) return fail(res, 409, "Esa dirección ya está en uso.");
+    res.json({ ok: true });
+  });
+  app.delete("/v1/hooks/:id", (req, res) => {
+    const owner = who(req, res);
+    if (!owner) return;
+    const hook = q.hookGet.get(req.params.id);
+    if (hook && hook.owner !== owner) return fail(res, 403, "Esa dirección no es tuya.");
+    // Revoked: the address stops existing and what still waited for it goes too.
+    q.hookDel.run(req.params.id, owner);
+    q.hookDrop.run(owner, "hook:" + req.params.id);
+    res.json({ ok: true });
+  });
 
   app.post("/v1/send", (req, res) => {
     const from = who(req, res);
@@ -149,6 +207,7 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
     res.set({ "Content-Type": "text/event-stream", Connection: "keep-alive" });
     res.flushHeaders();
     res.write("event: ready\ndata: {}\n\n");
+    q.hookOld.run(now() - L.hookKeepHours * 36e5); // an old webhook request is never delivered
     for (const r of q.waiting.all(address)) res.write(`event: mail\ndata: ${JSON.stringify({ id: r.id, from: r.sender, env: JSON.parse(r.env) })}\n\n`);
     set.add(res);
     streams.set(address, set);
@@ -255,8 +314,8 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
 }
 
 /** Starts the mailbox on `host:port`; resolves to { url, close }. */
-export async function startRelay({ port = 4390, host = "127.0.0.1", directory, limits } = {}) {
-  const relay = createRelay({ directory, limits });
+export async function startRelay({ port = 4390, host = "127.0.0.1", directory, limits, now } = {}) {
+  const relay = createRelay({ directory, limits, ...(now ? { now } : {}) });
   const server = http.createServer(relay.app);
   server.requestTimeout = 0; // SSE streams stay open
   await new Promise((resolve, reject) => {

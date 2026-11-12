@@ -187,7 +187,9 @@ export class Peers extends EventEmitter {
     }
     this.client = new RelayClient({
       url, identity: this.identity, fetchImpl: this.fetch, log: this.log,
-      onMail: (row) => this.receive(row),
+      // A webhook left at one of your addresses (server/webhooks.mjs) is not a person's
+      // envelope: it goes to its own handler and stays at the mailbox while there is none.
+      onMail: (row) => (row?.env?.hook ? (this.stopped || !this.hookHandler ? false : this.hookHandler(row)) : this.receive(row)),
       onStatus: (status, error) => {
         this.relayStatus = { status, error: status === "online" ? null : error || this.relayStatus.error };
         this.emit("live", { type: "relay", status });
