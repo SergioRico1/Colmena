@@ -337,3 +337,91 @@ Detalle del protocolo, el buzón y los límites en `docs/PEOPLE.md`. Todo bajo `
 - **Mapa de la conversación**: `GET /api/missions/:id/map` → `{ turns: [{ id, at, title, preview }] }` de toda la ruta activa, con o sin páginas cargadas.
 - **Borrador sin enviar** (`useDraftOffer`): se ofrece «Recuperar · Guardar para después · Descartar»; escribir otra cosa lo manda a «Guardados para después».
 - **Avisos con estado** (`src/lib/undoToast.js`): `later()` pasa de esperar (con «Deshacer») a en camino y a hecho/fallido en el mismo aviso; `promise(work, { loading, success, error })`; `setPaused` detiene todas las cuentas atrás (ventana oculta o ratón encima). Pila que se despliega al pasar el ratón y se descarta deslizando.
+
+## 16. «Notas»: la wiki que compartes con los bots
+`server/wiki.mjs` (modelo, enlaces, búsqueda), `server/wiki-import.mjs` (traer y sacar), `server/wiki-tools.mjs` (herramientas de los bots), `server/routes/wiki.mjs`. Páginas en Markdown sobre clientes, proyectos, procedimientos y decisiones; complementan la memoria (hechos cortos que van en cada prompt) y los entregables (documentos terminados). Todo bajo `/api/wiki`, con las mismas reglas de origen y token que el resto; los errores son `{ error, fields?, revision?, details? }`. El texto de una nota es un dato: el servidor nunca lo ejecuta ni lo sigue.
+
+Tiempo real: `GET /api/events` avisa con `changed` y `kinds` que incluye `wikiPages` (y `wikiLinks`, `wikiVersions`) cuando cambia algo; la pantalla vuelve a pedir lo que muestra.
+
+### Page
+```js
+// Resumen (listas, búsqueda): nunca lleva el texto
+{ id, slug,             // «acme-s-l»: sin acentos, minúsculas, guiones; es lo que va en la URL
+  title,                // «Acme S.L.» (sin [ ] | # ^)
+  aliases: [string],    // otros nombres; tras renombrar, aquí queda el slug anterior
+  folder,               // «clientes/activos» o ''
+  tags: [string],       // sin «#»
+  archived: bool, revision: number,   // revision sube en cada cambio; se manda al guardar
+  size,                 // caracteres del texto
+  excerpt,              // primeras ~180 letras, sin formato
+  createdAt, updatedAt,
+  updatedBy: { kind: 'person' } | { kind: 'bot', botId, name },
+  external: bool }      // lleva contenido copiado de fuera (ver «Contenido de fuera»)
+// Página entera (GET/POST/PATCH de una página): el resumen más
+{ body,                 // Markdown
+  external: null | { at, label, by, missionId, suspicious },
+  links: [{ slug, target, text, exists, title, archived?, heading? }],   // a dónde enlaza, en orden
+  backlinks: { pages: [{ slug, title, text, updatedAt }],
+               messages: [{ id, missionId, missionTitle, botId, role, at }],   // mensajes de chat que la nombran
+               artifacts: [{ id, title, missionId, at }] },                    // entregables que la nombran
+  versions: number,     // cuántas hay en el historial
+  redirectedFrom? }     // el slug pedido, cuando era un alias
+```
+Enlaces: `[[Título]]` y `[[Título|texto]]`; también `[[carpeta/Título]]` (cuenta el último tramo), `[[Título#Apartado]]` (`heading`) y `![[Título]]`. No son enlaces: lo que va en bloques de código o entre comillas invertidas, `\[[…]]`, `[[#Apartado]]` y los archivos incrustados (`![[foto.png]]`). Un enlace a una nota que no existe es válido: `exists: false` y sale en «Por crear». Resolver un nombre: se convierte en slug; gana la nota que tiene ese slug y, si no hay, la que lo tiene como alias. Renombrar cambia el slug y deja el anterior como alias, así que lo que apuntaba a ella sigue llegando. Dos títulos que dan el mismo slug son la misma nota (409 al crear).
+
+### Endpoints
+- `GET /api/wiki/pages?q=&folder=&tag=&archived=0|1|all&sort=updated|title|created&offset=0&limit=50` (máx. 200) → `{ pages: [Page resumen], total, offset, limit, folders: [{ name, count }], tags: [{ name, count }], counts: { pages, archived } }`. `folder` incluye sus subcarpetas. Con `q` el orden es por relevancia y cada página trae `snippet` y `score`.
+- `GET /api/wiki/search?q=&limit=20&folder=&tag=` (máx. 50) → `{ results: [Page resumen + { snippet, score }] }`. Texto completo con ranking: pesa más el título, después alias y etiquetas; sin acentos ni mayúsculas, con raíces en español («facturas» encuentra «facturación»). Las archivadas no salen.
+- `POST /api/wiki/pages { title, body?, aliases?, folder?, tags? }` → `201` Page entera. `409 { error, details: { slug, title, archived } }` si ya hay una con ese nombre.
+- `GET /api/wiki/pages/:slug` → Page entera. `:slug` admite el slug, el título o un alias (con `encodeURIComponent`). `404 { error: "Nota no encontrada.", details: { slug, exists: false } }`: el slug sirve para ofrecer «Crear esta nota».
+- `PATCH /api/wiki/pages/:slug { revision, body?, aliases?, folder?, tags? }` → Page entera. `revision` es la que leíste. Si la nota cambió entre tanto (un bot, otra ventana) no se guarda nada:
+```js
+// 409
+{ error: "La nota ha cambiado mientras la editabas. Compara los dos textos antes de guardar.",
+  revision: 7,                                   // la actual: úsala para volver a guardar
+  details: { current: { revision: 7, title, body, updatedAt, updatedBy },
+             yours:   { body },                  // lo que mandaste
+             diff:    { patch, added, removed, truncated } } }   // de la actual a la tuya, formato «@@ -a,n +b,m @@»
+```
+- `POST /api/wiki/pages/:slug/rename { title, revision }` → Page entera con el slug nuevo (el anterior queda en `aliases`). `409` si otra nota ya tiene ese nombre.
+- `POST /api/wiki/pages/:slug/archive` · `POST /api/wiki/pages/:slug/restore` (cuerpo `{}`) → Page entera. Una nota archivada no sale en listas, búsqueda ni mapa; sus enlaces siguen resolviendo (`archived: true`).
+- `DELETE /api/wiki/pages/:slug` (cuerpo `{}`) → `{ ok: true }`. Solo si está archivada (`409` si no); borra también su historial. Lo que enlazaba con ella pasa a «Por crear».
+- `POST /api/wiki/pages/:slug/trust { revision }` → Page entera con `external: null` («Lo he revisado»).
+- `GET /api/wiki/pages/:slug/versions` → `{ revision, versions: [{ id, revision, title, by, at, reason: 'create'|'edit'|'rename'|'restore'|'import', size, delta, external: bool, from? }] }`, la más nueva primero. Hay una versión por cada guardado que cambia el título o el texto (cambiar etiquetas o archivar sube `revision` sin crear versión). Se guardan todas las de los últimos 30 días; de las anteriores, la última de cada día; como mucho 200 por nota.
+- `GET /api/wiki/pages/:slug/versions/:version` (`:version` = `id` o número de revisión) → `{ ...versión, body, current: bool, diff: { patch, added, removed, truncated } }`; `diff` es lo que cambiaría la nota de ahora si se restaura.
+- `POST /api/wiki/pages/:slug/versions/:version/restore { revision }` → Page entera: el texto de esa versión como revisión nueva (`reason: 'restore'`, `from`). `409` como al guardar.
+- `GET /api/wiki/pages/:slug/export` → el archivo `.md` (`text/markdown`, con `title`, `aliases` y `tags` en la cabecera YAML). `GET /api/wiki/export?archived=0|1` → `application/zip` con todas, en sus carpetas.
+- `POST /api/wiki/resolve { targets: ["Acme", "Plan 2027|el plan"] }` (máx. 300) → `{ results: { "Acme": { slug, exists, title, archived, alias? }, … } }`. Para los `[[enlaces]]` de mensajes de chat y entregables: la clave es el texto tal cual entre corchetes.
+- `GET /api/wiki/missing` → `{ missing: [{ slug, title, count, from: [{ slug, title }], mentions }], total }` («Por crear»): nombres enlazados que aún no son una nota; `from` son notas (hasta 10), `mentions` los mensajes y entregables que lo nombran.
+- `GET /api/wiki/graph?nodes=300&focus=&depth=1` (máx. 1000 nodos, 2000 aristas) → `{ nodes: [{ id (slug), title, exists, folder, degree }], edges: [{ from, to }], total: { nodes, edges }, truncated }`. Con más nodos que el tope se quedan los más enlazados y `truncated` es `true`. `focus` (slug o título) con `depth` 1–4 da solo los alrededores de una nota.
+- `GET /api/search?q=` (paleta Ctrl+K) añade `notes: [{ slug, title, folder, snippet, updatedAt }]` (hasta 8).
+
+### Traer notas (estilo Obsidian)
+`POST /api/wiki/import { source, apply?: false, planId? }`. `source` es uno de:
+- `{ type: "folder", path }`: una carpeta de este ordenador, con su ruta completa (no vale la de los datos de Colmena ni una del sistema).
+- `{ type: "zip", data }`: un zip en base64 (hasta 25 MB). Si todo cuelga de una sola carpeta, esa no cuenta.
+- `{ type: "files", files: [{ path, content }] }`: los archivos leídos en la pantalla (ruta relativa con `/`).
+
+Siempre en dos pasos. Sin `apply` no se escribe nada y responde lo que haría; con `apply: true` y el `planId` recibido lo hace (todo o nada). Si el origen o las notas cambiaron entre medias: `409` con el plan nuevo en `details`.
+```js
+{ applied: false, planId,
+  counts: { create, update, same, skipped, rejected, attachments, embeds, ignored, missing },
+  create: [{ path, title, slug, folder, links, size, renamed? }],   // notas nuevas
+  update: [ … ],                                                    // ya existen y cambian
+  same:   [ … ],                                                    // ya existen, iguales: no se tocan
+  skipped:  [{ path, reason }],     // demasiado grande (1 MB), no es texto, sin nombre
+  rejected: [{ path, reason }],     // rutas que intentan salir del origen («..», absolutas, unidad, enlaces simbólicos)
+  missing:  [{ slug, title }],      // enlaces que seguirán «por crear» (hasta 50)
+  truncated }                       // las listas llevan hasta 500 entradas; counts es exacto
+// con apply: true → lo mismo con applied: true, created: [slug], updated: [slug]
+```
+Qué se conserva: los `[[enlaces]]` tal cual; de la cabecera YAML, `title`, `aliases` y `tags` (el resto se descarta junto con la cabecera); la carpeta relativa como `folder`; sin `title`, el nombre del archivo. Solo `.md` y `.markdown`: imágenes y demás no se traen (`attachments`; `embeds` cuenta los `![[archivo]]` que quedan en el texto). Las carpetas que empiezan por punto (`.obsidian`, `.trash`) se ignoran (`ignored`). Dos archivos con el mismo nombre: el de más arriba se queda el slug y el otro recibe `-2` (`renamed`). Una nota que ya existe se actualiza (y sale del archivo si estaba archivada). Topes: 2000 notas y 60 MB por vez (`413`).
+
+### Los bots y las notas
+Herramientas (detrás de `find_tools` cuando el bot tiene muchas; en la lista mientras la conversación habla de notas): `wiki_search { query }`, `wiki_read { page, part }` (por título, slug o alias; devuelve texto por partes de 20 000 caracteres, `revision`, `backlinks` y `links`) y `wiki_write { page, action: create|replace|append|section, section, content, revision }`.
+- Leer no pide nada. Escribir se hace al momento si la persona lo pidió en esa conversación o si el bot «Actúa y te avisa» / «Actúa solo»; si no, queda como petición (`kind: 'write'`, `tool: 'wiki_write'`, agrupable en «Aprobar todas», con «Siempre»). Tras leer contenido con frases de manipulación la petición espera siempre a la persona, sola y sin «Siempre».
+- La petición trae `wiki`: `{ slug, title, action, create: bool, section, baseRevision, patch, added, removed, truncated, outside: null | { suspicious } }` (`patch` = diff de la nota actual a la propuesta; al crear, todo son líneas añadidas).
+- `wiki_write` lleva la `revision` que leyó: si la nota cambió, no escribe y el bot vuelve a leer. Una petición aprobada cuya nota cambió mientras esperaba tampoco se aplica (el bot recibe el aviso).
+- **Contenido de fuera**: lo que un bot escribe después de leer una web, un correo, una app o una nota ya marcada deja la página marcada (`external`), salvo que sean palabras de la propia persona. La marca sigue en los guardados siguientes y en cada versión; quien lea la nota la recibe entre marcas de contenido externo. Solo la quita `POST …/trust`. La pantalla debe mostrarla («Incluye contenido copiado de fuera») con «Lo he revisado».
+- Las conversaciones de incógnito nunca escriben notas (ni petición) y sus mensajes no cuentan como enlaces. Los encargos de otra persona no tienen estas herramientas. Claves, contraseñas y números de tarjeta se rechazan.
+- Tarjetas de herramienta (`toolCalls[].card`): `wiki_search` → `{ type: 'search', query, count }`; `wiki_read` → `{ type: 'note', action: 'read', title, slug, found }`; `wiki_write` → `{ type: 'note', action: 'create'|'replace'|'append'|'section', title, slug, section, saved, created, revision, outside }`. Al escribir sin petición queda un mensaje de actividad en la sala («Nora ha cambiado la nota «Acme»»).

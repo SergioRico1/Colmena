@@ -52,6 +52,8 @@ import { registerAutomationRoutes } from "./routes/automations.mjs";
 import { registerSuggestionRoutes } from "./routes/suggestions.mjs";
 import { registerFolderRoutes } from "./routes/folders.mjs";
 import { registerNotificationRoutes } from "./routes/notifications.mjs";
+import { registerWikiRoutes, wikiImportParser } from "./routes/wiki.mjs";
+import { attachWikiTools } from "./wiki-tools.mjs";
 export { HttpError, zodMessage, critiqueAbout } from "./routes/shared.mjs";
 
 const APP_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -175,6 +177,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.use(attachmentBodyParser);
   app.use(codeUploadParser); // «Código» attachments (up to 20 MB)
   app.use(peerFileParser); // a file shared with people (up to 25 MB)
+  app.use(wikiImportParser); // «Notas»: a zip of Markdown files to bring in (up to 25 MB)
   app.use(express.json({ limit: "1400kb" }));
   app.get("/api/health", (_req, res) => res.json({ application: "Colmena", version: VERSION, pid: process.pid, ...(app.locals.stalls ? { stalls: app.locals.stalls.state } : {}) }));
   app.get("/api/bootstrap", (_req, res) => res.json({ csrf }));
@@ -414,6 +417,9 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerSuggestionRoutes(app, { mustGet, store, need, runtime, createAutomation });
   registerFolderRoutes(app, { mustGet, validateFolder, store });
   registerNotificationRoutes(app, { store, scheduler, rootOf, mustGet, runtime });
+  // «Notas»: the wiki the person and the bots share (server/wiki.mjs); the bots get wiki_search, wiki_read and wiki_write.
+  registerWikiRoutes(app, { store, validateFolder });
+  attachWikiTools(runtime);
 
   registerLearningRoutes(app, { store, runtime, computerAvailable: () => !!computer?.available });
   // Password vault: the runtime's (the bots sign in with it), or one of its own in tests.

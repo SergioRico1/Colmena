@@ -199,6 +199,8 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     // A key request: its name, why, for which sites and whether it replaces one (never a value).
     secret: kind === "secret" && a.secret ? { name: a.secret.name, reason: a.secret.reason, allowedHosts: a.secret.allowedHosts || [], existing: a.secret.existing || null } : null,
     email: kind === "send" ? email : null,
+    // A change to a note (wiki_write): which page, what it does and its diff (server/wiki-tools.mjs).
+    wiki: a.tool === "wiki_write" && a.wiki ? a.wiki : null,
     impact,
     edited: !!a.edited,
     canAlways: a.canAlways ?? (pending && ["write", "permission"].includes(kind)),

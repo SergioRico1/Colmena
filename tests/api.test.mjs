@@ -300,7 +300,7 @@ test("search finds bots, missions, artifacts, files and messages (accent-insensi
   assert.deepEqual(r.artifacts.map((a) => a.id), ["a1"]);
   assert.deepEqual(r.files.map((f) => f.name), ["campana-brief.txt"]);
   assert.deepEqual((await get("/search?q=dise")).bots.map((b) => b.id), ["iris"]);
-  assert.deepEqual(await get("/search?q="), { bots: [], missions: [], artifacts: [], files: [], messages: [] });
+  assert.deepEqual(await get("/search?q="), { bots: [], missions: [], artifacts: [], files: [], messages: [], notes: [] });
 });
 
 test("onboarding legal creates Leo, adjusts the team and marks onboarded", async (t) => {
