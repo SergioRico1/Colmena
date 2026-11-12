@@ -37,7 +37,7 @@ import {
   RESUME_WINDOW_MS, LIMIT_RESUMES, runsInParallel, PROGRESS_MAX, LIVE_AFTER, countWords,
 } from "./runtime/helpers.mjs";
 import { routed } from "./router.mjs";
-import { isOutsideOrigin, isPersonMessage as isOwnMessage } from "./origin.mjs";
+import { isOutsideOrigin } from "./origin.mjs";
 import { installMethods } from "./mixin.mjs";
 import { InferenceMethods } from "./runtime/inference.mjs";
 import { ContextMethods } from "./runtime/context.mjs";
@@ -1136,6 +1136,7 @@ export class Runtime {
         // Before the first word: what it is doing, so a slow start never looks frozen.
         if (!step.rounds) this.setActivity(bot.id, missionId, step.id, "preparando", "");
         step = this.injectHints(step);
+        step = this.injectJoined(this.store.get("missions", missionId) || mission, step);
         step = this.injectPermissionChange(this.store.get("missions", missionId) || mission, step);
         step = this.injectMessages(this.store.get("missions", missionId) || mission, step);
         step = this.injectRelays(step);
@@ -1341,6 +1342,12 @@ export class Runtime {
             continue;
           }
           throw Error("Atlas no propuso un reparto. Vuelve a intentarlo.");
+        }
+        // Something more about the same thing arrived while it wrote its answer (Scheduler#join):
+        // it reads it now, in one more round, instead of ending without knowing.
+        if (this.joinedWaiting(this.store.get("missions", missionId), step.id).length) {
+          this.injectJoined(this.store.get("missions", missionId), this.liveStep(step.id));
+          continue;
         }
         const current = this.store.get("steps", step.id);
         if (!text.trim() && !current.reacted && !current.silentOk) throw Error("El modelo termino sin entregar una respuesta.");

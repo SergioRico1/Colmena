@@ -401,7 +401,7 @@ export class Scheduler {
     const open = this.openRun(rule, signature);
     if (open) {
       this.store.patch("automations", ruleId, seen);
-      this.join(rule, open, event);
+      this.join(rule, open, event, time);
       return { status: "joined", missionId: open.id };
     }
     if (startsOf(rule, signature, time) >= LOOP.limit) {
@@ -423,15 +423,32 @@ export class Scheduler {
     return this.store.where("missions", "automationId", rule.id)
       .find((m) => m.origin?.signature === signature && (OPEN_STATUSES.has(m.status) || (m.status === "paused" && !!m.limited))) || null;
   }
-  /** Adds an event to open work as one activity line instead of starting a second mission. */
-  join(rule, mission, event) {
+  /**
+   * Adds an event to open work instead of starting a second mission: one activity line in its
+   * conversation, and the event itself — wrapped as outside content, with its origin — left on
+   * the mission for the bot, which reads it at its next round, or when the run goes on after
+   * the person's decision (Runtime#injectJoined). Never a message of the person, and nothing is
+   * launched: a run that waits or is parked stays as it is. The loop limit still holds: the
+   * run's start and the events passed on to it count together, and from LOOP.limit on the same
+   * thing again only leaves its line.
+   */
+  join(rule, mission, event, time = this.clock()) {
     const what = cleanHeader(event.summary || "un aviso nuevo", 160);
+    const origin = makeOrigin({ type: "trigger", id: rule.id, depth: Number(event.chain) || 0, signature: event.signature });
+    const since = time - LOOP.windowMs;
+    const passed = (mission.joined || []).filter((j) => j.passed && Date.parse(j.at) > since).length;
+    const pass = startsOf(rule, event.signature, time) + passed < LOOP.limit;
+    const found = pass ? detectInjection(JSON.stringify(event)) : [];
+    if (found.length) console.warn(`[security] Posible inyección en un aviso sumado a «${rule.name}»: ${found.join(", ")}`);
     this.store.put("messages", {
-      id: newId(), missionId: mission.id, role: "system", kind: "activity", at: now(),
-      text: "Ha llegado algo más sobre lo mismo (" + what + "). Lo sumo a este trabajo en vez de empezar otro.",
-      origin: makeOrigin({ type: "trigger", id: rule.id, depth: Number(event.chain) || 0, signature: event.signature }),
+      id: newId(), missionId: mission.id, role: "system", kind: "activity", at: now(), origin,
+      text: "Ha llegado algo más sobre lo mismo (" + what + "). " + (pass ? "Lo sumo a este trabajo en vez de empezar otro." : "Ya van " + LOOP.limit + " veces hoy: queda apuntado aquí, sin pasárselo al bot."),
     });
-    this.store.patch("missions", mission.id, (m) => ({ joined: [...(m.joined || []), { at: now(), id: event.id, summary: what }].slice(-20) }));
+    this.store.patch("missions", mission.id, (m) => ({
+      joined: [...(m.joined || []), { at: new Date(time).toISOString(), id: event.id, summary: what, ...(pass ? { passed: true, origin, text: wrapEvent(rule, event) } : {}) }].slice(-20),
+      // Whatever the run proposes after reading it is decided by the person (external-content.mjs isFlagged).
+      ...(found.length ? { suspicious: [...(m.suspicious || []), { tool: "disparador", found, at: now() }].slice(-20) } : {}),
+    }));
     this.note(rule.id, { kind: "joined", missionId: mission.id, text: "Sumado a «" + (mission.title || rule.name) + "»: " + what });
   }
   /** The same thing a fourth time in a day: the rule stops and you are told once, with «Reanudar». */
@@ -601,12 +618,13 @@ const isTimed = (rule) => !rule.trigger || TIME_TYPES.has(rule.trigger.type);
 // The event is outside content (an email, a page, a calendar change): wrapped as data, its
 // sender and subject cleaned, so neither the model nor «what you said» (preferences.mjs,
 // appactions.mjs) takes it for the person's words.
+const wrapEvent = (rule, event) => wrapExternal(JSON.stringify(sanitizeValue({ tipo: event.kind, resumen: event.summary, ...event.data })), {
+  source: EVENT_SOURCE[event.kind] || "trigger", label: rule.name,
+  sender: event.data?.de || null, subject: event.data?.asunto || null,
+});
 function eventContext(rule, events, digest = null) {
   if (!events.length) return "";
-  const wrap = (event) => wrapExternal(JSON.stringify(sanitizeValue({ tipo: event.kind, resumen: event.summary, ...event.data })), {
-    source: EVENT_SOURCE[event.kind] || "trigger", label: rule.name,
-    sender: event.data?.de || null, subject: event.data?.asunto || null,
-  });
+  const wrap = (event) => wrapEvent(rule, event);
   if (digest)
     return "\n\nQué lo ha puesto en marcha (" + (digest.count + digest.dropped) + " avisos seguidos; Colmena los ha juntado en una sola vez porque llegaban demasiado a menudo" +
       (digest.dropped ? ", y solo te pasa los " + digest.count + " últimos" : "") + "). Atiéndelos juntos, una vez:\n" + events.map(wrap).join("\n");

@@ -6,6 +6,9 @@ import { wrapExternal } from "../server/external-content.mjs";
 import { attachWikiTools, personAskedForNotes } from "../server/wiki-tools.mjs";
 import { attachBlockTools, blockByKey } from "../server/blocks.mjs";
 import { createPage, getPage, resolvePage } from "../server/wiki.mjs";
+import { Scheduler } from "../server/scheduler.mjs";
+import { normalizeTrigger } from "../server/triggers.mjs";
+import { LOOP } from "../server/brakes.mjs";
 
 // Bugs found at the seams between features. What they share: text that is not the person's own
 // typed message never counts as the person's words, and outside content (a trigger's payload
@@ -188,7 +191,7 @@ test("a routine's message in a room is not the person writing: the run stays una
 test("notes the person leaves in a 1:1 chat reach the bot's next turn, once: a hand-back note, and why they stopped it after «Descartar»", async (t) => {
   const inputs = [];
   let hang = null;
-  const { store, runtime } = await fixture(t, async ({ input, tools, signal }) => {
+  const { runtime } = await fixture(t, async ({ input, tools, signal }) => {
     if (!tools?.length) return answer("Vale.");
     inputs.push(JSON.stringify(input));
     if (hang) { const started = hang; hang = null; started(); await new Promise((resolve, reject) => signal?.addEventListener("abort", () => reject(signal.reason), { once: true })); }
@@ -225,4 +228,89 @@ test("notes the person leaves in a 1:1 chat reach the bot's next turn, once: a h
   runtime.addMessage(chat.id, "Gracias");
   await settle(runtime);
   assert.doesNotMatch(last(), /te paró/, "a one-off note, read once");
+});
+
+test("an event that joins open work reaches the bot as outside content: at its next round, or after the person's decision; never as their message, never restarting, within the loop limit", async (t) => {
+  const inputs = [];
+  let hang = null;
+  const script = [];
+  const { store, runtime } = await fixture(t, async ({ input, tools, signal }) => {
+    if (!tools?.length) return answer("Vale.");
+    inputs.push(JSON.stringify(input));
+    if (hang) { const gate = hang; hang = null; await gate(signal); }
+    return script.shift() ?? answer("Hecho.");
+  });
+  const clock = { now: Date.parse("2026-11-12T09:00:00.000Z") };
+  const scheduler = new Scheduler(store, runtime, () => true, { clock: () => clock.now, notifier: { notify() {}, start() {}, stop() {}, maybeRound() {} } });
+  t.after(async () => { scheduler.stop(); await new Promise((r) => setTimeout(r, 20)); });
+  store.put("automations", { id: "r", name: "Facturas", botId: "nora", prompt: "Mira lo que ha llegado y resume.", enabled: true, trigger: normalizeTrigger({ type: "archivo", config: { carpeta: "Facturas" } }), queue: [], createdAt: new Date(clock.now).toISOString() });
+  const file = (name, n, extra = {}) => ({ kind: "archivo", id: name + ":" + n, at: new Date(clock.now).toISOString(), summary: "Archivo nuevo: " + name, data: { carpeta: "Facturas", archivo: name, bytes: 10 + n, ...extra } });
+  const userMessages = (id) => store.where("messages", "missionId", id).filter((m) => m.role === "user").length;
+
+  // The run is in its (last) model call when the second event arrives.
+  let release = null;
+  const working = new Promise((started) => { hang = () => new Promise((resolve) => { release = resolve; started(); }); });
+  assert.equal(scheduler.enqueue("r", file("enero.pdf", 1)).status, "queued");
+  scheduler.tick(clock.now);
+  const run = store.get("missions", store.get("automations", "r").lastMissionId);
+  await working;
+  const before = userMessages(run.id);
+  const out = scheduler.enqueue("r", file("enero.pdf", 2, { nota: "versión corregida" }));
+  assert.deepEqual([out.status, out.missionId], ["joined", run.id]);
+  assert.equal(userMessages(run.id), before, "never a message of the person");
+  const waiting = store.get("missions", run.id).joined.at(-1);
+  assert.equal(waiting.passed, true);
+  assert.match(waiting.text, /<<<CONTENIDO_EXTERNO id="[0-9a-f]{16}">>>[\s\S]*versión corregida/);
+  assert.equal(waiting.origin.type, "trigger");
+  release();
+  await settle(runtime);
+  assert.equal(inputs.length, 2, "one more round, to read it");
+  assert.match(inputs[1], /Mientras trabajabas ha llegado algo más sobre lo mismo\. No es un mensaje de la persona/);
+  assert.match(inputs[1], /CONTENIDO_EXTERNO[\s\S]*versión corregida/);
+  const delivered = store.get("missions", run.id).joined.at(-1);
+  assert.ok(delivered.deliveredAt && delivered.text === null, "handed over once; its text does not stay on the mission");
+  assert.equal(runtime.steps(run.id)[0].outsideOrigin, true);
+  assert.equal(store.get("missions", run.id).status, "completed");
+
+  // A run that waits for the person's OK: the event waits too, and nothing is restarted.
+  clock.now += 60_000;
+  store.patch("bots", "nora", { autonomy: "sugiere" });
+  script.push(call("remember", { operations: [{ action: "add", target: "persona", text: "Las facturas de febrero llegan el día 5.", old: "" }] }, "m1"));
+  assert.equal(scheduler.enqueue("r", file("febrero.pdf", 1)).status, "queued");
+  scheduler.tick(clock.now);
+  await settle(runtime);
+  const second = store.get("missions", store.get("automations", "r").lastMissionId);
+  assert.equal(second.status, "waiting");
+  const calls = inputs.length;
+  assert.equal(scheduler.enqueue("r", file("febrero.pdf", 2, { nota: "segunda página" })).status, "joined");
+  await settle(runtime);
+  assert.equal(inputs.length, calls, "the bot is not woken while the person decides");
+  assert.equal(store.get("missions", second.id).status, "waiting");
+  runtime.approve(store.list("approvals").find((a) => a.missionId === second.id && a.status === "pending").id, "approved");
+  await settle(runtime);
+  assert.match(inputs.at(-1), /CONTENIDO_EXTERNO[\s\S]*segunda página/, "it reads it when the run goes on");
+
+  // The loop limit: the start and what was passed on count together; after that only the line is left.
+  clock.now += 60_000;
+  let free = null;
+  const busy = new Promise((started) => { hang = () => new Promise((resolve) => { free = resolve; started(); }); });
+  assert.equal(scheduler.enqueue("r", file("marzo.pdf", 1)).status, "queued");
+  scheduler.tick(clock.now);
+  await busy;
+  const third = store.get("automations", "r").lastMissionId;
+  for (const n of [2, 3, 4]) assert.equal(scheduler.enqueue("r", file("marzo.pdf", n)).status, "joined");
+  const joined = store.get("missions", third).joined;
+  assert.deepEqual(joined.map((j) => !!j.passed), [true, true, false]);
+  assert.equal(LOOP.limit, 3);
+  assert.match(store.where("messages", "missionId", third).filter((m) => m.kind === "activity").at(-1).text, /sin pasárselo al bot/);
+  free();
+  await settle(runtime);
+
+  // Parked work (paused by the plan) is joined but never launched by it.
+  store.patch("missions", third, { status: "paused", limited: { engine: "chatgpt", plan: true } });
+  clock.now += 25 * 3600_000;
+  const quiet = inputs.length;
+  assert.equal(scheduler.enqueue("r", file("marzo.pdf", 9)).status, "joined");
+  await settle(runtime);
+  assert.deepEqual([inputs.length, store.get("missions", third).status, runtime.active.has(third)], [quiet, "paused", false]);
 });
