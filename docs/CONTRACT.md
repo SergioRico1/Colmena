@@ -54,6 +54,7 @@ Detalle `GET /api/bots/:id` → Bot + `{ soul, skills:[Skill], memories:[Memory]
 ### Mission (resumen)
 ```js
 { id, title, room: 'informe-q3', prompt, mode: 'solo'|'equipo'|'debate',
+  kind?: 'chat'|'sala'|'tarea',               // qué es (§18). En el resumen solo viene si no se deduce: conversación con un bot = chat, ejecución de una rutina = tarea, lo demás = sala. src/lib/rooms.js › missionKind
   botIds, conversation: bool,                 // true = chat 1:1 (pantalla Chat)
   status: 'queued'|'planning'|'awaiting_plan'|'running'|'waiting'|'paused'|'blocked'|'awaiting_choice'|'completed'|'cancelled',
   statusLabel, activityLine,                  // «Iris está maquetando la diapositiva 3 de 8»
@@ -502,3 +503,39 @@ Tiempo real: `GET /api/events` avisa con `changed` y `kinds` que incluye `blocks
 - `POST /api/blocks/:id/refresh {}` → 202 `{ missionId, automationId }`: pone en marcha ahora la rutina del bloque como una ejecución de verdad (no una «Prueba»): lleva la marca de origen de la rutina, respeta la pausa de todo el equipo y una regla parada por un freno, no se solapa con la ejecución en curso, y en una regla de eventos pasa por los frenos de lo que empieza solo (cadena, trabajo abierto, límite de repeticiones, propuesta por coste). Cada llamada al modelo pasa por la puerta de admisión (pausa por plan) como siempre. 409 con el motivo si no puede; 409 también si el bloque no tiene rutina.
 - `DELETE /api/blocks/:id` → `{ ok, blocks }`: quita el bloque y su tarjeta de la conversación.
 - Borrar una conversación quita sus bloques sin fijar; los fijados siguen en el panel con `source.gone: true`.
+
+## 18. «Salas»: una sola sala (personas y bots en la misma conversación)
+Diseño en `docs/PLAN-equipo-y-salas.md`, contrato de datos en `docs/ROOMS-CONTRACT.md`, detalle en `docs/PEOPLE.md` › Salas. Código: `server/room.mjs`, `server/room-timeline.mjs`, `server/routes/rooms.mjs`, `server/mission-kind.mjs`. Una sala es el padre de una sala de bots (misión) y de una conversación con personas (share); puede tener una de las dos o las dos. `:id` es el id de la sala, el de su misión o el de su share: `/sala/:id` y `/con/:id` siguen valiendo. Un directo (`dm-…`) nunca es una sala (404).
+
+### Room
+```js
+{ id, title, slug, teamId|null, missionId|null, shareId|null, general: bool,
+  private: bool,                    // derivado: no tiene share
+  createdBy: <dirección>, createdAt, archived: bool, snoozedUntil|null, seenAt|null,
+  mine: bool,                       // la creaste tú (o es privada): puedes renombrarla y añadir personas
+  unread, lastAt,                   // sin leer (abajo) y última actividad de los dos almacenes
+  href,                             // dónde la abren las pantallas de hoy: /con/<share> si tiene personas, si no /sala/<misión>
+  left?: true, removed?: true }     // saliste o te quitaron
+```
+- **Sin leer**: lo que escribieron las personas (`share.unread`) más lo que dijeron tus bots (mensaje, entregable, pregunta, plan) después de `seenAt`. Una sala que nunca se ha marcado vista (`seenAt: null`) no cuenta nada de los bots, como hasta ahora las salas; la pantalla de la sala llama a `POST …/seen` al abrirla.
+- **Misión.kind**: `chat` (con un bot), `sala`, `tarea` (Trabajo). Se guarda al crearla; `POST /api/missions` admite `kind: 'sala'|'tarea'` y, sin él, es sala si es de equipo y lleva `title` (lo que hace «Nueva sala»), tarea si no. Las anteriores se deducen igual y se rellenan al arrancar.
+
+### `GET /api/state`
+`rooms: [{ id, title?, lastAt, unread?, teamId?, missionId?, shareId?, general?, snoozedUntil? }]`: las salas en las que estás (sin archivadas ni las que dejaste). Ligera: una sala privada no trae `title` (es el nombre de su misión, `missions[].room`) ni `missionId` cuando es su propio id; `unread` solo si hay algo. `src/lib/rooms.js › roomLinks(room, missions)` devuelve `{missionId, shareId, title, href}`. Quién está en cada una se lee con la sala, no aquí. Los cambios llegan por `/api/events` (`changed` con `rooms`).
+
+### Endpoints
+- `GET /api/rooms?team=<id>|solo&archived=0|1` → `[Room]`, la más reciente primero. Con `team`, las de ese equipo; sin él o con `solo`, las privadas y las de ningún equipo.
+- `POST /api/rooms {title, team?, botIds?, people?: [dirección], text?}` → 201 `RoomView`. Sin equipo ni personas es privada (la sala de bots de siempre; con `text`, su primer mensaje, arranca ya). Con `team` o `people` nace con share (el mismo camino que `POST /api/peers/shares {team}`) y, si lleva `botIds`, con misión. En un equipo puede empezar contigo solo.
+- `GET /api/rooms/:id` → `RoomView` = `Room` + `people: [{address, name, role: owner|member|guest, presence: online|offline, status: {mode, until}, you}]` + `bots: [{owner: {address, name, you}, bots: [{id, name, role, color, shape, state?: working|free, member?: true}]}]` + `requests?: [{id, roomId, from: {address, name}, person: {address, name}, status, at}]` (solo quien la creó). Tus bots: en una sala privada, los de su misión y Atlas; con personas, todos los tuyos encendidos que no sean personales (`member` = ya están en la misión). Los de los demás, lo que anunciaron (a sus contactos, a su equipo o a la sala).
+- `PATCH /api/rooms/:id {title?, archived?, snooze?: tarde|manana|lunes, snoozedUntil?}` → `RoomView`. Con personas solo renombra quien la creó (403 «Solo <nombre> puede cambiarle el nombre.»); el nombre viaja en la lista firmada y vuelve como título. Privada: cambia el `#slug` de su misión. Archivar y posponer son solo tuyos.
+- `GET /api/rooms/:id/timeline?cursor=&limit=` (máx. 200, por defecto 120) → `{room, items, attached, steps, cursor, more}`. `items`: mensajes de primer nivel de los dos almacenes, del más antiguo al más nuevo, cada uno una vez. `attached`: respuestas en hilo y líneas de progreso de la misión que cuelgan de esos mensajes. `steps`: los pasos de ese tramo (y los que siguen vivos, en la última página). `cursor`: opaco; pídelo de vuelta para la página anterior (`null` al principio).
+  - Cada elemento: `engine: 'mission'|'peer'`, `author` y los campos de su almacén (los de `Message` de §1, o los de un mensaje de «Personas» de §13).
+  - `author`: `{kind:'person', address, name, you}` · `{kind:'bot', botId: 'vera' | {owner, bot}, name, role, shape, color, owner: {address, name, you}}` (`botId` es el id si el bot es tuyo y `{owner, bot}` si es de otra persona) · `{kind:'system'}`.
+  - `plain: true`: texto de otra persona o de su bot; se pinta como texto, nunca como Markdown ni HTML.
+  - Un mensaje que está en los dos almacenes (el tuyo que dio turno a un bot, la respuesta de tu bot) sale una vez, como fila de la misión, con `peerId` y `peer: {id, status, seenBy, reactions, edited?, deleted?, replies?, parts?}` (cómo viajó).
+  - La respuesta larga del bot de otra persona llega en partes y sale como un solo mensaje con `parts` y `partIds`.
+- `POST /api/rooms/:id/messages {text, to?: [botId], thread?, replyTo?, mentions?: [{owner, bot}], people?: [dirección], attachments?, mode?, use?, deep?, refs?}` → `{engine, message, turn}`. Privada: como `POST /api/missions/:id/messages` (`engine: 'mission'`). Con personas: sale por «Personas» (`engine: 'peer'`, máx. 8000 caracteres, sin adjuntos: los archivos van por `…/files`); `turn` es el mensaje de la misión si uno de tus bots cogió el turno, o `null`. `to` nombra bots tuyos sin escribir «@». `thread` y `replyTo` admiten ids de cualquiera de los dos almacenes.
+- `POST /api/rooms/:id/people {address}` → `{added, room}`; `{invite: {name, role?}}` → `{invite: {code, text, …}, room}`. La primera persona convierte una sala privada en sala con personas (el share nace con el id de la sala; la misión sigue). Si no creaste tú la sala: con `address`, 202 `{asked: true, owner, person, text}` (se le pide a quien la creó); con `invite`, 403 «Pídele a <nombre> que le invite.». En «general», 409.
+- `POST /api/rooms/:id/requests/:request {decision: 'approve'|'decline'}` → `RoomView`: tu respuesta a «añade a esta persona» (solo quien creó la sala).
+- `POST /api/rooms/:id/leave` → `{ok}` (409 si solo estás tú, o en «general»); `POST /api/rooms/:id/seen` → `{ok, seenAt, unread: 0}` (marca vista la sala y avisa de «visto» a las personas).
+- Los endpoints por almacén siguen igual para las pantallas de hoy: `/api/missions/:id…` y `/api/peers/shares/:id…`. En vivo: `/api/events` (mensajes y pasos de la misión) y `/api/peers/events?share=` (personas).

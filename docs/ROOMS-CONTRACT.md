@@ -136,3 +136,68 @@ Each item carries `roomId` and `botId`; every surface filters this list.
    `to` and `author: {address}`, with other people's text wrapped as outside content.
 6. `where("peerMessages", "shareId")` has no index and every page sorts the full list: add an index
    before launch.
+
+## Rooms as built (`server/room.mjs`, `server/room-timeline.mjs`, `docs/PEOPLE.md` › Salas)
+
+The server side of the room is built as above. Where it differs, or where the contract left a
+choice open:
+
+- **Mission kind.** `mission.kind` is `"chat"` (one bot), `"sala"` or `"tarea"`
+  (`server/mission-kind.mjs`). Stored on creation (`POST /api/missions` takes `kind`; without it a
+  team mission that was given a `title` is a sala, which is what «Nueva sala» sends, and anything
+  else a task) and backfilled in the sweep without touching `updatedAt`. For older missions it is
+  inferred: a named team mission is a sala, one titled from its prompt, with a due date or for one
+  bot is a task; in doubt, a sala. `/api/state` only says a kind the shape does not give away.
+  Trabajo (`Tareas.jsx`) still lists salas too: it was not this task's file.
+- **A room and its share always have the same id.** It follows from the id rules, and the code
+  relies on it: `ensureForShare` adopts the room with the share's id.
+- **`createdBy`** is null for a private room made before «Personas» had its keys; views fill in
+  your address.
+- **Titles.** A private room is named after its sala's `#slug` (what salas show today), and
+  follows it when it is renamed from today's screen.
+- **Unread and `seenAt: null`.** A room nobody has marked seen counts nothing from the mission
+  side (`at > null` is never true). Rooms never had unread, and today's sala screen does not call
+  `POST …/seen`, so nothing piles up until the room screen does. «Personas» marking a
+  conversation read marks its room seen. An answer said in parts counts once.
+- **When your bots take a turn in a room with a share.** Only when you name them (picked with
+  «@», `to`, or «@Nombre» in a message with no picks) or reply in the thread of one of their
+  messages. No router and no Atlas by default there: a message that names nobody is for the
+  people. One decision (`Rooms#ownTurn`, called from `PeerBots#handle`) for every route. Asking a
+  bot to find a meeting slot still goes to meetings. Personal bots («solo para mí») never work in
+  a room. The turn is told the room is shared and gets the last 30 messages of the people as
+  outside content.
+- **What is relayed.** The final answer of every completed step that left a message, except a
+  plan step, once (`peerId`, and `peerParts` when it went in several). While the step runs the
+  others see the bot thinking. A relay that fails (no mailbox) is logged and not retried.
+- **Parts.** `part: {of, n, total, glue}` on bot messages; `of` is the id of the first part and
+  `glue` what stood between two parts, so the text joins back as it was. Later parts neither
+  count as unread nor notify.
+- **Cursor.** `{at, id, engine}`, base64url. Thread replies among people are not items: their
+  root carries `replies`, as in «Personas».
+- **Decision 1 («please add»).** Built: `room.req` to the owner, an informative notice and a
+  `roomRequests` record (`roomId`, `missionId`, `status: asked|added|declined`) the owner decides
+  with `POST /api/rooms/:id/requests/:request`. One thing the contract did not foresee: a
+  Colmena only takes a group's roster from someone it knows, so the requester also sends the
+  person `room.intro` with the owner's address and key. A code (`invite`) is still the owner's
+  alone: 403 «Pídele a <dueño> que le invite.». `roomRequests` are not in any «what waits for
+  you» list yet: `waitingItems` belongs to another task.
+- **Decision 2 (`room.bots`).** Team profiles cover every member of a room of a team, and
+  contacts get `profile`. `room.bots` is sent only to people you share a room with who are
+  neither. Their presence stays unknown (shown offline).
+- **Decision 3.** Parts as above. Deliverables are not sent: next task.
+- **Decision 4 (`step.capabilities`).** Not built: nothing of another person starts a turn with
+  tools yet.
+- **Decision 5.** `addMessage` takes `to`, `author {address, name}` and `peerId`. Rooms use `to`
+  and `peerId` for your own messages; `author` is ready (never your word, addressees only from
+  `to`, text wrapped as outside content) and unused until other people's requests run with tools.
+- **Decision 6.** Index `(kind, shareId, at)` over `data` (over `meta` when encrypted), created
+  on open, and `Store#ordered`. A room with 5,000 peer messages among 25,000: the latest page of
+  the timeline takes 47 ms without the index and 7 ms with it (56 → 15 ms encrypted); the old
+  page (`where` + sort of the whole conversation) 33 → 16 ms (172 → 155 ms encrypted, where
+  decrypting every row is what costs).
+- **`GET /api/sidebar`** was not built: the sidebar reads `rooms` from `/api/state`
+  (`src/lib/sidebar.js`), which changes live.
+- **`/api/state` budget.** The room list costs about 100 bytes a room. The older `peers` view
+  (every conversation with every member in full) is what does not fit with a team: ~63 KB with 30
+  people. `tests/perf-budget.test.mjs` pins it; the room screen can drop it by reading members
+  with the room.
