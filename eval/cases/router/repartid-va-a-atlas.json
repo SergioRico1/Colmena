@@ -1,0 +1,21 @@
+{
+  "id": "repartid-va-a-atlas",
+  "area": "router",
+  "title": "«Repartid esto entre todos» va a Atlas por regla, sin gastar una llamada al modelo",
+  "why": "server/router.mjs (coordinationAsk: «repartid», «entre todos», «organizaos»…) y server/runtime/routing.mjs (routeByRules decide antes que el modelo): repartir es trabajo del coordinador.",
+  "tags": ["enrutador", "sala", "regla"],
+  "setup": { "room": { "bots": ["nora", "tomas", "vera", "iris"], "title": "Lanzamiento de primavera" } },
+  "turns": [
+    { "say": "Repartid esto entre todos: hay que preparar la feria de marzo, con el stand, los folletos y la lista de precios." }
+  ],
+  "checks": [
+    { "name": "va a Atlas por regla", "routed": { "turn": 0, "to": ["atlas"], "by": "regla" } },
+    { "name": "Atlas es quien contesta a la persona", "observe": "messages", "some": { "turn": 0, "botId": "atlas" } },
+    { "name": "Atlas no hace él todo el trabajo: reparte", "judge": { "rubric": "La persona pidió repartir entre todos la preparación de una feria (stand, folletos, lista de precios) en una sala con Nora (investigación), Tomás (datos y finanzas), Vera (redacción) e Iris (diseño). Pasa solo si Atlas reparte: dice qué hace cada bot (o se lo encarga con sus herramientas) en lugar de hacer él todas las partes. No pasa si Atlas entrega él solo todo el trabajo sin repartirlo, ni si no contesta." } }
+  ],
+  "dry": {
+    "script": [
+      { "say": "Reparto: Iris diseña el stand y los folletos, Vera escribe los textos, Tomás prepara la lista de precios y Nora mira qué llevan los competidores. Os aviso cuando esté cada parte." }
+    ]
+  }
+}

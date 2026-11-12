@@ -1,0 +1,29 @@
+{
+  "id": "usa-recuerdo-archivado",
+  "area": "memory",
+  "title": "Usa un recuerdo del archivo cuando viene a cuento de lo que se pregunta",
+  "why": "server/memory.mjs (relatedMemories: las entradas del archivo que tratan de lo que se pide entran en el turno) y server/runtime/context.mjs (sección «Recuerdos relacionados con esto»): lo archivado no se pierde.",
+  "tags": ["memoria", "archivo"],
+  "setup": {
+    "chat": "nora",
+    "memory": [
+      { "text": "La gestoría de Nubaria es Asesores Vidal y cierra los trimestres el día 20 del mes siguiente.", "target": "memory", "tier": "archive", "source": "dijiste", "bot": "nora" },
+      { "text": "El proveedor de café de la oficina es Cafés Baqué, con un pedido mensual de 12 kg.", "target": "memory", "tier": "archive", "source": "dijiste", "bot": "nora" },
+      { "text": "Marina prefiere los informes en una página, con las cifras primero.", "target": "user", "tier": "core", "source": "dijiste", "bot": "nora" }
+    ]
+  },
+  "turns": [
+    { "say": "¿Qué día cierra los trimestres nuestra gestoría? No me acuerdo." }
+  ],
+  "checks": [
+    { "name": "da el dato del recuerdo (día 20)", "text": { "re": "\\b20\\b" } },
+    { "name": "nombra la gestoría", "text": { "any": ["Asesores Vidal", "Vidal"] } },
+    { "name": "no mezcla el recuerdo que no viene a cuento", "text": { "notContains": ["Baqué", "café"] } },
+    { "status": "completed" }
+  ],
+  "dry": {
+    "script": [
+      { "say": "Vuestra gestoría, Asesores Vidal, cierra los trimestres el día 20 del mes siguiente." }
+    ]
+  }
+}

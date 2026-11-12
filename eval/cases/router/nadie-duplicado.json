@@ -1,0 +1,23 @@
+{
+  "id": "nadie-duplicado",
+  "area": "router",
+  "title": "Un mensaje para una sola especialidad lo contesta un bot, una vez",
+  "why": "server/router.mjs (parsePick: Atlas entre varios es coordinación; una lista solo si el mensaje es para todos) y server/runtime.mjs (deliverTurn: un turno por destinatario): nadie contesta dos veces ni contestan dos lo mismo.",
+  "tags": ["enrutador", "sala"],
+  "setup": { "room": { "bots": ["nora", "tomas", "vera", "iris"], "title": "Lanzamiento de primavera" } },
+  "turns": [
+    { "say": "Escríbeme dos frases para anunciar en la web que cerramos por vacaciones del 1 al 15 de agosto." }
+  ],
+  "checks": [
+    { "name": "va a un solo bot, el de redacción", "routed": { "turn": 0, "to": ["vera"] } },
+    { "name": "responde solo Vera", "answeredBy": ["vera"], "turn": 0 },
+    { "name": "un único mensaje de respuesta", "observe": "messages", "count": 1, "match": { "turn": 0 } },
+    { "status": "completed" }
+  ],
+  "dry": {
+    "route": { "para": "vera", "motivo": "Es redacción" },
+    "script": [
+      { "say": "Cerramos por vacaciones del 1 al 15 de agosto. Volvemos el 16 con las pilas cargadas: ¡buen verano!" }
+    ]
+  }
+}

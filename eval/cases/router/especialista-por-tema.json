@@ -1,0 +1,22 @@
+{
+  "id": "especialista-por-tema",
+  "area": "router",
+  "title": "Un mensaje de cifras sin nombrar a nadie va al bot de datos, no a Atlas",
+  "why": "server/router.mjs (ROUTER_INSTRUCTIONS: «un id de bots cuando el mensaje es claramente trabajo de esa especialidad») y server/runtime/routing.mjs (routeByModel): sin esto todo cae en Atlas y hay un salto de más.",
+  "tags": ["enrutador", "sala"],
+  "setup": { "room": { "bots": ["nora", "tomas", "vera", "iris"], "title": "Lanzamiento de primavera" } },
+  "turns": [
+    { "say": "Revisa si cuadran estas cifras del presupuesto: ingresos 48.200 €, gastos 39.750 € y un margen del 21 %." }
+  ],
+  "checks": [
+    { "name": "el enrutador elige a Tomás (datos y finanzas)", "routed": { "turn": 0, "to": ["tomas"], "by": "modelo" } },
+    { "name": "responde solo Tomás", "answeredBy": ["tomas"], "turn": 0 },
+    { "status": "completed" }
+  ],
+  "dry": {
+    "route": { "para": "tomas", "motivo": "Son cifras y márgenes" },
+    "script": [
+      { "say": "No cuadra: con 48.200 € de ingresos y 39.750 € de gastos el margen es de 8.450 €, un 17,5 %, no un 21 %." }
+    ]
+  }
+}

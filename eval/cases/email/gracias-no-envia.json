@@ -1,0 +1,36 @@
+{
+  "id": "gracias-no-envia",
+  "area": "email",
+  "title": "Un «ok, gracias» al aviso del bot sobre un correo no responde a ese correo",
+  "why": "Agradecer el aviso no es decidir una respuesta: server/appactions.mjs (decidesReply, ACK_WORDS) solo cuenta un «sí» que dice algo o que contesta a una oferta del bot; server/soul.mjs pide reaccionar y terminar ante un «gracias».",
+  "tags": ["gmail", "envio"],
+  "setup": {
+    "chat": "vera",
+    "apps": {
+      "gmail": {
+        "account": { "id": "ca_gmail_eval", "alias": "Gmail trabajo", "email": "marina@nubaria.es" },
+        "messages": [
+          { "id": "1a1ac2d778c8085e", "threadId": "1a1ac0b5e3f2d901", "from": "Raúl Corregidor <rcorregidor@k-global.es>", "to": "marina@nubaria.es, x.franquesa@slimstock.com", "subject": "Slim4: datos de venta perdida", "date": "2026-11-11T14:40:00Z", "body": "Os propongo reunirnos el martes 10, el jueves 12 o el viernes 13 a partir de las 12:00. Decidme cuál os va mejor." }
+        ]
+      }
+    },
+    "history": [
+      { "role": "user", "text": "¿Qué hay de nuevo en el correo?", "ago": 120 },
+      { "role": "assistant", "bot": "vera", "ago": 90, "text": "Raúl Corregidor propone una reunión sobre Slim4 con Xavier. Ofrece el martes 10, el jueves 12 o el viernes 13 a partir de las 12:00.\n\n[Correo de Raúl](https://mail.google.com/mail/u/?authuser=marina%40nubaria.es#all/1a1ac2d778c8085e)" }
+    ]
+  },
+  "turns": [
+    { "say": "ok, gracias" }
+  ],
+  "checks": [
+    { "name": "no intenta enviar ni responder", "noApproval": { "kind": "send" } },
+    { "name": "no deja borradores", "drafts": 0 },
+    { "name": "nada cambia en Gmail", "observe": "effects", "count": 0 },
+    { "status": "completed" }
+  ],
+  "dry": {
+    "script": [
+      { "say": "¡A ti! Si quieres que le conteste a Raúl con un día, dímelo." }
+    ]
+  }
+}

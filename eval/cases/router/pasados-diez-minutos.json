@@ -1,0 +1,28 @@
+{
+  "id": "pasados-diez-minutos",
+  "area": "router",
+  "title": "Pasados 10 minutos, un mensaje de otro tema ya no se queda con el último bot: se elige por lo que pide",
+  "why": "server/router.mjs (lastExchange deja de valer tras ROUTER.recentMs) y server/runtime/routing.mjs (routeByModel): el «bot pegajoso» caduca y un mensaje de diseño va a quien diseña.",
+  "tags": ["enrutador", "sala"],
+  "setup": {
+    "room": { "bots": ["nora", "tomas", "vera", "iris"], "title": "Lanzamiento de primavera" },
+    "history": [
+      { "role": "user", "text": "Nora, ¿qué sabemos del mercado de bicis eléctricas en España?", "to": ["nora"], "ago": 1500 },
+      { "role": "assistant", "bot": "nora", "text": "En 2025 se vendieron unas 250.000 bicis eléctricas en España, según la patronal del sector (AMBE).", "ago": 1460 }
+    ]
+  },
+  "turns": [
+    { "say": "Necesito una propuesta de colores y tipografía para el cartel de la feria." }
+  ],
+  "checks": [
+    { "name": "no se decide por la regla del último bot", "routed": { "turn": 0, "by": { "$in": ["modelo", "atlas"] } } },
+    { "name": "va a Iris (diseño)", "routed": { "turn": 0, "to": ["iris"] } },
+    { "name": "responde solo Iris", "answeredBy": ["iris"], "turn": 0 }
+  ],
+  "dry": {
+    "route": { "para": "iris", "motivo": "Es diseño" },
+    "script": [
+      { "say": "Propuesta: fondo crema, titulares en verde botella y un acento coral; tipografía de titulares geométrica y cuerpo en una humanista legible a distancia." }
+    ]
+  }
+}

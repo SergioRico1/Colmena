@@ -1,4 +1,4 @@
-// `npm run check`: every server module and every Electron main-process file parses
+// `npm run check`: every server module, every Electron main-process file and the eval harness parse
 // (node --check). A syntax error in a file no test imports would otherwise ship.
 import { readdir } from "node:fs/promises";
 import { execFile } from "node:child_process";
@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const TARGETS = [["server", ".mjs"], ["desktop", ".cjs"]];
+const TARGETS = [["server", ".mjs"], ["desktop", ".cjs"], ["eval", ".mjs"]];
 
 async function walk(dir, ext, out = []) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {

@@ -1,0 +1,27 @@
+{
+  "id": "sigue-con-el-mismo-bot",
+  "area": "router",
+  "title": "Si acabas de hablar con un bot (menos de 10 minutos), tu siguiente mensaje sigue con él",
+  "why": "server/router.mjs (lastExchange, ROUTER.recentMs = 10 min) y server/runtime/routing.mjs (routeByRules: «Estabas hablando con…»): una repregunta no vuelve a pasar por el enrutador ni por Atlas.",
+  "tags": ["enrutador", "sala", "regla"],
+  "setup": {
+    "room": { "bots": ["nora", "tomas", "vera", "iris"], "title": "Lanzamiento de primavera" },
+    "history": [
+      { "role": "user", "text": "Nora, ¿qué sabemos del mercado de bicis eléctricas en España?", "to": ["nora"], "ago": 180 },
+      { "role": "assistant", "bot": "nora", "text": "En 2025 se vendieron unas 250.000 bicis eléctricas en España, según la patronal del sector (AMBE). Es el segmento que más crece.", "ago": 150 }
+    ]
+  },
+  "turns": [
+    { "say": "¿Y cuánto ha crecido respecto al año anterior?" }
+  ],
+  "checks": [
+    { "name": "sigue con Nora, por regla", "routed": { "turn": 0, "to": ["nora"], "by": "regla" } },
+    { "name": "responde solo Nora", "answeredBy": ["nora"], "turn": 0 },
+    { "status": "completed" }
+  ],
+  "dry": {
+    "script": [
+      { "say": "No tengo el dato del año anterior a mano; lo busco en la fuente y te lo digo con el enlace." }
+    ]
+  }
+}

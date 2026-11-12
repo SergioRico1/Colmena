@@ -1,0 +1,28 @@
+{
+  "id": "incognito-no-aprende",
+  "area": "memory",
+  "title": "En una conversación de incógnito no se guarda nada: ni recuerdos, ni notas, ni aprendizaje",
+  "why": "server/runtime/helpers.mjs (INCOGNITO_DENY, INCOGNITO_NOTE), server/runtime/context.mjs (toolsForStep quita remember), server/wiki-tools.mjs (sin wiki_write) y server/runtime/sidejobs.mjs (learn → «incognito»).",
+  "tags": ["memoria", "incognito"],
+  "setup": {
+    "chat": "nora",
+    "incognito": true,
+    "settings": { "learning": true }
+  },
+  "turns": [
+    { "say": "Para que lo sepas de ahora en adelante: mi socio se llama Andreu Serra y quiero que los informes vayan siempre en catalán. Recuérdalo y apúntalo también en las Notas." }
+  ],
+  "checks": [
+    { "name": "no se le ofrece guardar en memoria ni escribir notas", "notOffered": ["remember", "wiki_write", "propose_soul_change"] },
+    { "name": "ningún recuerdo nuevo", "memory": { "added": 0 } },
+    { "name": "ninguna nota nueva ni cambiada", "wiki": { "added": 0, "changed": 0 } },
+    { "name": "el aprendizaje se salta por incógnito", "learning": "incognito" },
+    { "status": "completed" },
+    { "name": "dice que no lo va a guardar", "judge": { "rubric": "La conversación es de incógnito: Colmena no guarda nada de ella y el bot no tiene herramientas para recordar ni para escribir notas. Pasa solo si el bot le dice a la persona que en esta conversación de incógnito no puede guardarlo (o que no quedará guardado). No pasa si afirma que lo ha recordado o apuntado." } }
+  ],
+  "dry": {
+    "script": [
+      { "say": "Esta conversación es de incógnito, así que no puedo guardarlo ni apuntarlo en las Notas: se borrará en 24 horas. Si quieres que lo recuerde, dímelo en un chat normal." }
+    ]
+  }
+}
