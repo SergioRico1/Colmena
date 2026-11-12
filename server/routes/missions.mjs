@@ -91,6 +91,10 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
       ...(m.use?.length ? { use: m.use } : {}), ...(m.deep ? { deep: true } : {}), ...(m.voice ? { voice: true } : {}),
       // «@» picks of files and conversations (mention-refs.mjs): chips under your message.
       ...(Array.isArray(m.refs) && m.refs.length ? { refs: m.refs.slice(0, 6).map((r) => ({ kind: r.kind, id: r.id ?? null, path: r.path ?? null, label: r.label ?? null })) } : {}),
+      // Who the router gave your message to (router.mjs), or that it is still choosing — a
+      // choice cut by a close is not shown as «choosing» for ever.
+      ...(Array.isArray(m.routed?.to) && m.routed.to.length ? { routed: { to: m.routed.to.slice(0, 3), by: m.routed.by, why: m.routed.why || "" } }
+        : m.routing === true && Date.now() - Date.parse(m.at || "") < 30_000 ? { routing: true } : {}),
       reactions: reactionsOf(m).map(reactionView),
       learned: m.learned ? {
         type: m.learned.type, undone: !!m.learned.undone, count: (m.learned.changes || []).length || 1,
