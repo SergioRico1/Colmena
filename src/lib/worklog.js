@@ -42,7 +42,13 @@ function classify(t) {
       return { verb: "buscado", thing: (k) => (k === 1 ? "en la web" : `${k} veces en la web`) };
     case "file": case "pdf_fields": return { verb: "leído", thing: units("un documento", "documentos"), once: c.name || c.path || null };
     case "folder": return { verb: "mirado", thing: units("una carpeta", "carpetas") };
-    case "search": return { verb: "buscado", thing: () => (t.name === "recall" ? "en su memoria" : "en el historial") };
+    case "search": return { verb: "buscado", thing: () => (t.name === "recall" ? "en su memoria" : t.name === "wiki_search" ? "en las notas" : "en el historial") };
+    // «Notas» (wiki_read, wiki_write): the note it read or wrote, by its name when it is one.
+    case "note": {
+      const named = (k, list) => (k === 1 && list[0]?.card?.title ? `la nota «${list[0].card.title}»` : n(k, "una nota", "notas"));
+      if (c.action === "read") return { verb: "leído", key: "note:read", thing: named, once: c.slug || c.title || null };
+      return { verb: c.action === "create" || c.created ? "creado" : "cambiado", key: "note:" + (c.action === "create" || c.created ? "create" : "edit"), thing: named };
+    }
     case "deliverable": return { verb: "guardado", thing: (k, list) => (k === 1 && list[0]?.card?.title ? `«${list[0].card.title}»` : n(k, "un entregable", "entregables")) };
     case "bot": return { verb: "consultado", thing: (_k, list) => "a " + joinAnd([...new Set(list.map((x) => x.card?.botName || "otro bot"))]) };
     case "app": {

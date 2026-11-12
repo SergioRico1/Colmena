@@ -1,11 +1,16 @@
 import { createContext, startTransition, useContext, useEffect, useMemo, useState } from "react";
+import { mayLeave, setLeaveGuard } from "./leaveGuard.js";
 
 // Tiny history router. Plain <a href="/ruta"> links are intercepted globally,
 // so screens keep the exact anchor markup of the designs.
 const RouterContext = createContext(null);
 
-export function navigate(to, { replace = false } = {}) {
+// A screen with unsaved work may hold a navigation (lib/leaveGuard.js); `force` goes through.
+export { setLeaveGuard };
+
+export function navigate(to, { replace = false, force = false } = {}) {
   if (to === location.pathname + location.search) return;
+  if (!force && !mayLeave(to)) return;
   history[replace ? "replaceState" : "pushState"](null, "", to);
   window.dispatchEvent(new Event("colmena:navigate"));
   window.scrollTo(0, 0);

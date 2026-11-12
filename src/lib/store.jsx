@@ -177,6 +177,8 @@ export function StoreProvider({ children }) {
           return;
         }
         if (event.type === "changed") {
+          // Small caches outside the store (the note links of lib/wikiResolve.js) hear what changed.
+          try { window.dispatchEvent(new CustomEvent("colmena:changed", { detail: { kinds: event.kinds || [] } })); } catch {}
           schedule(event.kinds || []);
           return;
         }

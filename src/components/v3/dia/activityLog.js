@@ -49,6 +49,11 @@ export function sentenceOf(name, calls) {
     case "browser": return `navegó por ${card.domain || "la web"}`;
     case "desktop": return `usó ${card.app || "el ordenador"} en el ordenador`;
     case "memory": return "guardó algo en su memoria";
+    case "note": {
+      const what = n > 1 ? `${n} notas` : `la nota «${card.title || "sin título"}»`;
+      if (card.action === "read") return failed ? `no pudo leer ${what}` : `leyó ${what}`;
+      return failed ? `no pudo cambiar ${what}` : `${card.action === "create" || card.created ? "creó" : "cambió"} ${what}`;
+    }
     case "bot": return `le preguntó a ${card.botName || "otro bot"}`;
     case "question": return "te hizo una pregunta";
     default: return failed ? `no pudo usar ${String(name).replace(/_/g, " ")}` : `usó ${String(name).replace(/_/g, " ")}${n > 1 ? ` ×${n}` : ""}`;

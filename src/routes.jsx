@@ -2,7 +2,7 @@
 // screen is missing the generated design (src/design/<screen>.jsx) is shown instead.
 export const routes = [
   // Colmena 3 (design/V3*.dc.html): six places — Inicio, Chats, Trabajo (Tareas, Rutinas,
-  // Objetivos), Código, Equipo, Biblioteca (Archivos, Habilidades, Memoria) — plus Actividad and Ajustes.
+  // Objetivos), Código, Equipo, Biblioteca (Archivos, Notas, Habilidades, Memoria) — plus Actividad and Ajustes.
   { path: "/", screen: "Hoy" },
   { path: "/inicio", screen: "Hoy" },
   { path: "/actividad", screen: "Actividad" },
@@ -12,6 +12,7 @@ export const routes = [
   { path: "/trabajo/objetivos", screen: "ObjetivosV2" },
   { path: "/trabajo/objetivos/:id", screen: "ObjetivosV2" },
   { path: "/biblioteca/:tab", screen: "ArchivoV2" },
+  { path: "/biblioteca/notas/:slug", screen: "ArchivoV2" }, // one note of «Notas» (slug, title or an old name)
   // Colmena 2.0 addresses, still valid.
   { path: "/encargo/:id", screen: "Encargo" },
   { path: "/ordenador/:id", screen: "OrdenadorV2" },
