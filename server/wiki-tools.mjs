@@ -79,7 +79,7 @@ const NOTE_VERB = /\b(apunta|anota|documenta)(?:r|lo|la|los|las|me|melo|mela|sel
 const WRITE_VERB = /\b(?:(?:apunt|anot|guard|escrib|anad|agreg|actualiz|document|registr|edit|corrig|corrij|complet|modific|cambi|ampli|redact|recog)\w*|crea(?:r|me|la|lo|las|los)?|(?:pon|mete|haz|pasa|deja|prepara)(?:me|lo|la|le|los|las|melo|mela)?)\b/;
 const NEGATED = /\b(no|nunca|todavia no|aun no|ni|sin)\s+(?:\w+\s+){0,3}?(apunt|anot|guard|escrib|anad|agreg|actualiz|cre[ae]|document|toqu|toc|edit|modific|cambi|pon|met)\w*/;
 const spoken = (store, mission) =>
-  store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && (!m.kind || m.kind === "message") && !m.approvalId && typeof m.text === "string");
+  store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && !m.author && (!m.kind || m.kind === "message") && !m.approvalId && typeof m.text === "string");
 // What was said in the conversation, whoever wrote it (only to decide which tools to list).
 const saidMessages = (store, mission) => spoken(store, mission).map((m) => foldText(withoutExternal(m.text)));
 // The person's own typed messages: never one a routine, a trigger or the watcher wrote

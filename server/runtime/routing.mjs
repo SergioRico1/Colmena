@@ -140,6 +140,8 @@ export class RoutingMethods {
         const own = (waited ? waited.own !== false && !msg.origin : true) && !msg.author;
         const mode = msg.mode || m.queueMode || "steer";
         const root = waited && msg.replyTo ? this.store.get("messages", msg.replyTo) : null;
+        // Another person's request goes only to the bot it named: with that bot gone, to nobody (never Atlas).
+        if (msg.author && !to.length) { this.store.patch("messages", msg.id, { routing: false, awaitsTurn: null }); continue; }
         if (waited) this.store.patch("messages", msg.id, { awaitsTurn: null });
         else this.store.patch("messages", msg.id, { routing: false, routed: routed(["atlas"], "atlas", messageId ? "No se pudo elegir ahora" : "Colmena se cerró mientras elegía") });
         this.deliverTurn(m.id, {

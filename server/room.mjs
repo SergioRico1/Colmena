@@ -22,6 +22,7 @@ import { statusNow } from "./notifications.mjs";
 import { wrapReport } from "./external-content.mjs";
 import { isAddress } from "./peers/protocol.mjs";
 import { PEER_LIMITS, botsOf, cleanBot } from "./peers/service.mjs";
+import { RoomWork } from "./room-work.mjs";
 
 export const ROOM_LIMITS = Object.freeze({ title: PEER_LIMITS.title, requests: 20, context: 30, parts: 20, bots: 6 });
 /** Assistant rows that count as something new in a room (docs/ROOMS-CONTRACT.md › Unread). */
@@ -76,14 +77,17 @@ export class Rooms {
     this.thinking = new Map(); // stepId → { shareId, face }
     this.greeted = new Map(); // shareId → the roster version whose people were told your bots
     this.attached = new WeakSet();
+    // Other people's requests to your bots, and what a room's people see of a bot's work (server/room-work.mjs).
+    this.work = new RoomWork(this);
     this.onChange = (change) => { try { this.changed(change); } catch (error) { this.log(error.message); } };
   }
   start() {
     try { this.sweep(); } catch (error) { this.log("No se pudieron preparar las salas: " + error.message); }
     this.store.listeners.add(this.onChange);
+    this.work.start();
     return this;
   }
-  stop() { this.store.listeners.delete(this.onChange); }
+  stop() { this.store.listeners.delete(this.onChange); this.work.stop(); }
 
   // ---------------------------------------------------------------- who
   /** «Personas», once it has its keys; listening to it from the first time it is seen. */
@@ -208,7 +212,8 @@ export class Rooms {
   changed(change) {
     if (change?.type !== "record") return;
     const { kind, op, data, id } = change;
-    if (kind === "missions") return op === "remove" ? this.missionGone(id) : this.missionChanged(data);
+    if (kind === "approvals" || kind === "thread") return this.work.changed(change);
+    if (kind === "missions") { if (op !== "remove") this.work.changed(change); return op === "remove" ? this.missionGone(id) : this.missionChanged(data); }
     if (kind === "peerShares") return op === "remove" ? this.shareGone(id) : this.shareChanged(data);
     if (kind === "messages") return data?.missionId ? void this.stats.delete(data.missionId) : void this.stats.clear();
     if (kind === "steps" && op !== "remove" && data) return this.stepChanged(data);
@@ -296,6 +301,7 @@ export class Rooms {
   }
   /** Every room you are in, light, for /api/state: the sidebar follows it live. */
   state() {
+    const busy = this.work.activityLight();
     return this.store.list("rooms").map((r) => this.view(r)).filter((v) => (v.missionId || v.shareId) && !v.left && !v.removed && !v.archived)
       // Lean (the state is fetched after every change): `unread` only when there is something.
       // A private room says neither its `title` (its sala's name, already in `missions`) nor its
@@ -305,6 +311,8 @@ export class Rooms {
         id: v.id, ...(v.shareId ? { title: v.title } : {}), lastAt: v.lastAt, ...(v.unread ? { unread: v.unread } : {}),
         ...(v.teamId ? { teamId: v.teamId } : {}), ...(v.missionId && (v.shareId || v.missionId !== v.id) ? { missionId: v.missionId } : {}), ...(v.shareId ? { shareId: v.shareId } : {}),
         ...(v.general ? { general: true } : {}), ...(v.snoozedUntil ? { snoozedUntil: v.snoozedUntil } : {}),
+        // Bots at work in it now, light: whose, which and in what state (server/room-work.mjs).
+        ...(v.shareId && busy.has(v.shareId) ? { activity: busy.get(v.shareId) } : {}),
       }));
   }
   personView(member) {
@@ -342,7 +350,9 @@ export class Rooms {
       if (c?.bots?.length) bots.push({ owner: { address: member.id, name: c.name || "Alguien", you: false }, bots: c.bots });
     }
     const requests = s && s.owner === me.address ? this.store.where("roomRequests", "shareId", s.id).filter((r) => r.status === "asked").map((r) => this.requestView(r)) : [];
-    return { ...this.view(room), people, bots, ...(requests.length ? { requests } : {}) };
+    // Who is at work here now (your bots and other people's), and what other people ask your bots (server/room-work.mjs).
+    const asks = s ? this.work.asksOf(room) : [];
+    return { ...this.view(room), people, bots, activity: s ? this.work.activity(room) : [], ...(asks.length ? { asks } : {}), ...(requests.length ? { requests } : {}) };
   }
   requestView(r) {
     const p = this.peers;
@@ -517,6 +527,8 @@ export class Rooms {
       case "room.no": return this.onRefused(from, body);
       case "room.intro": return this.onIntro(from, body);
       case "room.bots": return this.onBots(from, body);
+      case "room.status": return this.work.onStatus(from, body);
+      case "room.handoff": return this.work.onHandoff(from, body);
       default: // a newer Colmena's message: ignored
     }
   }
@@ -737,6 +749,8 @@ export class Rooms {
     const room = this.store.get("rooms", roomId), p = this.peers;
     const s = this.share(room);
     if (!p || !s || s.leftAt || s.removedAt) return;
+    // A routine's turn and an incognito conversation say nothing to the people of a room.
+    if (this.work.silent(this.store.get("missions", step.missionId), step)) return;
     const bot = cleanBot(this.store.get("bots", step.botId));
     // While it works the others see it thinking (who it is, never what it does).
     if (step.status === "running" && bot && !this.thinking.has(step.id)) {
@@ -747,22 +761,28 @@ export class Rooms {
       this.thinking.delete(step.id);
       p.botThinking(shareId, face, false);
     }
-    if (step.status === "completed" && bot) this.relay(room, s, step, bot);
+    // The answer first, then the state: whoever reads the room gets them in that order.
+    const answerId = step.status === "completed" && bot ? this.relay(room, s, step, bot) : null;
+    if (bot) this.work.stepChanged(room, s, step, bot);
+    // What it made for a request you allowed goes with the answer, as files.
+    if (step.status === "completed" && bot && step.roomAsk) void this.work.deliver(s, step, bot, answerId).catch((error) => this.log(error.message));
   }
   /**
    * A turn of your bot ended in a room with people: its FINAL answer is posted to them, signed
    * as your bot, and the mission message keeps the id it travelled with (`peerId`; `peerParts`
    * when it went in several). Only that: no progress lines, plans, questions, approvals or
-   * steps ever leave. Once per turn.
+   * steps ever leave. Once per turn. Returns the id it travelled with (null when nothing went).
+   * A turn that asked whoever made the request (ask_room) already said its part in the room.
    */
   relay(room, s, step, bot) {
-    if (step.skipped || step.quietReply || step.kind === "plan") return;
+    if (step.skipped || step.quietReply || step.kind === "plan" || step.askedRoom) return null;
     const rows = this.store.where("messages", "missionId", step.missionId).filter((m) => m.stepId === step.id && m.role === "assistant" && (m.kind || "message") === "message");
     const last = rows.at(-1);
-    if (!last || rows.some((m) => m.peerId)) return;
+    if (!last) return null;
+    if (rows.some((m) => m.peerId)) return rows.find((m) => m.peerId).peerId;
     // Said in parts, the turn's whole answer is the step's text; else the message itself.
     const parts = splitForPeers(last.part ? String(step.text || "") || last.text : last.text);
-    if (!parts.length) return;
+    if (!parts.length) return null;
     const p = this.peers;
     const asked = step.ackOn ? this.store.get("messages", step.ackOn) : null;
     const root = step.replyTo ? this.store.get("messages", step.replyTo) : null;
@@ -770,7 +790,7 @@ export class Rooms {
     try {
       parts.forEach((part, i) => {
         const sent = p.post(s.id, part.text, {
-          bot, id: i ? null : of, replyTo: asked?.peerId || null, thread: root?.peerId || null,
+          bot, id: i ? null : of, replyTo: asked?.peerId || null, thread: root?.peerId || asked?.peerThread || null,
           ...(parts.length > 1 ? { part: { of, n: i + 1, total: parts.length, glue: part.glue } } : {}),
         });
         ids.push(sent.id);
@@ -779,5 +799,6 @@ export class Rooms {
       this.log("La respuesta de " + bot.name + " no pudo salir a la sala: " + error.message);
     }
     if (ids.length) this.store.patch("messages", last.id, { peerId: ids[0], ...(ids.length > 1 ? { peerParts: ids } : {}) });
+    return ids[0] || null;
   }
 }

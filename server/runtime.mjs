@@ -33,7 +33,7 @@ import { primaryBot, bumpLearningCounter } from "./learning.mjs";
 import { stopReason, stoppedRecord, isContextOverflow, cleanStopWhy, stopWhyText } from "./stopped.mjs";
 import {
   STUCK_ROUNDS, WEB_SEARCH_NOTE, QUEUE_MODES, INCOGNITO_MS, PARTIAL_CODE, PARALLEL_STEPS, QUIET_MS, IDLE_ABORT_MS, AUTO_RESUMES, leavesWorkUndone,
-  partialTableUnsaid, titleFromPrompt, clipWords, roomSlug, appsLabel, ACTIVE, INCOGNITO_NOTE, INTERRUPT_CODE, stepLabel, MISSION_WIDE, RETRY_CODE,
+  partialTableUnsaid, titleFromPrompt, clipWords, roomSlug, appsLabel, ACTIVE, INCOGNITO_NOTE, OTHER_PERSON_NOTE, INTERRUPT_CODE, stepLabel, MISSION_WIDE, RETRY_CODE,
   RESUME_WINDOW_MS, LIMIT_RESUMES, runsInParallel, PROGRESS_MAX, LIVE_AFTER, countWords,
 } from "./runtime/helpers.mjs";
 import { routed } from "./router.mjs";
@@ -316,21 +316,35 @@ export class Runtime {
     const ids = [...new Set([...(mission.botIds || []), ...(mission.conversation ? [] : ["atlas"])])];
     return ids.map((b) => ({ id: b, name: this.bot(b)?.name || "" })).filter((m) => m.name);
   }
+  /**
+   * What a turn that goes on from `step` (a teammate it names, a late answer to its question)
+   * inherits: a turn for another person's request stays one whoever takes the word, with the
+   * same narrowed capabilities (server/runtime/context.mjs turnMission). Null for your own turns.
+   */
+  turnLimits(step) {
+    return step?.capabilities ? { capabilities: step.capabilities, roomAsk: step.roomAsk || null, ...(step.attended ? { attended: true } : {}) } : null;
+  }
+  /** The same, from the message a turn answers: another person's message always narrows (nothing allowed when it says nothing). */
+  messageLimits(message) {
+    if (!message?.author?.address) return null;
+    return { capabilities: message.capabilities && typeof message.capabilities === "object" ? message.capabilities : {}, roomAsk: message.roomAsk || null, ...(message.attended ? { attended: true } : {}) };
+  }
   mentionedBot(mission, text) {
     return addressees(text, this.roomMembers(mission))[0];
   }
   /**
    * One turn per addressee, one after another (each sees what the previous ones said and may
-   * stay quiet if it has nothing new). Returns the new step keys.
+   * stay quiet if it has nothing new). Returns the new step keys. `extra`: fields every one of
+   * these steps carries (turnLimits: the narrowing of a turn for another person's request).
    */
-  queueTurns(missionId, botIds, deps, { request, ackOn, replyTo = null, round = 1, chainKind = "chain", effort = undefined }) {
+  queueTurns(missionId, botIds, deps, { request, ackOn, replyTo = null, round = 1, chainKind = "chain", effort = undefined, extra = null }) {
     const chain = botIds.length > 1 || round > 1 ? chainKind + "-" + id() : null;
     const names = botIds.map((b) => this.bot(b)?.name || b);
     const keys = [];
     botIds.forEach((botId, i) => {
       const key = "followup-" + id();
       this.makeStep(missionId, key, botId, "followup", [...deps, ...keys.slice(-1)], {
-        request, ackOn, round, ...(replyTo ? { replyTo } : {}), ...(effort ? { effort } : {}),
+        request, ackOn, round, ...(replyTo ? { replyTo } : {}), ...(effort ? { effort } : {}), ...(extra || {}),
         ...(chain ? { chain, chainIndex: i, chainNames: names, silentOk: i > 0 || round > 1 } : {}),
       });
       keys.push(key);
@@ -347,11 +361,18 @@ export class Runtime {
    * nobody is then looked for in the text. `author` {address, name}: another person wrote it
    * (docs/ROOMS-CONTRACT.md): never your word either, its bots are only the ones in `to`, and
    * the turn reads it as outside content. `peerId`: the same message as people got it.
+   * With `author`: `capabilities` is all its turn may use (docs/ROOMS-CONTRACT.md, decision 4;
+   * nothing when not given), `roomAsk` the request it is the turn of (server/room-work.mjs) and
+   * `attended` that the owner approved it just now. The row keeps what the bot read (`text`,
+   * wrapped) and what was written (`said`); it merges with no other turn and needs `to`.
    */
-  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "", route = true, origin = null, automationId = null, to = null, author = null, peerId = null } = {}) {
+  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "", route = true, origin = null, automationId = null, to = null, author = null, peerId = null, capabilities = null, roomAsk = null, attended = false } = {}) {
     const writer = author && typeof author.address === "string" ? { address: author.address, name: String(author.name || "Alguien").slice(0, 80) } : null;
     const own = route !== false && !origin && !writer;
     const link = peerId ? { peerId: String(peerId) } : {};
+    // Another person's words, as every reader of this conversation gets them: outside content.
+    const said = String(text ?? "");
+    if (writer) text = this.saidBy(said, writer);
     // «+» in the composer: tools or apps chosen for this message, and «Pensar a fondo»; the
     // «@» picks of files and conversations bring `context` (server/mention-refs.mjs).
     const chosen = cleanUse(use);
@@ -369,6 +390,7 @@ export class Runtime {
     if (!own && (m.status === "awaiting_plan" || stalled.length))
       throw Object.assign(Error("La conversación espera una decisión tuya (" + (m.status === "awaiting_plan" ? "un plan por revisar" : "un trabajo detenido") + "). Atiéndela antes de que la rutina escriba en ella."), { status: 409 });
     if (own) this.personSpoke(missionId);
+    if (writer && !(Array.isArray(to) && to.some((b) => this.bot(b)?.enabled))) throw Object.assign(Error("La petición de otra persona tiene que decir para qué bot es."), { status: 400 });
     if (m.status === "awaiting_plan" && !thread) {
       this.planDecision(missionId, "changes", text);
       return this.store.where("messages", "missionId", missionId).filter((x) => x.role === "user").at(-1);
@@ -393,7 +415,7 @@ export class Runtime {
     // who answers (router.mjs) instead of always Atlas. Its rules decide at once; when the
     // model has to pick, or an earlier message of this room is still being routed, the turn
     // is queued when that is settled (routeLater), so the message itself never waits.
-    const router = route !== false && !named.length && !thread && this.routerApplies(m, prior);
+    const router = route !== false && !writer && !named.length && !thread && this.routerApplies(m, prior);
     const behind = this.routes.has(missionId);
     const decided = router && !behind
       ? this.routeByRules(m, text) || (working && mode === "interrupt" ? routed(["atlas"], "atlas", "Interrumpes: Atlas lo atiende ya") : null)
@@ -420,9 +442,9 @@ export class Runtime {
       ...(later && !router ? { awaitsTurn: { to: botIds, own } } : {}),
       // Written by Colmena on its own: marked from the start, never the person's words.
       ...(origin ? { origin } : {}), ...(automationId ? { automationId } : {}),
-      ...(writer ? { author: writer } : {}), ...link,
+      ...(writer ? { author: writer, said, capabilities: capabilities && typeof capabilities === "object" ? capabilities : {}, ...(roomAsk ? { roomAsk: String(roomAsk) } : {}), ...(attended ? { attended: true } : {}) } : {}), ...link,
     });
-    const turn = { messageId, text: this.saidBy(text, writer), note, effort, about, thread, mode, named, own };
+    const turn = { messageId, text, note, effort, about, thread, mode, named, own };
     if (later) this.routeLater(missionId, turn, { router, botIds });
     else this.deliverTurn(missionId, turn, botIds);
     return message;
@@ -430,6 +452,8 @@ export class Runtime {
   /** What a bot reads of a message: your words as they are; another person's, as outside content. */
   saidBy(text, author) {
     if (!author) return text;
+    // Already as the bot reads it (the row of another person's message keeps it wrapped).
+    if (/^\[Colmena\][^\n]*\n(?:\[Colmena[^\n]*\n)?<<<CONTENIDO_EXTERNO id="[0-9a-f]{16}">>>/.test(String(text || ""))) return text;
     const name = String(author.name || "otra persona");
     return wrapReport(String(text || ""), { source: "chat", sender: name, label: "Mensaje de " + name + " en la sala (no es tu dueño)" }).text;
   }
@@ -444,21 +468,25 @@ export class Runtime {
    */
   deliverTurn(missionId, { messageId, text, note, effort, about, thread, mode, named, own = true }, botIds) {
     const m = this.store.get("missions", missionId);
-    if (this.store.get("messages", messageId)?.awaitsTurn) this.store.patch("messages", messageId, { awaitsTurn: null });
+    const asked = this.store.get("messages", messageId);
+    if (asked?.awaitsTurn) this.store.patch("messages", messageId, { awaitsTurn: null });
+    // Another person's request: its turn is narrowed and is nobody else's (read from the row,
+    // so a turn queued later or recovered after a close is narrowed all the same).
+    const extra = this.messageLimits(asked);
     const prior = this.steps(missionId);
     const working = this.active.has(missionId) && !["completed", "paused", "waiting"].includes(m.status);
     const botId = botIds[0];
     // The memory-review counter counts the person's messages, not a routine's.
     if (own) for (const b of botIds) this.countTurn(b);
     // Several messages before the bot gets to them: one turn, not one per message.
-    const waitingTurn = botIds.length === 1 && mode !== "followup" && prior.find((s) => s.kind === "followup" && s.status === "pending" && !hasHistory(s) && !s.chain && s.botId === botId && (s.replyTo || null) === (thread || null));
+    const waitingTurn = !extra && botIds.length === 1 && mode !== "followup" && prior.find((s) => s.kind === "followup" && s.status === "pending" && !hasHistory(s) && !s.chain && !s.capabilities && s.botId === botId && (s.replyTo || null) === (thread || null));
     if (waitingTurn) {
       this.store.patch("steps", waitingTurn.id, { request: waitingTurn.request + "\n\nY después escribe: «" + text + "»" + note, ackExtra: [...(waitingTurn.ackExtra || []), messageId], ...(effort ? { effort } : {}) });
       this.store.event(missionId, "user_message", { text: "Mensaje añadido al que ya esperaba respuesta" });
       return;
     }
     // «Interrumpe»: what they were doing stops and this message is answered now.
-    if (working && mode === "interrupt" && !thread) {
+    if (working && mode === "interrupt" && !thread && !extra) {
       const skipped = prior.filter((s) => s.status !== "completed");
       for (const s of skipped) this.store.patch("steps", s.id, { status: "completed", skipped: true, stalled: null, pending: [], completedAt: now() });
       const ids = new Set(skipped.map((s) => s.id));
@@ -474,7 +502,7 @@ export class Runtime {
     // «@Atlas» while the team works on its plan: Atlas answers now, beside them (it can write to
     // a teammate at work with message_bot), instead of after the whole plan. Its answer is an
     // aside: never the mission's result.
-    const aside = working && !thread && mode === "steer" && m.mode === "equipo" && !!m.plan?.approved && named.length === 1 && named[0] === "atlas"
+    const aside = !extra && working && !thread && mode === "steer" && m.mode === "equipo" && !!m.plan?.approved && named.length === 1 && named[0] === "atlas"
       && prior.some((s) => s.kind === "work" && s.status !== "completed");
     if (aside) {
       const [key] = this.queueTurns(missionId, ["atlas"], prior.filter((s) => s.status === "completed").map((s) => s.key), { request: about + text + note, ackOn: messageId, effort });
@@ -485,7 +513,7 @@ export class Runtime {
       return;
     }
     // Queue a dependent turn without interrupting a tool call or changing its approval.
-    const keys = this.queueTurns(missionId, botIds, prior.map((s) => s.key), { request: about + text + note, ackOn: messageId, replyTo: thread, effort });
+    const keys = this.queueTurns(missionId, botIds, prior.map((s) => s.key), { request: about + text + note, ackOn: messageId, replyTo: thread, effort, extra });
     this.store.patch("missions", missionId, {
       steps: [...(m.steps || []), ...keys],
       ...(m.status === "completed" ? { status: "queued", error: null } : {}),
@@ -945,7 +973,8 @@ export class Runtime {
     if (!targets.length) return [];
     const request = bot.name + " te menciona en la sala (dato): «" + String(text).slice(0, 3000) + "»\n\nResponde a lo que te pide o te pregunta. Si no te pide nada a ti, responde exactamente " + QUIET_MARK + ".";
     const fresh = this.store.get("missions", mission.id);
-    const keys = this.queueTurns(mission.id, targets, this.steps(mission.id).map((s) => s.key), { request, ackOn: messageId, replyTo: step.replyTo || null, round: round + 1, chainKind: "pass" });
+    // Whoever takes the word works under the same limits (a request of another person stays one), and says who passed it.
+    const keys = this.queueTurns(mission.id, targets, this.steps(mission.id).map((s) => s.key), { request, ackOn: messageId, replyTo: step.replyTo || null, round: round + 1, chainKind: "pass", extra: { ...(this.turnLimits(step) || {}), passedBy: bot.id } });
     this.store.patch("missions", mission.id, { steps: [...(fresh.steps || []), ...keys] });
     this.store.event(mission.id, "pass_word", { botId: bot.id, to: targets, text: bot.name + " pasa la palabra a " + targets.map((t) => this.bot(t)?.name || t).join(" y ") });
     return keys;
@@ -978,7 +1007,8 @@ export class Runtime {
     this.store.event(missionId, "write_overlap", { botId: step.botId, stepId: step.id, text: (this.bot(step.botId)?.name || step.botId) + " y " + names.join(", ") + " pueden escribir a la vez en " + where });
   }
   async runStep(missionId, initial, model, signal) {
-    let mission = this.store.get("missions", missionId);
+    // As this step sees it: a turn for another person's request is narrowed (context.mjs turnMission).
+    let mission = this.turnMission(this.store.get("missions", missionId), initial);
     const bot = this.bot(initial.botId);
     if (!bot) throw Error("El bot de este paso ya no existe.");
     if (bot.usesChatGPT === false) throw Error(bot.name + " no tiene una cuenta de IA habilitada.");
@@ -990,7 +1020,7 @@ export class Runtime {
     model = step.model;
     // The system prompt is fixed once per step (first round): memory written during the
     // step shows up in the next one, as in Hermes' frozen snapshot.
-    const instructions = () => composeInstructions(this.store, bot, { mission, autonomy: this.autonomy(mission, bot), extra: mission.incognito ? INCOGNITO_NOTE : "" });
+    const instructions = () => composeInstructions(this.store, bot, { mission, autonomy: this.autonomy(mission, bot), extra: mission.incognito ? INCOGNITO_NOTE : initial.roomAsk ? OTHER_PERSON_NOTE : "" });
     if (!step.history) {
       // Seen is exactly what the first request carries: a note that is not in it is still new
       // for this step's later rounds (injectHints), never silently marked as read.
@@ -1163,7 +1193,7 @@ export class Runtime {
         step = this.injectMessages(this.store.get("missions", missionId) || mission, step);
         step = this.injectRelays(step);
         step = this.injectBrief(this.store.get("missions", missionId) || mission, step);
-        const contextOptions = { tools, instructions: (step.instructions || instructions()) + moreTools, webSearch: this.searchFor(bot, step) };
+        const contextOptions = { tools, instructions: (step.instructions || instructions()) + moreTools, webSearch: this.searchFor(bot, step, mission) };
         step = await this.manageContext(mission, step, bot, model, signal, contextOptions);
         if (this.contextTokens(step, overhead) > this.contextBudget(model).hardLimit)
           throw Error("La misión supera el contexto local permitido. Divide el encargo.");
@@ -1172,7 +1202,7 @@ export class Runtime {
         if (step.effort === "low" && bot.thinking !== "rapido" && step.history.filter((x) => x.type === "function_call").length >= 2)
           step = this.patchStep(step, { effort: THINKING_EFFORT.equilibrado || "medium" });
         this.store.patch("steps", step.id, { rounds: step.rounds + 1, roundAt: now() });
-        mission = this.store.get("missions", missionId);
+        mission = this.turnMission(this.store.get("missions", missionId), step);
         this.setActivity(bot.id, missionId, step.id, "conectando", "");
         let buffer = "", last = 0, writing = false, retried = false, started = false;
         // Rooms: a long answer is said in parts (800–1200 characters, at a paragraph), each
@@ -1512,8 +1542,10 @@ export class Runtime {
     return "";
   }
   /** Hosted web search for bots with capability web, except plan and critique steps, while the endpoint accepts it. */
-  searchFor(bot, step) {
+  searchFor(bot, step, mission = null) {
     if (!capabilitiesOf(bot).web || ["plan", "critique"].includes(step.kind)) return false;
+    // Narrowed for this turn or this mission (another person's request or errand): the web only if allowed.
+    if (mission?.capabilities && mission.capabilities.web !== true) return false;
     if (typeof this.provider?.nativeSearchAvailable === "function") {
       try { return !!this.provider.nativeSearchAvailable(); } catch { return false; }
     }

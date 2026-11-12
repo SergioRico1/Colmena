@@ -83,7 +83,10 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
   const MESSAGE_OPTIONAL = ["artifactId", "approvalId", "plan", "summary", "stepId", "options", "replyTo", "part", "to", "learned"];
   const messageView = (m) => {
     const view = {
-      id: m.id, role: m.role, botId: m.botId ?? null, text: m.text || "", at: m.at ?? null,
+      // Another person's request to one of your bots (server/room-work.mjs) is kept as the bot read
+      // it (`text`, wrapped as outside content); the screen shows what they wrote (`said`).
+      id: m.id, role: m.role, botId: m.botId ?? null, text: (m.author?.address && typeof m.said === "string" ? m.said : m.text) || "", at: m.at ?? null,
+      ...(m.author?.address ? { author: { address: m.author.address, name: m.author.name || "Alguien" } } : {}),
       kind: m.kind || (m.phase === "plan" ? "plan" : "message"),
       attachments: (m.attachments || []).map((a) => ({ name: a.name, size: a.size ?? null })),
       artifactId: m.artifactId ?? null, approvalId: m.approvalId ?? null, plan: m.plan ?? null, summary: m.summary ?? null,

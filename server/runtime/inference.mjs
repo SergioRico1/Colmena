@@ -50,6 +50,10 @@ export class InferenceMethods {
     // The turn answers a message: the person's, or the one a routine wrote in a room.
     const step = stepId ? this.store.get("steps", stepId) : null;
     const asked = step?.ackOn ? this.store.get("messages", step.ackOn) : null;
+    // Another person's request to one of your bots (server/room-work.mjs): nobody of this
+    // computer is waiting for it, so it is long work — unless its owner approved it just now
+    // (`attended`: they are here; it then counts calls like any turn of theirs).
+    if (step?.roomAsk && !step.attended) return "long";
     if (asked ? !!asked.automationId : !!(mission.automationId || mission.watch || mission.peerErrand)) return "long";
     return (this.turnCalls.get(missionId) || 0) >= LONG_TURN_CALLS ? "long" : "chat";
   }

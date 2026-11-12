@@ -103,6 +103,15 @@ export class ApprovalMethods {
     const a = this.store.get("approvals", approvalId);
     if (!a || a.kind !== "question") throw Error("Pregunta no encontrada.");
     if (a.status !== "pending") throw Error("Esta pregunta ya está respondida.");
+    // «Lucía pide a Vera: …» (server/room-work.mjs): your decision on another person's request.
+    // It closes here and the room hears it; never a message of yours in the room («Adelante»
+    // must not read as your word for anything else) and nothing to relaunch.
+    if (a.roomRequest) {
+      const option = a.options.find((o) => o.id === optionId);
+      if (!option) throw Error("Elige una de las opciones.");
+      this.store.patch("approvals", a.id, { status: "answered", answer: { optionId: option.id, label: option.label, text: null }, decidedAt: now(), decidedBy: "tú", resolution: option.label });
+      return;
+    }
     if (this.store.get("missions", a.missionId)?.status === "cancelled") throw Error("La misión está cancelada.");
     // The bot already went on without it: the answer reaches it as your message, tagged as the reply.
     if (a.timedOut) return this.lateAnswer(a, { optionId, text, answers });
@@ -141,6 +150,7 @@ export class ApprovalMethods {
     if (!a || a.kind !== "question") throw Error("Pregunta no encontrada.");
     if (a.status !== "pending") throw Error("Esta pregunta ya no espera respuesta.");
     this.store.patch("approvals", a.id, { status: "dismissed", decidedAt: now(), decidedBy: "tú", resolution: "Sin responder" });
+    if (a.roomRequest) return; // another person's request, put aside: «ahora no» (server/room-work.mjs)
     this.store.event(a.missionId, "approval_decided", { text: "Pregunta descartada" });
     // Timed out: the bot already went on; nothing waits for this card any more.
     if (!a.timedOut) this.relaunch(a.missionId);
@@ -175,7 +185,8 @@ export class ApprovalMethods {
       return message;
     }
     if (!mission || mission.status === "cancelled") return message;
-    const keys = this.queueTurns(a.missionId, [a.botId], this.steps(a.missionId).map((s) => s.key), { request: lateAnswerText(message.answersQuestion, said), ackOn: message.id });
+    // Asked in a turn for another person's request: what goes on from your answer keeps its limits.
+    const keys = this.queueTurns(a.missionId, [a.botId], this.steps(a.missionId).map((s) => s.key), { request: lateAnswerText(message.answersQuestion, said), ackOn: message.id, extra: this.turnLimits(step) });
     this.store.patch("missions", a.missionId, { steps: [...(mission.steps || []), ...keys], ...(mission.status === "completed" ? { status: "queued", error: null } : {}) });
     if (mission.status === "completed" && this.active.has(a.missionId)) void Promise.resolve(this.missionJobs.get(a.missionId)).then(() => this.launch(a.missionId));
     else if (!this.active.has(a.missionId) && !["paused"].includes(mission.status)) this.launch(a.missionId);
@@ -332,7 +343,7 @@ export class ApprovalMethods {
     if (decision !== "approved") return;
     const request = "La persona ha aprobado ahora lo que dejaste pendiente mientras no estaba: «" + String(a.title || a.summary || "").slice(0, 300) +
       "». Hazlo ahora con la misma herramienta (" + a.tool + ") y exactamente los mismos argumentos (" + JSON.stringify(a.args ?? {}).slice(0, 1500) + "): Colmena ya lo tiene aprobado. Después di en una frase cómo ha ido.";
-    const keys = this.queueTurns(a.missionId, [a.botId], this.steps(a.missionId).map((s) => s.key), { request });
+    const keys = this.queueTurns(a.missionId, [a.botId], this.steps(a.missionId).map((s) => s.key), { request, extra: this.turnLimits(a.stepId ? this.store.get("steps", a.stepId) : null) });
     this.store.patch("missions", a.missionId, { steps: [...(mission.steps || []), ...keys], ...(mission.status === "completed" ? { status: "queued", error: null } : {}) });
     this.relaunch(a.missionId);
   }

@@ -254,7 +254,9 @@ export class Connections {
           return result;
         }
       }
-      if (kind === 'send' && !flagged) {
+      // In a turn for another person's request (an errand, or a request to your bot in a room:
+      // `peerErrand`) nothing was asked for by you, whatever you wrote elsewhere in that room.
+      if (kind === 'send' && !flagged && !mission.peerErrand) {
         const to = review.draft ? [...review.draft.to, ...review.draft.cc] : recipientsOf(review.arguments);
         // «Envíalo» about the draft it prepared here, which you have seen: that is the OK.
         // Seen: it was there when the bot last answered, not written in this same turn.

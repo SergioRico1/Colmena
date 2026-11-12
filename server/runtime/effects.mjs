@@ -56,7 +56,7 @@ export class EffectMethods {
   repeatReminder(missionId, stepId, call, result) {
     const step = this.store.get("steps", stepId);
     if (!step || result?.waiting) return result;
-    const personAt = this.store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && (!m.kind || m.kind === "message"))
+    const personAt = this.store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && !m.author && (!m.kind || m.kind === "message"))
       .reduce((latest, m) => (String(m.at || "") > latest ? String(m.at) : latest), "") || null;
     const { state, reminder } = countRepeat(step.repeats, callKey(call.name, call.arguments), { personAt });
     this.store.patch("steps", stepId, { repeats: state });
@@ -135,7 +135,8 @@ export class EffectMethods {
   async tool(mission, step, call, signal, model) {
     try {
       const bot = this.bot(step.botId);
-      mission = this.store.get("missions", mission.id) || mission;
+      // As this step sees it (a turn for another person's request is narrowed: context.mjs turnMission).
+      mission = this.turnMission(this.store.get("missions", mission.id) || mission, step);
       const name = TOOL_ALIASES[call.name] || call.name;
       const offered = this.toolsForStep(mission, step, bot);
       // Tools on demand (tool-search.mjs). find_tools only reads the bot's own list. A valid
@@ -159,7 +160,7 @@ export class EffectMethods {
       }
       const schema = schemas[name];
       if (!schema) {
-        const extra = this.extraToolList(bot, mission, step.kind).find((t) => t.name === call.name);
+        const extra = [...this.extraToolList(bot, mission, step.kind), ...this.stepToolList(mission, step, bot)].find((t) => t.name === call.name);
         if (typeof extra?.run !== "function") throw Error("Herramienta no disponible.");
         const raw = JSON.parse(call.arguments || "{}");
         signal.throwIfAborted();

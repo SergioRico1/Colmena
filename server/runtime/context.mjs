@@ -264,7 +264,8 @@ export class ContextMethods {
     // Each message steers with its own mode (Ctrl+Enter) or the room's; a message for
     // teammates is context for this bot, not a reason to drop what it was about to do.
     const steers = (x) => (x.mode || mission?.queueMode || "steer") === "steer";
-    return this.store.where("messages", "missionId", missionId).some((x) => x.role === "user" && (!x.kind || x.kind === "message")
+    // Another person's request (`author`) steers nobody: it has a turn of its own.
+    return this.store.where("messages", "missionId", missionId).some((x) => x.role === "user" && !x.author && (!x.kind || x.kind === "message")
       && !x.approvalId && !x.replyTo && !x.deliver && steers(x) && (!x.to?.length || x.to.includes(step.botId)) && x.id !== step.ackOn && !(step.ackExtra || []).includes(x.id) && x.at > since);
   }
   /**
@@ -276,7 +277,7 @@ export class ContextMethods {
     const seen = new Set(step.seenMessages || []);
     // A late answer to this bot's question (it timed out) comes in too, tagged as the reply.
     const late = (x) => x.lateAnswer && this.store.get("approvals", x.approvalId)?.stepId === step.id;
-    const fresh = this.store.where("messages", "missionId", mission.id).filter((x) => x.role === "user" && (!x.kind || x.kind === "message")
+    const fresh = this.store.where("messages", "missionId", mission.id).filter((x) => x.role === "user" && !x.author && (!x.kind || x.kind === "message")
       && (!x.approvalId || late(x)) && !x.replyTo && !x.deliver && x.id !== step.ackOn && !(step.ackExtra || []).includes(x.id) && x.at > step.startedAt && !seen.has(x.id) && x.text);
     if (!fresh.length) return step;
     const mine = (x) => !x.to?.length || x.to.includes(step.botId);
@@ -397,24 +398,53 @@ export class ContextMethods {
       return [];
     }
   }
+  /**
+   * The mission as ONE step sees it (docs/ROOMS-CONTRACT.md, decision 4). A step that answers
+   * another person's request in a room (`step.capabilities`, `step.roomAsk`: server/room-work.mjs)
+   * works under the capabilities its owner allows for other people's requests, intersected with
+   * the mission's own, and under every rule of another person's errand (`peerErrand`): no notes,
+   * blocks, Código, errands of its own, and nothing counts as asked by the owner. Only that
+   * step: the owner's own turns in the same room read the mission as it is. Never stored.
+   */
+  turnMission(mission, step) {
+    if (!mission || !step?.capabilities || typeof step.capabilities !== "object") return mission;
+    if (mission.turnOf === step.id) return mission;
+    const allowed = (k) => step.capabilities[k] === true && (!mission.capabilities || mission.capabilities[k] === true);
+    const capabilities = Object.fromEntries(Object.keys(capabilitiesOf(null)).map((k) => [k, allowed(k)]));
+    return { ...mission, capabilities, peerErrand: mission.peerErrand || "room:" + (step.roomAsk || step.id), roomAsk: step.roomAsk || null, turnOf: step.id };
+  }
   /** Tools offered to (and accepted from) a bot in a step: kind, capabilities, mission and extras. */
   toolsForStep(mission, step, bot) {
+    mission = this.turnMission(mission, step);
     // A mission may narrow the bot's capabilities, never widen them (an errand from another
     // person runs with the tools its owner chose for errands: server/peers/errands.mjs).
     const own = capabilitiesOf(bot);
     const capabilities = mission?.capabilities ? Object.fromEntries(Object.entries(own).map(([k, v]) => [k, !!v && mission.capabilities[k] === true])) : own;
+    // Tools that exist only in one kind of turn (ask_room in a turn for another person's request).
+    const own2 = typeof this.stepTools === "function" ? this.stepToolList(mission, step, bot) : [];
     const tools = toolsFor(step.kind, {
       connections: !!this.connections,
       capabilities,
       mission,
-      extra: this.extraToolList(bot, mission, step.kind),
+      extra: [...this.extraToolList(bot, mission, step.kind), ...own2],
       images: canCreateImages(bot),
       // Código from the mission (code_task) and Atlas' notes to teammates at work (message_bot).
       code: !!this.code && canDelegateCode(bot) && !mission?.peerErrand,
       coordinator: bot?.id === "atlas" && !mission?.conversation && (mission?.botIds || []).some((b) => b !== "atlas"),
     });
     // Incognito (OpenClaw): nothing of this conversation goes into memory, skills or the soul.
-    return mission?.incognito ? tools.filter((t) => !INCOGNITO_DENY.has(t.name)) : tools;
+    // The same for a turn that answers another person: what they ask teaches the bot nothing.
+    return mission?.incognito || mission?.roomAsk ? tools.filter((t) => !INCOGNITO_DENY.has(t.name)) : tools;
+  }
+  /** Runtime#stepTools (set by server/room.mjs): tools of this very step, each with its own `run`. */
+  stepToolList(mission, step, bot) {
+    if (typeof this.stepTools !== "function" || ["plan", "critique", "delegate", "consult"].includes(step?.kind)) return [];
+    try {
+      const list = this.stepTools(mission, step, bot);
+      return Array.isArray(list) ? list.filter((t) => t && typeof t.name === "string" && !schemas[t.name]) : [];
+    } catch {
+      return [];
+    }
   }
   /**
    * Tools on demand (tool-search.mjs): what the model is shown in this step ({listed}) and

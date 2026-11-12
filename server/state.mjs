@@ -233,6 +233,9 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     autoSendAt: pending ? a.autoSendAt ?? null : null, askedByYou: !!a.askedByYou,
     blocks: a.blocks ?? (pending ? Math.max(1, blocked) : 0),
     options: kind === "question" ? a.options || [] : [],
+    // Another person asks one of your bots in a room (server/room-work.mjs): who, which bot, which room.
+    roomId: a.roomId ?? null,
+    roomRequest: a.roomRequest ? { id: a.roomRequest.id, roomId: a.roomRequest.roomId, from: a.roomRequest.from, bot: a.roomRequest.bot } : null,
     // Several questions answered by steps (questions.mjs), and what you said to each.
     questions: kind === "question" && a.questions?.length ? a.questions : null,
     answers: kind === "question" && a.answers?.length ? a.answers : null,
