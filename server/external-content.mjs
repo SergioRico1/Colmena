@@ -44,7 +44,11 @@ const SUSPICIOUS = [
 
 /** Labels of the injection phrases found in `text` (several kinds at most once). */
 export function detectInjection(text) {
-  const plain = fold(text).slice(0, 400000);
+  // Most of what is scanned is a result serialised as JSON (toolResultText, a trigger's event),
+  // where a line break is the two characters «\n» and its «n» glues to the next word, so a
+  // phrase at the start of a line had no word boundary before it. Escaped whitespace and
+  // quotes are read as what they stand for (also when encoded twice) before looking.
+  const plain = fold(text).slice(0, 400000).replace(/\\+[nrt]/g, "\n").replace(/\\+"/g, '"');
   if (!plain) return [];
   return SUSPICIOUS.filter(([, re]) => re.test(plain)).map(([label]) => label);
 }
