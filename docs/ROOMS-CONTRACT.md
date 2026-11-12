@@ -184,12 +184,10 @@ choice open:
 - **Decision 2 (`room.bots`).** Team profiles cover every member of a room of a team, and
   contacts get `profile`. `room.bots` is sent only to people you share a room with who are
   neither. Their presence stays unknown (shown offline).
-- **Decision 3.** Parts as above. Deliverables are not sent: next task.
-- **Decision 4 (`step.capabilities`).** Not built: nothing of another person starts a turn with
-  tools yet.
+- **Decision 3.** Parts as above. Deliverables: see «Bots in shared rooms as built».
+- **Decision 4 (`step.capabilities`).** Built: see «Bots in shared rooms as built».
 - **Decision 5.** `addMessage` takes `to`, `author {address, name}` and `peerId`. Rooms use `to`
-  and `peerId` for your own messages; `author` is ready (never your word, addressees only from
-  `to`, text wrapped as outside content) and unused until other people's requests run with tools.
+  and `peerId` for your own messages, and `author` for what other people ask your bots.
 - **Decision 6.** Index `(kind, shareId, at)` over `data` (over `meta` when encrypted), created
   on open, and `Store#ordered`. A room with 5,000 peer messages among 25,000: the latest page of
   the timeline takes 47 ms without the index and 7 ms with it (56 → 15 ms encrypted); the old
@@ -201,3 +199,96 @@ choice open:
   (every conversation with every member in full) is what does not fit with a team: ~63 KB with 30
   people. `tests/perf-budget.test.mjs` pins it; the room screen can drop it by reading members
   with the room.
+
+## Bots in shared rooms as built (`server/room-work.mjs`, `docs/PEOPLE.md` › «Bots trabajando en salas compartidas»)
+
+Step 2 of the plan: bots work with tools in rooms with other people. Tests:
+`tests/room-bots.test.mjs`.
+
+**A request to another person's bot.** B names A's bot with a picked mention in a room (a group
+share; directs are untouched). `Peers#post` marks such a message `req: 1`. On A's computer
+`PeerBots#handle` asks `RoomWork#incoming`, which decides by A's rule for B
+(`peerContacts[B].asks.encargos`: `pregunta` default, `siempre`, `nunca`; a teammate or roommate
+who is not a contact is a `known` contact and has the same field, so the rule is per address):
+
+- `nunca`, a personal bot, a guest, or a message without `req` (an older Colmena): not taken;
+  the tool-less answer of `bots.mjs` applies as before (unless `asks.bots` is `nunca`).
+- `pregunta`: a `roomAsks` record `{id, roomId, shareId, from, fromName, botId, peerId, text,
+  peerThread?, rule, state, approvalId, at}` (`state`: asked, working, done, declined, failed,
+  stopped) and an approval `{id: "roomask:"+ask, kind: "question", tool: "room_request", status:
+  "pending", botId, roomId, missionId|null, stepId: null, options: go|later|always|never,
+  roomRequest: {id, roomId, shareId, from: {address, name}, bot: {id, name}, peerId}}`. It is an
+  ordinary pending approval: every surface that counts pending approvals counts it.
+  `Runtime#answer` closes it without writing a message (an «Adelante» row would read as the
+  owner's word in the room) and `RoomWork#decided` hears it through the store.
+- `siempre`, or approved: `RoomWork#begin` → `Rooms#missionFor` (invariant 3: the sala is made
+  now) → `addMessage(mission, text, [], {to: [bot], author: {address, name}, peerId,
+  capabilities, roomAsk, attended, context})`.
+
+**Never the owner's words.** The row is `role: "user"` with `author`, `said` (what was written)
+and `text` (the same wrapped as outside content: every reader of the sala gets it marked).
+`origin.mjs`: `isOtherPerson`; `isPersonMessage` false, `personWords` empty, `isOutsideOrigin`
+true, and `worksFromOutside` true for any step with `roomAsk`. Send guards, `personTurnText`,
+the notes' and blocks' «the person asked» and the mission brief skip it; `Connections#request`
+auto-sends nothing in such a turn. A turn for another person never merges with one of the
+owner's (`deliverTurn`), is never routed, and a lost one is never given to Atlas.
+
+**Decision 4.** `step.capabilities` (plus `step.roomAsk`, `step.attended`) come from the message
+(`Runtime#messageLimits`) and are inherited by whatever goes on from the step
+(`Runtime#turnLimits`: a teammate it names, a delegate, the turn after a late answer).
+`Runtime#turnMission(mission, step)` gives that step the mission with `capabilities` intersected
+and `peerErrand` set, so every rule of an errand applies to that turn only (no notes, blocks,
+Código, errands, memory or soul tools; hosted web search follows `web`). It is used by
+`toolsForStep`, `runStep` and `tool`; nothing is stored on the mission. The capabilities are the
+errand ones (`settings.peerErrandTools`: web, carpetas, apps, ordenador).
+
+**Questions.** `ask_user` is unchanged (a local approval of the owner). `ask_room {question}`
+exists only in a step with `roomAsk` (`Runtime#stepTools`): it posts the question as a plain
+message of the bot addressed to the requester and the step ends without relaying its closing
+line. The requester's reply (linked, a mention of that bot, or their next plain message within
+10 minutes) starts a new turn of the same request, outside content again; at most 3 per request.
+
+**Limits.** 6 requests per person, room and hour (`ERRAND_LIMITS.perHour`), counted when they
+reach a rule other than `nunca`; over it the requester gets `throttled`. A message signed by a
+bot, a card or a guest's message never gets here. Admission: a `siempre` request is `long` work
+(parked when the plan window is almost used: status `limited`); one approved just now is
+`attended` and counts as the owner's turn. Brakes for self-started work do not apply; the step's
+own loop guard does.
+
+**What leaves (wire).** Besides the final answer (unchanged):
+
+- `room.status {share, bot, state, at, tools?, ms?}`: `bot` an id, `state` one of thinking,
+  working, waiting, limited, done, declined, stopped, failed, throttled; `at` the sender's clock
+  in ms; `tools`/`ms` integers, only with `done`. Built and accepted by `cleanStatus`, which
+  copies those fields and nothing else. `thinking`/`working` are ephemeral (not kept by the
+  mailbox, refreshed every 30 s to whoever is connected); the rest are queued like any message.
+  Not remembered in `peerSeen`: a status older than the last one known is ignored.
+- `room.handoff {share, from, to, at}`: two bot ids of the sender (pass-the-word, a plan's
+  work step, `ask_bot`/`message_bot` through the `thread` records), once a minute per pair.
+- Deliverables made in a step with `roomAsk` (its `deliverable` messages) go as files after the
+  answer (`PeerFiles#sendArtifact`, signed as the bot, `replyTo` the answer). Text deliverables
+  (md, txt, csv) are sent as a file of that format. `POST /api/rooms/:id/share` is the manual way.
+- Nothing from a routine's turn or an incognito conversation (`RoomWork#silent`).
+
+**Receiving.** `roomStatus {id: share:owner:bot, shareId, owner, bot, state, since, at, tools?,
+ms?}` is the latest per (room, owner, bot); `roomLines {id, shareId, kind: status|handoff, owner,
+bot, state?, tools?, ms?, to?, at}` are the lines of the conversation (ended states and
+hand-offs; at most 400 a room). Names come from the bots the owner announced, never from the
+status. Live states are dropped after 90 s without a refresh, or shown as `away` while their
+owner is offline (up to 12 h); ended ones stay 2 minutes as the status; waiting/limited 7 days.
+`RoomWork#tick` (every 10 s) refreshes and sweeps.
+
+**Old peers.** They ignore `room.status` and `room.handoff` (the `room.*` dispatch falls through)
+and see final answers and files, as before. Their mention carries no `req`, so it gets the
+tool-less answer whatever the rule: they could not see «waiting for the owner».
+
+**For `waitingItems`.** Read pending approvals with `roomRequest` (they are already in the first
+bullet of «One count»): `roomId` is on the approval and in `roomRequest.roomId`, `botId` on the
+approval. Questions and red lines raised inside a request turn are ordinary approvals of the
+room's mission (`missionId`; the room is `rooms.ofMission(missionId)`).
+
+**Not done.** The memory digest is still in the bot's prompt in a request turn (as in an
+errand): the turn is told not to tell, but only the tools are enforced. Today's sala screen
+(`/sala/:mission`) shows a request as a message of its author; statuses of a room without a
+share do not exist. Ajustes › Personas lists the rule for contacts; a teammate who is not a
+contact gets theirs from the card («Siempre/Nunca para…») or `PATCH /api/peers/contacts/:id`.
