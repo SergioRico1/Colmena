@@ -17,6 +17,8 @@ export function registerSettingsRoutes(app, { listModels, store, runtime }) {
       narration: z.boolean(),
       recaps: z.boolean(),
       autoReview: z.boolean(),
+      // Tools on demand (server/tool-search.mjs): false lists every tool on every call, as before.
+      toolSearch: z.boolean(),
       // Ajustes › Autonomía: minutes a bot waits for your answer before going on (0 = no limit),
       // and «Sin supervisión»: routines and triggers never wait for red lines (they stay for later).
       questionWaitMinutes: z.number().int().min(0).max(1440),

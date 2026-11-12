@@ -926,9 +926,18 @@ export class Runtime {
     this.acknowledge(step, bot);
     // Just after a restart the connected apps' direct tools may still be loading.
     if (typeof this.appTools?.whenReady === "function") await this.appTools.whenReady(8000);
-    const tools = this.toolsForStep(mission, step, bot);
+    // Everything this bot may call in this step; what the model is shown may be shorter.
+    const offered = this.toolsForStep(mission, step, bot);
+    // Tools on demand (tool-search.mjs): with many tools only the core ones are listed and the
+    // rest are found with find_tools and run with use_tool. The list is decided once and kept
+    // for the whole step (cached prefix, warm socket, Claude Code session); what the bot used
+    // through use_tool in earlier steps of this mission is listed directly from now on.
+    if (!Array.isArray(step.promotedTools)) step = this.patchStep(step, { promotedTools: this.toolsUsedBefore(step) });
+    const onDemand = this.toolSplit(mission, step, bot, offered);
+    const tools = onDemand.listed;
+    const moreTools = this.toolsNote(offered, tools);
     // Instructions and tools, priced once for the context budget (before any real usage).
-    const overhead = estimateTokens(step.instructions || "") + estimateTokens(tools);
+    const overhead = estimateTokens(step.instructions || "") + estimateTokens(moreTools) + estimateTokens(tools);
     let overflowRetried = false;
     const stall = (reason, text) => {
       const current = this.store.get("steps", step.id);
@@ -1067,7 +1076,7 @@ export class Runtime {
         step = this.injectMessages(this.store.get("missions", missionId) || mission, step);
         step = this.injectRelays(step);
         step = this.injectBrief(this.store.get("missions", missionId) || mission, step);
-        const contextOptions = { tools, instructions: step.instructions || instructions(), webSearch: this.searchFor(bot, step) };
+        const contextOptions = { tools, instructions: (step.instructions || instructions()) + moreTools, webSearch: this.searchFor(bot, step) };
         step = await this.manageContext(mission, step, bot, model, signal, contextOptions);
         if (this.contextTokens(step, overhead) > this.contextBudget(model).hardLimit)
           throw Error("La misión supera el contexto local permitido. Divide el encargo.");
@@ -1174,10 +1183,20 @@ export class Runtime {
         const searches = webSearchesOf(output);
         if (searches.length) this.recordSearches(missionId, step.id, bot, searches);
         const text = String(result.text || "");
-        const calls = output.filter((x) => x.type === "function_call");
+        // A use_tool call that names one of the bot's tools with valid arguments IS that call
+        // from here on — in the conversation and in `pending` — so everything that follows
+        // (permission, approval, red lines, receipt, steering, tool card) sees the real tool.
+        const viaSearch = [];
+        const produced = !onDemand.active ? output : output.map((x) => {
+          const real = x.type === "function_call" ? this.unwrapToolUse(x, offered) : x;
+          if (real !== x) viaSearch.push(real.name);
+          return real;
+        });
+        const calls = produced.filter((x) => x.type === "function_call");
         if (calls.some((c) => step.history.some((old) => old.type === "function_call" && old.call_id === c.call_id)))
           throw Error("OpenAI repitio un identificador de herramienta. No se ejecutará.");
-        this.setHistory(step.id, [...this.history(step.id), ...output], {
+        this.setHistory(step.id, [...this.history(step.id), ...produced], {
+          ...(viaSearch.length ? { usedTools: [...new Set([...(this.store.get("steps", step.id)?.usedTools || []), ...viaSearch])].slice(-24) } : {}),
           pending: calls,
           pendingAt: now(),
           meter: counted > 0 ? { tokens: counted, items: step.history.length, at: now() } : null,

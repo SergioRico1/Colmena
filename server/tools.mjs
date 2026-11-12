@@ -470,7 +470,7 @@ export function verbFor(name, args = {}) {
   if (name === "desktop_open") return "abriendo una app";
   if (name === "desktop_look") return "mirando la pantalla";
   if (name === "desktop_do") return { type: "escribiendo", set_value: "escribiendo", key: "pulsando teclas", hotkey: "pulsando teclas", scroll: "desplazándose" }[args.action] || "haciendo clic";
-  if (name === "mcp_tools") return "preparándose";
+  if (name === "mcp_tools" || name === "find_tools" || name === "use_tool") return "preparándose";
   if (name === "mcp_call") return "usando una app";
   if (name === "create_deliverable")
     return args.kind === "code" ? "programando" : args.kind === "design" ? "creando imagen" : ["table", "sheet"].includes(args.kind) ? "calculando" : "escribiendo";

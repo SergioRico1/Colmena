@@ -27,6 +27,9 @@ const NOT_EFFECTS = new Set([
   "browser_read", "browser_screenshot", "desktop_look", "desktop_windows", "project_files",
   // Keyed by the call (a Código job, a note to a teammate): asked again, they find what they did.
   "code_task", "message_bot",
+  // Tools on demand (tool-search.mjs): find_tools reads the bot's own list; a use_tool call
+  // that still has that name was refused (a valid one is recorded as the real tool).
+  "find_tools", "use_tool",
 ]);
 // Direct app tools that only read (apptools.mjs): fetch, list, get, search…
 const DIRECT_READ = /^(gmail|googlecalendar|googlesheets|googledrive|googledocs|notion|slack|outlook)_\w*(fetch|list|get|find|search|download|batch_get|info|history)\w*$/;
