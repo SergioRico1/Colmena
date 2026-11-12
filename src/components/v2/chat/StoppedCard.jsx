@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { withRowBoundary } from "../../RowBoundary.jsx";
 
 // «Se paró» (after assistant-ui stopped-run and MessageStatus.incomplete.reason): when a turn
 // ends before its answer, one quiet card says why — you stopped it, it ran too long, a content
@@ -13,7 +14,7 @@ const REASONS = {
   other: { title: (n) => `${n} se paró`, hint: null },
 };
 
-export default function StoppedCard({ stopped, botName = "El bot", onContinue, onDiscard }) {
+function StoppedCard({ stopped, botName = "El bot", onContinue, onDiscard }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const r = REASONS[stopped?.reason] || REASONS.other;
@@ -43,3 +44,5 @@ export default function StoppedCard({ stopped, botName = "El bot", onContinue, o
     </section>
   );
 }
+
+export default withRowBoundary(StoppedCard, { label: "No se ha podido mostrar este aviso", resetKey: ({ stopped }) => `${stopped?.reason}:${stopped?.at}` });

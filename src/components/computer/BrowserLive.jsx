@@ -3,10 +3,13 @@ import { BotPresence } from "../v2/Presence.jsx";
 import { post } from "../../lib/api.js";
 import { avatarStyle, initial } from "../../lib/bots.js";
 import { useBrowserFrames } from "./useBrowserFrames.js";
+import { ReturnNote, WatchedView, returnBody } from "./takeover.jsx";
 
 export { useBrowserFrames };
 
 // «Vista en vivo» of a bot's browser, in the visual language of design/EnVivo.dc.html.
+// While you only watch, the view is a picture: a click or a key on it asks «¿Quieres tomar el
+// control?» (it never reaches the page). With «Devolver» you can leave the bot a one-line note.
 const VERB_LABEL = {
   navegando: "Navegando",
   "rellenando un formulario": "Rellenando un formulario",
@@ -56,6 +59,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   const { frame, available, takeover } = useBrowserFrames(missionId);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
+  const [note, setNote] = useState("");
   const color = bot?.color || "#FFC93C";
   const name = bot?.name || "el bot";
   const label = VERB_LABEL[verb] || (verb ? verb.charAt(0).toUpperCase() + verb.slice(1) : takeover ? "Esperando" : "Navegando");
@@ -73,7 +77,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
     }
   };
   const takeControl = () => run("take", () => post("/computer/takeover", { missionId, action: "take", ...(frame?.botId ? { botId: frame.botId } : {}) }));
-  const giveBack = () => run("return", () => post("/computer/takeover", { missionId, action: "return", ...(frame?.botId ? { botId: frame.botId } : {}) }));
+  const giveBack = () => run("return", async () => { await post("/computer/takeover", returnBody(missionId, frame?.botId, note)); setNote(""); });
   const stop = () => run("stop", () => post("/missions/" + encodeURIComponent(missionId) + "/control", { action: "pause" }));
 
   if (!frame) {
@@ -133,13 +137,13 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
         ) : null}
       </div>
 
-      <div style={{ background: "#12131A", display: "grid", placeItems: "center" }}>
+      <WatchedView watching={!takeover} name={name} busy={!!busy} onTake={takeControl} takeStyle={BUTTON_DARK} quietStyle={BUTTON_LIGHT} style={{ background: "#12131A", display: "grid", placeItems: "center" }}>
         <img
           src={frame.image}
           alt={"Lo que ve " + name + ": " + (frame.title || host || "página web")}
           style={{ display: "block", width: "100%", height: "auto", maxHeight: "70vh", objectFit: "contain" }}
         />
-      </div>
+      </WatchedView>
 
       {takeover ? (
         <p style={{ margin: 0, padding: "12px 16px", borderTop: "1px solid #E6E8EE", background: "#FFF8E1", fontSize: "14px", lineHeight: 1.5 }}>
@@ -147,7 +151,8 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
         </p>
       ) : null}
 
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "12px 16px", borderTop: "1px solid #E6E8EE" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "8px", padding: "12px 16px", borderTop: "1px solid #E6E8EE" }}>
+        {takeover ? <ReturnNote name={name} value={note} onChange={setNote} onSubmit={giveBack} disabled={busy === "return"} style={{ flex: "1 1 260px" }} /> : null}
         {takeover ? (
           <button type="button" className="colmena-live-btn" onClick={giveBack} disabled={!!busy} style={BUTTON_HONEY}>
             {busy === "return" ? "Devolviendo…" : "Devolver el control a " + name}

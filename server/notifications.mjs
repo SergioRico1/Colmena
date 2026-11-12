@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { goalsDigest } from "./goals.mjs";
 import { id, now } from "./store.mjs";
 import { approvalExpiresAt, isExternalApproval } from "./state.mjs";
+import { isSnoozed } from "./snooze.mjs";
 
 /**
  * What a desktop notification may offer as buttons for one pending approval: local
@@ -123,11 +124,17 @@ export function noticeTag(key) {
 
 const NEEDS_STATUSES = new Set(["waiting", "awaiting_plan", "awaiting_choice"]);
 /** What waits for the person (the taskbar counter): pending approvals plus rooms that need them without one. */
-export function pendingCount(store) {
+export function pendingCount(store, time = Date.now()) {
   const approvals = store.list("approvals").filter((a) => a.status === "pending");
   const withApproval = new Set(approvals.map((a) => a.missionId));
   const rooms = store.columns("missions", ["id", "status"]).filter((m) => NEEDS_STATUSES.has(m.status) && !withApproval.has(m.id));
-  return approvals.length + rooms.length;
+  // What you put off («Recordar después», snooze.mjs) does not count until its time, and
+  // neither does its room.
+  return approvals.filter((a) => !isSnoozed(a, time)).length + rooms.length;
+}
+/** The pending approvals that wait for the person now: not the ones put off. */
+export function waitingApprovals(store, time = Date.now()) {
+  return store.list("approvals").filter((a) => a.status === "pending" && !isSnoozed(a, time));
 }
 
 /** Quiet hours: 19:00–9:00 and weekends (local time). */
@@ -335,7 +342,7 @@ export class Notifier {
   /** What Atlas found that needs the person, without calling a model. */
   findings(time = this.clock()) {
     const approvals = this.store.list("approvals").filter((a) => {
-      if (a.status !== "pending") return false;
+      if (a.status !== "pending" || isSnoozed(a, time)) return false; // put off by you: no reminder until then
       const created = Date.parse(a.createdAt || "");
       const expires = approvalExpiresAt(a);
       return (expires && Date.parse(expires) <= time) || (!Number.isNaN(created) && time - created > APPROVAL_WAIT_MS);

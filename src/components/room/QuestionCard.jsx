@@ -2,6 +2,8 @@ import { Clock } from "lucide-react";
 import { post } from "../../lib/api.js";
 import QuestionFlow, { AnswerList } from "../v2/chat/QuestionFlow.jsx";
 import { useAction } from "../../lib/store.jsx";
+import { letterOf, letterStyle, useChoiceKeys } from "../../lib/choiceKeys.js";
+import { withRowBoundary } from "../RowBoundary.jsx";
 import { BotAvatar } from "./common.jsx";
 import ApprovalConflict from "./ApprovalConflict.jsx";
 import Markdown from "./Markdown.jsx";
@@ -43,8 +45,10 @@ function WaitNote({ approval, bots }) {
 /**
  * Highlighted question from a bot («Lo que te bloquea, siempre arriba»: black border + honey shadow).
  * variant "chat" (Chat mockup) or "room" (Sala / En directo mockups).
+ * The options read A, B, C… and the letter key answers while this is the question in focus,
+ * or the last one waiting on screen, and you are not typing (lib/choiceKeys.js).
  */
-export default function QuestionCard({ approval, text, bots, variant = "room", id }) {
+function QuestionCard({ approval, text, bots, variant = "room", id }) {
   const { act, busy, error, conflict } = useAction();
   const chat = variant === "chat";
   const question = approval?.summary || approval?.title || text || "";
@@ -55,13 +59,14 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
   const answer = (option) => act(() => post(`/approvals/${approval.id}/answer`, { optionId: option.id, revision: approval.revision }));
   const mentioned = (label) => bots.find((b) => new RegExp(`\\b${escapeRe(b.name)}\\b`, "i").test(label));
   const helper = chat ? options.map((o) => mentioned(o.label)).find(Boolean) : null;
+  const keys = useChoiceKeys({ count: options.length, enabled: pending && !busy && !(approval?.questions?.length > 1), onChoose: (i) => answer(options[i]) });
 
   // Colmena 2.0: honey glow while it waits for you; a calm card once answered (no hard shadows).
   const card = { maxWidth: chat ? "none" : "640px", background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" };
   const answered = approval && !pending;
 
   return (
-    <div id={id} style={answered ? { ...card, boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)" } : card}>
+    <div ref={keys} id={id} style={answered ? { ...card, boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)" } : card}>
       {/[*_`#[\n]/.test(question)
         ? <Markdown text={question} size={chat ? 16 : 15} mentions={(bots || []).map((b) => b.name)} />
         : <p style={{ margin: "0", fontSize: chat ? "16px" : "15px", lineHeight: "1.55" }}><BoldNames text={question} bots={bots} /></p>}
@@ -80,10 +85,11 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
             const helperBot = chat && primary ? mentioned(o.label) : null;
             // Colmena 2.0 pills: the recommended option in ink, the rest on a soft surface.
             const style = primary
-              ? { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 20px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }
-              : { minHeight: "46px", padding: "0 18px", background: "#F6F6F3", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" };
+              ? { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 20px 0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }
+              : { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 18px 0 12px", background: "#F6F6F3", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" };
             return (
-              <button key={o.id || i} type="button" className="rm-focus" disabled={busy || !pending} aria-busy={busy ? "true" : undefined} onClick={() => answer(o)} style={style}>
+              <button key={o.id || i} type="button" className="rm-focus" disabled={busy || !pending} aria-busy={busy ? "true" : undefined} aria-keyshortcuts={letterOf(i) || undefined} onClick={() => answer(o)} style={style}>
+                {letterOf(i) ? <span aria-hidden="true" style={letterStyle(primary)}>{letterOf(i)}</span> : null}
                 {helperBot ? <BotAvatar bot={helperBot} size={20} /> : null}
                 {o.label}
               </button>
@@ -103,3 +109,5 @@ export default function QuestionCard({ approval, text, bots, variant = "room", i
     </div>
   );
 }
+
+export default withRowBoundary(QuestionCard, { label: "No se ha podido mostrar esta pregunta", resetKey: ({ approval, text }) => `${approval?.id}:${approval?.revision}:${approval?.status}:${String(text || "").length}` });

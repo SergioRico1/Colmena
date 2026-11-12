@@ -1,5 +1,6 @@
 import { Brain, CircleHelp, Compass, FileText, Folder, FolderCode, Globe, Image as ImageIcon, MessagesSquare, Monitor, Plug, RotateCw, Save, Search, SquareTerminal, Wrench } from "lucide-react";
 import { plural } from "../../lib/format.js";
+import RowBoundary from "../RowBoundary.jsx";
 import WorkingDots from "./Dots.jsx";
 import { BotAvatar, findBot } from "./common.jsx";
 
@@ -245,6 +246,8 @@ export function Detail({ tool, bots, onOpenArtifact, liveOutput = null }) {
   return parts;
 }
 
+const TOOL_FAILED = "No se ha podido mostrar este paso";
+
 /** The expanded list of the activity pill: one numbered card per tool call. */
 export default function ToolCards({ tools = [], bots = [], onOpenArtifact }) {
   const grouped = collapseRepeats(groupTools(tools));
@@ -252,6 +255,8 @@ export default function ToolCards({ tools = [], bots = [], onOpenArtifact }) {
     <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "14px", color: "#2B2D36" }}>
       {grouped.map((t, i) => (
         <li key={t.id || i} data-tool={t.name} data-status={t.status} style={{ display: "flex", gap: "10px" }}>
+          {/* One call that fails to draw becomes a muted pill; the rest of the list stays. */}
+          <RowBoundary label={TOOL_FAILED} resetKey={t.status}>
           {(() => { const Icon = ICONS[t.card?.type] || Wrench; return <span title={t.name} aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", color: t.status === "error" ? "#B4372A" : "#555A68" }}><Icon size={15} strokeWidth={2} /></span>; })()}
           <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "6px" }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 10px" }}>
@@ -260,6 +265,7 @@ export default function ToolCards({ tools = [], bots = [], onOpenArtifact }) {
             </div>
             <Detail tool={t} bots={bots} onOpenArtifact={onOpenArtifact} />
           </div>
+          </RowBoundary>
         </li>
       ))}
     </ol>

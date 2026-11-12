@@ -28,7 +28,7 @@ import { Connections } from "./connections.mjs";
 import { AppTools } from "./apptools.mjs";
 import { Projects } from "./projects/tools.mjs";
 import { CodeService } from "./code/service.mjs";
-import { pendingCount } from "./notifications.mjs";
+import { pendingCount, waitingApprovals } from "./notifications.mjs";
 import { watchStalls } from "./stalls.mjs";
 import { DEFAULT_RELAY, Peers } from "./peers/service.mjs";
 import { PeerBots } from "./peers/bots.mjs";
@@ -145,7 +145,7 @@ if (typeof process.send === "function") {
     const missions = store.list("missions");
     const presence = {
       working: missions.filter((m) => ["running", "planning", "queued"].includes(m.status)).length,
-      waiting: store.list("approvals").filter((a) => a.status === "pending").length,
+      waiting: waitingApprovals(store).length,
       paused: !!store.get("settings", "main")?.paused,
       finished: missions.filter((m) => m.status === "completed").length,
       // The taskbar counter: everything that waits for you.

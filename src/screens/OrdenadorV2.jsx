@@ -4,6 +4,7 @@ import { BotPresence } from "../components/v2/Presence.jsx";
 import { BotDot } from "../components/v3/TrabajoHeader.jsx";
 import NotFound from "./NotFound.jsx";
 import { useBrowserFrames } from "../components/computer/useBrowserFrames.js";
+import { ReturnNote, WatchedView, returnBody } from "../components/computer/takeover.jsx";
 import { useRoom } from "../components/room/useRoom.js";
 import { findBot } from "../components/room/common.jsx";
 import { useStore } from "../lib/store.jsx";
@@ -14,7 +15,9 @@ import { useExpert } from "../lib/expert.js";
 // Colmena 3 · Trabajo › una tarea › el navegador de un bot (design/V3Ordenador.dc.html): what
 // it sees, live; at a red line the honey card that waits for your OK (publishing, sending or
 // buying asks for a second press); what it has done; and what it may touch. You can take
-// the controls at any time and give them back.
+// the controls at any time and give them back. While you only watch, a click or a key on the
+// view asks «¿Quieres tomar el control?» (it never reaches the page); with «Devolver el
+// control» you can leave the bot a one-line note (components/computer/takeover.jsx).
 
 const INK = "#12131A";
 const MUTED = "#4A4D57";
@@ -35,6 +38,7 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
   const [error, setError] = useState(null);
   const [armed, setArmed] = useState(false);
   const [outcome, setOutcome] = useState(null);
+  const [note, setNote] = useState("");
   const timer = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -57,7 +61,7 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
     try { await fn(); } catch (e) { setError(e.message); } finally { setBusy(null); }
   };
   const take = () => run("take", () => post("/computer/takeover", { missionId: m.id, action: "take", ...(frame?.botId ? { botId: frame.botId } : {}) }));
-  const giveBack = () => run("return", () => post("/computer/takeover", { missionId: m.id, action: "return", ...(frame?.botId ? { botId: frame.botId } : {}) }));
+  const giveBack = () => run("return", async () => { await post("/computer/takeover", returnBody(m.id, frame?.botId, note)); setNote(""); });
   const decide = (decision) => run(decision, async () => {
     await post(`/approvals/${encodeURIComponent(ask.id)}`, { decision, revision: ask.revision });
     setOutcome(decision === "approved" ? { text: `Hecho con tu OK a las ${hhmm(new Date().toISOString())}. ${name} lo deja anotado en la tarea.`, ok: true } : { text: `No lo ha hecho. ${name} te deja el borrador listo.`, ok: false });
@@ -106,6 +110,11 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
             </button>
           ) : null}
         </header>
+        {takeover && frame ? (
+          <ReturnNote name={name} value={note} onChange={setNote} onSubmit={giveBack} disabled={busy === "return"}
+            style={{ padding: "14px 18px", borderRadius: "20px", background: "#FFFFFF" }}
+            inputStyle={{ height: "44px", border: 0, borderRadius: "999px", background: "#F6F6F3", fontSize: "15px", padding: "0 18px" }} />
+        ) : null}
         {error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{error}</p> : null}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
@@ -123,7 +132,10 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
                 </span>
               ) : null}
             </div>
-            <div style={{ position: "relative", minHeight: "440px", background: "#FBFBFA", display: "grid", placeItems: "center", overflow: "hidden" }}>
+            <WatchedView watching={!!frame?.image && !takeover} name={name} busy={!!busy} onTake={take}
+              takeStyle={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "14.5px", fontWeight: 600, cursor: "pointer" }}
+              quietStyle={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14.5px", cursor: "pointer" }}
+              style={{ minHeight: "440px", background: "#FBFBFA", display: "grid", placeItems: "center", overflow: "hidden" }}>
               {frame?.image ? (
                 <img src={frame.image} alt={"Lo que ve " + name + ": " + (frame.title || host || "página web")} style={{ display: "block", width: "100%", height: "auto", maxHeight: "72vh", objectFit: "contain" }} />
               ) : (
@@ -133,7 +145,7 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
                 </div>
               )}
               {takeover ? <div role="status" style={{ position: "absolute", left: "16px", bottom: "16px", padding: "8px 14px", borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "13px", animation: "rise .3s ease-out" }}>{`Tienes el control. ${name} espera y mira lo que haces.`}</div> : null}
-            </div>
+            </WatchedView>
           </section>
 
           <aside style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: "14px" }}>

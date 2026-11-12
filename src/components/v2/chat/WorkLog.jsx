@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { workSteps, workSummary } from "../../../lib/worklog.js";
 import { Detail, Status, collapseRepeats, groupTools, headline } from "../../room/ToolCards.jsx";
 import { useExpert } from "../../../lib/expert.js";
+import RowBoundary from "../../RowBoundary.jsx";
 
 // Colmena 3 work log (design/V3Chat.dc.html, V3ChatExperto.dc.html): what a bot did reads as a
 // white card «✓ Hecho en 4 pasos · Ha leído 5 correos · 2 min 14 s» with the steps in plain
@@ -84,6 +85,9 @@ function outputOf(tool) {
   return Object.keys(rest).length ? JSON.stringify(rest, null, 2) : "";
 }
 
+// One step that fails to draw becomes a muted pill; the rest of the log stays (RowBoundary.jsx).
+const STEP_FAILED = "No se ha podido mostrar este paso";
+
 /** A step in plain words (simple mode): a green tick, what it did, its detail on click. */
 function WorkStep({ tool, bots, stepId, onOpenArtifact }) {
   const [open, setOpen] = useState(false);
@@ -141,7 +145,7 @@ export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenAr
   if (expert) {
     return (
       <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderRadius: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", overflow: "hidden", animation: "fade .4s ease-out", minWidth: 0 }}>
-        {steps.map((t, i) => <ToolRow key={t.id || i} tool={t} stepId={stepId} first={i === 0} />)}
+        {steps.map((t, i) => <RowBoundary key={t.id || i} label={STEP_FAILED} resetKey={t.status}><ToolRow tool={t} stepId={stepId} first={i === 0} /></RowBoundary>)}
       </div>
     );
   }
@@ -160,7 +164,7 @@ export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenAr
       </button>
       {open ? (
         <ol aria-label="Pasos" style={{ margin: 0, padding: "0 16px 14px", listStyle: "none", display: "flex", flexDirection: "column", borderTop: "1px solid rgba(18,19,26,.06)", animation: "rise .25s ease-out" }}>
-          {steps.map((t, i) => <WorkStep key={t.id || i} tool={t} bots={bots} stepId={stepId} onOpenArtifact={onOpenArtifact} />)}
+          {steps.map((t, i) => <RowBoundary key={t.id || i} label={STEP_FAILED} resetKey={t.status}><WorkStep tool={t} bots={bots} stepId={stepId} onOpenArtifact={onOpenArtifact} /></RowBoundary>)}
         </ol>
       ) : null}
     </div>
