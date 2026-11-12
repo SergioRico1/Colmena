@@ -58,6 +58,7 @@ import AsidePanel, { askAsideAbout } from "../components/room/AsidePanel.jsx";
 import SelectionPopup, { asQuote, quoteInto } from "../components/room/SelectionPopup.jsx";
 import BrowserLive from "../components/computer/BrowserLive.jsx";
 import TerminalPanel, { commandsOf } from "../components/computer/TerminalPanel.jsx";
+import ChatBlock from "../components/blocks/ChatBlock.jsx";
 import { useAutoPreview } from "../lib/autoPreview.js";
 import { exportConversation } from "../lib/exportConversation.jsx";
 import { LimitBanner } from "../components/v2/LimitNotice.jsx";
@@ -384,6 +385,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         continue;
       }
       if (m.kind === "secret") { rows.push({ key, kind: "secret", m, mark, approval: approvals.find((a) => a.id === m.approvalId) || null }); continue; }
+      if (m.kind === "block") { rows.push({ key, kind: "block", m, mark }); continue; } // a live block (server/blocks.mjs)
       if (m.role === "system" || m.kind === "activity") { rows.push({ key, kind: "note", m, mark }); continue; }
       if (m.kind === "question") {
         const a = approvals.find((x) => x.id === m.approvalId) || null;
@@ -530,6 +532,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       }
       case "secret": return <SecretLine message={m} approval={row.approval} bots={bots} />;
       case "note": return <p style={{ margin: "0", textAlign: "center", fontSize: "13px", color: "#6B6F7A" }}>{plain(m.text)}<NoteLink link={m.link} /></p>;
+      case "block": return <ChatBlock message={m} />;
       case "question": return row.a?.status === "pending"
         ? <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />
         : <QuestionCard approval={row.a} text={m.text} bots={bots} variant="chat" />;
