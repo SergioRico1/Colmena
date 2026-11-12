@@ -345,6 +345,20 @@ export function ChoiceNeed({ m, bots, wide = false }) {
   );
 }
 
+/**
+ * What another person asks of one of your bots and waits for your OK (an errand, «Personas»).
+ * It is decided in your conversation with that person, where its card has the details.
+ */
+export function ErrandNeed({ item, bot, wide = false }) {
+  return (
+    <article aria-label={item.title} style={card(wide, wide ? RING : RING_SM)}>
+      <Head bot={bot} where="de otra persona" at={item.at} label="Decidir" />
+      <h3 style={title(wide)}>{item.title}</h3>
+      <a href={item.roomId ? `/con/${encodeURIComponent(item.roomId)}` : "/equipo"} style={{ ...btn.dark, alignSelf: "flex-start" }}>{"Ver y decidir"}</a>
+    </article>
+  );
+}
+
 // Where a note comes from (server/watch-sources.mjs «fuente»).
 const WHERE = { Correo: ["en tu correo", Mail], Agenda: ["en tu agenda", Calendar], Slack: ["en Slack", MessageSquare], Drive: ["en Drive", FileText], Notion: ["en Notion", FileText], Carpeta: ["en tus carpetas", Folder] };
 

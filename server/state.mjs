@@ -11,6 +11,7 @@ import { isProjectTool, projectToolCard } from "./projects/tools.mjs";
 import { isFlagged, unwrapExternal } from "./external-content.mjs";
 import { FIND_TOOLS, USE_TOOL, wrappedCall } from "./tool-search.mjs";
 import { approvalGroup } from "./approval-groups.mjs";
+import { waitingItems } from "./waiting.mjs";
 import { memoryProvenance, memoryTier } from "./memory.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
@@ -293,7 +294,7 @@ function activityLine(m, ctx) {
 // Fields of a mission summary that are usually empty: left out when null or false, so a
 // hundred finished missions do not fill /api/state with «"forkOf":null» (T3 Code keeps the
 // shell lean). The client reads them as optional (undefined is as falsy as null).
-const OPTIONAL_MISSION = ["conversationOf", "incognito", "expiresAt", "limited", "narration", "recap", "queuePaused", "quiet", "dueAt", "automationId", "error", "snoozedUntil", "archived", "forkOf", "nothingNew", "watch", "thread", "lastLine"];
+const OPTIONAL_MISSION = ["conversationOf", "incognito", "expiresAt", "limited", "narration", "recap", "queuePaused", "quiet", "dueAt", "automationId", "error", "snoozedUntil", "archived", "forkOf", "nothingNew", "watch", "thread", "lastLine", "waiting"];
 const leanSummary = (view) => {
   for (const key of OPTIONAL_MISSION) if (view[key] === null || view[key] === false) delete view[key];
   return view;
@@ -318,6 +319,9 @@ export function missionSummary(m, ctx) {
     // «Qué ha pasado aquí» in 1–3 sentences (recaps.mjs); status writing | ok | failed.
     recap: m.recap ? { text: m.recap.text || null, at: m.recap.at || null, status: m.recap.status || "ok" } : null,
     pendingCount: pending.length, questionCount: pending.filter((a) => a.kind === "question").length,
+    // How many things of this room wait for the person now (waiting.mjs): what «te necesita»
+    // means on every list. Not `pendingCount`, which also counts what was put off.
+    waiting: ctx.waitingByRoom?.get(m.id) || null,
     // What you wrote while it worked, waiting for its turn (queue.mjs).
     queue: Array.isArray(m.queue) ? m.queue.map((q) => ({ id: q.id, text: q.text, at: q.at ?? null })) : [], queuePaused: m.queue?.length ? m.queuePaused ?? null : null,
     safety: m.safety || "avisar", queueMode: m.queueMode || "steer", quiet: m.quiet ?? null, suggestions: m.suggestions?.list || [], suggestionsFor: m.suggestions?.forMessageId ?? null, dueAt: m.dueAt ?? null, automationId: m.automationId ?? null,
@@ -335,7 +339,9 @@ const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "ena
 export function botView(b, ctx) {
   const mine = ctx.missionsByBot.get(b.id) || [];
   const open = mine.filter((m) => OPEN.has(m.status));
-  const waitingIn = new Set((ctx.pendingByBot.get(b.id) || []).map((a) => a.missionId)).size;
+  // «Te espera»: in how many rooms something of this bot waits for the person. From the one
+  // list of what waits (waiting.mjs) when the caller has it; else from its pending approvals.
+  const waitingIn = ctx.waitingByBot ? ctx.waitingByBot.get(b.id)?.size || 0 : new Set((ctx.pendingByBot.get(b.id) || []).map((a) => a.missionId)).size;
   const act = ctx.activity.get(b.id) || null;
   const working = act || open.some((m) => WORKING.has(m.status) && (ctx.stepsByMission.get(m.id) || []).some((s) => s.botId === b.id && s.status === "running"));
   // «Limitado»: its work waits for an AI's plan to renew (limits.mjs, Runtime#resumeLimited).
@@ -367,8 +373,20 @@ export function context(store, runtime, reference = Date.now()) {
   try { accountEmail = runtime?.accountEmail?.() || null; } catch {}
   const ownDomains = ownDomainsOf([accountEmail, ...store.list("people").map((p) => p.email)].filter(Boolean));
   const ctx = { bots, missions, automations, stepsByMission, reference, activity: activityOf(runtime), paused: !!store.get("settings", "main")?.paused, ownDomains, flagged: (stepId) => isFlagged(store, stepId) };
-  const approvals = store.list("approvals").map((a) => approvalView(a, ctx));
+  const stored = store.list("approvals");
+  const approvals = stored.map((a) => approvalView(a, ctx));
   ctx.approvals = approvals;
+  // What waits for the person: the one list every count is a filter of (waiting.mjs), and
+  // from it how many of those things wait in each room and in how many rooms for each bot.
+  ctx.waiting = waitingItems(store, reference, { approvals: stored });
+  ctx.waitingByRoom = new Map();
+  ctx.waitingByBot = new Map();
+  for (const item of ctx.waiting) {
+    if (item.missionId) ctx.waitingByRoom.set(item.missionId, (ctx.waitingByRoom.get(item.missionId) || 0) + 1);
+    if (!item.botId) continue;
+    if (!ctx.waitingByBot.has(item.botId)) ctx.waitingByBot.set(item.botId, new Set());
+    ctx.waitingByBot.get(item.botId).add(item.roomId ?? item.id);
+  }
   ctx.pendingByMission = new Map();
   ctx.pendingByBot = new Map();
   for (const a of approvals.filter((x) => x.status === "pending")) {
@@ -497,6 +515,9 @@ export function buildState(store, runtime, extras = {}) {
     approvals: ctx.approvals
       .filter(recent)
       .sort((a, b) => String(b.decidedAt || b.createdAt).localeCompare(String(a.decidedAt || a.createdAt))),
+    // [{kind, id, missionId, roomId, botId, what, at}], the oldest first: `waiting.length` is the
+    // number Inicio, the sidebar, Trabajo, Equipo, Actividad and the taskbar all show.
+    waiting: ctx.waiting,
     automations: [...ctx.automations.values()].map((r) => automationView(r, reference)),
     suggestions: store
       .list("suggestions")

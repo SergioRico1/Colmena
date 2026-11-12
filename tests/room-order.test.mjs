@@ -2,12 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { orderRooms, moveId } from "../src/lib/format.js";
 
-const room = (id, status = "completed") => ({ id, status });
+// A room waits for you when something of it is on the one list of what waits (`waiting`, server/waiting.mjs).
+const room = (id, status = "completed") => ({ id, status, ...(status === "waiting" ? { waiting: 1 } : {}) });
 const ids = (list) => list.map((m) => m.id);
 
 test("until you reorder, rooms that wait for you go first", () => {
   const rooms = [room("a"), room("b", "waiting"), room("c")];
   assert.deepEqual(ids(orderRooms(rooms)), ["b", "a", "c"]);
+  // A room whose only request was put off is not on the list: it does not jump the queue.
+  assert.deepEqual(ids(orderRooms([room("a"), { id: "b", status: "waiting", pendingCount: 1 }, room("c")])), ["a", "b", "c"]);
 });
 
 test("your order is kept, new rooms go on top, and waiting does not move them", () => {

@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { needsOf } from "../components/v2/needs.js";
-import { ApprovalNeed, ChoiceNeed, GroupNeed, SnoozedNeeds, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
+import { ApprovalNeed, ChoiceNeed, ErrandNeed, GroupNeed, SnoozedNeeds, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
 import { groupApprovals } from "../lib/approvalGroups.js";
 import { Shape, sectionTitle, srOnly } from "../components/v3/dia/parts.jsx";
 import { routeOf } from "../components/v3/dia/route.js";
 import { useResource, useStore } from "../lib/store.jsx";
 import { pickFiles, post } from "../lib/api.js";
-import { greeting, time } from "../lib/format.js";
+import { greeting, needsYou, time } from "../lib/format.js";
 import { reversible } from "../lib/undoToast.js";
 import { formatTokens } from "../components/settings/format.jsx";
 import { navigate } from "../lib/router.jsx";
@@ -23,7 +23,6 @@ import Panel from "../components/blocks/Panel.jsx";
 // timeline: what finished, «Ahora» and what comes later. «Pausar a todo el equipo» stays at hand.
 const COUNT = ["Nada te necesita", "Una cosa te necesita", "Dos cosas te necesitan", "Tres cosas te necesitan", "Cuatro cosas te necesitan", "Cinco cosas te necesitan", "Seis cosas te necesitan", "Siete cosas te necesitan", "Ocho cosas te necesitan", "Nueve cosas te necesitan", "Diez cosas te necesitan"];
 const WORKING = new Set(["running", "queued", "planning", "waiting", "awaiting_plan", "awaiting_choice", "blocked", "paused"]);
-const NEEDS_YOU = new Set(["waiting", "awaiting_plan", "awaiting_choice"]);
 const IDEAS = ["Prepárame la reunión de mañana", "Resume mis correos de hoy", "Prepara mi semana", "Compara las ventas con el mes pasado"];
 
 const pct = (m) => (m.progress?.total ? Math.round((100 * (m.progress.done || 0)) / m.progress.total) : null);
@@ -50,7 +49,7 @@ export default function Hoy({ query = {} }) {
   useEffect(() => { if (query.aprobacion) navigate(`/revisar/${encodeURIComponent(query.aprobacion)}`, { replace: true }); }, [query.aprobacion]);
   const { bots, missions, approvals, automations = [], skills, usage, settings = {}, paused } = store;
   const goals = useResource("/goals").data;
-  const { asks, choices, notes, snoozed } = needsOf(store);
+  const { asks, choices, notes, errands, snoozed, items } = needsOf(store);
   const [ask, setAsk] = useState("");
   const [files, setFiles] = useState([]);
   const [picked, setPicked] = useState(null); // a bot chosen by hand in «… decide quién lo hace»
@@ -124,12 +123,14 @@ export default function Hoy({ query = {} }) {
       : { key: e.a.id, at: e.a.createdAt, el: (wide) => <ApprovalNeed key={e.a.id} a={e.a} wide={wide} bot={botOf(e.a.botId)} mission={missions.find((m) => m.id === e.a.missionId)} /> })),
     ...notes.map((x) => ({ key: x.id, at: x.createdAt, el: (wide) => <WatchNeed key={x.id} n={x} wide={wide} bot={botOf(x.botId)} /> })),
     ...choices.map((m) => ({ key: m.id, at: m.updatedAt || m.createdAt, el: (wide) => <ChoiceNeed key={m.id} m={m} wide={wide} bots={bots} /> })),
+    ...errands.map((x) => ({ key: x.id, at: x.at, el: (wide) => <ErrandNeed key={x.id} item={x} wide={wide} bot={botOf(x.botId)} /> })),
   ].sort((a, b) => ts(a.at) - ts(b.at));
-  const n = asks.length + notes.length + choices.length; // every request counts, also inside a shared card
+  // The one count of what waits for you (server/waiting.mjs): every request counts, also inside a shared card.
+  const n = items.length;
   const [first, ...rest] = needs;
 
   const running = missions.filter((m) => !m.conversation && !m.archived && WORKING.has(m.status))
-    .sort((a, b) => Number(NEEDS_YOU.has(b.status) || b.pendingCount > 0) - Number(NEEDS_YOU.has(a.status) || a.pendingCount > 0) || ts(b.updatedAt || b.createdAt) - ts(a.updatedAt || a.createdAt))
+    .sort((a, b) => Number(needsYou(b)) - Number(needsYou(a)) || ts(b.updatedAt || b.createdAt) - ts(a.updatedAt || a.createdAt))
     .slice(0, 6);
 
   // «Hoy»: what finished today, «Ahora» and what comes later today and the next two days.
@@ -289,7 +290,7 @@ export default function Hoy({ query = {} }) {
                 {running.map((m, i) => {
                   const p = pct(m);
                   const lead = botOf(m.botIds?.[0]) || botOf("atlas");
-                  const waits = NEEDS_YOU.has(m.status) || m.pendingCount > 0;
+                  const waits = needsYou(m);
                   const moving = ["running", "queued", "planning"].includes(m.status);
                   return (
                     <a key={m.id} href={`/encargo/${m.id}`} style={{ display: "flex", gap: "14px", padding: "16px 18px", borderTop: i ? "1px solid rgba(18,19,26,.06)" : "0", color: "#12131A" }}>

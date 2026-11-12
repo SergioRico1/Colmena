@@ -3,6 +3,7 @@ import { goalsDigest } from "./goals.mjs";
 import { id, now } from "./store.mjs";
 import { approvalExpiresAt, isExternalApproval } from "./state.mjs";
 import { isSnoozed } from "./snooze.mjs";
+import { isExpired, waitingItems } from "./waiting.mjs";
 
 /**
  * What a desktop notification may offer as buttons for one pending approval: local
@@ -122,19 +123,17 @@ export function noticeTag(key) {
   return hash.toString(16).padStart(16, "0");
 }
 
-const NEEDS_STATUSES = new Set(["waiting", "awaiting_plan", "awaiting_choice"]);
-/** What waits for the person (the taskbar counter): pending approvals plus rooms that need them without one. */
+/**
+ * What waits for the person (the taskbar and tray counter): the length of the one list every
+ * surface counts from (waiting.mjs). What you put off («Recordar después», snooze.mjs) and what
+ * expired do not count, and neither does a room whose only request is put off.
+ */
 export function pendingCount(store, time = Date.now()) {
-  const approvals = store.list("approvals").filter((a) => a.status === "pending");
-  const withApproval = new Set(approvals.map((a) => a.missionId));
-  const rooms = store.columns("missions", ["id", "status"]).filter((m) => NEEDS_STATUSES.has(m.status) && !withApproval.has(m.id));
-  // What you put off («Recordar después», snooze.mjs) does not count until its time, and
-  // neither does its room.
-  return approvals.filter((a) => !isSnoozed(a, time)).length + rooms.length;
+  return waitingItems(store, time).length;
 }
-/** The pending approvals that wait for the person now: not the ones put off. */
+/** The pending approvals that wait for the person now: not the ones put off, not the expired. */
 export function waitingApprovals(store, time = Date.now()) {
-  return store.list("approvals").filter((a) => a.status === "pending" && !isSnoozed(a, time));
+  return store.list("approvals").filter((a) => a.status === "pending" && !isSnoozed(a, time) && !isExpired(a, time));
 }
 
 /** Quiet hours: 19:00–9:00 and weekends (local time). */

@@ -97,18 +97,25 @@ and `peerErrand` (`server/peers/errands.mjs:203-205`); narrowing is mission-wide
 
 ## One count of what waits for you
 
-Today four counters disagree: the Inicio badge (`needsCount`, `src/components/v2/needs.js`), the
-footer and Equipo («N te esperan»: bots with status `espera`), the Trabajo column (`columnOf`,
-missions) and the taskbar (`pendingCount`, raw approvals). None counts people-side asks.
+Built (`server/waiting.mjs`, `tests/waiting.test.mjs`). Before, four counters disagreed: the
+Inicio badge, the footer and Equipo (bots with status `espera`), the Trabajo column and the
+taskbar (raw approvals), and none counted people-side asks.
 
-`waitingCount` is the length of one server list, `waitingItems(store, peers, now)`:
+`waitingCount` is the length of one server list, `waitingItems(store, now)` (peer state is read
+from the stored records, so it takes no `peers` argument):
 
 - approvals that are pending, not snoozed and not expired;
 - unarchived `awaiting_plan` / `awaiting_choice` missions without such an approval;
 - open watch notes;
 - inbound errands in state `asked`.
 
-Each item carries `roomId` and `botId`; every surface filters this list.
+Each item is `{kind, id, missionId, roomId, botId, what, at}` (an errand also has `title`); the
+list travels in `/api/state` as `waiting`, each mission summary says how many of its own items
+wait (`waiting`) and a bot's `waitingIn` counts its rooms on the list. Every surface filters
+this list (`src/components/v2/needs.js`): Inicio and the sidebar show its length, Trabajo the
+part that is in tasks («3 de 5 · ver todo»), Equipo and Actividad the same number and each
+bot's own items, the taskbar and tray `pendingCount`, which is its length. A room-level
+decision (a plan, a choice) waits as a room: it names a bot only in that bot's own chat.
 
 ## Technical decisions
 

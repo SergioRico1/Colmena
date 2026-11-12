@@ -11,6 +11,7 @@ import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { useExpert } from "../lib/expert.js";
 import { findBot } from "../components/room/common.jsx";
+import { needsYou } from "../lib/format.js";
 import { verbLabel } from "../components/room/working.js";
 import Markdown from "../components/room/Markdown.jsx";
 
@@ -60,7 +61,7 @@ const KIND = { table: "Hoja", sheet: "Hoja", doc: "Documento", document: "Docume
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
 
 export default function Encargo({ params = {} }) {
-  const { bots, ready } = useStore();
+  const { bots, missions = [], ready } = useStore();
   const [expert] = useExpert();
   const room = useRoom(params.id);
   const { mission: m, steps, messages, artifacts, pending, activity } = room;
@@ -86,7 +87,8 @@ export default function Encargo({ params = {} }) {
   const paused = m.status === "paused";
   const blocked = m.status === "blocked" || m.status === "failed";
   const asks = pending.filter((a) => a.kind !== "secret");
-  const waits = asks.length > 0 || ["waiting", "awaiting_plan", "awaiting_choice"].includes(m.status);
+  // «Te necesita»: something of this task is on the one list of what waits for you (server/waiting.mjs).
+  const waits = needsYou(missions.find((x) => x.id === m.id) || m);
   const pct = finished ? 100 : stages.length ? Math.round((100 * done) / (stages.length + 1)) : m.progress?.total ? Math.round((100 * (m.progress.done || 0)) / m.progress.total) : 0;
   const running = steps.find((s) => s.status === "running") || null;
   const runner = running ? findBot(bots, running.botId) : null;

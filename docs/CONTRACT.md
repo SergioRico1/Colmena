@@ -24,6 +24,8 @@ Ligero: nunca incluye contenidos grandes (texto de artefactos, SKILL.md, SOUL).
   usage: { monthTokens, limitTokens|null, percent|null },
   paused: bool,                       // "Pausar a todo el equipo"
   bots: [Bot], missions: [Mission], approvals: [Approval],
+  waiting: [{ kind: 'approval'|'mission'|'note'|'errand', id, missionId|null, roomId|null, botId|null, what, at, title? }],
+                                      // lo que te espera, lo más antiguo primero (server/waiting.mjs): la única cuenta; todo contador es su longitud o un filtro
   automations: [Automation], suggestions: [Suggestion],
   skills: [SkillSummary], memories: [Memory], artifacts: [ArtifactSummary],
   folders: [Folder], people: [Person], connectors: [Connector]
@@ -58,6 +60,7 @@ Detalle `GET /api/bots/:id` → Bot + `{ soul, skills:[Skill], memories:[Memory]
   status: 'queued'|'planning'|'awaiting_plan'|'running'|'waiting'|'paused'|'blocked'|'awaiting_choice'|'completed'|'cancelled',
   statusLabel, activityLine,                  // «Iris está maquetando la diapositiva 3 de 8»
   progress: { done, total }, pendingCount, questionCount,
+  waiting?: number,                           // cuántas cosas de esta sala te esperan ahora (sin lo pospuesto ni lo caducado)
   safety: 'preguntar'|'avisar', dueAt|null, automationId|null,
   createdAt, updatedAt, completedAt|null, error|null, chosenBotIds }
 ```

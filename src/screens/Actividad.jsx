@@ -3,6 +3,7 @@ import Shell from "../components/v2/Shell.jsx";
 import { Shape, sectionTitle } from "../components/v3/dia/parts.jsx";
 import { FILTERS, STATUS, filterRows, hrefOf, logCsv, logRows, since } from "../components/v3/dia/activityLog.js";
 import { needsOf } from "../components/v2/needs.js";
+import { sidebarModel } from "../lib/sidebar.js";
 import { useResource, useStore } from "../lib/store.jsx";
 import { useActivityMap } from "../lib/liveStore.js";
 import { download, post } from "../lib/api.js";
@@ -58,12 +59,19 @@ export default function Actividad() {
   const visible = filterRows(rows, filter, expert ? botFilter : null);
   const list = expert ? visible : visible.slice(0, shown);
 
+  // Who works and what waits for you come from the same model as the sidebar (lib/sidebar.js):
+  // «Ahora» here and the sidebar's foot can never say different things.
+  const model = sidebarModel(store);
+  const states = new Map(model.bots.map((r) => [r.id, r]));
+  const { asks } = needsOf(store);
+  const waiting = model.waitingCount;
   // «Ahora»: who works (and on what), who waits for you and who is stuck.
-  const now = useMemo(() => {
+  const now = (() => {
     const out = [];
     for (const b of bots.filter((x) => x.enabled !== false)) {
       const live = activity[b.id];
-      if (b.status === "trabaja") {
+      const row = states.get(b.id);
+      if (row?.state === "working") {
         let step = null, mission = null;
         for (const id of feeds) {
           const s = (details[id]?.steps || []).find((x) => x.botId === b.id && x.status === "running");
@@ -73,8 +81,8 @@ export default function Actividad() {
         const verb = live?.verb || b.activity?.verb;
         const detail = live?.detail || b.activity?.detail;
         out.push({ bot: b, state: "work", time: step?.startedAt ? since(step.startedAt) : live?.at ? since(new Date(live.at).toISOString()) : "ahora", doing: step?.narration?.text || (verb ? capital(verb) + (detail ? " " + detail : "") : step?.title || "Trabajando"), mission });
-      } else if (b.status === "espera") {
-        const a = approvals.filter((x) => x.status === "pending" && x.botId === b.id).sort((x, y) => ts(x.createdAt) - ts(y.createdAt))[0];
+      } else if (row?.waiting > 0) {
+        const a = asks.filter((x) => x.botId === b.id).sort((x, y) => ts(x.createdAt) - ts(y.createdAt))[0];
         const mission = missions.find((m) => m.id === a?.missionId) || null;
         out.push({ bot: b, state: "wait", time: "te espera", doing: a ? a.title : "Espera tu respuesta", mission, href: !a ? hrefOf(mission) : a.kind === "plan" ? `/sala/${a.missionId}#plan` : a.kind === "question" ? hrefOf(mission) : `/revisar/${a.id}` });
       } else if (b.status === "bloqueado") {
@@ -86,7 +94,7 @@ export default function Actividad() {
     }
     const order = { work: 0, wait: 1, stuck: 2, rest: 3 };
     return out.sort((x, y) => order[x.state] - order[y.state]);
-  }, [bots, activity, feeds, details, approvals, missions]);
+  })();
 
   const pauseMission = async (m) => {
     setError(null);
@@ -106,8 +114,6 @@ export default function Actividad() {
   const exportLog = () => download(`registro-colmena-${new Date().toISOString().slice(0, 10)}.csv`, "﻿" + logCsv(visible, bots), "text/csv;charset=utf-8");
 
   // The day in numbers.
-  const { asks, choices, notes } = needsOf(store);
-  const waiting = asks.length + choices.length + notes.length;
   const firstExpiry = asks.map((a) => a.expiresAt).filter(Boolean).sort()[0];
   const waitNote = firstExpiry ? `caduca ${new Date(firstExpiry).toDateString() === new Date().toDateString() ? "hoy" : new Date(firstExpiry).toLocaleDateString("es-ES", { weekday: "long" })} ${time(firstExpiry)}` : waiting ? "lo más antiguo, primero en Inicio" : "nada pendiente";
   const todayRows = rows.filter((r) => ts(r.at) >= startOf("hoy"));
@@ -117,7 +123,7 @@ export default function Actividad() {
   const month = expert
     ? { label: "Este mes", value: formatTokens(usage.monthTokens || 0) + " tk", note: usage.limitTokens ? `de ${formatTokens(usage.limitTokens)} de límite · ${usage.percent} %` : "sin límite de gasto" }
     : { label: "Este mes", value: usage.limitTokens ? `${usage.percent} %` : formatTokens(usage.monthTokens || 0) + " tokens", note: usage.limitTokens ? "del límite del mes" : "sin límite de gasto" };
-  const waitStat = { label: "Esperan tu OK", value: String(waiting), note: waitNote, honey: waiting > 0 };
+  const waitStat = { label: "Te necesitan", value: String(waiting), note: waitNote, honey: waiting > 0, href: "/" };
   const total = today?.total || {};
   const stats = expert ? [
     { label: "Pasos hoy", value: String(todayRows.length), note: `${todayRows.filter((r) => r.s === "err").length} errores · ${todayRows.filter((r) => r.s === "unk").length} sin confirmar` },
@@ -179,16 +185,22 @@ export default function Actividad() {
           ) : (
             <p style={{ margin: "0", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF", fontSize: "14.5px", color: "#4A4D57" }}>{paused ? "El equipo está en pausa. Nadie trabaja hasta que lo reanudes." : "Nadie está trabajando ahora mismo. Lo que pidas aparecerá aquí mientras se hace."}</p>
           )}
+          {/* The same line as the sidebar's foot, in words: who works and how many things wait. */}
+          <p role="status" style={{ margin: "0", fontSize: "13.5px", color: "#5C606C" }}>{model.summary.text}</p>
         </section>
 
         <section aria-label="Resumen de hoy" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))", gap: "10px" }}>
-          {stats.map((s) => (
-            <div key={s.label} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "16px 18px", borderRadius: "18px", background: s.honey ? "#FFC93C" : "#FFFFFF", color: "#12131A" }}>
-              <span style={{ fontSize: "13px", opacity: ".8" }}>{s.label}</span>
-              <span style={{ font: "600 28px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{s.value}</span>
-              <span style={{ fontSize: "12.5px", opacity: ".8" }}>{s.note}</span>
-            </div>
-          ))}
+          {stats.map((s) => {
+            // «Te necesitan» opens Inicio, where each of those things is answered.
+            const Box = s.href ? "a" : "div";
+            return (
+              <Box key={s.label} href={s.href} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "16px 18px", borderRadius: "18px", background: s.honey ? "#FFC93C" : "#FFFFFF", color: "#12131A" }}>
+                <span style={{ fontSize: "13px", opacity: ".8" }}>{s.label}</span>
+                <span style={{ font: "600 28px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{s.value}</span>
+                <span style={{ fontSize: "12.5px", opacity: ".8" }}>{s.note}</span>
+              </Box>
+            );
+          })}
         </section>
 
         <section aria-labelledby="log-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
