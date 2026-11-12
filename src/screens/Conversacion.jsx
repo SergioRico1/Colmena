@@ -13,7 +13,8 @@ import Inspector from "../components/v2/chat/Inspector.jsx";
 import { useExpert } from "../lib/expert.js";
 import { DeckCard, isDeck } from "../components/v2/SlideDeck.jsx";
 import { DocCard, SheetCard, isWordDoc, isWorkbook } from "../components/v2/OfficeFiles.jsx";
-import { NeedCard } from "../components/v2/NeedCard.jsx";
+import { NeedCard, NeedGroupCard } from "../components/v2/NeedCard.jsx";
+import { groupApprovals } from "../lib/approvalGroups.js";
 import { InteractiveContext } from "../components/room/Interactive.jsx";
 import { useFileDrop } from "../lib/useFileDrop.js";
 import { focusBox, shouldRefocus } from "../lib/composition.js";
@@ -93,7 +94,7 @@ function stepFor(message, steps) {
   return own[own.length - 1] || null;
 }
 // A first guess of each row's height (Timeline measures the real one as it shows it).
-const estimateRow = (row) => ({ head: row?.newChat ? 420 : 40, user: 96, answer: 360, question: 220, note: 30, now: 140, trail: 120, need: 220, error: 90, browser: 320 }[row?.kind] ?? 120);
+const estimateRow = (row) => ({ head: row?.newChat ? 420 : 40, user: 96, answer: 360, question: 220, note: 30, now: 140, trail: 120, need: 220, needs: 260, error: 90, browser: 320 }[row?.kind] ?? 120);
 const WHILE_WORKING_KEY = "colmena:while-working";
 // «/» in the composer (V3Chat «Comandos»): only what this chat really does.
 const SLASH = [
@@ -426,7 +427,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       if (runningStep?.progress?.length) rows.push({ key: "trail-" + runningStep.id, kind: "trail", step: runningStep, bot });
       rows.push({ key: "await", kind: "now", step: runningStep, bot, head: !runningStep?.progress?.length, narration: runningStep?.progress?.length ? null : runningStep?.narration?.text || null });
     }
-    for (const a of needs) if (a.kind !== "question") rows.push({ key: "need-" + a.id, kind: "need", a, bot: findBot(bots, a.botId), mission: missionCard });
+    for (const e of groupApprovals(needs.filter((a) => a.kind !== "question"))) rows.push(e.type === "group" ? { key: "needs-" + e.id, kind: "needs", group: e, bot: findBot(bots, e.botId), mission: missionCard } : { key: "need-" + e.a.id, kind: "need", a: e.a, bot: findBot(bots, e.a.botId), mission: missionCard });
     // Paused by a usage limit: its banner; a turn that stopped before its answer: «Se paró».
     if (mission?.limited) rows.push({ key: "error", kind: "error", limited: true, error: null, mission, name: bot?.name });
     else if (mission?.stopped && !turn) rows.push({ key: "stopped", kind: "stopped", stopped: mission.stopped, status: mission.status, name: bot?.name });
@@ -536,6 +537,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "trail": return <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}><AnswerHead bot={row.bot} state="work" /><WorkTrail step={row.step} bots={bots} running /></div>;
       case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} head={row.head} narration={row.narration} onStop={() => acts.current.stop()} />;
       case "need": return <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />;
+      case "needs": return <NeedGroupCard group={row.group} bot={row.bot} mission={row.mission} inline />;
       case "follow": return <FollowUps list={row.list} onPick={(t) => { setText(t); requestAnimationFrame(() => focusBox(inputRef.current)); }} />;
       case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={() => acts.current.control(row.status === "blocked" ? "retry" : "resume")} onDiscard={() => acts.current.control("discard")} />;
       case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "16px 18px", background: "#FBE7DF", borderRadius: "20px", fontSize: "15px", lineHeight: "1.5" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;

@@ -1,14 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QuestionFlow from "./chat/QuestionFlow.jsx";
 import { QuestionReply } from "../room/QuestionReply.jsx";
 import { post } from "../../lib/api.js";
 import { roomUrl, time } from "../../lib/format.js";
 import { cancel, schedule, useUndoable } from "../../lib/undoable.js";
+import { later } from "../../lib/undoToast.js";
+import { failureText, groupLine, groupShown, groupTitle } from "../../lib/approvalGroups.js";
+import { needsHold } from "../../lib/holdApprove.js";
+import { decideBatch, useBatchFailures } from "../../lib/useApprovalBatch.js";
+import HoldButton from "../HoldButton.jsx";
 import { BotPresence } from "./Presence.jsx";
 
 // «Te necesitan» cards of Colmena 2.0 (design/V2Hoy.dc.html): the only honey on the screen.
 // A send shows what goes out and to whom; «Aprobar y enviar» waits 10 s with «Deshacer».
 // A question shows its options; your choice also waits 10 s before it is given.
+// Several requests of the same kind in a row fold into one card with «Aprobar todas»
+// (NeedGroupCard); a send or any other red line is approved by holding its button.
 export const HONEY = "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)";
 export const CALM = "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)";
 
@@ -18,6 +25,7 @@ const tag = (label) => (
     {label}
   </span>
 );
+const APPROVE = { flex: "1", height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "#FFC93C", cursor: "pointer", fontSize: "15px", fontWeight: "600" };
 const ext = (name) => (String(name || "").split(".").pop() || "").slice(0, 4).toUpperCase();
 const EXT_TINT = { PDF: ["#FBE7DF", "#8E2A1F"], XLSX: ["#E1F4EC", "#0B5A3E"], CSV: ["#E1F4EC", "#0B5A3E"], DOCX: ["#E3EAFB", "#1F3F99"], PPTX: ["#FBEADF", "#8A3B12"] };
 
@@ -68,6 +76,7 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
   const { waiting } = useUndoable(key);
   const [error, setError] = useState(null);
   const [choice, setChoice] = useState(null);
+  const failures = useBatchFailures(); // why «Aprobar todas» could not decide this one
   useEffect(() => {
     const onFail = (e) => { if (e.detail?.id === key) setError(e.detail.message || "No se pudo completar. Vuelve a intentarlo."); };
     window.addEventListener("colmena:undo-failed", onFail);
@@ -150,9 +159,92 @@ export function NeedCard({ a, bot, mission, settled = null, inline = false }) {
       ) : (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
           <a href={a.kind === "plan" && a.missionId ? `/sala/${a.missionId}#plan` : `/revisar/${a.id}`} style={{ display: "flex", alignItems: "center", height: "50px", padding: "0 22px", borderRadius: "999px", background: "rgba(18,19,26,.06)", fontSize: "15px", fontWeight: "600" }}>{"Revisar"}</a>
-          {a.kind === "secret" || a.kind === "plan" ? null : (
-            <button type="button" onClick={approve} style={{ flex: "1", height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "#FFC93C", cursor: "pointer", fontSize: "15px", fontWeight: "600" }}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>
+          {a.kind === "secret" || a.kind === "plan" ? null : needsHold(a) ? (
+            <HoldButton onConfirm={approve} fill="rgba(18,19,26,.16)" style={APPROVE}>{isSend ? "Aprobar y enviar" : "Aprobar"}</HoldButton>
+          ) : (
+            <button type="button" onClick={approve} style={APPROVE}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>
           )}
+        </div>
+      )}
+      {error || failures.get(a.id) ? <span role="alert" style={{ fontSize: "14px", color: "#B4372A" }}>{error || failures.get(a.id)}</span> : null}
+    </article>
+  );
+}
+
+/**
+ * Several requests of the same kind from one bot, one after another, as one card: what each
+ * one is, «Aprobar todas» (10 s with «Deshacer»), «Ver cada una» (the usual cards, each
+ * decided alone) and «No permitir» for all of them. Never a red line.
+ */
+export function NeedGroupCard({ group, bot, mission, inline = false }) {
+  const key = "approvals:" + group.id;
+  const { waiting } = useUndoable(key);
+  const failures = useBatchFailures();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState(null);
+  const toggle = useRef(null);
+  const moved = useRef(false);
+  useEffect(() => {
+    const onFail = (e) => { if (e.detail?.id === key) setError(e.detail.message || "No se pudo completar. Vuelve a intentarlo."); };
+    window.addEventListener("colmena:undo-failed", onFail);
+    return () => window.removeEventListener("colmena:undo-failed", onFail);
+  }, [key]);
+  // «Ver cada una» ↔ «Ver juntas» swap places: the keyboard stays on the one that replaced it.
+  useEffect(() => {
+    if (!moved.current) return;
+    moved.current = false;
+    toggle.current?.focus();
+  }, [open]);
+  const flip = () => { moved.current = true; setOpen((v) => !v); };
+  const items = group.items;
+  const heading = groupTitle(group, bot?.name);
+  const listed = groupShown(items);
+  const approve = () => {
+    setError(null);
+    schedule(key, async () => {
+      const left = await decideBatch(items, "approved");
+      if (left) throw Error(failureText(left, "approved"));
+    });
+  };
+  const deny = () => {
+    setError(null);
+    later({
+      id: "deny:" + group.id, keys: items.map((a) => "approval:" + a.id), text: "No se permiten", error: "No se pudieron descartar",
+      run: async () => { const left = await decideBatch(items, "denied"); if (left) throw Error(failureText(left, "denied")); },
+    });
+  };
+  const quiet = { height: "50px", padding: "0 14px", border: "0", background: "transparent", cursor: "pointer", fontSize: "15px", fontWeight: "500", color: "#5C606C" };
+  if (open) {
+    return (
+      <div role="group" aria-label={heading} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "0 6px" }}>
+          <span style={{ flex: "1", minWidth: 0, fontSize: "15px", fontWeight: "600" }}>{heading}</span>
+          <button ref={toggle} type="button" aria-expanded="true" onClick={flip} style={{ ...quiet, height: "40px" }}>{"Ver juntas"}</button>
+        </div>
+        {items.map((a) => <NeedCard key={a.id} a={a} bot={bot} mission={mission} inline={inline} />)}
+      </div>
+    );
+  }
+  return (
+    <article aria-label={heading} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
+      {inline ? tag("Te necesita") : <Header bot={bot} mission={mission} at={items[0].createdAt} label="Aprobar" />}
+      <h3 style={{ margin: "0", font: inline ? "600 22px/1.25 'Bricolage Grotesque', sans-serif" : "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{heading}</h3>
+      <ul style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
+        {listed.shown.map((a) => (
+          <li key={a.id} style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "15px", lineHeight: "1.5", color: "#3D404A" }}>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{groupLine(a, bot?.name, group.label)}</span>
+            {failures.has(a.id) ? <span style={{ fontSize: "14px", color: "#B4372A" }}>{failures.get(a.id)}</span> : null}
+          </li>
+        ))}
+        {listed.more ? <li style={{ fontSize: "14px", color: "#6B6F7A" }}>{`y ${listed.more} más`}</li> : null}
+      </ul>
+      {waiting ? (
+        <Countdown id={key} onUndo={() => cancel(key)} text="Se aprueban en" />
+      ) : (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+          <button ref={toggle} type="button" aria-expanded="false" onClick={flip} style={{ height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "15px", fontWeight: "600" }}>{"Ver cada una"}</button>
+          <button type="button" onClick={approve} style={APPROVE}>{"Aprobar todas"}</button>
+          <button type="button" onClick={deny} style={quiet}>{"No permitir"}</button>
         </div>
       )}
       {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4372A" }}>{error}</span> : null}

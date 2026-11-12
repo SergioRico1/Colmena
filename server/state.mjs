@@ -8,7 +8,8 @@ import { ago, subtitle, TOOLKITS, CONNECTOR_NAMES, editorConfig } from "./trigge
 import { TOOL_KEYS } from "./store.mjs";
 import { extraToolCard, documentCardExtras, webSearchToolCall, recoveryToolCalls } from "./tools.mjs";
 import { isProjectTool, projectToolCard } from "./projects/tools.mjs";
-import { unwrapExternal } from "./external-content.mjs";
+import { isFlagged, unwrapExternal } from "./external-content.mjs";
+import { approvalGroup } from "./approval-groups.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
@@ -128,7 +129,7 @@ export function approvalExpiresAt(a, kind = a.kind) {
 }
 
 /** Approval in contract shape; tolerant to records written by older runtimes. */
-export function approvalView(a, { bots, missions, automations, reference = Date.now(), stepsByMission, ownDomains = [] }) {
+export function approvalView(a, { bots, missions, automations, reference = Date.now(), stepsByMission, ownDomains = [], flagged = null }) {
   const bot = bots.get(a.botId);
   const m = missions.get(a.missionId);
   const legacyKind = a.tool === "write_file" ? "write" : a.tool === "remember" ? "memory" : a.tool === "apps_execute" ? (a.kind === "send" ? "send" : "permission") : null;
@@ -190,6 +191,9 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     impact,
     edited: !!a.edited,
     canAlways: a.canAlways ?? (pending && ["write", "permission"].includes(kind)),
+    // {key, label} when it may be decided together with its neighbours of the same key
+    // («Aprobar todas», approval-groups.mjs); null for red lines and anything decided alone.
+    group: pending && !expired ? approvalGroup(a, { flagged: flagged ? flagged(a.stepId) : true }) : null,
     createdAt: a.createdAt ?? null, decidedAt: a.decidedAt ?? null,
     decidedBy: a.decidedBy ?? (a.decidedAt ? "tú" : null), resolution: a.resolution ?? null,
     denyReason: a.denyReason ?? null, reviewing: !!a.reviewing, reviewNote: a.reviewNote ?? null,
@@ -301,7 +305,7 @@ export function context(store, runtime, reference = Date.now()) {
   let accountEmail = null;
   try { accountEmail = runtime?.accountEmail?.() || null; } catch {}
   const ownDomains = ownDomainsOf([accountEmail, ...store.list("people").map((p) => p.email)].filter(Boolean));
-  const ctx = { bots, missions, automations, stepsByMission, reference, activity: activityOf(runtime), paused: !!store.get("settings", "main")?.paused, ownDomains };
+  const ctx = { bots, missions, automations, stepsByMission, reference, activity: activityOf(runtime), paused: !!store.get("settings", "main")?.paused, ownDomains, flagged: (stepId) => isFlagged(store, stepId) };
   const approvals = store.list("approvals").map((a) => approvalView(a, ctx));
   ctx.approvals = approvals;
   ctx.pendingByMission = new Map();
