@@ -11,7 +11,7 @@ import UsageSection, { UsageUnits } from "../components/v2/settings/Usage.jsx";
 import HelpSection, { diagnosticsDot, useDiagnostics } from "../components/v2/settings/Diagnostics.jsx";
 import AdvancedSection from "../components/v2/settings/Advanced.jsx";
 import PeopleSettings from "../components/v2/settings/People.jsx";
-import { PARENT, SECTION_OF, sectionId } from "../components/v2/settings/sections.js";
+import { DETAIL_ALIAS, PARENT, SECTION_OF, sectionId } from "../components/v2/settings/sections.js";
 import { Go, btn } from "../components/v2/settings/v3.jsx";
 import AjustesSeccion from "./AjustesSeccion.jsx";
 
@@ -34,7 +34,8 @@ const LEAD = { apps: <>Las apps, carpetas y webs con las que trabajan tus bots. 
 export default function AjustesV2({ params = {}, query = {}, section: forced = null }) {
   const { ai = null, ready } = useStore();
   const { result } = useDiagnostics();
-  const raw = forced || params.section || null;
+  const asked = forced || params.section || null;
+  const raw = DETAIL_ALIAS[asked] || asked; // /ajustes/personas → «Quién usa este ordenador»
   // A detail page of a section (/ajustes/ordenador, /ajustes/personas, /ajustes/seguridad).
   if (raw && PARENT[raw] && !SECTION_OF[raw]) return <AjustesSeccion params={{ section: raw }} />;
   const id = sectionId(raw);

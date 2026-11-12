@@ -42,7 +42,8 @@ export const SECTIONS = [
       ["narracion", "Te cuentan en qué están", "narración qué está haciendo progreso"],
       ["sugerencias", "Respuestas sugeridas", "sugerencias botones respuesta rápida"],
       ["quien-responde", "Elegir solo quién responde en las salas", "enrutador quién responde sala atlas reparte mención"],
-      ["personas", "Personas del espacio", "miembros compañeros invitar equipo"],
+      ["quien-usa", "Quién usa este ordenador", "personas del espacio miembros firmar aprobar asignar rol"],
+      ["personas", "Personas con las que hablas", "contactos compañeros invitar equipo conectar"],
       ["atajos", "Atajos de teclado", "ctrl k teclado shortcuts paleta"],
     ],
   },
@@ -191,7 +192,10 @@ export const SECTION_OF = Object.fromEntries(SECTIONS.map((s) => [s.id, s]));
 export const DEFAULT_SECTION = "general";
 
 // Detail pages (one click below a section): which section they belong to.
-export const PARENT = { ordenador: "apps", personas: "general", seguridad: "privacidad" };
+export const PARENT = { ordenador: "apps", "quien-usa": "general", seguridad: "privacidad" };
+// «Personas» means the people you talk to from Colmena (Equipo). The page that lists who signs
+// on this computer was called so too: its old address still opens it.
+export const DETAIL_ALIAS = { personas: "quien-usa" };
 // Old section addresses (Colmena 2 and before) whose content now lives in a section.
 export const ALIAS = {
   cuenta: "general", espacio: "general", inteligencia: "ia", autonomia: "permisos",

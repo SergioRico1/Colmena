@@ -15,6 +15,7 @@ import { navigate } from "../lib/router.jsx";
 import { NoAccountNotice } from "../components/v3/States.jsx";
 import { PlanLimitNotice } from "../components/v2/LimitNotice.jsx";
 import { scrollBehavior } from "../lib/motion.js";
+import { pauseLine } from "../lib/pauseReason.js";
 import Panel from "../components/blocks/Panel.jsx";
 
 // Colmena 3 · Inicio (design/V3Inicio.dc.html): one sentence says how many things need you, a
@@ -302,7 +303,7 @@ export default function Hoy({ query = {} }) {
                           <span style={{ flex: "1", minWidth: 0, fontSize: "15px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title}</span>
                           {m.dueAt ? <span style={{ flex: "none", fontSize: "12.5px", color: "#5C606C" }}>{dueLabel(m.dueAt)}</span> : null}
                         </span>
-                        <span style={{ fontSize: "13.5px", color: waits ? "#8A5A00" : "#4A4D57", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.narration?.text || m.activityLine || m.statusLabel}</span>
+                        <span style={{ fontSize: "13.5px", color: waits ? "#8A5A00" : "#4A4D57", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.status === "paused" ? pauseLine(m, { botName: lead?.name }) : m.narration?.text || m.activityLine || m.statusLabel}</span>
                         <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                           <span aria-hidden="true" style={{ position: "relative", flex: "1", height: "4px", borderRadius: "2px", background: "#ECECE7", overflow: "hidden" }}>
                             <span style={{ position: "absolute", inset: "0 auto 0 0", width: (p ?? 4) + "%", borderRadius: "2px", background: "#12131A", transition: "width .4s ease" }} />

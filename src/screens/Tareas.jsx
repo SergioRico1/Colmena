@@ -9,6 +9,7 @@ import { needsYou, roomUrl, time } from "../lib/format.js";
 import { countIn, needsCount } from "../components/v2/needs.js";
 import { waitingLabel } from "../lib/sidebar.js";
 import { isSnoozed, snoozeWhen } from "../lib/snooze.js";
+import { pauseLine } from "../lib/pauseReason.js";
 import { useExpert } from "../lib/expert.js";
 import { scrollBehavior } from "../lib/motion.js";
 
@@ -75,7 +76,7 @@ function holdText(m, approvals) {
 }
 
 /** What it is doing now, in one sentence. */
-function nowText(m, col) {
+function nowText(m, col, botName) {
   if (col === "done") return m.recap?.text || m.activityLine || "Terminada";
   if (col === "stuck") return m.error || m.activityLine || "Se ha atascado. Mira qué pasa.";
   if (col === "wait") {
@@ -85,7 +86,7 @@ function nowText(m, col) {
     if (m.waiting > 0) return m.waiting === 1 ? "Una cosa espera tu OK" : `${m.waiting} cosas esperan tu OK`;
     return m.activityLine || m.statusLabel || "Te espera";
   }
-  if (m.status === "paused") return m.error || "En pausa. Seguirá donde lo dejó.";
+  if (m.status === "paused") return pauseLine(m, { botName });
   return m.narration?.text || m.activityLine || m.statusLabel || "En marcha";
 }
 
@@ -128,7 +129,7 @@ export default function Tareas({ query = {} }) {
     const state = col === "run" && (m.status === "paused" || held) ? S.pause : S[col];
     return {
       m, col, ...state, pct: pct + "%", showBar: col !== "done" && total > 0,
-      now: held ? holdText(m, approvals) : nowText(m, col), meta, due: col === "done" ? dayLabel(m.completedAt, false) : due || "—",
+      now: held ? holdText(m, approvals) : nowText(m, col, list[0]?.name), meta, due: col === "done" ? dayLabel(m.completedAt, false) : due || "—",
       bots: list.map((b) => ({ b, work: col === "run" && m.status !== "paused" && b.status === "trabaja" })),
       href: m.status === "awaiting_choice" ? roomUrl(m) : `/encargo/${m.id}`,
     };

@@ -13,7 +13,11 @@ const ROLE_HELP = {
 };
 const initials = (name) => (name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
-/** Ajustes › Personas: who signs approvals and gets missions assigned (POST /api/people). */
+/**
+ * Ajustes › «Quién usa este ordenador»: who signs approvals and gets tasks assigned on this
+ * computer (POST /api/people). Not «Personas»: that word is for the people you talk to from
+ * Colmena (Equipo › Personas).
+ */
 export default function Personas() {
   const { people, settings } = useStore();
   const { act, busy, error, setError } = useAction();
@@ -36,20 +40,20 @@ export default function Personas() {
       </span>
       <span style={{ padding: "4px 9px", background: p.role === "Administrador" ? "#12131A" : "#F4F4F0", color: p.role === "Administrador" ? "#FFFFFF" : "#3D404A", borderRadius: "6px", fontSize: "12px", fontWeight: "600" }}>{p.role || "Colaborador"}</span>
       {you ? <a href="/ajustes/espacio" style={{ ...btn.quiet, textDecoration: "none" }}>Editar</a>
-        : <button type="button" onClick={() => later({ id: "person:" + p.id, keys: ["person:" + p.id], text: `${p.name || "Persona"} ya no está en el espacio`, error: "No se pudo quitar", run: () => act(() => del(`/people/${encodeURIComponent(p.id)}`)) })} aria-label={`Quitar a ${p.name}`} style={btn.quiet}>Quitar</button>}
+        : <button type="button" onClick={() => later({ id: "person:" + p.id, keys: ["person:" + p.id], text: `${p.name || "Persona"} ya no está en la lista`, error: "No se pudo quitar", run: () => act(() => del(`/people/${encodeURIComponent(p.id)}`)) })} aria-label={`Quitar a ${p.name}`} style={btn.quiet}>Quitar</button>}
     </div>
   );
 
   return (
     <>
-      <PageHeader title="Personas">Quién firma lo que se aprueba y a quién se asignan tareas en este ordenador.</PageHeader>
+      <PageHeader title="Quién usa este ordenador">Quién firma lo que se aprueba y a quién se asignan tareas en este ordenador.</PageHeader>
       <div role="note" style={{ maxWidth: "720px", display: "flex", gap: "12px", padding: "14px 16px", background: "#FFFFFF", border: "0", borderRadius: "14px", fontSize: "14px", lineHeight: "1.5" }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", marginTop: "2px" }}><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>
-        <span>Colmena funciona solo en este ordenador: no hay invitaciones ni cuentas en red. Las personas sirven para <strong>firmar</strong> las aprobaciones del registro y para <strong>asignar</strong> tareas.</span>
+        <span>Esta lista es solo de este ordenador: sirve para <strong>firmar</strong> las aprobaciones del registro y para <strong>asignar</strong> tareas. Para hablar con otras personas desde Colmena, ve a <a href="/equipo" style={{ color: "#1F4FD1", fontWeight: "600" }}>Equipo</a>.</span>
       </div>
       <Notice>{error}</Notice>
 
-      <Card id="personas-lista" title="En este espacio" aside={<span style={{ font: "500 12px/1 'Geist Mono', monospace", color: "#5C606C" }}>{people.length || 1} {people.length > 1 ? "personas" : "persona"}</span>}>
+      <Card id="personas-lista" title="En este ordenador" aside={<span style={{ font: "500 12px/1 'Geist Mono', monospace", color: "#5C606C" }}>{people.length || 1} {people.length > 1 ? "personas" : "persona"}</span>}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           {row(people.find((p) => p.self) || { name: settings.userName || "Tu cuenta", role: settings.userRole || "Administrador" }, true, 0)}
           {people.filter((p) => !p.self).map((p, i) => row(p, false, i + 1))}

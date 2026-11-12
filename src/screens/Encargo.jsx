@@ -12,6 +12,7 @@ import { navigate } from "../lib/router.jsx";
 import { useExpert } from "../lib/expert.js";
 import { findBot } from "../components/room/common.jsx";
 import { needsYou } from "../lib/format.js";
+import { pauseReason } from "../lib/pauseReason.js";
 import { verbLabel } from "../components/room/working.js";
 import Markdown from "../components/room/Markdown.jsx";
 
@@ -103,7 +104,7 @@ export default function Encargo({ params = {} }) {
   const state = finished ? { text: "Hecha", bg: "#E3F4EC", ink: "#0B6B4A" }
     : waits ? { text: "Te necesita", bg: "#FFC93C", ink: "#12131A" }
     : blocked ? { text: "Atascada · mira qué pasa", bg: "#FBE9EA", ink: "#B4232A" }
-    : paused ? { text: "En pausa · seguirá donde lo dejó", bg: "#F1F1EC", ink: "#4A4D57" }
+    : paused ? { text: "En pausa · " + (pauseReason(m, { botName: lead?.name })?.why || "seguirá donde lo dejó").replace(/^./, (c) => c.toLowerCase()), bg: "#F1F1EC", ink: "#4A4D57" }
     : { text: "En marcha · va según lo previsto", bg: "#EEF0F4", ink: "#1F4FD1" };
   const browsing = runner && /naveg|formulario|ordenador/i.test(act?.verb || "");
   const tools = expert && running ? (running.tools || []).slice(-6) : [];

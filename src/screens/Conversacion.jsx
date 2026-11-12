@@ -70,7 +70,7 @@ import ChangedFiles, { TurnFileLinks, useOpenFileRequests } from "../components/
 // shown as it happens, and the capsule to write or dictate. A conversation is a mission with
 // conversation:true (as before): the queue, drafts, quotes and side panel work as in v1.
 const STARTERS = [
-  [/coordin/i, ["Organiza mi semana con lo que tengo pendiente", "Reparte este encargo entre el equipo", "Resume en qué está cada bot"]],
+  [/coordin/i, ["Organiza mi semana con lo que tengo pendiente", "Reparte esta tarea entre el equipo", "Resume en qué está cada bot"]],
   [/investig|research/i, ["Busca qué ha cambiado esta semana en mi sector", "Compara tres opciones y dime cuál elegirías", "Resume este documento"]],
   [/dato|finanz|contab/i, ["Revisa este Excel y dime qué no cuadra", "Calcula cuánto gastamos al mes en proveedores", "Prepara la previsión del trimestre"]],
   [/dise/i, ["Propón tres ideas de portada", "Dibuja un esquema del proceso", "Revisa este diseño"]],

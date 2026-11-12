@@ -148,7 +148,7 @@ export default function EquipoPeople({ peers }) {
         <aside style={{ flex: "1 1 280px", minWidth: "0", display: "flex", flexDirection: "column", gap: "12px" }}>
           <InviteCard disabled={!peers?.me || relayOff} onAccept={() => setSheet({ kind: "aceptar" })} />
           {peers?.me ? <StatusCard status={peers.me.status} act={act} /> : null}
-          <a href="/ajustes/personas#buzon" style={{ padding: "0 6px", fontSize: "13.5px", color: "#1F4FD1" }}>{"El buzón y los encargos de otras personas, en Ajustes"}</a>
+          <a href="/ajustes/contactos#buzon" style={{ padding: "0 6px", fontSize: "13.5px", color: "#1F4FD1" }}>{"El buzón y los encargos de otras personas, en Ajustes"}</a>
           {act.error ? <p role="alert" style={{ margin: "0", fontSize: "13.5px", color: "#B4232A" }}>{act.error}</p> : null}
         </aside>
       </div>

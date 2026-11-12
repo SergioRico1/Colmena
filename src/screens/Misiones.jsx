@@ -382,7 +382,7 @@ export default function Misiones({ query = {} }) {
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "14px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <h1 style={{ margin: "0", font: "600 36px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Misiones"}</h1>
-              <p style={{ margin: "0", fontSize: "15px", color: "#5C606C" }}>{"Todos los encargos de todas las salas, en un mismo sitio."}</p>
+              <p style={{ margin: "0", fontSize: "15px", color: "#5C606C" }}>{"Todas las tareas de todas las salas, en un mismo sitio."}</p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               <div role="group" aria-label="Vista" style={{ display: "flex", gap: "4px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "12px" }}>

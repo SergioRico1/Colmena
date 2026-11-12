@@ -294,7 +294,7 @@ function activityLine(m, ctx) {
 // Fields of a mission summary that are usually empty: left out when null or false, so a
 // hundred finished missions do not fill /api/state with «"forkOf":null» (T3 Code keeps the
 // shell lean). The client reads them as optional (undefined is as falsy as null).
-const OPTIONAL_MISSION = ["conversationOf", "incognito", "expiresAt", "limited", "narration", "recap", "queuePaused", "quiet", "dueAt", "automationId", "error", "snoozedUntil", "archived", "forkOf", "nothingNew", "watch", "thread", "lastLine", "waiting"];
+const OPTIONAL_MISSION = ["conversationOf", "incognito", "expiresAt", "limited", "narration", "recap", "queuePaused", "quiet", "dueAt", "automationId", "error", "snoozedUntil", "archived", "forkOf", "nothingNew", "watch", "thread", "lastLine", "waiting", "pausedBy", "interrupted"];
 const leanSummary = (view) => {
   for (const key of OPTIONAL_MISSION) if (view[key] === null || view[key] === false) delete view[key];
   return view;
@@ -312,6 +312,9 @@ export function missionSummary(m, ctx) {
     // Paused by an AI's usage limit: which one, when it renews, when the work goes on alone.
     // Why the turn stopped before its answer (stopped.mjs): the «Se paró» card.
     stopped: ["paused", "blocked"].includes(m.status) && m.stopped && !m.limited ? { reason: m.stopped.reason, detail: m.stopped.detail ?? null, at: m.stopped.at ?? null, ...(m.stopped.why ? { why: m.stopped.why } : {}) } : null,
+    // Why it is paused when it is neither a limit nor a stop: the whole team is paused, or
+    // Colmena closed while it worked (it goes on by itself). The lists say it (src/lib/pauseReason.js).
+    pausedBy: m.status === "paused" ? m.pausedBy ?? null : null, interrupted: m.status === "paused" && !!m.interrupted,
     limited: m.status === "paused" && m.limited ? { engine: m.limited.engine, label: m.limited.label, window: m.limited.window ?? null, resetsAt: m.limited.resetsAt ?? null, resumeAt: m.limited.resumeAt ?? null, botIds: m.limited.botIds || [], ...(m.limited.plan ? { plan: true, percent: m.limited.percent ?? null } : {}) } : null,
     // The working bot's own line («Ya tengo dos tarifas…»), for the sidebar.
     narration: (() => { const s = steps.find((x) => x.status === "running" && x.narration?.text); return s ? { botId: s.botId, text: s.narration.text } : null; })(),
