@@ -677,7 +677,10 @@ export class Peers extends EventEmitter {
     const persons = [...new Set(people)].filter((a) => isAddress(a) && a !== this.address && members.has(a)).slice(0, 16);
     const piece = signed ? cleanPart(part) : null;
     if (id !== null && (typeof id !== "string" || !/^[A-Za-z0-9-]{8,64}$/.test(id) || this.store.get("peerMessages", id))) throw new PeerError("Ese mensaje ya existe.", 409);
-    const extra = { ...(replyTo ? { replyTo } : {}), ...(thread ? { thread } : {}), ...(signed ? { bot: signed } : {}), ...(named.length ? { mentions: named } : {}), ...(persons.length ? { people: persons } : {}), ...(card ? { card } : {}), ...(piece ? { part: piece } : {}) };
+    // `req`: this Colmena knows requests to other people's bots (server/room-work.mjs): whoever
+    // owns a bot named here may give it a real turn. An older Colmena never sends it.
+    const asks = !signed && s.kind === "group" && named.some((m) => m.owner !== this.address);
+    const extra = { ...(replyTo ? { replyTo } : {}), ...(thread ? { thread } : {}), ...(signed ? { bot: signed } : {}), ...(named.length ? { mentions: named } : {}), ...(persons.length ? { people: persons } : {}), ...(card ? { card } : {}), ...(piece ? { part: piece } : {}), ...(asks ? { req: 1 } : {}) };
     const to = this.others(s).filter((id) => ["active", "known", "pending"].includes(this.contact(id)?.status));
     const m = this.store.put("peerMessages", { id: id || randomUUID(), shareId, from: this.address, text: body, at: now(), status: to.length ? "sending" : "sent", pendingTo: to, ...extra });
     for (const id of to) this.enqueue(id, { type: "msg", share: shareId, id: m.id, at: m.at, text: body, ...extra, ...(s.kind === "group" ? { v: s.version } : {}) }, { messageId: m.id });
@@ -778,7 +781,7 @@ export class Peers extends EventEmitter {
     const to = this.others(s).filter((id) => this.contact(id)?.box);
     this.store.patch("peerMessages", m.id, { status: "sending", pendingTo: to, error: null });
     // The same message again, with everything it carried (thread, bot, mentions, card).
-    const extra = Object.fromEntries(["replyTo", "thread", "bot", "mentions", "people", "card", "part"].filter((k) => m[k] && (!Array.isArray(m[k]) || m[k].length)).map((k) => [k, m[k]]));
+    const extra = Object.fromEntries(["replyTo", "thread", "bot", "mentions", "people", "card", "part", "req"].filter((k) => m[k] && (!Array.isArray(m[k]) || m[k].length)).map((k) => [k, m[k]]));
     for (const id of to) this.enqueue(id, { type: "msg", share: s.id, id: m.id, at: m.at, text: m.text, ...extra, ...(s.kind === "group" ? { v: s.version } : {}) }, { messageId: m.id });
     void this.flushOutbox();
     return this.messageView(this.store.get("peerMessages", m.id));
@@ -845,7 +848,8 @@ export class Peers extends EventEmitter {
     } catch (error) {
       this.log("Mensaje de " + (c?.name || "alguien") + " ignorado: " + error.message);
     }
-    if (!["typing", "presence", "team.presence", "code.view", "code.viewers"].includes(body.type)) this.store.put("peerSeen", { id: env.id, at: now() });
+    // Live notes are not remembered; a room status says when it was sent and an older one is ignored (room-work.mjs).
+    if (!["typing", "presence", "team.presence", "code.view", "code.viewers", "room.status"].includes(body.type)) this.store.put("peerSeen", { id: env.id, at: now() });
     if (c) this.touch(from);
     return true;
   }
@@ -991,7 +995,8 @@ export class Peers extends EventEmitter {
         else if (/^errand\.[a-z]+$/.test(body.type)) this.emit("errand", { from: c, body });
         // A team's roster, a request to its creator, a teammate's profile or presence (teams.mjs checks who).
         else if (/^team\.[a-z]+$/.test(body.type)) this.emit("team", { from: c, body });
-        // A room: «please add this person» to its owner, the bots of someone you only share a room with (room.mjs checks who).
+        // A room: «please add this person» to its owner, the bots of someone you only share a room with,
+        // the state of a bot at work and a hand-off between two bots (room.mjs and room-work.mjs check who).
         else if (/^room\.[a-z]+$/.test(body.type)) this.emit("room", { from: c, body });
         return;
     }
@@ -1065,6 +1070,7 @@ export class Peers extends EventEmitter {
     const m = this.store.put("peerMessages", {
       id: body.id, shareId: s.id, from: c.id, text, at, receivedAt: now(), status: "received",
       ...(typeof body.replyTo === "string" ? { replyTo: body.replyTo.slice(0, 64) } : {}), ...(root ? { thread: root.id } : {}), ...(bot ? { bot } : {}), ...(mentions.length ? { mentions } : {}), ...(people.length ? { people } : {}), ...(card ? { card } : {}), ...(part ? { part } : {}),
+      ...(body.req === 1 && !bot && mentions.length && s.kind === "group" ? { req: 1 } : {}),
     });
     this.store.patch("peerShares", s.id, { lastAt: at > (s.lastAt || "") ? at : s.lastAt, lastLine: lastLineOf((bot ? bot.name + ": " : "") + text), lastFrom: c.id, lastFromOther: c.id, unread: (s.unread || 0) + (calls && !more ? 1 : 0) });
     this.typing.get(s.id)?.delete(bot ? c.id + "#" + bot.name : c.id);

@@ -8,6 +8,8 @@
 // POST  /api/rooms/:id/messages {text, to?, thread?, replyTo?, mentions?, people?, …}   routed by what the room is
 // POST  /api/rooms/:id/people {address} | {invite: {name, role?}}   the first person gives a private room its share
 // POST  /api/rooms/:id/requests/:request {decision}   a «please add» a member sent you: approve | decline
+// POST  /api/rooms/:id/asks/:ask {decision}  what another person asks one of your bots: go | later | always | never
+// POST  /api/rooms/:id/share {artifactId, caption?}   a deliverable of yours, to everyone in the room, as a file
 // POST  /api/rooms/:id/leave                 POST /api/rooms/:id/seen
 import { z } from "zod";
 import { MAX_PAGE } from "../history.mjs";
@@ -42,7 +44,7 @@ export function registerRoomRoutes(app, { store, rooms, messageView, stepView, s
   app.get("/api/rooms/:id/timeline", run((req) => {
     const q = check(z.object({ cursor: z.string().max(400).optional(), limit: z.coerce.number().int().min(1).max(MAX_PAGE).optional() }), { ...req.query });
     const room = rooms.must(req.params.id);
-    return { room: rooms.view(room), ...roomTimeline({ store, room, peers: rooms.peers, me: rooms.me(), cursor: q.cursor || null, limit: q.limit, messageView, stepView }) };
+    return { room: rooms.view(room), ...roomTimeline({ store, room, peers: rooms.peers, me: rooms.me(), cursor: q.cursor || null, limit: q.limit, messageView, stepView, work: rooms.work }) };
   }));
   app.post("/api/rooms/:id/messages", run((req) => {
     const mention = z.object({ owner: address, bot: z.string().trim().min(1).max(40) }).strict();
@@ -64,6 +66,12 @@ export function registerRoomRoutes(app, { store, rooms, messageView, stepView, s
     res.status(out.asked ? 202 : 200).json(out);
   });
   app.post("/api/rooms/:id/requests/:request", run((req) => rooms.decide(req.params.id, req.params.request, check(z.object({ decision: z.enum(["approve", "decline"]) }).strict(), req.body).decision)));
+  // Another person's request to one of your bots (server/room-work.mjs): the same decision as its card in «Te necesitan».
+  app.post("/api/rooms/:id/asks/:ask", run((req) => rooms.work.decide(rooms.must(req.params.id).id, req.params.ask, check(z.object({ decision: z.enum(["go", "later", "always", "never"]) }).strict(), req.body).decision)));
+  app.post("/api/rooms/:id/share", run((req) => {
+    const data = check(z.object({ artifactId: z.string().trim().min(1).max(200), caption: z.string().max(2000).optional() }).strict(), req.body);
+    return rooms.work.shareArtifact(req.params.id, data.artifactId, data.caption || "");
+  }));
   app.post("/api/rooms/:id/leave", run((req) => rooms.leave(req.params.id)));
   app.post("/api/rooms/:id/seen", run((req) => rooms.seen(req.params.id)));
 }

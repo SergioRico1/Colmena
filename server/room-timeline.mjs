@@ -9,6 +9,11 @@
 // bot's answer that went to the people carry `peerId` (and `peerParts`) on the mission row: the
 // mission row is the body and the peer row only says how it travelled (sent, seen by, edited,
 // reactions). A long answer of someone else's bot arrives in parts and is joined back here.
+// What another person asked one of your bots is the other way round: the sala keeps the row its
+// bot read (wrapped as outside content), and the conversation shows the message as it arrived.
+//
+// Lines that are not messages (server/room-work.mjs: «Vera usó 4 herramientas · 12 min»,
+// «Vera ⇄ Atlas») come with the page they fall in, as items of engine `line`.
 import { ROOM_PAGE, MAX_PAGE, stepsForPage } from "./history.mjs";
 import { visibleMessages } from "./branches.mjs";
 import { cleanPart, threadsOf } from "./peers/service.mjs";
@@ -77,9 +82,10 @@ function joined(store, first, part) {
  *  - attached: the sala's thread replies and progress lines that hang from those items;
  *  - steps: the steps of the span (the live ones too, on the latest page);
  *  - cursor: what to ask the page before with (null at the very start).
- * `messageView` / `stepView`: the missions route's own views; `peers`: «Personas» or null.
+ * `messageView` / `stepView`: the missions route's own views; `peers`: «Personas» or null;
+ * `work`: the room's RoomWork (status and hand-off lines, requests to your bots) or null.
  */
-export function roomTimeline({ store, room, peers = null, me, cursor = null, limit = ROOM_PAGE, messageView, stepView }) {
+export function roomTimeline({ store, room, peers = null, me, cursor = null, limit = ROOM_PAGE, messageView, stepView, work = null }) {
   const size = Math.max(1, Math.min(MAX_PAGE, Math.floor(limit) || ROOM_PAGE));
   const at = decodeCursor(cursor);
   const mission = room.missionId ? store.get("missions", room.missionId) : null;
@@ -87,7 +93,8 @@ export function roomTimeline({ store, room, peers = null, me, cursor = null, lim
   const bots = new Map(store.list("bots").map((b) => [b.id, b]));
 
   // ---- the sala: its visible path, top-level messages in the order of their time
-  const all = mission ? visibleMessages(mission, store.where("messages", "missionId", mission.id)) : [];
+  // Another person's request to one of your bots is shown by the message they sent, not by the row the bot read.
+  const all = mission ? visibleMessages(mission, store.where("messages", "missionId", mission.id)).filter((m) => !m.author?.address) : [];
   const top = all.filter(isTop).map((m, i) => ({ m, i })).sort((a, b) => atOf(a.m).localeCompare(atOf(b.m)) || a.i - b.i).map((x) => x.m);
   let mEnd = top.length;
   if (at) {
@@ -159,17 +166,28 @@ export function roomTimeline({ store, room, peers = null, me, cursor = null, lim
     };
   };
   const missionItem = (m) => ({ ...messageView(m), engine: "mission", author: missionAuthor(m), ...travel(m) });
+  // What other people asked your bots with these messages, and how each request stands.
+  const asked = new Map();
+  if (work && share) for (const a of store.where("roomAsks", "shareId", share.id)) (asked.get(a.peerId) || asked.set(a.peerId, []).get(a.peerId)).push(work.askView(a));
   const peerItem = (x) => {
     const author = peerAuthor(x.row);
     const mine = author.you || author.owner?.you;
     return {
-      ...peerView(x.row), engine: "peer", author,
+      ...peerView(x.row), engine: "peer", author, ...(asked.has(x.row.id) ? { asks: asked.get(x.row.id) } : {}),
       // Words that came from another computer are plain text: never Markdown, never HTML.
       ...(mine ? {} : { plain: true }), ...(x.parts ? { parts: x.parts.length, partIds: x.parts } : {}),
     };
   };
+  // Lines of this span: from the page's oldest item (on the very first page, from the start) up to the page after it.
+  const lines = work && share ? work.lines(room, { from: more && oldest ? oldest.at : null, until: at ? at.at : null }) : [];
+  const items = page.map((x) => (x.engine === "mission" ? missionItem(x.row) : peerItem(x)));
+  for (const line of lines) {
+    let i = items.length;
+    while (i > 0 && String(items[i - 1].at || "") > line.at) i--;
+    items.splice(i, 0, line);
+  }
   return {
-    items: page.map((x) => (x.engine === "mission" ? missionItem(x.row) : peerItem(x))),
+    items,
     attached: hanging.map(missionItem),
     steps,
     cursor: more && oldest ? encodeCursor({ at: oldest.at, id: oldest.row.id, engine: oldest.engine }) : null,

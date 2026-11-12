@@ -10,7 +10,9 @@
 // In a room with people (a group: server/room.mjs) what YOU ask one of your bots is your own
 // request: it takes the turn in the room's sala, with its tools, and its final answer goes to
 // everyone. Whether it does is decided here, in handle(), for every message whatever sent it;
-// what another person asks keeps the rules above (no tools).
+// what another person asks goes by your rule for them (server/room-work.mjs: a card for you, or
+// a turn with the tools you allow for other people's requests); with «Nunca», or from a
+// Colmena that does not know requests, it keeps the rules above (no tools).
 import { now } from "../store.mjs";
 import { readSoul, renderSoulTemplate, personalityHints } from "../soul.mjs";
 import { wrapReport } from "../external-content.mjs";
@@ -58,11 +60,18 @@ export class PeerBots {
     let targets = [...new Set([...named, ...byName])].slice(0, PEER_BOT_LIMITS.perMessage);
     // Your own message in a room: the room decides which of your bots work on it (Rooms#ownTurn).
     const rooms = mine && share.kind === "group" ? this.peers.rooms || null : null;
+    // In a room, what another person asks your bot may get a real turn (server/room-work.mjs).
+    const work = !mine && share.kind === "group" ? this.peers.rooms?.work || null : null;
+    // They answer a question your bot asked them in the room (ask_room): the same request goes on.
+    if (work?.reply(share, message)) return;
     if (!targets.length && !(rooms && hint?.missionThread)) return;
     if (!mine) {
       const c = this.peers.contact(message.from);
       // Your setting for that person (a «known» member of a group counts as asking).
       if ((c?.asks?.bots || "mencion") === "nunca") return;
+      // Your rule for their requests («Encargos a tus bots»): a card for you, or a turn with the
+      // tools you allow. «Nunca» (and an older Colmena's mention) leaves the answer without tools below.
+      if (work) targets = targets.filter((bot) => !work.incoming(share, message, bot));
     }
     // «@Atlas búscanos una hora…» from you: your bot organizes the meeting (meetings.mjs)
     // instead of answering in words. Only you can start one with your bots.

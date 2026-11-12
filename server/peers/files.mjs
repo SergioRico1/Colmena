@@ -77,8 +77,11 @@ export class PeerFiles {
     return { id, parts: parts.length, size: bytes.length, sha256: sha(bytes) };
   }
 
-  /** Shares a file in a conversation: `bytes` with its name, and a PDF to show it if there is one. */
-  async send(shareId, { name, bytes, caption = "", view = null }) {
+  /**
+   * Shares a file in a conversation: `bytes` with its name, and a PDF to show it if there is one.
+   * `bot`: signed as one of your bots (what it made for a request in a room); `replyTo`: the answer it goes with.
+   */
+  async send(shareId, { name, bytes, caption = "", view = null, bot = null, replyTo = null }) {
     this.peers.requireRelay();
     const s = this.peers.share(shareId);
     if (s.leftAt || s.removedAt) throw new PeerError("Ya no estás en esta conversación.", 409);
@@ -99,17 +102,17 @@ export class PeerFiles {
     if (preview) await writeFile(path.join(folder, "view.pdf"), view);
     // The record first: the message shows the file as soon as it is posted.
     this.store.put("peerFiles", { id: main.id, shareId, messageId: null, from: this.peers.address, name: clean, mime: kind[1], size: main.size, sha256: main.sha256, view: !!preview, until, status: "ready", at: now() });
-    const message = this.peers.post(shareId, String(caption || "").trim() || clean, { card });
+    const message = this.peers.post(shareId, String(caption || "").trim() || clean, { card, ...(bot ? { bot } : {}), ...(replyTo ? { replyTo } : {}) });
     const record = this.store.patch("peerFiles", main.id, { messageId: message.id });
     this.live(record);
     return { message, file: this.view(record) };
   }
   /** A deliverable of yours (Archivo): its file, and its PDF so they can see it as it is. */
-  async sendArtifact(shareId, artifactId, caption = "") {
+  async sendArtifact(shareId, artifactId, caption = "", { bot = null, replyTo = null } = {}) {
     const a = await this.artifactFile?.(artifactId);
     if (!a) throw new PeerError("No existe ese entregable.", 404);
     const view = a.pdf && extOf(a.name) !== "pdf" ? await readFile(a.pdf).catch(() => null) : null;
-    return this.send(shareId, { name: a.name, bytes: await readFile(a.path), caption, view });
+    return this.send(shareId, { name: a.name, bytes: a.bytes || await readFile(a.path), caption, view, bot, replyTo });
   }
 
   // ------------------------------------------------------------------ arriving
@@ -285,7 +288,14 @@ const decodeXml = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/
 export function artifactSource({ store, rootOf }) {
   return async (artifactId) => {
     const a = store.get("artifacts", String(artifactId));
-    if (!a?.file || !a.missionId) return null;
+    if (!a?.missionId) return null;
+    // A deliverable that is only text (a note, a table): its content as a file of that format.
+    if (!a.file) {
+      const format = String(a.format || "md").toLowerCase();
+      if (typeof a.content !== "string" || !a.content.trim() || !["md", "txt", "csv"].includes(format)) return null;
+      const title = String(a.title || "entregable").replace(/\.[a-z0-9]{1,6}$/i, "").trim().slice(0, 100) || "entregable";
+      return { bytes: Buffer.from(a.content, "utf8"), name: cleanName(title + "." + format), pdf: null };
+    }
     const { safePath } = await import("../files.mjs");
     const root = rootOf(a.missionId);
     const file = await safePath(root, a.file).catch(() => null);

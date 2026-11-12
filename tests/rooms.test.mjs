@@ -447,10 +447,12 @@ test("in a room with people your mention gives your bot the turn, with its tools
   await until(() => peerRows(marta, room.id).some((m) => m.text === "Sigo aquí."), "Marta recibe la segunda respuesta");
 });
 
-test("another person's message never starts your bot with tools: it answers a mention as before, without them", async (t) => {
+test("with «Nunca» for someone's requests their mention never starts your bot with tools: it answers as before, without them", async (t) => {
   const [sergio, marta] = await world(t);
   await friends(sergio, marta);
   const room = await sharedRoom(sergio, marta);
+  // «Encargos a tus bots: Nunca» for Marta (the default asks you: tests/room-bots.test.mjs).
+  sergio.peers.updateContact(addr(marta), { asks: { encargos: "nunca" } });
   const before = { steps: sergio.store.where("steps", "missionId", room.missionId).length, messages: sergio.store.where("messages", "missionId", room.missionId).length };
   sergio.reply = () => answer("Soy Vera: eso pídeselo a Sergio.");
   // Marta names Sergio's Vera (the «@» picker says whose bot), and tries to order it around.
