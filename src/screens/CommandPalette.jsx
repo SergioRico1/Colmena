@@ -40,6 +40,8 @@ function Tile({ children, dark = false, small = false }) {
   return <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "10px", background: dark ? "#12131A" : "#F1F1EC", font: `600 ${small ? "10px" : "12px"}/1 'Geist', sans-serif`, color: "#3D404A" }}>{children}</span>;
 }
 const glyph = (g, small) => <Tile small={small}>{g}</Tile>;
+// A person is a circle with initials (circles are people; bots keep their shapes).
+const personTile = (initials) => <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#E6E7EC", font: "600 10px/1 'Geist', sans-serif", color: "#12131A" }}>{initials}</span>;
 const iconTile = (Icon) => <Tile><Icon size={16} strokeWidth={2} /></Tile>;
 const botTile = (bot) => <Tile><Shape bot={bot} size={16} /></Tile>;
 const pathTile = (d) => <Tile><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg></Tile>;
@@ -473,7 +475,7 @@ export default function CommandPalette() {
       items: people.map((c) => {
         const dm = (peers?.shares || []).find((s) => s.kind === "dm" && s.members?.some((m) => m.id === c.id));
         const initials = String(c.name || "?").split(/\s+/).map((w) => w[0] || "").join("").slice(0, 2).toUpperCase();
-        return { key: "person:" + c.id, name: c.name, icon: glyph(initials, true), title: c.name, meta: dm ? "Abrir vuestra conversación" : "Persona conectada", run: () => go(dm ? shareUrl(dm.id) : "/equipo"), preview: { kind: "Persona", title: c.name, desc: "", facts: [], cta: dm ? "Abrir la conversación" : "Ver en Equipo" } };
+        return { key: "person:" + c.id, name: c.name, icon: personTile(initials), title: c.name, meta: dm ? "Abrir vuestra conversación" : "Persona conectada", run: () => go(dm ? shareUrl(dm.id) : "/equipo"), preview: { kind: "Persona", title: c.name, desc: "", facts: [], cta: dm ? "Abrir la conversación" : "Ver en Equipo" } };
       }),
     });
   } else if (actionsOnly) {
