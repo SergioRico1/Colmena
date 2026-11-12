@@ -8,7 +8,8 @@ export function registerSettingsRoutes(app, { listModels, store, runtime }) {
   const settingsPatch = z
     .object({
       spaceName: z.string().trim().min(1).max(80), userName: short, userRole: short, learning: z.boolean(), model: z.string().max(150),
-      limits: z.object({ monthlyTokens: z.number().int().min(1000).max(1e12).nullable(), pauseAtLimit: z.boolean(), warnAt80: z.boolean() }).partial().strict(),
+      // planPauseAt: long work waits from this share of the AI plan's window on (admission.mjs; unset = 95, null = never).
+      limits: z.object({ monthlyTokens: z.number().int().min(1000).max(1e12).nullable(), pauseAtLimit: z.boolean(), warnAt80: z.boolean(), planPauseAt: z.number().int().min(50).max(99).nullable() }).partial().strict(),
       fallback: z.enum(["local", "none"]), onboarded: z.boolean(), holidays: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(60),
       // Your order of the rooms in the sidebar (drag to reorder); new rooms go on top.
       roomOrder: z.array(z.string().min(1).max(200)).max(500),

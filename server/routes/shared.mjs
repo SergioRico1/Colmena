@@ -41,6 +41,8 @@ const botFields = z.object({
   usesChatGPT: z.boolean(), engine: z.enum(["openai", "anthropic", "opencode-go"]).nullable(), personality, autonomy, thinking, location: z.enum(["local", "nube"]), tools: toolsSchema,
   helpers: z.array(short).max(10), delegateFreely: z.boolean(), channels,
   voice: z.string().trim().max(200).nullable(), // speechSynthesis voice (voiceURI) for «Escuchar»
+  // The bot's own monthly budget in tokens (admission.mjs); null = only the space's limit.
+  monthlyTokens: z.number().int().min(1000).max(1e12).nullable(),
 });
 const botCreate = botFields
   .partial()

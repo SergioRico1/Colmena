@@ -3,6 +3,7 @@ import { id, now, withBotDefaults, TOOL_KEYS } from "../store.mjs";
 import * as skillsModule from "../skills.mjs";
 import { context, missionSummary, botView, skillSummary, memorySummary } from "../state.mjs";
 import { registerPortraitRoutes } from "../portraits.mjs";
+import { botMonthTokens } from "../usage.mjs";
 import { HttpError, SOON, attachment, instructions, botCreate, botPatch, draftBase, check, desktopOnly, safe } from "./shared.mjs";
 
 /** Bots: the team, creating and editing them, their drafts and their soul. */
@@ -96,6 +97,8 @@ export function registerBotRoutes(app, { store, runtime, optional, mustGet }) {
     res.json({
       ...botView(ctx.bots.get(req.params.id), ctx),
       voice: ctx.bots.get(req.params.id)?.voice ?? null,
+      // What it used this calendar month, beside its monthly budget (monthlyTokens).
+      monthTokens: botMonthTokens(store, req.params.id),
       soul: soul ?? null,
       skills: store.list("skills").filter((s) => s.botId === req.params.id).map(skillSummary),
       memories: store.list("memories").filter((m) => m.active !== false && (m.botId === req.params.id || m.scope === "equipo")).map(memorySummary),

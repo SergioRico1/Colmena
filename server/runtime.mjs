@@ -27,6 +27,7 @@ import { spillOutput } from "./spill.mjs";
 import { IMAGE_CODE } from "./images.mjs";
 import { stepUsage, LIMIT_CODE, tokensOf as usageTokens } from "./usage.mjs";
 import { engineName, PROVIDER_LIMIT_CODE, UNKNOWN_RESET_MS } from "./limits.mjs";
+import { Admission } from "./admission.mjs";
 import { Checkpoints } from "./checkpoints.mjs";
 import { primaryBot, bumpLearningCounter } from "./learning.mjs";
 import { stopReason, stoppedRecord, isContextOverflow } from "./stopped.mjs";
@@ -112,6 +113,10 @@ export class Runtime {
     this.jobs = new Set();
     this.missionJobs = new Map();
     this.wakeups = new Map(); // missionId → wakes its scheduler (an OK given while others work)
+    // The gate of every model call (admission.mjs): plan windows and budget reservations.
+    this.admission = new Admission(store);
+    this.runOrigin = new Map(); // missionId → 'auto' (went on by itself) | 'go' («Continuar»), for the run in course
+    this.turnCalls = new Map(); // missionId → model calls since the person last wrote in it
     this.delegates = new Map(); // helper step id (ask_bot tasks) → {missionId, botId, from}: who may get message_bot
     this.code = null; // «Código» (server/code/service.mjs), set by the server: code_task
     this.activity = new Map();
@@ -332,6 +337,7 @@ export class Runtime {
     const thread = parent && parent.missionId === missionId ? (parent.replyTo || parent.id) : null;
     if (!m || ["cancelled", "awaiting_choice"].includes(m.status))
       throw Error("La misión no admite mensajes ahora. Elige primero una propuesta si hay un debate pendiente.");
+    this.personSpoke(missionId);
     if (m.status === "awaiting_plan" && !thread) {
       this.planDecision(missionId, "changes", text);
       return this.store.where("messages", "missionId", missionId).filter((x) => x.role === "user").at(-1);
@@ -423,6 +429,7 @@ export class Runtime {
     if (this.active.has(missionId) || ["running", "queued", "planning"].includes(m.status)) throw Object.assign(Error("Espera a que termine de responder."), { status: 409 });
     const bot = botId && this.bot(botId) ? botId : m.mode === "solo" ? m.botIds[0] : "atlas";
     this.countTurn(bot);
+    this.personSpoke(missionId);
     const keys = this.queueTurns(missionId, [bot], this.steps(missionId).map((s) => s.key), { request: String(userMessage.text || ""), ackOn: userMessage.id });
     this.store.patch("missions", missionId, { steps: [...(m.steps || []), ...keys], status: "queued", error: null, stopped: null });
     this.launch(missionId);
@@ -538,13 +545,21 @@ export class Runtime {
     this.missionJobs.set(missionId, job);
     job.finally(() => {
       this.jobs.delete(job);
-      if (this.missionJobs.get(missionId) === job) this.missionJobs.delete(missionId);
+      if (this.missionJobs.get(missionId) !== job) return;
+      this.missionJobs.delete(missionId);
+      // Who started the run («Continuar», or by itself) only counts while it lasts.
+      this.runOrigin.delete(missionId);
     });
     return job;
   }
-  /** Resume a paused or blocked mission from its last checkpoint. */
+  /**
+   * «Continuar»: resume a paused or blocked mission from its last checkpoint. The person asks
+   * for it now, so this run is not parked for the little that is left of the plan (inference.mjs workOf).
+   */
   resume(missionId) {
     if (!this.store.get("missions", missionId)) throw Error("Misión no encontrada.");
+    this.turnCalls.delete(missionId);
+    this.runOrigin.set(missionId, "go");
     return this.launch(missionId);
   }
   /**
@@ -568,6 +583,7 @@ export class Runtime {
           this.setHistory(s.id, [...(this.history(s) || []), { role: "user", content: "Colmena se reinició mientras trabajabas. Antes de repetir algo que estaba a medias (un envío, un archivo, una acción en una web), comprueba si ya se hizo." }], { status: "pending" });
       this.store.patch("missions", m.id, { autoResumes: [...recent, now()], interrupted: null, error: null });
       this.store.event(m.id, "resumed", { text: "Sigue sola tras reiniciar Colmena" });
+      this.runOrigin.set(m.id, "auto");
       this.launch(m.id);
       resumed.push(m.id);
     }
@@ -585,6 +601,8 @@ export class Runtime {
     if (!Number.isFinite(resumeAt) || resumeAt <= Date.now()) resumeAt = Date.now() + UNKNOWN_RESET_MS;
     return {
       engine: error?.engine || "openai", label: limit.label || "límite de uso", window: limit.window || null, resetsAt: limit.resetsAt || null,
+      // Parked before the plan ran out (admission.mjs): how much was used, for its own card.
+      ...(limit.plan ? { plan: true, percent: limit.percent ?? null } : {}),
       resumeAt: new Date(resumeAt).toISOString(), botIds: [...new Set(running.map((s) => s.botId))], model: running.find((s) => s.model)?.model || null, at: now(),
     };
   }
@@ -604,7 +622,8 @@ export class Runtime {
       if (m.status !== "paused" || !l || this.active.has(m.id) || this.missionJobs.has(m.id)) continue;
       const due = Date.parse(l.resumeAt || "") <= time;
       let substitute = null;
-      if (!due && hub && l.model) try { substitute = hub.fallbackFor(l.model); } catch {}
+      // Work parked for the little left of a plan waits for the renewal: its engine still answers.
+      if (!due && hub && l.model && !l.plan) try { substitute = hub.fallbackFor(l.model); } catch {}
       if (!due && !substitute) continue;
       const recent = (m.limitResumes || []).filter((t) => time - Date.parse(t) < 86_400_000);
       if (recent.length >= LIMIT_RESUMES) {
@@ -618,6 +637,7 @@ export class Runtime {
       this.store.patch("missions", m.id, { limited: null, error: null, limitResumes: [...recent, new Date(time).toISOString()] });
       this.store.event(m.id, "resumed", { text });
       this.store.put("messages", { id: id(), missionId: m.id, role: "system", kind: "activity", text: text + ".", at: now() });
+      this.runOrigin.set(m.id, "auto");
       this.launch(m.id);
       resumed.push(m.id);
     }

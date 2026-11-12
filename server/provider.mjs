@@ -155,6 +155,8 @@ export function responseCollector({ onDelta = () => {}, onEvent = () => {}, erro
       error.providerCode = code || null;
       // «max_output_tokens» or «content_filter»: why the «Se paró» card says it stopped.
       error.incomplete = event.response?.incomplete_details?.reason || null;
+      // What the cut answer had used, when the provider says so (counted as partial usage).
+      if (event.response?.usage && typeof event.response.usage === "object") error.usage = event.response.usage;
       // The plan ran out mid-stream (WebSocket or SSE error event): a 429 with its renewal time.
       if (/usage_limit|rate_limit|quota/i.test(code) || Number(event.status ?? event.error?.status) === 429) {
         error.status = 429;

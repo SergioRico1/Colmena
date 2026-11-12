@@ -13,6 +13,8 @@ import { Alert, BotMark, Card, INK, MUTED, Pills, Row, Switch, Term, anchorOf, b
 const PAGES_PER_TOKEN = 1500 / 1e6;
 const LIMITS = [[null, "Sin límite"], [1e6, 1e6], [3e6, 3e6], [10e6, 10e6]];
 const PERIODS = [[7, "7 días"], [30, "30 días"], [90, "90 días"]];
+// Long work waits from this share of the AI plan's window on (server/admission.mjs; unset = 95).
+const PLAN_PAUSE = [[95, "Al 95 % usado"], [90, "Al 90 % usado"], [80, "Al 80 % usado"], [null, "Nunca"]];
 const share = (part, total) => (total ? Math.round((part / total) * 100) : 0);
 
 // The unit lives outside the screen so the switch in the title and the figures agree.
@@ -84,7 +86,8 @@ export default function UsageSection() {
   const top = spent[0]?.tokens || 1;
   const chats = (data?.chats || []).filter((c) => c.tokens > 0);
   const t = data?.total;
-  const setLimit = (patch, text) => save({ limits: patch }, text, { limits: Object.fromEntries(Object.keys(patch).map((k) => [k, k === "monthlyTokens" ? limits.monthlyTokens ?? null : limits[k] !== false])) });
+  const planPause = limits.planPauseAt === null ? null : limits.planPauseAt ?? 95;
+  const setLimit = (patch, text) => save({ limits: patch }, text, { limits: Object.fromEntries(Object.keys(patch).map((k) => [k, k === "monthlyTokens" ? limits.monthlyTokens ?? null : k === "planPauseAt" ? planPause : limits[k] !== false])) });
   const kind = (c) => (c.kind === "room" ? "Sala" : c.kind === "gone" ? "Borrada" : c.incognito ? "Incógnito" : "Chat");
   const note = cap ? `quedan ${fmt(u, Math.max(0, cap - used))} hasta el límite` : u === "pag" ? "un millón de tokens da para unas 1.500 páginas" : "sin límite al mes en Colmena";
   return (
@@ -181,6 +184,11 @@ export default function UsageSection() {
         </Row>
         <Row anchor="aviso-80" title="Avisarme al 80 %" sub="Un aviso en Inicio, sin parar nada." min="64px">
           <Switch on={limits.warnAt80 !== false} label="Avisarme al 80 por ciento" onChange={(v) => setLimit({ warnAt80: v }, v ? "Te avisarán al 80 %" : "Sin aviso al 80 %")} />
+        </Row>
+        <Row as="label" anchor="pausa-plan" title="Guardar el final del plan para chatear" sub="Cuando a tu plan de IA le queda poco, las rutinas y los trabajos largos esperan a que se renueve. Lo que tú escribes se responde igual, y puedes pulsar «Continuar ahora»." min="64px">
+          <select aria-label="Guardar el final del plan para chatear" value={planPause ?? ""} onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setLimit({ planPauseAt: v }, v ? `El trabajo largo espera al ${v} % del plan` : "El trabajo largo no espera por el plan"); }} style={{ ...select, width: "170px" }}>
+            {(PLAN_PAUSE.some(([v]) => v === planPause) ? PLAN_PAUSE : [[planPause, `Al ${planPause} % usado`], ...PLAN_PAUSE]).map(([v, l]) => <option key={String(v)} value={v ?? ""}>{l}</option>)}
+          </select>
         </Row>
         <Row anchor="csv" title="Descargar el uso en CSV" min="64px">
           <a href={`/api/usage/history.csv?days=${days}`} download style={{ ...btn("outline", 36), fontSize: "13.5px" }}>Descargar</a>

@@ -19,7 +19,7 @@ export function tokensOf(usage) {
 }
 
 /** Records one provider call. `tokens` may be a number or a Responses `usage` object. */
-export function record(store, { missionId = null, botId = null, stepId = null, tokens, usage, ms = null, model = null, effort = null, transport = null, timing = null, purpose = null, tools = null } = {}) {
+export function record(store, { missionId = null, botId = null, stepId = null, tokens, usage, ms = null, model = null, effort = null, transport = null, timing = null, purpose = null, tools = null, partial = false, estimated = false } = {}) {
   const t =
     typeof tokens === "number"
       ? { input: 0, output: 0, total: Math.max(0, tokens), cached: 0, reasoning: 0 }
@@ -48,11 +48,32 @@ export function record(store, { missionId = null, botId = null, stepId = null, t
     ...(timing?.firstTokenMs != null ? { firstTokenMs: Math.round(timing.firstTokenMs) } : {}),
     ...(purpose ? { purpose } : {}),
     ...(tools != null ? { tools } : {}),
+    // A call that died half-way (a cut stream, a stop): what it had used until then; `estimated`
+    // when the provider did not get to report it and Colmena counted what it sent and read.
+    ...(partial ? { partial: true } : {}),
+    ...(partial && estimated ? { estimated: true } : {}),
     at: now(),
   });
   const aggregate = store.get("usageMonths", month) || { id: month, tokens: 0, warned80: false };
   store.put("usageMonths", { ...aggregate, tokens: aggregate.tokens + t.total, updatedAt: now() });
+  // The bot's own month, once somebody asked for it (botMonthTokens builds it from the records).
+  const own = botId ? store.get("usageBotMonths", month + ":" + botId) : null;
+  if (own) store.put("usageBotMonths", { ...own, tokens: own.tokens + t.total, updatedAt: now() });
   return entry;
+}
+
+/**
+ * Tokens one bot used this month (its monthly budget, admission.mjs). O(1) after the first
+ * look: an aggregate per bot and month, built once from the usage records and kept by record().
+ */
+export function botMonthTokens(store, botId, month = monthKey()) {
+  if (!botId) return 0;
+  const key = month + ":" + botId;
+  const known = store.get("usageBotMonths", key);
+  if (known) return known.tokens || 0;
+  const tokens = store.where("usage", "botId", botId).reduce((n, u) => n + (u.month === month ? u.tokens || 0 : 0), 0);
+  store.put("usageBotMonths", { id: key, month, botId, tokens, updatedAt: now() });
+  return tokens;
 }
 
 /** What one bot turn cost: tokens and how much of the input came from the prompt cache. */

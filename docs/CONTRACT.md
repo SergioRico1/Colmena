@@ -17,7 +17,8 @@ Ligero: nunca incluye contenidos grandes (texto de artefactos, SKILL.md, SOUL).
   settings: {
     model, spaceName: 'Equipo de operaciones', userName: 'Tu cuenta', userRole: 'Administrador',
     onboarded: bool, learning: true,
-    limits: { monthlyTokens: number|null, pauseAtLimit: bool, warnAt80: bool },
+    limits: { monthlyTokens: number|null, pauseAtLimit: bool, warnAt80: bool,
+              planPauseAt?: 50..99|null },   // long work waits from this % of the AI plan (unset = 95, null = never)
     fallback: 'local'|'none',
   },
   usage: { monthTokens, limitTokens|null, percent|null },
@@ -41,6 +42,7 @@ Ligero: nunca incluye contenidos grandes (texto de artefactos, SKILL.md, SOUL).
   tools: { correo, calendario, carpeta, hojas, chat, erp }, // 'none'|'lee'|'escribe'|'pide'
   helpers: [botId], delegateFreely: bool,
   channels: { colmena: true, correo: bool, chat: bool, movil: bool },
+  monthlyTokens?: number|null,                     // presupuesto propio al mes, en tokens (server/admission.mjs); GET /api/bots/:id añade monthTokens (lo usado este mes)
   // calculados por el servidor:
   status: 'trabaja'|'espera'|'libre'|'pausado'|'bloqueado',
   statusLabel: 'Trabaja'|'Te espera'|'Libre'|'En pausa'|'Bloqueado',

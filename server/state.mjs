@@ -201,6 +201,7 @@ function activityLine(m, ctx) {
   if (m.activityLine) return m.activityLine;
   if (m.status === "paused" && m.limited) {
     const when = whenText(m.limited.resetsAt || m.limited.resumeAt);
+    if (m.limited.plan) return "En pausa · queda poco del plan de " + engineName(m.limited.engine) + (when ? "; sigue " + when : "");
     return "Limitado · " + engineName(m.limited.engine) + " renueva su límite" + (when ? " " + when : " pronto");
   }
   if (m.status === "running" || m.status === "queued") {
@@ -246,7 +247,7 @@ export function missionSummary(m, ctx) {
     // Paused by an AI's usage limit: which one, when it renews, when the work goes on alone.
     // Why the turn stopped before its answer (stopped.mjs): the «Se paró» card.
     stopped: ["paused", "blocked"].includes(m.status) && m.stopped && !m.limited ? { reason: m.stopped.reason, detail: m.stopped.detail ?? null, at: m.stopped.at ?? null } : null,
-    limited: m.status === "paused" && m.limited ? { engine: m.limited.engine, label: m.limited.label, window: m.limited.window ?? null, resetsAt: m.limited.resetsAt ?? null, resumeAt: m.limited.resumeAt ?? null, botIds: m.limited.botIds || [] } : null,
+    limited: m.status === "paused" && m.limited ? { engine: m.limited.engine, label: m.limited.label, window: m.limited.window ?? null, resetsAt: m.limited.resetsAt ?? null, resumeAt: m.limited.resumeAt ?? null, botIds: m.limited.botIds || [], ...(m.limited.plan ? { plan: true, percent: m.limited.percent ?? null } : {}) } : null,
     // The working bot's own line («Ya tengo dos tarifas…»), for the sidebar.
     narration: (() => { const s = steps.find((x) => x.status === "running" && x.narration?.text); return s ? { botId: s.botId, text: s.narration.text } : null; })(),
     progress: { done: steps.filter((s) => s.status === "completed").length, total: steps.length },
@@ -266,7 +267,7 @@ export function missionSummary(m, ctx) {
   });
 }
 
-const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "createdAt", "updatedAt"];
+const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "monthlyTokens", "createdAt", "updatedAt"];
 export function botView(b, ctx) {
   const mine = ctx.missionsByBot.get(b.id) || [];
   const open = mine.filter((m) => OPEN.has(m.status));
@@ -282,7 +283,7 @@ export function botView(b, ctx) {
     status, statusLabel: BOT_LABELS[status],
     activity: act ? { verb: act.verb || "pensando", missionId: act.missionId ?? null, detail: act.detail ?? null } : null,
     waitingIn, missionCount: open.length, usesTotal: mine.length,
-    limited: limited ? { engine: limited.engine, label: limited.label, resetsAt: limited.resetsAt ?? null, resumeAt: limited.resumeAt ?? null } : null,
+    limited: limited ? { engine: limited.engine, label: limited.label, resetsAt: limited.resetsAt ?? null, resumeAt: limited.resumeAt ?? null, ...(limited.plan ? { plan: true, percent: limited.percent ?? null } : {}) } : null,
   };
 }
 

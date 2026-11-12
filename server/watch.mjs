@@ -455,6 +455,13 @@ export class Watcher {
   }
   /** A failed look waits longer each time (10 min → 1 h). What it could not read counts as new next time. */
   failed(st, time, error) {
+    // Little is left of the AI's plan and this look was left for later (admission.mjs): not a
+    // failure. It looks again when the plan renews.
+    if (error?.parked) {
+      const renews = Date.parse(error.limit?.resetsAt || "");
+      this.save({ lastAt: new Date(time).toISOString(), retryAt: new Date(Number.isFinite(renews) && renews > time ? renews : time + 20 * MINUTE).toISOString(), lastResult: "en pausa", lastError: null });
+      return { ran: false, reason: "plan" };
+    }
     const failures = (st.failures || 0) + 1;
     const wait = Math.min(60, 10 * 2 ** (failures - 1)) * MINUTE;
     this.save({ lastAt: new Date(time).toISOString(), failures, retryAt: new Date(time + wait).toISOString(), lastResult: "error", lastError: clip(error?.message || error, 200) });

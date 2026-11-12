@@ -2,15 +2,96 @@ import { checkGoalBudget, spendOnGoal } from "../goals.mjs";
 import { chooseModel } from "../models.mjs";
 import { now } from "../store.mjs";
 import { THINKING_EFFORT, RETRY, retryDelay, UNAVAILABLE_CODE, isTransientError } from "../provider.mjs";
-import { checkLimit, record as recordUsage, crossedWarning } from "../usage.mjs";
+import { record as recordUsage, crossedWarning } from "../usage.mjs";
+import { parkError, LONG_TURN_CALLS } from "../admission.mjs";
+import { CONTEXT, estimateTokens } from "../context.mjs";
 import { usageLimitOf, limitError, engineName } from "../limits.mjs";
 import { parseRef } from "../providers/catalog.mjs";
 import { describeFailure, isChatStep, sha } from "./helpers.mjs";
 
-/** Runtime methods: calling the model (retries, usage limits, hand-over to another engine) and choosing the model and effort of a step. */
+/** What a request would send, in tokens (instructions, history and tools): an estimate. */
+const inputEstimate = (params) => estimateTokens(params.instructions) + estimateTokens(params.input) + estimateTokens(params.tools);
+
+/** Runtime methods: calling the model (the gate before it, retries, usage limits, hand-over to another engine) and choosing the model and effort of a step. */
 export class InferenceMethods {
   /**
-   * Inference wrapper: monthly cap before the call, usage after it, and recovery (OpenClaw
+   * The gate of every model call (admission.mjs decides; this says what the call is):
+   * {ok, reservation} | {park} | {refuse}. Long work parks when little is left of the plan of
+   * the engine it would use; a call whose worst case (input estimate + the model's maximum
+   * answer) does not fit in the bot's month or the space's is refused.
+   */
+  admit({ engine, missionId = null, botId = null, stepId = null, side = false, interactive = false, limited = false, params = {} }) {
+    const out = this.admission.admit({
+      engine, botId, limited,
+      work: () => this.workOf({ missionId, stepId, side, interactive }),
+      need: () => inputEstimate(params) + this.contextBudget(params.model).maxOutput,
+    });
+    if (out.ok && missionId && !side) this.turnCalls.set(missionId, (this.turnCalls.get(missionId) || 0) + 1);
+    return out;
+  }
+  /**
+   * What a call is for the plan gate: 'chat' (the person is waiting for it: never parked),
+   * 'long' (parked when little is left of the plan) or 'side' (skipped then). Long work is:
+   *   · a run nobody is watching: started by a routine or a trigger (also the turn a routine
+   *     opens in a room), by the watcher or by another person's errand, or one that went on by
+   *     itself (after a restart, or when a limit renewed) — until the person writes in it;
+   *   · a mission that already made LONG_TURN_CALLS model calls since the person last wrote in
+   *     it or pressed «Continuar».
+   * «Continuar» makes the whole run the person's ('chat'). Side jobs (titles, narration,
+   * recaps, learning, the watcher, check-ins) are 'side' unless the caller says `interactive`.
+   */
+  workOf({ missionId = null, stepId = null, side = false, interactive = false }) {
+    if (interactive) return "chat";
+    const mission = !side && missionId ? this.store.get("missions", missionId) : null;
+    if (!mission) return "side";
+    const origin = this.runOrigin.get(missionId);
+    if (origin === "go") return "chat";
+    if (origin === "auto") return "long";
+    // The turn answers a message: the person's, or the one a routine wrote in a room.
+    const step = stepId ? this.store.get("steps", stepId) : null;
+    const asked = step?.ackOn ? this.store.get("messages", step.ackOn) : null;
+    if (asked ? !!asked.automationId : !!(mission.automationId || mission.watch || mission.peerErrand)) return "long";
+    return (this.turnCalls.get(missionId) || 0) >= LONG_TURN_CALLS ? "long" : "chat";
+  }
+  /** The person wrote in a mission: its next calls are theirs again (a fresh turn). */
+  personSpoke(missionId) {
+    this.turnCalls.delete(missionId);
+    if (this.runOrigin.get(missionId) === "auto") this.runOrigin.delete(missionId);
+  }
+  /** Usage of one call into the month, the bot's month and the mission's goal. */
+  countUsage(usage, { missionId = null, botId = null, stepId = null, ...details }) {
+    const entry = recordUsage(this.store, { missionId, botId, stepId, tokens: usage, ...details });
+    const spent = missionId && entry ? spendOnGoal(this.store, missionId, entry.tokens) : null;
+    if (spent) this.store.event(missionId, "goal_budget", { text: "El objetivo «" + spent.title + "» ha gastado su presupuesto" });
+    if (missionId && entry && crossedWarning(this.store))
+      this.store.event(missionId, "usage_warning", { text: "Se ha usado el 80 % del limite mensual del espacio." });
+    return entry;
+  }
+  /**
+   * One provider call. When it dies half-way (a cut stream, a failure after it started, a
+   * stop) what it had used is still counted: the provider's own figure when the error carries
+   * one, else an estimate (what was sent, plus the text that had arrived), marked as such. A
+   * call that never started (no connection, a refusal) used nothing.
+   */
+  async metered(params, count, send) {
+    let chars = 0, begun = false;
+    const watched = {
+      ...params,
+      onDelta: (delta) => { begun = true; chars += String(delta || "").length; return params.onDelta?.(delta); },
+      onEvent: (event) => { begun = true; return params.onEvent?.(event); },
+    };
+    const started = Date.now();
+    try {
+      return await send(watched);
+    } catch (error) {
+      const said = error?.usage && typeof error.usage === "object" ? error.usage : null;
+      const usage = said || (begun ? { input_tokens: inputEstimate(params), output_tokens: Math.ceil(chars / CONTEXT.charsPerToken) } : null);
+      if (usage) try { this.countUsage(usage, { ...count, ms: Date.now() - started, partial: true, estimated: !said }); } catch {}
+      throw error;
+    }
+  }
+  /**
+   * Inference wrapper: the gate before the call (admit), usage after it, and recovery (OpenClaw
    * model-failover). A 429/5xx/timeout/network error is retried with the same model with
    * exponential backoff and jitter (~2 s, 6 s, 18 s; the provider's Retry-After when it says
    * one: provider.mjs retryDelay); nothing done is lost because the step history and receipts are
@@ -19,8 +100,7 @@ export class InferenceMethods {
    * UNAVAILABLE_CODE and the mission is paused. `params.timeoutMs` gives every attempt its
    * own deadline; `onRetry({attempt, max, wait, reason, status})` reports progress.
    */
-  async infer(params, { missionId = null, botId = null, stepId = null, onRetry = null, retry = true } = {}) {
-    checkLimit(this.store);
+  async infer(params, { missionId = null, botId = null, stepId = null, onRetry = null, retry = true, interactive = false } = {}) {
     if (missionId) checkGoalBudget(this.store, missionId);
     const { timeoutMs, ...rest } = params;
     // One cache key per bot and mission: its rounds (and its next turns) reuse the prefix
@@ -41,19 +121,34 @@ export class InferenceMethods {
     const attemptParams = () => ({ ...rest, fallback: false, signal: timeoutMs ? (base ? AbortSignal.any([base, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs)) : base });
     const hub = typeof this.provider?.fallbackFor === "function" ? this.provider : null;
     const engine = this.engineOfModel(rest.model);
-    let result, started = Date.now();
     // An engine that already ran out of its plan is not asked again until it renews (T3 Code
     // usage-limit recovery): the substitute answers, or the work waits for the renewal.
     const known = typeof hub?.limitOf === "function" ? hub.limitOf(engine) : null;
+    const effort = typeof rest.reasoning === "string" ? rest.reasoning : rest.reasoning?.effort || null;
+    const count = { missionId, botId, stepId, model: rest.model || null, effort, purpose: rest.purpose || (retry ? "step" : "side"), tools: Array.isArray(rest.tools) ? rest.tools.length : null };
+    // The one gate: long work waits when little is left of the plan; the worst case of the
+    // call is reserved in the bot's month and the space's until it ends, however it ends.
+    const gate = this.admit({ engine, missionId, botId, stepId, side: !retry, interactive, limited: !!known, params: rest });
+    if (gate.refuse) throw gate.refuse;
+    if (gate.park) throw parkError(gate.park);
+    try {
+      return await this.inferAdmitted({ rest, attemptParams, hub, engine, known, retries, delayFor, base, count, stepId, onRetry });
+    } finally {
+      this.admission.settle(gate.reservation);
+    }
+  }
+  /** The call itself, once admitted: attempts, backoff, hand-over, and the usage of what answered. */
+  async inferAdmitted({ rest, attemptParams, hub, engine, known, retries, delayFor, base, count, stepId, onRetry }) {
+    let result, started = Date.now();
     if (known) {
       const next = hub.fallbackFor(rest.model);
       if (!next) throw limitError(engine, known);
       started = Date.now();
-      result = await this.handOver(next, attemptParams(), { engine, reason: known.label, limit: known, stepId, onRetry, max: retries });
+      result = await this.handOver(next, attemptParams(), { engine, reason: known.label, limit: known, stepId, onRetry, max: retries, count });
     } else for (let attempt = 0; ; attempt++) {
       try {
         started = Date.now();
-        result = await this.provider.respond(attemptParams());
+        result = await this.metered(attemptParams(), count, (p) => this.provider.respond(p));
         break;
       } catch (error) {
         if (base?.aborted) throw error;
@@ -74,11 +169,11 @@ export class InferenceMethods {
         const next = hub ? hub.fallbackFor(rest.model) : null;
         const local = !next && typeof this.provider?.fallbackProvider === "function" ? this.provider.fallbackProvider() : null;
         if (next || local) {
-          if (next) result = await this.handOver(next, attemptParams(), { engine, reason, limit: usageLimit ? limit : null, stepId, onRetry, max: retries });
+          if (next) result = await this.handOver(next, attemptParams(), { engine, reason, limit: usageLimit ? limit : null, stepId, onRetry, max: retries, count });
           else {
             onRetry?.({ attempt: null, max: retries, wait: 0, reason, status: "fallback", to: "el modelo local" });
             const { fallback: _f, webSearch: _w, ...bare } = attemptParams();
-            result = await local.respond({ ...bare, reasoning: null });
+            result = await this.metered({ ...bare, reasoning: null }, count, (p) => local.respond(p));
           }
           break;
         }
@@ -92,15 +187,13 @@ export class InferenceMethods {
         );
       }
     }
-    if (result?.limits) this.planLimits = result.limits;
-    if (result?.usage) {
-      const effort = typeof rest.reasoning === "string" ? rest.reasoning : rest.reasoning?.effort || null;
-      const entry = recordUsage(this.store, { missionId, botId, stepId, tokens: result.usage, ms: Date.now() - started, model: result.model || rest.model || null, effort, transport: result.transport || null, timing: result.timing || null, purpose: rest.purpose || (retry ? "step" : "side"), tools: Array.isArray(rest.tools) ? rest.tools.length : null });
-      const spent = missionId && entry ? spendOnGoal(this.store, missionId, entry.tokens) : null;
-      if (spent) this.store.event(missionId, "goal_budget", { text: "El objetivo «" + spent.title + "» ha gastado su presupuesto" });
-      if (missionId && crossedWarning(this.store))
-        this.store.event(missionId, "usage_warning", { text: "Se ha usado el 80 % del limite mensual del espacio." });
+    // How much of its plan the engine that answered has used (only ChatGPT says): shown in
+    // Ajustes › Uso, and what the gate reads before the next long call.
+    if (result?.limits) {
+      this.planLimits = result.limits;
+      this.admission.notePlan(result.engine || engine, result.limits);
     }
+    if (result?.usage) this.countUsage(result.usage, { ...count, ms: Date.now() - started, model: result.model || rest.model || null, transport: result.transport || null, timing: result.timing || null });
     return result;
   }
   /** The engine a model runs on, as the hub routes it (a bare ChatGPT slug may become the team's engine). */
@@ -114,7 +207,7 @@ export class InferenceMethods {
    * every adapter), its instructions say it takes over, and the room hears it once per step.
    * If the substitute is out of its plan too, it is marked and the work waits for a renewal.
    */
-  async handOver(next, params, { engine, reason, limit = null, stepId = null, onRetry = null, max = 0 }) {
+  async handOver(next, params, { engine, reason, limit = null, stepId = null, onRetry = null, max = 0, count = null }) {
     const step = stepId ? this.store.get("steps", stepId) : null;
     if (!step || step.handedTo !== next.engine) {
       if (step) this.store.patch("steps", stepId, { handedTo: next.engine, handoff: { from: engine, to: next.engine, label: next.label, reason, limited: !!limit, at: now() } });
@@ -125,7 +218,8 @@ export class InferenceMethods {
     const note = "\n\n[Colmena] Sigues tú con " + next.label + ": " + engineName(engine) + (limit ? " ha llegado a su " + limit.label : " no responde") +
       ". Lo anterior de este turno lo hizo otro modelo; continúa desde donde se quedó, sin repetir lo que ya está hecho.";
     try {
-      const out = await next.provider.respond({ ...plain, instructions: (plain.instructions || "") + note, model: next.model, ...(isLocal ? { reasoning: null, webSearch: false } : {}) });
+      const sent = { ...plain, instructions: (plain.instructions || "") + note, model: next.model, ...(isLocal ? { reasoning: null, webSearch: false } : {}) };
+      const out = count ? await this.metered(sent, { ...count, model: next.model }, (p) => next.provider.respond(p)) : await next.provider.respond(sent);
       return { ...out, model: next.model, engine: next.engine, fellBack: next.label, switched: { from: engine, to: next.engine, reason, limited: !!limit } };
     } catch (error) {
       if (plain.signal?.aborted) throw error;

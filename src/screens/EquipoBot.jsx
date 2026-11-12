@@ -202,7 +202,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
         </div>
         <Journey bot={bot} sectionStyle={{ ...card, gap: "6px" }} h2={h2} ghost={outline} onOpenSkill={setReviewId} />
         <Personality bot={bot} data={data} setData={setData} approvals={approvals} versions={versions} busy={busy} change={change} />
-        <Usage bot={bot} usage={usage} missions={missions} settings={settings} expert={expert} learning={learning} />
+        <Usage bot={bot} usage={usage} missions={missions} settings={settings} expert={expert} learning={learning} busy={busy} change={change} />
         <History bot={bot} data={data} missions={missions} learnedBy={learnedBy} />
       </main>
       {portrait ? <PortraitPicker bot={bot} onClose={() => setPortrait(false)} onSaved={(p) => setData((d) => (d ? { ...d, portrait: p } : d))} /> : null}
@@ -608,8 +608,19 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
   );
 }
 
-function Usage({ bot, usage, missions, settings, expert, learning }) {
+// The bot's own monthly budget (server/admission.mjs), in tokens like the space's limit.
+const BUDGETS = [[null, "Sin presupuesto propio"], [250e3, "250 mil tokens al mes"], [1e6, "1 M de tokens al mes"], [3e6, "3 M de tokens al mes"], [10e6, "10 M de tokens al mes"]];
+
+function Usage({ bot, usage, missions, settings, expert, learning, busy, change }) {
   const mine = usage?.bots?.find((x) => x.botId === bot.id) || { tokens: 0, calls: 0 };
+  const budget = Number(bot.monthlyTokens) > 0 ? Number(bot.monthlyTokens) : null;
+  // This calendar month, as the budget counts it (the figure above may cover the last 7 days).
+  const month = bot.monthTokens ?? mine.tokens ?? 0;
+  const budgets = budget && !BUDGETS.some(([v]) => v === budget) ? [...BUDGETS, [budget, `${formatTokens(budget)} tokens al mes`]] : BUDGETS;
+  const setBudget = (e) => {
+    const v = e.target.value ? Number(e.target.value) : null;
+    change({ monthlyTokens: v }, { monthlyTokens: budget }, v ? `Presupuesto de ${bot.name}: ${formatTokens(v)} tokens al mes` : `${bot.name} ya no tiene presupuesto propio`);
+  };
   const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0);
   const since = Math.min(start.getTime(), Date.now() - 7 * 864e5);
   const tasks = missions.filter((m) => (m.botIds || []).includes(bot.id) && Date.parse(m.createdAt || m.updatedAt || 0) >= since).length;
@@ -630,6 +641,19 @@ function Usage({ bot, usage, missions, settings, expert, learning }) {
         </span>
       </div>
       <a href="/ajustes/uso" style={{ fontSize: "14px", color: BLUE }}>{"Ver detalle"}</a>
+      <label style={{ flex: "1 1 100%", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 20px", paddingTop: "14px", borderTop: LINE }}>
+        <span style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: "3px" }}>
+          <span style={{ fontSize: "14.5px", fontWeight: "500" }}>{"Presupuesto al mes"}</span>
+          <span style={{ fontSize: "13px", lineHeight: "1.45", color: TEXT3 }}>
+            {budget
+              ? `Lleva ${formatTokens(month)} de ${formatTokens(budget)} tokens este mes. Al llegar, ${bot.name} para y te lo dice.`
+              : `Un tope solo para ${bot.name}, aparte del límite del espacio. Al llegar, para y te lo dice.`}
+          </span>
+        </span>
+        <select aria-label={`Presupuesto al mes de ${bot.name}`} disabled={busy} value={budget ?? ""} onChange={setBudget} style={{ width: "240px", maxWidth: "100%", height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", color: INK, fontSize: "14.5px", boxSizing: "border-box", cursor: busy ? "wait" : "pointer" }}>
+          {budgets.map(([v, l]) => <option key={String(v)} value={v ?? ""}>{l}</option>)}
+        </select>
+      </label>
     </section>
   );
 }

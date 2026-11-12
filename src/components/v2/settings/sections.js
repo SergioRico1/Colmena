@@ -135,6 +135,7 @@ export const SECTIONS = [
       ["limite-mensual", "Límite al mes", "tope presupuesto máximo"],
       ["pausar-limite", "Pausar al llegar al límite", "parar tope"],
       ["aviso-80", "Avisarme al 80 %", "aviso límite"],
+      ["pausa-plan", "Guardar el final del plan para chatear", "plan chatgpt queda poco pausa rutinas trabajo largo 95"],
       ["csv", "Descargar el uso en CSV", "exportar excel hoja"],
     ],
   },

@@ -93,6 +93,36 @@ headers on its errors (`limitHeaders`).
   resumes it at `resumeAt`, or as soon as a substitute can answer, telling the running steps
   to continue without repeating; at most 8 times a day.
 
+## The gate before a call (`server/admission.mjs`)
+
+`Runtime#infer` asks one function before every model call, `Runtime#admit` →
+`Admission#admit(call)`: `{ok, reservation}`, `{park}` or `{refuse}`.
+
+- **Park** — the plan window of the engine the call would use is at or above
+  `settings.limits.planPauseAt` (unset = 95 %, `null` = never) and the call is long work. The
+  mission pauses through the same «Limitado» path with `limited.plan = true` and
+  `limited.percent`; its own card says «Queda poco del plan de ChatGPT» and offers «Continuar
+  ahora» (`Runtime#resume`: that run is the person's and is not parked). `resumeLimited`
+  resumes it at the renewal and never tries a substitute engine for it.
+  - Long work (`Runtime#workOf`): a run of a routine or trigger (also the turn a routine opens
+    in a room), of the watcher or of another person's errand; a run that went on by itself
+    (after a restart or a renewed limit) until the person writes in it; and a mission that
+    made `LONG_TURN_CALLS` (12) model calls since the person last wrote or pressed «Continuar».
+    The turn that answers a message the person wrote is never parked. Side jobs (titles,
+    narration, recaps, learning, the watcher, check-ins) are skipped instead; `/btw` passes
+    (`interactive`).
+  - The percent is only what the provider reported (`planLimitsOf`: today only ChatGPT's
+    `x-codex-*` headers). A reading holds until its window's renewal time; without one, for
+    15 minutes. No reading, nothing happens.
+- **Refuse** — budgets in tokens: `bot.monthlyTokens` (per bot, per calendar month) and the
+  space's `limits.monthlyTokens` (with `pauseAtLimit`). Each call reserves its worst case
+  (input estimate + the model's maximum answer) until it ends; beside calls in flight the
+  whole worst case must fit, and a call alone runs while anything is left. Refused calls end
+  with `LIMIT_CODE` and a line naming the bot and its budget. Reservations are in memory and
+  are settled in `finally`.
+- A call that dies half-way still counts: the usage the error carries, else an estimate
+  (`usage.partial`, `usage.estimated`).
+
 ## Context handoff (T3 Code portable handoffs)
 
 When a chat's engine changes between turns (a failure, a limit, or the person's choice),
