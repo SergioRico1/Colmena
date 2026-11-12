@@ -331,8 +331,15 @@ export class Runtime {
     });
     return keys;
   }
-  /** `route: false`: the message is not the person's (a routine writing in its room), so the router leaves it to Atlas. */
-  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "", route = true } = {}) {
+  /**
+   * A message in a conversation, and the turn that answers it. `route: false` or an `origin`
+   * marker (origin.mjs): the message is not the person's (a routine or a trigger writing in its
+   * room). The router leaves it to Atlas, it is stamped with where it comes from, and it never
+   * counts as the person writing: it decides no plan, resumes no stopped work, stops or
+   * interrupts nobody and leaves the run's «the person is here» bookkeeping alone.
+   */
+  addMessage(missionId, text, attachments = [], { replyTo = null, mode: forcedMode = null, use = [], deep = false, refs = [], context = "", route = true, origin = null, automationId = null } = {}) {
+    const own = route !== false && !origin;
     // «+» in the composer: tools or apps chosen for this message, and «Pensar a fondo»; the
     // «@» picks of files and conversations bring `context` (server/mention-refs.mjs).
     const chosen = cleanUse(use);
@@ -345,26 +352,30 @@ export class Runtime {
     const thread = parent && parent.missionId === missionId ? (parent.replyTo || parent.id) : null;
     if (!m || ["cancelled", "awaiting_choice"].includes(m.status))
       throw Error("La misión no admite mensajes ahora. Elige primero una propuesta si hay un debate pendiente.");
-    this.personSpoke(missionId);
+    const stalled = this.steps(missionId).filter((s) => s.stalled);
+    // What waits for the person's word is theirs to decide: a routine's text is not that word.
+    if (!own && (m.status === "awaiting_plan" || stalled.length))
+      throw Object.assign(Error("La conversación espera una decisión tuya (" + (m.status === "awaiting_plan" ? "un plan por revisar" : "un trabajo detenido") + "). Atiéndela antes de que la rutina escriba en ella."), { status: 409 });
+    if (own) this.personSpoke(missionId);
     if (m.status === "awaiting_plan" && !thread) {
       this.planDecision(missionId, "changes", text);
       return this.store.where("messages", "missionId", missionId).filter((x) => x.role === "user").at(-1);
     }
     const working = this.active.has(missionId) && !["completed", "paused", "waiting"].includes(m.status);
     // «Para», «detente», «stop»… alone: the work stops (as the Pause button), nothing is lost.
-    if (working && !thread && STOP_RE.test(text)) {
+    if (own && working && !thread && STOP_RE.test(text)) {
       const message = this.store.put("messages", { id: id(), missionId, role: "user", text, kind: "message", attachments: [], at: now(), stop: true });
       this.stop(missionId);
       return message;
     }
-    const stalled = this.steps(missionId).filter((s) => s.stalled);
     if (stalled.length && !thread) return this.resumeStalled(m, stalled, text, attachments);
     const prior = this.steps(missionId);
     const named = addressees(text, this.roomMembers(m));
     const root = thread ? this.store.get("messages", thread) : null;
     const threadBot = root?.role === "assistant" && root.botId && (m.botIds.includes(root.botId) || root.botId === "atlas") ? root.botId : null;
     // Ctrl+Enter sends one message with the other mode (OpenClaw steer ⇄ queue).
-    const mode = QUEUE_MODES.includes(forcedMode) ? forcedMode : QUEUE_MODES.includes(m.queueMode) ? m.queueMode : "steer";
+    const chosenMode = QUEUE_MODES.includes(forcedMode) ? forcedMode : QUEUE_MODES.includes(m.queueMode) ? m.queueMode : "steer";
+    const mode = !own && chosenMode === "interrupt" ? "steer" : chosenMode;
     // A message that names nobody in a team room with several specialists: the router picks
     // who answers (router.mjs) instead of always Atlas. Its rules decide at once; when the
     // model has to pick, or an earlier message of this room is still being routed, the turn
@@ -390,8 +401,10 @@ export class Runtime {
       ...(working && (mode === "followup" || mode === "collect") ? { deliver: "after" } : {}),
       // Who the router gave it to, or «Eligiendo quién responde…» while it decides.
       ...(decided ? { routed: decided } : router ? { routing: true } : {}),
+      // Written by Colmena on its own: marked from the start, never the person's words.
+      ...(origin ? { origin } : {}), ...(automationId ? { automationId } : {}),
     });
-    const turn = { messageId, text, note, effort, about, thread, mode, named };
+    const turn = { messageId, text, note, effort, about, thread, mode, named, own };
     if (later) this.routeLater(missionId, turn, { router, botIds });
     else this.deliverTurn(missionId, turn, botIds);
     return message;
@@ -401,12 +414,13 @@ export class Runtime {
    * who it is for (named, routed, or the room's default). Read with the mission as it is now:
    * a routed message gets here a moment after it was written.
    */
-  deliverTurn(missionId, { messageId, text, note, effort, about, thread, mode, named }, botIds) {
+  deliverTurn(missionId, { messageId, text, note, effort, about, thread, mode, named, own = true }, botIds) {
     const m = this.store.get("missions", missionId);
     const prior = this.steps(missionId);
     const working = this.active.has(missionId) && !["completed", "paused", "waiting"].includes(m.status);
     const botId = botIds[0];
-    for (const b of botIds) this.countTurn(b);
+    // The memory-review counter counts the person's messages, not a routine's.
+    if (own) for (const b of botIds) this.countTurn(b);
     // Several messages before the bot gets to them: one turn, not one per message.
     const waitingTurn = botIds.length === 1 && mode !== "followup" && prior.find((s) => s.kind === "followup" && s.status === "pending" && !hasHistory(s) && !s.chain && s.botId === botId && (s.replyTo || null) === (thread || null));
     if (waitingTurn) {

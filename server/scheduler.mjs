@@ -279,7 +279,7 @@ export class Scheduler {
       const prompt = (rule.prompt || rule.name || "Automatización") + context + lateNote(caught, time);
       if (room) {
         // Not the person's message: the router (router.mjs) leaves it to whoever takes the room's messages.
-        const message = this.runtime.addMessage(room.id, "Rutina «" + rule.name + "»: " + prompt, [], { route: false });
+        const message = this.runtime.addMessage(room.id, "Rutina «" + rule.name + "»: " + prompt, [], { route: false, origin, automationId: rule.id });
         messageId = message?.id || null;
         if (messageId && this.store.get("messages", messageId)) this.store.patch("messages", messageId, { automationId: rule.id, origin });
         mission = this.store.get("missions", room.id) || room;
@@ -338,6 +338,9 @@ export class Scheduler {
       throw Object.assign(Error(deliveryMode(rule) !== "nueva"
         ? "La conversación de esta rutina está ocupada. Espera a que termine para probarla."
         : "Ya hay una ejecución en marcha de esta regla. Espera a que termine."), { status: 409 });
+    // A plan waiting for the person's review is theirs to decide: the routine's text is not their answer.
+    if (last && deliveryMode(rule) !== "nueva" && last.status === "awaiting_plan")
+      throw Object.assign(Error("La conversación de esta rutina está " + LABEL.awaiting_plan + ". Revísalo antes de probarla."), { status: 409 });
     if (!safe(this.isConnected))
       throw Error("Conecta una cuenta de IA en Ajustes › Cuentas de IA para probar la automatización.");
     const timed = isTimed(rule);
