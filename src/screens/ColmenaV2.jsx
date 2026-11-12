@@ -10,6 +10,8 @@ import { useActivity } from "../lib/liveStore.js";
 import { useHidden } from "../lib/undoToast.js";
 import { navigate } from "../lib/router.jsx";
 import { useExpert } from "../lib/expert.js";
+import { sidebarModel, waitingLabel } from "../lib/sidebar.js";
+import { needsOf } from "../components/v2/needs.js";
 import EquipoBot from "./EquipoBot.jsx";
 
 // Colmena 3 · «Equipo» (design/V3Equipo.dc.html): who works with you. Your bots as cards
@@ -35,14 +37,19 @@ function NewBotPage() {
 }
 
 function Team() {
-  const { bots = [], approvals = [], peers = null } = useStore();
+  const store = useStore();
+  const { bots = [], peers = null } = store;
   const hiddenBot = useHidden("bot");
   const [expert] = useExpert();
   const [invite, setInvite] = useState(false);
   const team = bots.filter((b) => b.enabled !== false && !hiddenBot(b.id));
-  const working = team.filter((b) => b.status === "trabaja").length;
-  const waiting = team.filter((b) => b.status === "espera").length;
-  const count = [String(team.length), working ? `${working} trabajando` : null, waiting ? `${waiting} ${waiting === 1 ? "te espera" : "te esperan"}` : null].filter(Boolean).join(" · ");
+  // Who works and what waits for you: the same model as the sidebar (lib/sidebar.js), so the
+  // header, each card and the foot of the sidebar can never disagree. The number is the one
+  // count of what waits for you; a bot's «Te espera» is that list filtered by bot.
+  const model = sidebarModel(store);
+  const rows = new Map(model.bots.map((r) => [r.id, r]));
+  const { asks } = needsOf(store);
+  const count = [String(team.length), model.summary.working ? `${model.summary.working} trabajando` : null, model.waitingCount ? waitingLabel(model.waitingCount) : null].filter(Boolean).join(" · ");
   const relayOff = peers?.relay?.status === "off";
   return (
     <Shell active="equipo">
@@ -66,7 +73,7 @@ function Team() {
             <span style={{ fontSize: "14px", color: "#5C606C" }}>{count}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(250px, 100%), 1fr))", gap: "12px" }}>
-            {team.map((b) => <BotCard key={b.id} bot={b} approvals={approvals} expert={expert} />)}
+            {team.map((b) => <BotCard key={b.id} bot={b} row={rows.get(b.id)} ask={asks.find((a) => a.botId === b.id) || null} expert={expert} />)}
             <a href="/equipo/nuevo" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px", padding: "20px", borderRadius: "22px", border: "1.5px dashed rgba(18,19,26,.2)", color: "#12131A", minHeight: "220px" }}>
               <span style={{ font: "600 20px/1.1 'Bricolage Grotesque', sans-serif" }}>{"Un bot nuevo"}</span>
               <span style={{ fontSize: "14px", lineHeight: "1.45", color: "#4A4D57" }}>{"Descríbelo como a un compañero nuevo, o empieza de una plantilla: contable, atención al cliente, investigador…"}</span>
@@ -81,12 +88,13 @@ function Team() {
   );
 }
 
-function BotCard({ bot, approvals, expert }) {
+/** `row`: this bot in the sidebar's model (state, how many things of it wait for you); `ask`: the oldest of them. */
+function BotCard({ bot, row, ask, expert }) {
   const activity = useActivity(bot.id);
-  const work = bot.status === "trabaja";
-  const wait = bot.status === "espera";
-  const ask = wait ? approvals.find((a) => a.botId === bot.id && a.status === "pending") : null;
-  const state = work ? cap(activity?.verb) || "Trabajando" : wait ? (ask?.title ? `Te espera: ${ask.title.charAt(0).toLowerCase() + ask.title.slice(1)}` : "Te espera") : STATE[bot.status] || "Libre";
+  const work = row?.state === "working";
+  const wait = (row?.waiting || 0) > 0;
+  const waits = ask?.title ? `Te espera: ${ask.title.charAt(0).toLowerCase() + ask.title.slice(1)}` : "Te espera";
+  const state = work ? (cap(activity?.verb) || "Trabajando") + (wait ? " · te espera" : "") : wait ? waits : STATE[bot.status] || "Libre";
   const idle = !work && !wait;
   return (
     <article style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "22px", background: "#FFFFFF", boxShadow: wait ? "0 0 0 1.5px #FFC93C" : "0 1px 2px rgba(18,19,26,.04)" }}>
@@ -98,7 +106,12 @@ function BotCard({ bot, approvals, expert }) {
         <h3 style={{ margin: "0", font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{bot.name}</h3>
         <span style={{ fontSize: "14px", color: "#4A4D57" }}>{bot.role}</span>
       </div>
-      {bot.status === "limitado" ? <LimitLine limited={bot.limited} style={{ fontSize: "13.5px" }} /> : (
+      {bot.status === "limitado" ? (
+        <>
+          <LimitLine limited={bot.limited} style={{ fontSize: "13.5px" }} />
+          {wait ? <span style={{ marginTop: "-8px", fontSize: "13.5px", color: "#8A5A00", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={waits}>{waits}</span> : null}
+        </>
+      ) : (
         <span style={{ fontSize: "13.5px", color: wait ? "#8A5A00" : work ? "#3D404A" : "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={state}>{state}</span>
       )}
       {expert && bot.model?.label ? <span style={{ marginTop: "-6px", font: "500 12px/1.3 'Geist Mono', monospace", color: "#5C606C" }}>{[bot.model.label, bot.thinking || "equilibrado", bot.engine || "equipo"].join(" · ")}</span> : null}

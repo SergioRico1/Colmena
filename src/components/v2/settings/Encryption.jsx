@@ -90,7 +90,7 @@ export default function EncryptionSettings({ s, reload }) {
         <summary style={{ cursor: "pointer", fontWeight: 600 }}>Qué protege y qué no</summary>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px", color: "#3D404A" }}>
           <span>Protege tus conversaciones, lo que saben tus bots, tus ajustes y el historial de lo que hacen si alguien copia la carpeta o se lleva el disco. Se sigue viendo cuántos registros hay, sus fechas y estados; nunca el texto.</span>
-          <span>{`No protege si alguien entra en ${isMac ? "tu Mac" : "Windows"} con tu usuario, ni los archivos de tus encargos ni los puntos de «Deshacer cambios». Para eso, ${isMac ? "activa FileVault" : "activa BitLocker o cifra la carpeta de Colmena con EFS"}.`}</span>
+          <span>{`No protege si alguien entra en ${isMac ? "tu Mac" : "Windows"} con tu usuario, ni los archivos de tus tareas ni los puntos de «Deshacer cambios». Para eso, ${isMac ? "activa FileVault" : "activa BitLocker o cifra la carpeta de Colmena con EFS"}.`}</span>
           <span>Si se pierde la clave, Colmena arranca vacía y aparta tus datos cifrados: los recuperas restaurando una copia de seguridad.</span>
           {expert ? <span style={{ font: "400 12px/1.5 'Geist Mono', monospace", color: MUTED }}>{`AES-256-GCM por registro · clave en ${STORE[s.keyStore] || "el sistema"}`}</span> : null}
         </div>

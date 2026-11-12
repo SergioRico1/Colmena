@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Copy, X } from "lucide-react";
-import { post } from "../../../lib/api.js";
+import { patch, post } from "../../../lib/api.js";
+import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { shareUrl } from "../../../lib/peers.js";
+import { lacksOwnName } from "../../../lib/ownName.js";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // «Hablar con una persona» and «Tengo una invitación» (design/V2Personas.dc.html, paso
 // invitar / aceptar). Colmena never sends the invitation: you copy it and send it yourself.
+// The invitation says who you are («Hola Marta, soy Sergio…»): when Colmena does not know your
+// name yet, the sheet asks for it first and keeps it as your name (Ajustes › Tu nombre).
 const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", animation: "fade .25s ease-out" };
 const card = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "22px", padding: "28px", borderRadius: "32px", background: "rgba(255,255,255,.97)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box" });
 const dark = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: on ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: on ? "#12131A" : "#C9CBD1", color: "#FFFFFF" });
@@ -32,16 +36,23 @@ const Steps = ({ items }) => (
 
 export function InviteSheet({ onClose, initialName = "" }) {
   const box = useDialogFocus({ onEscape: onClose });
+  const store = useStore();
   const [name, setName] = useState(initialName);
+  // Asked once, when the sheet opens without a name of yours; it stays while you type it.
+  const [nameless] = useState(() => lacksOwnName(store));
+  const [mine, setMine] = useState("");
   const [made, setMade] = useState(null);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const make = async () => {
-    if (!name.trim() || busy) return;
+    if (!ready || busy) return;
     setBusy(true);
     setError(null);
-    try { setMade(await post("/peers/invites", { name: name.trim() })); } catch (e) { setError(e.message); } finally { setBusy(false); }
+    try {
+      if (nameless) await store.run(() => patch("/settings", { userName: mine.trim() }));
+      setMade(await post("/peers/invites", { name: name.trim() }));
+    } catch (e) { setError(e.message); } finally { setBusy(false); }
   };
   const copy = async () => {
     try {
@@ -52,6 +63,7 @@ export function InviteSheet({ onClose, initialName = "" }) {
     }
   };
   const first = (made?.name || name).split(/\s+/)[0] || "esa persona";
+  const ready = !!name.trim() && (!nameless || mine.trim().length >= 2);
   return (
     <div style={veil} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <section ref={box} role="dialog" aria-modal="true" aria-labelledby="inv-t" style={card(560)}>
@@ -64,12 +76,20 @@ export function InviteSheet({ onClose, initialName = "" }) {
         </div>
         {!made ? (
           <>
+            {nameless ? (
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "14px", fontWeight: 600 }}>
+                {"Tu nombre"}
+                <input className="c-quiet" autoFocus type="text" value={mine} maxLength={80} autoComplete="name" onChange={(e) => setMine(e.target.value)} placeholder="Como quieres que te vean"
+                  style={{ height: "46px", padding: "0 18px", border: 0, borderRadius: "999px", background: "#F2F2EE", fontSize: "16px", fontWeight: 400 }} />
+                <span style={{ fontSize: "13px", lineHeight: 1.5, fontWeight: 400, color: "#5C606C" }}>{"La invitación empieza por «Hola, soy…». Se guarda como tu nombre en Colmena; puedes cambiarlo en Ajustes."}</span>
+              </label>
+            ) : null}
             <div className="c-ring" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "999px", background: "#F2F2EE" }}>
               <label style={{ flex: 1, display: "flex" }}>
-                <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre"}</span>
-                <input className="c-bare" autoFocus type="text" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", fontSize: "16px" }} />
+                <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre de la otra persona"}</span>
+                <input className="c-bare" autoFocus={!nameless} type="text" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama la otra persona?" style={{ flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", fontSize: "16px" }} />
               </label>
-              <button type="button" onClick={make} disabled={!name.trim() || busy} style={dark(!!name.trim() && !busy)}>{busy ? "Creando…" : "Crear invitación"}</button>
+              <button type="button" onClick={make} disabled={!ready || busy} style={dark(ready && !busy)}>{busy ? "Creando…" : "Crear invitación"}</button>
             </div>
             <span style={{ fontSize: "13px", lineHeight: 1.5, color: "#5C606C" }}>{"Te daré un código que sirve una sola vez y caduca en 24 horas, con un mensaje listo para mandárselo tú por WhatsApp o correo. Colmena no escribe a nadie por ti."}</span>
           </>
@@ -77,6 +97,7 @@ export function InviteSheet({ onClose, initialName = "" }) {
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "22px", background: "#F4F4F0", animation: "rise .3s ease-out" }}>
               {/* Exactly what is copied: who you are, where to get Colmena, the code. */}
+              {/* Its link opens Colmena's downloads page on GitHub, not an installer: the steps below say so. */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", lineHeight: 1.5, color: "#1E2029", userSelect: "text" }}>
                 {made.text.split("\n").map((line, i) => line === made.code
                   ? <code key={i} style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{line}</code>
@@ -89,7 +110,7 @@ export function InviteSheet({ onClose, initialName = "" }) {
             </div>
             <Steps items={[
               "Se la mandas tú: Colmena no escribe a nadie por ti.",
-              `Si ${first} no tiene Colmena, el enlace del mensaje la descarga gratis. Después pulsa «Tengo una invitación» y pega el código.`,
+              `Si ${first} no tiene Colmena, el enlace del mensaje abre su página de descargas en GitHub: ahí elige el instalador de Windows o de Mac, que es gratis. Después pulsa «Tengo una invitación» y pega el código.`,
               "Os saldrán las mismas cuatro palabras a los dos. Decíoslas en persona o por teléfono: si coinciden, nadie se ha puesto en medio.",
             ]} />
           </>

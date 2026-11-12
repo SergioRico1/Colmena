@@ -442,7 +442,7 @@ function PlanBlock({ mission, message, bots }) {
       ) : pendingPlan ? (
         <div id="plan" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "#FFC93C", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }}>{"Aprobar plan"}</button>
+            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }}>{"Aprobar plan"}</button>
             <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={{ minHeight: "46px", padding: "0 20px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}>{"Pedir cambios"}</button>
           </div>
           {changing ? changeForm(() => decide("changes"), "¿Qué cambiarías del reparto?") : null}

@@ -6,6 +6,10 @@ import { useAction, useStore } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { needsYou, roomUrl, time } from "../lib/format.js";
+import { countIn, needsCount } from "../components/v2/needs.js";
+import { waitingLabel } from "../lib/sidebar.js";
+import { isSnoozed, snoozeWhen } from "../lib/snooze.js";
+import { pauseLine } from "../lib/pauseReason.js";
 import { useExpert } from "../lib/expert.js";
 import { scrollBehavior } from "../lib/motion.js";
 
@@ -57,25 +61,38 @@ function took(m) {
   const h = Math.round(min / 60);
   return h < 36 ? h + " h" : Math.round(h / 24) + " días";
 }
-const columnOf = (m) => (m.status === "completed" ? "done" : STUCK.has(m.status) ? "stuck" : needsYou(m) || m.questionCount > 0 ? "wait" : RUNNING.has(m.status) ? "run" : "wait");
+// «Te necesitan» is a filter of the one list of what waits for you (server/waiting.mjs): a task
+// is there only while something of it is on that list. A task whose request you put off, or
+// whose request expired, is on hold: it sits with what is under way and says why.
+const columnOf = (m) => (m.status === "completed" ? "done" : STUCK.has(m.status) ? "stuck" : needsYou(m) ? "wait" : "run");
+const onHold = (m) => !needsYou(m) && !RUNNING.has(m.status);
+/** Why a task waits without being on the list: what you put off, or a request that ran out of time. */
+function holdText(m, approvals) {
+  const mine = approvals.filter((a) => a.missionId === m.id);
+  const off = mine.filter((a) => isSnoozed(a)).sort((a, b) => Date.parse(a.snoozedUntil) - Date.parse(b.snoozedUntil))[0];
+  if (off) return `Lo pospusiste: vuelve ${snoozeWhen(off.snoozedUntil)}.`;
+  if (mine.some((a) => a.status === "expired")) return "Una petición caducó sin decidirse. Pídele que la prepare otra vez.";
+  return m.activityLine || m.statusLabel || "En espera";
+}
 
 /** What it is doing now, in one sentence. */
-function nowText(m, col) {
+function nowText(m, col, botName) {
   if (col === "done") return m.recap?.text || m.activityLine || "Terminada";
   if (col === "stuck") return m.error || m.activityLine || "Se ha atascado. Mira qué pasa.";
   if (col === "wait") {
     if (m.status === "awaiting_plan") return "Atlas espera que apruebes el plan";
     if (m.status === "awaiting_choice") return "Hay propuestas listas: elige una";
-    if (m.questionCount > 0) return m.questionCount === 1 ? "Tiene una pregunta para ti" : `Tiene ${m.questionCount} preguntas para ti`;
-    if (m.pendingCount > 0) return m.pendingCount === 1 ? "Una cosa espera tu OK" : `${m.pendingCount} cosas esperan tu OK`;
+    if (m.questionCount > 0 && m.questionCount >= m.waiting) return m.waiting === 1 ? "Tiene una pregunta para ti" : `Tiene ${m.waiting} preguntas para ti`;
+    if (m.waiting > 0) return m.waiting === 1 ? "Una cosa espera tu OK" : `${m.waiting} cosas esperan tu OK`;
     return m.activityLine || m.statusLabel || "Te espera";
   }
-  if (m.status === "paused") return m.error || "En pausa. Seguirá donde lo dejó.";
+  if (m.status === "paused") return pauseLine(m, { botName });
   return m.narration?.text || m.activityLine || m.statusLabel || "En marcha";
 }
 
 export default function Tareas({ query = {} }) {
-  const { missions = [], bots = [], ready } = useStore();
+  const store = useStore();
+  const { missions = [], bots = [], approvals = [], ready } = store;
   const [expert] = useExpert();
   const [view, setView] = useState(() => (query.vista === "lista" ? "list" : "board"));
   const [q, setQ] = useState("");
@@ -108,10 +125,11 @@ export default function Tareas({ query = {} }) {
     const meta = col === "done"
       ? [dayLabel(m.completedAt || m.updatedAt, sameDay(new Date(m.completedAt || m.updatedAt || 0), new Date())), took(m)].filter(Boolean).join(" · ")
       : [due || "sin fecha", m.room ? "#" + m.room : null, m.automationId ? "rutina" : null].filter(Boolean).join(" · ");
-    const state = col === "run" && m.status === "paused" ? S.pause : S[col];
+    const held = col === "run" && onHold(m);
+    const state = col === "run" && (m.status === "paused" || held) ? S.pause : S[col];
     return {
       m, col, ...state, pct: pct + "%", showBar: col !== "done" && total > 0,
-      now: nowText(m, col), meta, due: col === "done" ? dayLabel(m.completedAt, false) : due || "—",
+      now: held ? holdText(m, approvals) : nowText(m, col, list[0]?.name), meta, due: col === "done" ? dayLabel(m.completedAt, false) : due || "—",
       bots: list.map((b) => ({ b, work: col === "run" && m.status !== "paused" && b.status === "trabaja" })),
       href: m.status === "awaiting_choice" ? roomUrl(m) : `/encargo/${m.id}`,
     };
@@ -120,8 +138,14 @@ export default function Tareas({ query = {} }) {
   const doneAll = items.filter((t) => t.col === "done").sort((a, b) => Date.parse(b.m.completedAt || 0) - Date.parse(a.m.completedAt || 0));
   const doneWeek = doneAll.filter((t) => Date.parse(t.m.completedAt || 0) >= +monday);
   const doneOlder = doneAll.filter((t) => !doneWeek.includes(t));
+  // The column's number is how many of the things that wait for you are in these tasks; when
+  // other things wait elsewhere (a chat, a note, another person) it says «3 de 5» and links to all.
+  const waitTasks = items.filter((t) => t.col === "wait");
+  const waitAll = needsCount(store);
+  const waitCount = countIn(waitTasks.map((t) => t.m), waitAll);
+  const waitHere = waitCount.here;
   const cols = [
-    { id: "wait", title: "Te necesitan", bg: "#FFF1C7", badgeBg: "#FFC93C", items: items.filter((t) => t.col === "wait"), empty: "Nada te espera. Todo sigue su curso." },
+    { id: "wait", title: "Te necesitan", bg: "#FFF1C7", badgeBg: "#FFC93C", items: waitTasks, n: waitCount.text, more: waitCount.more, empty: waitAll ? "Nada te espera en las tareas." : "Nada te espera. Todo sigue su curso." },
     { id: "run", title: "En marcha", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: items.filter((t) => t.col === "run"), empty: "Ningún bot está con una tarea ahora mismo." },
     { id: "stuck", title: "Atascadas", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: items.filter((t) => t.col === "stuck"), empty: "Ninguna atascada." },
     { id: "done", title: "Hechas esta semana", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: older ? [...doneWeek, ...doneOlder] : doneWeek, n: doneWeek.length, empty: "Esta semana aún no ha terminado ninguna." },
@@ -206,7 +230,8 @@ export default function Tareas({ query = {} }) {
               <section key={c.id} aria-labelledby={"col-" + c.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", borderRadius: "22px", background: c.bg }}>
                 <h2 id={"col-" + c.id} style={{ margin: 0, padding: "4px 6px", display: "flex", alignItems: "center", gap: "8px", fontSize: "14.5px", fontWeight: 600 }}>
                   {c.title}
-                  <span style={{ minWidth: "22px", height: "22px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "11px", background: c.badgeBg, fontSize: "12px", fontWeight: 600 }}>{c.n ?? c.items.length}</span>
+                  <span aria-label={c.id === "wait" ? (c.more ? `${waitHere} de las ${waitAll} cosas que te esperan están en tareas` : waitingLabel(waitAll)) : undefined} style={{ minWidth: "22px", height: "22px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "11px", background: c.badgeBg, fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>{c.n ?? c.items.length}</span>
+                  {c.more ? <a href="/" style={{ marginLeft: "auto", fontSize: "13px", fontWeight: 500, color: "#12131A", textDecoration: "underline", textUnderlineOffset: "3px" }}>ver todo</a> : null}
                 </h2>
                 {c.items.length ? c.items.map(card) : <p style={{ margin: 0, padding: "4px 6px 6px", fontSize: "13.5px", lineHeight: 1.45, color: "#5C606C" }}>{c.empty}</p>}
                 {c.id === "done" && doneOlder.length ? (

@@ -6,12 +6,12 @@ import { useStore, useAction } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { avatarStyle, initial, botById } from "../lib/bots.js";
-import { roomUrl, missionUrl, time } from "../lib/format.js";
+import { needsYou, roomUrl, missionUrl, time } from "../lib/format.js";
 import { SkeletonCard } from "../components/Skeleton.jsx";
 import Recap from "../components/home/Recap.jsx";
 
 // 06 · Misiones — board / list / calendar of every mission (conversations excluded).
-const WAITING = ["waiting", "awaiting_choice", "awaiting_plan", "paused", "blocked"];
+const HELD = ["paused", "blocked"]; // this board keeps what is stopped beside what waits for you
 const RUNNING = ["queued", "planning", "running"];
 const DONE = ["completed", "cancelled"];
 const RESUMABLE = ["paused", "blocked"];
@@ -26,7 +26,8 @@ const TEMPLATES = [
   { title: "Automatizar una tarea repetida", desc: "Un bot de código la convierte en script y la prueba.", mode: "solo", text: "Convierte en un script esta tarea que repito a menudo y pruébalo: [describe la tarea]." },
 ];
 
-const isWaiting = (m) => WAITING.includes(m.status) || (!DONE.includes(m.status) && (m.pendingCount > 0 || m.questionCount > 0));
+// The same «te necesita» as everywhere: something of it is on the list of what waits for you.
+const isWaiting = (m) => HELD.includes(m.status) || (!DONE.includes(m.status) && needsYou(m));
 const columnOf = (m) => (DONE.includes(m.status) ? "done" : isWaiting(m) ? "wait" : "run");
 const dueSort = (a, b) => {
   const da = a.dueAt ? Date.parse(a.dueAt) : Infinity;
@@ -67,8 +68,7 @@ function waitText(m) {
   if (m.activityLine) return m.activityLine;
   if (m.status === "awaiting_plan") return "Atlas espera que apruebes el plan";
   if (m.status === "awaiting_choice") return "Elige una de las propuestas";
-  if (m.questionCount > 0) return m.questionCount === 1 ? "Tiene una pregunta para ti" : `Tiene ${m.questionCount} preguntas para ti`;
-  if (m.pendingCount > 0) return m.pendingCount === 1 ? "Una cosa espera tu OK" : `${m.pendingCount} cosas esperan tu OK`;
+  if (m.waiting > 0) return m.waiting === 1 ? "Una cosa espera tu OK" : `${m.waiting} cosas esperan tu OK`;
   return m.statusLabel || "Te espera";
 }
 
@@ -382,7 +382,7 @@ export default function Misiones({ query = {} }) {
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "14px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <h1 style={{ margin: "0", font: "600 36px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Misiones"}</h1>
-              <p style={{ margin: "0", fontSize: "15px", color: "#5C606C" }}>{"Todos los encargos de todas las salas, en un mismo sitio."}</p>
+              <p style={{ margin: "0", fontSize: "15px", color: "#5C606C" }}>{"Todas las tareas de todas las salas, en un mismo sitio."}</p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               <div role="group" aria-label="Vista" style={{ display: "flex", gap: "4px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "12px" }}>

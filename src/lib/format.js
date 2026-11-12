@@ -1,7 +1,12 @@
 // Shared formatting + URL helpers (Spanish locale).
 // A room or a task of Trabajo (not a chat with a bot); `missionKind` in ./rooms.js tells the two apart.
 export const isRoom = (m) => !m.conversation && m.status !== "cancelled";
-export const needsYou = (m) => ["waiting", "awaiting_choice", "awaiting_plan"].includes(m.status) || m.pendingCount > 0 || m.watchAsks > 0;
+/**
+ * Something of this room or chat waits for you now. `m.waiting` is how many items of the one
+ * list of what waits (server/waiting.mjs) belong to it: a request you put off or that expired
+ * does not count, so a row never says «te necesita» for something Inicio does not list.
+ */
+export const needsYou = (m) => m.waiting > 0;
 
 /**
  * Sidebar rooms (newest first in `rooms`). Until you drag one, rooms that wait for you go

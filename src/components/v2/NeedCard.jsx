@@ -7,7 +7,8 @@ import { roomUrl, time } from "../../lib/format.js";
 import { cancel, schedule, useUndoable } from "../../lib/undoable.js";
 import { later } from "../../lib/undoToast.js";
 import { failureText, groupLine, groupShown, groupTitle } from "../../lib/approvalGroups.js";
-import { needsHold } from "../../lib/holdApprove.js";
+import { GROUP_VERBS } from "../../lib/approvalCard.js";
+import { ApprovalNotes, SendWhat, useApprovalCard } from "../ApprovalParts.jsx";
 import { decideBatch, useBatchFailures } from "../../lib/useApprovalBatch.js";
 import { letterOf, letterStyle, useChoiceKeys } from "../../lib/choiceKeys.js";
 import { isSnoozed, snoozeWhen } from "../../lib/snooze.js";
@@ -18,7 +19,9 @@ import { BotPresence } from "./Presence.jsx";
 import SnoozeMenu, { snooze } from "./SnoozeMenu.jsx";
 
 // «Te necesitan» cards of Colmena 2.0 (design/V2Hoy.dc.html): the only honey on the screen.
-// A send shows what goes out and to whom; «Aprobar y enviar» waits 10 s with «Deshacer».
+// The verbs, the undo line and the expiry line come from lib/approvalCard.js (the same on
+// Inicio, in a room and in Revisar). A send shows what goes out and to whom; its «Mantén para
+// enviar» waits 10 s with «Deshacer».
 // A question shows its options; your choice also waits 10 s before it is given.
 // Several requests of the same kind in a row fold into one card with «Aprobar todas»
 // (NeedGroupCard); a send or any other red line is approved by holding its button.
@@ -36,7 +39,9 @@ const tag = (label) => (
   </span>
 );
 const QUIET = { height: "50px", padding: "0 14px", border: "0", background: "transparent", cursor: "pointer", fontSize: "15px", fontWeight: "500", color: "#5C606C" };
-const APPROVE = { flex: "1", height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "#FFC93C", cursor: "pointer", fontSize: "15px", fontWeight: "600" };
+// The primary action is the product's dark button: honey stays on the card's ring and its label.
+const APPROVE = { flex: "1", height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "15px", fontWeight: "600", whiteSpace: "nowrap" };
+const SOFT = { height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", color: "#12131A", cursor: "pointer", fontSize: "15px", fontWeight: "600", whiteSpace: "nowrap" };
 const ext = (name) => (String(name || "").split(".").pop() || "").slice(0, 4).toUpperCase();
 const EXT_TINT = { PDF: ["#FBE7DF", "#8E2A1F"], XLSX: ["#E1F4EC", "#0B5A3E"], CSV: ["#E1F4EC", "#0B5A3E"], DOCX: ["#E3EAFB", "#1F3F99"], PPTX: ["#FBEADF", "#8A3B12"] };
 
@@ -116,11 +121,17 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
   }, [key]);
   const isSend = a.kind === "send";
   const isQuestion = a.kind === "question";
-  const approve = () => {
+  // The same verbs, undo line and expiry line as on Inicio, in a room and in Revisar.
+  const model = useApprovalCard(a, bot?.name);
+  const approve = (always = false) => {
     setError(null);
     schedule(key, async () => {
-      await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision });
+      await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision, ...(always ? { always: true } : {}) });
     });
+  };
+  const deny = () => {
+    setError(null);
+    later({ id: "deny:" + a.id, keys: [key], text: model.denyToast, error: "No se pudo descartar", run: () => post(`/approvals/${a.id}`, { decision: "denied", revision: a.revision }) });
   };
   const pick = (o) => {
     setError(null);
@@ -151,11 +162,11 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
   return (
     <article ref={keys} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
       {inline ? (snoozed ? null : tag("Te necesita")) : <Header bot={bot} who={a.external ? "fuera de tu empresa" : null} mission={mission} at={a.createdAt} label={snoozed ? null : label} />}
-      <h3 style={{ margin: "0", font: inline ? "600 22px/1.25 'Bricolage Grotesque', sans-serif" : "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{isSend && email?.subject ? `Enviar «${email.subject}»` : isQuestion && a.questions?.length > 1 ? `${bot?.name || "El bot"} tiene ${a.questions.length} preguntas` : a.title}</h3>
+      <h3 style={{ margin: "0", font: inline ? "600 22px/1.25 'Bricolage Grotesque', sans-serif" : "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{model.title}</h3>
       {isSend && email ? (
         <div style={{ padding: "18px", background: "#F6F6F3", borderRadius: "20px", display: "flex", flexDirection: "column", gap: "10px", fontSize: "15px", lineHeight: "1.55" }}>
-          <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{"Para " + (email.to || []).join(", ")}</span>
-          <span style={{ display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{String(email.body || "").replace(/\s+/g, " ").trim()}</span>
+          {/* Who it goes to and what it says; the title already carries the subject. */}
+          <SendWhat send={model.send} subject={!model.send.subject} size="15px" />
           {(email.attachments || []).map((f, i) => {
             const e = ext(f.name || f);
             const [bg, fg] = EXT_TINT[e] || ["#EEF0F4", "#4A4F5C"];
@@ -204,17 +215,21 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
           )}
         </>
       ) : waiting ? (
-        <Countdown id={key} onUndo={undo} text={isSend ? "Se envía en" : "Se aprueba en"} />
+        <Countdown id={key} onUndo={undo} text={model.waitText} />
       ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-          <a href={a.kind === "plan" && a.missionId ? `/sala/${a.missionId}#plan` : `/revisar/${a.id}`} style={{ display: "flex", alignItems: "center", height: "50px", padding: "0 22px", borderRadius: "999px", background: "rgba(18,19,26,.06)", fontSize: "15px", fontWeight: "600" }}>{"Revisar"}</a>
-          {a.kind === "secret" || a.kind === "plan" ? null : needsHold(a) ? (
-            <HoldButton onConfirm={approve} fill="rgba(18,19,26,.16)" style={APPROVE}>{isSend ? "Aprobar y enviar" : "Aprobar"}</HoldButton>
-          ) : (
-            <button type="button" onClick={approve} style={APPROVE}>{isSend ? "Aprobar y enviar" : "Aprobar"}</button>
-          )}
-          <SnoozeMenu items={[a]} style={QUIET} onError={setError} />
-        </div>
+        <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            {model.primary.action === "open" ? <a href={model.primary.href} style={{ ...APPROVE, display: "flex", alignItems: "center", justifyContent: "center" }}>{model.primary.label}</a>
+              : model.primary.hold
+                ? <HoldButton onConfirm={() => approve()} plainLabel={model.primary.plain} style={APPROVE}>{model.primary.label}</HoldButton>
+                : <button type="button" onClick={() => approve()} style={APPROVE}>{model.primary.label}</button>}
+            {model.secondary.map((s) => (s.id === "review" ? <a key={s.id} href={s.href} style={{ ...SOFT, display: "flex", alignItems: "center" }}>{s.label}</a>
+              : s.id === "always" ? <button key={s.id} type="button" onClick={() => approve(true)} style={SOFT}>{s.label}</button>
+                : <button key={s.id} type="button" onClick={deny} style={QUIET}>{s.label}</button>))}
+            {a.kind === "secret" ? null : <SnoozeMenu items={[a]} style={QUIET} onError={setError} />}
+          </div>
+          <ApprovalNotes model={model} size="14px" />
+        </>
       )}
       {error || failures.get(a.id) ? <span role="alert" style={{ fontSize: "14px", color: "#B4372A" }}>{error || failures.get(a.id)}</span> : null}
     </article>
@@ -270,7 +285,7 @@ export const NeedGroupCard = withRowBoundary(function NeedGroupCard({ group, bot
       <div role="group" aria-label={heading} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "0 6px" }}>
           <span style={{ flex: "1", minWidth: 0, fontSize: "15px", fontWeight: "600" }}>{heading}</span>
-          <button ref={toggle} type="button" aria-expanded="true" onClick={flip} style={{ ...quiet, height: "40px" }}>{"Ver juntas"}</button>
+          <button ref={toggle} type="button" aria-expanded="true" onClick={flip} style={{ ...quiet, height: "40px" }}>{GROUP_VERBS.together}</button>
         </div>
         {items.map((a) => <NeedCard key={a.id} a={a} bot={bot} mission={mission} inline={inline} />)}
       </div>
@@ -294,12 +309,15 @@ export const NeedGroupCard = withRowBoundary(function NeedGroupCard({ group, bot
       ) : waiting ? (
         <Countdown id={key} onUndo={() => cancel(key)} text="Se aprueban en" />
       ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-          <button ref={toggle} type="button" aria-expanded="false" onClick={flip} style={{ height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "15px", fontWeight: "600" }}>{"Ver cada una"}</button>
-          <button type="button" onClick={approve} style={APPROVE}>{"Aprobar todas"}</button>
-          <button type="button" onClick={deny} style={quiet}>{"No permitir"}</button>
-          <SnoozeMenu items={items} style={quiet} onError={setError} />
-        </div>
+        <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            <button type="button" onClick={approve} style={APPROVE}>{GROUP_VERBS.approve}</button>
+            <button ref={toggle} type="button" aria-expanded="false" onClick={flip} style={SOFT}>{GROUP_VERBS.each}</button>
+            <button type="button" onClick={deny} style={quiet}>{GROUP_VERBS.deny}</button>
+            <SnoozeMenu items={items} style={quiet} onError={setError} />
+          </div>
+          <span style={{ fontSize: "14px", lineHeight: "1.45", color: "#5C606C" }}>{GROUP_VERBS.undoLine}</span>
+        </>
       )}
       {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4372A" }}>{error}</span> : null}
     </article>
@@ -316,7 +334,7 @@ export function ChoiceCard({ m, bots }) {
       <h3 style={{ margin: "0", font: "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em" }}>{m.title}</h3>
       <p style={{ margin: "0", fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{isPlan ? "El plan está listo. Revísalo y dale el OK para que empiecen." : m.activityLine || "Las propuestas están listas: elige una."}</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-        <a href={isPlan ? `/encargo/${m.id}` : `/debate/${m.id}`} style={{ flex: "1", display: "flex", alignItems: "center", justifyContent: "center", height: "50px", padding: "0 22px", borderRadius: "999px", background: "#FFC93C", fontSize: "15px", fontWeight: "600" }}>{isPlan ? "Revisar el plan" : "Ver las propuestas"}</a>
+        <a href={isPlan ? `/encargo/${m.id}` : `/debate/${m.id}`} style={{ flex: "1", display: "flex", alignItems: "center", justifyContent: "center", height: "50px", padding: "0 22px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "15px", fontWeight: "600" }}>{isPlan ? "Revisar el plan" : "Ver las propuestas"}</a>
       </div>
     </article>
   );

@@ -72,7 +72,7 @@ export default function ChatsHome() {
         preview: m.narration?.text || (isBot ? m.lastLine || m.title : m.activityLine || m.title) || "",
         at: m.rowAt || m.updatedAt || m.createdAt,
         busy: m.status === "running" || m.status === "planning",
-        attention, badge: attention ? String(m.pendingCount || m.questionCount || 1) : unread ? String(unread) : null,
+        attention, badge: attention ? String(m.waiting || 1) : unread ? String(unread) : null,
         pinHref: isBot ? `/chat/${m.botIds[0]}` : salaUrl(m),
       });
     }

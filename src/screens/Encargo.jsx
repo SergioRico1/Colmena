@@ -11,6 +11,8 @@ import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { useExpert } from "../lib/expert.js";
 import { findBot } from "../components/room/common.jsx";
+import { needsYou } from "../lib/format.js";
+import { pauseReason } from "../lib/pauseReason.js";
 import { verbLabel } from "../components/room/working.js";
 import Markdown from "../components/room/Markdown.jsx";
 
@@ -60,7 +62,7 @@ const KIND = { table: "Hoja", sheet: "Hoja", doc: "Documento", document: "Docume
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
 
 export default function Encargo({ params = {} }) {
-  const { bots, ready } = useStore();
+  const { bots, missions = [], ready } = useStore();
   const [expert] = useExpert();
   const room = useRoom(params.id);
   const { mission: m, steps, messages, artifacts, pending, activity } = room;
@@ -86,7 +88,8 @@ export default function Encargo({ params = {} }) {
   const paused = m.status === "paused";
   const blocked = m.status === "blocked" || m.status === "failed";
   const asks = pending.filter((a) => a.kind !== "secret");
-  const waits = asks.length > 0 || ["waiting", "awaiting_plan", "awaiting_choice"].includes(m.status);
+  // «Te necesita»: something of this task is on the one list of what waits for you (server/waiting.mjs).
+  const waits = needsYou(missions.find((x) => x.id === m.id) || m);
   const pct = finished ? 100 : stages.length ? Math.round((100 * done) / (stages.length + 1)) : m.progress?.total ? Math.round((100 * (m.progress.done || 0)) / m.progress.total) : 0;
   const running = steps.find((s) => s.status === "running") || null;
   const runner = running ? findBot(bots, running.botId) : null;
@@ -101,7 +104,7 @@ export default function Encargo({ params = {} }) {
   const state = finished ? { text: "Hecha", bg: "#E3F4EC", ink: "#0B6B4A" }
     : waits ? { text: "Te necesita", bg: "#FFC93C", ink: "#12131A" }
     : blocked ? { text: "Atascada · mira qué pasa", bg: "#FBE9EA", ink: "#B4232A" }
-    : paused ? { text: "En pausa · seguirá donde lo dejó", bg: "#F1F1EC", ink: "#4A4D57" }
+    : paused ? { text: "En pausa · " + (pauseReason(m, { botName: lead?.name })?.why || "seguirá donde lo dejó").replace(/^./, (c) => c.toLowerCase()), bg: "#F1F1EC", ink: "#4A4D57" }
     : { text: "En marcha · va según lo previsto", bg: "#EEF0F4", ink: "#1F4FD1" };
   const browsing = runner && /naveg|formulario|ordenador/i.test(act?.verb || "");
   const tools = expert && running ? (running.tools || []).slice(-6) : [];

@@ -43,11 +43,11 @@ export default function GeneralSection() {
         <SwitchRow anchor="narracion" title="Te cuentan en qué están" sub="Una frase mientras trabajan: «Leyendo tus correos de hoy…»." on={settings.narration !== false} onChange={flip("narration", "Te cuentan en qué están")} />
         <SwitchRow anchor="sugerencias" title="Respuestas sugeridas" sub="Hasta tres respuestas listas para pulsar bajo la última pregunta." on={settings.suggestions !== false} onChange={flip("suggestions", "Respuestas sugeridas")} />
         <SwitchRow anchor="quien-responde" title="Elegir solo quién responde en las salas" sub="Si no nombras a nadie, responde el bot al que le toca. Apagado, responde siempre Atlas." on={settings.routing !== false} onChange={flip("routing", "Elegir solo quién responde")} />
-        <Row anchor="personas" title="Personas" sub="Las de tu espacio firman lo que apruebas; con las conectadas hablas desde Colmena.">
-          <span style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            <Go to="/ajustes/personas" style={btn("outline", 36)}>Del espacio</Go>
-            <Go to="/ajustes/contactos" style={btn("outline", 36)}>Conectadas</Go>
-          </span>
+        <Row anchor="quien-usa" title="Quién usa este ordenador" sub="Quién firma lo que se aprueba aquí y a quién se asignan tareas.">
+          <Go to="/ajustes/quien-usa" style={btn("outline", 36)}>Ver la lista</Go>
+        </Row>
+        <Row anchor="personas" title="Personas" sub="Con quién hablas desde Colmena: invitaciones, tu estado y lo que pueden pedir a tus bots.">
+          <Go to="/ajustes/contactos" style={btn("outline", 36)}>Abrir</Go>
         </Row>
       </Card>
       <Panel anchor="atajos" title="Atajos de teclado">

@@ -107,7 +107,7 @@ const TRIGGER_CARDS = {
 const EVENT_TYPES = ["correo", "archivo", "evento", "sala", "hoja", "webhook"];
 // «Cuando …» of a webhook trigger, as server/triggers.mjs words it.
 const HOOK_WHEN = { github_pr: "se abra una pull request en GitHub", github_check: "falle una comprobación en GitHub", sentry: "aparezca un error nuevo en Sentry" };
-const FILTERS = [["todas", "Todas"], ["hora", "Por horario"], ["algo", "Cuando pasa algo"], ["recordatorio", "Recordatorios"], ["encargo", "Encargos"]];
+const FILTERS = [["todas", "Todas"], ["hora", "Por horario"], ["algo", "Cuando pasa algo"], ["recordatorio", "Recordatorios"], ["encargo", "Tareas fijas"]];
 const sel = (on) => (on ? INK : "rgba(18,19,26,.1)");
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
 
@@ -129,7 +129,7 @@ export default function RutinasV2() {
   const { automations = [], bots = [], missions = [], skills = [], ready } = useStore();
   const orders = useResource("/standing-orders");
   const intents = useResource("/intents");
-  const [filter, setFilter] = useState({ encargos: "encargo", recordatorios: "recordatorio" }[query.pestana] || "todas");
+  const [filter, setFilter] = useState({ encargos: "encargo", "tareas-fijas": "encargo", recordatorios: "recordatorio" }[query.pestana] || "todas");
   const [open, setOpen] = useState(query.nueva === "1");
   useEffect(() => { if (query.nueva === "1") setOpen(true); }, [query.nueva]);
   const [orderForm, setOrderForm] = useState(false);
@@ -182,8 +182,8 @@ export default function RutinasV2() {
           {filter === "recordatorio" ? <ReminderForm /> : null}
           {filter === "encargo" && !orderForm && !editingOrder ? (
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 18px", borderRadius: "18px", background: "#F1F1EC", fontSize: "14px", lineHeight: 1.45 }}>
-              <span style={{ flex: "1 1 320px", color: MUTED }}>Un encargo es algo que un bot atiende siempre que haga falta, con sus límites claros, como registrar las facturas que lleguen.</span>
-              <button type="button" onClick={() => setOrderForm(true)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", fontWeight: 500, cursor: "pointer" }}>Nuevo encargo</button>
+              <span style={{ flex: "1 1 320px", color: MUTED }}>Una tarea fija es algo que un bot atiende siempre que haga falta, con sus límites claros, como registrar las facturas que lleguen.</span>
+              <button type="button" onClick={() => setOrderForm(true)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", fontWeight: 500, cursor: "pointer" }}>Nueva tarea fija</button>
             </div>
           ) : null}
           {orderForm ? <OrderForm team={team} onClose={() => setOrderForm(false)} /> : null}
@@ -200,7 +200,7 @@ export default function RutinasV2() {
             <div style={{ display: "flex", flexDirection: "column", borderRadius: "22px", background: "#FFFFFF" }}>
               {list.map((r, i) => <RoutineRow key={r.key} r={r} first={i === 0} busy={act.busy} />)}
             </div>
-          ) : !loading && rows.length ? <p style={{ margin: 0, padding: "16px 4px", fontSize: "14.5px", color: FAINT }}>{{ hora: "Ninguna rutina por horario.", algo: "Ninguna rutina que salte cuando pasa algo.", recordatorio: "Sin recordatorios por tema.", encargo: "Sin encargos." }[filter]}</p> : null}
+          ) : !loading && rows.length ? <p style={{ margin: 0, padding: "16px 4px", fontSize: "14.5px", color: FAINT }}>{{ hora: "Ninguna rutina por horario.", algo: "Ninguna rutina que salte cuando pasa algo.", recordatorio: "Sin recordatorios por tema.", encargo: "Sin tareas fijas." }[filter]}</p> : null}
           {filter === "recordatorio" ? <ReminderSample sample={intentList[0]} atlas={atlas} /> : null}
         </section>
       </main>
@@ -239,7 +239,7 @@ function orderRow(o, bot, automations, act, setEditing) {
   const rule = o.automationId ? automations.find((a) => a.id === o.automationId) : null;
   const id = encodeURIComponent(o.id);
   const meta = [
-    `Encargo «${o.title}»`,
+    `Tarea fija «${o.title}»`,
     o.stopWhen ? "para y te pregunta: " + low(o.stopWhen).replace(/\.$/, "") : "solo para en las líneas rojas",
     "avisos como mucho: " + (NOTIFY.find(([k]) => k === o.notifyMax)?.[1] || "cada vez").toLowerCase(),
     o.until ? (o.expired ? "terminó el " : "hasta el ") + longDate(o.until) : null,
@@ -252,7 +252,7 @@ function orderRow(o, bot, automations, act, setEditing) {
     menu: [
       ["Editar", () => setEditing(o.id)],
       rule ? ["Ver la rutina que creó", () => navigate(`/automatizaciones?id=${encodeURIComponent(rule.id)}`)] : o.schedule ? ["Crear la rutina", () => act.act(() => post(`/standing-orders/${id}/automation`, {}))] : null,
-      ["Borrar", () => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Encargo «${o.title}» borrado`, error: "No se pudo borrar el encargo", run: () => act.act(() => del(`/standing-orders/${id}`)) })],
+      ["Borrar", () => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Tarea fija «${o.title}» borrada`, error: "No se pudo borrar la tarea fija", run: () => act.act(() => del(`/standing-orders/${id}`)) })],
     ].filter(Boolean),
   };
 }
@@ -751,9 +751,9 @@ function OrderForm({ team, initial, onClose }) {
   const label = (text) => <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED }}>{text}</span>;
   return (
     <section aria-labelledby="of-t" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "24px 26px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
-      <h2 id="of-t" style={{ margin: 0, fontSize: "15px", fontWeight: 600 }}>{initial ? "Cambiar el encargo" : "Nuevo encargo"}</h2>
+      <h2 id="of-t" style={{ margin: 0, fontSize: "15px", fontWeight: 600 }}>{initial ? "Cambiar la tarea fija" : "Nueva tarea fija"}</h2>
       <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {label("Nombre del encargo")}
+        {label("Nombre de la tarea fija")}
         <input className="c-quiet" type="text" autoFocus value={f.title} maxLength={100} onChange={(e) => set({ title: e.target.value })} placeholder="Facturas de proveedores" style={{ ...inputBox, height: "44px", padding: "0 14px" }} />
       </label>
       {!initial ? <Pills label="Quién se encarga" value={f.botId} onPick={(v) => set({ botId: v })} items={team.map((b) => [b.id, b.name])} /> : null}
@@ -769,11 +769,11 @@ function OrderForm({ team, initial, onClose }) {
         <Pills label="Avisos como mucho" items={NOTIFY} value={f.notifyMax} onPick={(v) => set({ notifyMax: v })} />
         <Pills label="Hasta (opcional)" items={untilItems} value={f.until} onPick={(v) => set({ until: v })} />
       </div>
-      <span style={{ fontSize: "13.5px", color: FAINT }}>Aunque el encargo diga otra cosa, enviar algo fuera, mover dinero, borrar archivos e instalar programas siempre te preguntan.</span>
+      <span style={{ fontSize: "13.5px", color: FAINT }}>Aunque la tarea fija diga otra cosa, enviar algo fuera, mover dinero, borrar archivos e instalar programas siempre te preguntan.</span>
       {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{act.error}</p> : null}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
         <button type="button" onClick={onClose} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "14.5px", fontWeight: 500 }}>Cancelar</button>
-        <button type="button" onClick={save} disabled={!ready || act.busy} style={{ height: "42px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "14.5px", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>{initial ? "Guardar cambios" : "Guardar encargo"}</button>
+        <button type="button" onClick={save} disabled={!ready || act.busy} style={{ height: "42px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "14.5px", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>{initial ? "Guardar cambios" : "Guardar tarea fija"}</button>
       </div>
     </section>
   );
@@ -809,7 +809,7 @@ function ReminderForm() {
         </label>
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-        <span role="status" style={{ fontSize: "13px", color: act.error ? "#B4232A" : touched && !ready ? "#8A5A00" : FAINT }}>{act.error || (touched && !ready ? "Escribe al menos una palabra o frase en cada lado." : "Palabras o frases separadas por comas.")}</span>
+        <span role="status" style={{ fontSize: "13px", color: act.error ? "#B4232A" : touched && !ready ? INK : FAINT }}>{act.error || (touched && !ready ? "Escribe al menos una palabra o frase en cada lado." : "Palabras o frases separadas por comas.")}</span>
         <button type="button" onClick={add} disabled={!ready || act.busy} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
       </div>
     </section>

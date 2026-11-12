@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { BotDot } from "../components/v3/TrabajoHeader.jsx";
@@ -11,6 +11,8 @@ import { useStore } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { useExpert } from "../lib/expert.js";
+import { approvalCard } from "../lib/approvalCard.js";
+import HoldButton from "../components/HoldButton.jsx";
 
 // Colmena 3 · Trabajo › una tarea › el navegador de un bot (design/V3Ordenador.dc.html): what
 // it sees, live; at a red line the honey card that waits for your OK (publishing, sending or
@@ -36,11 +38,8 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
   const { frame, available, takeover } = useBrowserFrames(params.id);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
-  const [armed, setArmed] = useState(false);
   const [outcome, setOutcome] = useState(null);
   const [note, setNote] = useState("");
-  const timer = useRef(null);
-  useEffect(() => () => clearTimeout(timer.current), []);
 
   if (ready && !room.loading && !m) return <NotFound title="Este navegador ya no está abierto" text="La tarea terminó o se cerró. Lo que hizo el bot sigue en su sala y en la Biblioteca." />;
   if (!m) return <Shell active="trabajo"><div /></Shell>;
@@ -65,14 +64,10 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
   const decide = (decision) => run(decision, async () => {
     await post(`/approvals/${encodeURIComponent(ask.id)}`, { decision, revision: ask.revision });
     setOutcome(decision === "approved" ? { text: `Hecho con tu OK a las ${hhmm(new Date().toISOString())}. ${name} lo deja anotado en la tarea.`, ok: true } : { text: `No lo ha hecho. ${name} te deja el borrador listo.`, ok: false });
-    setArmed(false);
   });
-  // Red-line actions need a second press within 3 s («Pulsa otra vez para confirmar»).
-  const confirm = () => {
-    if (!armed) { setArmed(true); clearTimeout(timer.current); timer.current = setTimeout(() => setArmed(false), 3000); return; }
-    clearTimeout(timer.current);
-    decide("approved");
-  };
+  // The same verbs as every other approval (lib/approvalCard.js): a red line is held to approve.
+  const card = ask ? approvalCard(ask, { botName: bot?.name, undo: false }) : null;
+  const denyLabel = card?.secondary.find((s) => s.id === "deny")?.label || "No permitir";
 
   const status = outcome?.ok ? "Terminado · " + lower(outcome.text.split(".")[0])
     : ask ? `En ${m.title} · espera tu OK para seguir`
@@ -155,9 +150,11 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
                 <h2 id="perm-t" style={{ margin: 0, fontSize: "18px", fontWeight: 600, lineHeight: 1.3 }}>{`${name} quiere ${lower(ask.title || "seguir")}`}</h2>
                 {ask.summary || ask.description ? <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.5, color: MUTED }}>{ask.summary || ask.description}</p> : null}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  <button type="button" disabled={!!busy} onClick={confirm} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "14.5px", fontWeight: 600, cursor: "pointer", transition: "all .2s ease" }}>{armed ? "Pulsa otra vez para confirmar" : "Sí, hazlo"}</button>
+                  {card.primary?.hold
+                    ? <HoldButton disabled={!!busy} onConfirm={() => decide("approved")} plainLabel={card.primary.plain} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "14.5px", fontWeight: 600, cursor: "pointer" }}>{card.primary.label}</HoldButton>
+                    : <button type="button" disabled={!!busy} onClick={() => decide("approved")} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "14.5px", fontWeight: 600, cursor: "pointer" }}>{"Aprobar"}</button>}
                   {frame ? <button type="button" disabled={!!busy} onClick={take} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14.5px", cursor: "pointer" }}>Lo hago yo</button> : null}
-                  <button type="button" disabled={!!busy} onClick={() => decide("denied")} style={{ height: "42px", padding: "0 12px", border: 0, background: "transparent", fontSize: "14.5px", color: MUTED, cursor: "pointer" }}>Ahora no</button>
+                  <button type="button" disabled={!!busy} onClick={() => decide("denied")} style={{ height: "42px", padding: "0 12px", border: 0, background: "transparent", fontSize: "14.5px", color: MUTED, cursor: "pointer" }}>{denyLabel}</button>
                 </div>
               </div>
             ) : null}

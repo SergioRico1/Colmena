@@ -125,7 +125,7 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
               <h2 style={{ margin: 0, font: "600 34px/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{g.title}</h2>
               {g.why ? <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.5, color: "#4A4D57" }}><strong style={{ color: "#12131A", fontWeight: 600 }}>Por qué:</strong> {g.why}</p> : null}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                <span title={budget.tokens ? `${budget.percent ?? 0} % del presupuesto` : undefined} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: budget.limited ? "#FFF1C7" : "#F1F1EC", color: budget.limited ? "#8A5A00" : "#12131A", fontSize: "13.5px" }}>{"Gasto: " + spent}</span>
+                <span title={budget.tokens ? `${budget.percent ?? 0} % del presupuesto` : undefined} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", color: "#12131A", fontWeight: budget.limited ? 600 : 400, fontSize: "13.5px" }}>{"Gasto: " + spent}</span>
                 <span style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", fontSize: "13.5px" }}>{tasksChip}</span>
               </div>
 
@@ -143,7 +143,7 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
                         <span style={{ fontSize: "14.5px", fontWeight: 500 }}>{m.title}</span>
                         <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{work ? <a href={`/encargo/${work.id}`} onClick={go(`/encargo/${work.id}`)} style={{ color: "#5C606C" }}>{`${who ? who + " · " : ""}${work.title}`}</a> : (m.automations || [])[0] ? `Rutina: ${(m.automations || [])[0].name}` : "Sin tarea todavía"}</span>
                       </span>
-                      <span style={{ flex: "none", fontSize: "13px", color: m.overdue ? "#8A5A00" : "#4A4D57" }}>{m.done ? shortDate(m.doneAt || m.dueAt) : m.overdue ? "con retraso" : shortDate(m.dueAt)}</span>
+                      <span style={{ flex: "none", fontSize: "13px", color: m.overdue ? "#B4232A" : "#4A4D57" }}>{m.done ? shortDate(m.doneAt || m.dueAt) : m.overdue ? "con retraso" : shortDate(m.dueAt)}</span>
                     </div>
                   );
                 })}

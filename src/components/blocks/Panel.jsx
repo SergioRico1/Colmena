@@ -15,7 +15,8 @@ import { moveOptions, movedIds } from "../../lib/blocks.js";
 
 const EMPTY = "Pide a un bot que te deje un dato aquí: «déjame en el panel las ventas de ayer y actualízalas cada mañana».";
 
-export default function Panel() {
+/** `page`: on its own page (/panel) the title is the page's heading and says what the panel is. */
+export default function Panel({ page = false }) {
   const { blocks: pinned = [], run } = useStore();
   const { data, setData } = useResource("/blocks?pinned=1");
   const hidden = useHidden("block");
@@ -46,7 +47,12 @@ export default function Panel() {
 
   return (
     <section aria-labelledby="panel-t" data-panel="" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      <h2 id="panel-t" style={sectionTitle}>{"Panel"}</h2>
+      {page ? (
+        <header style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
+          <h1 id="panel-t" style={{ margin: "0", font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Panel"}</h1>
+          <p style={{ margin: "0", fontSize: "16px", color: "#4A4D57" }}>{"Los datos que tus bots mantienen al día para ti."}</p>
+        </header>
+      ) : <h2 id="panel-t" style={sectionTitle}>{"Panel"}</h2>}
       {order.length ? (
         <div data-panel-grid="" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))", alignItems: "start", gap: "14px" }}>
           {order.map((id) => {

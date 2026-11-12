@@ -67,3 +67,12 @@ export function useUndoable(id) {
   const left = entry.paused ? entry.left : Math.max(0, entry.at - Date.now());
   return { waiting: true, secs: Math.ceil(left / 1000), fraction: left / UNDO_MS };
 }
+
+/** Calls `onFail(message)` when the action scheduled as `id` ran and failed. */
+export function useUndoFailed(id, onFail) {
+  useEffect(() => {
+    const listen = (e) => { if (e.detail?.id === id) onFail(e.detail.message || "No se pudo completar. Vuelve a intentarlo."); };
+    window.addEventListener("colmena:undo-failed", listen);
+    return () => window.removeEventListener("colmena:undo-failed", listen);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+}

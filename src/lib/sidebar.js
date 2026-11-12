@@ -4,8 +4,8 @@
 // by /api/events), so a new message, a bot that starts or stops and a presence change reach the
 // sidebar without polling. It is the shape `GET /api/sidebar?team=` would answer:
 //   { rooms: [{id, href, title, unread, waiting}], bots: [{id, name, role, shape, color, state}],
-//     people: [{id, href, name, presence, status, unread}], waitingCount }
-import { needsCount, needsOf } from "../components/v2/needs.js";
+//     people: [{id, href, name, presence, status, unread, waiting}], waitingCount }
+import { waitingBy, waitingOf } from "../components/v2/needs.js";
 import { listRows } from "./threads.js";
 import { isBotChat, isSala, roomLinks } from "./rooms.js";
 
@@ -34,13 +34,10 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
   const inTeam = (x) => !team || !x.teamId || x.teamId === team;
   const missionOf = new Map(missions.map((m) => [m.id, m]));
 
-  // What waits for you, by room and by bot: the same items Inicio lists (needsOf).
-  const { asks, choices, notes } = needsOf(store, now);
-  const waitingIn = new Map(), waitingOf = new Map();
+  // What waits for you, by room and by bot: filters of the one list (server/waiting.mjs).
+  const waitingNow = waitingOf(store, now);
+  const { rooms: waitingIn, bots: waitingOf_ } = waitingBy(waitingNow);
   const add = (map, key) => { if (key) map.set(key, (map.get(key) || 0) + 1); };
-  for (const a of asks) { add(waitingIn, a.missionId); add(waitingOf, a.botId); }
-  for (const m of choices) { add(waitingIn, m.id); if (isBotChat(m)) add(waitingOf, m.botIds[0]); }
-  for (const n of notes) { add(waitingIn, n.missionId); add(waitingOf, n.botId); }
 
   // Unread: a mention or a message you have not opened, by room and by bot (its own chats).
   const unreadIn = new Map(), unreadOf = new Map();
@@ -73,13 +70,13 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
   const talking = new Set();
   for (const s of peers?.shares || []) {
     if (s.removed || s.left || !inTeam(s)) continue;
-    // Nothing in a conversation with people asks for your decision yet: requests to your bots
-    // from other people will (the owner's rule, server/peers), and will count here.
+    // What another person asks of your bots and waits for your OK (an errand in state «asked»)
+    // counts in its conversation, like any other thing that waits for you.
     if (s.kind !== "dm" && listed) continue;
-    if (s.kind !== "dm") { rooms.push({ id: s.id, href: `/con/${s.id}`, title: s.title || "sala", unread: s.unread || 0, waiting: 0, at: time(s.lastAt), withPeople: true }); continue; }
+    if (s.kind !== "dm") { rooms.push({ id: s.id, href: `/con/${s.id}`, title: s.title || "sala", unread: s.unread || 0, waiting: waitingIn.get(s.id) || 0, at: time(s.lastAt), withPeople: true }); continue; }
     const other = (s.members || []).find((p) => !p.me) || null;
     talking.add(s.id);
-    people.push(personRow({ id: other?.id || s.id, href: `/con/${s.id}`, name: s.title || other?.name, person: other, unread: s.unread || 0 }));
+    people.push(personRow({ id: other?.id || s.id, href: `/con/${s.id}`, name: s.title || other?.name, person: other, unread: s.unread || 0, waiting: waitingIn.get(s.id) || 0 }));
   }
   // People you are connected with and have not written to yet.
   for (const c of peers?.contacts || []) {
@@ -90,18 +87,18 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
   people.sort((a, b) => byName(a.name, b.name) || byName(a.id, b.id));
 
   const team_ = bots.filter((b) => b.enabled !== false).map((b) => {
-    const waiting = waitingOf.get(b.id) || 0;
+    const waiting = waitingOf_.get(b.id) || 0;
     const state = paused || b.status === "pausado" ? "paused" : b.status === "trabaja" ? "working" : waiting ? "waiting" : b.status === "limitado" ? "limited" : b.status === "bloqueado" ? "stuck" : "free";
     return { id: b.id, href: `/chat/${b.id}`, name: b.name || "Bot", role: b.role || "", shape: sidebarShape(b.shape), color: b.color || "#C9CBD1", portrait: b.portrait ?? null, state, waiting, unread: unreadOf.get(b.id) || 0 };
   });
 
-  const waitingCount = needsCount(store, now);
+  const waitingCount = waitingNow.length;
   return { rooms, bots: team_, people, waitingCount, summary: summaryOf(team_, waitingCount, paused) };
 }
 
-function personRow({ id, href, name, person, unread }) {
+function personRow({ id, href, name, person, unread, waiting = 0 }) {
   const status = STATUS_WORD[person?.away?.mode] ? person.away.mode : null;
-  return { id, href, name: name || "Alguien", initials: person?.initials || initialsOf(name), color: person?.color || "#E9E6DA", presence: person?.online ? "online" : "offline", status, unread };
+  return { id, href, name: name || "Alguien", initials: person?.initials || initialsOf(name), color: person?.color || "#E9E6DA", presence: person?.online ? "online" : "offline", status, unread, waiting };
 }
 
 /** The foot's line. It counts the same rows the Bots group shows and the same number as Inicio. */
