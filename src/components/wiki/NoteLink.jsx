@@ -22,7 +22,7 @@ export default function NoteLink({ target, children }) {
       onClick={missing && ctx?.onMissing ? (e) => { e.preventDefault(); ctx.onMissing(name); } : undefined}
       style={missing
         ? { color: "var(--c-text-3)", textDecoration: "underline dashed", textUnderlineOffset: "3px" }
-        : { color: "var(--c-accent-ink)", textDecoration: "underline", textDecorationColor: "rgba(31,79,209,.35)", textUnderlineOffset: "3px" }}>
+        : { color: "var(--c-accent-ink)", textDecoration: "underline", textDecorationColor: "color-mix(in srgb, var(--c-accent-ink) 35%, transparent)", textUnderlineOffset: "3px" }}>
       {children}
     </a>
   );

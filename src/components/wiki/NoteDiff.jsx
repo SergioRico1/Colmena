@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { diffModel, diffSummary, noteAskTitle, noteUrl } from "../../lib/wikiLinks.js";
 import { useResource } from "../../lib/store.jsx";
+import { C } from "../../lib/theme.js";
 
 // The changes of a note as lines: what is new in green with «+», what goes in red with «−»
 // (the sign says it too, not only the colour). Used by the conflict view, the history and
 // the approval cards of a bot's note write (approval.wiki).
 
 const MONO = "'Geist Mono', monospace";
-const TONE = { add: ["#E3F4EC", "#0B6B4A", "+"], del: ["#FBE9EA", "#B4232A", "−"], ctx: ["transparent", "#3D404A", " "] };
+const TONE = { add: [C.okSoft, C.okInk, "+"], del: [C.errorSoft, C.error, "−"], ctx: ["transparent", C.text2, " "] };
 const WORD = { add: "Línea nueva", del: "Línea quitada" };
 
 /** `diff` is `{patch, added, removed, truncated}` (or the patch alone). `max` rows before «Ver todo». */
@@ -20,7 +21,7 @@ export default function NoteDiff({ diff, max = 400, label = "Cambios en la nota"
     <div role="group" aria-label={`${label}: ${diffSummary(model)}`} style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0, ...style }}>
       <div tabIndex={0} aria-label={label} style={{ maxHeight: "360px", overflow: "auto", borderRadius: "var(--r-md)", background: "var(--c-sunken)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .06)", font: `400 var(--t-meta)/1.6 ${MONO}` }}>
         {rows.map((r, i) => {
-          if (r.type === "gap") return <div key={i} aria-hidden="true" style={{ padding: "2px 12px", color: "#8A8D97" }}>{"⋯"}</div>;
+          if (r.type === "gap") return <div key={i} aria-hidden="true" style={{ padding: "2px 12px", color: "var(--c-text-4)" }}>{"⋯"}</div>;
           const [bg, ink, sign] = TONE[r.type];
           return (
             <div key={i} style={{ display: "flex", gap: "8px", padding: "0 12px", background: bg, color: ink }}>
@@ -40,7 +41,7 @@ export default function NoteDiff({ diff, max = 400, label = "Cambios en la nota"
   );
 }
 
-const shine = { background: "linear-gradient(90deg,#ECECE7 0%,#F6F6F3 40%,#ECECE7 80%)", backgroundSize: "300% 100%", animation: "shimmer 1.6s ease-in-out infinite" };
+const shine = { background: "linear-gradient(90deg,var(--c-chip) 0%,var(--c-hover) 40%,var(--c-chip) 80%)", backgroundSize: "300% 100%", animation: "shimmer 1.6s ease-in-out infinite" };
 /** The diff while it loads: grey lines with the soft shimmer of every «Cargando» (Skeleton.jsx). */
 function DiffLoading() {
   return (

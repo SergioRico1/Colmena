@@ -1,4 +1,5 @@
 import { BotPresence } from "../v2/Presence.jsx";
+import { C } from "../../lib/theme.js";
 
 // Shared pieces for the team screens (Equipo, Nuevo bot, Perfil del bot).
 
@@ -30,9 +31,9 @@ export function Switch({ on, label, onClick, disabled, title }) {
   return (
     <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={label} aria-disabled={disabled ? "true" : undefined} title={title} onClick={onClick}
       style={on
-        ? { width: "52px", height: "32px", flex: "none", padding: "3px", background: "#0B8A5F", border: "0", borderRadius: "var(--r-pill)", cursor: disabled ? "default" : "pointer", display: "flex", justifyContent: "flex-end", opacity: disabled ? 0.75 : 1 }
+        ? { width: "52px", height: "32px", flex: "none", padding: "3px", background: C.ok, border: "0", borderRadius: "var(--r-pill)", cursor: disabled ? "default" : "pointer", display: "flex", justifyContent: "flex-end", opacity: disabled ? 0.75 : 1 }
         : { width: "52px", height: "32px", flex: "none", padding: "3px", background: "rgb(var(--c-ink-rgb) / .14)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-start" }}>
-      <span style={on ? { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.2)" } : { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.2)" }} />
+      <span style={on ? { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-knob)", boxShadow: "var(--c-shadow-lift)" } : { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-knob)", boxShadow: "var(--c-shadow-lift)" }} />
     </button>
   );
 }

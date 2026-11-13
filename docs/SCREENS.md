@@ -71,6 +71,18 @@ con estas tres piezas; no hay colores, iconos ni bots dibujados a mano.
 - Lo que aún queda en hex por pantalla lo terminan los agentes que rehacen cada pantalla (codemod de colores: solo
   se cambió lo inequívoco).
 
+- Más allá de los tokens base, `src/styles/palette.css` (en claro y oscuro) y sus nombres en `src/lib/palette4.js`:
+  la terminal (`TERM`, `term-*`, y `ansi-*` que lee xterm con `xtermTheme()`/`watchXtermTheme()`: terminal de papel en
+  claro, más honda que la ventana en oscuro), los tipos de archivo (`KIND.doc|xls|ppt|img|pdf|md|code` → [fondo, tinta,
+  marca]), «a medias» (`WARN`, naranja que nunca es miel), la página de una vista previa (`PAPER`) y el avatar de una
+  persona (`personTint(color)`: su color mezclado con la superficie, `--c-av-*`).
+- Piezas de pantalla v4 (`src/lib/ui4.js`): botones `B.primary|secondary|ghost|danger` (32 px, `B.lg` 36 px, esquina
+  `r-sm`), `CARD` (línea fina, `r-md`, sin sombra), `ROW`/`ROW_SEP`, `H1`/`LEAD`, `SEC`/`H2`/`COUNT`/`MORE`, `SIDE_H`,
+  `TAG`, `chip(on)`, `WAIT_COUNT` (la cuenta en miel), `TRACK`/`fill(pct)` y `ONE`. Sus estados `:hover` son clases de
+  `palette.css`: `u4-pri`, `u4-sec`, `u4-ghost`, `u4-row` y `u4-honey` (una fila sobre el fondo de miel).
+- Las pantallas rehechas en v4 pasan `background="var(--c-app)"` a `<Shell>` y sus tarjetas llevan línea fina.
+- `node scripts/a11y-scan.mjs <url> --dark` y `node scripts/v3-shot.cjs … --dark` miran el tema oscuro.
+
 ### Tema (Sistema / Claro / Oscuro)
 - `settings.theme`: `"system"` (por defecto, sigue `prefers-color-scheme`), `"light"` o `"dark"`; se cambia en
   Ajustes › General › Tema (`/ajustes/general#tema`).

@@ -5,6 +5,7 @@ import { post } from "../../lib/api.js";
 import { avatarStyle, initial } from "../../lib/bots.js";
 import { useBrowserFrames } from "./useBrowserFrames.js";
 import { ReturnNote, WatchedView, returnBody } from "./takeover.jsx";
+import { C } from "../../lib/theme.js";
 
 export { useBrowserFrames };
 
@@ -19,8 +20,8 @@ const VERB_LABEL = {
 };
 
 const CSS = `
-@keyframes colmena-live{0%{box-shadow:0 0 0 0 rgba(61,220,151,.7)}100%{box-shadow:0 0 0 7px rgba(61,220,151,0)}}
-.colmena-live-btn:focus-visible{outline:3px solid #2F6BFF;outline-offset:2px}
+@keyframes colmena-live{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--c-ok) 70%, transparent)}100%{box-shadow:0 0 0 7px transparent}}
+.colmena-live-btn:focus-visible{outline:3px solid var(--c-accent);outline-offset:2px}
 `;
 
 const buttonBase = { height: "40px", padding: "0 14px", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "8px" };
@@ -35,7 +36,7 @@ function GlobeIcon() {
 }
 
 function LockIcon({ secure }) {
-  return secure ? <Lock size={13} weight="bold" color="var(--c-ok-ink)" /> : <LockOpen size={13} weight="bold" color="#9DA2B0" />;
+  return secure ? <Lock size={13} weight="bold" color="var(--c-ok-ink)" /> : <LockOpen size={13} weight="bold" color="var(--c-text-4)" />;
 }
 
 function Avatar({ bot }) {
@@ -53,7 +54,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [note, setNote] = useState("");
-  const color = bot?.color || "#FFC93C";
+  const color = bot?.color || C.accent;
   const name = bot?.name || "el bot";
   const label = VERB_LABEL[verb] || (verb ? verb.charAt(0).toUpperCase() + verb.slice(1) : takeover ? "Esperando" : "Navegando");
 
@@ -76,7 +77,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   if (!frame) {
     const desktopOnly = available === false;
     return (
-      <article aria-label={"Vista en vivo del navegador de " + name} style={{ margin: "6px 0", border: "1px dashed var(--c-line-strong)", borderRadius: "var(--r-xl)", background: "var(--c-card)", padding: "18px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+      <article aria-label={"Vista en vivo del navegador de " + name} style={{ margin: "6px 0", border: "1px dashed var(--c-line-strong)", borderRadius: "var(--r-md)", background: "var(--c-card)", padding: "18px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
         <style>{CSS}</style>
         <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-chip)", borderRadius: "var(--r-md)", color: "var(--c-text-2)" }}>
           <GlobeIcon />
@@ -103,7 +104,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   return (
     <article
       aria-label={"Vista en vivo del navegador de " + name}
-      style={{ margin: "6px 0", border: "2px solid " + color, borderRadius: "var(--r-xl)", overflow: "hidden", background: "var(--c-card)", boxShadow: takeover ? "8px 8px 0 #FFC93C" : "none", transition: "box-shadow .2s ease" }}
+      style={{ margin: "6px 0", border: "2px solid " + color, borderRadius: "var(--r-md)", overflow: "hidden", background: "var(--c-card)", boxShadow: takeover ? "8px 8px 0 var(--c-honey-ring)" : "none", transition: "box-shadow .2s ease" }}
     >
       <style>{CSS}</style>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 16px", borderBottom: "1px solid var(--c-line)" }}>
@@ -115,7 +116,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
         </span>
         <span style={{ flex: 1 }} />
         <span style={{ display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>
-          <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#3DDC97", animation: "colmena-live 1.4s ease-out infinite" }} />
+          <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "var(--c-ok)", animation: "colmena-live 1.4s ease-out infinite" }} />
           Vista en vivo
         </span>
       </div>
@@ -130,7 +131,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
         ) : null}
       </div>
 
-      <WatchedView watching={!takeover} name={name} busy={!!busy} onTake={takeControl} takeStyle={BUTTON_DARK} quietStyle={BUTTON_LIGHT} style={{ background: "#12131A", display: "grid", placeItems: "center" }}>
+      <WatchedView watching={!takeover} name={name} busy={!!busy} onTake={takeControl} takeStyle={BUTTON_DARK} quietStyle={BUTTON_LIGHT} style={{ background: C.btn, display: "grid", placeItems: "center" }}>
         <img
           src={frame.image}
           alt={"Lo que ve " + name + ": " + (frame.title || host || "página web")}

@@ -70,7 +70,7 @@ function EntryRow({ e, first }) {
         {confirm ? (
           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "var(--t-meta)" }}>{"¿Quitarla de la bóveda?"}</span>
-            <button type="button" disabled={busy} onClick={() => act(() => del(`/vault/${encodeURIComponent(e.id)}`))} style={{ ...btn.quiet, color: "var(--c-error)", borderColor: "#F1B5B7", fontWeight: "600" }}>{"Quitar"}</button>
+            <button type="button" disabled={busy} onClick={() => act(() => del(`/vault/${encodeURIComponent(e.id)}`))} style={{ ...btn.quiet, color: "var(--c-error)", borderColor: "color-mix(in srgb, var(--c-error) 35%, transparent)", fontWeight: "600" }}>{"Quitar"}</button>
             <button type="button" onClick={() => setConfirm(false)} style={btn.quiet}>{"No"}</button>
           </span>
         ) : (

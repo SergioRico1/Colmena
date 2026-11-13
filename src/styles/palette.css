@@ -1,0 +1,69 @@
+/* Colmena 4 · the palettes beyond the base tokens (docs/SCREENS.md › v4), light and dark:
+     term-*   the terminal (Código's terminal, the computer's command log): a light paper terminal
+              in the light theme, a deeper-than-the-window one in dark; ansi-* feed xterm
+     kind-*   file kinds (thumbnails, file chips): a soft ground, an ink for the label, a mark
+     warn-*   «a medias» (a P1 review note, a slow thing): orange that is never honey
+     av-*     a person's round avatar: their colour mixed into the surface, and into the ink for the initials
+     paper    the page of a document preview (white in light, a raised grey in dark)
+     knob     the thumb of a switch (light on any track, in both themes)
+     logo-tile the light tile under an app's brand mark (brand colours are drawn for white)
+     scrim    the shade behind a dialog (it darkens in both themes; an ink alpha would lighten dark)
+   Inline styles use them as var(--c-…) or through src/lib/palette4.js. */
+:root{
+  --c-term-bg:#F7F7F4;--c-term-fg:#33363F;--c-term-strong:#12131A;--c-term-dim:#5C606C;
+  --c-term-line:rgb(18 19 26 / .08);--c-term-hover:rgb(18 19 26 / .06);--c-term-chip:rgb(18 19 26 / .05);
+  --c-term-sel:rgb(47 107 255 / .18);--c-term-cursor:#12131A;
+  --c-term-ok:#0B6B4A;--c-term-error:#B4332B;--c-term-info:#1F4FD1;--c-term-wait:#6B4E00;
+  --c-ansi-black:#12131A;--c-ansi-red:#B4332B;--c-ansi-green:#0B6B4A;--c-ansi-yellow:#7A5A00;--c-ansi-blue:#1F4FD1;
+  --c-ansi-magenta:#A3266A;--c-ansi-cyan:#0B6E7A;--c-ansi-white:#5C606C;--c-ansi-bright-black:#666A75;
+  --c-ansi-bright-red:#D0453C;--c-ansi-bright-green:#16895A;--c-ansi-bright-yellow:#6B4E00;--c-ansi-bright-blue:#2F6BFF;
+  --c-ansi-bright-magenta:#B4236E;--c-ansi-bright-cyan:#0A8A9A;--c-ansi-bright-white:#12131A;
+
+  --c-kind-doc-bg:#E9EFFF;--c-kind-doc:#1F4FD1;
+  --c-kind-xls-bg:#E3F4EC;--c-kind-xls:#0B6B4A;--c-kind-xls-mark:#16895A;
+  --c-kind-ppt-bg:#FFE9DC;--c-kind-ppt:#B2410C;--c-kind-ppt-mark:#F07A1E;
+  --c-kind-img-bg:#FFE3F0;--c-kind-img:#B4236E;--c-kind-img-mark:#E0559A;--c-kind-img-sky:#FFF4F9;--c-kind-img-hill:#F8CFE1;
+  --c-kind-pdf-bg:#FBE9EA;--c-kind-pdf:#B4332B;
+  --c-kind-md-bg:#F1F1EC;--c-kind-md:#33363F;
+  --c-kind-code-bg:#EEF0F4;--c-kind-code:#12131A;--c-kind-code-mark:#16895A;
+
+  --c-warn-soft:#FFF1E0;--c-warn:#9A4A00;
+  --c-paper:#FFFFFF;--c-paper-line:#E6E7EC;
+  --c-av-base:#FFFFFF;--c-av-mix:24%;--c-av-ink:#12131A;--c-av-ink-mix:72%;
+  --c-knob:#FFFFFF;--c-scrim:rgb(18 19 26 / .4);--c-logo-tile:#F6F6F3;
+}
+[data-theme="dark"]{
+  --c-term-bg:#111216;--c-term-fg:#D6D7DD;--c-term-strong:#F1F1F4;--c-term-dim:#8F929D;
+  --c-term-line:rgb(255 255 255 / .07);--c-term-hover:rgb(255 255 255 / .08);--c-term-chip:rgb(255 255 255 / .06);
+  --c-term-sel:rgb(126 162 255 / .28);--c-term-cursor:#F1F1F4;
+  --c-term-ok:#7BE0B4;--c-term-error:#FF8A80;--c-term-info:#9DB7FF;--c-term-wait:#FFD970;
+  --c-ansi-black:#2A2C36;--c-ansi-red:#FF8A80;--c-ansi-green:#7FD6B0;--c-ansi-yellow:#F2CC6B;--c-ansi-blue:#8FB4FF;
+  --c-ansi-magenta:#FF8FC7;--c-ansi-cyan:#6FE3E8;--c-ansi-white:#D6D7DD;--c-ansi-bright-black:#6B6F7A;
+  --c-ansi-bright-red:#FFB4AC;--c-ansi-bright-green:#A7E8CB;--c-ansi-bright-yellow:#FFDB7A;--c-ansi-bright-blue:#B5CDFF;
+  --c-ansi-bright-magenta:#FFB6DA;--c-ansi-bright-cyan:#9FEEF1;--c-ansi-bright-white:#FFFFFF;
+
+  --c-kind-doc-bg:rgb(126 162 255 / .16);--c-kind-doc:#A9C0FF;
+  --c-kind-xls-bg:rgb(60 196 138 / .15);--c-kind-xls:#5FD3A1;--c-kind-xls-mark:#3CC48A;
+  --c-kind-ppt-bg:rgb(255 150 80 / .15);--c-kind-ppt:#FFB27A;--c-kind-ppt-mark:#F59A52;
+  --c-kind-img-bg:rgb(255 120 180 / .15);--c-kind-img:#FF9FCB;--c-kind-img-mark:#E874AA;--c-kind-img-sky:#2E2730;--c-kind-img-hill:#4A2E3E;
+  --c-kind-pdf-bg:rgb(255 138 128 / .15);--c-kind-pdf:#FF8A80;
+  --c-kind-md-bg:#2A2C36;--c-kind-md:#D6D7DD;
+  --c-kind-code-bg:#2A2C36;--c-kind-code:#F1F1F4;--c-kind-code-mark:#3CC48A;
+
+  --c-warn-soft:rgb(255 150 80 / .14);--c-warn:#FFB27A;
+  --c-paper:#2A2C36;--c-paper-line:#3B3E49;
+  --c-av-base:#22232B;--c-av-mix:38%;--c-av-ink:#FFFFFF;--c-av-ink-mix:40%;
+  --c-knob:#E9EAEE;--c-scrim:rgb(0 0 0 / .6);--c-logo-tile:#E9EAEE;
+}
+
+/* Hover states of the v4 pieces in src/lib/ui4.js (inline styles cannot say :hover):
+   u4-pri the ink button · u4-sec the outlined one · u4-ghost a text button · u4-row a row or card
+   that opens · u4-honey a row on the honey ground. */
+.u4-pri:hover:not(:disabled){background:var(--c-btn-hover)!important;border-color:var(--c-btn-hover)!important}
+.u4-sec:hover:not(:disabled){background:var(--c-hover)!important}
+.u4-ghost:hover:not(:disabled){background:rgb(var(--c-ink-rgb) / .06)!important;color:var(--c-text)!important}
+.u4-row{transition:background-color .12s ease}
+.u4-row:hover{background:var(--c-hover)!important}
+.u4-honey:hover{background:color-mix(in oklab,var(--c-honey-soft) 88%,var(--c-text))!important}
+:is(.u4-pri,.u4-sec,.u4-ghost):disabled{opacity:.45;cursor:not-allowed}
+@media (prefers-reduced-motion:reduce){.u4-row{transition:none}}

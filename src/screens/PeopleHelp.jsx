@@ -108,14 +108,14 @@ export default function PeopleHelp() {
     if (id) document.getElementById(id)?.scrollIntoView({ block: "start" });
   }, []);
   return (
-    <Shell active="conversaciones">
+    <Shell active="conversaciones" background="var(--c-app)">
       <article style={{ width: "100%", maxWidth: "760px", margin: "0 auto", padding: "40px clamp(20px, 4vw, 44px) 72px", display: "flex", flexDirection: "column", gap: "28px", boxSizing: "border-box" }}>
         <a href="/ajustes/contactos" onClick={(e) => { e.preventDefault(); if (history.length > 1) history.back(); else navigate("/ajustes/contactos"); }} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text-3)", textDecoration: "none" }}><ArrowLeft size={15} strokeWidth={2.2} aria-hidden="true" />{"Volver"}</a>
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <h1 style={{ margin: 0, font: "600 var(--t-display-m)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{"Cómo funciona"}</h1>
+          <h1 style={{ margin: 0, font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>{"Cómo funciona"}</h1>
           <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: 1.55, color: "var(--c-text-2)" }}>{"Colmena es un chat de equipo para personas y para los bots de cada una. Cada persona usa su Colmena en su ordenador, con sus bots; el equipo comparte la conversación, no los datos."}</p>
         </header>
-        <ol style={{ margin: 0, padding: "22px", listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", borderRadius: "var(--r-2xl)", background: "var(--c-card)" }}>
+        <ol style={{ margin: 0, padding: "22px", listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
           {INTRO_STEPS.map(([Icon, title, text]) => (
             <li key={title} style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
               <span aria-hidden="true" style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-sunken)" }}><Icon size={18} strokeWidth={2} /></span>
@@ -124,11 +124,11 @@ export default function PeopleHelp() {
           ))}
         </ol>
         <nav aria-label="En esta página" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {ALL.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)", textDecoration: "none" }}>{title}</a>)}
+          {ALL.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)", textDecoration: "none" }}>{title}</a>)}
         </nav>
         {ALL.map(([id, Icon, title, paragraphs]) => (
           <section key={id} id={id} aria-labelledby={id + "-t"} style={{ display: "flex", flexDirection: "column", gap: "12px", scrollMarginTop: "24px" }}>
-            <h2 id={id + "-t"} style={{ margin: 0, display: "flex", alignItems: "center", gap: "10px", font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}><Icon size={20} strokeWidth={2} aria-hidden="true" />{title}</h2>
+            <h2 id={id + "-t"} style={{ margin: 0, display: "flex", alignItems: "center", gap: "10px", font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}><Icon size={20} strokeWidth={2} aria-hidden="true" />{title}</h2>
             {paragraphs.map((p) => <p key={p} style={{ margin: 0, fontSize: "var(--t-read)", lineHeight: 1.6, color: "var(--c-text-2)" }}>{p}</p>)}
           </section>
         ))}

@@ -50,7 +50,7 @@ function Provider({ id, info, primary, fallback, planLimits, login }) {
       : <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={btn(open ? "outline" : "dark", 38)}>{open ? "Cancelar" : "Conectar"}</button>)
     : <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={btn("outline", 38)}>Gestionar</button>;
   return (
-    <div {...anchorOf({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[id])} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px", overflow: "hidden" }}>
+    <div {...anchorOf({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[id])} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px", overflow: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 20px" }}>
         <ProviderMark engine={id} size={44} style={{ background: "var(--c-chip)", borderRadius: "var(--r-md)" }} />
         <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -79,7 +79,7 @@ function Provider({ id, info, primary, fallback, planLimits, login }) {
             {id === "anthropic" && info.method ? { cli: "Con la sesión de Claude Code de este ordenador.", token: "Con un token de suscripción (claude setup-token).", api_key: "Con una clave de API, pago por uso." }[info.method] || null : null}
             {" "}Si la desconectas, los bots que la usan siguen con la principal o el respaldo.
           </span>
-          <button type="button" disabled={act.busy} onClick={disconnect} style={{ ...btn("outline", 34), color: "var(--c-error)", borderColor: "rgba(180,35,42,.35)" }}>Desconectar</button>
+          <button type="button" disabled={act.busy} onClick={disconnect} style={{ ...btn("outline", 34), color: "var(--c-error)", borderColor: "color-mix(in srgb, var(--c-error) 35%, transparent)" }}>Desconectar</button>
         </div>
       ) : null}
       {act.error ? <p role="alert" style={{ margin: 0, padding: "0 20px 14px 80px", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{act.error}</p> : null}

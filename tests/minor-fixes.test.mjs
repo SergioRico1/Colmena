@@ -56,7 +56,9 @@ test("small things a person notices: autonomy only when unusual, Modo experto sa
   assert.match(equipo, /"sin cuenta de IA"/);
   assert.match(src("src/components/v2/code/CodeHome.jsx"), /type="checkbox" checked=\{multi\}[^\n]*width: "24px", height: "24px"/);
   assert.match(src("src/styles/base.css"), /\.c-on-dark::placeholder\{color:#A9ACB6/);
-  assert.match(src("src/components/v3/team/People.jsx"), /className="c-quiet c-on-dark"/);
+  // v4: the invitation card is a hairline card in both themes (no longer an ink panel), so its
+  // name field takes the ordinary placeholder, which already reads at 4.5:1.
+  assert.match(src("src/components/v3/team/People.jsx"), /className="c-quiet" type="text" value=\{name\}/);
 });
 
 test("rooms: the same log structure, a subtitle that is never cut, a task's conversation says what it is", () => {

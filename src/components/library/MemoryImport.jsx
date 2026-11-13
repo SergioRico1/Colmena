@@ -94,7 +94,7 @@ export default function MemoryImport({ onClose, onDone }) {
 
   return (
     <dialog ref={dialog} onClose={onClose} aria-labelledby="mi-t"
-      style={{ width: "min(760px, 94vw)", maxHeight: "88vh", padding: 0, border: "0", borderRadius: "var(--r-3xl)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.5), 0 2px 6px rgba(18,19,26,.06)", background: "var(--c-card)", color: "var(--c-text)", overflow: "hidden" }}>
+      style={{ width: "min(760px, 94vw)", maxHeight: "88vh", padding: 0, border: "0", borderRadius: "var(--r-lg)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.5), 0 2px 6px rgba(18,19,26,.06)", background: "var(--c-card)", color: "var(--c-text)", overflow: "hidden" }}>
       <div style={{ display: "flex", flexDirection: "column", maxHeight: "88vh" }}>
         <header style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "20px 22px 14px", borderBottom: "1px solid var(--c-line)" }}>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>

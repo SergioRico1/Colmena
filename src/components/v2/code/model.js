@@ -1,3 +1,4 @@
+import { C } from "../../../lib/theme.js";
 // Pure helpers of the «Código» screen (shared with the tests): the timeline rows and the
 // unified diff parser.
 
@@ -124,8 +125,8 @@ export function whenLabel(iso, now = new Date()) {
 // Colmena 3 · Código (design/V3Codigo.dc.html): each task says where it is in words, and the
 // list has three parts: what waits for you, what is moving, and what is put off or done.
 const TONE = {
-  honey: { bg: "#FFC93C", ink: "#12131A" }, run: { bg: "#EEF0F4", ink: "#1F4FD1" }, red: { bg: "#FBE9EA", ink: "#B4232A" },
-  done: { bg: "#E3F4EC", ink: "#0B6B4A" }, quiet: { bg: "#F1F1EC", ink: "#4A4D57" },
+  honey: { bg: C.honey, ink: C.honeyInk }, run: { bg: C.chip, ink: C.accentInk }, red: { bg: C.errorSoft, ink: C.error },
+  done: { bg: C.okSoft, ink: C.okInk }, quiet: { bg: C.chip, ink: C.text2 },
 };
 /** The status pill of a task: {text, tone, bg, ink}. Honey only when it needs you. */
 export function pillOf(t, now = new Date()) {

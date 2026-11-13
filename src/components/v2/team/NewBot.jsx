@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import BotFace from "../../BotFace.jsx";
-import { Check } from "../../Icon.js";
+import { ArrowUp, Check, X } from "../../Icon.js";
 import { post, pickTextFiles } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
 import { useExpert } from "../../../lib/expert.js";
@@ -9,10 +9,11 @@ import { SHAPES } from "../Presence.jsx";
 import { TOOL_KEYS, TOOL_LABEL, skillMarkdown } from "../../team/common.jsx";
 import { autonomyLabel, Seg } from "../../v3/team/parts.jsx";
 
-// Colmena 3 · «Nuevo bot» (design/V3NuevoBot.dc.html), a page inside Equipo: three steps —
+// Colmena 4 · «Nuevo bot» (design/V3NuevoBot.dc.html, v4 look), a page inside Equipo: three steps —
 // 1 Describe (as to a new colleague; Atlas checks what is missing), 2 Ajusta (name, role,
 // shape, colour, instructions, skills, what it can use), 3 Prueba (a private test chat;
-// nothing is saved or sent) — with «Así se verá» beside them. Honey is not offered as a
+// nothing is saved or sent) — with «Así se verá» beside them. Shape and colour are picked on the
+// bot itself: every choice is its BotFace, drawn live with the name and role you type. Honey is not offered as a
 // colour (it means «te necesita») and ink belongs to Atlas.
 // No circle: circles are people (src/lib/identity.js). A bot that already has one is drawn as the capsule.
 const SHAPE_LIST = [["hex", "hexágono"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"], ["capsule", "cápsula"]];
@@ -134,15 +135,15 @@ export default function NewBot({ onClose, onHired }) {
         <span style={{ color: "var(--c-text)", fontWeight: "500" }}>{"Nuevo bot"}</span>
       </nav>
       <header style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
-        <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Un compañero nuevo"}</h1>
+        <h1 style={{ margin: "0", font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>{"Un compañero nuevo"}</h1>
         <ol aria-label="Pasos" style={{ margin: "0", padding: "4px", listStyle: "none", display: "inline-flex", gap: "2px", borderRadius: "var(--r-pill)", background: "var(--c-chip)" }}>
           {STEPS.map((l, i) => {
             const cur = i === step;
             const ok = reach(i);
             return (
               <li key={l}>
-                <button type="button" aria-current={cur ? "step" : undefined} disabled={!ok || !!busy} onClick={() => { setError(null); setStep(i); }} style={{ height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "var(--r-pill)", background: cur ? "var(--c-card)" : "transparent", boxShadow: cur ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: cur ? "600" : "500", color: ok ? "var(--c-text)" : "#8C8F99", cursor: ok ? "pointer" : "default" }}>
-                  <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{i < step ? "✓" : String(i + 1)}</span>{l}
+                <button type="button" aria-current={cur ? "step" : undefined} disabled={!ok || !!busy} onClick={() => { setError(null); setStep(i); }} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "var(--r-sm)", background: cur ? "var(--c-card)" : "transparent", boxShadow: cur ? "var(--c-shadow-lift)" : "none", fontSize: "var(--t-ui)", fontWeight: cur ? "600" : "500", color: ok ? "var(--c-text)" : "var(--c-text-4)", cursor: ok ? "pointer" : "default" }}>
+                  <span style={{ display: "inline-grid", placeItems: "center", fontSize: "var(--t-caption)", color: i < step ? "var(--c-ok-ink)" : "var(--c-text-3)" }}>{i < step ? <Check size={12} weight="bold" aria-label="hecho" /> : String(i + 1)}</span>{l}
                 </button>
               </li>
             );
@@ -150,7 +151,7 @@ export default function NewBot({ onClose, onHired }) {
         </ol>
       </header>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "22px", alignItems: "flex-start" }}>
-        <section aria-label="Formulario" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "20px", padding: "26px 28px", borderRadius: "var(--r-2xl)", background: "var(--c-card)" }}>
+        <section aria-label="Formulario" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "20px", padding: "26px 28px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
           {step === 0 ? (
             <>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -166,8 +167,8 @@ export default function NewBot({ onClose, onHired }) {
                 <div role="list" aria-label="Se va revisando" style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
                   {checksOf(desc, files).map(([l, ok]) => (
                     <span key={l} role="listitem" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: ok ? "var(--c-ok-ink)" : "var(--c-text-3)", transition: "color .25s ease" }}>
-                      <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: ok ? "#0B8A5F" : "transparent", boxShadow: ok ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)", transition: "all .25s ease" }}>
-                        <Check size={9} weight="bold" color="#FFFFFF" style={{ opacity: ok ? 1 : 0 }} />
+                      <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: ok ? "var(--c-ok)" : "transparent", boxShadow: ok ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)", transition: "all .25s ease" }}>
+                        <Check size={10} weight="bold" color="var(--c-on-accent)" style={{ opacity: ok ? 1 : 0 }} />
                       </span>
                       {l}
                     </span>
@@ -177,7 +178,7 @@ export default function NewBot({ onClose, onHired }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{"O empieza con un ejemplo"}</span>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  {EXAMPLES.map(([l, t]) => <button key={l} type="button" onClick={() => { setDesc(t); setError(null); }} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: desc === t ? "var(--c-chip)" : "var(--c-card)", fontSize: "var(--t-ui)", color: "var(--c-text-2)", cursor: "pointer" }}>{l}</button>)}
+                  {EXAMPLES.map(([l, t]) => <button key={l} type="button" onClick={() => { setDesc(t); setError(null); }} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-sm)", background: desc === t ? "var(--c-chip)" : "var(--c-card)", fontSize: "var(--t-ui)", color: "var(--c-text-2)", cursor: "pointer" }}>{l}</button>)}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -200,9 +201,9 @@ export default function NewBot({ onClose, onHired }) {
               {files.length ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "-8px" }}>
                   {files.map((f, i) => (
-                    <span key={f.name + i} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 6px 0 12px", borderRadius: "var(--r-pill)", background: "var(--c-hover)", fontSize: "var(--t-meta)", animation: "pop .3s ease-out" }}>
+                    <span key={f.name + i} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 6px 0 12px", borderRadius: "var(--r-sm)", background: "var(--c-hover)", fontSize: "var(--t-meta)", animation: "pop .3s ease-out" }}>
                       {f.name}
-                      <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label={"Quitar " + f.name} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>{"×"}</button>
+                      <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label={"Quitar " + f.name} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}><X size={12} weight="bold" /></button>
                     </span>
                   ))}
                 </div>
@@ -228,8 +229,8 @@ export default function NewBot({ onClose, onHired }) {
                   {SHAPE_LIST.map(([id, l]) => {
                     const on = d.shape === id;
                     return (
-                      <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ shape: id })} style={{ width: "52px", height: "52px", display: "grid", placeItems: "center", border: `2px solid ${on ? "var(--c-text)" : "rgb(var(--c-ink-rgb) / .1)"}`, borderRadius: "var(--r-lg)", background: "var(--c-card)", cursor: "pointer" }}>
-                        <BotFace bot={{ id: "nuevo", shape: id, color: d.color, role: d.role }} size={32} decorative />
+                      <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ shape: id })} style={{ width: "52px", height: "52px", display: "grid", placeItems: "center", border: `${on ? 2 : 1}px solid ${on ? "var(--c-text)" : "var(--c-line)"}`, borderRadius: "var(--r-md)", background: on ? "var(--c-hover)" : "var(--c-card)", cursor: "pointer" }}>
+                        <BotFace bot={{ id: "nuevo", name: d.name, shape: id, color: d.color, role: d.role }} size={32} decorative />
                       </button>
                     );
                   })}
@@ -240,7 +241,11 @@ export default function NewBot({ onClose, onHired }) {
                 <div role="radiogroup" aria-label="Color" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {COLORS.map(([hex, l]) => {
                     const on = d.color.toUpperCase() === hex;
-                    return <button key={hex} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ color: hex })} style={{ width: "38px", height: "38px", padding: "0", border: `3px solid ${on ? "var(--c-text)" : "#FFFFFF"}`, borderRadius: "var(--r-circle)", background: hex, cursor: "pointer" }} />;
+                    return (
+                      <button key={hex} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ color: hex })} style={{ width: "52px", height: "52px", display: "grid", placeItems: "center", padding: "0", border: `${on ? 2 : 1}px solid ${on ? "var(--c-text)" : "var(--c-line)"}`, borderRadius: "var(--r-md)", background: on ? "var(--c-hover)" : "var(--c-card)", cursor: "pointer" }}>
+                        <BotFace bot={{ id: "nuevo", name: d.name, shape: d.shape, color: hex, role: d.role }} size={32} decorative />
+                      </button>
+                    );
                   })}
                 </div>
               </div>
@@ -252,12 +257,12 @@ export default function NewBot({ onClose, onHired }) {
                 <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-text-2)" }}>{"Habilidades preparadas"}</span>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
                   {d.skills.map((k, i) => (
-                    <span key={k.name + i} style={{ height: "40px", padding: "0 6px 0 14px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-pill)", background: "var(--c-hover)", fontSize: "var(--t-ui)", animation: "pop .3s ease-out" }}>
+                    <span key={k.name + i} style={{ height: "36px", padding: "0 6px 0 14px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-sm)", background: "var(--c-hover)", fontSize: "var(--t-ui)", animation: "pop .3s ease-out" }}>
                       {k.name}
-                      <button type="button" onClick={() => set({ skills: d.skills.filter((_, j) => j !== i) })} aria-label={"Quitar " + k.name} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>{"×"}</button>
+                      <button type="button" onClick={() => set({ skills: d.skills.filter((_, j) => j !== i) })} aria-label={"Quitar " + k.name} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}><X size={12} weight="bold" /></button>
                     </span>
                   ))}
-                  <form className="c-ring" onSubmit={(e) => { e.preventDefault(); if (skillIn.trim()) { set({ skills: [...d.skills, { name: skillIn.trim(), description: "" }].slice(0, 8) }); setSkillIn(""); } }} style={{ height: "40px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px 0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)" }}>
+                  <form className="c-ring" onSubmit={(e) => { e.preventDefault(); if (skillIn.trim()) { set({ skills: [...d.skills, { name: skillIn.trim(), description: "" }].slice(0, 8) }); setSkillIn(""); } }} style={{ height: "36px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px 0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-sm)" }}>
                     <label style={{ display: "flex" }}><span style={sr}>{"Nombre de la habilidad"}</span><input className="c-bare" type="text" value={skillIn} onChange={(e) => setSkillIn(e.target.value)} placeholder="Otra: resumir contratos…" style={{ width: "170px", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} /></label>
                     <button type="submit" style={{ height: "30px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Añadir"}</button>
                   </form>
@@ -280,7 +285,7 @@ export default function NewBot({ onClose, onHired }) {
                       const v = d.tools[k] || "none";
                       const on = v !== "none";
                       return (
-                        <label key={k} style={{ height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "var(--r-pill)", background: "var(--c-hover)", fontSize: "var(--t-ui)", cursor: "pointer" }}>
+                        <label key={k} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "var(--r-sm)", background: "var(--c-hover)", fontSize: "var(--t-ui)", cursor: "pointer" }}>
                           <input type="checkbox" checked={on} onChange={() => set({ tools: { ...d.tools, [k]: on ? "none" : "lee" } })} style={{ accentColor: "var(--c-text)" }} />
                           {(TOOL_LABEL[k] || k) + (on ? ` (${LEVEL[v] || v})` : "")}
                         </label>
@@ -306,7 +311,7 @@ export default function NewBot({ onClose, onHired }) {
                 {busy === "ask" ? <div role="status" style={{ display: "flex", gap: "10px", alignItems: "center" }}><BotFace bot={draftBot} size={24} state="work" decorative /><span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{`${d.name || "Tu bot"} está pensando…`}</span></div> : null}
                 {!chat.length && busy !== "ask" ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                    {[`¿Qué puedes hacer por mí${d.role ? ` como ${d.role.toLowerCase()}` : ""}?`, "Preséntate en dos frases"].map((t) => <button key={t} type="button" onClick={() => ask(t)} style={{ height: "34px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-meta)" }}>{t}</button>)}
+                    {[`¿Qué puedes hacer por mí${d.role ? ` como ${d.role.toLowerCase()}` : ""}?`, "Preséntate en dos frases"].map((t) => <button key={t} type="button" onClick={() => ask(t)} style={{ height: "32px", padding: "0 12px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-meta)" }}>{t}</button>)}
                   </div>
                 ) : null}
                 <span ref={chatEnd} />
@@ -316,7 +321,7 @@ export default function NewBot({ onClose, onHired }) {
                   <span style={sr}>{"Otra pregunta de prueba"}</span>
                   <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chat.length ? "Otra pregunta de prueba…" : `Pregúntale algo a ${d.name || "tu bot"}…`} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", fontSize: "var(--t-body)", background: "transparent" }} />
                 </label>
-                <button type="submit" aria-label="Preguntar" disabled={busy === "ask" || !q.trim()} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: q.trim() ? "var(--c-btn)" : "#C9CBD1", color: "var(--c-btn-text)", cursor: "pointer" }}>{"↑"}</button>
+                <button type="submit" aria-label="Preguntar" disabled={busy === "ask" || !q.trim()} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-sm)", background: q.trim() ? "var(--c-btn)" : "var(--c-chip)", color: q.trim() ? "var(--c-btn-text)" : "var(--c-text-4)", cursor: "pointer" }}><ArrowUp size={16} weight="bold" /></button>
               </form>
             </>
           ) : null}
@@ -327,20 +332,20 @@ export default function NewBot({ onClose, onHired }) {
               ? <button type="button" onClick={() => { setError(null); setStep(step - 1); }} style={{ height: "46px", padding: "0 16px", border: "0", background: "transparent", fontSize: "var(--t-body)", color: "var(--c-text-2)", cursor: "pointer" }}>{"Atrás"}</button>
               : <button type="button" onClick={onClose} style={{ height: "46px", padding: "0 16px", border: "0", background: "transparent", fontSize: "var(--t-body)", color: "var(--c-text-2)", cursor: "pointer" }}>{"Ahora no"}</button>}
             <span style={{ flex: "1" }} />
-            <button type="button" disabled={!!busy} onClick={next} style={{ height: "46px", padding: "0 22px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: "600", cursor: busy ? "wait" : "pointer" }}>
+            <button type="button" disabled={!!busy} onClick={next} style={{ height: "36px", padding: "0 14px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: busy ? "wait" : "pointer" }}>
               {step === 0 ? (busy === "prepare" ? "Preparando…" : "Preparar el bot") : step === 1 ? "Probarlo" : busy === "hire" ? "Contratando…" : `Contratar a ${d?.name?.trim() || "este bot"}`}
             </button>
           </div>
         </section>
-        <aside aria-label="Así se verá" style={{ flex: "1 1 280px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "16px", padding: "24px", borderRadius: "var(--r-2xl)", background: "var(--c-btn)", color: "var(--c-btn-text)" }}>
-          <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{"Así se verá"}</span>
+        <aside aria-label="Así se verá" style={{ flex: "1 1 280px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "16px", padding: "20px", borderRadius: "var(--r-lg)", background: "var(--c-btn)", color: "var(--c-btn-text)" }}>
+          <span style={{ fontSize: "var(--t-meta)", color: "color-mix(in srgb, var(--c-btn-text) 70%, transparent)" }}>{"Así se verá"}</span>
           <BotFace bot={draftBot} size={96} decorative />
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{name}</span>
-            <span style={{ fontSize: "var(--t-body)", color: "#C9CBD3" }}>{`${role} · ${aud[3]}`}</span>
+            <span style={{ font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{name}</span>
+            <span style={{ fontSize: "var(--t-body)", color: "color-mix(in srgb, var(--c-btn-text) 78%, transparent)" }}>{`${role} · ${aud[3]}`}</span>
           </div>
-          <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#E6E7EC" }}>{"«" + hello + "»"}</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "14px", borderTop: "1px solid rgba(255,255,255,.12)", fontSize: "var(--t-ui)", color: "#C9CBD3" }}>
+          <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "color-mix(in srgb, var(--c-btn-text) 92%, transparent)" }}>{"«" + hello + "»"}</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "14px", borderTop: "1px solid color-mix(in srgb, var(--c-btn-text) 14%, transparent)", fontSize: "var(--t-ui)", color: "color-mix(in srgb, var(--c-btn-text) 78%, transparent)" }}>
             <span>{"Autonomía: " + autonomyLabel(d?.autonomy || "sugiere").toLowerCase()}</span>
             <span>{d ? (d.skills.length === 1 ? "1 habilidad preparada" : `${d.skills.length} habilidades preparadas`) : "Las habilidades, al prepararlo"}</span>
             <span>{d ? (usable.length ? usable.map((k) => `${TOOL_LABEL[k] || k} (${LEVEL[d.tools[k]] || d.tools[k]})`).join(" · ") : "Sin apps conectadas") : "Las apps que use, al prepararlo"}</span>

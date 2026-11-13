@@ -16,7 +16,7 @@ export default function PeopleIntro({ onInvite = null, onCode = null, compact = 
     <div style={{ display: "flex", flexDirection: "column", gap: compact ? "14px" : "20px", padding: compact ? "6px 10px 14px" : "24px 22px 22px", animation: "fade .3s ease-out" }}>
       {compact ? null : (
         <span style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <strong style={{ font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Habla con personas, cada una en su Colmena"}</strong>
+          <strong style={{ font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{"Habla con personas, cada una en su Colmena"}</strong>
           <span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{"Cada mensaje viaja cerrado con llave: solo lo lee quien lo recibe."}</span>
         </span>
       )}
@@ -32,8 +32,8 @@ export default function PeopleIntro({ onInvite = null, onCode = null, compact = 
         ))}
       </ol>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        {onInvite ? <button type="button" onClick={onInvite} style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button> : null}
-        {onCode ? <button type="button" onClick={onCode} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{"Tengo una invitación"}</button> : null}
+        {onInvite ? <button type="button" onClick={onInvite} style={{ display: "flex", alignItems: "center", gap: "8px", height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button> : null}
+        {onCode ? <button type="button" onClick={onCode} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{"Tengo una invitación"}</button> : null}
         <a href={HELP_URL} onClick={(e) => { e.preventDefault(); navigate(HELP_URL); }} style={{ padding: "0 8px", fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-accent-ink)", textDecoration: "none" }}>{"Cómo funciona"}</a>
       </div>
     </div>

@@ -3,15 +3,16 @@ import { Check, Copy } from "../../Icon.js";
 import ProviderMark from "../ProviderMark.jsx";
 import { useAction } from "../../../lib/store.jsx";
 import { post } from "../../../lib/api.js";
+import { C } from "../../../lib/theme.js";
 
 // Ajustes › Inteligencia (v2): the accounts Colmena thinks with besides ChatGPT — Claude,
 // connected the three ways OpenClaw offers, and OpenCode Go — plus which one the team
 // uses and what takes over when it fails. Rows, one quiet panel at a time, nothing else.
 
-const INK = "#12131A";
+const INK = C.text;
 const LINE = "1px solid rgb(var(--c-ink-rgb) / .06)";
 
-export const pill = (dark) => ({ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", background: dark ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: dark ? "var(--c-btn-text)" : INK });
+export const pill = (dark) => ({ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", background: dark ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: dark ? "var(--c-btn-text)" : INK });
 
 function Command({ text }) {
   const [done, setDone] = useState(false);
@@ -61,13 +62,13 @@ export function ClaudePanel({ onDone, style = null }) {
         {CLAUDE_WAYS.map((w) => {
           const on = way === w.id;
           return (
-            <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => { act.setError(null); setWay(w.id); }} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 14px", border: 0, borderRadius: "var(--r-lg)", cursor: "pointer", textAlign: "left", color: "var(--c-text)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", transition: "background .2s ease" }}>
+            <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => { act.setError(null); setWay(w.id); }} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 14px", border: 0, borderRadius: "var(--r-lg)", cursor: "pointer", textAlign: "left", color: "var(--c-text)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none", transition: "background .2s ease" }}>
               <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
                 <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{w.title}</strong>
                 <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{w.sub}</span>
               </span>
               <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? INK : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
-                <Check size={11} strokeWidth={3.4} color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
+                <Check size={11} strokeWidth={3.4} color={C.btnText} style={{ opacity: on ? 1 : 0 }} />
               </span>
             </button>
           );

@@ -4,12 +4,13 @@ import { BotPresence } from "../Presence.jsx";
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { useStore } from "../../../lib/store.jsx";
+import { C } from "../../../lib/theme.js";
 
 // An errand for one of your bots (design/V2Personas.dc.html, paso encargo): only you see this
 // card. Nothing runs until you approve; then your bot does it in an incognito chat with the
 // tools you chose for errands, and its answer goes back to who asked.
 const TOOL_WORDS = { web: "la web", carpetas: "tus carpetas", apps: "tus apps conectadas", ordenador: "un navegador aparte" };
-const pill = { display: "inline-flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 };
+const pill = { display: "inline-flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 };
 export const toolsText = (tools) => {
   const on = Object.entries(tools || {}).filter(([, v]) => v).map(([k]) => TOOL_WORDS[k]).filter(Boolean);
   return on.length ? on.slice(0, -1).join(", ") + (on.length > 1 ? " y " : "") + on.at(-1) : "ninguna herramienta: solo lo que sabe";
@@ -23,7 +24,7 @@ export default function ErrandCard({ errand }) {
   const e = view?.id === errand?.id && view.state !== "asked" ? view : errand;
   if (!e) return null;
   const first = String(e.from || "").split(" ")[0] || "Alguien";
-  const bot = bots.find((b) => b.id === e.bot.id) || { id: e.bot.id, name: e.bot.name, color: "#8C8F99", shape: "circle" };
+  const bot = bots.find((b) => b.id === e.bot.id) || { id: e.bot.id, name: e.bot.name, color: C.text4, shape: "circle" };
   const act = async (what) => {
     setBusy(true); setError(null);
     try { setView(await post(`/peers/errands/${encodeURIComponent(e.id)}/${what}`)); } catch (x) { setError(x.message); } finally { setBusy(false); }
@@ -36,7 +37,7 @@ export default function ErrandCard({ errand }) {
     failed: `${bot.name} no pudo hacerlo${e.error ? ": " + e.error : "."}`,
   }[e.state];
   return (
-    <div style={{ alignSelf: "flex-start", width: "min(520px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "18px 20px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: e.state === "asked" ? "0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C" : "0 1px 2px rgba(18,19,26,.05), 0 14px 30px -20px rgba(18,19,26,.3)", animation: "rise .3s ease-out" }}>
+    <div style={{ alignSelf: "flex-start", width: "min(520px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "18px 20px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: e.state === "asked" ? "0 0 0 1.5px var(--c-text), 6px 6px 0 0 var(--c-honey)" : "var(--c-shadow-pop)", animation: "rise .3s ease-out" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <BotPresence bot={bot} size={26} state={e.state === "working" ? "work" : "rest"} />
         <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>

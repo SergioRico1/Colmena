@@ -11,6 +11,7 @@ const pages = (tokens) => {
 };
 import { useAction, useStore } from "../../lib/store.jsx";
 import { patch } from "../../lib/api.js";
+import { C } from "../../lib/theme.js";
 
 const PRESETS = [1e6, 5e6, 20e6];
 
@@ -33,7 +34,7 @@ function PlanCard({ limits }) {
               {reset ? <span style={{ color: "var(--c-text-3)" }}>{"se renueva a las " + reset}</span> : null}
             </span>
             <span role="progressbar" aria-label={windowName(w.windowMinutes) + ": usado"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={w.usedPercent} style={{ height: "10px", borderRadius: "var(--r-pill)", background: "var(--c-sunken)", overflow: "hidden" }}>
-              <span style={{ display: "block", width: w.usedPercent + "%", height: "100%", background: w.usedPercent >= 90 ? "#E5484D" : w.usedPercent >= 70 ? "#C98A00" : "#12131A" }} />
+              <span style={{ display: "block", width: w.usedPercent + "%", height: "100%", background: w.usedPercent >= 90 ? "var(--c-error)" : w.usedPercent >= 70 ? C.honeyRing : C.text }} />
             </span>
           </div>
         );
@@ -55,7 +56,7 @@ export default function Limites() {
   const used = usage?.monthTokens || 0;
   const limit = usage?.limitTokens ?? limits.monthlyTokens ?? null;
   const percent = usage?.percent ?? (limit ? Math.round((100 * used) / limit) : null);
-  const barColor = percent >= 100 ? "#E5484D" : percent >= 80 ? "#C98A00" : "#12131A";
+  const barColor = percent >= 100 ? "var(--c-error)" : percent >= 80 ? C.honeyRing : C.text;
   const month = new Date().toLocaleDateString("es-ES", { month: "long" });
 
   const save = async (next) => {
@@ -92,7 +93,7 @@ export default function Limites() {
 
       <PlanCard limits={planLimits} />
 
-      <form onSubmit={submit} aria-labelledby="limite" style={{ background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      <form onSubmit={submit} aria-labelledby="limite" style={{ background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h2 id="limite" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Límite mensual</h2>
           <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{limits.monthlyTokens ? `Ahora: ${formatTokens(limits.monthlyTokens)} tokens al mes (unas ${pages(limits.monthlyTokens)}).` : "Ahora no hay límite: los bots trabajan lo que haga falta."}</span>

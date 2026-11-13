@@ -13,8 +13,10 @@ import { pauseLine } from "../lib/pauseReason.js";
 import { useExpert } from "../lib/expert.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { tasksOf } from "../lib/rooms.js";
+import { C, line } from "../lib/theme.js";
+import { B, CARD, TRACK, chip as chip4, fill } from "../lib/ui4.js";
 
-// Colmena 3 · Trabajo › Tareas (design/V3Tareas.dc.html): everything the bots do once, as a
+// Colmena 4 · Trabajo › Tareas (design/V3Tareas.dc.html, v4 look): everything the bots do once, as a
 // board (what needs you → under way → stuck → done this week) or a list. Tasks are the
 // missions that are not chats. «Nueva tarea» (and ?nueva=1, the sidebar's «Nuevo › Tarea»)
 // opens a short sheet: what to do, who does it (or Atlas decides) and by when.
@@ -22,11 +24,11 @@ import { tasksOf } from "../lib/rooms.js";
 const RUNNING = new Set(["queued", "planning", "running", "paused"]);
 const STUCK = new Set(["blocked", "failed"]);
 const S = {
-  wait: { status: "Te necesita", sBg: "#FFC93C", sInk: "#12131A" },
-  run: { status: "En marcha", sBg: "#EEF0F4", sInk: "#1F4FD1" },
-  pause: { status: "En pausa", sBg: "#F1F1EC", sInk: "#4A4D57" },
-  stuck: { status: "Atascada", sBg: "#FBE9EA", sInk: "#B4232A" },
-  done: { status: "Hecha", sBg: "#E3F4EC", sInk: "#0B6B4A" },
+  wait: { status: "Te necesita", sBg: C.honey, sInk: C.honeyInk },
+  run: { status: "En marcha", sBg: C.accentSoft, sInk: C.accentInk },
+  pause: { status: "En pausa", sBg: C.chip, sInk: C.text2 },
+  stuck: { status: "Atascada", sBg: C.errorSoft, sInk: C.error },
+  done: { status: "Hecha", sBg: C.okSoft, sInk: C.okInk },
 };
 const VIEWS = [["board", "Tablero"], ["list", "Lista"]];
 const ZERO_WIDTH = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
@@ -146,68 +148,68 @@ export default function Tareas({ query = {} }) {
   const waitAll = needsCount(store);
   const waitCount = countIn(waitTasks.map((t) => t.m), waitAll);
   const cols = [
-    { id: "wait", title: "Te necesitan", bg: "#FFF1C7", badgeBg: "#FFC93C", items: waitTasks, n: waitCount.text, more: waitCount.link, empty: waitAll ? "Nada te espera en las tareas." : "Nada te espera. Todo sigue su curso." },
-    { id: "run", title: "En marcha", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: items.filter((t) => t.col === "run"), empty: "Ningún bot está con una tarea ahora mismo." },
-    { id: "stuck", title: "Atascadas", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: items.filter((t) => t.col === "stuck"), empty: "Ninguna atascada." },
-    { id: "done", title: "Hechas esta semana", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: older ? [...doneWeek, ...doneOlder] : doneWeek, n: doneWeek.length, empty: "Esta semana aún no ha terminado ninguna." },
+    { id: "wait", title: "Te necesitan", badgeBg: C.honey, badgeInk: C.honeyInk, items: waitTasks, n: waitCount.text, more: waitCount.link, empty: waitAll ? "Nada te espera en las tareas." : "Nada te espera. Todo sigue su curso." },
+    { id: "run", title: "En marcha", badgeBg: C.chip, badgeInk: C.text2, items: items.filter((t) => t.col === "run"), empty: "Ningún bot está con una tarea ahora mismo." },
+    { id: "stuck", title: "Atascadas", badgeBg: C.chip, badgeInk: C.text2, items: items.filter((t) => t.col === "stuck"), empty: "Ninguna atascada." },
+    { id: "done", title: "Hechas esta semana", badgeBg: C.chip, badgeInk: C.text2, items: older ? [...doneWeek, ...doneOlder] : doneWeek, n: doneWeek.length, empty: "Esta semana aún no ha terminado ninguna." },
   ];
   const flat = [...cols[0].items, ...cols[1].items, ...cols[2].items, ...doneAll];
   const picked = botId ? botOf(botId) : null;
   const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
 
   const card = (t) => (
-    <a key={t.m.id} href={t.href} onClick={go(t.href)} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-card)", color: "var(--c-text)", boxShadow: "0 1px 2px rgba(18,19,26,.05)", opacity: t.col === "done" && !doneWeek.includes(t) ? 0.75 : 1 }}>
-      <span style={{ fontSize: "var(--t-body)", fontWeight: 600, lineHeight: 1.3, overflowWrap: "anywhere" }}>{t.m.title}</span>
-      <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.4, color: "var(--c-text-2)", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{t.now}</span>
+    <a key={t.m.id} href={t.href} onClick={go(t.href)} className={t.col === "wait" ? "u4-honey" : "u4-row"} style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 14px", borderRadius: "var(--r-md)", border: t.col === "wait" ? `1px solid ${C.honeyRing}` : line(), background: t.col === "wait" ? C.honeySoft : C.card, color: C.text, opacity: t.col === "done" && !doneWeek.includes(t) ? 0.75 : 1 }}>
+      <span style={{ fontSize: "var(--t-ui)", fontWeight: 600, lineHeight: 1.35, overflowWrap: "anywhere" }}>{t.m.title}</span>
+      <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.4, color: t.col === "wait" ? C.honeyText : t.col === "stuck" ? C.error : C.text2, display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{t.now}</span>
       {t.showBar ? (
         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span aria-hidden="true" style={{ position: "relative", flex: 1, height: "4px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}><span style={{ position: "absolute", inset: "0 auto 0 0", width: t.pct, borderRadius: "var(--r-xs)", background: "#12131A" }} /></span>
-          <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)", fontVariantNumeric: "tabular-nums" }}>{t.pct}</span>
+          <span aria-hidden="true" style={{ ...TRACK, flex: 1 }}><span style={{ ...fill(parseInt(t.pct, 10)) }} /></span>
+          <span style={{ fontSize: "var(--t-caption)", color: C.text3, fontVariantNumeric: "tabular-nums" }}>{t.pct}</span>
         </span>
       ) : null}
-      <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
-        {t.bots.length ? <span role="img" aria-label={botsAlt(t.bots)} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>{t.bots.map(({ b, work }) => <BotDot key={b.id} bot={b} work={work} />)}</span> : null}
-        <span style={{ marginLeft: "4px", minWidth: 0 }}>{t.meta}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-caption)", color: C.text3 }}>
+        {t.bots.length ? <span role="img" aria-label={botsAlt(t.bots)} style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>{t.bots.map(({ b, work }) => <BotDot key={b.id} bot={b} size={20} work={work} />)}</span> : null}
+        <span style={{ minWidth: 0 }}>{t.meta}</span>
       </span>
       {expert ? <span style={{ font: "400 var(--t-caption)/1.3 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{`${t.m.mode} · ${t.m.status}${t.m.progress?.total ? ` · ${t.m.progress.done || 0}/${t.m.progress.total} pasos` : ""}`}</span> : null}
     </a>
   );
 
   return (
-    <Shell active="trabajo">
+    <Shell active="trabajo" background="var(--c-app)">
       <main style={trabajoMain()}>
         <TrabajoHeader tab="tareas" action={{ label: "Nueva tarea", onClick: () => setCreating(true) }} />
 
         {creating ? <NewTask team={team} onClose={() => { setCreating(false); if (query.nueva) navigate("/trabajo", { replace: true }); }} /> : null}
 
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
-          <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
-            <Search size={16} color="#5C606C" />
+          <label className="c-ring" style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 10px", borderRadius: "var(--r-sm)", background: C.card, border: line() }}>
+            <Search size={16} color={C.text3} />
             <span style={ZERO_WIDTH}>Buscar tareas</span>
-            <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-body)" }} />
+            <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: C.text }} />
           </label>
           <span style={{ position: "relative" }}>
-            <button type="button" aria-haspopup="listbox" aria-expanded={menu} onClick={() => setMenu((o) => !o)} style={{ height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>
-              {picked ? <><BotDot bot={picked} size={12} />{"Con " + picked.name}</> : kept ? "Pospuestas y archivadas" : "Todos los bots"}
+            <button type="button" aria-haspopup="listbox" aria-expanded={menu} onClick={() => setMenu((o) => !o)} className="u4-sec" style={{ ...B.secondary, fontWeight: 500 }}>
+              {picked ? <><BotDot bot={picked} size={20} />{"Con " + picked.name}</> : kept ? "Pospuestas y archivadas" : "Todos los bots"}
               <ChevronDown size={14} aria-hidden="true" />
             </button>
             {menu ? (
               <>
                 <button type="button" aria-label="Cerrar el menú" onClick={() => setMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 15, background: "transparent", border: 0, cursor: "default" }} />
-                <div role="listbox" aria-label="Filtrar por bot" style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", zIndex: 22, width: "min(280px, 82vw)", padding: "6px", display: "flex", flexDirection: "column", gap: "2px", background: "var(--c-card)", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px rgba(18,19,26,.2)", animation: "rise .2s ease-out" }}>
+                <div role="listbox" aria-label="Filtrar por bot" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 22, width: "min(280px, 82vw)", padding: "6px", display: "flex", flexDirection: "column", gap: "1px", background: C.raised, border: line(), borderRadius: "var(--r-md)", boxShadow: C.shadowPop, animation: "rise .2s ease-out" }}>
                   {[{ id: null, name: "Todos los bots" }, ...team].map((b) => {
                     const on = (botId || null) === b.id;
                     return (
-                      <button key={b.id || "all"} type="button" role="option" aria-selected={on} onClick={() => { setBotId(b.id); setMenu(false); }} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: on ? "var(--c-chip)" : "transparent", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left" }}>
-                        {b.id ? <BotDot bot={b} size={14} /> : <span style={{ width: "14px" }} />}
+                      <button key={b.id || "all"} type="button" role="option" aria-selected={on} onClick={() => { setBotId(b.id); setMenu(false); }} className="u4-row" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 8px", border: 0, borderRadius: "var(--r-sm)", background: on ? C.chip : "transparent", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left", color: C.text }}>
+                        {b.id ? <BotDot bot={b} size={20} /> : <span style={{ width: "20px" }} />}
                         <span style={{ flex: 1 }}>{b.name}{b.role ? <span style={{ color: "var(--c-text-3)" }}>{" · " + b.role}</span> : null}</span>
                         {on ? <Check size={15} aria-hidden="true" /> : null}
                       </button>
                     );
                   })}
                   {keptCount || kept ? (
-                    <button type="button" role="option" aria-selected={kept} onClick={() => { setKept((v) => !v); setMenu(false); }} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", marginTop: "4px", padding: "0 10px", border: 0, borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", borderRadius: "var(--r-md)", background: kept ? "var(--c-chip)" : "transparent", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left" }}>
-                      <span style={{ width: "14px" }} />
+                    <button type="button" role="option" aria-selected={kept} onClick={() => { setKept((v) => !v); setMenu(false); }} className="u4-row" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", marginTop: "4px", padding: "0 8px", border: 0, borderTop: line(), borderRadius: "var(--r-sm)", background: kept ? C.chip : "transparent", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left", color: C.text }}>
+                      <span style={{ width: "20px" }} />
                       <span style={{ flex: 1 }}>{kept ? "Volver a las activas" : `Pospuestas y archivadas · ${keptCount}`}</span>
                     </button>
                   ) : null}
@@ -215,28 +217,28 @@ export default function Tareas({ query = {} }) {
               </>
             ) : null}
           </span>
-          <div role="radiogroup" aria-label="Vista" style={{ display: "inline-flex", padding: "4px", gap: "2px", borderRadius: "var(--r-pill)", background: "var(--c-chip)" }}>
+          <div role="radiogroup" aria-label="Vista" style={{ display: "inline-flex", padding: "2px", gap: "2px", borderRadius: "var(--r-sm)", background: C.chip }}>
             {VIEWS.map(([id, label]) => {
               const on = view === id;
-              return <button key={id} type="button" role="radio" aria-checked={on} onClick={() => setView(id)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+              return <button key={id} type="button" role="radio" aria-checked={on} onClick={() => setView(id)} style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-xs)", background: on ? C.selected : "transparent", boxShadow: on ? C.shadowLift : "none", color: on ? C.text : C.text2, fontSize: "var(--t-meta)", fontWeight: on ? 600 : 500, cursor: "pointer" }}>{label}</button>;
             })}
           </div>
         </div>
 
-        {!ready ? <div style={{ height: "220px", borderRadius: "var(--r-2xl)", background: "var(--c-chip)", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+        {!ready ? <div className="colmena-skeleton" style={{ height: "220px", borderRadius: "var(--r-md)" }} /> : null}
 
         {ready && view === "board" ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(250px, 100%), 1fr))", gap: "14px", alignItems: "start" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", gap: "12px", alignItems: "start" }}>
             {cols.map((c) => (
-              <section key={c.id} aria-labelledby={"col-" + c.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", borderRadius: "var(--r-2xl)", background: c.bg }}>
-                <h2 id={"col-" + c.id} style={{ margin: 0, padding: "4px 6px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600 }}>
+              <section key={c.id} aria-labelledby={"col-" + c.id} style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "8px", borderRadius: "var(--r-md)", background: C.sunken, border: line() }}>
+                <h2 id={"col-" + c.id} style={{ margin: 0, padding: "4px 6px 2px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", fontWeight: 600 }}>
                   {c.title}
-                  <span aria-label={c.id === "wait" ? waitCount.label : undefined} style={{ minWidth: "22px", height: "22px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: c.badgeBg, fontSize: "var(--t-caption)", fontWeight: 600, whiteSpace: "nowrap" }}>{c.n ?? c.items.length}</span>
-                  {c.more ? <a href="/" onClick={go("/")} style={{ marginLeft: "auto", fontSize: "var(--t-meta)", fontWeight: 500, color: "var(--c-text)", textDecoration: "underline", textUnderlineOffset: "3px" }}>{c.more}</a> : null}
+                  <span aria-label={c.id === "wait" ? waitCount.label : undefined} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: c.items.length || c.id !== "wait" ? c.badgeBg : C.chip, color: c.items.length || c.id !== "wait" ? c.badgeInk : C.text2, fontSize: "var(--t-micro)", fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{c.n ?? c.items.length}</span>
+                  {c.more ? <a href="/" onClick={go("/")} style={{ marginLeft: "auto", fontSize: "var(--t-meta)", fontWeight: 500, color: C.accentInk }}>{c.more}</a> : null}
                 </h2>
-                {c.items.length ? c.items.map(card) : <p style={{ margin: 0, padding: "4px 6px 6px", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text-3)" }}>{c.empty}</p>}
+                {c.items.length ? c.items.map(card) : <p style={{ margin: 0, padding: "2px 6px 6px", fontSize: "var(--t-meta)", lineHeight: 1.45, color: C.text3 }}>{c.empty}</p>}
                 {c.id === "done" && doneOlder.length ? (
-                  <button type="button" onClick={() => setOlder((v) => !v)} style={{ alignSelf: "flex-start", padding: "2px 6px", border: 0, background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: "var(--c-accent-ink)" }}>
+                  <button type="button" onClick={() => setOlder((v) => !v)} className="u4-ghost" style={{ ...B.ghost, alignSelf: "flex-start", color: C.accentInk, fontWeight: 500 }}>
                     {older ? "Ver solo las de esta semana" : `Ver ${doneOlder.length === 1 ? "la anterior" : `las ${doneOlder.length} anteriores`}`}
                   </button>
                 ) : null}
@@ -246,19 +248,19 @@ export default function Tareas({ query = {} }) {
         ) : null}
 
         {ready && view === "list" ? (
-          <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)", overflow: "hidden" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)", gap: "16px", padding: "12px 20px", background: "var(--c-hover)", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-2)" }}><span>Tarea</span><span>Estado</span><span>Quién</span><span>Entrega</span></div>
+          <div style={{ ...CARD, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)", gap: "16px", padding: "8px 16px", fontSize: "var(--t-caption)", fontWeight: 600, color: C.text3 }}><span>Tarea</span><span>Estado</span><span>Quién</span><span>Entrega</span></div>
             {flat.length ? flat.map((t) => (
-              <a key={t.m.id} href={t.href} onClick={go(t.href)} style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)", gap: "16px", alignItems: "center", minHeight: "56px", padding: "8px 20px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)", fontSize: "var(--t-body)" }}>
-                <span style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
+              <a key={t.m.id} href={t.href} onClick={go(t.href)} className="u4-row" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)", gap: "16px", alignItems: "center", minHeight: "48px", padding: "6px 16px", borderTop: line(), color: C.text, fontSize: "var(--t-ui)" }}>
+                <span style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
                   <span style={{ fontWeight: 600 }}>{t.m.title}</span>
                   <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.now}</span>
                 </span>
-                <span><span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: t.sBg, color: t.sInk, fontSize: "var(--t-caption)", fontWeight: 600 }}>{t.status}</span></span>
-                <span role={t.bots.length ? "img" : undefined} aria-label={t.bots.length ? botsAlt(t.bots) : undefined} style={{ display: "flex", gap: "4px" }}>{t.bots.map(({ b, work }) => <BotDot key={b.id} bot={b} size={16} work={work} />)}</span>
+                <span><span style={{ height: "22px", padding: "0 8px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: t.sBg, color: t.sInk, fontSize: "var(--t-caption)", fontWeight: 600 }}>{t.status}</span></span>
+                <span role={t.bots.length ? "img" : undefined} aria-label={t.bots.length ? botsAlt(t.bots) : undefined} style={{ display: "flex", gap: "2px" }}>{t.bots.map(({ b, work }) => <BotDot key={b.id} bot={b} size={20} work={work} />)}</span>
                 <span style={{ color: "var(--c-text-2)" }}>{t.due}{expert ? <span style={{ display: "block", font: "400 var(--t-caption)/1.3 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{t.m.status}</span> : null}</span>
               </a>
-            )) : <p style={{ margin: 0, padding: "20px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{q || botId ? "Ninguna tarea coincide." : "Aún no hay tareas. Pide algo con «Nueva tarea»."}</p>}
+            )) : <p style={{ margin: 0, padding: "16px", borderTop: line(), fontSize: "var(--t-ui)", color: C.text3 }}>{q || botId ? "Ninguna tarea coincide." : "Aún no hay tareas. Pide algo con «Nueva tarea»."}</p>}
           </div>
         ) : null}
       </main>
@@ -285,9 +287,9 @@ function NewTask({ team, onClose }) {
     if (m?.id) navigate(`/encargo/${m.id}`);
   });
   const whoText = who.length === 0 ? `${atlas?.name || "Atlas"} decide quién lo hace` : who.length === 1 ? `${team.find((b) => b.id === who[0])?.name} se encarga` : `${atlas?.name || "Atlas"} lo reparte entre ${who.map((id) => team.find((b) => b.id === id)?.name).join(" y ")}`;
-  const chip = (on) => ({ height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: `1.5px solid ${on ? "var(--c-text)" : "rgb(var(--c-ink-rgb) / .1)"}`, borderRadius: "var(--r-md)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" });
+  const chip = (on) => ({ ...chip4(false), height: "36px", gap: "8px", fontSize: "var(--t-ui)", color: C.text, ...(on ? { border: `1px solid ${C.text}`, boxShadow: `inset 0 0 0 1px ${C.text}` } : {}) });
   return (
-    <section className="c-ring" aria-labelledby="nt-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
+    <section className="c-ring" aria-labelledby="nt-t" style={{ ...CARD, display: "flex", flexDirection: "column", gap: "14px", padding: "18px 20px", boxShadow: C.shadowPop, animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
         <h2 id="nt-t" style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>Nueva tarea</h2>
         <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Algo que se hace una vez, con su plan y su entrega.</span>
@@ -296,26 +298,26 @@ function NewTask({ team, onClose }) {
         <span style={ZERO_WIDTH}>Qué hay que hacer</span>
         <textarea className="c-bare" ref={box} rows={2} value={text} maxLength={20000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) start(); if (e.key === "Escape") onClose(); }}
           placeholder="Prepara el informe del trimestre para el comité del miércoles"
-          style={{ flex: 1, minWidth: 0, padding: "4px 0", border: 0, resize: "none", background: "transparent", font: "500 clamp(var(--t-heading), 2.4vw, var(--t-headline))/1.4 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", color: "var(--c-text)" }} />
+          style={{ flex: 1, minWidth: 0, padding: "4px 0", border: 0, resize: "none", background: "transparent", font: "500 var(--t-title)/1.4 'Geist', sans-serif", color: C.text }} />
       </label>
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "var(--c-hover)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", borderRadius: "var(--r-md)", background: C.sunken, border: line() }}>
         <span style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>Quién lo hace <span style={{ fontWeight: 400, color: "var(--c-text-3)" }}>{"· " + whoText}</span></span>
         <div role="group" aria-label="Quién lo hace" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          <button type="button" aria-pressed={!who.length} onClick={() => setWho([])} style={chip(!who.length)}>{atlas ? <BotDot bot={atlas} size={16} /> : null}<span style={{ fontWeight: 600 }}>{atlas?.name || "Atlas"}</span><span style={{ color: "var(--c-text-3)" }}>decide</span></button>
+          <button type="button" aria-pressed={!who.length} onClick={() => setWho([])} style={chip(!who.length)}>{atlas ? <BotDot bot={atlas} size={20} /> : null}<span style={{ fontWeight: 600 }}>{atlas?.name || "Atlas"}</span><span style={{ color: "var(--c-text-3)" }}>decide</span></button>
           {helpers.map((b) => (
-            <button key={b.id} type="button" aria-pressed={who.includes(b.id)} onClick={() => toggle(b.id)} style={chip(who.includes(b.id))}><BotDot bot={b} size={16} /><span style={{ fontWeight: 600 }}>{b.name}</span>{b.role ? <span style={{ color: "var(--c-text-3)" }}>{b.role.toLowerCase()}</span> : null}</button>
+            <button key={b.id} type="button" aria-pressed={who.includes(b.id)} onClick={() => toggle(b.id)} style={chip(who.includes(b.id))}><BotDot bot={b} size={20} /><span style={{ fontWeight: 600 }}>{b.name}</span>{b.role ? <span style={{ color: "var(--c-text-3)" }}>{b.role.toLowerCase()}</span> : null}</button>
           ))}
         </div>
         <label style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", fontSize: "var(--t-ui)", fontWeight: 600 }}>
           Para cuándo
-          <input type="date" value={due} onChange={(e) => setDue(e.target.value)} style={{ height: "36px", padding: "0 10px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-md)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 400 }} />
+          <input type="date" value={due} onChange={(e) => setDue(e.target.value)} style={{ height: "32px", padding: "0 8px", border: line(true), borderRadius: "var(--r-sm)", background: C.card, color: C.text, colorScheme: "light dark", fontSize: "var(--t-ui)", fontWeight: 400 }} />
           <span style={{ fontWeight: 400, color: "var(--c-text-3)" }}>{due ? "" : "opcional"}</span>
         </label>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <span role={act.error ? "alert" : undefined} style={{ flex: "1 1 260px", fontSize: "var(--t-ui)", color: act.error ? "var(--c-error)" : "var(--c-text-3)" }}>{act.error || "Enviar fuera, pagar, publicar y borrar siempre te preguntan."}</span>
-        <button type="button" onClick={onClose} style={{ height: "44px", padding: "0 18px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: 500, cursor: "pointer" }}>Ahora no</button>
-        <button type="button" onClick={start} disabled={!ok || act.busy} style={{ height: "44px", padding: "0 22px", border: 0, borderRadius: "var(--r-pill)", background: ok ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .08)", color: ok ? "var(--c-btn-text)" : "#8A8D96", fontSize: "var(--t-body)", fontWeight: 600, cursor: ok ? "pointer" : "default" }}>{act.busy ? "Empezando…" : "Empezar"}</button>
+        <button type="button" onClick={onClose} className="u4-sec" style={{ ...B.secondary, ...B.lg }}>Ahora no</button>
+        <button type="button" onClick={start} disabled={!ok || act.busy} className="u4-pri" style={{ ...B.primary, ...B.lg }}>{act.busy ? "Empezando…" : "Empezar"}</button>
       </div>
     </section>
   );

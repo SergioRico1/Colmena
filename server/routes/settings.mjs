@@ -37,6 +37,8 @@ export function registerSettingsRoutes(app, { listModels, store, runtime }) {
       pinned: z.array(z.string().trim().regex(/^\/[^\s]*$/).max(300)).max(30),
       // Colmena 4: light or dark, or follow the system (src/lib/theme.js; unset = "system").
       theme: z.enum(["system", "light", "dark"]),
+      // Inicio › «Para empezar»: the steps you put off with «Ahora no», and "all" once you closed the card.
+      setupHidden: z.array(z.enum(["about", "ai", "apps", "invite", "all"])).max(5),
     })
     .partial()
     .strict();

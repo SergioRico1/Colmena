@@ -1,4 +1,5 @@
 import { mentionedBots } from "../../home/shared.jsx";
+import { C } from "../../../lib/theme.js";
 
 // Who takes something you ask (Inicio's box and «Buscar o pedir»): a bot you mention, a bot
 // whose kind of work it clearly is, or Atlas, who decides and shares it out.
@@ -10,7 +11,7 @@ const ROLE_WORDS = [
   [/script|código|codigo|programa|automatiza|macro/i, ["bruno"]],
 ];
 
-export const ATLAS_FALLBACK = { id: "atlas", name: "Atlas", color: "#12131A", shape: "hex" };
+export const ATLAS_FALLBACK = { id: "atlas", name: "Atlas", color: C.text, shape: "hex" };
 
 /** The bot that probably fits a request (null when nothing clearly points at one). */
 export function likelyBot(text, bots) {

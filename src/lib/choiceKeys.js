@@ -74,5 +74,5 @@ export function useChoiceKeys({ count, onChoose, enabled = true }) {
 
 /** The letter in front of an option (decorative: the button says its shortcut itself). */
 export function letterStyle(dark = false, size = 22) {
-  return { flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: dark ? "rgba(255,255,255,.16)" : "rgb(var(--c-ink-rgb) / .07)", color: dark ? "#FFFFFF" : "#5C606C", font: "600 var(--t-caption)/1 'Geist Mono', monospace" };
+  return { flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: dark ? "color-mix(in srgb, var(--c-btn-text) 16%, transparent)" : "rgb(var(--c-ink-rgb) / .07)", color: dark ? "var(--c-btn-text)" : "var(--c-text-3)", font: "600 var(--t-caption)/1 'Geist Mono', monospace" };
 }

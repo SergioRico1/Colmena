@@ -7,6 +7,7 @@ import { BotMark, PersonMark } from "../../v2/chat/Mark.jsx";
 import { ROOM_MAX_BOTS, currentTeam, realTeams, roomHint, roomPayload, roomPeople } from "../../../lib/teams.js";
 import { Sheet, darkBtn, errorLine, hidden, note, quietBtn } from "./TeamSheets.jsx";
 import { coordinatorOf } from "../../../lib/bots.js";
+import { C } from "../../../lib/theme.js";
 
 // «Nuevo → Sala» (docs/CONTRACT.md §18): a name, where it lives (one of your teams or
 // «Privada»), people and bots → POST /api/rooms {title, team?, botIds?, people?} → the room,
@@ -79,7 +80,7 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
                 const on = people.includes(p.address);
                 return (
                   <button key={p.address} type="button" aria-pressed={on ? "true" : "false"} onClick={() => toggle(people, setPeople, p.address)} style={chip(on)}>
-                    <PersonMark name={p.name} size={26} tint={on ? "#FFFFFF" : "#E6E7EC"} />
+                    <PersonMark name={p.name} size={26} tint={on ? C.card : C.line} />
                     <span style={{ fontWeight: 500 }}>{p.name}</span>
                     {on ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : null}
                   </button>
@@ -101,7 +102,7 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
                     <span aria-hidden="true" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center" }}><BotMark bot={b} size={18} /></span>
                     <span style={{ display: "flex", flexDirection: "column", gap: "1px", lineHeight: 1.2 }}>
                       <span style={{ fontWeight: 600 }}>{b.name}</span>
-                      {b.role ? <span style={{ fontSize: "var(--t-caption)", color: on ? "#D6D8DE" : "var(--c-text-3)" }}>{b.role}</span> : null}
+                      {b.role ? <span style={{ fontSize: "var(--t-caption)", color: on ? "color-mix(in srgb, var(--c-btn-text) 75%, transparent)" : "var(--c-text-3)" }}>{b.role}</span> : null}
                     </span>
                     {on ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : null}
                   </button>

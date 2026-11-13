@@ -8,6 +8,7 @@ import { navigate } from "../../../../lib/router.jsx";
 import { VERSION_REASON, noteUrl } from "../../../../lib/wikiLinks.js";
 import { whenShort } from "../Files.jsx";
 import { Back, CARD, CHIP, DARK, ERROR, MUTED, PILL, Who, filterChip } from "./parts.jsx";
+import { C } from "../../../../lib/theme.js";
 
 // Biblioteca › Notas, the history of a note (?ver=historial): every saved version with who,
 // when and why; the chosen one as it read or as what restoring it would change; «Volver a
@@ -65,8 +66,8 @@ export default function NoteHistory({ page, bots = [], version = null, onRestore
                   <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}><Who by={v.by} bots={bots} />{" · " + whenShort(v.at, true) + (v.current ? " · es la de ahora" : "")}</span>
                 </div>
                 <div role="group" aria-label="Qué ver de esta versión" style={{ display: "flex", gap: "6px" }}>
-                  <button type="button" aria-pressed={mode === "diff"} onClick={() => setMode("diff")} style={{ ...filterChip(mode === "diff"), background: mode === "diff" ? "#12131A" : "var(--c-chip)" }}>{"Qué cambiaría"}</button>
-                  <button type="button" aria-pressed={mode === "text"} onClick={() => setMode("text")} style={{ ...filterChip(mode === "text"), background: mode === "text" ? "#12131A" : "var(--c-chip)" }}>{"Cómo era"}</button>
+                  <button type="button" aria-pressed={mode === "diff"} onClick={() => setMode("diff")} style={{ ...filterChip(mode === "diff"), background: mode === "diff" ? C.text : "var(--c-chip)" }}>{"Qué cambiaría"}</button>
+                  <button type="button" aria-pressed={mode === "text"} onClick={() => setMode("text")} style={{ ...filterChip(mode === "text"), background: mode === "text" ? C.text : "var(--c-chip)" }}>{"Cómo era"}</button>
                 </div>
               </div>
               {mode === "diff"

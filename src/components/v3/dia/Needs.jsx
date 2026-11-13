@@ -16,8 +16,9 @@ import { useStore } from "../../../lib/store.jsx";
 import HoldButton from "../../HoldButton.jsx";
 import { withRowBoundary } from "../../RowBoundary.jsx";
 import SnoozeMenu, { snooze } from "../../v2/SnoozeMenu.jsx";
-import { NeedLabel, Shape, UndoBar, btn } from "./parts.jsx";
+import { NeedLabel, Shape, UndoBar, btn4 as btn } from "./parts.jsx";
 import { NoteAsk } from "../../wiki/NoteDiff.jsx";
+import { C } from "../../../lib/theme.js";
 
 // «Te necesitan» on Inicio (design/V3Inicio.dc.html): white cards ringed in honey, the oldest
 // first. The verbs, the undo line and the expiry line come from lib/approvalCard.js, the same
@@ -32,9 +33,9 @@ import { NoteAsk } from "../../wiki/NoteDiff.jsx";
 // brings one back. A question's options read A, B, C… and the letter key answers
 // (lib/choiceKeys.js). A card that fails to draw becomes one muted pill (RowBoundary.jsx).
 
-const RING = "0 0 0 1.5px #FFC93C, 0 18px 40px -28px rgba(138,90,0,.45)";
-const RING_SM = "0 0 0 1.5px #FFC93C";
-const CALM = "0 0 0 1px rgba(18,19,26,.08)";
+const RING = "0 0 0 1px var(--c-honey-ring)";
+const RING_SM = "0 0 0 1px var(--c-honey-ring)";
+const CALM = "0 0 0 1px rgb(var(--c-ink-rgb) / .08)";
 
 // What was approved or answered here stays a while, confirmed, then goes.
 const done = new Map(); // approval id → {approval, text, at}
@@ -55,9 +56,9 @@ export function scheduleApproval(a, model, always = false) {
   });
 }
 
-const card = (wide, ring) => ({ display: "flex", flexDirection: "column", gap: wide ? "14px" : "12px", padding: "20px 22px", background: "var(--c-card)", borderRadius: "var(--r-xl)", boxShadow: ring, transition: "box-shadow .4s ease", animation: "rise .4s ease-out" });
-const title = (wide) => (wide ? { margin: "0", fontSize: "var(--t-lead)", fontWeight: "600", letterSpacing: "-0.01em", lineHeight: "1.3" } : { margin: "0", fontSize: "var(--t-read)", fontWeight: "600", lineHeight: "1.35" });
-const body = { margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text-2)", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" };
+const card = (wide, ring) => ({ display: "flex", flexDirection: "column", gap: wide ? "12px" : "10px", padding: "14px 16px", background: "var(--c-card)", borderRadius: "var(--r-md)", boxShadow: ring, transition: "box-shadow .4s ease", animation: "rise .4s ease-out" });
+const title = (wide) => (wide ? { margin: "0", fontSize: "var(--t-read)", fontWeight: "600", lineHeight: "1.35" } : { margin: "0", fontSize: "var(--t-ui)", fontWeight: "600", lineHeight: "1.35" });
+const body = { margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" };
 const strong = { fontWeight: "600", color: "var(--c-text)" };
 const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" };
 
@@ -78,8 +79,8 @@ function Head({ bot, where, at, label }) {
 function Settled({ text }) {
   return (
     <span role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-ok-ink)", animation: "fade .3s ease-out" }}>
-      <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
-        <Check size={11} weight="bold" color="#FFFFFF" />
+      <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: C.ok, animation: "pop .4s ease-out" }}>
+        <Check size={11} weight="bold" color={C.btnText} />
       </span>
       {text}
     </span>
@@ -318,7 +319,7 @@ export function SnoozedNeeds({ items = [], bots = [] }) {
         <ChevronDown size={11} weight="bold" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
       </button>
       {open ? (
-        <ul id="snoozed-needs" aria-label="Pospuestos" style={{ margin: "0", padding: "4px 18px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", animation: "fade .2s ease-out" }}>
+        <ul id="snoozed-needs" aria-label="Pospuestos" style={{ margin: "0", padding: "4px 18px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "fade .2s ease-out" }}>
           {items.map((a, i) => {
             const bot = bots.find((b) => b.id === a.botId) || null;
             return (

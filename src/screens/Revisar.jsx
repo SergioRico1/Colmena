@@ -12,6 +12,7 @@ import { later } from "../lib/undoToast.js";
 import { useExpert } from "../lib/expert.js";
 import HoldButton from "../components/HoldButton.jsx";
 import { useApprovalCard } from "../components/ApprovalParts.jsx";
+import { C } from "../lib/theme.js";
 
 // Colmena 3 · «Revisa antes de enviar» (design/V3Revisar.dc.html): the mail as a form you can
 // change in place (recipients, subject, text; attachments can be taken out), beside why it
@@ -21,7 +22,7 @@ import { useApprovalCard } from "../components/ApprovalParts.jsx";
 // lib/approvalCard.js, the same as on every other surface. Other requests (permissions, plans, memories…) use the same page.
 const isMail = (v) => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(String(v || "").trim());
 const first = (e) => { const local = String(e).split("@")[0].replace(/[._]/g, " ").split(" ")[0]; return local.charAt(0).toUpperCase() + local.slice(1); };
-const EXT = { PDF: ["#FBE9EA", "#B4232A"], XLS: ["#E3F4EC", "#0B6B4A"], CSV: ["#E3F4EC", "#0B6B4A"], PPT: ["#FFE6F1", "#9C1F5C"], DOC: ["#E3EAFB", "#1F3F99"] };
+const EXT = { PDF: [C.errorSoft, C.error], XLS: [C.okSoft, C.okInk], CSV: [C.okSoft, C.okInk], PPT: ["var(--c-kind-ppt-bg)", "var(--c-kind-ppt)"], DOC: ["var(--c-kind-doc-bg)", "var(--c-kind-doc)"] };
 const extOf = (name) => (String(name).split(".").pop() || "").toUpperCase().slice(0, 3);
 const sizeOf = (n) => (n == null ? "" : n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1).replace(".", ",")} MB`);
 const fromEmail = (e) => ({ to: [...(e?.to || [])], cc: [...(e?.cc || [])], cco: [...(e?.cco || [])], subject: e?.subject || "", body: e?.body || "", files: (e?.attachments || []).map((f) => (typeof f === "string" ? { name: f } : { ...f })) });
@@ -68,7 +69,7 @@ export default function Revisar({ params = {} }) {
   // The same verbs, undo line and expiry line as on Inicio, in the chat and in a room.
   const model = useApprovalCard(a?.status === "pending" ? a : null, bot?.name);
 
-  if (!ready) return <Shell active="inicio"><div /></Shell>;
+  if (!ready) return <Shell active="inicio" background="var(--c-app)"><div /></Shell>;
   if (!a || (a.status !== "pending" && !sent && !undo.waiting)) {
     return <NotFound title="Esta solicitud ya no está" text="Ya se resolvió o caducó. No se ha perdido nada de lo tuyo." />;
   }
@@ -120,7 +121,7 @@ export default function Revisar({ params = {} }) {
         : `${bot?.name || "El bot"} no puede hacer esto sin ti con los permisos que le diste.`;
   const people = isSend ? d.to.length + d.cc.length + d.cco.length : 0;
   const affects = a.impact?.headline || (isSend ? `${people === 1 ? "1 persona" : people + " personas"}${d.cc.length ? `, ${d.cc.length} en copia` : ""}.` : null);
-  const card = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px", borderRadius: "var(--r-xl)", background: "var(--c-card)" };
+  const card = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" };
   const h2 = { margin: "0", fontSize: "var(--t-body)", fontWeight: "600" };
   const p = { margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)" };
   const chip = (field, e, i) => (
@@ -138,11 +139,11 @@ export default function Revisar({ params = {} }) {
   );
   const row = { display: "flex", alignItems: "center", gap: "12px", padding: "14px 22px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" };
   const label = { flex: "none", width: "64px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" };
-  const pill = (dark) => ({ height: "46px", padding: dark ? "0 22px" : "0 18px", border: dark ? "0" : "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: dark ? "var(--c-btn)" : "var(--c-card)", color: dark ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-body)", fontWeight: dark ? "600" : "500", cursor: "pointer" });
+  const pill = (dark) => ({ height: "36px", padding: dark ? "0 22px" : "0 18px", border: dark ? "0" : "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: dark ? "var(--c-btn)" : "var(--c-card)", color: dark ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: dark ? "600" : "500", cursor: "pointer" });
   const crumb = isSend && data.subject ? `Enviar «${data.subject}»` : a.title;
 
   return (
-    <Shell active="inicio">
+    <Shell active="inicio" background="var(--c-app)">
       <main style={{ maxWidth: "1120px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 52px) 64px", display: "flex", flexDirection: "column", gap: "26px" }}>
         <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-3)", minWidth: 0 }}>
           <a href="/" style={{ color: "var(--c-text-3)" }}>{"Inicio"}</a><span aria-hidden="true">{"›"}</span><span>{"Te necesita"}</span><span aria-hidden="true">{"›"}</span>
@@ -155,7 +156,7 @@ export default function Revisar({ params = {} }) {
               <Shape bot={bot} size={22} />
               <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}><strong style={{ color: "var(--c-text)", fontWeight: "600" }}>{bot?.name || "Un bot"}</strong>{isSend ? " lo preparó " : " lo pide "}{where}{" · " + day(a.createdAt) + " " + time(a.createdAt)}</span>
             </div>
-            <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{KIND_TITLE[a.kind] || "Revisa antes de aprobar"}</h1>
+            <h1 style={{ margin: "0", font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>{KIND_TITLE[a.kind] || "Revisa antes de aprobar"}</h1>
             <p style={{ margin: "0", fontSize: "var(--t-read)", color: "var(--c-text-2)" }}>{KIND_LEAD[a.kind] || "Nada cambia hasta que pulses «Aprobar»."}</p>
           </div>
           {sent ? null : <span style={{ height: "30px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-honey)", color: "var(--c-honey-ink)", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Te necesita"}</span>}
@@ -163,7 +164,7 @@ export default function Revisar({ params = {} }) {
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
           {isSend ? (
-            <section aria-label="Correo" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", background: "var(--c-card)", borderRadius: "var(--r-2xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -32px rgba(18,19,26,.3)", overflow: "hidden" }}>
+            <section aria-label="Correo" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
               <div style={row}>
                 <span style={label}>{"Para"}</span>
                 <div style={{ flex: "1", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
@@ -192,7 +193,7 @@ export default function Revisar({ params = {} }) {
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 22px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)", background: "var(--c-sunken)" }}>
                   {d.files.map((f, i) => {
                     const e = extOf(f.name);
-                    const [bg, fg] = EXT[e] || ["#EEF0F4", "#4A4F5C"];
+                    const [bg, fg] = EXT[e] || [C.chip, C.text2];
                     return (
                       <span key={f.name + i} style={{ height: "44px", padding: "0 6px 0 8px", display: "inline-flex", alignItems: "center", gap: "10px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)", fontSize: "var(--t-ui)" }}>
                         <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: "700" }}>{e}</span>
@@ -205,8 +206,8 @@ export default function Revisar({ params = {} }) {
               ) : null}
             </section>
           ) : (
-            <section aria-label="Qué pide" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "24px", background: "var(--c-card)", borderRadius: "var(--r-2xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -32px rgba(18,19,26,.3)" }}>
-              <h2 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{a.title}</h2>
+            <section aria-label="Qué pide" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "24px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)" }}>
+              <h2 style={{ margin: "0", font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{a.title}</h2>
               {a.summary && a.summary !== a.title ? <p style={{ margin: "0", fontSize: "var(--t-read)", lineHeight: "1.65", whiteSpace: "pre-wrap" }}>{a.summary}</p> : null}
               {a.context ? <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{a.context}</p> : null}
               {a.kind === "plan" && mission ? <a href={`/sala/${mission.id}#plan`} style={{ alignSelf: "flex-start", fontSize: "var(--t-body)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{"Ver el plan en la sala"}</a> : null}
@@ -234,7 +235,7 @@ export default function Revisar({ params = {} }) {
                 {(a.impact?.details || []).slice(0, 4).map((t, i) => <p key={i} style={{ ...p, fontSize: "var(--t-ui)" }}>{typeof t === "string" ? t : t.text || t.label}</p>)}
               </div>
             ) : null}
-            <details open={expert || undefined} style={{ padding: "16px 20px", borderRadius: "var(--r-xl)", background: "var(--c-card)", fontSize: "var(--t-ui)" }}>
+            <details open={expert || undefined} style={{ padding: "16px 20px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", fontSize: "var(--t-ui)" }}>
               <summary style={{ cursor: "pointer", fontWeight: "600" }}>{"Detalles técnicos"}</summary>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "10px", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", color: "var(--c-text-2)", overflowWrap: "anywhere" }}>
                 <span>{[a.kind, a.app, a.scopeLabel].filter(Boolean).join(" · ")}</span>
@@ -246,13 +247,13 @@ export default function Revisar({ params = {} }) {
           </aside>
         </div>
 
-        <div style={{ position: "sticky", bottom: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 12px 12px 20px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 20px 40px -20px rgba(18,19,26,.35)" }}>
+        <div style={{ position: "sticky", bottom: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 12px 12px 20px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
           {error ? <span role="alert" style={{ flexBasis: "100%", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</span> : null}
           {sent ? (
             <>
               <span role="status" style={{ flex: "1", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-ok-ink)" }}>
-                <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
-                  <Check size={11} weight="bold" color="#FFFFFF" />
+                <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: C.ok, animation: "pop .4s ease-out" }}>
+                  <Check size={11} weight="bold" color={C.btnText} />
                 </span>
                 {sent}
               </span>

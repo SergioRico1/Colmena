@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "../../Icon.js";
 import { get, put } from "../../../lib/api.js";
-import { C, HEAD, MONO, SHEET } from "./parts.jsx";
+import { C, MONO, SHEET } from "./parts.jsx";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // Keyboard shortcuts of «Código» (T3 Code keybindings): defaults you can change one by one.
@@ -96,11 +96,11 @@ export default function ShortcutsSheet({ onClose }) {
   const box = useDialogFocus({ onEscape: () => { if (!recording) onClose(); } });
   const reset = async () => { setData(await put("/code/keybindings", { bindings: {} })); await loadBindings(true); setError(null); };
   return (
-    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 900, background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", display: "grid", placeItems: "center", padding: "24px", animation: "fade .2s ease-out" }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 900, background: "var(--c-scrim)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", display: "grid", placeItems: "center", padding: "24px", animation: "fade .2s ease-out" }}>
       <div ref={box} role="dialog" aria-modal="true" aria-label="Atajos de Código" style={{ width: "min(560px, 100%)", maxHeight: "86vh", display: "flex", flexDirection: "column", borderRadius: "var(--r-3xl)", background: C.white, boxShadow: SHEET, animation: "sheet .35s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "22px 22px 12px" }}>
-          <h2 style={{ flex: 1, margin: 0, font: `600 var(--t-heading)/1.1 ${HEAD}`, letterSpacing: "-0.02em" }}>Atajos de Código</h2>
-          <button type="button" onClick={reset} style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>Restablecer</button>
+          <h2 style={{ flex: 1, margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>Atajos de Código</h2>
+          <button type="button" onClick={reset} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>Restablecer</button>
           <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: C.muted }}><X size={16} strokeWidth={2.2} aria-hidden="true" /></button>
         </div>
         <p style={{ margin: "0 22px 10px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: C.muted }}>Pulsa un atajo para cambiarlo y luego la combinación que quieras. Ctrl+K sigue abriendo «Buscar o pedir» en toda Colmena.</p>
@@ -109,7 +109,7 @@ export default function ShortcutsSheet({ onClose }) {
             <div key={action} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "46px", padding: "0 10px", borderRadius: "var(--r-lg)" }} className="code-hover">
               <span style={{ flex: 1, fontSize: "var(--t-ui)" }}>{ACTION_LABEL[action]}</span>
               <button type="button" onClick={() => { setError(null); setRecording(action); }} aria-label={"Cambiar el atajo de " + ACTION_LABEL[action]}
-                style={{ minWidth: "110px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, background: recording === action ? "var(--c-honey-soft)" : C.soft, color: recording === action ? C.honeyText : C.text, boxShadow: recording === action ? "0 0 0 1.5px " + C.honey : "none" }}>
+                style={{ minWidth: "110px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, background: recording === action ? "var(--c-honey-soft)" : C.soft, color: recording === action ? "var(--c-accent-ink)" : C.text, boxShadow: recording === action ? "0 0 0 1.5px var(--c-accent)" : "none" }}>
                 {recording === action ? "Pulsa la combinación…" : showCombo(data?.bindings?.[action])}
               </button>
             </div>

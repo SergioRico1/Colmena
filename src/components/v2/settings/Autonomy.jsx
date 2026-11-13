@@ -4,6 +4,7 @@ import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, get, patch, post, put } from "../../../lib/api.js";
 import { later, reversible, useHiddenVersion, visible } from "../../../lib/undoToast.js";
 import { Alert, BotMark, Card, Go, Panel, Pills, Row, Switch, SwitchRow, UNDO_MS, anchorOf, btn, useSettings } from "./v3.jsx";
+import { C } from "../../../lib/theme.js";
 
 // Ajustes › Permisos y autonomía (design/V3Permisos.dc.html): the red lines, which no setting,
 // routine or bot can skip (send outside, pay, publish, delete for real, type passwords,
@@ -17,8 +18,8 @@ const AUTONOMY_WORD = { sugiere: "solo sugiere", avisa: "hace y avisa", solo: "h
 // before writing) shows as its own step and moves on to «escribe».
 const APPS = [["correo", "Correo"], ["calendario", "Calendario"], ["carpeta", "Carpeta"], ["hojas", "Hojas"], ["chat", "Chat"]];
 const NEXT = { none: "lee", lee: "escribe", pide: "escribe", escribe: "none" };
-const CELL = { none: ["No", "#F1F1EC", "#5C606C"], lee: ["Lee", "#EEF0F4", "#1F4FD1"], pide: ["Lee y pide", "#EEF0F4", "#1F4FD1"], escribe: ["Escribe", "#12131A", "#FFFFFF"] };
-const lock = <Lock size={15} color="#FFFFFF" style={{ flex: "none" }} />;
+const CELL = { none: ["No", C.chip, C.text3], lee: ["Lee", C.chip, C.accentInk], pide: ["Lee y pide", C.chip, C.accentInk], escribe: ["Escribe", C.btn, C.btnText] };
+const lock = <Lock size={15} color={C.btnText} style={{ flex: "none" }} />;
 
 // «Tareas de Código» (T3 Code auto-settle rules, GET/PUT /api/code/archive-settings): finished
 // tasks leave the list on their own when saved into main, when their PR closes, or after idle days.
@@ -99,12 +100,12 @@ export default function AutonomySection() {
       <section {...anchorOf("lineas-rojas")} aria-labelledby="red-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-btn)", color: "var(--c-btn-text)", scrollMarginTop: "24px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h3 id="red-t" style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600 }}>Siempre te preguntan antes de…</h3>
-          <span style={{ fontSize: "var(--t-ui)", color: "#C9CBD3" }}>Las líneas rojas. Ningún ajuste, rutina ni bot puede saltárselas. Navegar por la web nunca pregunta.</span>
+          <span style={{ fontSize: "var(--t-ui)", color: C.text4 }}>Las líneas rojas. Ningún ajuste, rutina ni bot puede saltárselas. Navegar por la web nunca pregunta.</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "8px" }}>
-          {RED.map((r) => <div key={r} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", padding: "0 14px", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.08)", fontSize: "var(--t-ui)" }}>{lock}{r}</div>)}
+          {RED.map((r) => <div key={r} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", padding: "0 14px", borderRadius: "var(--r-md)", background: "color-mix(in srgb, var(--c-btn-text) 8%, transparent)", fontSize: "var(--t-ui)" }}>{lock}{r}</div>)}
         </div>
-        <span style={{ fontSize: "var(--t-ui)", color: "#E6E7EC" }}>Si pides tú «envíalo», sale tras 10 segundos para que puedas deshacer.</span>
+        <span style={{ fontSize: "var(--t-ui)", color: C.line }}>Si pides tú «envíalo», sale tras 10 segundos para que puedas deshacer.</span>
       </section>
 
       <Panel big anchor="autonomia-bot" title="Cuánto hace solo cada bot" sub="Fuera de las líneas rojas." style={{ gap: "6px" }}>
@@ -130,7 +131,7 @@ export default function AutonomySection() {
             <span role="columnheader">Bot</span>
             {apps.map(([k, label]) => (
               <span key={k} role="columnheader" title={connected(k) ? "Conectada" : "Sin conectar"} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
-                {label}<span aria-label={connected(k) ? "conectada" : "sin conectar"} style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: connected(k) ? "#0B8A5F" : "rgb(var(--c-ink-rgb) / .18)" }} />
+                {label}<span aria-label={connected(k) ? "conectada" : "sin conectar"} style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: connected(k) ? C.ok : "rgb(var(--c-ink-rgb) / .18)" }} />
               </span>
             ))}
           </div>
@@ -143,7 +144,7 @@ export default function AutonomySection() {
                 return (
                   <span key={k} role="cell" style={{ display: "grid", placeItems: "center" }}>
                     <button type="button" onClick={() => cycle(b, k)} disabled={act.busy} aria-label={`${b.name} en ${label}: ${text}. Pulsa para cambiar a ${CELL[NEXT[v] || "lee"][0]}.`}
-                      style={{ width: "100%", maxWidth: "92px", height: "32px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: bg, color: ink, fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", opacity: pending === b.id + k ? 0.5 : 1 }}>{text}</button>
+                      style={{ width: "100%", maxWidth: "92px", height: "32px", padding: "0 10px", border: 0, borderRadius: "var(--r-sm)", background: bg, color: ink, fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", opacity: pending === b.id + k ? 0.5 : 1 }}>{text}</button>
                   </span>
                 );
               })}

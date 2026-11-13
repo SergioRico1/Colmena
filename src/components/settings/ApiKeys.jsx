@@ -27,7 +27,7 @@ function KeyRow({ s, first }) {
         {confirm ? (
           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "var(--t-meta)" }}>{"¿Borrarla? Los bots dejarán de poder usarla."}</span>
-            <button type="button" disabled={busy} onClick={() => act(() => del(`/secrets/${encodeURIComponent(s.name)}`))} style={{ ...btn.quiet, color: "var(--c-error)", borderColor: "#F1B5B7", fontWeight: "600" }}>{"Borrar"}</button>
+            <button type="button" disabled={busy} onClick={() => act(() => del(`/secrets/${encodeURIComponent(s.name)}`))} style={{ ...btn.quiet, color: "var(--c-error)", borderColor: "color-mix(in srgb, var(--c-error) 35%, transparent)", fontWeight: "600" }}>{"Borrar"}</button>
             <button type="button" onClick={() => setConfirm(false)} style={btn.quiet}>{"No"}</button>
           </span>
         ) : (

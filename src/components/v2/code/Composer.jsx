@@ -62,7 +62,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
   if (home) {
     return (
       <form onSubmit={submit} className="code-composer" style={{ width: "100%" }}>
-        <section className="c-ring" aria-label="Nueva tarea de código" {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 28px 60px -34px rgba(18,19,26,.4)" }}>
+        <section className="c-ring" aria-label="Nueva tarea de código" {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: C.white, boxShadow: "var(--c-shadow-pop)" }}>
           {extras.menu}
           {extras.chips ? <div style={{ padding: "16px 24px 0" }}>{extras.chips}</div> : null}
           <div style={{ display: "flex", alignItems: "flex-end", gap: "2px", padding: "22px 14px 8px 24px" }}>
@@ -73,7 +73,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "10px 14px 14px 20px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
             {footer}
             <span style={{ flex: 1 }} />
-            <button type="submit" disabled={!ready || busy} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", border: 0, borderRadius: "var(--r-pill)", background: C.ink, color: C.white, fontSize: "var(--t-body)", fontWeight: 600, cursor: ready && !busy ? "pointer" : "default", opacity: ready && !busy ? 1 : 0.45, transition: "opacity .15s ease" }}>
+            <button type="submit" disabled={!ready || busy} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", border: 0, borderRadius: "var(--r-sm)", background: C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600, cursor: ready && !busy ? "pointer" : "default", opacity: ready && !busy ? 1 : 0.45, transition: "opacity .15s ease" }}>
               {busy ? "Empezando…" : label}
             </button>
           </div>
@@ -104,7 +104,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
       ) : null}
       {status}
       {mode === "plan" ? <span style={{ display: "block", margin: "0 0 8px 4px", fontSize: "var(--t-caption)", color: C.muted }}><strong style={{ fontWeight: 600, color: C.ink }}>Modo plan</strong> · Bruno propone antes de tocar nada.</span> : null}
-      <div className="c-ring" {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "6px", padding: "8px 8px 8px 14px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.06), 0 14px 30px -20px rgba(18,19,26,.4)" }}>
+      <div className="c-ring" {...drop} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "6px", padding: "8px 8px 8px 14px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: "var(--c-shadow-pop)" }}>
         {extras.menu}
         {extras.chips}
         <div style={{ display: "flex", alignItems: "flex-end", gap: "4px" }}>
@@ -182,17 +182,17 @@ function ContextRing({ used, max = 200000, onCompact = null, disabled = false })
   return (
     <span style={{ position: "relative", display: "flex" }}>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} title={`Contexto usado: ${Math.round(pct * 100)} % (${Math.round(used / 1000)} k de ${Math.round(max / 1000)} k)`}
-        style={{ display: "flex", alignItems: "center", gap: "4px", height: "36px", padding: "0 6px", border: 0, borderRadius: "var(--r-pill)", background: open ? C.soft : "transparent", cursor: "pointer", whiteSpace: "nowrap", font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: C.quiet }}>
+        style={{ display: "flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 6px", border: 0, borderRadius: "var(--r-sm)", background: open ? C.soft : "transparent", cursor: "pointer", whiteSpace: "nowrap", font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: C.quiet }}>
         <svg width="20" height="20" viewBox="0 0 36 36" aria-hidden="true" style={{ transform: "rotate(-90deg)" }}>
-          <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(18,19,26,.08)" strokeWidth="4" />
-          <circle cx="18" cy="18" r={r} fill="none" stroke={pct > 0.85 ? C.honey : C.ink} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${len * pct} ${len}`} />
+          <circle cx="18" cy="18" r={r} fill="none" stroke="rgb(var(--c-ink-rgb) / .08)" strokeWidth="4" />
+          <circle cx="18" cy="18" r={r} fill="none" stroke={pct > 0.85 ? "var(--c-warn)" : C.ink} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${len * pct} ${len}`} />
         </svg>
       </button>
       {open ? (
-        <div role="dialog" aria-label="Contexto" onMouseLeave={() => setOpen(false)} style={{ position: "absolute", zIndex: 40, right: 0, bottom: "44px", width: "280px", padding: "16px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45)", display: "flex", flexDirection: "column", gap: "10px", animation: "rise .2s ease-out" }}>
+        <div role="dialog" aria-label="Contexto" onMouseLeave={() => setOpen(false)} style={{ position: "absolute", zIndex: 40, right: 0, bottom: "44px", width: "280px", padding: "16px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .06), var(--c-shadow-pop)", display: "flex", flexDirection: "column", gap: "10px", animation: "rise .2s ease-out" }}>
           <strong style={{ fontSize: "var(--t-ui)" }}>Contexto usado: {Math.round(pct * 100)} %</strong>
           <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: C.muted }}>{Math.round(used / 1000)} k de {Math.round(max / 1000)} k. Compactar resume la conversación para que Bruno siga con más espacio; los archivos no cambian.</span>
-          {onCompact ? <button type="button" disabled={disabled} onClick={() => { setOpen(false); onCompact(); }} style={{ alignSelf: "flex-start", height: "36px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", background: disabled ? "rgb(var(--c-ink-rgb) / .12)" : C.ink, color: C.white, cursor: disabled ? "default" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>Compactar ahora</button> : null}
+          {onCompact ? <button type="button" disabled={disabled} onClick={() => { setOpen(false); onCompact(); }} style={{ alignSelf: "flex-start", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: disabled ? "rgb(var(--c-ink-rgb) / .12)" : C.ink, color: C.white, cursor: disabled ? "default" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>Compactar ahora</button> : null}
         </div>
       ) : null}
     </span>

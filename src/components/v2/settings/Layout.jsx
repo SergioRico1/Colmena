@@ -5,6 +5,7 @@ import { navigate } from "../../../lib/router.jsx";
 import { useExpert } from "../../../lib/expert.js";
 import { SECTIONS, SECTION_OF, searchSettings, settingsIndex } from "./sections.js";
 import { srOnly } from "./v3.jsx";
+import { C } from "../../../lib/theme.js";
 
 // Ajustes (Colmena 3, design/V3Ajustes.dc.html): on the left «Ajustes», a search box and the
 // eight sections (Avanzado too, in expert mode); on the right the chosen one, with what it is
@@ -16,10 +17,10 @@ import { srOnly } from "./v3.jsx";
 const NARROW = 940; // px of window: below it the list and the section take turns
 const STYLE = `
 .st-nav-item{transition:background .15s ease}
-.st-nav-item:hover{background:rgba(18,19,26,.04)}
-.st-nav-item[aria-current="page"],.st-result[data-on="1"]{background:#FFFFFF;box-shadow:0 1px 2px rgba(18,19,26,.08)}
+.st-nav-item:hover{background:rgb(var(--c-ink-rgb) / .04)}
+.st-nav-item[aria-current="page"],.st-result[data-on="1"]{background:var(--c-card);box-shadow:0 1px 2px rgb(var(--c-ink-rgb) / .08)}
 [data-setting]{transition:background .6s ease}
-[data-setting][data-lit="1"]{background:rgba(18,19,26,.045)!important}
+[data-setting][data-lit="1"]{background:rgb(var(--c-ink-rgb) / .045)!important}
 .st-back{display:none}
 @media (max-width:${NARROW}px){
   .st-wrap{flex-direction:column!important}
@@ -101,9 +102,9 @@ function Nav({ active, tags }) {
   const shown = SECTIONS.filter((s) => !s.hidden && (!s.expert || expert));
   return (
     <nav className="st-nav" aria-label="Secciones de Ajustes" style={{ flex: "0 0 264px", position: "sticky", top: 0, display: "flex", flexDirection: "column", gap: "4px", minHeight: "100vh", padding: "40px 14px 24px 22px", boxSizing: "border-box" }}>
-      <h1 style={{ margin: "0 0 14px 8px", font: "600 var(--t-display-s)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>Ajustes</h1>
+      <h1 style={{ margin: "0 0 14px 8px", font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>Ajustes</h1>
       <label style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", height: "40px", marginBottom: "10px", padding: "0 12px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
-        <Search size={15} color="#5C606C" />
+        <Search size={15} color={C.text3} />
         <span style={srOnly}>Buscar un ajuste</span>
         <input className="c-bare" ref={box} type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKeyDown} placeholder="Buscar un ajuste" role="combobox" aria-expanded={!!q} aria-controls="st-results" aria-activedescendant={q && results[at] ? "st-r-" + at : undefined} autoComplete="off" spellCheck={false}
           style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text)" }} />
@@ -126,7 +127,7 @@ function Nav({ active, tags }) {
                   <span style={{ fontSize: "var(--t-ui)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
                   <span style={{ fontSize: "var(--t-caption)", fontWeight: 500, color: "var(--c-text-3)" }}>{r.isSection ? "Sección" : s.label}</span>
                 </span>
-                {i === at ? <CornerDownLeft size={13} strokeWidth={2.2} color="#8A8D96" aria-hidden="true" /> : null}
+                {i === at ? <CornerDownLeft size={13} strokeWidth={2.2} color={C.text4} aria-hidden="true" /> : null}
               </a>
             );
           })}
@@ -160,23 +161,23 @@ export default function SettingsLayout({ active, open = true, back = null, tags 
   const head = title ?? section?.label;
   const sub = lead ?? (back ? null : section?.lead);
   return (
-    <Shell active="ajustes" extraCss={STYLE + extraCss}>
+    <Shell active="ajustes" background="var(--c-app)" extraCss={STYLE + extraCss}>
       <div className="st-wrap" data-open={open ? "1" : "0"} style={{ display: "flex", alignItems: "flex-start", minHeight: "100%" }}>
         <Nav active={active} tags={tags} />
         <main className="st-body" style={{ flex: "999 1 480px", minWidth: 0, maxWidth: width + "px", padding: "40px clamp(20px, 3vw, 40px) 64px", display: "flex", flexDirection: "column", gap: "18px", boxSizing: "border-box" }}>
           {parent ? (
-            <a href={"/ajustes/" + parent.id} onClick={(e) => { e.preventDefault(); navigate("/ajustes/" + parent.id); }} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
+            <a href={"/ajustes/" + parent.id} onClick={(e) => { e.preventDefault(); navigate("/ajustes/" + parent.id); }} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .05)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />{parent.label}
             </a>
           ) : (
-            <a className="st-back" href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ alignSelf: "flex-start", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
+            <a className="st-back" href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ alignSelf: "flex-start", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .05)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />Ajustes
             </a>
           )}
           {head || sub ? (
             <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "12px", marginBottom: "6px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {head ? <h2 style={{ margin: 0, font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{head}</h2> : null}
+                {head ? <h2 style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{head}</h2> : null}
                 {sub ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{sub}</p> : null}
               </div>
               {aside}

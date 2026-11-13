@@ -16,6 +16,7 @@ import { isTask } from "../lib/rooms.js";
 import { pauseReason } from "../lib/pauseReason.js";
 import { verbLabel } from "../components/room/working.js";
 import Markdown from "../components/room/Markdown.jsx";
+import { C } from "../lib/theme.js";
 
 // Colmena 3 · Trabajo › Tareas › una tarea (design/V3Tarea.dc.html): how a piece of work goes —
 // the plan with who does each part, what is being done right now (in sentences, with the
@@ -23,7 +24,7 @@ import Markdown from "../components/room/Markdown.jsx";
 // cut, how it resumed. Pause and talk from the header. Expert mode adds the tool calls.
 const STAGE = new Set(["work", "solo", "synthesis", "proposal", "followup"]);
 const DONE = new Set(["completed", "done"]);
-const card = { background: "var(--c-card)", borderRadius: "var(--r-2xl)" };
+const card = { background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)" };
 const hhmm = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "");
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 function dayTime(iso) {
@@ -53,12 +54,12 @@ function since(from) {
 }
 // File badges of «Lo que ya hay» (the board's XLS / PDF / PPT squares).
 const EXT = {
-  table: ["XLS", "#E3F4EC", "#0B6B4A"], sheet: ["XLS", "#E3F4EC", "#0B6B4A"], csv: ["CSV", "#E3F4EC", "#0B6B4A"], xlsx: ["XLS", "#E3F4EC", "#0B6B4A"],
-  pdf: ["PDF", "#FBE9EA", "#B4232A"], slides: ["PPT", "#FFE9DC", "#C2410C"], pptx: ["PPT", "#FFE9DC", "#C2410C"],
-  design: ["IMG", "#FDE7F1", "#B0306A"], png: ["IMG", "#FDE7F1", "#B0306A"], svg: ["SVG", "#FDE7F1", "#B0306A"],
-  code: ["COD", "#EEF0F4", "#1F4FD1"], doc: ["DOC", "#E3EBFF", "#1F4FD1"], docx: ["DOC", "#E3EBFF", "#1F4FD1"], document: ["DOC", "#E3EBFF", "#1F4FD1"],
+  table: ["XLS", C.okSoft, C.okInk], sheet: ["XLS", C.okSoft, C.okInk], csv: ["CSV", C.okSoft, C.okInk], xlsx: ["XLS", C.okSoft, C.okInk],
+  pdf: ["PDF", C.errorSoft, C.error], slides: ["PPT", "var(--c-kind-ppt-bg)", "var(--c-kind-ppt)"], pptx: ["PPT", "var(--c-kind-ppt-bg)", "var(--c-kind-ppt)"],
+  design: ["IMG", "var(--c-kind-img-bg)", "var(--c-kind-img)"], png: ["IMG", "var(--c-kind-img-bg)", "var(--c-kind-img)"], svg: ["SVG", "var(--c-kind-img-bg)", "var(--c-kind-img)"],
+  code: ["COD", C.chip, C.accentInk], doc: ["DOC", C.accentSoft, C.accentInk], docx: ["DOC", C.accentSoft, C.accentInk], document: ["DOC", C.accentSoft, C.accentInk],
 };
-const extOf = (a) => EXT[a.format] || EXT[a.kind] || ["DOC", "#E3EBFF", "#1F4FD1"];
+const extOf = (a) => EXT[a.format] || EXT[a.kind] || ["DOC", C.accentSoft, C.accentInk];
 const KIND = { table: "Hoja", sheet: "Hoja", doc: "Documento", document: "Documento", design: "Diseño", code: "Código", slides: "Diapositivas" };
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
 
@@ -82,7 +83,7 @@ export default function Encargo({ params = {} }) {
   }, [m, steps, messages, artifacts, bots]);
 
   if (ready && !room.loading && !m) return <NotFound title="Esta tarea ya no está" text="Puede que se cerrara o que alguien borrara su sala. No se ha perdido nada de lo tuyo." />;
-  if (!m) return <Shell active="trabajo"><div /></Shell>;
+  if (!m) return <Shell active="trabajo" background="var(--c-app)"><div /></Shell>;
 
   const stages = steps.filter((s) => STAGE.has(s.kind) && s.status !== "cancelled" && s.status !== "skipped").slice(0, 6);
   const done = stages.filter((s) => DONE.has(s.status)).length;
@@ -109,11 +110,11 @@ export default function Encargo({ params = {} }) {
   const toRooms = async () => { if (await moving.act(async () => { await patch(`/missions/${m.id}`, { kind: "sala" }); return true; })) navigate(`/sala/${m.id}`); };
   // The conversation of a task: /sala/<task> opens its page, so the link says it wants the conversation.
   const talk = task ? `/sala/${m.id}?conversacion=1` : `/sala/${m.id}`;
-  const state = finished ? { text: "Hecha", bg: "#E3F4EC", ink: "#0B6B4A" }
-    : waits ? { text: "Te necesita", bg: "#FFC93C", ink: "#12131A" }
-    : blocked ? { text: "Atascada · mira qué pasa", bg: "#FBE9EA", ink: "#B4232A" }
-    : paused ? { text: "En pausa · " + (pauseReason(m, { botName: lead?.name })?.why || "seguirá donde lo dejó").replace(/^./, (c) => c.toLowerCase()), bg: "#F1F1EC", ink: "#4A4D57" }
-    : { text: "En marcha · va según lo previsto", bg: "#EEF0F4", ink: "#1F4FD1" };
+  const state = finished ? { text: "Hecha", bg: C.okSoft, ink: C.okInk }
+    : waits ? { text: "Te necesita", bg: C.honey, ink: C.honeyInk }
+    : blocked ? { text: "Atascada · mira qué pasa", bg: C.errorSoft, ink: C.error }
+    : paused ? { text: "En pausa · " + (pauseReason(m, { botName: lead?.name })?.why || "seguirá donde lo dejó").replace(/^./, (c) => c.toLowerCase()), bg: C.chip, ink: C.text2 }
+    : { text: "En marcha · va según lo previsto", bg: C.chip, ink: C.accentInk };
   const browsing = runner && /naveg|formulario|ordenador/i.test(act?.verb || "");
   const tools = expert && running ? (running.tools || []).slice(-6) : [];
   const plan = [
@@ -125,17 +126,17 @@ export default function Encargo({ params = {} }) {
       const wait = s.status === "waiting";
       return {
         key: s.id, part: s.title, bot: b, now, wait,
-        bar: isDone ? "#12131A" : now || held ? "linear-gradient(90deg, #12131A 50%, #E6E6E0 50%)" : wait ? "#FFC93C" : "#E6E6E0",
+        bar: isDone ? C.btn : now || held ? "linear-gradient(90deg, var(--c-text) 50%, var(--c-line) 50%)" : wait ? C.honey : C.line,
         state: `${b?.name || "Un bot"} · ${isDone ? "hecho" : now ? "ahora" : held ? "en pausa" : wait ? "te espera" : "después"}`,
-        ink: isDone ? "#0B6B4A" : now ? "#1F4FD1" : held ? "#4A4D57" : wait ? "#8A5A00" : "#5C606C",
+        ink: isDone ? C.okInk : now ? C.accentInk : held ? C.text2 : wait ? C.honeyText : C.text3,
       };
     }),
-    ...(finished ? [] : [{ key: "you", part: "Tu revisión", you: true, bar: asks.length ? "#FFC93C" : "#E6E6E0", state: asks.length ? "Tú · te esperan ahora" : "Tú · " + (due || "al terminar"), ink: asks.length ? "#8A5A00" : "#5C606C" }]),
+    ...(finished ? [] : [{ key: "you", part: "Tu revisión", you: true, bar: asks.length ? C.honey : C.line, state: asks.length ? "Tú · te esperan ahora" : "Tú · " + (due || "al terminar"), ink: asks.length ? C.honeyText : C.text3 }]),
   ];
   const cut = (paused || blocked) && m.error ? m.error : null;
 
   return (
-    <Shell active="trabajo">
+    <Shell active="trabajo" background="var(--c-app)">
       <main style={{ maxWidth: "1160px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "26px" }}>
         <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-3)", minWidth: 0 }}>
           <a href="/trabajo" onClick={go("/trabajo")} style={{ color: "var(--c-text-3)" }}>Trabajo</a><span aria-hidden="true">›</span>
@@ -153,7 +154,7 @@ export default function Encargo({ params = {} }) {
               {goal ? <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Objetivo: <a href={`/trabajo/objetivos/${goal.id}`} onClick={go(`/trabajo/objetivos/${goal.id}`)} style={{ color: "var(--c-accent-ink)" }}>{goal.title}</a></span> : null}
               {expert ? <span style={{ font: "400 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{`${m.id} · ${m.mode} · ${m.status}`}</span> : null}
             </div>
-            <h1 style={{ margin: 0, font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em", overflowWrap: "anywhere" }}>{m.title}</h1>
+            <h1 style={{ margin: 0, font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em", overflowWrap: "anywhere" }}>{m.title}</h1>
             <p style={{ margin: 0, fontSize: "var(--t-read)", color: "var(--c-text-2)" }}>
               {m.automationId ? "La lanzó una rutina" : "Lo pediste"}
               {finished ? ` · terminada ${dayTime(m.completedAt).toLowerCase()}` : due ? ` · entrega ${due}` : " · sin fecha de entrega"}
@@ -161,9 +162,9 @@ export default function Encargo({ params = {} }) {
             </p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {finished ? null : <button type="button" disabled={control.busy} onClick={toggle} style={{ height: "42px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: 500, cursor: control.busy ? "wait" : "pointer" }}>{paused ? "Reanudar" : "Pausar la tarea"}</button>}
-            {task && !m.automationId ? <button type="button" disabled={moving.busy} onClick={toRooms} style={{ height: "42px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: 500, cursor: moving.busy ? "wait" : "pointer" }}>Mover a Salas</button> : null}
-            <a href={talk} onClick={go(talk)} style={{ height: "42px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600 }}>Hablar con el equipo</a>
+            {finished ? null : <button type="button" disabled={control.busy} onClick={toggle} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: control.busy ? "wait" : "pointer" }}>{paused ? "Reanudar" : "Pausar la tarea"}</button>}
+            {task && !m.automationId ? <button type="button" disabled={moving.busy} onClick={toRooms} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: moving.busy ? "wait" : "pointer" }}>Mover a Salas</button> : null}
+            <a href={talk} onClick={go(talk)} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600 }}>Hablar con el equipo</a>
           </div>
         </header>
         {moving.error ? <p role="alert" style={{ margin: "-14px 0 0", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{moving.error}</p> : null}
@@ -202,7 +203,7 @@ export default function Encargo({ params = {} }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
           <div style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "20px" }}>
             {running || paused ? (
-              <section aria-labelledby="now-t" style={{ ...card, display: "flex", flexDirection: "column", gap: "16px", padding: "22px 24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -34px rgba(18,19,26,.4)" }}>
+              <section aria-labelledby="now-t" style={{ ...card, display: "flex", flexDirection: "column", gap: "16px", padding: "22px 24px", boxShadow: "var(--c-shadow-pop)" }}>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
                   <BotDot bot={runner || lead} size={26} work={!!runner && !paused} />
                   <div style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -214,11 +215,11 @@ export default function Encargo({ params = {} }) {
                   {runner ? <a href={`/chat/${runner.id}`} onClick={go(`/chat/${runner.id}`)} style={{ fontSize: "var(--t-ui)", fontWeight: 500, color: "var(--c-accent-ink)" }}>{`Hablar con ${runner.name}`}</a> : null}
                 </div>
                 {runner && !paused ? (
-                  <span aria-hidden="true" style={{ position: "relative", height: "2px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}><span style={{ position: "absolute", top: 0, bottom: 0, width: "35%", background: runner.color || "#12131A", animation: "sweep 1.8s ease-in-out infinite" }} /></span>
+                  <span aria-hidden="true" style={{ position: "relative", height: "2px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}><span style={{ position: "absolute", top: 0, bottom: 0, width: "35%", background: runner.color || C.btn, animation: "sweep 1.8s ease-in-out infinite" }} /></span>
                 ) : null}
                 {browsing ? (
-                  <a href={`/ordenador/${m.id}?bot=${encodeURIComponent(runner.id)}`} onClick={go(`/ordenador/${m.id}?bot=${encodeURIComponent(runner.id)}`)} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "8px", height: "36px", padding: "0 14px", borderRadius: "var(--r-pill)", background: "var(--c-chip)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600 }}>
-                    <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#B4232A", animation: "breathe 1.4s ease-in-out infinite" }} />
+                  <a href={`/ordenador/${m.id}?bot=${encodeURIComponent(runner.id)}`} onClick={go(`/ordenador/${m.id}?bot=${encodeURIComponent(runner.id)}`)} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-sm)", background: "var(--c-chip)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600 }}>
+                    <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: C.error, animation: "breathe 1.4s ease-in-out infinite" }} />
                     Ver su navegador en directo
                   </a>
                 ) : null}
@@ -244,7 +245,7 @@ export default function Encargo({ params = {} }) {
                       {!running?.text && lastArtifact.createdAt ? <span style={{ fontWeight: 400, color: "var(--c-text-3)" }}>{dayTime(lastArtifact.createdAt)}</span> : null}
                     </figcaption>
                     {running?.text
-                      ? <div style={{ maxHeight: "260px", overflow: "hidden", WebkitMaskImage: "linear-gradient(#000 70%, transparent)", maskImage: "linear-gradient(#000 70%, transparent)" }}><Markdown text={running.text} size={15} /></div>
+                      ? <div style={{ maxHeight: "260px", overflow: "hidden", WebkitMaskImage: "linear-gradient(black 70%, transparent)", maskImage: "linear-gradient(black 70%, transparent)" }}><Markdown text={running.text} size={15} /></div>
                       : <a href={`/biblioteca?abrir=${encodeURIComponent(lastArtifact.id)}`} style={{ fontSize: "var(--t-body)", fontWeight: 600, color: "var(--c-text)" }}>{lastArtifact.title}</a>}
                   </figure>
                 ) : null}
@@ -261,7 +262,7 @@ export default function Encargo({ params = {} }) {
             {story.length ? (
               <section aria-labelledby="his-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <h2 id="his-t" style={{ margin: 0, font: "600 var(--t-title)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Historia</h2>
-                <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", padding: "6px 0" }}>
+                <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", padding: "6px 0" }}>
                   {story.map((e, i) => (
                     <div key={i} style={{ display: "flex", gap: "14px", padding: "10px 20px", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
                       <span style={{ flex: "none", width: "92px", color: "var(--c-text-3)" }}>{dayTime(e.at)}</span>
@@ -275,7 +276,7 @@ export default function Encargo({ params = {} }) {
 
           <aside style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: "14px" }}>
             {others.length ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
                 <h2 style={{ margin: "0 0 6px", fontSize: "var(--t-ui)", fontWeight: 600 }}>Mientras tanto</h2>
                 {others.map((s) => {
                   const b = findBot(bots, s.botId);
@@ -290,7 +291,7 @@ export default function Encargo({ params = {} }) {
               </div>
             ) : null}
             {artifacts.length ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                   <h2 style={{ margin: 0, fontSize: "var(--t-ui)", fontWeight: 600 }}>Lo que ya hay</h2>
                   <a href="/biblioteca" onClick={go("/biblioteca")} style={{ fontSize: "var(--t-meta)", color: "var(--c-accent-ink)" }}>Ver en Biblioteca</a>
@@ -316,7 +317,7 @@ export default function Encargo({ params = {} }) {
               </div>
             ) : null}
             {!others.length && !artifacts.length && !cut ? (
-              <div style={{ padding: "16px 18px", borderRadius: "var(--r-xl)", background: "var(--c-card)", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>
+              <div style={{ padding: "16px 18px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>
                 {finished ? "Terminada. Lo que salió queda en la Biblioteca y en su sala." : "Aquí verás quién más trabaja en esta tarea y lo que vaya saliendo."}
               </div>
             ) : null}

@@ -11,6 +11,7 @@ import { navigate } from "../lib/router.jsx";
 import { avatarStyle, initial, botById } from "../lib/bots.js";
 import { isRoom, time } from "../lib/format.js";
 import { later } from "../lib/undoToast.js";
+import { C } from "../lib/theme.js";
 
 // 08 · Automatizaciones (canvas version, with <Disparador> as «Detalles»).
 const TRIGGERS = [
@@ -105,9 +106,9 @@ function fromDescribed(d, base = blankDraft()) {
 }
 
 const errStyle = { fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-error)" };
-const overlayBtn = { position: "fixed", inset: "0", zIndex: "15", background: "rgb(var(--c-ink-rgb) / 0.06)", border: "0", cursor: "default" };
-const menuBox = { position: "absolute", left: "0", top: "calc(100% + 8px)", zIndex: "22", background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px rgba(18,19,26,.22)", padding: "8px", display: "flex", flexDirection: "column", gap: "2px" };
-const check = (color = "#12131A", w = 3, size = 16) => <Check size={size} color={color} />;
+const overlayBtn = { position: "fixed", inset: "0", zIndex: "15", background: "color-mix(in srgb, var(--c-scrim) 15%, transparent)", border: "0", cursor: "default" };
+const menuBox = { position: "absolute", left: "0", top: "calc(100% + 8px)", zIndex: "22", background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)", padding: "8px", display: "flex", flexDirection: "column", gap: "2px" };
+const check = (color = C.text, w = 3, size = 16) => <Check size={size} color={color} />;
 
 export default function Automatizaciones({ query = {} }) {
   const { automations, suggestions, bots, folders, missions, connectors, ready, run } = useStore();
@@ -338,7 +339,7 @@ export default function Automatizaciones({ query = {} }) {
     const waiting = a.state === "waiting";
     const avatar = <BotPresence bot={bot} size={30} />;
     return (
-      <div key={a.id} onClick={(e) => { if (!e.target.closest("button,a")) select(a.id); }} style={{ display: "grid", gridTemplateColumns: "30px 1fr auto", alignItems: "center", gap: "12px", padding: "14px", cursor: "pointer", ...(on ? { background: "var(--c-card)", border: "0", boxShadow: edited ? "0 0 0 2px #12131A" : "0 1px 2px rgba(18,19,26,.05)" } : { background: "rgba(255,255,255,.55)", border: "0", boxShadow: edited ? "0 0 0 2px #12131A" : "none" }), borderRadius: "var(--r-2xl)" }}>
+      <div key={a.id} onClick={(e) => { if (!e.target.closest("button,a")) select(a.id); }} style={{ display: "grid", gridTemplateColumns: "30px 1fr auto", alignItems: "center", gap: "12px", padding: "14px", cursor: "pointer", color: "var(--c-text)", ...(on ? { background: "var(--c-card)", border: "0", boxShadow: edited ? "0 0 0 2px var(--c-text)" : "var(--c-shadow-lift)" } : { background: "color-mix(in srgb, var(--c-card) 55%, transparent)", border: "0", boxShadow: edited ? "0 0 0 2px var(--c-text)" : "none" }), borderRadius: "var(--r-lg)" }}>
         {avatar}
         <span style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>
           <a href={`/automatizaciones?id=${encodeURIComponent(a.id)}`} aria-current={edited ? "true" : undefined} onClick={(e) => { e.preventDefault(); select(a.id); }} style={{ fontSize: "var(--t-body)", fontWeight: "700", ...(on ? {} : { color: "var(--c-text-3)" }) }}>{a.name}</a>
@@ -346,8 +347,8 @@ export default function Automatizaciones({ query = {} }) {
             {waiting ? <>{sub.replace(/\s*·?\s*Te espera\s*$/i, "") + " · "}<span style={{ padding: "2px 6px", background: "var(--c-honey-soft)", borderRadius: "var(--r-xs)", color: "var(--c-text)", fontWeight: "600" }}>{"Te espera"}</span></> : sub}
           </span>
         </span>
-        <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={a.name} disabled={toggle.busy} onClick={() => toggle.act(() => patch(`/automations/${encodeURIComponent(a.id)}`, { enabled: !on }))} style={on ? { width: "52px", height: "32px", padding: "3px", background: "#0B8A5F", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-end" } : { width: "52px", height: "32px", padding: "3px", background: "rgb(var(--c-ink-rgb) / .14)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-start" }}>
-          <span style={on ? { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.2)" } : { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.2)" }} />
+        <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={a.name} disabled={toggle.busy} onClick={() => toggle.act(() => patch(`/automations/${encodeURIComponent(a.id)}`, { enabled: !on }))} style={on ? { width: "52px", height: "32px", padding: "3px", background: C.ok, border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-end" } : { width: "52px", height: "32px", padding: "3px", background: "rgb(var(--c-ink-rgb) / .14)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-start" }}>
+          <span style={on ? { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-knob)", boxShadow: "var(--c-shadow-lift)" } : { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-knob)", boxShadow: "var(--c-shadow-lift)" }} />
         </button>
       </div>
     );
@@ -357,7 +358,7 @@ export default function Automatizaciones({ query = {} }) {
     const st = r.status;
     if (["completed", "done", "ok", "saved"].includes(st)) return <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--c-ok-ink)", fontWeight: "600" }}>{check("currentColor", 2.6, 14)}{r.statusLabel || "Hecha"}</span>;
     if (["waiting", "awaiting_choice", "awaiting_plan", "notified"].includes(st)) return <span style={{ padding: "3px 8px", background: "var(--c-honey-soft)", borderRadius: "var(--r-sm)", fontWeight: "600" }}>{r.statusLabel || "Te espera"}</span>;
-    if (["running", "queued", "planning"].includes(st)) return <span style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: "#0B8A5F", boxShadow: "0 0 0 4px #D6F0E4" }} />{r.statusLabel || "En marcha"}</span>;
+    if (["running", "queued", "planning"].includes(st)) return <span style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: C.ok, boxShadow: "0 0 0 4px var(--c-ok-soft)" }} />{r.statusLabel || "En marcha"}</span>;
     if (["failed", "error", "blocked"].includes(st)) return <span style={{ color: "var(--c-error)", fontWeight: "600" }}>{r.statusLabel || (st === "blocked" ? "Bloqueada" : "Falló")}</span>;
     return <span style={{ color: "var(--c-text-3)" }}>{r.statusLabel || (st === "cancelled" ? "Cancelada" : st === "paused" ? "En pausa" : "Ignorado")}</span>;
   };
@@ -366,7 +367,7 @@ export default function Automatizaciones({ query = {} }) {
   return (
     <Shell active="rutinas" extraCss={css}>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
-        <a href="C:/Program Files/Git/rutinas" onClick={(e) => { e.preventDefault(); navigate("C:/Program Files/Git/rutinas"); }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", margin: "32px clamp(20px, 4vw, 48px) 0", padding: "0 14px 0 10px", alignSelf: "flex-start", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text)" }}>
+        <a href="C:/Program Files/Git/rutinas" onClick={(e) => { e.preventDefault(); navigate("C:/Program Files/Git/rutinas"); }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", margin: "32px clamp(20px, 4vw, 48px) 0", padding: "0 14px 0 10px", alignSelf: "flex-start", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text)" }}>
           <ChevronLeft size={14} weight="bold" />
           Rutinas
         </a>
@@ -377,7 +378,7 @@ export default function Automatizaciones({ query = {} }) {
                 <h1 id="auto-t" style={{ margin: "0", font: "600 var(--t-display-s)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Automatizaciones"}</h1>
                 <p style={{ margin: "0", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{"Trabajo que pasa solo, a una hora o cuando ocurre algo."}</p>
               </div>
-              <button type="button" onClick={() => { startNew(); navigate("/automatizaciones", { replace: true }); handled.current = JSON.stringify({}); }} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>
+              <button type="button" onClick={() => { startNew(); navigate("/automatizaciones", { replace: true }); handled.current = JSON.stringify({}); }} style={{ display: "flex", alignItems: "center", gap: "8px", height: "36px", padding: "0 14px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>
                 <Plus size={16} weight="bold" />
                 {"Nueva"}
               </button>
@@ -387,8 +388,8 @@ export default function Automatizaciones({ query = {} }) {
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {automations.map(row)}
               {ready && automations.length === 0 ? (
-                <div style={{ display: "grid", gridTemplateColumns: "30px 1fr", alignItems: "center", gap: "12px", padding: "14px", background: "var(--c-hover)", border: "0", borderRadius: "var(--r-lg)" }}>
-                  <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-meta)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
+                <div style={{ display: "grid", gridTemplateColumns: "30px 1fr", alignItems: "center", gap: "12px", padding: "14px", background: "var(--c-hover)", border: "0", borderRadius: "var(--r-lg)" , color: "var(--c-text)" }}>
+                  <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--c-card) 62%, transparent), transparent 54%), var(--c-honey)", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-meta)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
                   <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <strong style={{ fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{"Aún no hay automatizaciones"}</strong>
                     <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Prepara la primera a la derecha o pide a Atlas que la monte con tus palabras."}</span>
@@ -401,7 +402,7 @@ export default function Automatizaciones({ query = {} }) {
 
           {anyOpen ? <button type="button" aria-label="Cerrar el menú" onClick={() => { setOpen(null); setDescribe(null); }} style={overlayBtn} /> : null}
 
-          <section aria-labelledby="regla-t" style={{ position: "relative", zIndex: "16", flex: "1.3 1 520px", minWidth: "0", background: "var(--c-card)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .1)", padding: "28px clamp(16px, 3vw, 32px) 48px", display: "flex", flexDirection: "column", gap: "22px" }}>
+          <section aria-labelledby="regla-t" style={{ position: "relative", zIndex: "16", flex: "1.3 1 520px", minWidth: "0", background: "var(--c-card)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .1)", padding: "28px clamp(16px, 3vw, 32px) 48px", display: "flex", flexDirection: "column", gap: "22px" , color: "var(--c-text)" }}>
             {!draft ? <p style={{ margin: "0", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{ready ? "Elige una automatización de la lista o crea una nueva." : "Cargando…"}</p> : (
               <>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -411,8 +412,8 @@ export default function Automatizaciones({ query = {} }) {
                   </h2>
                 </div>
                 {preparing ? (
-                  <div role="status" style={{ display: "flex", gap: "12px", padding: "14px 16px", background: "var(--c-accent-soft)", border: "1px solid #B4C8FF", borderRadius: "var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: "1.45" }}>
-                    <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-meta)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
+                  <div role="status" style={{ display: "flex", gap: "12px", padding: "14px 16px", background: "var(--c-accent-soft)", border: "1px solid color-mix(in srgb, var(--c-accent) 35%, transparent)", borderRadius: "var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: "1.45" }}>
+                    <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--c-card) 62%, transparent), transparent 54%), var(--c-honey)", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-meta)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
                     <span style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       {preparing.error ? <><span><strong>{"Atlas no ha podido prepararla"}</strong>{` a partir de «${preparing.text}».`}</span><span style={errStyle}>{preparing.error}</span><span>{"Puedes rellenarla tú mismo aquí abajo."}</span></>
                         : <span><strong>{"Atlas la está preparando"}</strong>{` a partir de «${preparing.text}»…`}</span>}
@@ -425,7 +426,7 @@ export default function Automatizaciones({ query = {} }) {
                     <span style={{ font: "600 var(--t-lead)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Cuando"}</span>
                     <div style={{ position: "relative", minWidth: "0" }}>
                       <button type="button" aria-haspopup="listbox" aria-expanded={cuandoOpen ? "true" : "false"} onClick={() => setOpen(cuandoOpen ? null : "cuando")} style={{ position: "relative", zIndex: "21", width: "100%", minHeight: "52px", padding: "10px 12px", textAlign: "left", background: cuandoOpen ? "var(--c-card)" : "var(--c-hover)", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-body)", lineHeight: "1.4", display: "flex", alignItems: "center", gap: "10px" }}>
-                        <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-card)", border: "0", borderRadius: "var(--r-sm)" }}>
+                        <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-card)", border: "0", borderRadius: "var(--r-sm)" , color: "var(--c-text)" }}>
                           <TriggerIcon type={type} size={16} />
                         </span>
                         <span style={{ flex: "1" }}>{draft.trigger.sentence || TRIGGER_META[type][0]}</span>
@@ -433,7 +434,7 @@ export default function Automatizaciones({ query = {} }) {
                       </button>
                       {cuandoOpen ? (
                         <div role="listbox" aria-label="Cuándo se pone en marcha" style={{ ...menuBox, right: "0" }}>
-                          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", margin: "2px 2px 6px", padding: "0 12px", background: "var(--c-hover)", border: "0", borderRadius: "var(--r-pill)" }}>
+                          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "36px", margin: "2px 2px 6px", padding: "0 12px", background: "var(--c-hover)", border: "0", borderRadius: "var(--r-sm)" , color: "var(--c-text)" }}>
                             <Search size={15} />
                             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar disparador"}</span>
                             <input className="c-bare" type="text" autoFocus value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setOpen(null); }} placeholder="Busca: «factura», «lunes», «carpeta»…" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
@@ -442,7 +443,7 @@ export default function Automatizaciones({ query = {} }) {
                             <span key={o.label} style={{ display: "block", padding: "10px 10px 4px", font: "600 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>{o.label}</span>
                           ) : (
                             <button key={o.id} type="button" role="option" aria-selected={o.id === type ? "true" : "false"} onClick={() => pickTrigger(o.id)} style={{ width: "100%", display: "grid", gridTemplateColumns: "32px 1fr 20px", gap: "10px", alignItems: "center", minHeight: "52px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", background: o.id === type ? "var(--c-honey-soft)" : "var(--c-card)" }}>
-                              <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", background: "var(--c-sunken)", borderRadius: "var(--r-sm)" }}>
+                              <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", background: "var(--c-sunken)", borderRadius: "var(--r-sm)" , color: "var(--c-text)" }}>
                                 <TriggerIcon type={o.id} size={16} />
                               </span>
                               <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -457,17 +458,17 @@ export default function Automatizaciones({ query = {} }) {
                             <form onSubmit={(e) => { e.preventDefault(); runDescribe(describe.text); }} style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px", padding: "10px 12px", background: "var(--c-honey-soft)", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
                               <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontWeight: "600", fontSize: "var(--t-meta)" }}>
                                 {"Cuéntale a Atlas cuándo debe ponerse en marcha"}
-                                <textarea autoFocus rows={2} value={describe.text} onChange={(e) => setDescribe({ ...describe, text: e.target.value })} placeholder="P. ej.: el último viernes de cada mes, si nadie ha enviado el informe" style={{ padding: "10px 12px", border: "0", borderRadius: "var(--r-md)", fontFamily: "inherit", fontSize: "var(--t-body)", fontWeight: "400", background: "var(--c-card)", resize: "vertical" }} />
+                                <textarea autoFocus rows={2} value={describe.text} onChange={(e) => setDescribe({ ...describe, text: e.target.value })} placeholder="P. ej.: el último viernes de cada mes, si nadie ha enviado el informe" style={{ padding: "10px 12px", border: "0", borderRadius: "var(--r-md)", fontFamily: "inherit", fontSize: "var(--t-body)", fontWeight: "400", background: "var(--c-card)", resize: "vertical" , color: "var(--c-text)" }} />
                               </label>
                               {describe.error ? <span role="alert" style={errStyle}>{describe.error}</span> : null}
                               <span style={{ display: "flex", gap: "8px" }}>
-                                <button type="submit" disabled={describe.busy || !describe.text.trim()} style={{ height: "38px", padding: "0 12px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" }}>{describe.busy ? "Atlas lo está preparando…" : "Que Atlas lo prepare"}</button>
+                                <button type="submit" disabled={describe.busy || !describe.text.trim()} style={{ height: "32px", padding: "0 12px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" }}>{describe.busy ? "Atlas lo está preparando…" : "Que Atlas lo prepare"}</button>
                                 <button type="button" onClick={() => setDescribe(null)} style={{ height: "38px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>{"Cancelar"}</button>
                               </span>
                             </form>
                           ) : (
                             <button type="button" onClick={() => setDescribe({ text: search.trim(), busy: false, error: null })} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", marginTop: "6px", padding: "0 12px", background: "var(--c-honey-soft)", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left" }}>
-                              <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-micro)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
+                              <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--c-card) 62%, transparent), transparent 54%), var(--c-honey)", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-micro)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
                               <span>{"¿No está? "}<strong>{"Descríbelo con tus palabras"}</strong>{" y Atlas lo prepara"}</span>
                             </button>
                           )}
@@ -481,7 +482,7 @@ export default function Automatizaciones({ query = {} }) {
                     <div style={{ minWidth: "0", display: "flex", flexDirection: "column", gap: "10px" }}>
                       {sel?.error && sel.trigger?.type === type ? (
                         <div role="note" style={sel.state === "paused" || sel.state === "blocked"
-                          ? { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#12131A" }
+                          ? { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "var(--c-error-soft)", border: "1.5px solid var(--c-error)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: C.text }
                           : { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "var(--c-honey-soft)", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
                           <CircleAlert size={16} weight="bold" style={{ flex: "none", marginTop: "2px" }} />
                           <span>{sel.error}</span>
@@ -530,7 +531,7 @@ export default function Automatizaciones({ query = {} }) {
                   {/* Hace */}
                   <div style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: "12px", alignItems: "start" }}>
                     <span style={{ font: "600 var(--t-lead)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", paddingTop: "16px" }}>{"Hace"}</span>
-                    <textarea aria-label="Qué hace" value={draft.prompt} onChange={(e) => set({ prompt: e.target.value })} rows={draft.prompt ? Math.max(2, Math.ceil(draft.prompt.length / 55)) : 3} placeholder="Qué tiene que hacer, con tus palabras. P. ej.: guarda el PDF en la carpeta de facturas y apunta proveedor, fecha e importe en la hoja de gastos." style={{ minHeight: "52px", width: "100%", padding: "12px 14px", background: "var(--c-hover)", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", lineHeight: "1.5", fontFamily: "inherit", resize: "vertical" }} />
+                    <textarea aria-label="Qué hace" value={draft.prompt} onChange={(e) => set({ prompt: e.target.value })} rows={draft.prompt ? Math.max(2, Math.ceil(draft.prompt.length / 55)) : 3} placeholder="Qué tiene que hacer, con tus palabras. P. ej.: guarda el PDF en la carpeta de facturas y apunta proveedor, fecha e importe en la hoja de gastos." style={{ minHeight: "52px", width: "100%", padding: "12px 14px", background: "var(--c-hover)", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", lineHeight: "1.5", fontFamily: "inherit", resize: "vertical" , color: "var(--c-text)" }} />
                   </div>
                   {/* Avísame */}
                   <div style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: "12px", alignItems: "start" }}>
@@ -557,7 +558,7 @@ export default function Automatizaciones({ query = {} }) {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", background: "var(--c-hover)", borderRadius: "var(--r-md)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", background: "var(--c-hover)", borderRadius: "var(--r-md)" , color: "var(--c-text)" }}>
                   <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{who?.coord || !whoBot ? `El bot que elija ${whoBot?.name || "Atlas"} necesitará` : `${whoBot.name} necesitará`}</span>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", fontSize: "var(--t-meta)" }}>
                     {needs.length === 0 ? <span style={{ color: "var(--c-text-3)" }}>{"Nada especial: con lo que ya tiene le basta."}</span> : null}
@@ -565,15 +566,15 @@ export default function Automatizaciones({ query = {} }) {
                       const st = whoCoverage?.res.find((r) => r.tool === n.tool)?.state || "neutral";
                       const label = `${TOOL[n.tool]?.chip || n.tool} · ${n.access === "escribe" ? "escribir" : "leer"}`;
                       if (st === "permiso" || st === "none") return <span key={n.tool} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "var(--c-honey-soft)", border: "0", borderRadius: "var(--r-pill)", fontWeight: "600" }}>{`${label} · ${st === "none" ? "sin acceso" : "falta tu permiso"}`}</span>;
-                      return <span key={n.tool} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-pill)" }}>{st === "ok" ? check("#0B6B4A", 3, 13) : null}{label}</span>;
+                      return <span key={n.tool} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-pill)" , color: "var(--c-text)" }}>{st === "ok" ? check(C.okInk, 3, 13) : null}{label}</span>;
                     })}
                   </div>
                   {whoCoverage && (whoCoverage.lacking.length || whoCoverage.blocked.length) && whoBot ? <a href={`/equipo/${encodeURIComponent(whoBot.id)}`} style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{`Revisar los permisos de ${whoBot.name}`}</a> : null}
                 </div>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  <button type="button" onClick={onTest} disabled={saving} style={{ height: "46px", padding: "0 16px", background: "rgb(var(--c-ink-rgb) / .06)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{PROBE_LABEL[type]}</button>
-                  <button type="button" onClick={onSave} disabled={saving} style={{ height: "46px", padding: "0 18px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{saving ? "Guardando…" : isNew ? "Crear automatización" : "Guardar cambios"}</button>
+                  <button type="button" onClick={onTest} disabled={saving} style={{ height: "36px", padding: "0 14px", background: "rgb(var(--c-ink-rgb) / .06)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{PROBE_LABEL[type]}</button>
+                  <button type="button" onClick={onSave} disabled={saving} style={{ height: "36px", padding: "0 14px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{saving ? "Guardando…" : isNew ? "Crear automatización" : "Guardar cambios"}</button>
                   <span style={{ flex: "1" }} />
                   {isNew ? (
                     <button type="button" onClick={() => (automations.length ? select(automations[0].id) : startNew())} style={{ height: "46px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>{"Descartar"}</button>

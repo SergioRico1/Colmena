@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { BotPresence } from "../../v2/Presence.jsx";
 import { formatTokens } from "../../settings/format.jsx";
 import { weekRange, weekSummary } from "../../../lib/week.js";
+import { C } from "../../../lib/theme.js";
 
 // «Tu semana con el equipo» (it lived at the foot of Inicio; now in Actividad, where what the
 // team did is told): what the last seven days were and what comes, once per week («Leído»).
@@ -13,33 +14,33 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
   const week = useMemo(() => weekSummary({ missions, approvals, skills, goals, artifacts }), [missions, approvals, skills, goals, artifacts]);
   if (dismissed || (!week.done && !week.approved && !week.skills)) return null;
   const spend = usage?.percent != null ? { n: usage.percent + " %", label: "del gasto del mes" } : { n: formatTokens(usage?.monthTokens || 0), label: "tokens este mes" };
-  const atlas = bots.find((b) => b.id === "atlas") || { shape: "hex", color: "#12131A" };
+  const atlas = bots.find((b) => b.id === "atlas") || { shape: "hex", color: C.text };
   const stat = (value, label) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,.08)" }}>
-      <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{value}</span>
-      <span style={{ fontSize: "var(--t-meta)", color: "#B8BBC4" }}>{label}</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "12px 14px", borderRadius: "var(--r-sm)", background: C.sunken, border: "1px solid var(--c-line)" }}>
+      <span style={{ font: "600 var(--t-read)/1.3 'Geist', sans-serif", fontVariantNumeric: "tabular-nums" }}>{value}</span>
+      <span style={{ fontSize: "var(--t-meta)", color: C.text3 }}>{label}</span>
     </div>
   );
   const list = (head, items) => (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", color: "#B8BBC4" }}>{head}</span>
-      <ul style={{ margin: "0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#E6E7EC" }}>
+      <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: C.text3 }}>{head}</span>
+      <ul style={{ margin: "0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: C.text2 }}>
         {items.map((t, i) => <li key={i}>{t}</li>)}
       </ul>
     </div>
   );
-  const pill = { display: "inline-flex", alignItems: "center", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: "600" };
+  const pill = { display: "inline-flex", alignItems: "center", height: "32px", padding: "0 12px", borderRadius: "var(--r-sm)", fontSize: "var(--t-meta)", fontWeight: "600", border: "1px solid var(--c-line-strong)", background: C.raised, color: C.text };
   return (
-    <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "24px 28px", borderRadius: "var(--r-2xl)", background: "var(--c-btn)", color: "var(--c-btn-text)", animation: "rise .5s ease-out" }}>
+    <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "16px 18px", borderRadius: "var(--r-md)", background: C.card, border: "1px solid var(--c-line)", color: C.text, animation: "rise .5s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <BotPresence bot={atlas} size={26} state="rest" />
+          <BotPresence bot={atlas} size={32} state="rest" />
           <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-            <h2 id="wk-t" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Tu semana con el equipo"}</h2>
-            <span style={{ fontSize: "var(--t-meta)", color: "#B8BBC4" }}>{weekRange(week.from, week.to) + " · te lo resume " + (atlas.name || "Atlas")}</span>
+            <h2 id="wk-t" style={{ margin: "0", fontSize: "var(--t-read)", fontWeight: 600, lineHeight: 1.3 }}>{"Tu semana con el equipo"}</h2>
+            <span style={{ fontSize: "var(--t-meta)", color: C.text3 }}>{weekRange(week.from, week.to) + " · te lo resume " + (atlas.name || "Atlas")}</span>
           </div>
         </div>
-        <button type="button" onClick={() => { try { localStorage.setItem(key, "1"); } catch {} setDismissed(true); }} style={{ ...pill, border: "0", background: "rgba(255,255,255,.1)", color: "#FFFFFF", cursor: "pointer" }}>{"Leído"}</button>
+        <button type="button" onClick={() => { try { localStorage.setItem(key, "1"); } catch {} setDismissed(true); }} style={{ ...pill, cursor: "pointer" }}>{"Leído"}</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "10px" }}>
         {stat(week.done, week.done === 1 ? "trabajo terminado" : "trabajos terminados")}
@@ -54,8 +55,8 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
         </div>
       ) : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        {week.skills ? <a href="/biblioteca/habilidades" style={{ ...pill, background: "var(--c-card)", color: "var(--c-text)" }}>{"Revisar las habilidades"}</a> : null}
-        <a href="/trabajo/objetivos" style={{ ...pill, background: "rgba(255,255,255,.1)", color: "#FFFFFF" }}>{"Ver objetivos"}</a>
+        {week.skills ? <a href="/biblioteca/habilidades" style={{ ...pill, background: C.btn, borderColor: C.btn, color: C.btnText }}>{"Revisar las habilidades"}</a> : null}
+        <a href="/trabajo/objetivos" style={pill}>{"Ver objetivos"}</a>
       </div>
     </section>
   );

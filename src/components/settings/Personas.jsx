@@ -5,6 +5,7 @@ import { Card, Notice, PageHeader, btn, field } from "./SettingsShell.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { del, post } from "../../lib/api.js";
 import { later } from "../../lib/undoToast.js";
+import { C } from "../../lib/theme.js";
 
 const ROLES = ["Administrador", "Responsable", "Colaborador", "Solo lectura"];
 const ROLE_HELP = {
@@ -35,7 +36,7 @@ export default function Personas() {
 
   const row = (p, you, i) => (
     <div key={p.id || "tu"} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", minHeight: "60px", padding: "8px 0", borderTop: i ? "1px solid rgb(var(--c-ink-rgb) / .06)" : "0" }}>
-      <span aria-hidden="true" style={{ width: "36px", height: "36px", flex: "none", borderRadius: "var(--r-circle)", background: you ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: you ? "var(--c-btn-text)" : "#12131A", display: "grid", placeItems: "center", fontWeight: "700", fontSize: "var(--t-meta)" }}>{you ? "TÚ" : initials(p.name)}</span>
+      <span aria-hidden="true" style={{ width: "36px", height: "36px", flex: "none", borderRadius: "var(--r-circle)", background: you ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: you ? "var(--c-btn-text)" : C.text, display: "grid", placeItems: "center", fontWeight: "700", fontSize: "var(--t-meta)" }}>{you ? "TÚ" : initials(p.name)}</span>
       <span style={{ flex: "1 1 200px", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
         <strong style={{ fontSize: "var(--t-body)" }}>{p.name}{you ? <span style={{ fontWeight: "400", color: "var(--c-text-3)" }}> · tú</span> : null}</strong>
         <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-caption)", color: "var(--c-text-3)", overflowWrap: "anywhere" }}>{p.email || (you ? "en este ordenador" : "sin correo")}</span>
@@ -62,7 +63,7 @@ export default function Personas() {
         </div>
       </Card>
 
-      <form onSubmit={add} aria-labelledby="nueva-persona" style={{ background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      <form onSubmit={add} aria-labelledby="nueva-persona" style={{ background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h2 id="nueva-persona" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Añadir una persona</h2>
           <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Queda en la lista de este ordenador. Nadie recibe ningún aviso.</span>
@@ -82,7 +83,7 @@ export default function Personas() {
           </label>
         </div>
         <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{ROLE_HELP[draft.role]}</span>
-        <button type="submit" disabled={busy} style={{ ...btn.dark, alignSelf: "flex-start", height: "44px", borderRadius: "var(--r-pill)" }}>{busy ? "Añadiendo…" : "Añadir persona"}</button>
+        <button type="submit" disabled={busy} style={{ ...btn.dark, alignSelf: "flex-start", height: "36px", borderRadius: "var(--r-sm)" }}>{busy ? "Añadiendo…" : "Añadir persona"}</button>
       </form>
     </>
   );

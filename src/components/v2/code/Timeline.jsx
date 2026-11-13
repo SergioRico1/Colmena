@@ -45,14 +45,14 @@ function LogEntry({ entry }) {
     <>
       <button type="button" onClick={() => canOpen && setOpen(!open)} aria-expanded={canOpen ? open : undefined} title={details[0] || undefined}
         style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", minHeight: "20px", padding: 0, border: 0, background: "transparent", cursor: canOpen ? "pointer" : "default", textAlign: "left", font: `400 var(--t-caption)/1.5 ${MONO}`, color: denied ? C.faint : failed ? C.red : running ? C.ink : C.muted }}>
-        {running ? <span aria-hidden="true" style={{ flex: "none", width: "9px", height: "9px", borderRadius: "var(--r-circle)", border: "1.5px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}
+        {running ? <span aria-hidden="true" style={{ flex: "none", width: "9px", height: "9px", borderRadius: "var(--r-circle)", border: "1.5px solid var(--c-line-strong)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: denied ? "line-through" : "none" }}>{entryLine(entry)}</span>
         {meta ? <span style={{ flex: "none", color: running ? C.bruno : failed ? C.red : C.quiet }}>{meta}</span> : null}
       </button>
       {open ? (
-        <div style={{ margin: "4px 0 6px", padding: "12px 14px", borderRadius: "var(--r-md)", background: C.ink, display: "flex", flexDirection: "column", gap: "3px", font: `400 var(--t-caption)/1.6 ${MONO}`, color: "#C9CBD1", animation: "rise .25s ease-out", maxHeight: "300px", overflow: "auto" }}>
-          {details.map((d, k) => <span key={k} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", color: items[0].verb === "run" ? "#8A8D96" : "#C9CBD1" }}>{items[0].verb === "run" ? "> " + d : d}</span>)}
-          {output ? <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", color: items[0].status === "error" ? "#FF8A80" : "#E6E7EC" }}>{output}</span> : null}
+        <div style={{ margin: "4px 0 6px", padding: "12px 14px", borderRadius: "var(--r-md)", background: C.ink, display: "flex", flexDirection: "column", gap: "3px", font: `400 var(--t-caption)/1.6 ${MONO}`, color: "var(--c-text-4)", animation: "rise .25s ease-out", maxHeight: "300px", overflow: "auto" }}>
+          {details.map((d, k) => <span key={k} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", color: items[0].verb === "run" ? "var(--c-text-4)" : "var(--c-line-strong)" }}>{items[0].verb === "run" ? "> " + d : d}</span>)}
+          {output ? <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", color: items[0].status === "error" ? "var(--c-term-error)" : "var(--c-line)" }}>{output}</span> : null}
         </div>
       ) : null}
     </>
@@ -72,7 +72,7 @@ function WorkLog({ row }) {
     const now = running ? entryLine(row.entries.at(-1)) : null;
     return (
       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        <button type="button" onClick={() => setOpen(true)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-meta)", color: C.text2, cursor: "pointer" }}>{n === 1 ? "Ver el paso" : "Ver los " + n + " pasos"}</button>
+        <button type="button" onClick={() => setOpen(true)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-sm)", background: "transparent", fontSize: "var(--t-meta)", color: C.text2, cursor: "pointer" }}>{n === 1 ? "Ver el paso" : "Ver los " + n + " pasos"}</button>
         {now ? <span style={{ minWidth: 0, fontSize: "var(--t-meta)", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{now}…</span> : null}
       </span>
     );
@@ -104,7 +104,7 @@ function TurnCard({ item, total, busy, onDiff, onRestore }) {
 }
 
 // Cards that need you wear the honey ring (design/V3CodigoTarea.dc.html); the answered ones are plain.
-const RING = "0 0 0 2px #FFC93C";
+const RING = "0 0 0 2px var(--c-honey-ring)";
 const PENDING_DOT = <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: C.honey, animation: "halo 1.8s ease-out infinite" }} />;
 
 function AskCard({ item, onAnswer }) {
@@ -160,8 +160,8 @@ function AskCard({ item, onAnswer }) {
 }
 
 const SEVERITY = {
-  P0: { bg: "#FBE9EA", fg: "#B4232A", text: "Rompe algo" }, P1: { bg: "#FBE9EA", fg: "#B4232A", text: "Fallo real" },
-  P2: { bg: "#FFF1C7", fg: "#8A5A00", text: "Conviene arreglar" }, P3: { bg: "#F1F1EC", fg: "#4A4D57", text: "Detalle" },
+  P0: { bg: "var(--c-error-soft)", fg: "var(--c-error)", text: "Rompe algo" }, P1: { bg: "var(--c-error-soft)", fg: "var(--c-error)", text: "Fallo real" },
+  P2: { bg: "var(--c-honey-soft)", fg: "var(--c-honey-text)", text: "Conviene arreglar" }, P3: { bg: "var(--c-chip)", fg: "var(--c-text-2)", text: "Detalle" },
 };
 
 /** The review before merging (OpenClaw autoreview): findings P0–P3; «Que Bruno lo arregle» is up in the header. */
@@ -189,7 +189,7 @@ function ReviewCard({ item, onFinding, current, pr = null, onPublish = null }) {
               {f.title}{f.file ? <> <span style={{ font: `400 var(--t-caption)/1 ${MONO}`, color: C.muted }}>{f.file.split("/").pop()}{f.line ? ":" + f.line : ""}</span></> : null}
               {f.detail && expert ? <span style={{ display: "block", marginTop: "2px", fontSize: "var(--t-meta)", color: C.muted }}>{f.detail}</span> : null}
             </span>
-            <button type="button" className="code-tools" onClick={() => onFinding(f)} title="Añádelo a tu próximo mensaje" style={{ position: "absolute", right: 0, top: "-2px", height: "24px", padding: "0 9px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: C.white, boxShadow: "0 4px 12px -4px rgba(18,19,26,.25)", cursor: "pointer", fontSize: "var(--t-caption)", whiteSpace: "nowrap" }}>Pasar a Bruno</button>
+            <button type="button" className="code-tools" onClick={() => onFinding(f)} title="Añádelo a tu próximo mensaje" style={{ position: "absolute", right: 0, top: "-2px", height: "24px", padding: "0 9px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: C.white, boxShadow: "var(--c-shadow-lift)", cursor: "pointer", fontSize: "var(--t-caption)", whiteSpace: "nowrap" }}>Pasar a Bruno</button>
           </div>
         );
       })}
@@ -248,7 +248,7 @@ export function TimelineRow({ row, ctx }) {
     const canEdit = !ctx.busy && !item.steer && ctx.editable.has(item.id);
     return (
       <div className="code-turn" style={{ alignSelf: "flex-end", maxWidth: "92%", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
-        <div data-message-id={item.id} style={{ padding: "10px 14px", background: "#E8E8E2", borderRadius: "var(--r-xl) var(--r-xl) var(--r-sm) var(--r-xl)", fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+        <div data-message-id={item.id} style={{ padding: "10px 14px", background: "var(--c-mine)", borderRadius: "var(--r-xl) var(--r-xl) var(--r-sm) var(--r-xl)", fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
           {item.steer ? <span style={{ display: "block", fontSize: "var(--t-caption)", color: C.faint, marginBottom: "4px" }}>Se lo pasaste mientras trabajaba</span> : null}{item.text}
           {item.contexts?.length ? (
             <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "8px" : 0 }}>
@@ -257,7 +257,7 @@ export function TimelineRow({ row, ctx }) {
           ) : null}
           {item.attachments?.length ? (
             <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "8px" : 0 }}>
-              {item.attachments.map((a) => <span key={a.path} title={a.path} style={{ padding: "3px 9px", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.7)", fontSize: "var(--t-caption)", color: C.text }}>{a.image ? "Imagen · " : ""}{a.name}</span>)}
+              {item.attachments.map((a) => <span key={a.path} title={a.path} style={{ padding: "3px 9px", borderRadius: "var(--r-pill)", background: "color-mix(in srgb, var(--c-card) 70%, transparent)", fontSize: "var(--t-caption)", color: C.text }}>{a.image ? "Imagen · " : ""}{a.name}</span>)}
             </span>
           ) : null}
         </div>
@@ -284,10 +284,10 @@ export function TimelineRow({ row, ctx }) {
   if (row.kind === "plan") return <PlanCard item={item} busy={ctx.busy} onPlan={ctx.onPlan} onShowPlan={ctx.onShowPlan} />;
   if (row.kind === "review") return <ReviewCard item={item} onFinding={ctx.onFinding} current={ctx.review === item.id} pr={ctx.pr} onPublish={ctx.onPublish} />;
   if (row.kind === "notice") {
-    const tone = item.tone === "done" ? { bg: "#E3F4EC", fg: "#0B6B4A" } : item.tone === "warn" ? { bg: "#FFF1C7", fg: "#5C4300" } : null;
+    const tone = item.tone === "done" ? { bg: "var(--c-ok-soft)", fg: "var(--c-ok-ink)" } : item.tone === "warn" ? { bg: "var(--c-honey-soft)", fg: "var(--c-honey-text)" } : null;
     return (
       <span data-message-id={item.id} title={item.detail || undefined} style={{ alignSelf: "center", display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "6px 8px", padding: tone ? "6px 12px" : 0, borderRadius: "var(--r-pill)", background: tone ? tone.bg : "transparent", fontSize: "var(--t-meta)", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
-        {item.tone === "done" ? <Check size={13} strokeWidth={2.6} aria-hidden="true" /> : item.engineSwitch ? <EngineMark engine={item.engineSwitch.to} size={12} /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "var(--r-circle)", border: "2px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
+        {item.tone === "done" ? <Check size={13} strokeWidth={2.6} aria-hidden="true" /> : item.engineSwitch ? <EngineMark engine={item.engineSwitch.to} size={12} /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "var(--r-circle)", border: "2px solid var(--c-line-strong)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
         {item.url ? <a href={item.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Abrir en GitHub</a> : null}
         {item.overlap ? <a href={"/codigo/" + item.overlap} style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Ver la otra tarea</a> : null}
         {item.undo && ctx.lastNotice === item.id && !ctx.busy ? (

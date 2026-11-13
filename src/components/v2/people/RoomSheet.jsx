@@ -4,6 +4,7 @@ import { PeerAvatar } from "./PeerAvatar.jsx";
 import { del, patch, post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
+import { C } from "../../../lib/theme.js";
 
 // Who is in a group (design/V2Personas.dc.html, paso roles): the owner renames it, chooses
 // each person's role (Miembro, or Invitado: writes and reads, wakes no bot), takes someone
@@ -11,8 +12,8 @@ import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 // new list signed by the owner; the others only accept lists from the owner.
 const enc = encodeURIComponent;
 const ROLE = { owner: "Creó la conversación", member: "Miembro", guest: "Invitado" };
-const pill = { display: "inline-flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 };
-const seg = (on) => ({ height: "28px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.12)" : "none", color: "var(--c-text)" });
+const pill = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 };
+const seg = (on) => ({ height: "28px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none", color: "var(--c-text)" });
 
 export default function RoomSheet({ share, onClose, onChanged }) {
   const { peers } = useStore();
@@ -28,8 +29,8 @@ export default function RoomSheet({ share, onClose, onChanged }) {
   const outside = (peers?.contacts || []).filter((c) => c.status === "active" && !share.members.some((m) => m.id === c.id));
   return (
     <div ref={box} role="dialog" aria-modal="true" aria-label={"Personas de " + share.title} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", justifyContent: "flex-end", background: "rgba(18,19,26,.28)", animation: "fade .2s ease-out" }}>
-      <aside style={{ width: "min(460px, 100%)", height: "100%", overflowY: "auto", padding: "28px 26px 36px", boxSizing: "border-box", background: "rgba(255,255,255,.96)", WebkitBackdropFilter: "blur(30px) saturate(1.6)", backdropFilter: "blur(30px) saturate(1.6)", borderRadius: "var(--r-3xl) 0 0 var(--r-3xl)", boxShadow: "-40px 0 80px -30px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "22px", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
+      style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", justifyContent: "flex-end", background: "var(--c-scrim)", animation: "fade .2s ease-out" }}>
+      <aside style={{ width: "min(460px, 100%)", height: "100%", overflowY: "auto", padding: "28px 26px 36px", boxSizing: "border-box", background: "var(--c-raised)", WebkitBackdropFilter: "blur(30px) saturate(1.6)", backdropFilter: "blur(30px) saturate(1.6)", borderRadius: "var(--r-3xl) 0 0 var(--r-3xl)", boxShadow: "var(--c-shadow-pop)", display: "flex", flexDirection: "column", gap: "22px", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <header style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
           <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
             <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>{share.members.length + " personas"}</span>
@@ -39,8 +40,8 @@ export default function RoomSheet({ share, onClose, onChanged }) {
                 <button type="submit" disabled={busy || !title.trim()} style={{ ...pill, background: "var(--c-btn)", color: "var(--c-btn-text)" }}>{"Guardar"}</button>
               </form>
             ) : (
-              <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
-                <span style={{ color: "#A3A6AE" }}>{"#"}</span>{share.title}
+              <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>
+                <span style={{ color: C.text4 }}>{"#"}</span>{share.title}
                 {mine ? <button type="button" aria-label="Cambiar el nombre" onClick={() => { setTitle(share.title); setRenaming(true); }} style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .05)", cursor: "pointer", color: "var(--c-text-2)" }}><Pencil size={14} strokeWidth={2.2} /></button> : null}
               </h2>
             )}
@@ -51,7 +52,7 @@ export default function RoomSheet({ share, onClose, onChanged }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
           {members.map((m) => (
             <div key={m.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 12px", minHeight: "56px", padding: "6px 4px" }}>
-              <PeerAvatar person={m} size={36} dot={!m.me} ring="#FFFFFF" />
+              <PeerAvatar person={m} size={36} dot={!m.me} ring={C.card} />
               <span style={{ flex: "1 1 140px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
                 <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{m.me ? "Tú" : m.name}</strong>
                 <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{ROLE[m.role] || "Miembro"}{m.role === "guest" ? " · no despierta a los bots" : ""}</span>
@@ -99,7 +100,7 @@ export default function RoomSheet({ share, onClose, onChanged }) {
                     <span role="radiogroup" aria-label="Papel" style={{ display: "flex", gap: "2px", padding: "2px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)" }}>
                       {[["member", "Miembro"], ["guest", "Invitado"]].map(([v, label]) => <button key={v} type="button" role="radio" aria-checked={(inviting?.role || "member") === v ? "true" : "false"} onClick={() => setInviting({ ...(inviting || {}), role: v })} style={seg((inviting?.role || "member") === v)}>{label}</button>)}
                     </span>
-                    <button type="submit" disabled={busy || !inviting?.name?.trim()} style={{ ...pill, background: inviting?.name?.trim() ? "var(--c-btn)" : "#C9CBD1", color: "var(--c-btn-text)" }}><UserPlus size={14} strokeWidth={2.2} aria-hidden="true" />{"Crear invitación"}</button>
+                    <button type="submit" disabled={busy || !inviting?.name?.trim()} style={{ ...pill, background: inviting?.name?.trim() ? "var(--c-btn)" : C.lineStrong, color: "var(--c-btn-text)" }}><UserPlus size={14} strokeWidth={2.2} aria-hidden="true" />{"Crear invitación"}</button>
                   </span>
                 </form>
               )}

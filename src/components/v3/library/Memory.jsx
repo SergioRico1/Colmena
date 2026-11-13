@@ -155,10 +155,10 @@ export default function Memory({ memories, bots, missions = [], expert }) {
 
   return (
     <>
-      <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 8px 8px 20px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 44px -30px rgba(18,19,26,.4)" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 8px 8px 20px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Cuéntales algo para que lo recuerden"}</span>
         <input className="c-bare" type="text" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") tell(); }} placeholder="Cuéntales algo para que lo recuerden: «Los viernes salgo a las 15:00»" style={{ flex: "1", minWidth: "0", height: "50px", border: "0", background: "transparent", fontSize: "var(--t-read)" }} />
-        <button type="button" onClick={tell} disabled={!text.trim() || act.busy} style={{ height: "44px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: "600", cursor: text.trim() ? "pointer" : "default" }}>{"Guardar"}</button>
+        <button type="button" onClick={tell} disabled={!text.trim() || act.busy} style={{ height: "36px", padding: "0 14px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: text.trim() ? "pointer" : "default" }}>{"Guardar"}</button>
       </label>
       {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{act.error}</p> : null}
 
@@ -172,8 +172,8 @@ export default function Memory({ memories, bots, missions = [], expert }) {
             const bot = botOf(m.botId);
             const doubt = m.trust === "doubt";
             const mine = doubt ? memories.find((x) => x.id === m.contradicts) : null;
-            const pill = { height: "38px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" };
-            const main = { height: "38px", padding: "0 16px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
+            const pill = { height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" };
+            const main = { height: "32px", padding: "0 12px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
             return (
               <div key={m.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-card)" }}>
                 <span style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -200,11 +200,11 @@ export default function Memory({ memories, bots, missions = [], expert }) {
 
       <section aria-labelledby="know-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-          <h2 id="know-t" style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Lo que saben de ti"}</h2>
-          <button type="button" aria-expanded={versions} onClick={() => setVersions((x) => !x)} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: versions ? "var(--c-chip)" : "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{nVersions ? `Versiones del perfil · ${nVersions}` : "Versiones del perfil"}</button>
+          <h2 id="know-t" style={{ margin: "0", font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{"Lo que saben de ti"}</h2>
+          <button type="button" aria-expanded={versions} onClick={() => setVersions((x) => !x)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-sm)", background: versions ? "var(--c-chip)" : "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{nVersions ? `Versiones del perfil · ${nVersions}` : "Versiones del perfil"}</button>
         </div>
         {versions ? (
-          <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", overflow: "hidden", animation: "rise .2s ease-out" }}>
+          <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden", animation: "rise .2s ease-out" }}>
             <h3 style={{ margin: "0", padding: "14px 20px 0", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text-3)" }}>{"Tu perfil (USER.md): el resumen de lo que saben de ti. Puedes volver a cualquier versión."}</h3>
             <div style={{ padding: "4px 0 6px" }}><DocHistory doc="user" empty="Todavía no hay un perfil resumido: Colmena lo prepara cuando sabe lo suficiente de ti." /></div>
           </div>
@@ -213,7 +213,7 @@ export default function Memory({ memories, bots, missions = [], expert }) {
           <div role="group" aria-label="Qué recuerdos ver" style={{ display: "flex", gap: "6px" }}>
             {[["core", "Siempre presentes"], ["archive", "Archivo"]].map(([id, label]) => {
               const on = tier === id;
-              return <button key={id} type="button" aria-pressed={on} onClick={() => setTier(id)} style={{ height: "36px", padding: "0 13px", border: "0", borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}{" · "}{String(count[id])}</button>;
+              return <button key={id} type="button" aria-pressed={on} onClick={() => setTier(id)} style={{ height: "32px", padding: "0 12px", border: "0", borderRadius: "var(--r-sm)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}{" · "}{String(count[id])}</button>;
             })}
           </div>
           <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{tier === "core" ? "Lo tienen delante en cada conversación. Si se llena, lo que menos se usa pasa al archivo." : "No lo llevan siempre encima: lo recuerdan cuando viene a cuento."}</span>
@@ -223,16 +223,16 @@ export default function Memory({ memories, bots, missions = [], expert }) {
             style={{ height: "40px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-md)", background: "var(--c-card)", fontSize: "var(--t-body)" }} />
         ) : null}
         {archive.error && tier === "archive" ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{"No se pudo leer el archivo. " + archive.error}</p> : null}
-        {archiveLoading ? <SkeletonList rows={3} style={{ borderRadius: "var(--r-xl)" }} /> : !groups.length ? <p style={{ margin: 0, padding: "18px 20px", borderRadius: "var(--r-xl)", background: "var(--c-card)", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{tier === "archive" ? (query ? "Nada en el archivo con esas palabras." : "El archivo está vacío. Aquí llega lo que ya no cabe entre lo siempre presente, y lo que tú archives.") : "Todavía no saben nada de ti. Cuéntales algo arriba o tráelo de ChatGPT."}</p> : null}
+        {archiveLoading ? <SkeletonList rows={3} style={{ borderRadius: "var(--r-xl)" }} /> : !groups.length ? <p style={{ margin: 0, padding: "18px 20px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{tier === "archive" ? (query ? "Nada en el archivo con esas palabras." : "El archivo está vacío. Aquí llega lo que ya no cabe entre lo siempre presente, y lo que tú archives.") : "Todavía no saben nada de ti. Cuéntales algo arriba o tráelo de ChatGPT."}</p> : null}
         {groups.map((g) => (
-          <div key={g.key} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", overflow: "hidden" }}>
+          <div key={g.key} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden" }}>
             <h3 style={{ margin: "0", padding: "14px 20px 6px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text-3)" }}><Mark bot={g.bot} />{g.title}</h3>
             {g.items.map((m) => <Known key={m.id} m={m} bot={botOf(m.botId)} mission={missionOf(m.missionId)} expert={expert} />)}
           </div>
         ))}
         {more > 0 ? (
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
-            {shown < ARCHIVE_MAX ? <button type="button" onClick={() => setShown((n) => Math.min(ARCHIVE_MAX, n + ARCHIVE_PAGE))} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Ver más"}</button> : null}
+            {shown < ARCHIVE_MAX ? <button type="button" onClick={() => setShown((n) => Math.min(ARCHIVE_MAX, n + ARCHIVE_PAGE))} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Ver más"}</button> : null}
             <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{shown < ARCHIVE_MAX ? `Quedan ${more} más antiguos.` : `Hay ${more} más antiguos: búscalos por lo que dicen.`}</span>
           </div>
         ) : null}

@@ -8,6 +8,7 @@ import BackupSettings, { folderLabel, size, when } from "./Backup.jsx";
 import EncryptionSettings from "./Encryption.jsx";
 import DictationRow from "./Dictation.jsx";
 import { Alert, Go, LINE, Row, Switch, UNDO_MS, anchorOf, btn, h3, useSettings } from "./v3.jsx";
+import { C } from "../../../lib/theme.js";
 
 // Ajustes › Privacidad y datos (design/V3Privacidad.dc.html): where your data lives and what
 // leaves this computer, the encrypted backups, the local database encryption, what the bots
@@ -16,7 +17,7 @@ import { Alert, Go, LINE, Row, Switch, UNDO_MS, anchorOf, btn, h3, useSettings }
 
 function Fact({ k, v, n, dot, anchor }) {
   return (
-    <div {...anchorOf(anchor)} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
+    <div {...anchorOf(anchor)} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}><span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: dot }} />{k}</span>
       <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{v}</span>
       <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{n}</span>
@@ -54,15 +55,15 @@ export default function PrivacySection() {
     <>
       <Alert>{error}</Alert>
       <section aria-label="Resumen" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "10px" }}>
-        <Fact anchor="privado" k="Dónde viven tus datos" v="En este ordenador" dot={s?.encrypted ? "#0B6B4A" : "#8A8D96"} n={s?.encrypted ? "Cifrados. Colmena no tiene servidores propios." : "Colmena no tiene servidores propios."} />
-        <Fact k="Qué sale de aquí" v="Solo lo que pides" dot="#8A8D96" n="Pasa por tu cuenta de IA para que te respondan" />
-        <Fact k="Última copia" v={v?.last ? when(v.last.at) : "Ninguna todavía"} dot={v?.last && !v.lastError ? "#0B6B4A" : "#8A8D96"} n={v?.last ? `Cifrada, en ${folderLabel(v)} · ${size(v.last.bytes)}` : v?.hasPassword ? "Haz la primera aquí abajo." : "Pon una contraseña y haz la primera."} />
+        <Fact anchor="privado" k="Dónde viven tus datos" v="En este ordenador" dot={s?.encrypted ? C.okInk : C.text4} n={s?.encrypted ? "Cifrados. Colmena no tiene servidores propios." : "Colmena no tiene servidores propios."} />
+        <Fact k="Qué sale de aquí" v="Solo lo que pides" dot={C.text4} n="Pasa por tu cuenta de IA para que te respondan" />
+        <Fact k="Última copia" v={v?.last ? when(v.last.at) : "Ninguna todavía"} dot={v?.last && !v.lastError ? C.okInk : C.text4} n={v?.last ? `Cifrada, en ${folderLabel(v)} · ${size(v.last.bytes)}` : v?.hasPassword ? "Haz la primera aquí abajo." : "Pon una contraseña y haz la primera."} />
       </section>
 
       <BackupSettings v={v} setV={backup.setData} error={backup.error} />
       <EncryptionSettings s={s} reload={reloadEnc} />
 
-      <section aria-labelledby="mem-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", overflow: "hidden" }}>
+      <section aria-labelledby="mem-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden" }}>
         <h3 id="mem-t" style={{ ...h3, fontSize: "var(--t-read)", padding: "18px 22px 8px" }}>Memoria y conversaciones</h3>
         <Row anchor="aprenden" title="Aprenden de lo que hablas" sub="Si lo apagas, siguen trabajando pero no guardan recuerdos ni habilidades nuevas. Un chat de incógnito nunca aprende." min="64px">
           <Switch on={settings.learning !== false} label="Aprenden de lo que hablas" onChange={(on) => save({ learning: on }, on ? "Vuelven a aprender" : "Ya no aprenden de lo que hablas", { learning: !on })} />
@@ -84,12 +85,12 @@ export default function PrivacySection() {
         </Row>
       </section>
 
-      <section {...anchorOf("olvidar")} aria-labelledby="danger-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 20px", padding: "18px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "inset 0 0 0 1px rgba(180,35,42,.25)", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("olvidar")} aria-labelledby="danger-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 20px", padding: "18px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--c-error) 25%, transparent)", scrollMarginTop: "24px" }}>
         <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <h3 id="danger-t" style={h3}>Hacer que lo olviden todo</h3>
           <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>Borra lo que recuerdan de ti. Los chats y los archivos se quedan. Tienes 10 segundos para deshacerlo.</span>
         </span>
-        <button type="button" disabled={!remembered} onClick={forgetAll} style={{ ...btn("outline", 38), borderColor: "rgba(180,35,42,.35)", color: "var(--c-error)", fontSize: "var(--t-ui)", opacity: memories.length ? 1 : 0.5 }}>Olvidar todo…</button>
+        <button type="button" disabled={!remembered} onClick={forgetAll} style={{ ...btn("outline", 38), borderColor: "color-mix(in srgb, var(--c-error) 35%, transparent)", color: "var(--c-error)", fontSize: "var(--t-ui)", opacity: memories.length ? 1 : 0.5 }}>Olvidar todo…</button>
       </section>
     </>
   );

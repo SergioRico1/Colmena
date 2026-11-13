@@ -172,7 +172,7 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
       {contexts.map((c) => {
         const Icon = CONTEXT_ICON[c.kind] || FileCode2;
         return (
-          <span key={c.key} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "var(--r-pill)", background: "var(--c-honey-soft)", boxShadow: "inset 0 0 0 1px rgba(255,201,60,.55)", fontSize: "var(--t-caption)", color: "var(--c-honey-text)", maxWidth: "280px", animation: "rise .2s ease-out" }}>
+          <span key={c.key} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "var(--r-pill)", background: "var(--c-honey-soft)", boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--c-honey) 55%, transparent)", fontSize: "var(--t-caption)", color: "var(--c-honey-text)", maxWidth: "280px", animation: "rise .2s ease-out" }}>
             <Icon size={13} strokeWidth={2} aria-hidden="true" />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.label}</span>
             <button type="button" onClick={() => setContexts((all) => all.filter((x) => x.key !== c.key))} aria-label={"Quitar " + c.label} style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-honey-text)" }}><X size={11} strokeWidth={2.4} aria-hidden="true" /></button>

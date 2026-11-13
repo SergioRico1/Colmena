@@ -6,6 +6,7 @@ import { roomUrl, shortDate } from "../../lib/format.js";
 import { navigate } from "../../lib/router.jsx";
 import { useAction, useResource, useStore } from "../../lib/store.jsx";
 import { useDialogFocus } from "../../lib/useDialogFocus.js";
+import { C } from "../../lib/theme.js";
 
 // «Qué ha aprendido» (Hermes /journey): what a bot learned, newest first, each with the room it
 // came from; memories can be corrected or forgotten in place. «Enséñale» (Hermes /learn) opens a
@@ -40,8 +41,8 @@ function TimelineRow({ item, first, onOpenSkill }) {
         {editing ? (
           <form onSubmit={save} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <input autoFocus value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Escape" && (setText(item.title), setEditing(false))} aria-label="Corregir el recuerdo"
-              style={{ flex: "1", minWidth: 0, height: "38px", padding: "0 10px", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-pill)", fontSize: "var(--t-body)" }} />
-            <button type="submit" disabled={busy} aria-label="Guardar" style={{ ...iconButton, color: "#0B8A5F" }}><Check size={17} strokeWidth={2.4} aria-hidden="true" /></button>
+              style={{ flex: "1", minWidth: 0, height: "32px", padding: "0 10px", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-sm)", fontSize: "var(--t-meta)" }} />
+            <button type="submit" disabled={busy} aria-label="Guardar" style={{ ...iconButton, color: C.ok }}><Check size={17} strokeWidth={2.4} aria-hidden="true" /></button>
             <button type="button" onClick={() => { setText(item.title); setEditing(false); }} aria-label="Cancelar" style={iconButton}><X size={17} strokeWidth={2.2} aria-hidden="true" /></button>
           </form>
         ) : item.type === "skill" && item.skillId ? (
@@ -102,11 +103,11 @@ export function TeachDialog({ bot, onClose }) {
   };
   const field = { width: "100%", minHeight: "44px", padding: "0 12px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", color: "var(--c-text)" };
   return (
-    <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "80px 16px 16px", overflowY: "auto" }}>
-      <form ref={box} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="ensena-t" style={{ width: "min(560px, 100%)", background: "var(--c-card)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-xl)", display: "flex", flexDirection: "column" }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "var(--c-scrim)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "80px 16px 16px", overflowY: "auto" }}>
+      <form ref={box} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="ensena-t" style={{ width: "min(560px, 100%)", background: "var(--c-card)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-md)", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 22px 16px", display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <h2 id="ensena-t" style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{`Enséñale algo a ${bot.name}`}</h2>
+            <h2 id="ensena-t" style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{`Enséñale algo a ${bot.name}`}</h2>
             <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{`${bot.name} lo estudia en una sala, te cuenta lo que ha entendido para que le corrijas y lo guarda como habilidad o recuerdo. No envía ni cambia nada fuera de Colmena.`}</p>
           </div>
           <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", fontWeight: "600" }}>
@@ -140,8 +141,8 @@ export function TeachDialog({ bot, onClose }) {
           {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}>{error}</p> : null}
         </div>
         <div style={{ padding: "14px 22px 18px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)" }}>Cancelar</button>
-          <button type="submit" disabled={busy || !ready} style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 16px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: busy || !ready ? 0.6 : 1 }}>
+          <button type="button" onClick={onClose} disabled={busy} style={{ height: "36px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-ui)" }}>Cancelar</button>
+          <button type="submit" disabled={busy || !ready} style={{ display: "flex", alignItems: "center", gap: "8px", height: "36px", padding: "0 14px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: busy || !ready ? 0.6 : 1 }}>
             <GraduationCap size={16} strokeWidth={2.2} aria-hidden="true" />{busy ? "Preparando…" : "Empezar la lección"}
           </button>
         </div>

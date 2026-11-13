@@ -4,6 +4,7 @@ import { navigate } from "../../../../lib/router.jsx";
 import { layoutGraph, noteUrl } from "../../../../lib/wikiLinks.js";
 import { CARD, ERROR, MUTED, filterChip } from "./parts.jsx";
 import { createNote } from "./actions.js";
+import { C } from "../../../../lib/theme.js";
 
 // Biblioteca › Notas, the map (GET /api/wiki/graph): which notes name which. A still drawing
 // (nothing moves, so there is nothing to switch off under «reduce motion»): each note a dot,
@@ -35,13 +36,13 @@ export default function NoteGraph({ focus = "", title = "" }) {
     <section aria-labelledby="map-t" style={{ ...CARD, display: "flex", flexDirection: "column", gap: "14px", padding: "22px clamp(16px, 3vw, 26px) 24px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <h2 id="map-t" style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{focus ? `Alrededor de «${title || focus}»` : "Mapa de las notas"}</h2>
+          <h2 id="map-t" style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{focus ? `Alrededor de «${title || focus}»` : "Mapa de las notas"}</h2>
           <span style={MUTED}>{"Cada punto es una nota y cada línea, una que nombra a otra. Los puntos huecos están por crear."}</span>
         </div>
         {focus ? (
           <div role="group" aria-label="Hasta dónde mirar" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <span style={MUTED}>{"Saltos"}</span>
-            {[1, 2, 3].map((d) => <button key={d} type="button" aria-pressed={depth === d} onClick={() => setDepth(d)} style={{ ...filterChip(depth === d), background: depth === d ? "#12131A" : "var(--c-chip)", minWidth: "36px", justifyContent: "center" }}>{String(d)}</button>)}
+            {[1, 2, 3].map((d) => <button key={d} type="button" aria-pressed={depth === d} onClick={() => setDepth(d)} style={{ ...filterChip(depth === d), background: depth === d ? C.text : "var(--c-chip)", minWidth: "36px", justifyContent: "center" }}>{String(d)}</button>)}
           </div>
         ) : null}
       </div>
@@ -53,7 +54,7 @@ export default function NoteGraph({ focus = "", title = "" }) {
         <>
           <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={`Mapa con ${view.nodes.length} notas y ${view.edges.length} enlaces`} style={{ width: "100%", height: "auto", maxHeight: "70vh", borderRadius: "var(--r-lg)", background: "var(--c-sunken)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .05)" }} onMouseLeave={() => setHot(null)}>
             <g aria-hidden="true">
-              {view.edges.map((e) => <line key={e.from + ">" + e.to} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} stroke="#12131A" strokeOpacity={lit(e) ? (hot ? 0.55 : 0.16) : 0.05} strokeWidth={hot && lit(e) ? 1.4 : 1} />)}
+              {view.edges.map((e) => <line key={e.from + ">" + e.to} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} stroke={C.text} strokeOpacity={lit(e) ? (hot ? 0.55 : 0.16) : 0.05} strokeWidth={hot && lit(e) ? 1.4 : 1} />)}
             </g>
             {view.nodes.map((n) => {
               const links = near.get(n.id)?.length || 0;
@@ -63,8 +64,8 @@ export default function NoteGraph({ focus = "", title = "" }) {
                 <a key={n.id} href={noteUrl(n.exists ? n.id : n.title)} aria-label={`${n.title}${n.exists ? "" : " (por crear)"}, ${links === 1 ? "1 enlace" : links + " enlaces"}`} className="c-note-node"
                   onClick={(e) => { e.preventDefault(); open(n); }} onMouseEnter={() => setHot(n.id)} onFocus={() => setHot(n.id)} onBlur={() => setHot(null)} style={{ cursor: "pointer", outlineOffset: "3px" }}>
                   <circle cx={n.x} cy={n.y} r={Math.max(n.r, 12)} fill="transparent" />
-                  <circle cx={n.x} cy={n.y} r={n.r} fill={!n.exists ? "#FFFFFF" : me ? "#1F4FD1" : "#12131A"} stroke={!n.exists ? "#5C606C" : hot === n.id ? "#1F4FD1" : "#FFFFFF"} strokeWidth={!n.exists ? 1.5 : 2} strokeDasharray={n.exists ? undefined : "3 2.5"} />
-                  {labelled(n) ? <text x={n.x} y={below ? n.y + n.r + 14 : n.y - n.r - 7} textAnchor={n.x < 70 ? "start" : n.x > W - 70 ? "end" : "middle"} fontSize="12" fontWeight={me || hot === n.id ? 600 : 500} fill={n.exists ? "#12131A" : "#5C606C"} stroke="#FBFBF9" strokeWidth="3" paintOrder="stroke" style={{ pointerEvents: "none" }}>{clip(n.title)}</text> : null}
+                  <circle cx={n.x} cy={n.y} r={n.r} fill={!n.exists ? C.card : me ? C.accentInk : C.text} stroke={!n.exists ? C.text3 : hot === n.id ? C.accentInk : C.card} strokeWidth={!n.exists ? 1.5 : 2} strokeDasharray={n.exists ? undefined : "3 2.5"} />
+                  {labelled(n) ? <text x={n.x} y={below ? n.y + n.r + 14 : n.y - n.r - 7} textAnchor={n.x < 70 ? "start" : n.x > W - 70 ? "end" : "middle"} fontSize="12" fontWeight={me || hot === n.id ? 600 : 500} fill={n.exists ? C.btn : C.text3} stroke={C.app} strokeWidth="3" paintOrder="stroke" style={{ pointerEvents: "none" }}>{clip(n.title)}</text> : null}
                 </a>
               );
             })}
