@@ -2,6 +2,7 @@ import { refsInput } from "../mention-refs.mjs";
 import path from "node:path";
 import { z } from "zod";
 import { TOOL_KEYS } from "../store.mjs";
+import { ENGINES } from "../providers/catalog.mjs";
 import { attachmentInput } from "../files.mjs";
 import { triggerInput } from "../triggers.mjs";
 import { DELIVERY_MODES } from "../scheduler.mjs";
@@ -38,7 +39,7 @@ const email = z.string().trim().email("Correo no válido.").max(254);
 
 const botFields = z.object({
   name: short, role: short, instructions, color: hex, shape, enabled: z.boolean(), audience: z.enum(["yo", "equipo"]),
-  usesChatGPT: z.boolean(), engine: z.enum(["openai", "anthropic", "opencode-go"]).nullable(), personality, autonomy, thinking, location: z.enum(["local", "nube"]), tools: toolsSchema,
+  usesChatGPT: z.boolean(), engine: z.enum(ENGINES).nullable(), personality, autonomy, thinking, location: z.enum(["local", "nube"]), tools: toolsSchema,
   helpers: z.array(short).max(10), delegateFreely: z.boolean(), channels,
   voice: z.string().trim().max(200).nullable(), // speechSynthesis voice (voiceURI) for «Escuchar»
   // The bot's own monthly budget in tokens (admission.mjs); null = only the space's limit.

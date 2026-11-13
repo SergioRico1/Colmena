@@ -74,7 +74,7 @@ async function aiChecks({ provider, probeClaude = probeClaudeCli }) {
   const out = [];
   for (const e of engines) {
     const base = { id: "ai:" + e.id, group: "ia", title: e.label };
-    if (!e.connected) { out.push({ ...base, status: "off", text: "Sin conectar.", to: AI_TO + "#" + (e.id === "openai" ? "chatgpt" : e.id === "anthropic" ? "claude" : "opencode") }); continue; }
+    if (!e.connected) { out.push({ ...base, status: "off", text: "Sin conectar.", to: AI_TO + "#" + ({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[e.id] || e.id) }); continue; }
     if (e.limit) {
       const when = e.limit.resetsAt ? whenText(e.limit.resetsAt) : null;
       out.push({ ...base, status: "warn", text: `Ha llegado a su ${e.limit.label || "límite de uso"}${when ? ` · se renueva ${when}` : ""}.`, fix: "El trabajo sigue solo al renovarse. Para seguir antes, elige otra IA en «Si falla, usar».", to: AI_TO + "#respaldo" });
@@ -99,7 +99,7 @@ async function aiChecks({ provider, probeClaude = probeClaudeCli }) {
     out.push({ ...base, status: "ok", text: "Conectada" + (e.detail ? " · " + e.detail : "") + "." });
   }
   const connected = engines.filter((e) => e.connected);
-  if (!connected.length) out.unshift({ id: "ai:none", group: "ia", title: "Cerebro del equipo", status: "fail", text: "Ninguna cuenta de IA conectada: los bots no pueden pensar.", fix: "Conecta ChatGPT, Claude u OpenCode Go.", to: AI_TO });
+  if (!connected.length) out.unshift({ id: "ai:none", group: "ia", title: "Cerebro del equipo", status: "fail", text: "Ninguna cuenta de IA conectada: los bots no pueden pensar.", fix: "Conecta ChatGPT, Claude u otra IA en Cuentas de IA.", to: AI_TO });
   else {
     const fallback = provider.config?.()?.fallback;
     if (connected.length > 1 && (!fallback || fallback === "none")) out.push({ id: "ai:fallback", group: "ia", title: "Respaldo", status: "warn", text: "Tienes más de una IA conectada pero ninguna de respaldo.", fix: "Elige una en «Si falla, usar»: si la principal llega a su límite, el trabajo sigue con la otra.", to: AI_TO + "#respaldo" });

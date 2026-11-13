@@ -6,7 +6,8 @@ import { imageUnsupported, IMAGES_UNSUPPORTED } from "./images.mjs";
 import { ResponseSockets, SocketUnavailable } from "./provider-ws.mjs";
 import { chooseModel, parseModel } from "./models.mjs";
 import { cheapestModel } from "./checkins.mjs";
-import { ENGINES, ENGINE_LABEL, CATALOG, ANTHROPIC_API, OPENCODE_GO_API, OPENCODE_GO_ANTHROPIC_API, OPENCODE_GO_CHECK_MODEL, opencodeSession, parseRef, modelEntry, listEntry } from "./providers/catalog.mjs";
+import { ENGINES, ENGINE_LABEL, CATALOG, KEY_ENGINES, ANTHROPIC_API, OPENCODE_GO_API, OPENCODE_GO_ANTHROPIC_API, OPENCODE_GO_CHECK_MODEL, opencodeSession, parseRef, modelEntry, listEntry, catalogOf, supportsVision, supportsPdf } from "./providers/catalog.mjs";
+import { ApiAccounts, looksVisual } from "./providers/accounts.mjs";
 import { AnthropicProvider, validateSetupToken, isSubscriptionToken } from "./providers/anthropic.mjs";
 import { CompletionsProvider } from "./providers/completions.mjs";
 import { ClaudeCliProvider, probeClaudeCli, claudeCliVersion, CLI_MIN_VERSION, newerOrEqual } from "./providers/claude-cli.mjs";
@@ -525,6 +526,8 @@ export class ProviderHub {
     this.goChat = new CompletionsProvider({ loadKey: goKey, fetchImpl, baseUrl: OPENCODE_GO_API, names: goNames });
     this.goAnthropic = new AnthropicProvider({ credential: async () => { const key = await goKey(); return key ? { type: "api_key", key } : null; }, fetchImpl, baseUrl: OPENCODE_GO_ANTHROPIC_API, direct: false, engine: "opencode-go", names: goNames });
     this.goResponses = new GoResponsesProvider(goKey, { fetchImpl });
+    // Gemini, OpenRouter, DeepSeek, Kimi and «Servidor propio» (providers/accounts.mjs).
+    this.accounts = new ApiAccounts(this);
   }
   config() {
     return this.store.get("providers", CONFIG_ID) || { id: CONFIG_ID, kind: null, apikey: null, local: null };
@@ -573,6 +576,7 @@ export class ProviderHub {
     if (engine === "openai") return !!this.kind;
     if (engine === "anthropic") return ["api_key", "token", "cli"].includes(c.anthropic?.method);
     if (engine === "opencode-go") return !!c.opencode?.hint;
+    if (KEY_ENGINES.includes(engine)) return this.accounts.connected(engine);
     return false;
   }
   /** The team's engine: the one chosen in Ajustes if connected, else the first connected. */
@@ -588,8 +592,8 @@ export class ProviderHub {
   /** Models of an engine in the {slug, label, families, utility} shape models.mjs reads. */
   modelsFor(engine = this.primary) {
     if (engine === "openai") return this.kind === "local" ? [] : Array.isArray(this.session?.models) ? this.session.models : [];
-    const list = CATALOG[engine];
-    if (!list) return [];
+    const list = catalogOf(engine);
+    if (!list.length) return [];
     // Ajustes › Avanzado can pin a model to a family; the pinned one wins that family. A pin
     // to a model the catalogue no longer has is ignored (the family keeps its default).
     const pins = Object.fromEntries(Object.entries(this.config().pins?.[engine] || {}).filter(([, ref]) => list.some((m) => m.ref === ref)));
@@ -608,6 +612,7 @@ export class ProviderHub {
       ...(id === "openai" ? { detail: this.connected("openai") ? this.openaiStatus().label : null } : {}),
       ...(id === "anthropic" ? { method: a?.method || null, detail: a?.method === "cli" ? "Claude Code" + (a.email ? " · " + a.email : "") : a?.method === "token" ? "Token de suscripción ····" + (a.hint || "") : a?.method === "api_key" ? "Clave de API ····" + (a.hint || "") : null } : {}),
       ...(id === "opencode-go" ? { detail: o?.hint ? "Clave ····" + o.hint : null } : {}),
+      ...(KEY_ENGINES.includes(id) ? this.accounts.view(id) : {}),
       resting: this.resting(id),
       limit: this.limitOf(id),
     }));
@@ -759,7 +764,8 @@ export class ProviderHub {
       if (this.vault) await this.vault.remove(BINDINGS["opencode-apikey"].profile);
       this.secrets.delete("opencode-apikey");
       this.saveConfig({ opencode: null, primary: c.primary === "opencode-go" ? null : c.primary ?? null });
-    } else throw Error("Proveedor desconocido.");
+    } else if (KEY_ENGINES.includes(kind)) await this.accounts.disconnect(kind);
+    else throw Error("Proveedor desconocido.");
     return this.status();
   }
 
@@ -767,7 +773,7 @@ export class ProviderHub {
   async models() {
     const out = [];
     if (this.kind) out.push(...(await this.openaiModels()));
-    for (const engine of ["anthropic", "opencode-go"]) if (this.connected(engine)) out.push(...this.modelsFor(engine));
+    for (const engine of ENGINES.filter((e) => e !== "openai")) if (this.connected(engine)) out.push(...this.modelsFor(engine));
     return out;
   }
   async openaiModels() {
@@ -808,6 +814,7 @@ export class ProviderHub {
       const api = modelEntry(model)?.api || "openai-completions";
       return api === "anthropic-messages" ? this.goAnthropic : api === "openai-responses" ? this.goResponses : this.goChat;
     }
+    if (KEY_ENGINES.includes(engine)) return this.accounts.provider(engine);
     return this.provider(this.kind);
   }
   /**
@@ -831,6 +838,20 @@ export class ProviderHub {
     if (entry) return { window: entry.context, maxOutput: Math.min(entry.maxTokens || 0, 64000) || null };
     const listed = (this.session?.models || []).find((m) => m.slug === resolved);
     return listed?.context_window > 0 ? { window: listed.context_window, maxOutput: null } : null;
+  }
+  /**
+   * Can the model a call really uses look at images / take a PDF file? (catalog.mjs; the
+   * local model by its name). Message builders drop what it cannot read and leave a note.
+   */
+  supportsVision(model) {
+    const resolved = this.resolveModel(model);
+    if (parseRef(resolved).engine === "openai" && this.kind === "local") return looksVisual(this.config().local?.model);
+    return supportsVision(resolved);
+  }
+  supportsPdf(model) {
+    const resolved = this.resolveModel(model);
+    if (parseRef(resolved).engine === "openai" && this.kind === "local") return false;
+    return supportsPdf(resolved);
   }
   /** Same family on another engine (OpenClaw fallbacks list, by role instead of by name). */
   equivalent(model, engine) {
