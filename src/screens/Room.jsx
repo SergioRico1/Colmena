@@ -272,13 +272,8 @@ function Room({ id, query }) {
       <RowBoundary key={m.id} resetKey={m.id + ":" + (m.edited || "") + ":" + (m.status || "") + ":" + (waits ? "w" : "")}>
         <PeopleMessage m={m} dm={false} botOf={botOf} shared={sameName} lastSeen={m.id === lastSeenMine} continued={continued} onMeeting={tl.reload}
           onReact={react} onRetry={retry} onEdit={edit} onDelete={remove} onThread={m.local || gone ? null : openThread} onOpenFile={setViewing} onError={setError} />
-        {/* It waits for you: a honey dot and where to decide (the card is over the composer). */}
-        {waits ? (
-          <a href={"#" + waits.anchor} onClick={(e) => { const card = document.getElementById(waits.anchor); if (!card) return; e.preventDefault(); card.scrollIntoView({ block: "nearest" }); card.querySelector("button")?.focus({ preventScroll: true }); }}
-            style={{ alignSelf: "flex-start", margin: "0 0 4px 52px", display: "inline-flex", alignItems: "center", gap: "7px", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>
-            <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: "#FFC93C", boxShadow: "0 0 0 1px rgba(18,19,26,.18)" }} />{waits.text + " · decidir"}
-          </a>
-        ) : null}
+        {/* What waits for you is decided on its one card, pinned over the composer (always in view):
+            no second honey line here. A screen reader is told by the announcer and the card. */}
       </RowBoundary>
     );
   };
@@ -461,7 +456,8 @@ function Room({ id, query }) {
                       <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} bot={b} size={18} owner={b.owner} ring="#F5F5F2" state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
                       <span aria-hidden="true" style={{ fontSize: "var(--t-meta)", color: "#4A4D57", whiteSpace: "nowrap" }}>{counts}</span>
                     </span>
-                    {mission?.mode === "debate" ? <a href={`/debate/${missionId}`} style={{ ...outline, textDecoration: "none" }}>{"Elegir propuesta"}</a> : null}
+                    {/* A debate waiting for your choice is decided from the banner below: one action, one honey element. */}
+                    {mission?.mode === "debate" && mission.status !== "awaiting_choice" ? <a href={`/debate/${missionId}`} style={{ ...outline, textDecoration: "none" }}>{"Ver las propuestas"}</a> : null}
                     {!gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={outline}>{"Invitar"}</button> : null}
                     <button type="button" aria-label={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} title={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} aria-expanded={membersOpen && !dockShown ? "true" : "false"} aria-controls="sala-miembros"
                       onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}

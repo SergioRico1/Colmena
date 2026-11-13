@@ -131,7 +131,8 @@ export function BlockerBand({ mission, pending, bots }) {
         <strong>{bot ? `${bot.name} te espera:` : "La sala te espera:"}</strong>
         {" " + (text || "") + more}
       </span>
-      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-pill)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{"Responder"}</span>
+      {/* The one action of this decision in the room (the header no longer repeats it). */}
+      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-pill)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{!first ? "Elegir propuesta" : first.kind === "plan" ? "Revisar el plan" : first.kind === "question" ? "Responder" : "Revisar"}</span>
     </a>
   );
 }
