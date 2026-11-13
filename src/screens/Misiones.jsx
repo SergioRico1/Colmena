@@ -66,7 +66,7 @@ function waitText(m) {
   if (m.status === "paused") return m.activityLine || "En pausa · arrástrala a «En marcha» para reanudarla";
   if (m.status === "blocked") return m.error || m.activityLine || "Bloqueada · arrástrala a «En marcha» para reintentar";
   if (m.activityLine) return m.activityLine;
-  if (m.status === "awaiting_plan") return "Atlas espera que apruebes el plan";
+  if (m.status === "awaiting_plan") return "Espera que apruebes el plan";
   if (m.status === "awaiting_choice") return "Elige una de las propuestas";
   if (m.waiting > 0) return m.waiting === 1 ? "Una cosa espera tu OK" : `${m.waiting} cosas esperan tu OK`;
   return m.statusLabel || "Te espera";

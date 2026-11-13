@@ -253,7 +253,7 @@ export class Notifier {
       const first = pending[0];
       const botId = first?.botId || lead;
       const text =
-        m.status === "awaiting_plan" ? "Revisa el plan de Atlas para empezar." :
+        m.status === "awaiting_plan" ? "Revisa el plan para empezar." :
           m.status === "awaiting_choice" ? "Elige una de las propuestas del debate." :
             first ? (first.title || first.summary || "Necesita tu OK.") + (pending.length > 1 ? " · " + plural(pending.length - 1, "cosa más", "cosas más") : "") :
               "Necesita tu respuesta para seguir.";

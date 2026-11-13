@@ -4,7 +4,8 @@ import { useAction } from "../../lib/store.jsx";
 import { BotMark } from "../v2/chat/Mark.jsx";
 import { PersonAvatar } from "./Author.jsx";
 import { QUEUE } from "./RoomExtras.jsx";
-import { noBotsText } from "../../lib/roomView.js";
+import { compactBots, noBotsText } from "../../lib/roomView.js";
+import { srOnly } from "../../lib/alt.js";
 
 // The member panel of a room (docs/PLAN-equipo-y-salas.md, scope 3), on the right while no other
 // panel is open: «Personas · N» with their role in the room and their presence in words, «Bots»
@@ -42,6 +43,36 @@ function Requests({ view, onChanged }) {
   );
 }
 
+/**
+ * Someone else's bots: one compact row of marks and names (wrapping to a second line), the busy
+ * ones first, the rest behind «Ver los N». Each says whose it is to a screen reader.
+ */
+function OwnerBots({ group }) {
+  const [open, setOpen] = useState(false);
+  const { shown, hidden } = compactBots(group.bots, open);
+  return (
+    <section style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <h2 style={head}>{`${group.label} · ${group.bots.length}`}</h2>
+      <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexWrap: "wrap", gap: "8px 14px" }}>
+        {shown.map((b) => (
+          <li key={b.id} title={[b.shown, b.role, b.state !== "free" ? b.stateWord : null].filter(Boolean).join(" · ")}
+            style={{ display: "inline-flex", alignItems: "center", gap: "7px", minHeight: "28px", maxWidth: "100%", fontSize: "var(--t-ui)", color: "#12131A" }}>
+            <BotMark bot={b} size={20} owner={group.owner} state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} style={{ marginRight: "3px" }} />
+            <span style={srOnly}>{b.a11y + (b.state !== "free" ? ", " + b.stateWord : "")}</span>
+            <span aria-hidden="true" style={{ ...ellipsis, fontWeight: 500 }}>{b.name}</span>
+            {b.state !== "free" ? <span aria-hidden="true" style={{ ...small, flex: "none" }}>{b.stateWord}</span> : null}
+          </li>
+        ))}
+      </ul>
+      {hidden || open ? (
+        <button type="button" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} style={{ ...pill, alignSelf: "flex-start", minHeight: "28px", padding: "0 10px" }}>
+          {open ? "Ver menos" : `Ver los ${group.bots.length}`}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
 export default function MemberPanel({ view, panel, mission = null, addable = [], fileCount = 0, onRules = null, onFiles = null, onInvite = null, onChanged = null }) {
   const { act, busy } = useAction();
   const queue = QUEUE.find(([v]) => v === (mission?.queueMode || "steer"))?.[1] || QUEUE[0][1];
@@ -69,26 +100,24 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
         </ul>
         {onInvite && !view.general ? <button type="button" onClick={onInvite} style={{ ...pill, alignSelf: "flex-start", marginTop: "6px" }}>{"Invitar a una persona"}</button> : null}
       </section>
-      {panel.groups.map((g) => (
-        <section key={g.owner?.address || g.label} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+      {panel.groups.map((g) => (g.mine ? (
+        <section key="mine" style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h2 style={head}>{`${g.label} · ${g.bots.length}`}</h2>
           <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" }}>
-            {g.bots.map((b) => {
-              const inner = (
-                <>
-                  <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center" }}><BotMark bot={b} size={20} state={b.state === "working" || b.state === "thinking" ? "work" : b.state === "waiting" && g.mine ? "wait" : "rest"} /></span>
+            {g.bots.map((b) => (
+              <li key={b.id}>
+                <a href={`/equipo/${b.id}`} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "44px", color: "#12131A" }}>
+                  <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center" }}><BotMark bot={b} size={20} state={b.state === "working" || b.state === "thinking" ? "work" : b.state === "waiting" ? "wait" : "rest"} /></span>
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
                     <span style={{ ...ellipsis, fontSize: "var(--t-ui)", fontWeight: 500 }}>{b.name}</span>
                     <span style={{ ...ellipsis, ...small }}>{b.role || "bot"}</span>
                   </span>
-                  <span style={{ flex: "none", fontSize: "var(--t-meta)", color: b.state === "waiting" && g.mine ? "#12131A" : "#5C606C", fontWeight: b.state === "waiting" && g.mine ? 600 : 400 }}>{b.stateWord}</span>
-                </>
-              );
-              const rowStyle = { display: "flex", alignItems: "center", gap: "10px", minHeight: "44px", color: "#12131A" };
-              return <li key={b.id}>{g.mine ? <a href={`/equipo/${b.id}`} style={rowStyle}>{inner}</a> : <div style={rowStyle}>{inner}</div>}</li>;
-            })}
+                  <span style={{ flex: "none", fontSize: "var(--t-meta)", color: b.state === "waiting" ? "#12131A" : "#5C606C", fontWeight: b.state === "waiting" ? 600 : 400 }}>{b.stateWord}</span>
+                </a>
+              </li>
+            ))}
           </ul>
-          {g.mine && addable.length && mission ? (
+          {addable.length && mission ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingTop: "6px" }}>
               {addable.map((b) => (
                 <button key={b.id} type="button" disabled={busy} onClick={() => act(() => post(`/missions/${mission.id}/members`, { botId: b.id }))} aria-label={`Añadir a ${b.name} a la sala`} title={[b.name, b.role].filter(Boolean).join(" · ")} style={{ ...pill, display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 10px 0 8px", fontSize: "var(--t-meta)", color: "#3D404A" }}>
@@ -97,9 +126,9 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
               ))}
             </div>
           ) : null}
-          {g.mine && !view.private ? <span style={{ ...small, lineHeight: 1.45, paddingTop: "4px" }}>{"Trabajan en tu ordenador, con tu cuenta. Nómbralos con @ para que contesten aquí."}</span> : null}
+          {!view.private ? <span style={{ ...small, lineHeight: 1.45, paddingTop: "4px" }}>{"Trabajan en tu ordenador, con tu cuenta. Nómbralos con @ para que contesten aquí."}</span> : null}
         </section>
-      ))}
+      ) : <OwnerBots key={g.owner?.address || g.label} group={g} />))}
       {panel.groups.length ? null : (
         <section style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <h2 style={head}>{"Bots · 0"}</h2>

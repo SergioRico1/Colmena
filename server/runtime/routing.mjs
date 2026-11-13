@@ -3,6 +3,7 @@ import { visibleMessages } from "../branches.mjs";
 import { now } from "../store.mjs";
 import { cleanUse, turnNote } from "../turnoptions.mjs";
 import { ROUTER_INSTRUCTIONS, coordinationAsk, lastExchange, parsePick, quotedBot, routed, routerInput, spokenLines } from "../router.mjs";
+import { coordinatorName } from "../bot-looks.mjs";
 
 /** «Atlas está eligiendo quién responde» while the model picks (the room's typing line). */
 export const ROUTING_VERB = "eligiendo quién responde";
@@ -165,9 +166,9 @@ export class RoutingMethods {
       let route = null;
       try {
         const working = this.active.has(missionId) && !["completed", "paused", "waiting"].includes(mission.status);
-        route = !this.routerApplies(mission, this.steps(missionId)) ? routed(["atlas"], "atlas", "Atlas lo coordina")
+        route = !this.routerApplies(mission, this.steps(missionId)) ? routed(["atlas"], "atlas", coordinatorName(this.store) + " lo coordina")
           : this.routeByRules(mission, turn.text, { exceptId: turn.messageId })
-            || (working && turn.mode === "interrupt" ? routed(["atlas"], "atlas", "Interrumpes: Atlas lo atiende ya") : await this.routeByModel(mission, turn.text, { exceptId: turn.messageId }));
+            || (working && turn.mode === "interrupt" ? routed(["atlas"], "atlas", "Interrumpes: " + coordinatorName(this.store) + " lo atiende ya") : await this.routeByModel(mission, turn.text, { exceptId: turn.messageId }));
       } catch {
         route = routed(["atlas"], "atlas", "No se pudo elegir ahora");
       }

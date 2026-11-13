@@ -19,7 +19,7 @@ import { missionKind } from "./mission-kind.mjs";
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
 
 export const MISSION_LABELS = {
-  queued: "Pendiente", planning: "Atlas prepara el plan", awaiting_plan: "Revisa el plan", running: "En marcha",
+  queued: "Pendiente", planning: "Preparando el plan", awaiting_plan: "Revisa el plan", running: "En marcha",
   waiting: "Te espera", paused: "En pausa", blocked: "Bloqueada", awaiting_choice: "Elige una propuesta",
   completed: "Terminada", cancelled: "Cancelada", failed: "Bloqueada",
 };
@@ -286,8 +286,9 @@ function activityLine(m, ctx) {
     const parts = [q ? plural(q, "pregunta", "preguntas") : null, other ? plural(other, "permiso", "permisos") : null].filter(Boolean);
     return "Te espera" + (parts.length ? ": " + parts.join(" y ") : "");
   }
-  if (m.status === "planning") return "Atlas prepara el plan";
-  if (m.status === "awaiting_plan") return "Revisa el plan de Atlas";
+  const coord = ctx.bots?.get?.("atlas")?.name || "Atlas";
+  if (m.status === "planning") return coord + " prepara el plan";
+  if (m.status === "awaiting_plan") return "Revisa el plan de " + coord;
   if (m.status === "awaiting_choice") return "Elige una propuesta";
   if (m.status === "blocked" || m.status === "failed") return m.error || "Bloqueada";
   if (m.status === "paused") return "En pausa";
@@ -349,7 +350,7 @@ export function missionSummary(m, ctx) {
   });
 }
 
-const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "monthlyTokens", "createdAt", "updatedAt"];
+const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "monthlyTokens", "previousNames", "look", "createdAt", "updatedAt"];
 export function botView(b, ctx) {
   const mine = ctx.missionsByBot.get(b.id) || [];
   const open = mine.filter((m) => OPEN.has(m.status));

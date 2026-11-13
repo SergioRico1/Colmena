@@ -6,6 +6,8 @@ import { navigate } from "../../../lib/router.jsx";
 import { later, promise, useHidden } from "../../../lib/undoToast.js";
 import { scrollBehavior } from "../../../lib/motion.js";
 import { BotMark } from "../../v2/chat/Mark.jsx";
+import { botA11yName } from "../../../lib/identity.js";
+import { srOnly } from "../../../lib/alt.js";
 import { PeerAvatar } from "../../v2/people/PeerAvatar.jsx";
 import { More, Seg, outline } from "./parts.jsx";
 import TeamSheets from "./TeamSheets.jsx";
@@ -34,12 +36,13 @@ const tag = { flex: "none", height: "20px", padding: "0 8px", display: "inline-f
 const pendingText = { display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: 1.4, color: TEXT };
 const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", minHeight: "64px", padding: "12px 18px" };
 
-/** A read-only bot: its shape, its name and its role. */
-function BotChip({ bot }) {
+/** A read-only bot: its shape (with its owner's chip when it is someone else's), its name and its role. */
+function BotChip({ bot, owner = null }) {
   return (
-    <li style={{ display: "inline-flex", alignItems: "center", gap: "7px", minHeight: "28px", padding: "2px 10px 2px 8px", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.2 }}>
-      <BotMark bot={bot} size={14} />
+    <li style={{ display: "inline-flex", alignItems: "center", gap: "7px", minHeight: "28px", padding: "2px 10px 2px 6px", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.2 }}>
+      <BotMark bot={bot} size={18} owner={owner} ring="#F6F6F3" style={{ marginRight: owner && !owner.you ? "3px" : 0 }} />
       <span style={{ fontWeight: 600 }}>{bot.name}</span>
+      {owner && !owner.you ? <span style={srOnly}>{botA11yName(bot, owner).slice(bot.name.length)}</span> : null}
       {bot.role ? <span style={{ color: MUTED }}>{bot.role}</span> : null}
     </li>
   );
@@ -250,7 +253,7 @@ export default function TeamSection() {
                       </span>
                       {m.bots?.length ? (
                         <ul aria-label={m.you ? "Tus bots" : `Bots de ${m.name}`} style={{ flex: "2 1 280px", minWidth: 0, display: "flex", flexWrap: "wrap", gap: "6px", margin: 0, padding: 0, listStyle: "none" }}>
-                          {m.bots.map((b) => <BotChip key={b.id} bot={b} />)}
+                          {m.bots.map((b) => <BotChip key={b.id} bot={b} owner={m.you ? null : { name: m.name, color: m.color }} />)}
                         </ul>
                       ) : <span style={{ flex: "2 1 280px", fontSize: "var(--t-meta)", color: MUTED }}>{"Sin bots a la vista"}</span>}
                       <span style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px", minWidth: "36px", justifyContent: "flex-end" }}>

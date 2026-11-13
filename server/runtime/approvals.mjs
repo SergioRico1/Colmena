@@ -250,7 +250,7 @@ export class ApprovalMethods {
         this.applyPlan(mission.id, a);
         return { approved: true, decidedBy: "regla", message: "El plan ya está en marcha; la persona puede pararlo o cambiarlo. Resume el reparto en una o dos frases para la sala; no hagas el trabajo de los demás." };
       }
-      this.store.event(mission.id, "plan_proposed", { botId: bot.id, text: "Atlas propone un plan" });
+      this.store.event(mission.id, "plan_proposed", { botId: bot.id, text: bot.name + " propone un plan" });
       return { waiting: true };
     }
     if (a.status === "pending") return { waiting: true };

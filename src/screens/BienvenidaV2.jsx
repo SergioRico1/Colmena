@@ -95,8 +95,10 @@ export default function BienvenidaV2({ query = {} }) {
   const cur = ROLES.find((r) => r.id === role) || ROLES.at(-1);
   const team = useMemo(() => cur.team.map(([id, help]) => {
     const r = bots.find((b) => b.id === id);
-    return { ...B[id], ...(r ? { name: r.name, color: r.color, shape: r.shape } : {}), help: id === "atlas" ? "Coordina y reparte" : help };
-  }), [cur, bots]);
+    // Leo comes with a legal team: the look it will get is kept ready (server/bot-looks.mjs).
+    const ready = !r ? settings.botLooks?.[id] : null;
+    return { ...B[id], ...(r ? { name: r.name, color: r.color, shape: r.shape } : ready ? { name: ready.name, color: ready.color } : {}), help: id === "atlas" ? "Coordina y reparte" : help };
+  }), [cur, bots, settings.botLooks]);
   const kept = team.filter((m) => m.id === "atlas" || !dropped.includes(m.id));
   // Step 0: the built-in team as it is on this computer (the code's defaults until it loads).
   const crew = useMemo(() => {
@@ -107,6 +109,12 @@ export default function BienvenidaV2({ query = {} }) {
   const request = text ?? ideas[0] ?? "";
   const roleName = (ROLE_CHIPS.find(([id]) => id === role)?.[1] || cur.label).toLowerCase();
   const writer = real("vera") || B.vera;
+  const coordinator = real("atlas")?.name || B.atlas.name;
+  const [relooked, setRelooked] = useState("");
+  const relook = (m, what) => run("look", async () => {
+    const bot = await post(`/bots/${encodeURIComponent(m.id)}/look`, { what });
+    setRelooked(what === "name" ? `${m.name} ahora se llama ${bot.name}.` : `${bot.name} tiene otro color.`);
+  });
 
   const run = async (k, fn) => {
     if (busy) return undefined;
@@ -327,24 +335,37 @@ export default function BienvenidaV2({ query = {} }) {
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <h1 style={h1}>{"Tus bots ya están aquí."}</h1>
-                    <p style={lead}>{"Pensado para "}{roleName}{". Atlas coordina y reparte; los demás hacen. Quita los que no quieras: puedes crear más luego."}</p>
+                    <p style={lead}>{"Pensado para "}{roleName}{`. ${coordinator} coordina y reparte; los demás hacen. Quita los que no quieras: puedes crear más luego.`}</p>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "10px" }}>
                     {team.map((m) => {
                       const atlas = m.id === "atlas";
                       const keep = atlas || !dropped.includes(m.id);
+                      // Names and colours are this person's own (server/bot-looks.mjs): «Otro nombre» and
+                      // «Otro color» walk the bot's own sequence, never to one another of yours has.
+                      const here = !!real(m.id) && !!settings.botLooks?.key;
+                      const pill = { height: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#3D404A", fontSize: "var(--t-meta)", fontWeight: "500", cursor: busy ? "default" : "pointer" };
                       return (
-                        <label key={m.id} title={atlas ? "Atlas siempre está: coordina al equipo" : undefined} style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "72px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", cursor: atlas ? "default" : "pointer", opacity: keep ? 1 : 0.55, transition: "opacity .2s ease" }}>
-                          <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", ...face(m) }} />
-                          <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
-                            <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{m.name}</span>
-                            <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{m.help}</span>
-                          </span>
-                          <input type="checkbox" checked={keep} aria-disabled={atlas || undefined} onChange={() => !atlas && setDropped((l) => (keep ? [...l, m.id] : l.filter((x) => x !== m.id)))} aria-label={`Quedarme con ${m.name}`} style={{ width: "20px", height: "20px", accentColor: INK }} />
-                        </label>
+                        <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", opacity: keep ? 1 : 0.55, transition: "opacity .2s ease" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                            <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", ...face(m) }} />
+                            <label htmlFor={"keep-" + m.id} title={atlas ? `${m.name} siempre está: coordina al equipo` : undefined} style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px", cursor: atlas ? "default" : "pointer" }}>
+                              <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{m.name}</span>
+                              <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{m.help}</span>
+                            </label>
+                            <input id={"keep-" + m.id} type="checkbox" checked={keep} aria-disabled={atlas || undefined} onChange={() => !atlas && setDropped((l) => (keep ? [...l, m.id] : l.filter((x) => x !== m.id)))} aria-label={`Quedarme con ${m.name}`} style={{ width: "24px", height: "24px", margin: 0, accentColor: INK }} />
+                          </div>
+                          {here && keep ? (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingLeft: "50px" }}>
+                              <button type="button" disabled={!!busy} onClick={() => relook(m, "name")} aria-label={`Otro nombre para ${m.name}`} style={pill}>{"Otro nombre"}</button>
+                              {atlas ? null : <button type="button" disabled={!!busy} onClick={() => relook(m, "color")} aria-label={`Otro color para ${m.name}`} style={pill}>{"Otro color"}</button>}
+                            </div>
+                          ) : null}
+                        </div>
                       );
                     })}
                   </div>
+                  <p role="status" style={{ margin: "-18px 0 0", minHeight: "20px", fontSize: "var(--t-ui)", color: MUTED }}>{relooked || "Tus compañeros verán estos nombres y colores; los de cada persona son distintos."}</p>
                 </>
               ) : null}
 
@@ -380,7 +401,7 @@ export default function BienvenidaV2({ query = {} }) {
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <h1 style={h1}>{"Pídeles algo."}</h1>
-                    <p style={lead}>{anyConnected ? "Escribe como se lo dirías a un compañero. Atlas decide quién lo hace." : "Escribe como se lo dirías a un compañero. Atlas lo repartirá cuando conectes tu cuenta de IA."}</p>
+                    <p style={lead}>{anyConnected ? `Escribe como se lo dirías a un compañero. ${coordinator} decide quién lo hace.` : `Escribe como se lo dirías a un compañero. ${coordinator} lo repartirá cuando conectes tu cuenta de IA.`}</p>
                   </div>
                   <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 8px 8px 22px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 60px -30px rgba(18,19,26,.35)" }}>
                     <label htmlFor="v3-first-request" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Tu primera petición"}</label>

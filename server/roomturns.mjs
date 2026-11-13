@@ -6,6 +6,7 @@
 // - long answers in rooms are said in parts (OpenClaw block streaming, 800–1200 characters);
 // - «para», «detente», «stop»… alone stop the work (OpenClaw abort trigger words).
 import { QUIET_MARK, quietRun } from "./quiet.mjs";
+import { answeringNames } from "./bot-looks.mjs";
 
 export const MAX_ADDRESSEES = 10;
 /** A person's message can start up to this many rounds of bots passing the word. */
@@ -29,12 +30,14 @@ export function addressees(text, members) {
   const list = (members || []).filter((m) => m?.id && m?.name);
   if (/(^|\s)@(todos|equipo)(?![\p{L}\d])/u.test(raw)) return list.map((m) => m.id).slice(0, MAX_ADDRESSEES);
   const found = [];
-  for (const m of list) {
-    const name = escapeRe(fold(m.name));
-    const at = new RegExp("(^|[\\s(¿¡,;])@" + name + "(?![\\p{L}\\d])", "u").exec(raw);
-    const vocative = new RegExp("^\\s*" + name + "\\s*[,:]", "u").test(raw);
-    if (at) found.push({ id: m.id, index: at.index });
-    else if (vocative) found.push({ id: m.id, index: -1 });
+  // A bot also answers to a name it had before (`previousNames`), unless another has it now.
+  for (const { bot: m, names } of answeringNames(list)) {
+    for (const n of names) {
+      const name = escapeRe(fold(n));
+      const at = new RegExp("(^|[\\s(¿¡,;])@" + name + "(?![\\p{L}\\d])", "u").exec(raw);
+      if (at) { found.push({ id: m.id, index: at.index }); break; }
+      if (new RegExp("^\\s*" + name + "\\s*[,:]", "u").test(raw)) { found.push({ id: m.id, index: -1 }); break; }
+    }
   }
   return found.sort((a, b) => a.index - b.index).map((f) => f.id).slice(0, MAX_ADDRESSEES);
 }
@@ -73,10 +76,9 @@ export function quietReply(text) {
 export function passedTo(text, members, { self, already = [] } = {}) {
   const raw = fold(text);
   const out = [];
-  for (const m of members || []) {
-    if (!m?.id || !m?.name || m.id === self || already.includes(m.id)) continue;
-    const re = new RegExp("(^|[\\s(¿¡,;])@" + escapeRe(fold(m.name)) + "(?![\\p{L}\\d])", "u");
-    const hit = re.exec(raw);
+  for (const { bot: m, names } of answeringNames(members)) {
+    if (!m?.id || m.id === self || already.includes(m.id)) continue;
+    const hit = names.map((n) => new RegExp("(^|[\\s(¿¡,;])@" + escapeRe(fold(n)) + "(?![\\p{L}\\d])", "u").exec(raw)).find(Boolean);
     if (hit) out.push({ id: m.id, index: hit.index });
   }
   return out.sort((a, b) => a.index - b.index).map((x) => x.id).slice(0, PASS_LIMIT);

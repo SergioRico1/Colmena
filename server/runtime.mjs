@@ -49,6 +49,7 @@ import { EffectMethods } from "./runtime/effects.mjs";
 import { ApprovalMethods } from "./runtime/approvals.mjs";
 import { DelegationMethods } from "./runtime/delegation.mjs";
 import { RoutingMethods } from "./runtime/routing.mjs";
+import { coordinatorName } from "./bot-looks.mjs";
 export {
   STUCK_ROUNDS, SUGGEST_INSTRUCTIONS, TITLE_INSTRUCTIONS, MEMORY_FLUSH, COMPACT_INSTRUCTIONS, WEB_SEARCH_NOTE, QUEUE_MODES, INCOGNITO_MS,
   PARTIAL_CODE, PARALLEL_STEPS, QUIET_MS, IDLE_ABORT_MS, AUTO_RESUMES, THREAD_WINDOW, THREAD_STEP, threadCut, leavesWorkUndone, partialTableUnsaid,
@@ -177,14 +178,15 @@ export class Runtime {
   makeStep(missionId, key, botId, kind, deps = [], extra = {}) {
     const bot = this.bot(botId);
     const name = bot?.name || botId;
+    const coord = coordinatorName(this.store);
     const titles = {
       solo: extra.missionTitle || "Respuesta",
-      plan: "Atlas prepara el reparto",
+      plan: coord + " prepara el reparto",
       work: name + ": " + String(extra.taskTitle || extra.task || "su parte").slice(0, 80),
-      synthesis: extra.combine ? "Atlas combina las propuestas" : "Atlas integra el trabajo",
+      synthesis: extra.combine ? coord + " combina las propuestas" : coord + " integra el trabajo",
       proposal: "Propuesta de " + name,
       critique: name + " compara las propuestas",
-      debate_summary: "Atlas resume el debate",
+      debate_summary: coord + " resume el debate",
       followup: "Respuesta de " + name + " a tu mensaje",
     };
     const { missionTitle, ...rest } = extra;
@@ -238,7 +240,7 @@ export class Runtime {
     if (conversationOf && !previous) throw Error("Conversacion no encontrada.");
     let bots = [...new Set(botIds?.length ? botIds : previous ? previous.botIds : mode === "solo" ? ["nora"] : [])];
     if (mode === "equipo") {
-      if (!this.bot("atlas")?.enabled) throw Error("Atlas coordina el equipo y debe estar disponible.");
+      if (!this.bot("atlas")?.enabled) throw Error(coordinatorName(this.store) + " coordina el equipo y debe estar disponible.");
       bots = bots.filter((b) => b !== "atlas");
       if (!bots.length && !this.teamCandidates().length) throw Error("No hay bots de equipo disponibles.");
     } else if (!bots.length) throw Error("Selecciona entre uno y cuatro bots disponibles.");
@@ -317,7 +319,7 @@ export class Runtime {
   /** The bots of a room or chat, by name (Atlas included: he coordinates every room). */
   roomMembers(mission) {
     const ids = [...new Set([...(mission.botIds || []), ...(mission.conversation ? [] : ["atlas"])])];
-    return ids.map((b) => ({ id: b, name: this.bot(b)?.name || "" })).filter((m) => m.name);
+    return ids.map((b) => ({ id: b, name: this.bot(b)?.name || "", previousNames: this.bot(b)?.previousNames || [] })).filter((m) => m.name);
   }
   /**
    * What a turn that goes on from `step` (a teammate it names, a late answer to its question)
@@ -428,7 +430,7 @@ export class Runtime {
     const router = route !== false && !writer && !named.length && !thread && this.routerApplies(m, prior);
     const behind = this.routes.has(missionId);
     const decided = router && !behind
-      ? this.routeByRules(m, text) || (working && mode === "interrupt" ? routed(["atlas"], "atlas", "Interrumpes: Atlas lo atiende ya") : null)
+      ? this.routeByRules(m, text) || (working && mode === "interrupt" ? routed(["atlas"], "atlas", "Interrumpes: " + coordinatorName(this.store) + " lo atiende ya") : null)
       : null;
     const later = behind || (router && !decided);
     const botIds = named.length ? named : decided ? decided.to : [threadBot
@@ -545,7 +547,7 @@ export class Runtime {
       const [key] = this.queueTurns(missionId, ["atlas"], prior.filter((s) => s.status === "completed").map((s) => s.key), { request: about + text + note, ackOn: messageId, effort, extra: flags });
       this.store.patch("steps", missionId + ":" + key, { aside: true });
       this.store.patch("missions", missionId, { steps: [...(m.steps || []), key] });
-      this.store.event(missionId, "user_message", { text: "Atlas te responde ahora; el equipo sigue con lo suyo." });
+      this.store.event(missionId, "user_message", { text: coordinatorName(this.store) + " te responde ahora; el equipo sigue con lo suyo." });
       this.wakeups.get(missionId)?.();
       return;
     }
@@ -1446,7 +1448,7 @@ export class Runtime {
             this.setHistory(step.id, [...this.history(step.id), { role: "user", content: "Llama a propose_plan con el reparto antes de terminar." }]);
             continue;
           }
-          throw Error("Atlas no propuso un reparto. Vuelve a intentarlo.");
+          throw Error(coordinatorName(this.store) + " no propuso un reparto. Vuelve a intentarlo.");
         }
         // Something more about the same thing arrived while it wrote its answer (Scheduler#join):
         // it reads it now, in one more round, instead of ending without knowing.
@@ -1826,7 +1828,7 @@ export class Runtime {
         "». Conserva lo mejor de cada una, resuelve contradicciones y explica en dos lineas que tomaste de cada propuesta.",
     });
     this.store.patch("missions", missionId, { steps: [...m.steps, "combine"], status: "queued" });
-    this.store.event(missionId, "combine", { text: "Atlas combina las propuestas de " + names });
+    this.store.event(missionId, "combine", { text: coordinatorName(this.store) + " combina las propuestas de " + names });
     this.launch(missionId);
   }
   async shutdown() {

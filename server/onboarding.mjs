@@ -1,4 +1,5 @@
 import { LEO, now, withBotDefaults } from "./store.mjs";
+import { lookForNew } from "./bot-looks.mjs";
 
 // Roles and starting teams from design/Bienvenida.dc.html.
 export const ROLES = {
@@ -29,7 +30,7 @@ export function applyOnboarding(store, role, { team = null, userName = null, app
   const plan = { ...base, team: [...new Set(chosen)] };
   return store.tx(() => {
     if (plan.team.includes("leo") && !store.get("bots", "leo"))
-      store.put("bots", withBotDefaults({ ...LEO, builtin: true, enabled: true, createdAt: now() }));
+      store.put("bots", withBotDefaults({ ...LEO, ...(lookForNew(store, "leo") || {}), builtin: true, enabled: true, createdAt: now() }));
     for (const bot of store.list("bots")) {
       if (!bot.builtin) continue;
       const enabled = bot.id === "atlas" || plan.team.includes(bot.id);

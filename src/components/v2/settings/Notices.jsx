@@ -100,20 +100,20 @@ function CheckinRows() {
   useEffect(() => { get("/checkin").then(setState).catch(() => {}); }, []);
   if (!state) return null;
   const save = async (changes) => { setBusy(true); setNote(null); try { setState(await patch("/checkin", changes)); return true; } catch (e) { setNote(e.message); return false; } finally { setBusy(false); } };
-  const enable = (v) => save({ enabled: v }).then((ok) => ok && reversible({ id: "checkin:enabled", text: v ? "Atlas revisará por ti" : "Atlas ya no revisa", ms: UNDO_MS, undo: () => patch("/checkin", { enabled: !v }).then(setState) }));
+  const enable = (v) => save({ enabled: v }).then((ok) => ok && reversible({ id: "checkin:enabled", text: v ? "Se revisará por ti" : "Ya no se revisa", ms: UNDO_MS, undo: () => patch("/checkin", { enabled: !v }).then(setState) }));
   const runNow = async () => {
     setBusy(true); setNote(null);
     try {
       const r = await post("/checkin/run", {});
       setState(r);
-      setNote(r.notified ? "Atlas te ha dejado un aviso en Inicio." : r.reason === "nada pendiente" ? "No había nada pendiente: no ha hecho falta preguntar al modelo." : "Atlas no ve nada urgente ahora.");
+      setNote(r.notified ? "Te ha quedado un aviso en Inicio." : r.reason === "nada pendiente" ? "No había nada pendiente: no ha hecho falta preguntar al modelo." : "No hay nada urgente ahora.");
     } catch (e) { setNote(e.message); } finally { setBusy(false); }
   };
   const when = state.lastAt ? new Date(state.lastAt).toLocaleString("es-ES", { weekday: "short", hour: "2-digit", minute: "2-digit" }) : null;
   const hour = { ...select, width: "92px", height: "36px", fontSize: "var(--t-ui)" };
   return (
     <>
-      <SwitchRow anchor="revision-atlas" title="Revisión de Atlas" sub="Mira lo que espera tu respuesta, las salas paradas y lo que vence, y solo te escribe si merece la pena. Con el modelo más barato." on={!!state.enabled} busy={busy} onChange={enable} />
+      <SwitchRow anchor="revision-atlas" title="Revisión periódica" sub="Mira lo que espera tu respuesta, las salas paradas y lo que vence, y solo te escribe si merece la pena. Con el modelo más barato." on={!!state.enabled} busy={busy} onChange={enable} />
       {state.enabled ? (
         <>
           <Row title="Cada cuánto">

@@ -16,6 +16,7 @@ import { forget, forgetHash, isForgotten } from "./forgotten.mjs";
 import { observeMission, refreshObservations, missionEnding, isCorrection } from "./verdicts.mjs";
 import { feedbackCorrections } from "./feedback.mjs";
 import { isOtherPerson } from "./origin.mjs";
+import { coordinatorName } from "./bot-looks.mjs";
 
 export { containsSecret, forgetHash, isForgotten };
 
@@ -997,7 +998,7 @@ export function suggestAutomation(store, mission) {
   return putSuggestion(store, {
     kind: "automation",
     botId: bot,
-    text: `Atlas ha notado que cada ${day} pides «${short}». ¿Lo automatizamos?`,
+    text: `${coordinatorName(store)} ha notado que cada ${day} pides «${short}». ¿Lo automatizamos?`,
     cta: `Sí, cada ${day} a las ${hour}:00`,
     payload: {
       name: mission.title.slice(0, 100),

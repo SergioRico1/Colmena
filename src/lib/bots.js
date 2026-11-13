@@ -53,3 +53,6 @@ export function faceOf(bot, mood = null) {
   if (bot?.id !== "atlas" || portraitOf(bot)) return null;
   return "/faces/hex/" + (FACES.includes(mood) ? mood : "neutral") + ".png";
 }
+
+/** The name of the bot that coordinates (id «atlas»): each person names theirs (server/bot-looks.mjs). */
+export const coordinatorOf = (bots) => (bots || []).find((b) => b?.id === "atlas")?.name || "Atlas";

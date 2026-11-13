@@ -6,6 +6,7 @@ import { patch, post } from "../../lib/api.js";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { navigate } from "../../lib/router.jsx";
 import { findBot } from "./common.jsx";
+import { coordinatorOf } from "../../lib/bots.js";
 
 // Pieces of the room screen that came with the sala of your bots (design/V2Sala.dc.html,
 // V3Sala): «Mientras no estabas», «Bots y reglas» and the room that waits for its first message.
@@ -110,7 +111,7 @@ export function RulesPanel({ mission, bots, memberIds }) {
           );
         })}
         <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: "1.55", color: "#3D404A" }}>{mission.safety === "avisar" ? "Para enviar algo fuera o gastar dinero, te avisan antes y esperan tu OK." : "Para enviar algo fuera o gastar dinero, siempre esperan tu OK."}</p>
-        {saved ? <span role="status" style={{ fontSize: "var(--t-ui)", color: "#0B6B4A" }}>{"Guardado. Atlas lo tendrá en cuenta desde ahora."}</span> : null}
+        {saved ? <span role="status" style={{ fontSize: "var(--t-ui)", color: "#0B6B4A" }}>{`Guardado. ${coordinatorOf(bots)} lo tendrá en cuenta desde ahora.`}</span> : null}
         {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4372A" }}>{error}</span> : null}
       </section>
     </div>
@@ -147,7 +148,7 @@ export function NewRoom({ query }) {
           <div style={{ flex: "1", display: "flex", flexDirection: "column", justifyContent: "flex-end", width: "100%", maxWidth: "840px", margin: "0 auto", padding: "22px clamp(20px, 4vw, 44px)", gap: "16px" }}>
             <span style={{ display: "flex", gap: "10px" }}>{members.map((b) => <BotMark key={b.id} bot={b} size={34} />)}</span>
             <strong style={{ font: "600 var(--t-headline)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{`Sala con ${members.map((b) => b.name).join(", ").replace(/, ([^,]*)$/, " y $1")}`}</strong>
-            <span style={{ fontSize: "var(--t-read)", lineHeight: "1.5", color: "#5C606C" }}>{"Escribe qué necesitáis. Atlas reparte el trabajo y todos lo veis aquí."}</span>
+            <span style={{ fontSize: "var(--t-read)", lineHeight: "1.5", color: "#5C606C" }}>{`Escribe qué necesitáis. ${coordinatorOf(bots)} reparte el trabajo y todos lo veis aquí.`}</span>
             {error ? <span role="alert" style={{ color: "#B4372A" }}>{error}</span> : null}
           </div>
           <Composer value={text} onChange={setText} onSubmit={submit} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); } }} label="Primer mensaje de la sala" placeholder={`Mensaje en #${name} · qué necesitáis`} busy={busy} v3 />

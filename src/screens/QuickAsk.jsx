@@ -275,7 +275,7 @@ export default function QuickAsk() {
   ];
   // «Para …»: the team (Atlas coordinates) or one bot.
   const targetItems = [
-    { id: "equipo", icon: atlas ? <BotPresence bot={atlas} size={14} /> : <Plus {...ICON} />, label: "Tu equipo", hint: "Atlas decide quién lo hace", checked: target === "equipo" && !replyIn, run: () => { setTarget("equipo"); setReplyIn(null); } },
+    { id: "equipo", icon: atlas ? <BotPresence bot={atlas} size={14} /> : <Plus {...ICON} />, label: "Tu equipo", hint: (atlas?.name || "Atlas") + " decide quién lo hace", checked: target === "equipo" && !replyIn, run: () => { setTarget("equipo"); setReplyIn(null); } },
     ...team.map((b) => ({ id: b.id, icon: <BotPresence bot={b} size={14} />, label: b.name, hint: b.role, checked: target === b.id && !replyIn, run: () => { setTarget(b.id); setReplyIn(null); } })),
   ];
   const pill = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#3D404A", fontSize: "var(--t-meta)", cursor: "pointer", whiteSpace: "nowrap" };

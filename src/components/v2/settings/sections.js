@@ -97,7 +97,7 @@ export const SECTIONS = [
       ["horario", "Horario tranquilo", "no molestar noche fin de semana silencio"],
       ["resumenes", "Resumen al volver a una sala", "recaps resumen al volver"],
       ["te-avisa", "Te avisa de lo importante", "vigilar correo novedades resumen mirar"],
-      ["revision-atlas", "Revisión de Atlas", "checkin revisar periódica atlas"],
+      ["revision-atlas", "Revisión periódica", "checkin revisar periódica atlas coordinador"],
     ],
   },
   {

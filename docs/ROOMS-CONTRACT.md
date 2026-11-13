@@ -478,3 +478,38 @@ room's mission (`missionId`; the room is `rooms.ofMission(missionId)`).
 (`/sala/:mission`) shows a request as a message of its author; statuses of a room without a
 share do not exist. Ajustes › Personas lists the rule for contacts; a teammate who is not a
 contact gets theirs from the card («Siempre/Nunca para…») or `PATCH /api/peers/contacts/:id`.
+
+## Bots unique per person (`server/bot-looks.mjs`, `tests/bot-looks.test.mjs`)
+
+Every Colmena used to start with the same six bots; a room of three people had three «Vera».
+Bot ids never change (they are keys everywhere); names and colours are each person's own.
+
+- **Seed.** The person's «Personas» identity: the public signing key (`peers.address`), loaded or
+  created by `Peers#start` on the first start, before the window opens onboarding
+  (`server/index.mjs` calls `ensureBotLooks(store, peers.address)` once it is known). If the
+  identity cannot be loaded, a random `settings.installId` stands in. The key used is written to
+  `settings.botLooks.key` and never read from the identity again, so the looks change only by the
+  person's hand. Same key, same bots on any machine.
+- **New installation** (`botLooks.state: "fresh"`, set by `Store#migrate`): each built-in bot gets
+  a name from its role's pool (`NAME_POOLS`, 12 per role, disjoint, none of the factory names)
+  and a colour from `BOT_PALETTE` (12 colours, none honey nor amber, ≥ 3:1 on the light
+  surfaces), all distinct. The shape keeps marking the role; the coordinator (`atlas`) keeps its
+  ink and hexagon and gets a pooled name. Leo (legal) gets the look onboarding showed for it.
+- **Existing installation** (`"update"`): names are kept. Each built-in bot except the
+  coordinator still at its factory colour gets a seeded colour distinct from all your bots; a
+  colour you chose stays. `botLooks.previous` keeps the factory colours for «Deshacer» of the
+  one quiet notice (`POST /api/bots/looks/undo`, `…/seen`).
+- **«Otro nombre» / «Otro color»** (`POST /api/bots/:id/look {what}`): the next one of the bot's
+  own seeded sequence (`bot.look` is its position) that none of your other bots has.
+- **Unique names.** Your bots never share a name, accents and case out (create, rename,
+  duplicate). A rename keeps the old name in `previousNames` (five at most): «@Vera» typed by
+  hand still finds the bot (`peers/bots.mjs › mentionedByName`, `roomturns.mjs › addressees`,
+  `passedTo`, the client's `resolveMentions` and Inicio's `mentionedBots`) unless another of your
+  bots is called that now.
+- **Teammates** learn new names and colours through the profile re-announce: a change to a `bots`
+  record runs `announceProfile`, whose signature includes every bot's colour (`profile`, then
+  `profile-out` → `team.profile` and `room.bots`).
+- **In sight.** Two visible bots with one name read «Vera · de Lucía» (`identity.js ›
+  botNameLabels`; «de Lucía M.» when two owners share a first name; your own never «de ti»).
+  Someone else's bot carries a round chip with its owner's initials in the corner
+  (`Mark.jsx › OwnerBadge`), and its accessible name says whose it is («Vera, bot de Lucía»).

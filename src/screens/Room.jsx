@@ -24,7 +24,7 @@ import AsidePanel, { askAsideAbout } from "../components/room/AsidePanel.jsx";
 import SelectionPopup, { quoteInto } from "../components/room/SelectionPopup.jsx";
 import { BlockerBand, StuckBand, RepliesPanel, ProgressPanel, RoomComposer, RoomMessages, ThreadPanel, typingInfo, withOrphanQuestions, OlderMessages } from "../components/room/RoomParts.jsx";
 import { CatchUp, NewRoom, RulesPanel, useSince } from "../components/room/RoomExtras.jsx";
-import { HandoffLine, PersonAvatar, StatusLine } from "../components/room/Author.jsx";
+import { BotNames, HandoffLine, PersonAvatar, StatusLine } from "../components/room/Author.jsx";
 import MemberPanel from "../components/room/MemberPanel.jsx";
 import RoomInvite from "../components/room/RoomInvite.jsx";
 import RoomAsks from "../components/room/RoomAsks.jsx";
@@ -37,8 +37,8 @@ import { LimitBanner } from "../components/v2/LimitNotice.jsx";
 import { RELAY_LABEL, editMessage, fileBase64, unsendMessage } from "../lib/peers.js";
 import { isHidden, later, reversible, useToasts } from "../lib/undoToast.js";
 import { isTask, roomLinks } from "../lib/rooms.js";
-import { firstName, initialsOf, listNames } from "../lib/identity.js";
-import { askWaiting, authorOf, authorView, itemType, liveLines, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
+import { botNameLabels, firstName, initialsOf, listNames } from "../lib/identity.js";
+import { askWaiting, authorOf, authorView, headerBots, itemType, liveLines, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
 import { useAnnouncer } from "../lib/useAnnouncer.js";
 import { messageListProps } from "../lib/messageKeys.js";
 import Announcer from "../components/Announcer.jsx";
@@ -212,6 +212,8 @@ function Room({ id, query }) {
   const panel = useMemo(() => memberPanel(shown, {
     working: bots.filter(working).map((b) => b.id), waiting: [...pending.map((a) => a.botId), ...asks.filter((a) => a.state === "asked").map((a) => a.bot?.id)], activity: shown?.activity || EMPTY,
   }), [shown, bots, activity, live, pending]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A name two visible bots share reads «Vera · de Lucía» in every author line (identity.js).
+  const botNames = useMemo(() => botNameLabels(shown?.bots || EMPTY), [shown]);
   const title = shown?.title || mission?.room || mission?.title || "sala";
   const place = roomPlace(shown, teams);
   const myBots = useMemo(() => (shown?.bots || EMPTY).filter((g) => g.owner?.you).flatMap((g) => g.bots), [shown]);
@@ -409,12 +411,13 @@ function Room({ id, query }) {
     </p>
   ) : null;
   const ready2 = !!shown;
-  const stackPeople = panel.people.slice(0, 4), stackBots = panel.groups.flatMap((g) => g.bots.map((b) => ({ ...b, mine: g.mine }))).slice(0, 4);
+  const stackPeople = panel.people.slice(0, 4), stackBots = headerBots(panel);
   const counts = [panel.people.length === 1 ? "1 persona" : `${panel.people.length} personas`, panel.botCount === 1 ? "1 bot" : `${panel.botCount} bots`].join(" · ");
   const send = (text) => (shared ? post(`${path}/messages`, { text }).then(() => tl.reload()) : post(`/missions/${missionId}/messages`, { text }));
 
   return (
     <InteractiveContext.Provider value={{ send: mission ? send : null }}>
+      <BotNames.Provider value={botNames}>
       <Shell active="chats" scroll={false}>
         <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
           <main aria-label={"Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
@@ -445,7 +448,7 @@ function Room({ id, query }) {
                     </div>
                     <span role="img" aria-label={stackLabel(panel)} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span aria-hidden="true" style={{ display: "flex" }}>{stackPeople.map((p, i) => <span key={p.address || i} style={{ marginLeft: i ? "-7px" : 0, borderRadius: "var(--r-circle)", boxShadow: "0 0 0 2px #F5F5F2" }}><PersonAvatar person={p} size={26} /></span>)}</span>
-                      <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:") + b.id} bot={b} size={18} state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
+                      <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} bot={b} size={18} owner={b.owner} ring="#F5F5F2" state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
                       <span aria-hidden="true" style={{ fontSize: "var(--t-meta)", color: "#4A4D57", whiteSpace: "nowrap" }}>{counts}</span>
                     </span>
                     {mission?.mode === "debate" ? <a href={`/debate/${missionId}`} style={{ ...outline, textDecoration: "none" }}>{"Elegir propuesta"}</a> : null}
@@ -527,6 +530,7 @@ function Room({ id, query }) {
             composer={{ others, mentionable: guest ? EMPTY : mentionable, mineEnabled: guest ? EMPTY : bots.filter((b) => b.enabled !== false), me: peers?.me?.address || null, disabled: gone, onTyping: tl.typingNow }} /> : null}
         </div>
       </Shell>
+      </BotNames.Provider>
     </InteractiveContext.Provider>
   );
 }

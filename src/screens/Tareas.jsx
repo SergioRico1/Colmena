@@ -82,7 +82,7 @@ function nowText(m, col, botName) {
   if (col === "done") return m.recap?.text || m.activityLine || "Terminada";
   if (col === "stuck") return m.error || m.activityLine || "Se ha atascado. Mira qué pasa.";
   if (col === "wait") {
-    if (m.status === "awaiting_plan") return "Atlas espera que apruebes el plan";
+    if (m.status === "awaiting_plan") return "Espera que apruebes el plan";
     if (m.status === "awaiting_choice") return "Hay propuestas listas: elige una";
     if (m.questionCount > 0 && m.questionCount >= m.waiting) return m.waiting === 1 ? "Tiene una pregunta para ti" : `Tiene ${m.waiting} preguntas para ti`;
     if (m.waiting > 0) return m.waiting === 1 ? "Una cosa espera tu OK" : `${m.waiting} cosas esperan tu OK`;

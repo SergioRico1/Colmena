@@ -169,6 +169,9 @@ export class Store {
       // «No» are kept; a «Lee» you choose afterwards stays.
       const appWrites = !fresh && !settings.appWrites;
       if (!settings.appWrites) merged.appWrites = true;
+      // Bots unique per person (server/bot-looks.mjs): a new installation gets names and colours
+      // of its own once the identity is known; an existing one, colours only.
+      if (!settings.botLooks) merged.botLooks = { state: fresh ? "fresh" : "update" };
       if (JSON.stringify(merged) !== JSON.stringify(settings)) this.put("settings", merged);
       const seedIds = new Set([...SEEDS.map((s) => s[0]), "leo"]);
       for (const bot of this.list("bots")) {

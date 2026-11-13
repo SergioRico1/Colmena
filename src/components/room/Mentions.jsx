@@ -192,7 +192,9 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null, r
   };
 
   const row = (item, selected) => {
-    if (item.type === "bot" || item.type === "peerbot") return [<BotMark key="g" bot={item.bot} size={18} />, item.bot.name, item.bot.role || "bot"];
+    // Someone else's bot carries its owner's chip; the second option for a name you share reads «¿Vera, de Lucía?».
+    if (item.type === "peerbot") return [<BotMark key="g" bot={item.bot} size={18} owner={item.owner} />, item.ask || item.bot.name, item.ask ? "bot de " + firstName(item.owner?.name) : item.bot.role || "bot"];
+    if (item.type === "bot") return [<BotMark key="g" bot={item.bot} size={18} />, item.bot.name, item.bot.role || "bot"];
     if (item.type === "person") return [<PersonAvatar key="g" person={item.person} size={20} ring="#FFFFFF" />, item.person.name, item.person.presence === "online" ? "en línea" : "persona"];
     if (item.type === "file") return [<RefGlyph key="g" kind="file" name={item.name} />, item.name, "archivo"];
     if (item.type === "folder") return [<RefGlyph key="g" kind="folder" />, item.name, <span key="k" style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>{"carpeta"}<ChevronRight {...I} style={{ opacity: selected ? 1 : 0.6 }} /></span>];

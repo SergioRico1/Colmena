@@ -171,6 +171,20 @@ function writeIfChanged(file, text) {
   atomicWrite(file, text);
 }
 
+/**
+ * A bot was renamed: a SOUL.md that is still exactly the template of its old name follows the new
+ * one (one written or changed by the person is never touched).
+ */
+export function soulRenamed(before, after, { directory = dataDirectory } = {}) {
+  if (!directory || !before?.id || before.name === after?.name) return false;
+  const file = path.join(botDirectory(before.id, directory), "SOUL.md");
+  try {
+    if (readFileSync(file, "utf8") !== renderSoulTemplate(before)) return false;
+  } catch { return false; }
+  atomicWrite(file, renderSoulTemplate(after));
+  return true;
+}
+
 /** Current SOUL.md of a bot; if it was never written, the Colmena template for that bot. */
 export function readSoul(botId, { directory = dataDirectory, bot = null } = {}) {
   try {

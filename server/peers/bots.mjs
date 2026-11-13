@@ -17,6 +17,7 @@ import { now } from "../store.mjs";
 import { readSoul, renderSoulTemplate, personalityHints } from "../soul.mjs";
 import { EXTERNAL_NOTICE, cleanLabel, conversationReport, wrapReport } from "../external-content.mjs";
 import { isMeetingRequest } from "./meetings.mjs";
+import { answeringNames } from "../bot-looks.mjs";
 
 export const PEER_BOT_LIMITS = Object.freeze({ history: 30, perHour: 20, perMessage: 3, timeoutMs: 120000, answer: 6000 });
 const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -25,7 +26,8 @@ const hhmm = (iso) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit
 /** Your bots named in `text` as «@Nombre» (only for your own messages). */
 export function mentionedByName(text, bots) {
   const t = fold(text);
-  return bots.filter((b) => new RegExp("(^|[^\\p{L}\\p{N}])@" + fold(b.name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\p{N}])", "u").test(t));
+  // A name it had before («@Vera» after it became «Amaia») still finds it (server/bot-looks.mjs).
+  return answeringNames(bots).filter(({ names }) => names.some((n) => new RegExp("(^|[^\\p{L}\\p{N}])@" + fold(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![\\p{L}\\p{N}])", "u").test(t))).map(({ bot }) => bot);
 }
 
 export class PeerBots {
