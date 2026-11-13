@@ -21,6 +21,8 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { imageUnsupported } from "../images.mjs";
 import { modelEntry } from "./catalog.mjs";
+import { imageBlock } from "./anthropic-items.mjs";
+import { MEDIA, pdfNote } from "../media.mjs";
 
 export const MCP_NAME = "colmena";
 const PREFIX = "mcp__" + MCP_NAME + "__";
@@ -97,7 +99,20 @@ export function claudeCliVersion({ command = findClaudeCli(), timeoutMs = 10000 
 
 const textOf = (content) =>
   typeof content === "string" ? content
-    : (Array.isArray(content) ? content : []).map((c) => (["input_text", "output_text", "text"].includes(c?.type) ? c.text : c?.type === "input_image" ? "[imagen]" : "")).filter(Boolean).join("\n");
+    : (Array.isArray(content) ? content : []).map((c) => (["input_text", "output_text", "text"].includes(c?.type) ? c.text : c?.type === "input_image" ? "[imagen]" : c?.type === "input_file" ? pdfNote(c) : "")).filter(Boolean).join("\n");
+
+/**
+ * The images of the person's messages among `items`, as Anthropic image blocks for the CLI's
+ * stream-json user message (the newest MEDIA.images). Tool outputs carry theirs through MCP.
+ */
+export function userImages(items) {
+  const blocks = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    if (item?.type || item?.role !== "user" || !Array.isArray(item.content)) continue;
+    for (const p of item.content) if (p?.type === "input_image") { const b = imageBlock(p.image_url?.url || p.image_url); if (b) blocks.push(b); }
+  }
+  return blocks.slice(-MEDIA.images);
+}
 
 /** The step so far, as one message for a fresh CLI session (OpenClaw reseed from transcript). */
 export function transcriptOf(items, { max = 400000 } = {}) {
@@ -362,9 +377,11 @@ export class ClaudeCliProvider {
       s.onDelta = onDelta; s.onEvent = onEvent;
       s.deliver(outputs);
       const extra = rest.map((x) => textOf(x.content)).filter((t) => t.trim()).join("\n\n");
-      if (extra) {
-        if (s.turnDone) s.send([{ type: "text", text: extra }]);
-        else s.proc?.stdin?.write(userLine([{ type: "text", text: extra }]));
+      const pictures = userImages(rest);
+      if (extra || pictures.length) {
+        const content = [{ type: "text", text: extra || "." }, ...pictures];
+        if (s.turnDone) s.send(content);
+        else s.proc?.stdin?.write(userLine(content));
       }
     } else {
       s?.close();
@@ -373,7 +390,7 @@ export class ClaudeCliProvider {
       const onlyUser = items.every((x) => x?.role === "user" && !x.type);
       const first = onlyUser ? items.map((x) => textOf(x.content)).filter(Boolean).join("\n\n")
         : "Continúa este trabajo. Esto es lo que ha pasado hasta ahora en este paso (transcripción de Colmena):\n\n" + transcriptOf(items) + "\n\nSigue desde aquí: si quedan herramientas por usar, úsalas; si ya está, responde.";
-      s.send([{ type: "text", text: first || "." }]);
+      s.send([{ type: "text", text: first || "." }, ...userImages(items)]);
     }
     let round;
     try {

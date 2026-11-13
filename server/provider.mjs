@@ -4,6 +4,7 @@ import { RESOURCE } from "./nexo/security.mjs";
 import { windowsVault } from "./nexo/credential-vault.mjs";
 import { imageUnsupported, IMAGES_UNSUPPORTED } from "./images.mjs";
 import { ResponseSockets, SocketUnavailable } from "./provider-ws.mjs";
+import { mediaIn, mediaRefusal, withoutMedia } from "./media.mjs";
 import { chooseModel, parseModel } from "./models.mjs";
 import { cheapestModel } from "./checkins.mjs";
 import { ENGINES, ENGINE_LABEL, CATALOG, ANTHROPIC_API, OPENCODE_GO_API, OPENCODE_GO_ANTHROPIC_API, OPENCODE_GO_CHECK_MODEL, opencodeSession, parseRef, modelEntry, listEntry } from "./providers/catalog.mjs";
@@ -290,8 +291,11 @@ class ResponsesProvider {
     let search = !!webSearch && this.nativeSearchAvailable();
     let sources = search && this.searchSources !== false;
     let keyed = !!cacheKey && this.supportsCacheKey();
+    // Images and PDFs (media.mjs): a 400 about them drops them for this call (PDFs for the session).
+    const media = mediaIn(input);
+    let dropImages = this.images === false, dropFiles = this.files === false;
     const build = () => {
-      const body = { model: chosen, instructions, input: this.prepareInput(this.foreignFree(input)), tools: search ? [...tools, { type: "web_search" }] : tools, stream: true, store: false };
+      const body = { model: chosen, instructions, input: withoutMedia(this.prepareInput(this.foreignFree(input)), { images: dropImages, files: dropFiles }), tools: search ? [...tools, { type: "web_search" }] : tools, stream: true, store: false };
       if (keyed) body.prompt_cache_key = String(cacheKey).slice(0, 64);
       if (withReasoning) body.reasoning = { effort: search && effort === "minimal" ? "low" : effort };
       const include = [];
@@ -327,7 +331,10 @@ class ResponsesProvider {
       } catch (error) {
         if (error.status !== 400 || attempt >= 3 || signal?.aborted) throw error;
         const detail = String(error.detail || "");
+        const refused = mediaRefusal(detail, { images: media.images && !dropImages, files: media.files && !dropFiles });
         if (keyed && /prompt_cache_key/i.test(detail)) { keyed = false; this.cacheKeys = false; }
+        else if (refused === "files") { dropFiles = true; this.files = false; }
+        else if (refused === "images") { dropImages = true; if (this.rememberImages) this.images = false; }
         else if (withReasoning && (!search || /reasoning|effort/i.test(detail))) withReasoning = false;
         else if (search && sources && /include|sources/i.test(detail)) { sources = false; this.searchSources = false; }
         else if (search) { search = false; this.nativeSearch = false; }
@@ -446,6 +453,8 @@ export class LocalProvider extends ResponsesProvider {
       errors: { name: "El modelo local", limit: "El modelo local esta ocupado.", auth: "El modelo local rechazo el acceso." },
     });
     this.config = config;
+    this.files = false; // a local server never takes PDFs as documents
+    this.rememberImages = true; // one that refuses images keeps refusing them (media.mjs mediaCaps)
   }
   supportsReasoning() { return false; }
   supportsNativeSearch() { return false; }
@@ -469,6 +478,7 @@ export class GoResponsesProvider extends ResponsesProvider {
   constructor(loadKey, { fetchImpl = fetch } = {}) {
     super({ fetchImpl, sockets: null, errors: { name: "OpenCode Go", limit: "Has alcanzado el límite de tu plan de OpenCode Go.", auth: "Reconecta OpenCode Go en Ajustes." } });
     this.loadKey = loadKey;
+    this.files = false; // PDFs go as their note (media.mjs)
   }
   supportsNativeSearch() { return false; }
   supportsCacheKey() { return false; }

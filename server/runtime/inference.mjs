@@ -1,6 +1,6 @@
 import { checkGoalBudget, spendOnGoal } from "../goals.mjs";
 import { chooseModel } from "../models.mjs";
-import { now } from "../store.mjs";
+import { id, now } from "../store.mjs";
 import { THINKING_EFFORT, RETRY, retryDelay, UNAVAILABLE_CODE, isTransientError } from "../provider.mjs";
 import { record as recordUsage, crossedWarning } from "../usage.mjs";
 import { parkError, LONG_TURN_CALLS } from "../admission.mjs";
@@ -8,6 +8,7 @@ import { CONTEXT, estimateTokens } from "../context.mjs";
 import { usageLimitOf, limitError, engineName } from "../limits.mjs";
 import { parseRef } from "../providers/catalog.mjs";
 import { describeFailure, isChatStep, sha } from "./helpers.mjs";
+import { hasMediaRefs, mediaCaps, resolveMedia } from "../media.mjs";
 
 /** What a request would send, in tokens (instructions, history and tools): an estimate. */
 const inputEstimate = (params) => estimateTokens(params.instructions) + estimateTokens(params.input) + estimateTokens(params.tools);
@@ -107,6 +108,9 @@ export class InferenceMethods {
   async infer(params, { missionId = null, botId = null, stepId = null, onRetry = null, retry = true, interactive = false } = {}) {
     if (missionId) checkGoalBudget(this.store, missionId);
     const { timeoutMs, ...rest } = params;
+    // Pictures and PDFs the person attached travel as references: here they become what this
+    // engine takes (media.mjs), right before the call. The step history keeps the references.
+    if (hasMediaRefs(rest.input)) rest.input = await this.mediaInput(rest.input, rest.model, { missionId, botId });
     // One cache key per bot and mission: its rounds (and its next turns) reuse the prefix
     // OpenAI already processed — the same system prompt, tools and earlier history.
     // Side tasks (no retry: titles, narration…) get their own key, so they never take the
@@ -140,6 +144,21 @@ export class InferenceMethods {
     } finally {
       this.admission.settle(gate.reservation);
     }
+  }
+  /**
+   * `input` with its attachment references resolved for the engine of `model` (media.mjs).
+   * When that engine cannot see images, the person is told once per conversation, in plain words.
+   */
+  async mediaInput(input, model, { missionId = null, botId = null } = {}) {
+    const { input: resolved, hidden } = await resolveMedia(input, { rootOf: (missionOf) => this.root(missionOf), caps: mediaCaps(this.provider, model) });
+    const mission = missionId ? this.store.get("missions", missionId) : null;
+    if (hidden.length && mission && !mission.visionNotice) {
+      const name = this.bot(botId)?.name || "Tu bot";
+      this.store.patch("missions", missionId, { visionNotice: now() });
+      this.store.put("messages", { id: id(), missionId, role: "system", botId, kind: "activity", visionNotice: true, at: now(),
+        text: name + " usa una IA que no ve imágenes, así que no puede mirar «" + hidden[0] + "»" + (hidden.length > 1 ? " ni las demás" : "") + ". Cuéntale con palabras lo que necesitas, o elige para este bot una IA que vea imágenes." });
+    }
+    return resolved;
   }
   /** The call itself, once admitted: attempts, backoff, hand-over, and the usage of what answered. */
   async inferAdmitted({ rest, attemptParams, hub, engine, known, retries, delayFor, base, count, stepId, onRetry }) {

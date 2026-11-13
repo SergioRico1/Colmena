@@ -419,7 +419,7 @@ async function parse(buffer, name, format) {
     };
   }
   if (format === "legacy") throw docError(`No puedo leer el formato ${LEGACY[String(name).split(".").pop().toLowerCase()]}. Guárdalo como .docx, .xlsx o PDF.`);
-  if (format === "image") throw docError("Es una imagen: todavía no puedo leer el texto de imágenes. Si es un documento escaneado, pide un PDF con texto.");
+  if (format === "image") throw docError("Es una imagen: ábrela con read_file para verla.");
   if (format === "binary") throw docError("Este tipo de archivo no se puede leer como documento.");
   if (buffer.length > DOC_LIMITS.maxTextBytes) throw docError("Solo archivos de texto de hasta 2 MB.");
   return { format: "text", chunks: chunkText(buffer.toString("utf8").replace(/^﻿/, "")) };

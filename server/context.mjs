@@ -45,9 +45,17 @@ export function contextBudget({ window, maxOutput } = {}) {
 
 // Size of a history as the model sees it: a screenshot counts as a small fixed cost, not as
 // the hundreds of thousands of base64 characters it takes to carry it.
+// An attached image (still a reference, or its data URL) and a PDF (a page ≈ 1 500 tokens;
+// media.mjs) count the same way: images and documents take room in the window too.
 const IMAGE_COST = "x".repeat(4000);
+const pdfCost = (pages) => "x".repeat(Math.min(100, Math.max(1, pages || 10)) * 1500 * 3);
 export function contextSize(history) {
-  return JSON.stringify(history, (k, v) => (k === "image_url" && typeof v === "string" && v.startsWith("data:") ? IMAGE_COST : v)).length;
+  return JSON.stringify(history, (k, v) => {
+    if (k === "image_url" && typeof v === "string" && v.startsWith("data:")) return IMAGE_COST;
+    if (k === "file_data" && typeof v === "string" && v.startsWith("data:")) return pdfCost(Math.ceil((v.length * 3) / 4 / 60000));
+    if (v && typeof v === "object" && v.ref && !Array.isArray(v)) return v.type === "input_image" ? IMAGE_COST : v.type === "input_file" ? pdfCost(v.pages) : v;
+    return v;
+  }).length;
 }
 /** Estimated tokens of a text or of history items (~3 characters per token). */
 export function estimateTokens(value) {

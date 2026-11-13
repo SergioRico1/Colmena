@@ -148,7 +148,7 @@ test("OpenCode Go Chat Completions: tool calls and outputs, DeepSeek reasoning r
   ];
   const msgs = toChatMessages(history, { instructions: "Sys", model: "deepseek-v4-pro", vision: false });
   assert.equal(msgs[0].role, "system");
-  assert.match(msgs[1].content, /no puede ver imágenes/);
+  assert.match(msgs[1].content, /no ve imágenes/);
   assert.deepEqual(msgs[2], { role: "assistant", content: null, reasoning_content: "razono", tool_calls: [{ id: "c1", type: "function", function: { name: "read_file", arguments: "{\"path\":\"a\"}" } }] });
   assert.deepEqual(msgs[3], { role: "tool", tool_call_id: "c1", content: "contenido" });
   assert.equal(toChatMessages(history, { model: "kimi-k3" })[2].reasoning_content, undefined, "another model never gets it");

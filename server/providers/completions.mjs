@@ -8,13 +8,15 @@ import { imageUnsupported } from "../images.mjs";
 import { modelEntry, opencodeSession } from "./catalog.mjs";
 import { NATIVE } from "./anthropic-items.mjs";
 import { limitHeaders } from "../limits.mjs";
+import { NO_VISION_NOTE, pdfNote } from "../media.mjs";
 
 const DERIVED = new Set(["message", "function_call", "web_search_call", "reasoning"]);
-const NO_VISION = "[Imagen omitida: este modelo no puede ver imágenes.]";
+const NO_VISION = "[Imagen omitida] " + NO_VISION_NOTE;
 
+// A PDF (input_file) never goes as a document on this route: its note says to read it with read_file.
 const textOf = (content) =>
   typeof content === "string" ? content
-    : (Array.isArray(content) ? content : []).map((c) => (["input_text", "output_text", "text"].includes(c?.type) ? c.text : c?.type === "refusal" ? c.refusal : "")).filter(Boolean).join("\n");
+    : (Array.isArray(content) ? content : []).map((c) => (["input_text", "output_text", "text"].includes(c?.type) ? c.text : c?.type === "refusal" ? c.refusal : c?.type === "input_file" ? pdfNote(c) : "")).filter(Boolean).join("\n");
 const imagesOf = (content) =>
   (Array.isArray(content) ? content : []).filter((c) => c?.type === "input_image").map((c) => c.image_url?.url || c.image_url).filter((u) => typeof u === "string" && u);
 
@@ -26,7 +28,7 @@ export function toChatMessages(input, { instructions = "", model = "", vision = 
   let pendingImages = [];
   const flushImages = () => {
     if (!pendingImages.length) return;
-    out.push({ role: "user", content: [{ type: "text", text: "Capturas devueltas por la herramienta anterior:" }, ...pendingImages.map((url) => ({ type: "image_url", image_url: { url } }))] });
+    out.push({ role: "user", content: [{ type: "text", text: "Imágenes devueltas por la herramienta anterior:" }, ...pendingImages.map((url) => ({ type: "image_url", image_url: { url } }))] });
     pendingImages = [];
   };
   const assistant = () => {
