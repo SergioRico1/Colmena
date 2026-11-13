@@ -12,7 +12,7 @@ import NewRoomSheet from "../components/v3/team/NewRoomSheet.jsx";
 import ChatsHome from "../components/v2/chat/ChatsHome.jsx";
 import Composer from "../components/v2/chat/Composer.jsx";
 import PlusMenu, { chosenChips, turnBody } from "../components/v2/chat/PlusMenu.jsx";
-import { AnswerActions, AnswerHead, AttachmentChip, BotAnswer, DeliverableV2, TimeMark, UsageLine, UserBubble, WorkNow, WorkTrail, kTokens } from "../components/v2/chat/Parts.jsx";
+import { AnswerActions, AnswerHead, AttachmentChip, AttachmentImage, isImageAttachment, BotAnswer, DeliverableV2, TimeMark, UsageLine, UserBubble, WorkNow, WorkTrail, kTokens } from "../components/v2/chat/Parts.jsx";
 import BotFace from "../components/BotFace.jsx";
 import { OpenBot } from "../components/room/Author.jsx";
 import { BotProfile } from "../components/room/MemberPanel.jsx";
@@ -543,7 +543,9 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         return (
           row.editing ? <EditMessage text={m.text} canRestore={row.canRestore} onCancel={() => acts.current.edit(null)} onSend={(text, restore) => acts.current.sendEdit(m.id, text, restore)} /> : (
           <UserBubble message={m} seen={seenIds.has(m.id)}>
-            {attachments.length ? <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px" }}>{attachments.map((f, i) => <AttachmentChip key={i} name={f.name || String(f)} missionId={c} />)}</span> : null}
+            {/* Pictures as thumbnails (open in the viewer); every other file as its chip. */}
+            {attachments.some(isImageAttachment) ? <span className="v4-thumbs">{attachments.filter(isImageAttachment).map((f, i) => <AttachmentImage key={i} file={f} missionId={c} />)}</span> : null}
+            {attachments.some((f) => !isImageAttachment(f)) ? <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px" }}>{attachments.filter((f) => !isImageAttachment(f)).map((f, i) => <AttachmentChip key={i} name={f.path || f.name || String(f)} missionId={c} />)}</span> : null}
             {m.failed ? <FailedLine error={m.failed} onRetry={() => acts.current.resend(m)} onDiscard={() => unshowSent(`/missions/${c}`, m.id)} /> : null}
             {row.receipt ? <Receipt receipt={row.receipt} bots={bots} /> : null}
             {row.editable || row.branch ? (

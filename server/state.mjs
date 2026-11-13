@@ -54,6 +54,8 @@ export function artifactSummary(a, missions) {
     createdAt: a.createdAt ?? null, updatedAt: a.updatedAt ?? null,
     // Its working file in the mission folder (code you can run, a page with «Vista previa»).
     ...(a.workFile ? { workFile: a.workFile } : {}),
+    // An image keeps its size in pixels (read from the PNG header): it is shown at its real proportions.
+    ...(Number(a.width) > 0 && Number(a.height) > 0 && a.format === "png" ? { width: a.width, height: a.height } : {}),
     // A presentation: how many slides, whether each has its picture and whether there is a PDF.
     ...(a.deck ? { slides: a.slides || a.deck.slides?.length || 0, thumbs: (a.thumbs || []).length, pdf: !!a.pdf, theme: a.deck.theme || "colmena" } : {}),
     // A Word document: its pages (pictures once the desktop app printed it) and whether there is a PDF.

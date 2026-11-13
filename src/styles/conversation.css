@@ -135,3 +135,15 @@
 .v4-menu-item:hover,.v4-menu-item:focus-visible{background:var(--c-hover)!important;outline:none}
 :where(.v4-row,.v4-mine,.v4-q,.v4-need,.v4-cbox,.v4-seg,.v4-mrow,.v4-bcell) :focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){.v4-timer i{transition:none}}
+
+/* Pictures you attached, in your bubble (Parts.jsx AttachmentImage): openable in the viewer. */
+.v4-thumbs{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:100%}
+.v4-thumb{display:block;padding:0;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-sunken);overflow:hidden;cursor:zoom-in;line-height:0;transition:border-color .15s ease}
+.v4-thumb:hover{border-color:var(--c-line-strong)}
+.v4-thumb:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.v4-thumb img{display:block;object-fit:cover;max-width:100%}
+/* A bot making an image (Parts.jsx ImageMaking): the frame of its size, a slow light across it. */
+.v4-imaging-frame{position:relative;max-height:420px;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--c-line);background:linear-gradient(105deg,var(--c-sunken) 0%,var(--c-sunken) 38%,color-mix(in oklab,var(--c-raised) 75%,var(--c-sunken)) 50%,var(--c-sunken) 62%,var(--c-sunken) 100%);background-size:240% 100%;animation:shimmer 3.2s cubic-bezier(.4,0,.2,1) infinite}
+.v4-imaging-phase{position:absolute;left:14px;bottom:14px;display:inline-flex;align-items:baseline;gap:10px;padding:7px 12px;border-radius:var(--r-pill);background:var(--c-raised);box-shadow:var(--c-shadow-lift);font-size:var(--t-meta);font-weight:600;color:var(--c-text)}
+.v4-imaging-size{font:500 var(--t-caption)/1 'Geist Mono',monospace;color:var(--c-text-3)}
+@media (prefers-reduced-motion: reduce){.v4-imaging-frame{animation:none;background:var(--c-sunken)}}
