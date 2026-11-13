@@ -3,7 +3,8 @@
 // bot's page). None of them returns, accepts or logs a password or a master password.
 //
 //   GET    /api/password-managers                    → {managers:[status], logins:[login]}
-//   GET    /api/password-managers/:manager/items     → {items:[{itemId, title, domain, user, chosenId}]}
+//   GET    /api/logins                               → {logins:[login]} (no program is run)
+//   GET    /api/password-managers/:manager/items    → {items:[{itemId, title, domain, user, chosenId}]}
 //   POST   /api/password-managers/:manager/logins    {itemId} → login (Colmena may use it)
 //   DELETE /api/logins/:id                           → stop using it (its bot permissions go too)
 //   POST   /api/password-managers/bitwarden/unlock   → opens bw's own prompt in a window → status
@@ -54,6 +55,8 @@ export function registerManagerRoutes(app, { store, managers, sessions, z }) {
   app.get("/api/password-managers", async (req, res) => {
     res.json({ managers: await managers.statuses(), logins: managers.list() });
   });
+  // The chosen logins without asking the programs anything (cheap: screens refetch it freely).
+  app.get("/api/logins", (req, res) => res.json({ logins: managers.list() }));
   app.get("/api/password-managers/:manager/items", async (req, res) => {
     res.json({ items: await managers.items(managerId(req.params.manager)) });
   });

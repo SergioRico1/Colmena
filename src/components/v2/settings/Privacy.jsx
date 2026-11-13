@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import ManagersPanel from "./Managers.jsx";
 import { useResource, useStore } from "../../../lib/store.jsx";
 import { del, get } from "../../../lib/api.js";
 import { later } from "../../../lib/undoToast.js";
@@ -30,10 +31,14 @@ export default function PrivacySection() {
   const { settings, save, error } = useSettings();
   const enc = useResource("/encryption");
   const vault = useResource("/vault");
-  const [open, setOpen] = useState(null); // "vault" | "profile"
+  const [open, setOpen] = useState(null); // "vault" | "managers" | "profile"
   const [asking, setAsking] = useState(false);
   const s = enc.data;
   const saved = vault.data?.entries?.length || 0;
+  const logins = useResource("/logins");
+  const chosenLogins = logins.data?.logins?.length || 0;
+  // A link to #gestores (Ctrl+K, a bot's page) opens the panel.
+  useEffect(() => { if (location.hash === "#gestores") setOpen("managers"); }, []);
   const forgetAll = () => {
     setAsking(false);
     const all = memories.map((m) => m.id);
@@ -79,6 +84,10 @@ export default function PrivacySection() {
           <button type="button" aria-expanded={open === "vault"} onClick={() => toggle("vault")} style={btn("outline", 32)}>{open === "vault" ? "Ocultar" : "Gestionar"}</button>
         </Row>
         {open === "vault" ? <div style={{ padding: "0 10px 10px", borderTop: LINE, animation: "fade .25s ease-out" }}><VaultCard /></div> : null}
+        <Row anchor="gestores" title="Conectar un gestor de contraseñas" sub={chosenLogins ? `${chosenLogins} ${chosenLogins === 1 ? "inicio de sesión" : "inicios de sesión"} de 1Password o Bitwarden. Tus bots entran con ellos sin verlos.` : "1Password o Bitwarden. Eliges qué inicios de sesión y qué bots; ninguno hasta que tú lo digas."} min="64px">
+          <button type="button" aria-expanded={open === "managers"} onClick={() => toggle("managers")} style={btn("outline", 32)}>{open === "managers" ? "Ocultar" : chosenLogins ? "Gestionar" : "Conectar"}</button>
+        </Row>
+        {open === "managers" ? <div style={{ padding: "0 10px 10px", borderTop: LINE, animation: "fade .25s ease-out" }}><ManagersPanel /></div> : null}
         <Row anchor="registro" title="Registro de acciones" sub="Todo lo que han hecho, con quién lo aprobó y cuándo. Se puede descargar." min="64px">
           <Go to="/ajustes/seguridad" style={btn("outline", 32)}>Ver el registro</Go>
         </Row>

@@ -122,6 +122,7 @@ export const SECTIONS = [
       ["recuerdos", "Qué recuerda cada bot de ti", "memoria recuerdos datos personales"],
       ["perfil-historial", "Tu perfil y sus versiones", "user.md perfil historial versiones restaurar deshacer lo que saben de ti"],
       ["boveda", "Contraseñas de webs", "bóveda vault contraseña login usuario"],
+      ["gestores", "Conectar un gestor de contraseñas", "1password bitwarden gestor de contraseñas llavero op bw iniciar sesión entrar sin verlas"],
       ["registro", "Registro de acciones", "historial auditoría log aprobaciones quién decidió", "/ajustes/seguridad"],
       ["olvidar", "Hacer que lo olviden todo", "borrar recuerdos olvidar memoria"],
     ],
@@ -144,9 +145,10 @@ export const SECTIONS = [
   },
   {
     id: "sistema", group: "ordenador", label: "Navegador y dictado", icon: SECTION_ICONS.sistema,
-    lead: "El navegador propio de tus bots y el dictado por voz de este ordenador.",
+    lead: "El navegador propio de tus bots, sus sesiones y el dictado por voz de este ordenador.",
     items: [
       ["navegador", "Navegador propio para cada bot", "web chrome navegar navegador ventana"],
+      ["sesiones", "Sesiones del navegador", "sesión perfil cookies iniciar sesión a mano trabajo personal cliente cerrar sesiones"],
       ["dictado", "Dictado por voz", "micrófono voz hablar dictar transcribir reconocimiento idioma español whisper"],
     ],
   },

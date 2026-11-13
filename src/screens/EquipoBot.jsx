@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Banknote, Brain, Calendar, Check, ChevronDown, CopyPlus, Folder, ImagePlus, Mail, MessageSquare, Pin, Sliders, Table, UserMinus, Lock as LockGlyph } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
+import BotBrowser from "../components/v3/team/BotBrowser.jsx";
 import { portraitOf } from "../lib/bots.js";
 import PortraitPicker from "../components/team/PortraitPicker.jsx";
 import SkillReview from "../components/team/SkillReview.jsx";
@@ -425,6 +426,7 @@ function Apps({ bot, connectors, learning, setLearning, expert, busy, change }) 
           );
         })}
       </div>
+      <BotBrowser bot={bot} subhead={subhead} row={row} />
       <span style={subhead}>{"Dónde puedes hablarle"}</span>
       <div style={{ display: "flex", flexDirection: "column", marginTop: "-10px" }}>
         <div style={{ ...row, minHeight: "52px" }}><span style={{ flex: "1", fontSize: "var(--t-body)", fontWeight: "500" }}>{"Colmena"}</span><Toggle on label="Colmena" disabled title="Siempre activo" onClick={() => {}} /></div>

@@ -69,7 +69,11 @@ export class PasswordManagers {
   /** {id, label, state: 'connected'|'locked'|'setup'|'missing', detail, install}: what Ajustes shows next to the name. */
   async status(manager) {
     const m = MANAGERS[manager];
-    const base = { id: m.id, label: m.label, install: m.install, chosen: this.list().filter((l) => l.manager === manager).length };
+    const base = {
+      id: m.id, label: m.label, install: m.install, chosen: this.list().filter((l) => l.manager === manager).length,
+      // Bitwarden can open its own prompt in a window here (server/managers/bw-window.mjs).
+      ...(manager === "bitwarden" ? { canUnlock: ["win32", "darwin"].includes(process.platform), unlockedByColmena: !!this.bwSession && this.bwSession !== this.env.BW_SESSION } : {}),
+    };
     if (!this.path(manager)) return { ...base, state: "missing", detail: "No instalado" };
     try {
       if (manager === "1password") {

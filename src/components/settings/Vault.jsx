@@ -4,6 +4,7 @@ import { Card, Notice, btn, field } from "./SettingsShell.jsx";
 import { useAction, useResource } from "../../lib/store.jsx";
 import { del, patch, post } from "../../lib/api.js";
 import { dateTime } from "../../lib/format.js";
+import { AccountBots } from "../v2/settings/Managers.jsx";
 
 // Ajustes › Seguridad › Bóveda: site accounts a bot can sign in with (browser_sign_in). The
 // passwords are encrypted by Windows for your user on this computer; Colmena never shows them
@@ -80,6 +81,7 @@ function EntryRow({ e, first }) {
           </span>
         )}
       </div>
+      <span style={{ paddingLeft: "46px" }}><AccountBots asks scope={"vault:" + e.id} label={"Bots que pueden entrar en " + e.label} /></span>
       {changing ? (
         <form className="c-enter" onSubmit={(ev) => { ev.preventDefault(); act(async () => { await patch(`/vault/${encodeURIComponent(e.id)}`, { password }); setPassword(""); setChanging(false); }); }} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", paddingLeft: "46px" }}>
           <span style={{ flex: "1 1 240px" }}><PasswordInput value={password} onChange={setPassword} label={"Nueva contraseña de " + e.label} autoFocus /></span>
@@ -100,7 +102,7 @@ export default function VaultCard() {
   return (
     <Card id="boveda" title="Bóveda de contraseñas" aside={available && !adding ? <button type="button" onClick={() => setAdding(true)} style={btn.outline}><Plus size={15} strokeWidth={2.4} aria-hidden="true" />{"Añadir cuenta"}</button> : null}>
       <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>
-        {"Guarda aquí las cuentas con las que quieres que tus bots puedan entrar en una web. Windows las cifra para tu usuario en este ordenador. Ningún bot ve ni escribe la contraseña: Colmena rellena el acceso en su navegador, solo si la página es de esa web, y te pide permiso la primera vez. Los códigos de verificación y los captchas siguen siendo cosa tuya."}
+        {"Guarda aquí las cuentas con las que quieres que tus bots puedan entrar en una web. Windows las cifra para tu usuario en este ordenador. Ningún bot ve ni escribe la contraseña: Colmena rellena el acceso en su navegador, solo si la página es de esa web, y te pide permiso la primera vez, salvo a los bots que elijas en cada cuenta. Los códigos de verificación y los captchas siguen siendo cosa tuya."}
       </p>
       {!available ? <Notice tone="info">{"La bóveda cifrada solo funciona en Windows, en la aplicación de escritorio."}</Notice> : null}
       {adding ? <AddForm onDone={() => setAdding(false)} /> : null}
