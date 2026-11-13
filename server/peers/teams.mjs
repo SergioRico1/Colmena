@@ -72,6 +72,7 @@ export class Teams {
   constructor({ peers, store = peers.store }) {
     this.peers = peers;
     this.store = store;
+    this.toldOut = new Map(); // address:team → when someone who went out was last told so
   }
   start() {
     const safely = (fn) => (event) => { try { fn(event); } catch (error) { this.peers.log?.("Equipos: " + error.message); } };
@@ -139,6 +140,25 @@ export class Teams {
       members: t.members.map((m) => ({ id: m.id, role: m.role, box: m.box, name: m.id === this.me ? this.peers.myName() : this.peers.contact(m.id)?.name || m.name })),
       ...(changes || {}),
     });
+  }
+  /**
+   * What someone who is no longer in a team of yours is told: that they are out, as of which
+   * version. A roster signed like any other (their Colmena, also an older one, reads «I am not
+   * in it»), with the creator alone in it: nobody else's name, address or key, nor the team's
+   * name as it is now.
+   */
+  outRoster(t) {
+    return signTeamRoster(this.peers.identity, {
+      kind: "team", id: t.id, name: "", owner: t.owner, version: t.version, room: t.room, at: t.at,
+      members: [{ id: this.me, role: "owner", box: this.peers.identity.box.pub }],
+    });
+  }
+  /** Tells someone who went out that they are out (once a minute each at most). */
+  tellOut(t, address) {
+    if (!(t.gone || []).includes(address) || this.clock() - (this.toldOut.get(address + ":" + t.id) || 0) < 60000) return;
+    this.toldOut.set(address + ":" + t.id, this.clock());
+    if (this.toldOut.size > 500) this.toldOut.delete(this.toldOut.keys().next().value);
+    if (this.peers.enqueue(address, { type: "team.roster", roster: this.outRoster(t) })) void this.peers.flushOutbox();
   }
   /**
    * Someone of a team as a «known» person: they can write in rooms you share, not to you
@@ -241,7 +261,9 @@ export class Teams {
       return this.store.patch("teams", t.id, { ...changes, version: t.version + 1, at: now() });
     });
     const roster = this.roster(next);
-    for (const id of new Set([...next.members.map((m) => m.id), ...extra])) if (id !== this.me) this.peers.enqueue(id, { type: "team.roster", roster });
+    for (const m of next.members) if (m.id !== this.me) this.peers.enqueue(m.id, { type: "team.roster", roster });
+    // Whoever just went out learns that, and nothing of who stays.
+    for (const id of new Set(extra)) if (id !== this.me && !next.members.some((m) => m.id === id)) this.peers.enqueue(id, { type: "team.roster", roster: this.outRoster(next) });
     this.syncGeneral(next, extra);
     void this.peers.flushOutbox();
     this.after(t, next);
@@ -291,8 +313,8 @@ export class Teams {
     if (!t) return;
     const again = () => { this.peers.enqueue(from.id, { type: "team.roster", roster: this.roster(this.record(t.id)) }); void this.peers.flushOutbox(); };
     const role = this.roleOf(t, from.id);
-    // Someone who is no longer in it only learns that they are out.
-    if (!role) return void ((t.gone || []).includes(from.id) && again());
+    // Someone who is no longer in it only learns that they are out: never who is in it now.
+    if (!role) return void this.tellOut(t, from.id);
     if (body.op === "leave") return void this.dropMember(t, from.id);
     // Not an admin (any more): nothing changes, and they get the roster that says so.
     if (role !== "admin") return again();
@@ -313,8 +335,8 @@ export class Teams {
     const t = this.owned(body.team);
     if (!t) return;
     const member = !!this.roleOf(t, from.id);
-    if (!member && !(t.gone || []).includes(from.id)) return;
-    if (member && Number(body.v) >= t.version) return;
+    if (!member) return void this.tellOut(t, from.id);
+    if (Number(body.v) >= t.version) return;
     this.peers.enqueue(from.id, { type: "team.roster", roster: this.roster(t) });
     void this.peers.flushOutbox();
   }

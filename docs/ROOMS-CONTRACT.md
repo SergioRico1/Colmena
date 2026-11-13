@@ -121,6 +121,9 @@ decision (a plan, a choice) waits as a room: it names a bot only in that bot's o
 
 - Store kinds `teams` (the last roster verified, signed by the creator) and `teamMemberships`
   (your state in each); `settings.currentTeam`.
+- Someone who is not a member (taken out, or asking again with `team.req` / `team.sync` while in
+  `gone`) gets `Teams#outRoster`: a signed roster of the current version with `name: ""` and the
+  creator as its only member. The full roster only ever goes to current members.
 - «general» is a `peerShares` group whose id is the team roster's `room`; its record and
   `shareView` carry `teamId` and `general: true`. Other rooms of a team carry `teamId` only
   (`createGroup(title, members, { teamId })`). Adopt them by those fields.
