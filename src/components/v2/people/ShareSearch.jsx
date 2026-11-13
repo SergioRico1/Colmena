@@ -4,6 +4,7 @@ import { Highlight } from "../../home/shared.jsx";
 import { get } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { hhmm } from "./PeopleMessage.jsx";
+import { C } from "../../../lib/theme.js";
 
 // «Buscar en esta conversación» (design/V2Personas.dc.html, paso buscar): what you search
 // stays on this computer; every word must be there, accents and case do not matter. A hit
@@ -28,8 +29,8 @@ export default function ShareSearch({ shareId, onClose }) {
   const first = q.trim().split(/\s+/)[0] || "";
   return (
     <div role="search" style={{ position: "relative", padding: "0 clamp(20px, 4vw, 44px) 14px", animation: "fade .2s ease-out" }}>
-      <label style={{ display: "flex", alignItems: "center", gap: "10px", height: "46px", padding: "0 8px 0 16px", borderRadius: "var(--r-pill)", background: "var(--c-card)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 10px 26px -16px rgba(18,19,26,.25)" }}>
-        <Search size={17} strokeWidth={2.2} color="#6B6F7A" aria-hidden="true" />
+      <label style={{ display: "flex", alignItems: "center", gap: "10px", height: "36px", padding: "0 8px 0 16px", borderRadius: "var(--r-sm)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)" }}>
+        <Search size={17} strokeWidth={2.2} color={C.text3} aria-hidden="true" />
         <input className="c-bare" ref={input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onClose(); } if (e.key === "Enter" && hits?.[0]) { navigate(hitUrl(hits[0])); onClose(); } }}
           placeholder="Buscar en esta conversación" aria-label="Buscar en esta conversación"
           style={{ flex: 1, minWidth: 0, height: "100%", border: 0, background: "transparent", font: "inherit", fontSize: "var(--t-body)" }} />
@@ -37,7 +38,7 @@ export default function ShareSearch({ shareId, onClose }) {
         <button type="button" aria-label="Cerrar la búsqueda" onClick={onClose} style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .05)", cursor: "pointer", color: "var(--c-text-2)" }}><X size={15} strokeWidth={2.4} aria-hidden="true" /></button>
       </label>
       {hits?.length ? (
-        <ul role="listbox" aria-label="Mensajes encontrados" style={{ position: "absolute", left: "clamp(20px, 4vw, 44px)", right: "clamp(20px, 4vw, 44px)", top: "54px", zIndex: 20, maxHeight: "360px", overflowY: "auto", margin: 0, padding: "8px", listStyle: "none", background: "rgba(255,255,255,.97)", WebkitBackdropFilter: "blur(20px)", backdropFilter: "blur(20px)", borderRadius: "var(--r-2xl)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", animation: "rise .2s ease-out" }}>
+        <ul role="listbox" aria-label="Mensajes encontrados" style={{ position: "absolute", left: "clamp(20px, 4vw, 44px)", right: "clamp(20px, 4vw, 44px)", top: "54px", zIndex: 20, maxHeight: "360px", overflowY: "auto", margin: 0, padding: "8px", listStyle: "none", background: "var(--c-raised)", WebkitBackdropFilter: "blur(20px)", backdropFilter: "blur(20px)", borderRadius: "var(--r-2xl)", boxShadow: "var(--c-shadow-pop)", animation: "rise .2s ease-out" }}>
           {hits.map((h) => (
             <li key={h.id}>
               <button type="button" role="option" aria-selected="false" onClick={() => { navigate(hitUrl(h)); onClose(); }} style={{ width: "100%", display: "flex", flexDirection: "column", gap: "3px", padding: "10px 12px", border: 0, borderRadius: "var(--r-lg)", background: "transparent", cursor: "pointer", textAlign: "left" }}>
