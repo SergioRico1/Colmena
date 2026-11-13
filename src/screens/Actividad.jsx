@@ -13,6 +13,7 @@ import { time } from "../lib/format.js";
 import { reversible } from "../lib/undoToast.js";
 import { useExpert } from "../lib/expert.js";
 import { formatTokens } from "../components/settings/format.jsx";
+import { C } from "../lib/theme.js";
 
 // Colmena 3 · Actividad (design/V3Actividad.dc.html): what each bot is doing now (with
 // «Pausar»), what today cost and what waits for your OK, and the log of everything they did,
@@ -137,22 +138,22 @@ export default function Actividad() {
     month, waitStat,
   ];
 
-  const chip = (on) => ({ height: "34px", padding: "0 13px", display: "inline-flex", alignItems: "center", gap: "7px", border: "0", borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" });
+  const chip = (on) => ({ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "7px", border: "0", borderRadius: "var(--r-sm)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" });
   const team = bots.filter((b) => b.enabled !== false);
   let lastDay = null;
 
   return (
-    <Shell active="actividad">
+    <Shell active="actividad" background="var(--c-app)">
       {feeds.map((id) => <Feed key={id} id={id} onData={onData} />)}
       <main style={{ maxWidth: "1120px", margin: "0 auto", padding: "44px clamp(20px, 4vw, 52px) 72px", display: "flex", flexDirection: "column", gap: "32px" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Actividad"}</h1>
+            <h1 style={{ margin: "0", font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>{"Actividad"}</h1>
             <p style={{ margin: "0", fontSize: "var(--t-read)", color: "var(--c-text-2)" }}>{"Qué hace cada bot ahora, qué ha hecho y lo que ha costado. Todo queda registrado."}</p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {expert ? <button type="button" onClick={exportLog} disabled={!visible.length} style={{ height: "42px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: "500", cursor: visible.length ? "pointer" : "default" }}>{"Exportar registro"}</button> : null}
-            <button type="button" onClick={togglePause} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: "600", cursor: "pointer" }}>{paused ? "Reanudar al equipo" : "Pausar a todo el equipo"}</button>
+            {expert ? <button type="button" onClick={exportLog} disabled={!visible.length} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: visible.length ? "pointer" : "default" }}>{"Exportar registro"}</button> : null}
+            <button type="button" onClick={togglePause} style={{ height: "36px", padding: "0 14px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{paused ? "Reanudar al equipo" : "Pausar a todo el equipo"}</button>
           </div>
         </header>
         {error ? <p role="alert" style={{ margin: "-16px 0 0", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</p> : null}
@@ -163,9 +164,9 @@ export default function Actividad() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", gap: "10px" }}>
               {now.map((x) => {
                 const work = x.state === "work";
-                const ring = x.state === "wait" ? "0 0 0 1.5px #FFC93C" : x.state === "stuck" ? "0 0 0 1.5px #B4232A" : "none";
+                const ring = x.state === "wait" ? "0 0 0 1.5px var(--c-honey)" : x.state === "stuck" ? "0 0 0 1.5px var(--c-error)" : "none";
                 return (
-                  <article key={x.bot.id} aria-label={`${x.bot.name}: ${x.doing}`} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: ring }}>
+                  <article key={x.bot.id} aria-label={`${x.bot.name}: ${x.doing}`} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-md)", background: "var(--c-card)", boxShadow: ring }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <Shape bot={x.bot} size={20} anim={work} />
                       <span style={{ flex: "1", fontSize: "var(--t-body)", fontWeight: "600" }}>{x.bot.name}</span>
@@ -173,7 +174,7 @@ export default function Actividad() {
                     </div>
                     <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.4", color: "var(--c-text-2)", minHeight: "40px", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{x.doing}</span>
                     <span aria-hidden="true" style={{ position: "relative", height: "2px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}>
-                      <span style={{ position: "absolute", top: "0", bottom: "0", width: "40%", background: x.bot.color || "#C9CBD3", animation: work ? "sweep 1.8s ease-in-out infinite" : "none" }} />
+                      <span style={{ position: "absolute", top: "0", bottom: "0", width: "40%", background: x.bot.color || C.lineStrong, animation: work ? "sweep 1.8s ease-in-out infinite" : "none" }} />
                     </span>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "var(--t-meta)" }}>
                       {x.mission ? <a href={hrefOf(x.mission)} style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--c-accent-ink)" }}>{x.mission.title || x.mission.room}</a> : <span />}
@@ -186,7 +187,7 @@ export default function Actividad() {
               })}
             </div>
           ) : (
-            <p style={{ margin: "0", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "var(--c-card)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>{paused ? "El equipo está en pausa. Nadie trabaja hasta que lo reanudes." : "Nadie está trabajando ahora mismo. Lo que pidas aparecerá aquí mientras se hace."}</p>
+            <p style={{ margin: "0", padding: "16px 18px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>{paused ? "El equipo está en pausa. Nadie trabaja hasta que lo reanudes." : "Nadie está trabajando ahora mismo. Lo que pidas aparecerá aquí mientras se hace."}</p>
           )}
           {/* The same line as the sidebar's foot, in words: who works and how many things wait. */}
           <p role="status" style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{model.summary.text}</p>
@@ -197,10 +198,10 @@ export default function Actividad() {
             // «Te necesitan» opens Inicio, where each of those things is answered.
             const Box = s.href ? "a" : "div";
             return (
-              <Box key={s.label} href={s.href} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: s.honey ? "var(--c-honey)" : "var(--c-card)", color: s.honey ? "var(--c-honey-ink)" : "var(--c-text)" }}>
-                <span style={{ fontSize: "var(--t-meta)", opacity: ".8" }}>{s.label}</span>
-                <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{s.value}</span>
-                <span style={{ fontSize: "var(--t-meta)", opacity: ".8" }}>{s.note}</span>
+              <Box key={s.label} href={s.href} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "12px 14px", borderRadius: "var(--r-md)", background: s.honey ? "var(--c-honey-soft)" : "var(--c-card)", border: `1px solid ${s.honey ? "var(--c-honey-ring)" : "var(--c-line)"}`, color: "var(--c-text)" }}>
+                <span style={{ fontSize: "var(--t-meta)", color: s.honey ? "var(--c-honey-text)" : "var(--c-text-3)", fontWeight: s.honey ? 600 : 400 }}>{s.label}</span>
+                <span style={{ font: "600 var(--t-read)/1.3 'Geist', sans-serif", fontVariantNumeric: "tabular-nums" }}>{s.value}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{s.note}</span>
               </Box>
             );
           })}
@@ -216,9 +217,9 @@ export default function Actividad() {
               <button key={id} type="button" aria-pressed={filter === id ? "true" : "false"} onClick={() => { setFilter(id); setShown(15); }} style={chip(filter === id)}>{label}</button>
             ))}
             <span style={{ flex: "1" }} />
-            <button type="button" role="switch" aria-checked={expert ? "true" : "false"} onClick={() => setExpert(!expert)} title="El mismo interruptor que el de la barra lateral" style={{ height: "36px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "0 4px 0 10px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text-2)", cursor: "pointer" }}>
+            <button type="button" role="switch" aria-checked={expert ? "true" : "false"} onClick={() => setExpert(!expert)} title="El mismo interruptor que el de la barra lateral" style={{ height: "32px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "0 4px 0 10px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text-2)", cursor: "pointer" }}>
               {"Modo experto"}
-              <span aria-hidden="true" style={{ position: "relative", width: "34px", height: "20px", borderRadius: "var(--r-pill)", background: expert ? "#12131A" : "#8A8D96", transition: "background .2s ease" }}><span style={{ position: "absolute", top: "2px", left: expert ? "16px" : "2px", width: "16px", height: "16px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s ease" }} /></span>
+              <span aria-hidden="true" style={{ position: "relative", width: "34px", height: "20px", borderRadius: "var(--r-pill)", background: expert ? C.btn : C.text4, transition: "background .2s ease" }}><span style={{ position: "absolute", top: "2px", left: expert ? "16px" : "2px", width: "16px", height: "16px", borderRadius: "var(--r-circle)", background: C.card, boxShadow: "var(--c-shadow-lift)", transition: "left .2s ease" }} /></span>
             </button>
           </div>
           {expert ? (
@@ -240,7 +241,7 @@ export default function Actividad() {
           ) : null}
 
           {list.length ? (
-            <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)", overflow: "hidden" }}>
+            <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden" }}>
               {list.map((r, i) => {
                 const b = botOf(r.botId);
                 const st = STATUS[r.s] || STATUS.unk;
@@ -266,13 +267,13 @@ export default function Actividad() {
               })}
             </div>
           ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>
               <span style={{ flex: "1" }}>{feeds.some((id) => !details[id]) ? "Cargando el registro…" : range === "hoy" ? "Hoy todavía no hay nada en el registro." : "No hay nada en el registro de estos días."}</span>
-              {range === "hoy" && !feeds.some((id) => !details[id]) ? <button type="button" onClick={() => setRange("7")} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Ver los últimos 7 días"}</button> : null}
+              {range === "hoy" && !feeds.some((id) => !details[id]) ? <button type="button" onClick={() => setRange("7")} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Ver los últimos 7 días"}</button> : null}
             </div>
           )}
           {!expert && visible.length > list.length ? (
-            <button type="button" onClick={() => setShown(shown + 30)} style={{ alignSelf: "flex-start", height: "38px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{`Ver ${Math.min(30, visible.length - list.length)} más`}</button>
+            <button type="button" onClick={() => setShown(shown + 30)} style={{ alignSelf: "flex-start", height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{`Ver ${Math.min(30, visible.length - list.length)} más`}</button>
           ) : null}
           {!expert && list.length ? (
             <button type="button" onClick={() => { setRange(range === "hoy" ? "7" : "hoy"); setShown(15); }} style={{ alignSelf: "flex-start", height: "32px", padding: "0 2px", border: "0", background: "transparent", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-accent-ink)", cursor: "pointer" }}>{range === "hoy" ? "Ver los últimos 7 días" : "Ver solo hoy"}</button>
