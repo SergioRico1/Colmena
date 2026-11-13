@@ -14,6 +14,7 @@ import PeopleSettings from "../components/v2/settings/People.jsx";
 import { DETAIL_ALIAS, PARENT, SECTION_OF, sectionId } from "../components/v2/settings/sections.js";
 import { Go, btn } from "../components/v2/settings/v3.jsx";
 import AjustesSeccion from "./AjustesSeccion.jsx";
+import { C } from "../lib/theme.js";
 
 // Colmena 3 · Ajustes (design/V3Ajustes.dc.html and its sibling boards): eight sections by what
 // you want to do — General, Cuentas de IA, Permisos y autonomía, Apps y carpetas, Avisos,
@@ -42,7 +43,7 @@ export default function AjustesV2({ params = {}, query = {}, section: forced = n
   const section = SECTION_OF[id];
   const noAI = ready && ai && !ai.engines?.some((e) => e.connected);
   const tags = {
-    ...(noAI ? { ia: { text: "!", color: "#B4232A", label: "Ninguna IA conectada" } } : {}),
+    ...(noAI ? { ia: { text: "!", color: C.error, label: "Ninguna IA conectada" } } : {}),
     ...(diagnosticsDot(result) ? { ayuda: diagnosticsDot(result) } : {}),
   };
   if (!section) {

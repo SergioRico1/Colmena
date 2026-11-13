@@ -15,7 +15,7 @@ export function Group({ id, title, note, children, anchor }) {
   return (
     <section id={anchor || undefined} data-setting={anchor || undefined} aria-labelledby={id} style={{ display: "flex", flexDirection: "column", gap: "10px", scrollMarginTop: "24px" }}>
       {title ? <h2 id={id} style={{ margin: "0 0 0 20px", fontSize: "var(--t-meta)", fontWeight: 500, color: "var(--c-text-3)" }}>{title}</h2> : null}
-      <div style={{ background: "var(--c-card)", borderRadius: "var(--r-2xl)", overflow: "hidden" }}>{children}</div>
+      <div style={{ background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>{children}</div>
       {note ? <p style={{ margin: "0 20px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{note}</p> : null}
     </section>
   );
@@ -79,10 +79,10 @@ export function Segmented({ label, items, value, onPick, busy }) {
     <div role="radiogroup" aria-label={label} style={{ display: "flex", gap: "2px", padding: "3px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)" }}>
       {items.map(([v, text]) => {
         const on = value === v;
-        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ flex: 1, height: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", color: "var(--c-text)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none" }}>{text}</button>;
+        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ flex: 1, height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", color: "var(--c-text)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none" }}>{text}</button>;
       })}
     </div>
   );
 }
-export const pill = (dark) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", whiteSpace: "nowrap", background: dark ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: dark ? "var(--c-btn-text)" : INK });
+export const pill = (dark) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", whiteSpace: "nowrap", background: dark ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: dark ? "var(--c-btn-text)" : INK });
 export const inputStyle = { flex: "1 1 240px", minWidth: 0, width: "100%", height: "46px", padding: "0 16px", border: 0, borderRadius: "var(--r-lg)", background: "var(--c-sunken)", fontSize: "var(--t-body)", color: "var(--c-text)", boxSizing: "border-box" };

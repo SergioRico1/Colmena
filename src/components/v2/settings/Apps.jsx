@@ -9,6 +9,7 @@ import { useExpert } from "../../../lib/expert.js";
 import AppLogo from "../../settings/AppLogo.jsx";
 import { appName, linkUrl, loadAccounts, loadCatalogue, loadStatus, pendingLink, rememberApps, setPendingLink } from "../../settings/connections.jsx";
 import { Alert, BotMark, Chip, Go, LINE, Term, UNDO_MS, anchorOf, btn, h3, mono, select, srOnly } from "./v3.jsx";
+import { C } from "../../../lib/theme.js";
 
 // Ajustes › Apps y carpetas (design/V3Conexiones.dc.html): the apps your bots work with —
 // direct MCP connections first, the rest (Google, Microsoft, Slack…) through Composio —, the
@@ -244,11 +245,11 @@ function Catalogue({ c, initialQuery }) {
     : c.pending ? `Termina la autorización de ${appName(c.pending.toolkit)} en tu navegador. Colmena lo detecta solo.`
     : c.loaded && !c.available ? (c.noAccount ? "Las apps del servicio de conexiones (Gmail, Calendar, Slack…) se activan cuando conectes tu cuenta de IA. Las de conexión directa ya funcionan." : UNAVAILABLE) : null;
   return (
-    <section {...anchorOf("conectar-app")} aria-labelledby="add-t" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
+    <section {...anchorOf("conectar-app")} aria-labelledby="add-t" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <h3 id="add-t" style={{ ...h3, flex: "1 1 180px" }}>Conectar otra app</h3>
         <label style={{ flex: "0 1 260px", display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 12px", borderRadius: "var(--r-md)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .12)" }}>
-          <Search size={14} color="#5C606C" />
+          <Search size={14} color={C.text3} />
           <span style={srOnly}>Buscar una app</span>
           <input className="c-bare" type="text" value={text} onChange={(e) => type(e.target.value)} placeholder={`Buscar entre ${c.curated.length > 30 ? "cientos de" : "todas las"} apps`} style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text)" }} />
         </label>
@@ -256,7 +257,7 @@ function Catalogue({ c, initialQuery }) {
       <div role="group" aria-label="Filtrar por tipo" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {FILTERS.map(([id, label]) => {
           const sel = filter === id;
-          return <button key={id} type="button" aria-pressed={sel} onClick={() => pick(id)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: sel ? "var(--c-btn)" : "var(--c-chip)", color: sel ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+          return <button key={id} type="button" aria-pressed={sel} onClick={() => pick(id)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: sel ? "var(--c-btn)" : "var(--c-chip)", color: sel ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
         })}
       </div>
       {status ? (
@@ -269,7 +270,7 @@ function Catalogue({ c, initialQuery }) {
       ) : null}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(172px, 100%), 1fr))", gap: "8px" }}>
         {c.loaded && !list.length ? <p style={{ gridColumn: "1 / -1", margin: 0, padding: "18px 0", textAlign: "center", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{text ? `No hay apps que coincidan con «${text}».` : "No hay apps en este tipo."}</p> : null}
-        {!c.loaded ? Array.from({ length: 4 }, (_, i) => <span key={i} style={{ minHeight: "56px", borderRadius: "var(--r-lg)", background: "linear-gradient(90deg, #F6F6F3, #EEEEEA, #F6F6F3)", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} />) : null}
+        {!c.loaded ? Array.from({ length: 4 }, (_, i) => <span key={i} style={{ minHeight: "56px", borderRadius: "var(--r-lg)", background: "linear-gradient(90deg, var(--c-hover), var(--c-chip), var(--c-hover))", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} />) : null}
         {list.map((d) => {
           const isOn = on(d), wait = waiting(d);
           const blocked = d.via === "composio" ? !c.available && c.loaded : !c.mcpOk;
@@ -277,11 +278,11 @@ function Catalogue({ c, initialQuery }) {
             <button key={d.via + ":" + d.id} type="button" disabled={c.busy || blocked || (isOn && d.via === "mcp")} onClick={() => (wait && d.via === "composio" ? c.action(c.load) : c.connect(d))}
               aria-label={isOn ? `${d.name} conectada` : wait ? `Comprobar la autorización de ${d.name}` : `Conectar ${d.name}`}
               title={blocked ? (d.via === "composio" ? (c.noAccount ? NEEDS_ACCOUNT : UNAVAILABLE) : "Las conexiones directas solo funcionan en la aplicación de escritorio.") : d.description}
-              style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "56px", padding: "8px 12px 8px 10px", border: 0, borderRadius: "var(--r-lg)", background: "var(--c-hover)", textAlign: "left", color: "var(--c-text)", cursor: blocked ? "default" : "pointer", opacity: blocked ? 0.55 : 1, boxShadow: wait ? "inset 0 0 0 1.5px #FFC93C" : "none", animation: "fade .3s ease-out" }}>
+              style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "56px", padding: "8px 12px 8px 10px", border: 0, borderRadius: "var(--r-lg)", background: "var(--c-hover)", textAlign: "left", color: "var(--c-text)", cursor: blocked ? "default" : "pointer", opacity: blocked ? 0.55 : 1, boxShadow: wait ? "inset 0 0 0 1.5px var(--c-honey-ring)" : "none", animation: "fade .3s ease-out" }}>
               <span style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-card)", overflow: "hidden" }}><AppLogo id={d.id} name={d.name} logo={d.logo} size={30} /></span>
               <span style={{ flex: 1, minWidth: 0, fontSize: "var(--t-ui)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
-              {isOn ? <Check size={16} weight="bold" color="#0B6B4A" style={{ flex: "none" }} />
-                : <Plus size={16} color="#5C606C" style={{ flex: "none" }} />}
+              {isOn ? <Check size={16} weight="bold" color={C.okInk} style={{ flex: "none" }} />
+                : <Plus size={16} color={C.text3} style={{ flex: "none" }} />}
             </button>
           );
         })}
@@ -309,7 +310,7 @@ function Folders() {
   };
   const access = (f, v) => run(() => patch(`/folders/${encodeURIComponent(f.id)}`, { access: v })).catch((e) => setError(e.message));
   return (
-    <section {...anchorOf("carpetas")} aria-labelledby="fold-t" style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "20px 22px 10px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
+    <section {...anchorOf("carpetas")} aria-labelledby="fold-t" style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "20px 22px 10px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
         <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <h3 id="fold-t" style={h3}>Carpetas de este ordenador</h3>
@@ -321,13 +322,13 @@ function Folders() {
       {list.map((f) => (
         <div key={f.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", minHeight: "62px", padding: "8px 0", borderTop: LINE }}>
           <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-chip)" }}>
-            <Folder size={17} color="#4A4D57" />
+            <Folder size={17} color={C.text2} />
           </span>
           <span style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
             <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{f.label}<span style={{ fontWeight: 400, color: "var(--c-text-3)" }}>{f.botIds?.length ? " · " + f.botIds.map((id) => botOf(id)?.name).filter(Boolean).join(", ") : ""}</span></span>
             <span style={{ font: `400 var(--t-meta)/1.3 ${mono}`, color: "var(--c-text-3)", overflowWrap: "anywhere" }}>{f.path}</span>
           </span>
-          <Select aria-label={`Qué pueden hacer en ${f.label}`} value={f.access} onChange={(e) => access(f, e.target.value)} style={{ ...select, width: "auto", height: "32px", borderRadius: "var(--r-pill)", padding: "0 10px 0 12px", fontSize: "var(--t-meta)" }} options={ACCESS} />
+          <Select aria-label={`Qué pueden hacer en ${f.label}`} value={f.access} onChange={(e) => access(f, e.target.value)} style={{ ...select, width: "auto", height: "32px", borderRadius: "var(--r-sm)", padding: "0 10px 0 12px", fontSize: "var(--t-meta)" }} options={ACCESS} />
           <button type="button" aria-label={`Quitar ${f.label}`} onClick={() => later({ id: "folder:" + f.id, keys: ["folder:" + f.id], ms: UNDO_MS, text: `Carpeta «${f.label || f.path}» quitada`, error: "No se pudo quitar la carpeta", run: () => run(() => del(`/folders/${encodeURIComponent(f.id)}`)) })} style={{ ...btn("ghost", 32), padding: "0 8px" }}>Quitar</button>
         </div>
       ))}
@@ -351,15 +352,15 @@ export default function AppsSection({ query = {} }) {
       <Alert>{c.error}</Alert>
       <section {...anchorOf("apps-conectadas")} aria-labelledby="con-t" style={{ display: "flex", flexDirection: "column", gap: "10px", scrollMarginTop: "24px" }}>
         <h3 id="con-t" style={h3}>{rows.length ? `Conectadas · ${rows.length}` : "Conectadas"}</h3>
-        <ul role="list" style={{ margin: 0, padding: 0, listStyle: "none", borderRadius: "var(--r-xl)", background: "var(--c-card)", overflow: "hidden" }}>
-          {!c.loaded ? <li style={{ height: "68px", background: "linear-gradient(90deg, #FFFFFF, #F6F6F3, #FFFFFF)", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} /> : null}
+        <ul role="list" style={{ margin: 0, padding: 0, listStyle: "none", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden" }}>
+          {!c.loaded ? <li style={{ height: "68px", background: "linear-gradient(90deg, var(--c-card), var(--c-hover), var(--c-card))", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} /> : null}
           {c.loaded && !rows.length ? <li style={{ padding: "20px 18px", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>Ninguna todavía. Conecta abajo la primera: tu correo, tu calendario o tus documentos.</li> : null}
           {rows.map((r, i) => <Connected key={r.key} row={r} c={c} first={i === 0} team={team} />)}
         </ul>
       </section>
       <Catalogue c={c} initialQuery={query.q || ""} />
       <Folders />
-      <section {...anchorOf("navegador")} aria-labelledby="nav-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("navegador")} aria-labelledby="nav-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "10px 16px" }}>
           <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
             <h3 id="nav-t" style={h3}>Navegador propio para cada bot</h3>

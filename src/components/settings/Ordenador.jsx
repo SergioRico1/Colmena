@@ -4,6 +4,7 @@ import { AccessPills, BotChips, Card, Notice, PageHeader, btn, field } from "./S
 import { useAction, useStore } from "../../lib/store.jsx";
 import { del, patch, post } from "../../lib/api.js";
 import { later } from "../../lib/undoToast.js";
+import { C } from "../../lib/theme.js";
 
 /** Ajustes › Este ordenador: folders the bots may open (POST/PATCH/DELETE /api/folders). */
 export default function Ordenador() {
@@ -28,8 +29,8 @@ export default function Ordenador() {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "14px" }}>
         <PageHeader title="Este ordenador">Las carpetas que tus bots pueden abrir mientras la app esté abierta. Cada bot solo ve las carpetas que marques aquí.</PageHeader>
         {offline
-          ? <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "var(--r-xs)", background: "#E5484D" }} />Sin conexión</span>
-          : <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-ok-ink)", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#0B8A5F" }} />En línea</span>}
+          ? <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "var(--r-xs)", background: "var(--c-error)" }} />Sin conexión</span>
+          : <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-ok-ink)", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: C.ok }} />En línea</span>}
       </div>
       <Notice>{error}</Notice>
 
@@ -58,7 +59,7 @@ export default function Ordenador() {
         ))}
       </Card>
 
-      <form onSubmit={add} aria-labelledby="nueva-carpeta" style={{ background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      <form onSubmit={add} aria-labelledby="nueva-carpeta" style={{ background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h2 id="nueva-carpeta" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Añadir carpeta</h2>
           <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)" }}>{window.colmenaWindow?.pickFolder ? "Elígela en tu ordenador o pega su ruta. Los bots no pueden salir de esa carpeta." : "Copia la ruta desde la barra del Explorador de archivos. Los bots no pueden salir de esa carpeta."}</span>
@@ -74,7 +75,7 @@ export default function Ordenador() {
                   if (!chosen) return;
                   const base = chosen.split(/[\\/]/).filter(Boolean).pop() || "";
                   setDraft((d) => ({ ...d, path: chosen, label: d.label || base }));
-                }} style={{ flex: "none", height: "46px", padding: "0 16px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>Elegir carpeta…</button>
+                }} style={{ flex: "none", height: "36px", padding: "0 14px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>Elegir carpeta…</button>
               ) : null}
             </span>
           </label>
@@ -92,7 +93,7 @@ export default function Ordenador() {
           <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>Bots con acceso</span>
           <BotChips bots={team} selected={draft.botIds} label="Bots con acceso a la nueva carpeta" onToggle={(id) => setDraft({ ...draft, botIds: toggleIn(draft.botIds, id) })} />
         </div>
-        <button type="submit" disabled={busy} style={{ ...btn.dark, alignSelf: "flex-start", height: "44px", borderRadius: "var(--r-pill)" }}>{busy ? "Añadiendo…" : "Añadir carpeta"}</button>
+        <button type="submit" disabled={busy} style={{ ...btn.dark, alignSelf: "flex-start", height: "36px", borderRadius: "var(--r-sm)" }}>{busy ? "Añadiendo…" : "Añadir carpeta"}</button>
       </form>
     </>
   );

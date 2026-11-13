@@ -25,15 +25,15 @@ export default function AppLogo({ id, name, logo = null, size = 36 }) {
   const icon = ICONS[id];
   if (icon)
     return (
-      <span aria-hidden="true" style={{ ...tile, background: "var(--c-hover)" }}>
+      <span aria-hidden="true" style={{ ...tile, background: "var(--c-logo-tile)" }}>
         <svg width={Math.round(size * 0.55)} height={Math.round(size * 0.55)} viewBox="0 0 24 24" fill={ON_WHITE[id] || "#" + icon.hex}><path d={icon.path} /></svg>
       </span>
     );
   if (logo && !broken)
     return (
-      <span aria-hidden="true" style={{ ...tile, background: "var(--c-hover)" }}>
+      <span aria-hidden="true" style={{ ...tile, background: "var(--c-logo-tile)" }}>
         <img src={logo} alt="" width={Math.round(size * 0.6)} height={Math.round(size * 0.6)} onError={() => setBroken(true)} style={{ objectFit: "contain" }} />
       </span>
     );
-  return <span aria-hidden="true" style={{ ...tile, background: "#EEEEE9", fontSize: stepOf(Math.round(size * 0.4)) + "px", fontWeight: "600", color: "#12131A" }}>{(name || "?").charAt(0).toUpperCase()}</span>;
+  return <span aria-hidden="true" style={{ ...tile, background: "var(--c-chip)", fontSize: stepOf(Math.round(size * 0.4)) + "px", fontWeight: "600", color: "var(--c-text)" }}>{(name || "?").charAt(0).toUpperCase()}</span>;
 }

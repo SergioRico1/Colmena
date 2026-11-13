@@ -111,7 +111,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
   };
   if (!v) {
     return (
-      <section {...anchorOf("copias")} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "18px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
+      <section {...anchorOf("copias")} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "18px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
         <h3 style={{ ...h3, fontSize: "var(--t-read)" }}>Copias de seguridad</h3>
         <span style={{ fontSize: "var(--t-meta)", color: loadError ? "var(--c-error)" : "var(--c-text-3)" }}>{loadError || "Cargando…"}</span>
       </section>
@@ -133,7 +133,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
   const pending = v.pending;
   const detected = v.folders.find((f) => f.path === v.folder && (f.kind === "onedrive" || f.kind === "gdrive"));
   const restoreHere = restoring && !v.backups.some((b) => b.path === restoring.path);
-  const chip = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", borderRadius: "var(--r-pill)", border: 0, cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: on ? "var(--c-btn-text)" : "var(--c-text-2)", background: on ? "var(--c-btn)" : "var(--c-chip)" });
+  const chip = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", borderRadius: "var(--r-sm)", border: 0, cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: on ? "var(--c-btn-text)" : "var(--c-text-2)", background: on ? "var(--c-btn)" : "var(--c-chip)" });
 
   return (
     <>
@@ -149,7 +149,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
       ) : null}
       {v.restored && !pending ? <p role="status" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-ok-ink)" }}>{`✓ Restaurada la copia del ${when(v.restored.from).toLowerCase()}. Lo que había antes está en la carpeta «${v.restored.aside}».`}</p> : null}
 
-      <section {...anchorOf("copias")} aria-labelledby="copy-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", overflow: "hidden", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("copias")} aria-labelledby="copy-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden", scrollMarginTop: "24px" }}>
         <div {...anchorOf("copia-ahora")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "18px 22px 10px", scrollMarginTop: "24px" }}>
           <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
             <h3 id="copy-t" style={{ ...h3, fontSize: "var(--t-read)" }}>Copias de seguridad</h3>

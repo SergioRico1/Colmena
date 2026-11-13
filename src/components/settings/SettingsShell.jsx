@@ -2,13 +2,14 @@ import { stepOf } from "../../lib/type.js";
 import SettingsLayout from "../v2/settings/Layout.jsx";
 import { BotPresence } from "../v2/Presence.jsx";
 import { ALIAS, PARENT, SECTION_OF } from "../v2/settings/sections.js";
+import { C } from "../../lib/theme.js";
 
 // Colmena 2.0 chrome for every Ajustes detail page (/ajustes/ia, /ajustes/conexiones,
 // /ajustes/ordenador…): the Ajustes frame with its section list (src/components/v2/settings/
 // Layout.jsx), the section the page belongs to marked, «‹ <sección>» back to it, and the
 // shared pieces below, all in the v2 language (white 26 px cards, pills, soft fills).
 
-const INK = "#12131A";
+const INK = C.text;
 
 /**
  * @param {{ section: string, gap?: string, extraCss?: string, wide?: boolean, children: any }} props
@@ -37,7 +38,7 @@ export function PageHeader({ title, children }) {
 export function Toggle({ on, onChange, label, disabled = false }) {
   return (
     <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={label} disabled={disabled} onClick={() => onChange(!on)}
-      style={{ width: "52px", height: "32px", flex: "none", padding: "3px", border: 0, borderRadius: "var(--r-pill)", cursor: disabled ? "default" : "pointer", transition: "background .25s ease", background: on ? "#0B8A5F" : "rgb(var(--c-ink-rgb) / .14)", opacity: disabled ? 0.6 : 1 }}>
+      style={{ width: "52px", height: "32px", flex: "none", padding: "3px", border: 0, borderRadius: "var(--r-pill)", cursor: disabled ? "default" : "pointer", transition: "background .25s ease", background: on ? C.ok : "rgb(var(--c-ink-rgb) / .14)", opacity: disabled ? 0.6 : 1 }}>
       <span style={{ display: "block", width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-knob)", boxShadow: "var(--c-shadow-lift)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", transform: on ? "translateX(20px)" : "translateX(0)" }} />
     </button>
   );
@@ -64,7 +65,7 @@ export function Notice({ tone = "error", children, style }) {
 /** White v2 card: radius 26, no border. */
 export function Card({ id, title, aside, children, style, titleSize = 22 }) {
   return (
-    <section aria-labelledby={id} style={{ background: "var(--c-card)", borderRadius: "var(--r-2xl)", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", ...style }}>
+    <section aria-labelledby={id} style={{ background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", ...style }}>
       {title ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
           <h2 id={id} style={{ margin: 0, font: `600 ${stepOf(titleSize)}px/1.1 'Bricolage Grotesque', sans-serif`, letterSpacing: "-0.02em" }}>{title}</h2>
@@ -76,7 +77,7 @@ export function Card({ id, title, aside, children, style, titleSize = 22 }) {
   );
 }
 
-const pillBase = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, whiteSpace: "nowrap" };
+const pillBase = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, whiteSpace: "nowrap" };
 export const btn = {
   dark: { ...pillBase, background: "var(--c-btn)", color: "var(--c-btn-text)" },
   // Honey is only for «te necesitamos»; a main action elsewhere is ink.
@@ -93,11 +94,11 @@ export const field = {
 };
 
 /** Visible focus for every control. */
-export const formCss = "\ninput:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #12131A;outline-offset:1px}\nbutton:focus-visible,a:focus-visible{outline:2px solid #12131A;outline-offset:2px}\nbutton:not(:disabled){cursor:pointer}";
+export const formCss = "\ninput:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--c-text);outline-offset:1px}\nbutton:focus-visible,a:focus-visible{outline:2px solid var(--c-text);outline-offset:2px}\nbutton:not(:disabled){cursor:pointer}";
 
 /** Segmented Lee / Escribe selector. */
 export function AccessPills({ value, onChange, label = "Acceso" }) {
-  const seg = (on) => ({ height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none" });
+  const seg = (on) => ({ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 3px rgb(var(--c-ink-rgb) / .15)" : "none" });
   return (
     <span role="radiogroup" aria-label={label} style={{ display: "inline-flex", gap: "2px", padding: "3px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)" }}>
       <button type="button" role="radio" aria-checked={value === "lee"} onClick={() => onChange("lee")} style={seg(value === "lee")}>Solo leer</button>
@@ -114,7 +115,7 @@ export function BotChips({ bots, selected, onToggle, label = "Bots con acceso" }
         const on = selected.includes(b.id);
         return (
           <button key={b.id} type="button" aria-pressed={on} onClick={() => onToggle(b.id)}
-            style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 14px 0 10px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .05)", color: on ? "var(--c-btn-text)" : INK }}>
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 14px 0 10px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .05)", color: on ? "var(--c-btn-text)" : INK }}>
             <BotPresence bot={b} size={16} />
             {b.name}
           </button>

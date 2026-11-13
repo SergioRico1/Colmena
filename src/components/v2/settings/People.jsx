@@ -8,6 +8,7 @@ import { PeerAvatar } from "../people/PeerAvatar.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import PeopleIntro, { HELP_URL } from "../people/PeopleIntro.jsx";
 import { Chevron, FieldRow, Group, LINE, LinkRow, Segmented, SwitchRow, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
+import { C } from "../../../lib/theme.js";
 
 // Ajustes › Personas (design/V2Personas.dc.html, paso personas): who you talk to from
 // Colmena, what each one's bot may ask you, your safety words with each, invitations not yet
@@ -60,9 +61,9 @@ export default function PeopleSettings() {
           return (
             <div key={c.id} id={c.id} style={{ borderBottom: i === contacts.length - 1 && !peers.invites.length ? 0 : LINE }}>
               <button type="button" onClick={() => setOpen(isOpen ? null : c.id)} aria-expanded={isOpen} style={{ ...rowStyle(true, "68px"), cursor: "pointer" }}>
-                <PeerAvatar person={c} size={40} dot ring="#FFFFFF" dashed={c.status === "pending"} />
+                <PeerAvatar person={c} size={40} dot ring={C.card} dashed={c.status === "pending"} />
                 <Text title={c.name} sub={seenText(c)} />
-                {c.verifiedAt ? <ShieldCheck size={17} strokeWidth={2.2} color="#0B8A5F" aria-label="Palabras comprobadas" /> : null}
+                {c.verifiedAt ? <ShieldCheck size={17} strokeWidth={2.2} color={C.ok} aria-label="Palabras comprobadas" /> : null}
                 <Chevron open={isOpen} />
               </button>
               {isOpen ? (
@@ -79,7 +80,7 @@ export default function PeopleSettings() {
                       <span style={{ flex: "0 1 300px" }}><Segmented label={title} items={items} value={c.asks[key]} busy={act.busy} onPick={(v) => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { asks: { [key]: v } }))} /></span>
                     </div>
                   ))}
-                  <button type="button" onClick={() => remove(c)} style={{ ...pill(false), alignSelf: "flex-start", background: "transparent", color: "#B42318", padding: "0 4px" }}>{"Dejar de hablar con " + c.name.split(" ")[0]}</button>
+                  <button type="button" onClick={() => remove(c)} style={{ ...pill(false), alignSelf: "flex-start", background: "transparent", color: "var(--c-error)", padding: "0 4px" }}>{"Dejar de hablar con " + c.name.split(" ")[0]}</button>
                 </div>
               ) : null}
             </div>
@@ -87,7 +88,7 @@ export default function PeopleSettings() {
         })}
         {peers.invites.map((inv, i) => (
           <div key={inv.id} style={rowStyle(i === peers.invites.length - 1, "64px")}>
-            <PeerAvatar person={{ initials: inv.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase(), color: "#EEEAE3" }} size={40} dashed />
+            <PeerAvatar person={{ initials: inv.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase(), color: C.chip }} size={40} dashed />
             <Text title={inv.name} sub={"Invitación sin aceptar · caduca el " + when(inv.expiresAt)} />
             <button type="button" onClick={() => later({ id: "invite:" + inv.id, keys: [], text: "Invitación cancelada", run: () => act.act(() => del(`/peers/invites/${inv.id}`)) })} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)" }}>{"Cancelar"}</button>
           </div>
@@ -174,7 +175,7 @@ function ErrandTools({ act }) {
 function RelayGroup({ relay, act }) {
   const [draft, setDraft] = useState(relay.url || "");
   useEffect(() => { setDraft(relay.url || ""); }, [relay.url]);
-  const color = relay.status === "online" ? "#1E9E6A" : relay.status === "connecting" ? "#C98A00" : relay.status === "offline" ? "#B4372A" : "#9A9DA6";
+  const color = relay.status === "online" ? C.ok : relay.status === "connecting" ? C.honeyRing : relay.status === "offline" ? C.error : C.text4;
   const save = () => { const v = draft.trim(); if (v !== (relay.url || "")) act.act(() => patch("/peers/settings", { relayUrl: v || null })); };
   return (
     <Group id="pp-rl" title="Cómo os llegan los mensajes" anchor="buzon" note="Si alguien no está conectado, su sobre espera en el buzón hasta 7 días. Tus correos, tu calendario, tus archivos y lo que saben de ti tus bots nunca salen de aquí: solo lo que escribís y lo que tú apruebas compartir.">

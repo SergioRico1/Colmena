@@ -64,7 +64,7 @@ export default function Seguridad() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: "10px" }}>
           {RED_LINES.map((r) => (
             <div key={r.title} style={{ padding: "14px", background: "var(--c-hover)", borderRadius: "var(--r-md)", display: "flex", flexDirection: "column", gap: "8px" }}>
-              <span aria-hidden="true" style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", background: "var(--c-card)", border: "1.5px solid #E5484D", color: "#B4262B", borderRadius: "var(--r-sm)" }}>
+              <span aria-hidden="true" style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", background: "var(--c-card)", border: "1.5px solid var(--c-error)", color: "var(--c-error)", borderRadius: "var(--r-sm)" }}>
                 <r.Icon size={17} strokeWidth={2} />
               </span>
               <strong style={{ fontSize: "var(--t-body)" }}>{r.title}</strong>

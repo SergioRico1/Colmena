@@ -2,6 +2,7 @@ import { useState } from "react";
 import { del, post } from "../../../lib/api.js";
 import { useExpert } from "../../../lib/expert.js";
 import { Alert, Chip, anchorOf, btn, h3 } from "./v3.jsx";
+import { C } from "../../../lib/theme.js";
 
 // Ajustes › Privacidad y datos › «Cifrado de este ordenador» (design/V3Privacidad.dc.html,
 // server/encryption.mjs): the database encrypted with a key Windows (or the Mac's Keychain)
@@ -27,7 +28,7 @@ export default function EncryptionSettings({ s, reload }) {
   if (!s) return null;
   const pending = s.pending;
   return (
-    <section {...anchorOf("cifrado")} aria-labelledby="enc-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
+    <section {...anchorOf("cifrado")} aria-labelledby="enc-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
       <div {...anchorOf("cifrado-estado")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", scrollMarginTop: "24px" }}>
         <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <h3 id="enc-t" style={{ ...h3, fontSize: "var(--t-read)" }}>Cifrado de este ordenador</h3>
@@ -41,13 +42,13 @@ export default function EncryptionSettings({ s, reload }) {
       </div>
 
       {s.locked ? (
-        <div role="alert" style={banner("#FBEAE7")}>
+        <div role="alert" style={banner(C.errorSoft)}>
           <span style={{ flex: "1 1 260px" }}>{`No encontré la clave de tu base de datos cifrada. Colmena ha empezado de cero y ha apartado tus datos cifrados en «${s.locked.folder}». Para recuperarlos, restaura una copia de seguridad.`}</span>
           <button type="button" onClick={() => act("dismiss", () => post("/encryption/dismiss/locked", {}))} style={btn("outline", 32)}>Entendido</button>
         </div>
       ) : null}
       {pending ? (
-        <div role="status" style={banner("#F6F6F3")}>
+        <div role="status" style={banner(C.hover)}>
           <span style={{ flex: "1 1 260px" }}>La copia de seguridad ya está hecha. Colmena cifra la base al reiniciarse: tarda unos segundos.</span>
           {s.canRelaunch
             ? <button type="button" onClick={() => act("restart", () => post("/encryption/relaunch", {}))} disabled={busy === "restart"} style={btn("dark", 34)}>{busy === "restart" ? "Reiniciando…" : "Reiniciar y cifrar"}</button>
@@ -68,18 +69,18 @@ export default function EncryptionSettings({ s, reload }) {
         </div>
       ) : null}
       {s.failed ? (
-        <div style={banner("#FBEAE7")}>
+        <div style={banner(C.errorSoft)}>
           <span style={{ flex: "1 1 260px" }}><strong style={{ fontWeight: 600 }}>No se pudo cifrar: todo sigue como estaba.</strong> {s.failed.error}</span>
           <button type="button" onClick={() => act("dismiss", () => post("/encryption/dismiss/encrypt-failed", {}))} style={btn("outline", 32)}>Entendido</button>
         </div>
       ) : null}
       {s.encrypted && s.plainCopies?.length ? (
-        <div style={banner("#F6F6F3")}>
+        <div style={banner(C.hover)}>
           <span>{`Quedan copias antiguas sin cifrar en la carpeta de Colmena: ${s.plainCopies.join(", ")}. Son lo que había antes de una restauración; bórralas cuando ya no las necesites.`}</span>
         </div>
       ) : null}
       {s.done && s.encrypted ? (
-        <div role="status" style={banner("#E3F4EC")}>
+        <div role="status" style={banner(C.okSoft)}>
           <span style={{ flex: "1 1 260px", color: "var(--c-ok-ink)" }}>{`Cifrado comprobado: todos tus registros están, en su orden, y se descifran igual. Tardó ${Math.max(1, Math.round(s.done.ms / 1000))} s.`}</span>
           <button type="button" onClick={() => act("dismiss", () => post("/encryption/dismiss/encrypt-done", {}))} style={btn("ghost", 32)}>Ocultar</button>
         </div>

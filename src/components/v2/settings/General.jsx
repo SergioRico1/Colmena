@@ -50,7 +50,7 @@ export default function GeneralSection() {
         <Row anchor="tema" title="Tema" sub="Claro, oscuro o el mismo que tu ordenador.">
           <Pills label="Tema" items={THEME_ITEMS} value={theme} onPick={pickTheme} />
         </Row>
-        <SwitchRow anchor="modo-experto" strong min="76px" tint="#FAFAF8" title="Modo experto"
+        <SwitchRow anchor="modo-experto" strong min="76px" tint="var(--c-hover)" title="Modo experto"
           sub="Muestra herramientas, tokens, modelo, registros y atajos. Añade la sección Avanzado. No quita nada."
           on={expert} onChange={toggleExpert} />
         <SwitchRow anchor="narracion" title="Te cuentan en qué están" sub="Una frase mientras trabajan: «Leyendo tus correos de hoy…»." on={settings.narration !== false} onChange={flip("narration", "Te cuentan en qué están")} />

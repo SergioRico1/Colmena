@@ -4,6 +4,7 @@ import { api } from "../../../lib/api.js";
 import { updates, useUpdates } from "../../../lib/updates.js";
 import { useExpert } from "../../../lib/expert.js";
 import { Go, LINE, MUTED, anchorOf, btn } from "./v3.jsx";
+import { C } from "../../../lib/theme.js";
 
 // Ajustes › Ayuda y diagnóstico (design/V3Ajustes.dc.html; «t3 doctor» for a person who is not
 // technical): one click checks the AI accounts, the code engines, the database and the disk,
@@ -21,10 +22,10 @@ const GROUPS = [
 ];
 const ORDER = { fail: 0, warn: 1, ok: 2, off: 3 };
 const MARK = {
-  ok: ["✓", "#E3F4EC", "#0B6B4A", "Bien"],
-  warn: ["!", "#FFC93C", "#12131A", "Revisar"],
-  fail: ["!", "#FBEAE7", "#B4232A", "Falla"],
-  off: ["–", "#F1F1EC", "#5C606C", "Sin usar"],
+  ok: ["✓", C.okSoft, C.okInk, "Bien"],
+  warn: ["!", "var(--c-warn-soft)", "var(--c-warn)", "Revisar"],
+  fail: ["!", C.errorSoft, C.error, "Falla"],
+  off: ["–", C.chip, C.text3, "Sin usar"],
 };
 
 // The last result lives outside the screen: the section list shows its count, and coming
@@ -47,7 +48,7 @@ export function diagnosticsDot(result) {
   const s = result?.summary;
   if (!s || !(s.fail || s.warn)) return null;
   const n = (s.fail || 0) + (s.warn || 0);
-  return { text: String(n), color: s.fail ? "#B4232A" : MUTED, label: s.fail ? `${s.fail} ${s.fail === 1 ? "cosa falla" : "cosas fallan"}` : `${n} ${n === 1 ? "cosa que revisar" : "cosas que revisar"}` };
+  return { text: String(n), color: s.fail ? C.error : MUTED, label: s.fail ? `${s.fail} ${s.fail === 1 ? "cosa falla" : "cosas fallan"}` : `${n} ${n === 1 ? "cosa que revisar" : "cosas que revisar"}` };
 }
 
 function updateCheck(u) {
@@ -155,7 +156,7 @@ export default function HelpSection() {
   const label = running ? "Comprobando…" : result?.at ? `Comprobado a las ${hm(result.at)}` : "Comprobar ahora";
   return (
     <>
-      <section {...anchorOf("comprobar")} aria-live="polite" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("comprobar")} aria-live="polite" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
           <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
             <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>Comprueba que todo funciona</span>
@@ -163,17 +164,17 @@ export default function HelpSection() {
           </span>
           <button type="button" onClick={() => { runDiagnostics(); updates?.check?.(); }} disabled={running} title={result?.at ? "Comprobar otra vez" : undefined}
             style={{ ...btn("dark", 42), padding: "0 18px", fontSize: "var(--t-body)", cursor: running ? "wait" : "pointer" }}>
-            {running ? <span aria-hidden="true" style={{ width: "14px", height: "14px", borderRadius: "var(--r-circle)", border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#FFFFFF", animation: "spin .9s linear infinite" }} /> : null}{label}
+            {running ? <span aria-hidden="true" style={{ width: "14px", height: "14px", borderRadius: "var(--r-circle)", border: "2px solid color-mix(in srgb, var(--c-btn-text) 30%, transparent)", borderTopColor: C.card, animation: "spin .9s linear infinite" }} /> : null}{label}
           </button>
         </div>
         {checks ? GROUPS.map(([g, groupLabel, anchor]) => {
           const list = checks.filter((c) => c.group === g);
           return list.length ? <GroupRow key={g} label={groupLabel} anchor={anchor} list={list} expert={expert} /> : null;
-        }) : running ? <span style={{ height: "48px", borderRadius: "var(--r-md)", background: "linear-gradient(90deg, #F6F6F3, #EEEEEA, #F6F6F3)", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} /> : null}
+        }) : running ? <span style={{ height: "48px", borderRadius: "var(--r-md)", background: "linear-gradient(90deg, var(--c-hover), var(--c-chip), var(--c-hover))", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} /> : null}
       </section>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: "10px" }}>
-        <div {...anchorOf("version")} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px 20px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
+        <div {...anchorOf("version")} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px 20px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
           <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Versión</span>
           <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif" }}>{version}</span>
           {u ? (
@@ -198,8 +199,8 @@ export default function HelpSection() {
             </>
           ) : <span {...anchorOf("actualizaciones")} style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Las actualizaciones las lleva la app de escritorio.</span>}
         </div>
-        <button type="button" {...anchorOf("comentarios")} onClick={copy} disabled={!checks} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", padding: "18px 20px", border: 0, borderRadius: "var(--r-xl)", background: "var(--c-card)", textAlign: "left", color: "var(--c-text)", cursor: checks ? "pointer" : "default", scrollMarginTop: "24px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600 }}>{copied ? <Check size={15} strokeWidth={2.4} color="#0B6B4A" aria-hidden="true" /> : null}{copied ? "Informe copiado" : "Enviar comentarios"}</span>
+        <button type="button" {...anchorOf("comentarios")} onClick={copy} disabled={!checks} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", padding: "18px 20px", border: 0, borderRadius: "var(--r-md)", background: "var(--c-card)", textAlign: "left", color: "var(--c-text)", cursor: checks ? "pointer" : "default", scrollMarginTop: "24px" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600 }}>{copied ? <Check size={15} strokeWidth={2.4} color={C.okInk} aria-hidden="true" /> : null}{copied ? "Informe copiado" : "Enviar comentarios"}</span>
           <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Copia el informe de la comprobación para pegarlo en un correo a quien te ayude.</span>
         </button>
       </div>

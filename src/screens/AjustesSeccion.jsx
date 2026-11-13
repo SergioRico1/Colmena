@@ -16,7 +16,7 @@ export default function AjustesSeccion({ params }) {
       {Section ? <Section /> : (
         <>
           <PageHeader title="Esta sección no existe">Elige una de las secciones de la izquierda. Tus ajustes siguen como estaban.</PageHeader>
-          <a href="/ajustes" style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", height: "44px", padding: "0 20px", background: "var(--c-btn)", color: "var(--c-btn-text)", borderRadius: "var(--r-pill)", fontWeight: "600", fontSize: "var(--t-ui)" }}>Ir a Ajustes</a>
+          <a href="/ajustes" style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", height: "36px", padding: "0 14px", background: "var(--c-btn)", color: "var(--c-btn-text)", borderRadius: "var(--r-sm)", fontWeight: "600", fontSize: "var(--t-ui)" }}>Ir a Ajustes</a>
         </>
       )}
     </SettingsShell>

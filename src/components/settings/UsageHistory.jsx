@@ -7,6 +7,7 @@ import { useStore } from "../../lib/store.jsx";
 import { botById } from "../../lib/bots.js";
 import { roomUrl } from "../../lib/format.js";
 import { Avatar } from "../home/shared.jsx";
+import { C } from "../../lib/theme.js";
 
 // «Últimos 30 días» (OpenClaw usage dashboard): tokens per day as bars (today in honey),
 // then who used them — per bot or per room — and the whole detail as a CSV for Excel.
@@ -45,12 +46,12 @@ export default function UsageHistory() {
 
   return (
     <Card id="historial" title="Últimos 30 días" aside={
-      <a href="/api/usage/history.csv?days=30" download className="rm-focus" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 12px", background: "var(--c-card)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>
+      <a href="/api/usage/history.csv?days=30" download className="rm-focus" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", background: "var(--c-card)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-sm)", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>
         <Download size={14} strokeWidth={2.2} aria-hidden="true" />{"Descargar CSV"}
       </a>
     }>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 14px" }}>
-        <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{formatTokens(data.total)}</span>
+        <span style={{ font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{formatTokens(data.total)}</span>
         <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{`tokens · ${data.calls.toLocaleString("es-ES")} ${data.calls === 1 ? "llamada" : "llamadas"} · ${active} ${active === 1 ? "día con uso" : "días con uso"}`}</span>
       </div>
 
@@ -64,7 +65,7 @@ export default function UsageHistory() {
               <button key={d.date} type="button" className="rm-focus" aria-label={`${dayLabel(d.date, true)}: ${d.tokens ? formatTokens(d.tokens) + " tokens" : "sin uso"}`}
                 onMouseEnter={() => setHover(d.date)} onFocus={() => setHover(d.date)} onBlur={() => setHover(null)}
                 style={{ flex: "1", minWidth: 0, height: "100%", padding: 0, background: "transparent", border: 0, cursor: "default", display: "flex", alignItems: "flex-end" }}>
-                <span style={{ display: "block", width: "100%", height: h + "px", borderRadius: "var(--r-xs) var(--r-xs) 0 0", background: !d.tokens ? "rgb(var(--c-ink-rgb) / .1)" : isToday ? "var(--c-honey)" : on ? "#5C606C" : "#12131A", boxShadow: isToday && d.tokens ? "inset 0 0 0 1.5px #12131A" : "none", transition: "background .12s ease" }} />
+                <span style={{ display: "block", width: "100%", height: h + "px", borderRadius: "var(--r-xs) var(--r-xs) 0 0", background: !d.tokens ? "rgb(var(--c-ink-rgb) / .1)" : isToday ? "var(--c-honey)" : on ? C.text3 : C.text, boxShadow: isToday && d.tokens ? "inset 0 0 0 1.5px var(--c-text)" : "none", transition: "background .12s ease" }} />
               </button>
             );
           })}
@@ -80,7 +81,7 @@ export default function UsageHistory() {
           <div role="group" aria-label="Ver el uso" style={{ display: "inline-flex", alignSelf: "flex-start", padding: "3px", background: "var(--c-sunken)", borderRadius: "var(--r-md)" }}>
             {[["bot", "Por bot"], ["sala", "Por sala o chat"]].map(([id, label]) => (
               <button key={id} type="button" aria-pressed={by === id ? "true" : "false"} onClick={() => setBy(id)} className="rm-focus"
-                style={{ height: "30px", padding: "0 12px", background: by === id ? "var(--c-card)" : "transparent", border: 0, borderRadius: "var(--r-sm)", boxShadow: by === id ? "0 1px 2px rgba(18,19,26,.12)" : "none", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: by === id ? 700 : 500, color: "var(--c-text)" }}>{label}</button>
+                style={{ height: "30px", padding: "0 12px", background: by === id ? "var(--c-card)" : "transparent", border: 0, borderRadius: "var(--r-sm)", boxShadow: by === id ? "0 1px 2px rgb(var(--c-ink-rgb) / .12)" : "none", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: by === id ? 700 : 500, color: "var(--c-text)" }}>{label}</button>
             ))}
           </div>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -97,7 +98,7 @@ export default function UsageHistory() {
                       : <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600, color: r.exists === false ? "var(--c-text-3)" : "var(--c-text)" }}>{name}</span>}
                   </span>
                   <span aria-hidden="true" style={{ height: "8px", borderRadius: "var(--r-xs)", background: "var(--c-sunken)", overflow: "hidden" }}>
-                    <span style={{ display: "block", width: Math.max(2, (r.tokens / top) * 100) + "%", height: "100%", background: "#12131A", borderRadius: "var(--r-xs)" }} />
+                    <span style={{ display: "block", width: Math.max(2, (r.tokens / top) * 100) + "%", height: "100%", background: C.btn, borderRadius: "var(--r-xs)" }} />
                   </span>
                   <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-3)", whiteSpace: "nowrap" }}>{`${formatTokens(r.tokens)} · ${pct} %`}</span>
                 </li>
