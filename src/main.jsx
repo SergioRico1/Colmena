@@ -7,6 +7,7 @@ import "@fontsource/geist-mono/500.css";
 import "@fontsource/geist-mono/600.css";
 import "@fontsource/poppins/800.css";
 import "./styles/base.css";
+import "./styles/palette.css";
 import { StrictMode, Suspense, lazy, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, navigate, useRouter } from "./lib/router.jsx";
