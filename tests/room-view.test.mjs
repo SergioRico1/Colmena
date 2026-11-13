@@ -111,6 +111,7 @@ test("the status line of another owner's bot, for every state, in neutral words"
   assert.equal(durationText(65 * 60000), "1 h 5 min");
   assert.equal(durationText(120 * 60000), "2 h");
   assert.equal(statusLine(item("throttled")), "Vera está en pausa un momento: demasiadas peticiones seguidas");
+  assert.match(statusLine(item("expired")), /no llegó a tener el OK de|No llegaste a dar el OK/);
   // As built the server writes the sentence: it is used as it comes, whatever the state.
   assert.equal(statusLine({ engine: "line", kind: "status", state: "done", text: "Vera usó 4 herramientas · 12 min", bot: vera }), "Vera usó 4 herramientas · 12 min");
   assert.equal(statusLine({ engine: "line", kind: "status", state: "a-new-state", text: "Vera espera tu OK" }), "Vera espera tu OK");

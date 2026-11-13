@@ -139,6 +139,8 @@ export function statusLine(item) {
     case "limited": return you ? `${bot} está en pausa: límite de tu plan` : `${bot} está en pausa: límite del plan de ${owner}`;
     case "failed": return `${bot} no ha podido terminar`;
     case "throttled": return `${bot} está en pausa un momento: demasiadas peticiones seguidas`;
+    // An approval nobody decided in time: the request is closed (server/room-work.mjs).
+    case "expired": return you ? `No llegaste a dar el OK a ${bot}` : `${bot} no llegó a tener el OK de ${owner}`;
     case "away": return you ? `${bot} seguirá cuando vuelvas` : `${owner} no está; ${bot} seguirá cuando vuelva`;
     default: return null;
   }
