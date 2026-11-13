@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, FolderOpen, Globe, ListChecks, Lock, MessageSquareReply, MessagesSquare, SquareTerminal, Users, Ellipsis } from "../components/Icon.js";
+import { FileText, FolderOpen, Globe, Hash, ListChecks, Lock, LockSimple, MessageSquareReply, MessagesSquare, PanelRight, Search, SquareTerminal, Users, Ellipsis } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
-import { BotMark } from "../components/v2/chat/Mark.jsx";
+import BotFace from "../components/BotFace.jsx";
 import { get, patch, post } from "../lib/api.js";
 import { InteractiveContext } from "../components/room/Interactive.jsx";
 import { useFollow } from "../lib/useStickToBottom.js";
@@ -24,7 +24,7 @@ import AsidePanel, { askAsideAbout } from "../components/room/AsidePanel.jsx";
 import SelectionPopup, { quoteInto } from "../components/room/SelectionPopup.jsx";
 import { BlockerBand, StuckBand, RepliesPanel, ProgressPanel, RoomComposer, RoomMessages, ThreadPanel, typingInfo, withOrphanQuestions, OlderMessages } from "../components/room/RoomParts.jsx";
 import { CatchUp, NewRoom, RulesPanel, useSince } from "../components/room/RoomExtras.jsx";
-import { BotNames, HandoffLine, PersonAvatar, StatusLine } from "../components/room/Author.jsx";
+import { BotNames, HandoffLine, OpenBot, PersonAvatar, StatusLine } from "../components/room/Author.jsx";
 import MemberPanel from "../components/room/MemberPanel.jsx";
 import RoomInvite from "../components/room/RoomInvite.jsx";
 import RoomAsks from "../components/room/RoomAsks.jsx";
@@ -58,7 +58,7 @@ const I = { size: 15, strokeWidth: 2.2, "aria-hidden": "true" };
 const BROWSING = ["navegando", "rellenando un formulario", "usando el ordenador", "ejecutando una tarea"];
 const SHORTCUTS = { aparte: "mod+shift+s", archivos: "mod+shift+b", progreso: "mod+alt+shift+e", hilo: "mod+alt+shift+j", navegador: "mod+alt+shift+u", terminal: "mod+alt+shift+t", reglas: "mod+alt+shift+r" };
 const TABS = Object.fromEntries(["hilo", "progreso", "archivos", "navegador", "terminal", "aparte", "reglas"].map((k) => [k, { id: k, kind: k }]));
-const popover = { position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "260px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" };
+const popover = { position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "260px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-raised)", border: "1px solid var(--c-line)", boxShadow: "var(--c-shadow-pop)", animation: "rise .15s ease-out" };
 const menuItem = { minHeight: "38px", display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "var(--c-text)", width: "100%" };
 const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
 const MEMBERS_KEY = "colmena:room-members";
@@ -146,7 +146,10 @@ function Room({ id, query }) {
   const [error, setError] = useState(null);
   const [wantAside, setWantAside] = useState(false); // «Solo para mí» asked before the room had its sala here
   const closeViewer = useCallback(() => setViewing(null), []);
-  useEffect(() => { setError(null); setSearching(false); setLeaving(false); setRenaming(null); setSheet(null); }, [roomId]);
+  // The right panel's two tabs: the bot you opened from a face or a name, and «Miembros».
+  const [profile, setProfile] = useState(null); // {id, owner: address | null, name}
+  const [panelTab, setPanelTab] = useState("miembros");
+  useEffect(() => { setError(null); setSearching(false); setLeaving(false); setRenaming(null); setSheet(null); setProfile(null); setPanelTab("miembros"); }, [roomId]);
 
   const { mission, steps: missionSteps, thread, artifacts, approvals, live, activity, memberIds } = room;
   // What someone asked one of your bots here is decided on its own card (RoomAsks), once.
@@ -376,7 +379,7 @@ function Room({ id, query }) {
   };
   const menu = [
     ...(shown?.mine && !shown?.general ? [["Cambiar el nombre", () => setRenaming(title)]] : []),
-    ...(shared ? [["Buscar en la sala", () => setSearching(true)]] : []),
+    ...(!gone && !guest ? [["Invitar a la sala", () => setSheet("invitar")]] : []),
     ...(mission ? [
       ["Reglas de la sala", () => dock.toggle(TABS.reglas)],
       ["Archivos de la sala", () => dock.toggle(TABS.archivos)],
@@ -401,15 +404,21 @@ function Room({ id, query }) {
     try { await post(`/rooms/${encodeURIComponent(roomId)}/aside`); setWantAside(true); refreshView(); } catch (err) { setError(err.message); }
     return undefined;
   };
-  const audience = only.available ? (
-    <span className="c-tip-wrap">
-      <button type="button" aria-pressed={aside ? "true" : "false"} aria-describedby="solo-para-mi" onClick={toggleAside}
-        style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: aside ? "var(--c-btn)" : "var(--c-chip)", color: aside ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
-        <Lock {...I} />{only.label}
-      </button>
-      <span role="tooltip" id="solo-para-mi" className="c-tip">{only.hint}</span>
-    </span>
-  ) : null;
+  // The composer's chip says it (RoomComposer › AddressChip): «Toda la sala», a bot, «Solo para mí».
+  const audience = { on: !!aside, toggle: toggleAside, label: only.label, hint: only.hint, available: only.available };
+
+  // ---- the right panel: «Miembros», or the bot you opened from its face or name
+  const panelOpen = membersOpen && !dockShown && !threadId;
+  const showMembers = () => { if (dockShown) dock.setOpen(false); setMembersOpen(true); setPanelTab("miembros"); };
+  const openBot = (author) => {
+    const id = typeof author?.botId === "object" && author.botId ? author.botId.bot : author?.botId || author?.id;
+    if (!id) return;
+    const owner = author.owner?.you ? null : author.owner?.address || (typeof author?.botId === "object" ? author.botId?.owner : null) || null;
+    setProfile({ id, owner, name: author.name || null });
+    setPanelTab("perfil");
+    if (dockShown) dock.setOpen(false);
+    setMembersOpen(true);
+  };
 
   // People typing and other people's bots thinking; files on their way; what went wrong.
   const above = shared && (tl.typing.length || thinking.length || sending.length || error) ? (
@@ -428,15 +437,16 @@ function Room({ id, query }) {
   return (
     <InteractiveContext.Provider value={{ send: mission ? send : null }}>
       <BotNames.Provider value={botNames}>
-      <Shell active="chats" scroll={false}>
+      <OpenBot.Provider value={openBot}>
+      <Shell active="chats" scroll={false} background="var(--c-app)">
         <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
           <main aria-label={taskTalk ? "Conversación de la tarea " + taskTalk.title : "Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
             <Announcer text={news} />
             {ready2 ? (
               <>
-                <header style={{ position: "relative", zIndex: 5, flex: "none", background: "color-mix(in oklab, var(--c-page) 92%, transparent)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
-                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 26px" }}>
-                    <div style={{ flex: "1 1 220px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px", marginRight: "auto" }}>
+                <header style={{ position: "relative", zIndex: 5, flex: "none", background: "var(--c-app)", borderBottom: "1px solid var(--c-line)", WebkitAppRegion: "drag" }}>
+                  <div style={{ minHeight: "56px", display: "flex", alignItems: "center", gap: "12px", padding: "0 12px 0 24px" }}>
+                    <div style={{ flex: "1 1 auto", minWidth: 0, display: "flex", alignItems: "center", gap: "12px", marginRight: "auto", WebkitAppRegion: "no-drag" }}>
                       {renaming !== null ? (
                         <form onSubmit={saveName} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                           <label style={{ flex: 1, minWidth: 0, display: "flex" }}>
@@ -447,31 +457,39 @@ function Room({ id, query }) {
                           <button type="submit" style={{ ...outline, height: "34px", background: "var(--c-btn)", borderColor: "var(--c-text)", color: "var(--c-btn-text)" }}>{"Guardar"}</button>
                           <button type="button" onClick={() => setRenaming(null)} style={{ ...outline, height: "34px" }}>{"Cancelar"}</button>
                         </form>
-                      ) : <h1 style={{ margin: 0, fontSize: "var(--t-lead)", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{taskTalk ? `Conversación de la tarea «${taskTalk.title}»` : "# " + title}</h1>}
-                      <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)", minWidth: 0 }}>
-                        {place.private && !taskTalk ? <Lock size={12} strokeWidth={2.3} aria-hidden="true" style={{ flex: "none", marginTop: "3px" }} /> : null}
-                        {/* Up to two lines, the whole of it on hover and to a screen reader (it is all in the page). */}
-                        <span title={subtitle} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 }}>
-                          {taskTalk ? <>{"Lo que habláis tú y los bots sobre esta tarea · "}<a href={`/encargo/${encodeURIComponent(missionId)}`}>{"volver a la tarea"}</a></> : <>
-                            {subtitle}
-                            {mission ? <>{" · "}<a href={`/encargo/${missionId}`}>{"ver la tarea"}</a></> : null}
-                          </>}
+                      ) : <h1 style={{ margin: 0, flex: "none", maxWidth: "50%", display: "flex", alignItems: "center", gap: "6px", font: "600 var(--t-lead)/1.2 'Geist', sans-serif", letterSpacing: "-0.01em", overflow: "hidden", whiteSpace: "nowrap" }}>
+                        {taskTalk ? null : place.private ? <LockSimple size={19} style={{ flex: "none", color: "var(--c-text-3)" }} aria-label="Privada" /> : <Hash size={19} style={{ flex: "none", color: "var(--c-text-3)" }} />}
+                        <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{taskTalk ? `Conversación de la tarea «${taskTalk.title}»` : title}</span>
+                      </h1>}
+                      {renaming !== null ? null : (
+                        <span style={{ flex: "1 1 auto", minWidth: 0, paddingLeft: "12px", borderLeft: "1px solid var(--c-line)", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
+                          {/* Up to two lines, the whole of it on hover and to a screen reader (it is all in the page). */}
+                          <span title={subtitle} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 }}>
+                            {taskTalk ? <>{"Lo que habláis tú y los bots sobre esta tarea · "}<a href={`/encargo/${encodeURIComponent(missionId)}`}>{"volver a la tarea"}</a></> : <>
+                              {subtitle}
+                              {mission ? <>{" · "}<a href={`/encargo/${missionId}`}>{"ver la tarea"}</a></> : null}
+                            </>}
+                          </span>
                         </span>
-                      </span>
+                      )}
                     </div>
-                    <span role="img" aria-label={stackLabel(panel)} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span aria-hidden="true" style={{ display: "flex" }}>{stackPeople.map((p, i) => <span key={p.address || i} style={{ marginLeft: i ? "-7px" : 0, borderRadius: "var(--r-circle)", boxShadow: "0 0 0 2px #F5F5F2" }}><PersonAvatar person={p} size={26} /></span>)}</span>
-                      <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} bot={b} size={18} owner={b.owner} ring="var(--c-page)" state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
-                      <span aria-hidden="true" style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)", whiteSpace: "nowrap" }}>{counts}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" }}>
+                      {/* A debate waiting for your choice is decided from the banner below: one action, one honey element. */}
+                      {mission?.mode === "debate" && mission.status !== "awaiting_choice" ? <a href={`/debate/${missionId}`} className="v4-btn" style={{ marginRight: "6px" }}>{"Ver las propuestas"}</a> : null}
+                      {/* Who is here (design/v4 › .stack): it opens «Miembros». */}
+                      <button type="button" className="v4-stack" aria-label={stackLabel(panel) + ". Ver los miembros"} title="Ver los miembros" onClick={() => showMembers()}>
+                        <span aria-hidden="true" style={{ display: "flex" }}>
+                          {stackPeople.map((p, i) => <span key={p.address || i} style={{ marginLeft: i ? "-6px" : 0, borderRadius: "var(--r-circle)", boxShadow: "0 0 0 2px var(--c-app)" }}><PersonAvatar person={p} size={24} /></span>)}
+                          {stackBots.slice(0, 3).map((b) => <span key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} style={{ marginLeft: "4px", display: "grid" }}><BotFace bot={b} size={24} owner={b.mine ? null : b.owner} state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} decorative /></span>)}
+                        </span>
+                        <span aria-hidden="true" style={{ whiteSpace: "nowrap" }}>{counts}</span>
+                      </button>
+                      {shared ? <button type="button" className="v4-ib" aria-label="Buscar en la sala" title="Buscar en la sala" aria-pressed={searching} onClick={() => setSearching((v) => !v)}><Search size={18} /></button> : null}
+                      <button type="button" className="v4-ib" aria-label={panelOpen ? "Ocultar el panel lateral" : "Ver el panel lateral"} title={panelOpen ? "Ocultar el panel lateral" : "Ver el panel lateral"} aria-pressed={panelOpen} aria-controls="sala-miembros"
+                        onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}><PanelRight size={18} active={panelOpen} /></button>
+                      {menu.length ? <HeaderMenu label="Más opciones" items={menu} style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}
+                        button={<Ellipsis size={18} />} /> : null}
                     </span>
-                    {/* A debate waiting for your choice is decided from the banner below: one action, one honey element. */}
-                    {mission?.mode === "debate" && mission.status !== "awaiting_choice" ? <a href={`/debate/${missionId}`} style={{ ...outline, textDecoration: "none" }}>{"Ver las propuestas"}</a> : null}
-                    {!gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={outline}>{"Invitar"}</button> : null}
-                    <button type="button" aria-label={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} title={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} aria-expanded={membersOpen && !dockShown ? "true" : "false"} aria-controls="sala-miembros"
-                      onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}
-                      style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: membersOpen && !dockShown ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}><Users size={17} strokeWidth={2.1} aria-hidden="true" /></button>
-                    {menu.length ? <HeaderMenu label="Más opciones" items={menu} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}
-                      button={<Ellipsis size={18} />} /> : null}
                   </div>
                   {searching && shared ? <ShareSearch shareId={shareId} onClose={() => setSearching(false)} /> : null}
                   {leaving ? (
@@ -492,9 +510,9 @@ function Room({ id, query }) {
                 ) : null}
                 {gone ? <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "var(--c-chip)", color: "var(--c-text-2)", fontSize: "var(--t-ui)" }}>{view.removed ? "Ya no estás en esta sala. Puedes leer lo que tenías." : "Saliste de esta sala. Puedes leer lo que tenías."}</p> : null}
                 <div style={{ flex: "1", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                  <div ref={(el) => { follow.ref(el); scroller.current = el; }} {...messageListProps("Mensajes de la sala")} style={{ flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", display: "flex", flexDirection: "column" }}>
+                  <div ref={(el) => { follow.ref(el); scroller.current = el; }} {...messageListProps("Mensajes de la sala")} style={{ flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column" }}>
                     {/* role="log" as in a chat (Timeline.jsx), private or with people; new rows are spoken by the Announcer. */}
-                    <div ref={scope} role="log" aria-live="off" style={{ width: "100%", maxWidth: "860px", margin: "auto auto 0", padding: "20px 26px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div ref={scope} role="log" aria-live="off" style={{ width: "100%", maxWidth: "1040px", margin: "auto 0 0", padding: "8px 24px 16px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "2px" }}>
                       {mission ? <SelectionPopup scope={scope} askLabel={ONLY_ME} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
                       {mission ? <CatchUp count={since} mission={mission} pending={pending} id={missionId} /> : null}
                       {shared ? (tl.more ? <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}><button type="button" onClick={olderPage} style={{ ...outline, height: "34px", fontSize: "var(--t-meta)", fontWeight: 600 }}>{"Ver mensajes anteriores"}</button></div> : null) : <OlderMessages count={room.olderCount} onShow={room.showOlder} />}
@@ -519,25 +537,25 @@ function Room({ id, query }) {
                     </div>
                   </div>
                   <PositionRail scroller={scroller} items={railItems(missionRows, (b) => findBot(bots, b || "atlas").name)} version={rows.length} />
-                  <div style={{ width: "100%", maxWidth: "860px", margin: "0 auto", padding: "0 10px" }}>
+                  <div style={{ width: "100%", maxWidth: "1040px", padding: "0 24px", boxSizing: "border-box" }}>
                     {mission ? <NowBar missionId={missionId} active={["running", "planning"].includes(mission.status) && (activity.length > 0 || live.length > 0)} steps={steps} bots={bots} scroller={scroller} selector="[data-live-turn], [data-room-end]"
-                      onShow={follow.toEnd} onStop={() => { post(`/missions/${missionId}/control`, { action: "pause" }).catch(() => {}); }} style={{ margin: "0 16px 6px" }} /> : null}
+                      onShow={follow.toEnd} onStop={() => { post(`/missions/${missionId}/control`, { action: "pause" }).catch(() => {}); }} style={{ margin: "0 0 6px" }} /> : null}
                     {shared ? <RoomAsks roomId={roomId} asks={asks} onDecided={refreshView} /> : null}
                     <RoomComposer mission={mission} bots={bots} memberIds={shared ? myBots.map((b) => b.id) : memberIds} typing={typing} messages={missionRows} below={follow.below} onJump={follow.toEnd} onSent={follow.toEnd}
                       secrets={pending.filter((a) => a.kind === "secret")} approvals={pending.filter((a) => a.kind !== "secret" && a.kind !== "question" && !rows.some((m) => m.approvalId === a.id))}
-                      tools={audience}
+                      aside={audience}
                       shared={shared ? { roomId, view: guest ? { ...view, bots: [] } : view, onTyping: tl.typingNow, onSent: () => { tl.reload(); follow.toEnd(); }, onFiles: gone ? null : attach, disabled: gone || !view, above } : null}
                       placeholder={gone ? "Ya no estás en esta sala" : shared ? `Mensaje en #${title} · @ para nombrar a una persona o a un bot` : `Mensaje en #${title} · @ para pedir algo a un bot`} />
-                    {shared && !gone && !guest && myBots.length ? <p style={{ margin: "-10px 0 12px", padding: "0 clamp(16px, 3vw, 28px)", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Tus bots trabajan en tu ordenador. A los demás solo les llega lo que contestan."}</p> : null}
+                    
                   </div>
                 </div>
               </>
             ) : null}
           </main>
           {ready2 && mission && dockShown ? <SideDock dock={dockView} tabs={tabs} addable={addableTabs} widthKey="sala" label="Panel de la sala" tone="v3" /> : null}
-          {ready2 && !dockShown && membersOpen && !threadId ? (
+          {ready2 && panelOpen ? (
             <MemberPanel view={shown} panel={panel} mission={mission} addable={addableBots} fileCount={fileCount} onRules={mission ? () => dock.open(TABS.reglas) : null} onFiles={mission ? () => dock.open(TABS.archivos) : null}
-              onInvite={!gone && !guest ? () => setSheet("invitar") : null} onChanged={refreshView} />
+              onInvite={!gone && !guest ? () => setSheet("invitar") : null} onChanged={refreshView} profile={profile} tab={panelTab} onTab={setPanelTab} onOpenBot={(b) => { setProfile(b); setPanelTab("perfil"); }} />
           ) : null}
           {viewing ? <FileViewer file={viewing} onClose={closeViewer} /> : null}
           {sheet === "invitar" && shown ? <RoomInvite view={shown} onClose={() => setSheet(null)} onChanged={refreshView} /> : null}
@@ -545,6 +563,7 @@ function Room({ id, query }) {
             composer={{ others, mentionable: guest ? EMPTY : mentionable, mineEnabled: guest ? EMPTY : bots.filter((b) => b.enabled !== false), me: peers?.me?.address || null, disabled: gone, onTyping: tl.typingNow }} /> : null}
         </div>
       </Shell>
+      </OpenBot.Provider>
       </BotNames.Provider>
     </InteractiveContext.Provider>
   );

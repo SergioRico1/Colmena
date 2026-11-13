@@ -225,8 +225,14 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null, r
 
   const chips = refs.map((r) => ({ key: r.key, label: r.label, icon: <RefGlyph kind={r.kind} name={r.label} room={r.room} /> }));
   const removeRef = (key) => setRefs((list) => list.filter((r) => r.key !== key));
+  /** One of your bots addressed from the composer's chip («@Vera» at the start): in a room with people it is picked too. */
+  const address = (bot) => {
+    if (!room || !bot) return;
+    const pick = { type: "bot", id: bot.id, owner: null, ownerName: null, label: bot.name };
+    setPicks((list) => (list.some((x) => x.type === "bot" && x.id === bot.id) ? list : [...list, pick]));
+  };
   return {
-    inputProps, handleKey, menu, start, composing: (e) => ime.key(e?.nativeEvent || e),
+    inputProps, handleKey, menu, start, address, composing: (e) => ime.key(e?.nativeEvent || e),
     picks, clearPicks: () => setPicks([]), restorePicks: setPicks,
     refs, chips, removeRef, isRef: (key) => String(key || "").startsWith("ref:"),
     refsBody: () => (refs.length ? { refs: refBody(refs) } : {}), clearRefs: () => setRefs([]), restoreRefs: setRefs,

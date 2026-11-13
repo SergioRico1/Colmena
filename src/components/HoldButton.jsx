@@ -11,7 +11,7 @@ import { CONFIRM_MS, HINT_MS, HOLD_IDLE, HOLD_MS, holdLabel, holdNext } from "..
  * `onConfirm` runs once the hold (or the second step) completes. `fill`: the colour that
  * grows inside while held — light on a dark button, dark on a light one.
  */
-export default function HoldButton({ onConfirm, children, plainLabel = null, style, disabled = false, className, fill = "rgba(255,255,255,.26)", ...rest }) {
+export default function HoldButton({ onConfirm, children, plainLabel = null, style, disabled = false, className, fill = "color-mix(in oklab, var(--c-btn-text) 26%, transparent)", ...rest }) {
   const [state, setState] = useState(HOLD_IDLE);
   const current = useRef(HOLD_IDLE);
   const confirm = useRef(onConfirm);
