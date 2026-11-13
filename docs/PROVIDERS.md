@@ -1,16 +1,83 @@
-# Providers (ChatGPT, Claude, OpenCode Go)
+# Providers (ChatGPT, Claude, OpenCode Go, Gemini, OpenRouter, DeepSeek, Kimi, Servidor propio)
 
-Colmena thinks with three engines, copied from OpenClaw's provider layer
+Colmena thinks with eight engines, copied from OpenClaw's provider layer
 (`extensions/<provider>/openclaw.plugin.json` catalogues, `packages/ai/src/transports`).
 
-| Engine | Connect (Ajustes › Inteligencia) | Wire protocol | Credentials |
+| Engine | Connect (Ajustes › Cuentas de IA) | Wire protocol | Credentials |
 |---|---|---|---|
 | `openai` | ChatGPT login, OpenAI API key, loopback local model | Responses (`provider.mjs`) | ChatGPT session vault; `openai-apikey` DPAPI profile |
 | `anthropic` | Claude Code of this computer (`claude` CLI login), subscription setup-token (`claude setup-token`), API key | Messages through `@anthropic-ai/sdk` (`providers/anthropic.mjs`), or the CLI (`providers/claude-cli.mjs`) | `anthropic-apikey` / `anthropic-token` DPAPI profiles; the CLI keeps its own login |
 | `opencode-go` | One key from opencode.ai/auth | Per model: Chat Completions (`providers/completions.mjs`), Responses (`GoResponsesProvider`), Anthropic Messages (Qwen) | `opencode-apikey` DPAPI profile |
+| `gemini` | «Conectar otra IA» › Gemini: a key from aistudio.google.com | Chat Completions at `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-apikey` DPAPI profile |
+| `openrouter` | «Conectar otra IA» › OpenRouter: a key from openrouter.ai + a model from its list | Chat Completions at `https://openrouter.ai/api/v1` | `openrouter-apikey` DPAPI profile |
+| `deepseek` | «Conectar otra IA» › DeepSeek: a key from platform.deepseek.com | Chat Completions at `https://api.deepseek.com` | `deepseek-apikey` DPAPI profile |
+| `moonshot` (Kimi) | «Conectar otra IA» › Kimi: a key from platform.kimi.ai | Chat Completions at `https://api.moonshot.ai/v1` | `moonshot-apikey` DPAPI profile |
+| `custom` (Servidor propio) | «Conectar otra IA» › Servidor propio: base URL, optional key, a model from its `/models` or typed | Chat Completions at that base URL | `custom-apikey` DPAPI profile (none when the server takes no key) |
 
 SQLite (`providers/main`) only keeps the method, the last four characters and the choices:
-`primary` (team engine), `fallback` (engine, `local` or `none`) and `pins` (model per family).
+`primary` (team engine), `fallback` (engine, `local` or `none`), `pins` (model per family) and
+`accounts[engine]` for the key engines: `{hint, savedAt, baseUrl?, model?, meta?}` (the server's
+address, and the model chosen for OpenRouter or the server with what its list said about it).
+
+## Accounts with one API key (`providers/accounts.mjs`)
+
+Gemini, OpenRouter, DeepSeek, Kimi and «Servidor propio» share one adapter: the OpenAI-compatible
+Chat Completions `CompletionsProvider` (`providers/completions.mjs`, the one OpenCode Go already
+used), built per engine by `ApiAccounts#provider`. `COMPATIBLE` (accounts.mjs) holds each one's
+base URL, where its key comes from, the cheap model «Probar» asks and its extra headers.
+
+- **Connect** (`POST /api/ai/accounts/:engine {key, baseUrl?, model?}`): the pasted key is
+  cleaned (`cleanSecret`) and its shape checked (`checkKey`: a Gemini key starts with `AIza`, an
+  OpenRouter one with `sk-or-`, another provider's key is named as such), then **«Probar»**
+  (`POST …/test`) asks for a 16-token, non-streamed answer; only a passing check saves the key in
+  the vault. Errors are Colmena's sentences (`chatError`): bad key, no credit (402 or
+  «insufficient balance»), rate limit, quota (a usage limit: the engine rests until it renews),
+  model not found, context too long (kept as the provider's detail so `stopped.mjs` sees the
+  overflow and the runtime compacts), server down. Keys are never logged nor returned; Ajustes
+  shows «Clave ····1234».
+- **Models**: Gemini, DeepSeek and Kimi have a catalogue (`catalog.mjs`); «Automático» lets each
+  family take its default, and picking one model in «Gestionar» pins it to the three families
+  (`PATCH /api/ai/accounts/:engine {model}` → `setEngines({pins})`). OpenRouter and the server
+  list their own (`POST …/models`): the chosen one fills every family and side tasks
+  (`setDynamicModels`, so `modelEntry`, `modelsFor` and limits read it like a catalogue entry).
+- **Never another key, never another host**: each adapter loads only its own vault profile and
+  only calls its base URL plus `/models` and `/chat/completions`, with `redirect: "error"`.
+  A server's base URL goes through `providers/endpoint.mjs#validateBaseUrl`: http only on this
+  computer or the local network (loopback, RFC 1918, CGNAT/Tailscale, `fc00::/7`, single-label
+  and `.local`/`.lan`/`.home.arpa` names), https anywhere else; link-local (169.254.x, cloud
+  metadata), credentials, query and fragment are refused; a pasted `/chat/completions` or
+  `/models` is trimmed.
+- **Disconnect** (`DELETE /api/auth/provider?kind=<engine>`) removes the vault profile, the pins
+  and, if it was the backup, sets «Si falla, usar» to «Nada».
+
+| Engine | Models (Automático) | Tools | Vision | PDF | Reasoning sent | Replayed to the same model |
+|---|---|---|---|---|---|---|
+| Gemini | 3.8 Flash every family, 3.5 Flash-Lite side tasks; 4 Argon and 4 Carbon to pick (paid tier only) | yes, parallel | yes | no (not documented on the OpenAI route) | `reasoning_effort` | thought signatures (`tool_calls[].extra_content.google.thought_signature`); other models' calls get `skip_thought_signature_validator` |
+| OpenRouter | `openrouter/auto` (OpenRouter's router); any model whose `supported_parameters` has `tools` | yes | per model (`architecture.input_modalities` has `image`) | per model (`file`) | `reasoning: {effort}` when the model reasons | `reasoning_details` |
+| DeepSeek | `deepseek-flash` (V4.1 Flash) everything; `deepseek-v4-pro` to pick | yes | Flash yes, V4 Pro no | no | `thinking: {type: "enabled"}` + `reasoning_effort` low/high/max | `reasoning_content` (required in tool rounds; others get `""`) |
+| Kimi | K3.1 Pro Sol and Astra, K3.1 Pro Highspeed Luna and side tasks; K3 to pick | yes | yes (data URLs) | no | `reasoning_effort` low/high/max; `max_completion_tokens` | `reasoning_content` |
+| Servidor propio | the model chosen or typed | yes | guessed from the name (`looksVisual`: llava, -vl, pixtral, gemma3…) | no | nothing (no answer cap either: a small server counts it against its window) | `reasoning_content` when it sends one |
+
+DeepSeek and Kimi also offer Anthropic-compatible endpoints; Colmena uses their OpenAI-compatible
+ones because they are the documented primary routes, the shared adapter already replays the
+`reasoning_content` both require in tool rounds, and DeepSeek's Anthropic route ignores
+`is_error`/`cache_control` and drops images for V4 Pro.
+
+`supportsVision(model)` and `supportsPdf(model)` (`catalog.mjs`, and `ProviderHub#supportsVision`
+/ `#supportsPdf`, which also know the local model) tell message builders which images and PDFs a
+model can read; the adapter itself replaces what it cannot with «[Imagen omitida…]» / «[PDF
+omitido…]». Images are still created only by ChatGPT (`generateImage`), whichever engine thinks.
+
+OpenRouter gets `HTTP-Referer: https://github.com/SergioRico1/Colmena`, `X-OpenRouter-Title:
+Colmena` and `X-Title: Colmena` (its app attribution headers); its model list is public, so the
+picker shows it before a key is pasted. Usage: these engines report tokens per call (Ajustes ›
+Uso counts them); none reports plan windows, so «Límites de tus planes» says «No dice cuánto
+queda» until one hits a quota, which then shows as «Ha llegado a su límite».
+
+Verified only against fakes (no real keys in tests): `tests/ai-accounts.test.mjs` runs the
+adapter against local HTTP servers (streaming split mid-event, parallel and index-less tool calls,
+Gemini signatures, mid-stream OpenRouter errors, every error sentence), each provider's request
+shape through a recording fetch, URL validation, key masking and Gemini → DeepSeek failover.
 
 ## Models
 

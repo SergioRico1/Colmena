@@ -1,7 +1,8 @@
 // Ajustes · what an action will do, said before you do it. Pure: every sentence is built from the
 // state the screen already has, so it can be tested and never promises what the app cannot do.
+import { ENGINE_NAMES } from "../../../lib/engineNames.js";
 
-const ENGINE = { openai: "ChatGPT", anthropic: "Claude", "opencode-go": "OpenCode Go", local: "el modelo de este ordenador" };
+const ENGINE = { ...ENGINE_NAMES, local: "el modelo de este ordenador" };
 const join = (list) => (list.length < 2 ? list.join("") : list.slice(0, -1).join(", ") + " y " + list.at(-1));
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 

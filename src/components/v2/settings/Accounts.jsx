@@ -9,11 +9,15 @@ import { later, reversible } from "../../../lib/undoToast.js";
 import { useExpert } from "../../../lib/expert.js";
 import { Advanced, Alert, BotMark, Card, Choices, Chip, Go, LINE, Meter, Panel, Row, Term, UNDO_MS, anchorOf, btn, danger, mono, select, useSettings } from "./v3.jsx";
 import { disconnectAiText } from "./effects.js";
+import { ConnectOther, KeyPanel } from "./OtherAis.jsx";
+import { ENGINE_NAMES, KEY_ENGINES } from "../../../lib/engineNames.js";
 
 // Ajustes › Cuentas de IA (design/V3AjustesIA.dc.html): the three accounts Colmena thinks with
 // (ChatGPT; Claude through Claude Code, a setup-token or an API key; OpenCode Go), which one
 // the team uses, which one covers when it fails or reaches its plan's limit (the work hands
 // over with its context, server/providers), how hard they think and what each bot uses.
+// Gemini, OpenRouter, DeepSeek, Kimi and a «Servidor propio» come in through «Conectar otra
+// IA» (OtherAis.jsx) and, once connected, get their own card like the three above.
 
 const ENGINES = ["openai", "anthropic", "opencode-go"];
 const IDLE = {
@@ -29,12 +33,13 @@ const hm = (iso) => { const t = Date.parse(iso || ""); return Number.isFinite(t)
 const small = { ...select, width: "100%", height: "32px", padding: "0 6px", fontSize: "var(--t-ui)" };
 
 /** One account card: mark, name and its role, what it is, how much of the plan is gone, its button. */
-function Provider({ id, info, primary, fallback, planLimits, login, engines, bots }) {
+function Provider({ id, info, primary, fallback, planLimits, login, engines, bots, catalog = [], pinned = "" }) {
   const act = useAction();
   const [open, setOpen] = useState(false);
   const connected = !!info?.connected;
   useEffect(() => { if (connected) setOpen(false); }, [connected]);
-  const name = info?.label || { openai: "ChatGPT", anthropic: "Claude", "opencode-go": "OpenCode Go" }[id];
+  const name = info?.label || ENGINE_NAMES[id];
+  const keyed = KEY_ENGINES.includes(id);
   const tag = !connected ? ["Sin conectar", "quiet"] : primary === id ? ["Principal", "dark"] : fallback === id ? ["Respaldo", "grey"] : ["Conectada", "grey"];
   const w = id === "openai" ? planLimits?.primary : null;
   const note = info?.limit ? `Ha llegado a su ${info.limit.label || "límite de uso"}${info.limit.resetsAt ? " · vuelve a las " + hm(info.limit.resetsAt) : ""}. Mientras, sigue el respaldo.`
@@ -52,7 +57,7 @@ function Provider({ id, info, primary, fallback, planLimits, login, engines, bot
       : <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={btn(open ? "outline" : "dark", 38)}>{open ? "Cancelar" : "Conectar"}</button>)
     : <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={btn("outline", 38)}>Gestionar</button>;
   return (
-    <div {...anchorOf({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[id])} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px", overflow: "hidden" }}>
+    <div {...anchorOf({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[id] || id)} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px", overflow: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 20px" }}>
         <ProviderMark engine={id} size={44} style={{ background: "var(--c-chip)", borderRadius: "var(--r-md)" }} />
         <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -75,8 +80,9 @@ function Provider({ id, info, primary, fallback, planLimits, login, engines, bot
       ) : null}
       {open && !connected && id === "anthropic" ? <ClaudePanel onDone={() => setOpen(false)} style={{ padding: "2px 20px 20px 80px", borderBottom: 0, borderTop: LINE, paddingTop: "16px" }} /> : null}
       {open && !connected && id === "opencode-go" ? <OpenCodePanel onDone={() => setOpen(false)} style={{ padding: "16px 20px 20px 80px", borderBottom: 0, borderTop: LINE }} /> : null}
+      {open && connected && keyed ? <KeyPanel engine={id} mode="manage" info={{ ...info, pinned }} catalog={catalog} style={{ padding: "16px 20px 4px 80px", borderTop: LINE }} /> : null}
       {open && connected ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "14px 20px 16px 80px", borderTop: LINE, animation: "fade .25s ease-out" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: keyed ? "12px 20px 16px 80px" : "14px 20px 16px 80px", borderTop: keyed ? 0 : LINE, animation: "fade .25s ease-out" }}>
           <span style={{ flex: "1 1 240px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
             {id === "anthropic" && info.method ? <span style={{ color: "var(--c-text-2)" }}>{{ cli: "Conectada con la sesión de Claude Code de este ordenador.", token: "Conectada con un token de suscripción (claude setup-token).", api_key: "Conectada con una clave de API: pagas por uso." }[info.method] || null}</span> : null}
             <span style={{ color: "var(--c-text-3)" }}>{"Si la desconectas: " + disconnectAiText({ id, engines, primary, fallback, bots })}</span>
@@ -129,8 +135,10 @@ export default function AccountsSection() {
   const { settings, save, error } = useSettings();
   const [expert] = useExpert();
   const act = useAction();
-  const engines = ai?.engines || ENGINES.map((id) => ({ id, connected: id === "openai" && !!provider?.connected, label: { openai: "ChatGPT", anthropic: "Claude", "opencode-go": "OpenCode Go" }[id] }));
+  const engines = ai?.engines || ENGINES.map((id) => ({ id, connected: id === "openai" && !!provider?.connected, label: ENGINE_NAMES[id] }));
   const engine = (id) => engines.find((e) => e.id === id) || null;
+  // The model an account is pinned to for every family («Gestionar» › Modelo); "" = Automático.
+  const pinOf = (id) => { const p = ai?.pins?.[id] || {}; return p.luna && p.luna === p.sol && p.sol === p.astra ? p.luna : ""; };
   const live = engines.filter((e) => e.connected);
   const primary = ai?.primary || live[0]?.id || null;
   const team = engine(primary);
@@ -177,7 +185,8 @@ export default function AccountsSection() {
     <>
       <Alert>{error || act.error}</Alert>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {ENGINES.map((id) => <Provider key={id} id={id} info={engine(id)} primary={primary} fallback={ai?.fallback} planLimits={planLimits} login={login} engines={engines} bots={list} />)}
+        {[...ENGINES, ...KEY_ENGINES.filter((id) => engine(id)?.connected)].map((id) => <Provider key={id} id={id} info={engine(id)} primary={primary} fallback={ai?.fallback} planLimits={planLimits} login={login} engines={engines} bots={list} catalog={ai?.catalog?.[id] || []} pinned={pinOf(id)} />)}
+        <ConnectOther engines={engines} catalog={ai?.catalog || {}} />
       </div>
 
       <Card label="Qué usan">
@@ -210,7 +219,7 @@ export default function AccountsSection() {
       </Advanced>
 
       <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>
-        ¿<Term tip="Una clave que da acceso a OpenAI pagando por uso, en lugar de tu plan de ChatGPT.">Clave de API</Term> de OpenAI o un modelo en este ordenador (Ollama, LM Studio)? Está en{" "}
+        Tu propio servidor de modelos (Ollama, LM Studio, vLLM) se conecta en «Conectar otra IA». ¿Una <Term tip="Una clave que da acceso a OpenAI pagando por uso, en lugar de tu plan de ChatGPT.">clave de API</Term> de OpenAI? Está en{" "}
         {expert ? <Go to="/ajustes/avanzado#clave-openai">Servidores y claves</Go> : <><Go to="/ajustes/general#modo-experto">Servidores y claves</Go>, con el modo experto</>}.
       </p>
     </>

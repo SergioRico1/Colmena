@@ -1,7 +1,8 @@
 // The words of a usage limit, shared by the limit notices (components/v2/LimitNotice.jsx) and
 // by the reason a paused task gives (lib/pauseReason.js). Pure: no React, no network.
+import { ENGINE_NAMES } from "./engineNames.js";
 
-const ENGINE = { openai: "ChatGPT", anthropic: "Claude", "opencode-go": "OpenCode Go" };
+const ENGINE = ENGINE_NAMES;
 export const engineName = (engine) => ENGINE[engine] || "La IA";
 
 /** «hoy a las 15:40», «en 12 min», «mañana a las 9:05». */

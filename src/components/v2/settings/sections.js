@@ -80,6 +80,7 @@ export const SECTIONS = [
       ["chatgpt", "Tu cuenta de ChatGPT", "openai iniciar sesión gpt plan"],
       ["claude", "Claude", "anthropic claude code token suscripción setup-token clave"],
       ["opencode", "OpenCode Go", "opencode clave"],
+      ["otra-ia", "Conectar otra IA", "gemini google openrouter deepseek kimi moonshot servidor propio ollama lm studio vllm clave api"],
       ["piensan-con", "Piensan con", "proveedor principal motor cerebro ia"],
       ["respaldo", "Si falla o llega al límite, usar", "respaldo fallback alternativa límite traspaso"],
       ["cuanto-piensan", "Cuánto piensan", "razonamiento esfuerzo rápido equilibrado a fondo profundo"],
