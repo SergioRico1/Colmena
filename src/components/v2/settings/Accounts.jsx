@@ -1,6 +1,7 @@
 import Select from "../../Select.jsx";
 import { useEffect, useState } from "react";
 import ProviderMark from "../ProviderMark.jsx";
+import { Laptop, Pause } from "../../Icon.js";
 import { ClaudePanel, OpenCodePanel } from "./Engines.jsx";
 import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, patch, post } from "../../../lib/api.js";
@@ -147,9 +148,16 @@ export default function AccountsSection() {
   };
 
   const setEngines = (changes, text, back) => act.act(() => patch("/ai/engines", changes)).then(() => reversible({ id: "ai:" + Object.keys(changes).join(","), text, ms: UNDO_MS, undo: () => run(() => patch("/ai/engines", back)) }));
-  const others = live.filter((e) => e.id !== primary);
-  const fallbacks = [...others.map((e) => [e.id, e.label]), ...(ai?.local ? [["local", "El modelo de este ordenador"]] : []), ["none", "Nada: esperar"]];
-  const fallback = fallbacks.some(([v]) => v === ai?.fallback) ? ai.fallback : "none";
+  // Every account is listed; one that cannot be chosen says why (Select's disabled reason).
+  const mark = (id) => <ProviderMark engine={id} size={16} tile={false} />;
+  const offWhy = (e) => (e.connected ? false : "No está conectada: conéctala arriba");
+  const primaries = live.length ? engines.map((e) => ({ value: e.id, label: e.label, icon: mark(e.id), disabled: offWhy(e) })) : [["", "Ninguna todavía"]];
+  const fallbacks = [
+    ...engines.map((e) => ({ value: e.id, label: e.label, icon: mark(e.id), disabled: e.id === primary ? "Es la principal: el respaldo tiene que ser otra" : offWhy(e) })),
+    ...(ai?.local ? [{ value: "local", label: "El modelo de este ordenador", icon: Laptop }] : []),
+    { value: "none", label: "Nada: esperar", icon: Pause },
+  ];
+  const fallback = fallbacks.some((o) => o.value === ai?.fallback && !o.disabled) ? ai.fallback : "none";
   const gptModels = models.filter((m) => !String(m.slug).includes("/"));
 
   // «Cuánto piensan»: the team's way, set on every bot at once («Deshacer» puts each one back).
@@ -174,7 +182,7 @@ export default function AccountsSection() {
 
       <Card label="Qué usan">
         <Row as="label" first anchor="piensan-con" title="Piensan con" sub={live.length > 1 ? "La cuenta que usan por defecto." : live.length ? "Es la única conectada. Conecta otra arriba para poder elegir." : "Conecta una cuenta arriba para que tus bots puedan pensar."}>
-          <Select aria-label="Piensan con" disabled={live.length < 2 || act.busy} value={primary || ""} onChange={(e) => setEngines({ primary: e.target.value }, "Tu equipo piensa con " + engine(e.target.value)?.label, { primary })} style={{ ...select, width: "220px" }} options={live.length ? live.map((e) => [e.id, e.label]) : [["", "Ninguna todavía"]]} />
+          <Select aria-label="Piensan con" disabled={!live.length || act.busy} value={primary || ""} onChange={(e) => setEngines({ primary: e.target.value }, "Tu equipo piensa con " + engine(e.target.value)?.label, { primary })} style={{ ...select, width: "220px" }} options={primaries} />
         </Row>
         <Row as="label" anchor="respaldo" title="Si falla o llega al límite, usar"
           sub={!live.length ? "Primero conecta una cuenta." : fallback === "none" ? (live.length < 2 && !ai?.local ? "Con una sola cuenta no hay respaldo: si llega a su límite, paran y te avisan; lo hecho se conserva." : "Si la principal llega a su límite, paran y te avisan; lo hecho se conserva.") : "Siguen trabajando sin que tengas que hacer nada, con todo lo que llevaban."}>

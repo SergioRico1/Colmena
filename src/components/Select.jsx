@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { isValidElement, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown } from "./Icon.js";
 import { normalizeOptions, placeList, selectKey } from "../lib/select.js";
@@ -10,7 +10,9 @@ import { useClickAway } from "../lib/useClickAway.js";
 //
 //   <Select label="Orden" value={sort} onChange={(e) => setSort(e.target.value)} options={[["recent", "Recientes"], ["title", "Título"]]} />
 //
-// `options`: [value, label] pairs, plain values, or { value, label, disabled }. `onChange` is
+// `options`: [value, label] pairs, plain values, or { value, label, disabled, icon }: `icon` a
+// Phosphor icon (or any element) before the label; `disabled` may be a string, the reason it
+// cannot be chosen now (its title, and said by a screen reader). `onChange` is
 // called as the native control calls it, with `{ target: { value } }` (the value as text) and
 // the chosen option as a second argument, so it drops in where a <select> was. `label` is the name read by a
 // screen reader; leave it out only when a visible <label> wraps the control. `style` dresses
@@ -112,10 +114,13 @@ export default function Select({ value, onChange, options, label, "aria-label": 
           {opts.map((o, i) => {
             const on = i === selected, active = i === at;
             return (
-              <li key={i} id={`${listId}-${i}`} role="option" data-index={i} aria-selected={on ? "true" : "false"} aria-disabled={o.disabled ? "true" : undefined} tabIndex={active ? 0 : -1}
+              <li key={i} id={`${listId}-${i}`} role="option" data-index={i} aria-selected={on ? "true" : "false"} aria-disabled={o.disabled ? "true" : undefined} title={typeof o.disabled === "string" ? o.disabled : undefined} aria-description={typeof o.disabled === "string" ? o.disabled : undefined} tabIndex={active ? 0 : -1}
                 onClick={() => { if (o.disabled) return; choose(i); close(true); }} onMouseMove={() => { if (!o.disabled && at !== i) setAt(i); }}
                 style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", minHeight: "36px", padding: "0 12px", borderRadius: "var(--r-sm)", background: active ? "var(--c-chip)" : "transparent", fontWeight: on ? 600 : 400, whiteSpace: "nowrap", cursor: o.disabled ? "default" : "pointer", opacity: o.disabled ? 0.5 : 1, outlineOffset: "-2px" }}>
-                <span>{o.label}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                  {o.icon ? <span aria-hidden="true" style={{ flex: "none", display: "grid", placeItems: "center", width: "16px", color: "var(--c-text-3)" }}>{isValidElement(o.icon) ? o.icon : <o.icon size={16} />}</span> : null}
+                  <span>{o.label}</span>
+                </span>
                 {on ? <Check size={15} strokeWidth={2.6} aria-hidden="true" style={{ flex: "none" }} /> : <span aria-hidden="true" style={{ flex: "none", width: "15px" }} />}
               </li>
             );
