@@ -5,6 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { addr, team, until, world } from "./fixtures/people-world.mjs";
 import { verifyTeamRoster } from "../server/peers/protocol.mjs";
+import { TEAM_LIMITS } from "../server/peers/teams.mjs";
 
 /** Sends `body` as `from` straight to `to` (what any Colmena can put in an envelope) and waits until it was handled. */
 async function raw(from, to, body) {
@@ -70,4 +71,71 @@ test("someone who is no longer in a team is told only that they are out: never w
   await raw(marta, sergio, { type: "team.sync", team: made.id, v: 1 });
   const whole = sergio.out.slice(mark).filter((o) => o.to === addr(marta)).map((o) => o.body.roster);
   assert.deepEqual([whole.length, whole[0].members.length, whole[0].name], [1, 3, "Proyecto Reservado"]);
+});
+
+test("a change asked against an old roster is not applied: someone taken out returns only with an invitation made afterwards", async (t) => {
+  const [sergio, marta, luis] = await world(t, ["Sergio Rico", "Marta Ruiz", "Luis Vega"]);
+  const made = await team(sergio, [marta, luis]);
+  const id = made.id, roster = () => sergio.store.get("teams", id);
+  const has = (p) => roster().members.some((m) => m.id === (typeof p === "string" ? p : addr(p)));
+  sergio.teams.setAdmin(id, addr(marta), true);
+  await until(() => marta.teams.admin(marta.store.get("teams", id)), "Marta administra");
+  // What an admin's Colmena sends says which roster it was asked against.
+  const mark = marta.out.length;
+  marta.teams.rename(id, "Acme 2");
+  const sent = marta.out.slice(mark).find((o) => o.body.type === "team.req").body;
+  assert.deepEqual([sent.op, sent.v], ["rename", marta.store.get("teams", id).version]);
+  await until(() => roster().name === "Acme 2", "el nombre nuevo");
+  // A request to add Luis, made while he was in… and delivered after Sergio took him out.
+  const before = roster().version;
+  const code = await sergio.teams.invite(id, "Luis");
+  sergio.teams.remove(id, addr(luis));
+  await until(() => luis.teams.membership(id)?.state === "removed" && !marta.store.get("teams", id).members.some((m) => m.id === addr(luis)), "Luis fuera");
+  const out = roster().version;
+  assert.equal(roster().goneAt[addr(luis)].v, out);
+  const person = { id: addr(luis), box: luis.peers.identity.box.pub, name: "Luis Vega" };
+  for (const v of [before, out - 1, undefined, 0, "9999", -1]) {
+    await raw(marta, sergio, { type: "team.req", team: id, op: "add", member: person, ...(v === undefined ? {} : { v }) });
+    assert.deepEqual([has(luis), roster().version], [false, out], "asked against version " + v);
+  }
+  assert.ok(sergio.out.some((o) => o.to === addr(marta) && o.body.type === "team.no" && o.body.member === addr(luis)), "the admin is told it was not done");
+  // Not with a code made before he was taken out either, whoever made it.
+  await luis.teams.join(code.code);
+  await until(() => luis.teams.membership(id)?.state === "refused", "el código de antes no vale");
+  assert.equal(has(luis), false);
+  await raw(marta, sergio, { type: "team.req", team: id, op: "add", member: person, v: out, made: new Date(Date.parse(roster().goneAt[addr(luis)].at) - 1000).toISOString() });
+  assert.equal(has(luis), false, "an admin's code made before, used after");
+  // An invitation made after: he is back.
+  luis.teams.leave(id);
+  await bring(sergio, luis, id, [sergio, marta]);
+  assert.equal(has(luis), true);
+  // Someone new: an add or an admin grant needs a recent roster; an older Colmena's request (no version) is not applied.
+  const { newIdentity } = await import("../server/peers/protocol.mjs");
+  const stranger = newIdentity(), other = { id: stranger.sign.pub, box: stranger.box.pub, name: "Nueva" };
+  const now = () => roster().version;
+  await raw(marta, sergio, { type: "team.req", team: id, op: "add", member: other });
+  assert.equal(has(other.id), false, "no version");
+  await raw(marta, sergio, { type: "team.req", team: id, op: "add", member: other, v: now() });
+  assert.equal(has(other.id), true, "the current version");
+  await raw(marta, sergio, { type: "team.req", team: id, op: "admin", member: addr(luis), on: true });
+  assert.equal(sergio.teams.roleOf(roster(), addr(luis)), "member", "no version");
+  // Many versions later, a grant asked against the old one is not applied; against a recent one it is.
+  const old = now();
+  for (let i = 0; i <= TEAM_LIMITS.staleVersions; i++) sergio.teams.rename(id, "Acme " + (10 + i));
+  assert.ok(now() - old > TEAM_LIMITS.staleVersions);
+  await raw(marta, sergio, { type: "team.req", team: id, op: "admin", member: addr(luis), on: true, v: old });
+  assert.equal(sergio.teams.roleOf(roster(), addr(luis)), "member", "too many versions behind");
+  await raw(marta, sergio, { type: "team.req", team: id, op: "admin", member: addr(luis), on: true, v: now() - 1 });
+  assert.equal(sergio.teams.roleOf(roster(), addr(luis)), "admin", "a recent version");
+  // Taking someone out and a new name do not need it; neither does leaving.
+  await raw(marta, sergio, { type: "team.req", team: id, op: "remove", member: other.id });
+  assert.equal(has(other.id), false);
+  await raw(marta, sergio, { type: "team.req", team: id, op: "rename", name: "Sin versión" });
+  assert.equal(roster().name, "Sin versión");
+  await raw(luis, sergio, { type: "team.req", team: id, op: "leave" });
+  assert.equal(has(luis), false);
+  // …unless that person went out after it was asked: a request held back does not take them out again.
+  const t0 = { version: 20, goneAt: { [other.id]: { v: 12, at: "2026-11-13T10:00:00.000Z" } } };
+  assert.deepEqual([sergio.teams.stale(t0, { op: "remove", v: 11 }, other.id), sergio.teams.stale(t0, { op: "remove", v: 12 }, other.id), sergio.teams.stale(t0, { op: "remove" }, other.id), sergio.teams.stale(t0, { op: "remove" }, addr(marta))], [true, false, true, false]);
+  assert.deepEqual([sergio.teams.stale(t0, { op: "leave" }), sergio.teams.stale(t0, { op: "rename" }), sergio.teams.stale(t0, { op: "add", v: 20 }, addr(marta)), sergio.teams.stale(t0, { op: "add", v: 11 }, addr(marta))], [false, false, false, true]);
 });
