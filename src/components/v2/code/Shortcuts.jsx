@@ -11,8 +11,17 @@ export const ACTION_LABEL = {
   newTask: "Nueva tarea", focusComposer: "Escribir a Bruno", togglePlan: "Cambiar entre Construir y Plan", stop: "Parar a Bruno",
   compact: "Compactar la conversación", togglePanel: "Mostrar u ocultar el panel", widePanel: "Ampliar el panel",
   tabChanges: "Ver los cambios", tabPreview: "Ver la vista previa", tabTerminal: "Ver la terminal", tabFiles: "Ver los archivos", tabProcesses: "Ver los procesos", newTerminal: "Nueva terminal",
-  save: "Guardar (el botón principal)", shortcuts: "Ver los atajos",
+  save: "El botón principal de la tarea (fusionar, responder, arreglar…)", shortcuts: "Ver los atajos",
 };
+
+/** Keys of «Cambios» (fixed: they act only while the diff is on screen and no field has the focus). */
+export const DIFF_KEYS = [
+  ["j", "Cambio siguiente"], ["k", "Cambio anterior"], ["n", "Archivo siguiente"], ["p", "Archivo anterior"],
+  ["u", "Unificado o lado a lado"], ["x", "Plegar o desplegar el archivo"], ["c", "Copiar la ruta del archivo"],
+  ["e", "Abrir el archivo en el editor"], ["/", "Buscar en los cambios"], ["Enter", "Siguiente resultado (⇧: anterior)"],
+];
+/** Keys of the menus and tabs of Código (fixed). */
+export const MENU_KEYS = [["↑ ↓", "Moverse por un menú"], ["Inicio Fin", "Primera o última opción"], ["Esc", "Cerrar y volver al botón"], ["← →", "Cambiar de pestaña en el espacio de trabajo"]];
 
 const MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.platform || "");
 
@@ -109,9 +118,20 @@ export default function ShortcutsSheet({ onClose }) {
             <div key={action} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "46px", padding: "0 10px", borderRadius: "var(--r-lg)" }} className="code-hover">
               <span style={{ flex: 1, fontSize: "var(--t-ui)" }}>{ACTION_LABEL[action]}</span>
               <button type="button" onClick={() => { setError(null); setRecording(action); }} aria-label={"Cambiar el atajo de " + ACTION_LABEL[action]}
-                style={{ minWidth: "110px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, background: recording === action ? "var(--c-honey-soft)" : C.soft, color: recording === action ? "var(--c-accent-ink)" : C.text, boxShadow: recording === action ? "0 0 0 1.5px var(--c-accent)" : "none" }}>
+                style={{ minWidth: "110px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, background: recording === action ? "var(--c-accent-soft)" : C.soft, color: recording === action ? "var(--c-accent-ink)" : C.text, boxShadow: recording === action ? "0 0 0 1.5px var(--c-accent)" : "none" }}>
                 {recording === action ? "Pulsa la combinación…" : showCombo(data?.bindings?.[action])}
               </button>
+            </div>
+          ))}
+          {[["En los cambios", DIFF_KEYS], ["Menús y pestañas", MENU_KEYS]].map(([title, list]) => (
+            <div key={title} role="group" aria-label={title}>
+              <h3 style={{ margin: "16px 10px 6px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>{title}</h3>
+              {list.map(([key, text]) => (
+                <div key={key} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "38px", padding: "0 10px" }}>
+                  <span style={{ flex: 1, fontSize: "var(--t-ui)" }}>{text}</span>
+                  <kbd style={{ minWidth: "110px", height: "28px", padding: "0 12px", display: "inline-grid", placeItems: "center", borderRadius: "var(--r-sm)", border: "1px solid var(--c-line)", background: "transparent", font: `500 var(--t-caption)/1 ${MONO}`, color: C.text }}>{key}</kbd>
+                </div>
+              ))}
             </div>
           ))}
         </div>

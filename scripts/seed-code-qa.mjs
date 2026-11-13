@@ -291,7 +291,7 @@ async function seed() {
     id: QA_TASKS.plan, project: "tienda", title: "Migrar el cliente de la API a fetch", minutes: 75,
     turns: [{ ask: "Quita axios y usa fetch en el cliente de la API. Antes de tocar nada, propónme un plan.", mode: "plan", tools: [["read", "Leyó src/api/client.js", "src/api/client.js"], ["search", "Buscó «request(» en src", "request\\(", "src/checkout.js:6"]], say: null, secs: 64 }],
     extra: { status: "planned" },
-    after: ({ item }) => item(70, { kind: "plan", status: "open", turn: 1, text: "## Plan\n\n1. Reescribir `src/api/client.js` con `fetch`, misma firma `request(url, { method, body })`.\n2. Lanzar un `Error` con el estado HTTP cuando la respuesta no sea `ok`.\n3. Quitar `axios` de `package.json`.\n4. Probar `pay()` de `src/checkout.js` con un `fetch` simulado.\n\nNo cambia nada fuera de esos tres archivos." }),
+    after: ({ item }) => item(70, { kind: "plan", status: "open", turn: 1, text: "1. Reescribir `src/api/client.js` con `fetch`, misma firma `request(url, { method, body })`.\n2. Lanzar un `Error` con el estado HTTP cuando la respuesta no sea `ok`.\n3. Quitar `axios` de `package.json`.\n4. Probar `pay()` de `src/checkout.js` con un `fetch` simulado.\n\nNo cambia nada fuera de esos tres archivos." }),
   });
 
   // 3 · A question for the person.
@@ -333,10 +333,10 @@ async function seed() {
     ],
     after: ({ item, store, id }) => {
       const findings = [
-        { severity: "P0", title: "El IBAN completo se escribe en los logs", file: "lib/customers.mjs", line: 4, detail: "console.log recibe data.iban sin enmascarar: usa maskIban() o quita el log." },
-        { severity: "P1", title: "Un IBAN vacío pasa la validación", file: "lib/customers.mjs", line: 7, detail: "data.iban = \"\" es falsy y se guarda: decide si es obligatorio." },
+        { severity: "P0", title: "El IBAN completo se escribe en los logs", file: "lib/customers.mjs", line: 6, detail: "console.log recibe data.iban sin enmascarar: usa maskIban() o quita el log." },
+        { severity: "P1", title: "Un IBAN vacío pasa la validación", file: "lib/customers.mjs", line: 8, detail: "data.iban = \"\" es falsy y se guarda: decide si es obligatorio." },
         { severity: "P2", title: "Faltan longitudes de más países", file: "lib/iban.mjs", line: 2, detail: "Solo cinco países: el resto acepta cualquier longitud." },
-        { severity: "P3", title: "maskIban no tiene test", file: "lib/customers.mjs", line: 1, detail: "Un test corto evita que se rompa." },
+        { severity: "P3", title: "maskIban no tiene test", file: "lib/customers.mjs", line: 3, detail: "Un test corto evita que se rompa." },
       ];
       const review = item(100, { kind: "review", summary: "Funciona, pero filtra datos personales a los logs y acepta un IBAN vacío.", findings, files: 2, turnsAt: 2 });
       store.patch("codeTasks", id, { review: { at: at(100), turns: 2, item: review.id, serious: 2, total: 4 } });
@@ -406,8 +406,8 @@ async function seed() {
   // Terminal output kept on disk (server/code/terminal.mjs), as after a restart.
   const term = path.join(DATA, "code", "terminals", QA_TASKS.prFailing);
   mkdirSync(term, { recursive: true });
-  writeFileSync(path.join(term, "tqa001.json"), JSON.stringify({ title: "npm test", command: "npm test" }));
-  writeFileSync(path.join(term, "tqa001.log"), [
+  writeFileSync(path.join(term, "t0a0c01.json"), JSON.stringify({ title: "npm test", command: "npm test" }));
+  writeFileSync(path.join(term, "t0a0c01.log"), [
     "\x1b[1mPS\x1b[0m tienda-web> npm test", "", "> tienda-web@1.3.0 test", "> node --test", "",
     "\x1b[32m✔\x1b[0m total with VAT \x1b[90m(1.21ms)\x1b[0m", "\x1b[32m✔\x1b[0m search finds by name \x1b[90m(0.8ms)\x1b[0m",
     "\x1b[31m✖\x1b[0m search finds by tag \x1b[90m(3.1ms)\x1b[0m", "  \x1b[31mAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\x1b[0m", "", "  2 !== 0", "",

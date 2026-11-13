@@ -117,7 +117,7 @@ function AskCard({ item, onAnswer }) {
     const qs = item.questions || [];
     const ready = qs.every((q) => picked[q.question]);
     return (
-      <div style={box}>
+      <div style={box} data-pending-ask={pending ? "" : undefined}>
         <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", fontWeight: 600, color: pending ? C.honeyText : C.faint }}>
           {pending ? PENDING_DOT : null}{pending ? "Bruno te pregunta" : item.status === "answered" ? "Respondiste" : "Pregunta sin responder"}
         </span>
@@ -139,7 +139,7 @@ function AskCard({ item, onAnswer }) {
   const status = { allowed: item.always ? "Permitido siempre en este proyecto" : item.scope === "task" ? "Permitido en esta tarea" : item.scope === "here" ? "Permitida siempre esta orden aquí" : "Lo permitiste", denied: "Dijiste que no", expired: "Ya no hacía falta" }[item.status];
   const small = { ...BTN.outline, height: "36px", padding: "0 12px", fontSize: "var(--t-meta)" };
   return (
-    <div role={pending ? "dialog" : undefined} style={box}>
+    <div role={pending ? "group" : undefined} aria-label={pending ? item.title : undefined} style={box} data-pending-ask={pending ? "" : undefined}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", fontWeight: 600, color: pending ? C.honeyText : C.faint }}>
         {pending ? PENDING_DOT : null}{pending ? (red ? "Línea roja · necesita tu OK" : "Necesita tu OK") : status}
       </span>
@@ -161,11 +161,11 @@ function AskCard({ item, onAnswer }) {
 
 const SEVERITY = {
   P0: { bg: "var(--c-error-soft)", fg: "var(--c-error)", text: "Rompe algo" }, P1: { bg: "var(--c-error-soft)", fg: "var(--c-error)", text: "Fallo real" },
-  P2: { bg: "var(--c-honey-soft)", fg: "var(--c-honey-text)", text: "Conviene arreglar" }, P3: { bg: "var(--c-chip)", fg: "var(--c-text-2)", text: "Detalle" },
+  P2: { bg: "var(--c-warn-soft)", fg: "var(--c-warn)", text: "Conviene arreglar" }, P3: { bg: "var(--c-chip)", fg: "var(--c-text-2)", text: "Detalle" },
 };
 
 /** The review before merging (OpenClaw autoreview): findings P0–P3; «Que Bruno lo arregle» is up in the header. */
-function ReviewCard({ item, onFinding, current, pr = null, onPublish = null }) {
+function ReviewCard({ item, onFinding, onShowFinding = null, current, pr = null, onPublish = null }) {
   const [expert] = useExpert();
   const [publishing, setPublishing] = useState(false);
   const publish = async () => { setPublishing(true); try { await onPublish(item); } finally { setPublishing(false); } };
@@ -186,7 +186,9 @@ function ReviewCard({ item, onFinding, current, pr = null, onPublish = null }) {
           <div key={k} className="code-turn" style={{ position: "relative", display: "flex", gap: "10px", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
             <span title={s.text} style={{ flex: "none", height: "20px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-sm)", background: s.bg, color: s.fg, font: `600 var(--t-micro)/1 ${MONO}` }}>{f.severity}</span>
             <span style={{ flex: 1, minWidth: 0 }} title={f.detail || undefined}>
-              {f.title}{f.file ? <> <span style={{ font: `400 var(--t-caption)/1 ${MONO}`, color: C.muted }}>{f.file.split("/").pop()}{f.line ? ":" + f.line : ""}</span></> : null}
+              {f.title}{f.file ? <> {onShowFinding && f.line ? (
+                <button type="button" onClick={() => onShowFinding(f)} title={"Ver " + f.file + ":" + f.line + " en los cambios"} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", font: `400 var(--t-caption)/1 ${MONO}`, color: C.blue, textDecoration: "underline", textUnderlineOffset: "2px" }}>{f.file.split("/").pop()}:{f.line}</button>
+              ) : <span style={{ font: `400 var(--t-caption)/1 ${MONO}`, color: C.muted }}>{f.file.split("/").pop()}{f.line ? ":" + f.line : ""}</span>}</> : null}
               {f.detail && expert ? <span style={{ display: "block", marginTop: "2px", fontSize: "var(--t-meta)", color: C.muted }}>{f.detail}</span> : null}
             </span>
             <button type="button" className="code-tools" onClick={() => onFinding(f)} title="Añádelo a tu próximo mensaje" style={{ position: "absolute", right: 0, top: "-2px", height: "24px", padding: "0 9px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: C.white, boxShadow: "var(--c-shadow-lift)", cursor: "pointer", fontSize: "var(--t-caption)", whiteSpace: "nowrap" }}>Pasar a Bruno</button>
@@ -282,7 +284,7 @@ export function TimelineRow({ row, ctx }) {
   if (row.kind === "turn") return <TurnCard item={item} total={ctx.turns} busy={ctx.busy} onDiff={ctx.onDiff} onRestore={ctx.onRestore} />;
   if (row.kind === "ask") return <AskCard item={item} onAnswer={ctx.onAnswer} />;
   if (row.kind === "plan") return <PlanCard item={item} busy={ctx.busy} onPlan={ctx.onPlan} onShowPlan={ctx.onShowPlan} />;
-  if (row.kind === "review") return <ReviewCard item={item} onFinding={ctx.onFinding} current={ctx.review === item.id} pr={ctx.pr} onPublish={ctx.onPublish} />;
+  if (row.kind === "review") return <ReviewCard item={item} onFinding={ctx.onFinding} onShowFinding={ctx.review === item.id ? ctx.onShowFinding : null} current={ctx.review === item.id} pr={ctx.pr} onPublish={ctx.onPublish} />;
   if (row.kind === "notice") {
     const tone = item.tone === "done" ? { bg: "var(--c-ok-soft)", fg: "var(--c-ok-ink)" } : item.tone === "warn" ? { bg: "var(--c-honey-soft)", fg: "var(--c-honey-text)" } : null;
     return (
