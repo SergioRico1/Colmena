@@ -1,5 +1,6 @@
 import { impactOf, ownDomainsOf } from "./impact.mjs";
 import { engineName, whenText } from "./limits.mjs";
+import { CATALOG } from "./providers/catalog.mjs";
 import { appActionLabel, appLabel } from "./appactions.mjs";
 import { isAppToolName } from "./apptools.mjs";
 import { createHash } from "node:crypto";
@@ -520,7 +521,7 @@ export function buildState(store, runtime, extras = {}) {
       const hub = runtime?.provider;
       if (typeof hub?.engines !== "function") return null;
       const c = hub.config();
-      return { engines: hub.engines(), primary: hub.primary, local: !!(c.local?.baseUrl && c.local?.model), fallback: c.fallback ?? settings.fallback ?? "none", pins: c.pins || {}, catalog: Object.fromEntries(["anthropic", "opencode-go"].map((e) => [e, hub.modelsFor(e).map((m) => ({ slug: m.slug, label: m.label, families: m.families, utility: m.utility }))])) };
+      return { engines: hub.engines(), primary: hub.primary, local: !!(c.local?.baseUrl && c.local?.model), fallback: c.fallback ?? settings.fallback ?? "none", pins: c.pins || {}, catalog: Object.fromEntries(Object.keys(CATALOG).map((e) => [e, hub.modelsFor(e).map((m) => ({ slug: m.slug, label: m.label, families: m.families, utility: m.utility, input: m.input }))])) };
     }) || null,
     bots: bots.map((b) => {
       // Each bot thinks with its engine's models (its own choice, else the team's).

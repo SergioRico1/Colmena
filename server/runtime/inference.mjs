@@ -203,7 +203,7 @@ export class InferenceMethods {
         onRetry?.({ attempt: null, max: retries, wait: 0, reason, status: "failed", message: error.message });
         if (usageLimit) throw limitError(engine, limit, error);
         if (accountFailure) throw error;
-        const who = { anthropic: "Claude", "opencode-go": "OpenCode Go" }[error?.engine] || "OpenAI";
+        const who = error?.engine && error.engine !== "openai" ? engineName(error.engine) : "OpenAI";
         throw Object.assign(
           Error(`${who} no responde (${reason}) tras ${retries} reintentos. La misión queda en pausa: pulsa «Continuar» cuando vuelva; lo hecho se conserva.`),
           { code: UNAVAILABLE_CODE, cause: error },

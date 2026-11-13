@@ -44,6 +44,8 @@ import { registerGoalRoutes } from "./goals.mjs";
 import { HttpError, zodMessage, notFound, SOON, short, check, safe, fold, inside } from "./routes/shared.mjs";
 import { registerConnectionRoutes } from "./routes/connections.mjs";
 import { registerSettingsRoutes } from "./routes/settings.mjs";
+import { registerAiAccountRoutes } from "./routes/ai-accounts.mjs";
+import { ENGINES, CATALOG } from "./providers/catalog.mjs";
 import { registerMissionRoutes } from "./routes/missions.mjs";
 import { registerApprovalRoutes } from "./routes/approvals.mjs";
 import { registerBotRoutes } from "./routes/bots.mjs";
@@ -408,22 +410,23 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.patch("/api/ai/engines", async (req, res) => {
     const ref = z.string().max(120);
     const data = check(z.object({
-      primary: z.enum(["openai", "anthropic", "opencode-go"]).nullable(),
-      fallback: z.enum(["openai", "anthropic", "opencode-go", "local", "none"]),
-      pins: z.record(z.enum(["anthropic", "opencode-go"]), z.object({ luna: ref, sol: ref, astra: ref }).partial().strict()),
+      primary: z.enum(ENGINES).nullable(),
+      fallback: z.enum([...ENGINES, "local", "none"]),
+      pins: z.record(z.enum(Object.keys(CATALOG)), z.object({ luna: ref, sol: ref, astra: ref }).partial().strict()),
     }).partial().strict(), req.body);
     const engines = provider("setEngines")(data);
     emit(["account"]);
     res.json({ ok: true, engines, provider: providerStatus() });
   });
   app.delete("/api/auth/provider", async (req, res) => {
-    const { kind } = check(z.object({ kind: z.enum(["chatgpt", "apikey", "local", "anthropic", "opencode-go"]) }).strict(), { kind: req.body?.kind ?? req.query.kind });
+    const { kind } = check(z.object({ kind: z.enum(["chatgpt", "apikey", "local", ...ENGINES.filter((e) => e !== "openai")]) }).strict(), { kind: req.body?.kind ?? req.query.kind });
     if (kind === "chatgpt" && typeof runtime?.provider?.clear !== "function") await session.logout();
     else await provider("clear")(kind);
     modelCache = { key: null, at: 0, list: [] };
     emit(["account"]);
     res.json({ ok: true, provider: providerStatus() });
   });
+  registerAiAccountRoutes(app, { hub: () => runtime?.provider, emit, changed: () => { modelCache = { key: null, at: 0, list: [] }; } });
   registerSettingsRoutes(app, { listModels, store, runtime });
   const { messageView, stepView, enabledBot, sendMessage, messageFields } = registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued });
   registerApprovalRoutes(app, { store, runtime, mustGet, connection, need, emailEdit });

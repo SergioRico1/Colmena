@@ -1,3 +1,4 @@
+import { ENGINE_LABEL as ENGINE_NAME } from "./providers/catalog.mjs";
 // Provider usage limits (T3 Code usageLimits / UsageLimitRecoveryWorker, ideas only): which
 // limit a 429 is, when it renews, and the Spanish line the person reads. A limit that renews
 // within RATE_MAX_MS is a short rate limit and is simply retried; anything longer (the 5-hour
@@ -10,7 +11,6 @@ export const RATE_MAX_MS = 90_000;
 export const UNKNOWN_RESET_MS = 20 * 60_000;
 const MAX_MS = 40 * 86400_000;
 
-const ENGINE_NAME = { openai: "ChatGPT", anthropic: "Claude", "opencode-go": "OpenCode Go" };
 export const engineName = (engine) => ENGINE_NAME[engine] || "La IA";
 
 const headerOf = (headers, name) => {

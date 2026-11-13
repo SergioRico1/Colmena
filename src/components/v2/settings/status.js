@@ -5,8 +5,9 @@
 //
 // A status is { text, tone, label }: `text` fits the list (a word or two), `label` is the whole
 // sentence (the title line and what a screen reader hears), `tone` is ok | error | quiet | news.
+import { ENGINE_NAMES } from "../../../lib/engineNames.js";
 
-const ENGINE = { openai: "ChatGPT", anthropic: "Claude", "opencode-go": "OpenCode Go", local: "el modelo de este ordenador" };
+const ENGINE = { ...ENGINE_NAMES, local: "el modelo de este ordenador" };
 const join = (list) => (list.length < 2 ? list.join("") : list.slice(0, -1).join(", ") + " y " + list.at(-1));
 const DAY = 864e5;
 

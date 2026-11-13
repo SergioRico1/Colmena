@@ -14,7 +14,7 @@
 import path from "node:path";
 import { createRequire } from "node:module";
 import { lstat, readFile } from "node:fs/promises";
-import { modelEntry, parseRef } from "./providers/catalog.mjs";
+import { KEY_ENGINES, modelEntry, parseRef } from "./providers/catalog.mjs";
 import { EXTERNAL_NOTICE, cleanLabel, wrapExternal } from "./external-content.mjs";
 
 export const MEDIA = Object.freeze({
@@ -204,7 +204,8 @@ export function contentText(content) {
  * {images, pdf} for the model a call uses, as the hub routes it: OpenAI (ChatGPT, API key)
  * sees images and takes PDFs; a local server may see images (a 400 drops them); Claude with
  * a key or token sees both; Claude Code sees images (PDFs go as text); OpenCode Go models see
- * images when the catalogue says so and never take PDFs.
+ * images when the catalogue says so and never take PDFs; the API-key engines on Chat Completions
+ * follow their catalogue (supportsVision / supportsPdf).
  */
 export function mediaCaps(hub, model) {
   const resolved = typeof hub?.resolveModel === "function" ? hub.resolveModel(model) : model;
@@ -214,6 +215,12 @@ export function mediaCaps(hub, model) {
   if (!hub || typeof hub.config !== "function") return { images: true, pdf: true };
   if (engine === "anthropic") return hub.config().anthropic?.method === "cli" ? { images: vision, pdf: false } : { images: vision, pdf: true };
   if (engine === "opencode-go") return { images: vision, pdf: false };
+  // Gemini, OpenRouter, DeepSeek, Kimi, «Servidor propio»: what the model's catalogue (or its
+  // account's /models list) says it reads.
+  if (KEY_ENGINES.includes(engine)) return {
+    images: typeof hub.supportsVision === "function" ? hub.supportsVision(model) : vision,
+    pdf: typeof hub.supportsPdf === "function" ? hub.supportsPdf(model) : false,
+  };
   const kind = hub.kind;
   if (kind === "local") return { images: hub.local?.images !== false, pdf: false };
   const provider = kind === "chatgpt" ? hub.chatgpt : hub.apikey;
