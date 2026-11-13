@@ -125,8 +125,12 @@ con estas tres piezas; no hay colores, iconos ni bots dibujados a mano.
   `<MenuButton label="Más opciones" items={[…]}>…</MenuButton>` para un «…» o un selector; `useContextMenu(build)` para el
   clic derecho de una parte de la página (el resto lo atiende `ContextMenu.jsx`, hecho con el mismo menú).
 - Entradas: `{ label, icon, hint, shortcut, meta, onSelect | href, disabled: "por qué", danger, checked, radio, items,
-  confirm: { title, text, action } }` o grupos `{ group: "Título" | null, items }`. Lo destructivo va siempre al final y en
-  rojo; si no se puede deshacer, `confirm` pregunta dentro del propio menú.
+  confirm: { title, text, action }, panel: ({ close, back }) => … }` o grupos `{ group: "Título" | <elemento> | null, items,
+  note }`. Lo destructivo va siempre al final y en rojo; si no se puede deshacer, `confirm` pregunta dentro del propio menú.
+  `panel` cambia el menú por un formulario pequeño suyo («Elegir día y hora…»; Escape vuelve). `note` es una línea discreta
+  bajo los elementos del grupo; `footer` (en `MenuButton`) otra al pie del menú. Un `disabled` que ya se ve en `hint` no se
+  lee dos veces. Código usa este menú en todo («…» de tarea y proyecto, «Más acciones», pickers de motor, proyecto, puntos
+  y servidores): no hay otro kit.
 - Contenido: agrupado por intención, ≤ 7 por grupo, lo que no es una acción fuera del menú, y nada que ya tenga un
   control visible al lado (ni «Solo para mí», que vive en el chip del compositor).
 

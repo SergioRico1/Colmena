@@ -230,6 +230,10 @@ a,img,svg{-webkit-user-drag:none}
 .c-menu-sep{flex:none;height:1px;margin:6px 0;background:var(--c-line)}
 .c-menu-header{flex:none;display:flex;align-items:center;gap:12px;padding:8px 8px 12px;margin-bottom:6px;border-bottom:1px solid var(--c-line);white-space:nowrap}
 .c-menu-head{flex:none;padding:8px 10px 4px;font:600 var(--t-caption)/1.2 'Geist',sans-serif;color:var(--c-text-3)}
+.c-menu-head > span{display:inline-flex;align-items:center;gap:8px}
+.c-menu-note{flex:none;padding:2px 10px 6px;font-size:var(--t-caption);line-height:1.45;color:var(--c-text-3);white-space:normal}
+.c-menu-footer{flex:none;margin-top:6px;padding:8px 10px 4px;border-top:1px solid var(--c-line);font-size:var(--t-caption);line-height:1.45;color:var(--c-text-3);white-space:normal}
+.c-menu-panel{display:flex;flex-direction:column;gap:8px;padding:6px;white-space:normal}
 .c-menu-confirm{display:flex;flex-direction:column;gap:6px;max-width:300px;padding:8px 8px 6px;white-space:normal}
 .c-menu-confirm strong{font-weight:600;font-size:var(--t-ui);line-height:1.35}
 .c-menu-confirm p{margin:0;font-size:var(--t-meta);line-height:1.45;color:var(--c-text-2)}

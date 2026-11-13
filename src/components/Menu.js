@@ -22,7 +22,8 @@ import { useClickAway } from "../lib/useClickAway.js";
 // 6 px padding, 32 px rows of 14 px text with a regular Phosphor icon, the error colour for what
 // destroys. Styles in styles/base.css (.c-menu, .c-mi…). Keyboard: arrows (wrapping), Home/End,
 // typing a letter, Enter/Space, Escape (back to what opened it), → and ← for submenus, Tab
-// leaves. A destructive item with `confirm` asks inside the menu before it runs.
+// leaves. A destructive item with `confirm` asks inside the menu before it runs; an item with
+// `panel` opens its own small form in place (Escape goes back to the items).
 
 const TYPE_PAUSE = 700;
 
@@ -59,7 +60,8 @@ function Row({ row, index, active, onPointer, onPick, expanded, menuId }) {
     "aria-expanded": it.items ? (expanded ? "true" : "false") : undefined,
     "aria-controls": it.items && expanded ? menuId + "-sub" : undefined,
     title: reason || it.title || undefined,
-    "aria-description": reason || undefined,
+    // A reason already said on the item's second line is not said twice.
+    "aria-description": reason && reason !== it.hint ? reason : undefined,
     onMouseMove: () => onPointer(index),
     onClick: (e) => onPick(index, e),
   };
@@ -84,6 +86,11 @@ function Confirm({ item, onYes, onNo }) {
       h("button", { type: "button", className: "c-menu-btn danger", onClick: onYes }, c.action || item.label)));
 }
 
+/** An item's own small form (`panel`), drawn in place of the items: a date to pick, say. */
+function Panel({ item, close, back }) {
+  return h("div", { className: "c-menu-panel", role: "group", "aria-label": item.label }, item.panel({ close, back }));
+}
+
 /**
  * The menu itself, floating over the page (a portal on <body>, position: fixed): a stack of
  * panels, the root and any open submenu beside its item.
@@ -95,8 +102,9 @@ function Confirm({ item, onYes, onNo }) {
  *   autoFocus   false keeps focus where it is (a text field keeps its caret); keys still work
  *   returnFocus the element focus goes back to when the menu is left with Escape or a pick
  *   onClose     called once, when it closes for any reason
+ *   header      drawn above the items (what the menu is about); `footer`: a quiet note below them
  */
-export function MenuSurface({ entries, label, anchor, placement = "bottom-end", initial = "first", autoFocus = true, returnFocus = null, onClose, id: givenId, header = null }) {
+export function MenuSurface({ entries, label, anchor, placement = "bottom-end", initial = "first", autoFocus = true, returnFocus = null, onClose, id: givenId, header = null, footer = null }) {
   const autoId = useId();
   const menuId = givenId || "menu" + autoId.replace(/:/g, "");
   const rootRows = menuRows(entries);
@@ -148,7 +156,7 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
   useLayoutEffect(() => {
     const lv = live[top], panel = panels.current[top];
     if (!panel || !autoFocus) return;
-    if (lv.confirm >= 0) { panel.querySelector("[data-autofocus]")?.focus({ preventScroll: true }); return; }
+    if (lv.confirm >= 0) { panel.querySelector("[data-autofocus], input, select, textarea, button")?.focus({ preventScroll: true }); return; }
     const node = nodeOf(panel, lv.at);
     if (node) { node.focus({ preventScroll: true }); node.scrollIntoView?.({ block: "nearest" }); } else panel.focus({ preventScroll: true });
   }, [top, live[top]?.at, live[top]?.confirm, autoFocus]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -175,7 +183,7 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
     if (!item) return;
     if (item.disabled) { e?.preventDefault?.(); return; }
     if (item.items) { e?.preventDefault?.(); openSub(level, index); return; }
-    if (item.confirm) { e?.preventDefault?.(); setLevel(level, { at: index, confirm: index }); return; }
+    if (item.confirm || item.panel) { e?.preventDefault?.(); setLevel(level, { at: index, confirm: index }); return; }
     if (item.keepOpen) { item.onSelect?.(e); return; }
     run(item, e);
   };
@@ -225,10 +233,14 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
       onMouseDown: autoFocus ? undefined : (e) => e.preventDefault(),
       onBlur: (e) => { const to = e.relatedTarget; if (to && !to.closest?.("[data-c-menu]") && !(anchor?.contains?.(to))) close(false); },
     }, confirming
-      ? h(Confirm, { item: confirming, onYes: () => run(confirming), onNo: () => setLevel(level, { confirm: -1 }) })
+      ? (confirming.panel
+        ? h(Panel, { item: confirming, close: () => close(true), back: () => setLevel(level, { confirm: -1 }) })
+        : h(Confirm, { item: confirming, onYes: () => run(confirming), onNo: () => setLevel(level, { confirm: -1 }) }))
       : [level === 0 && header ? h("div", { key: "header", className: "c-menu-header", role: "presentation" }, header) : null, ...lv.rows.map((row, i) => (row.kind === "separator" ? h("div", { key: row.key, role: "separator", className: "c-menu-sep" })
         : row.kind === "heading" ? h("div", { key: row.key, role: "presentation", className: "c-menu-head" }, row.label)
-          : h(Row, { key: row.key, row, index: i, active: lv.at === i, expanded: live[level + 1]?.parent === i, menuId, onPointer: (j) => hover(level, j), onPick: (j, e) => pick(level, j, e) })))]);
+          : row.kind === "note" ? h("div", { key: row.key, role: "presentation", className: "c-menu-note" }, row.text)
+            : h(Row, { key: row.key, row, index: i, active: lv.at === i, expanded: live[level + 1]?.parent === i, menuId, onPointer: (j) => hover(level, j), onPick: (j, e) => pick(level, j, e) }))),
+      level === 0 && footer ? h("div", { key: "footer", className: "c-menu-footer", role: "presentation" }, footer) : null]);
   };
 
   if (typeof document === "undefined") return null;
@@ -243,7 +255,7 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
  *   menuLabel   the menu's name (default: label)
  *   openStyle   added to `style` while open (default: the chip background)
  */
-export function MenuButton({ items, label, menuLabel, placement = "bottom-end", children, className, style, openStyle = OPEN, title, disabled = false, open: openProp, onOpenChange, buttonProps = null, showTitle = true, header = null }) {
+export function MenuButton({ items, label, menuLabel, placement = "bottom-end", children, className, style, openStyle = OPEN, title, disabled = false, open: openProp, onOpenChange, buttonProps = null, showTitle = true, header = null, footer = null }) {
   const [own, setOwn] = useState(null); // null | "first" | "last"
   // Controlled when `open` is given (a shortcut elsewhere opens it): true | "first" | "last" | false.
   // `how` remembers whether a pointer or a key opened it, for a controlled one too.
@@ -266,7 +278,7 @@ export function MenuButton({ items, label, menuLabel, placement = "bottom-end", 
       style: open ? { ...style, ...openStyle } : style,
       ...buttonProps,
     }, children),
-    open ? h(MenuSurface, { id: menuId, entries, label: menuLabel || label, anchor: button.current, placement, initial: open, header, returnFocus: button.current, onClose: () => setOpen(null) }) : null);
+    open ? h(MenuSurface, { id: menuId, entries, label: menuLabel || label, anchor: button.current, placement, initial: open, header, footer, returnFocus: button.current, onClose: () => setOpen(null) }) : null);
 }
 const OPEN = { background: "var(--c-chip)" };
 

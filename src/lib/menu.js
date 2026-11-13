@@ -4,15 +4,19 @@
 //
 // Entries, as call sites write them:
 //   { label, icon?, hint?, shortcut?, meta?, onSelect?, href?, disabled?, danger?, checked?,
-//     radio?, items?, confirm?, keepOpen?, id? }
-//   { group: "Ver" | null, items: [entry, …] }        a group, with an optional small heading
+//     radio?, items?, confirm?, panel?, keepOpen?, id? }
+//   { group: "Ver" | null, items: [entry, …], note? }  a group, with an optional small heading
+//                                                     (text or an element) and a quiet note
+//                                                     under its items
+// `panel: ({ close, back }) => element` swaps the menu for a small form of its own (a date to
+// pick, say), as `confirm` swaps it for a question; Escape or `back()` returns to the items.
 //   null / false / undefined                          left out (so `cond ? {...} : null` works)
 // Loose entries between groups form groups of their own. `danger` entries (irreversible or
 // destructive) always end the menu, in a last group of their own. `disabled` may be a string:
 // the reason it cannot be used now (said as the item's title and to a screen reader).
 //
 // Rows, as the menu draws them: { kind: "item", item, key } · { kind: "separator", key } ·
-// { kind: "heading", label, key }.
+// { kind: "heading", label, key } · { kind: "note", text, key }.
 
 import { typeahead } from "./select.js";
 
@@ -24,7 +28,7 @@ export function menuGroups(entries) {
   const groups = [];
   let loose = null;
   for (const e of present(entries)) {
-    if (isGroup(e)) { loose = null; groups.push({ label: e.group || null, items: present(e.items) }); continue; }
+    if (isGroup(e)) { loose = null; groups.push({ label: e.group || null, items: present(e.items), ...(e.note ? { note: e.note } : {}) }); continue; }
     if (!loose) { loose = { label: null, items: [] }; groups.push(loose); }
     loose.items.push(e);
   }
@@ -45,6 +49,7 @@ export function menuRows(entries) {
     if (gi) rows.push({ kind: "separator", key: "sep:" + gi });
     if (g.label) rows.push({ kind: "heading", label: g.label, key: "head:" + gi });
     g.items.forEach((item, ii) => rows.push({ kind: "item", item, key: item.id || `${gi}:${ii}:${item.label}` }));
+    if (g.note) rows.push({ kind: "note", text: g.note, key: "note:" + gi });
   });
   return rows;
 }

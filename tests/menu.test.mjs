@@ -52,6 +52,13 @@ test("rows: a line between groups, a heading where a group has a name", () => {
   assert.equal(new Set(rows.map((r) => r.key)).size, rows.length, "every row has its own key");
 });
 
+test("rows: a group's quiet note follows its items, and stays with them when danger moves", () => {
+  const rows = menuRows([{ group: "Codex", items: [{ label: "astra" }, { label: "Quitar", danger: true }], note: "Con tu cuenta." }, { group: "Vacío", items: [], note: "nadie la ve" }]);
+  assert.deepEqual(rows.map((r) => r.kind + ":" + (r.label || r.text || r.item?.label || "")), ["heading:Codex", "item:astra", "note:Con tu cuenta.", "separator:", "item:Quitar"]);
+  assert.equal(firstItem(rows), 1, "a note is never landed on");
+  assert.equal(nextItem(rows, 1, 1), 4);
+});
+
 test("roles: a toggle is a checkbox, one of a set is a radio, the rest are plain items", () => {
   assert.equal(itemRole({ label: "x" }), "menuitem");
   assert.equal(itemRole({ label: "x", checked: false }), "menuitemcheckbox");
@@ -261,5 +268,43 @@ test("mounted: roles, focus in and back, arrows, a toggle, a submenu, a confirma
   await act(() => { document.getElementById("before").dispatchEvent(new window.Event("pointerdown", { bubbles: true })); });
   assert.equal(menu(), null);
 
+  await act(() => root.unmount());
+});
+
+test("mounted: an item's own small form in place, a footer, and a reason said once", async () => {
+  const picked = [];
+  function Form() {
+    return h(MenuButton, { label: "Acciones", footer: "Marca hasta 4.", items: [
+      { label: "Ver", hint: "Fulano está trabajando", disabled: "Fulano está trabajando" },
+      { label: "Elegir día y hora…", panel: ({ close, back }) => h("form", { onSubmit: (e) => { e.preventDefault(); picked.push("at"); close(); } },
+        h("input", { "aria-label": "Hasta cuándo" }), h("button", { type: "button", onClick: back }, "Volver"), h("button", { type: "submit" }, "Posponer")) },
+    ] }, "…");
+  }
+  document.body.insertAdjacentHTML("beforeend", "<div id='root2'></div>");
+  const root = createRoot(document.getElementById("root2"));
+  await act(() => root.render(h(Form)));
+  const button = document.querySelector("#root2 [aria-haspopup=menu]");
+  button.focus();
+  await act(() => { button.dispatchEvent(Object.assign(new window.Event("keydown", { bubbles: true, cancelable: true }), key("ArrowDown"))); });
+  assert.equal(menu().querySelector(".c-menu-footer").textContent, "Marca hasta 4.");
+  assert.equal(items()[0].getAttribute("aria-description"), null, "the reason is on its second line already");
+  assert.equal(items()[0].getAttribute("title"), "Fulano está trabajando");
+  await act(() => { press("ArrowDown"); });
+  await act(() => { press("Enter"); });
+  await flush();
+  const form = document.querySelector("[data-c-menu][role=dialog] .c-menu-panel");
+  assert.ok(form, "the form takes the menu's place");
+  assert.equal(document.activeElement.getAttribute("aria-label"), "Hasta cuándo", "focus in its first field");
+  await act(() => { press("Escape"); });
+  assert.ok(menu(), "Escape goes back to the items");
+  assert.equal(document.activeElement.textContent, "Elegir día y hora…");
+  await act(() => { press("Enter"); });
+  await flush();
+  const submit = [...document.querySelectorAll(".c-menu-panel button")].find((b) => b.textContent === "Posponer");
+  await act(() => { submit.closest("form").dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
+  await flush();
+  assert.deepEqual(picked, ["at"]);
+  assert.equal(document.querySelector("[data-c-menu]"), null, "close() shuts it");
+  assert.equal(document.activeElement, button);
   await act(() => root.unmount());
 });
