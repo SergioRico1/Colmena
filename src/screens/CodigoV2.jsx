@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files as FilesIcon, FolderOpen, SquareArrowOutUpRight, Stop } from "../components/Icon.js";
+import { ArrowDown, Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files as FilesIcon, FolderOpen, SquareArrowOutUpRight, Stop } from "../components/Icon.js";
 import { useRevealMessage } from "../lib/reveal.js";
 import Shell from "../components/v2/Shell.jsx";
 import { whenLabel, taskActions, CiChip } from "../components/v2/code/ProjectList.jsx";
@@ -395,14 +395,24 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
   const pendingAsk = items.find((i) => i.kind === "ask" && i.status === "pending") || null;
   // The ONE primary button of the header: the next step for the person (flow.js).
   const next = nextAction(task, { pendingAsk, openPlan, findings, canSave: !!canSave });
+  // A question or a plan has its own ink button on its card: the header only takes you there
+  // (one primary per decision), opening the conversation when the wide panel hides it.
+  const toCard = next?.id === "answer" || next?.id === "implement";
+  const jumpToCard = (selector, tries = 0) => {
+    const card = document.querySelector(selector);
+    if (!card) {
+      if (panel && wide && !tries) onWide(false);
+      if (tries < 10) requestAnimationFrame(() => jumpToCard(selector, tries + 1));
+      return;
+    }
+    card.scrollIntoView({ block: "center", behavior: "smooth" });
+    card.querySelector("[data-card-primary]:not(:disabled), button:not(:disabled)")?.focus({ preventScroll: true });
+  };
   const runNext = () => {
     if (!next) return;
     const id = next.id;
-    if (id === "answer") {
-      const card = document.querySelector("[data-pending-ask]");
-      card?.scrollIntoView({ block: "center", behavior: "smooth" });
-      card?.querySelector("button")?.focus({ preventScroll: true });
-    } else if (id === "implement") ctx.onPlan(openPlan, "implement");
+    if (id === "answer") jumpToCard("[data-pending-ask]");
+    else if (id === "implement") jumpToCard("[data-open-plan]");
     else if (id === "write") document.querySelector("[data-code-composer]")?.focus();
     else if (id === "fix") fix();
     else if (id === "catchup") saving.save("catchup");
@@ -415,7 +425,11 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
   const nextBusy = !!saving.busy || !!prBusy || (next?.id === "save" && !!task.merging && running);
   const nextIcon = { save: GitMerge, "merge-pr": GitMerge, "pr-ready": GitPullRequestArrow, "open-pr": ExternalLink, catchup: RefreshCw, fix: ShieldCheck }[next?.id] || null;
   const NextIcon = nextIcon;
-  const primary = next ? (
+  const primary = toCard ? (
+    <button type="button" onClick={runNext} title={next.id === "implement" ? "El plan espera tu OK en la conversación" : "Te espera en la conversación"} style={BTN.outline}>
+      <ArrowDown size={16} aria-hidden="true" />{next.id === "implement" ? "Ir al plan" : pendingAsk?.ask === "question" ? "Ir a la pregunta" : pendingAsk?.ask === "redline" ? "Ir a la línea roja" : "Ir al permiso"}
+    </button>
+  ) : next ? (
     <button type="button" disabled={nextBusy} onClick={runNext} title={next.id === "save" ? (task.isolated ? "Revisión, commit en " + task.branch + " y merge en tu carpeta" : "Commit con el mensaje que escribe " + name) : undefined}
       style={{ ...BTN.primary, opacity: nextBusy ? 0.6 : 1, cursor: nextBusy ? "default" : "pointer" }}>
       {NextIcon ? <NextIcon size={16} aria-hidden="true" /> : null}{(next.id === "save" || next.id === "catchup") && saving.label ? saving.label : prBusy === "merge" && next.id === "merge-pr" ? "Fusionando en GitHub…" : next.label}

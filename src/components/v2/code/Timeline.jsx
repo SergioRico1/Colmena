@@ -132,7 +132,7 @@ function AskCard({ item, onAnswer }) {
             </div>
           </div>
         ))}
-        {pending ? <button type="button" disabled={!ready} onClick={() => onAnswer(item, { answers: picked })} style={{ ...BTN.primary, alignSelf: "flex-start", opacity: ready ? 1 : 0.45, cursor: ready ? "pointer" : "default" }}>Responder</button> : null}
+        {pending ? <button type="button" data-card-primary="" disabled={!ready} onClick={() => onAnswer(item, { answers: picked })} style={{ ...BTN.primary, alignSelf: "flex-start", opacity: ready ? 1 : 0.45, cursor: ready ? "pointer" : "default" }}>Responder</button> : null}
       </div>
     );
   }
@@ -148,7 +148,7 @@ function AskCard({ item, onAnswer }) {
       {pending && item.reason ? <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2 }}>{item.reason}{red ? " Lo demás (editar, probar, instalar dentro del proyecto) lo hace sin preguntarte." : ""}</p> : null}
       {pending ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          <button type="button" onClick={() => onAnswer(item, { decision: "allow" })} style={{ ...BTN.primary, height: "36px", padding: "0 16px", fontSize: "var(--t-meta)" }}>Permitir</button>
+          <button type="button" data-card-primary="" onClick={() => onAnswer(item, { decision: "allow" })} style={{ ...BTN.primary, height: "36px", padding: "0 16px", fontSize: "var(--t-meta)" }}>Permitir</button>
           {item.taskScope ? <button type="button" onClick={() => onAnswer(item, { decision: "task" })} title={red ? "No vuelve a preguntar esto mientras dure esta tarea" : "No vuelve a preguntar por este tipo de paso en esta tarea"} style={small}>En esta tarea</button> : null}
           {item.exact ? <button type="button" onClick={() => onAnswer(item, { decision: "here" })} title={"Esta orden exacta no vuelve a preguntar en este proyecto: " + item.exact} style={small}>Siempre aquí</button> : null}
           {item.durable ? <button type="button" onClick={() => onAnswer(item, { decision: "always" })} style={small}>Siempre en este proyecto</button> : null}
@@ -227,12 +227,12 @@ function PlanCard({ item, busy, onPlan, onShowPlan }) {
     );
   }
   return (
-    <div data-message-id={item.id} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: RING, animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+    <div data-message-id={item.id} data-open-plan="" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: RING, animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.honeyText }}>{PENDING_DOT}Plan · aún no ha tocado nada</span>
       <div style={{ color: C.body }}><Markdown text={item.text} size={14} /></div>
       {item.taskId ? <PlanVotes taskId={item.taskId} item={item} /> : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-        <button type="button" disabled={busy} onClick={() => onPlan(item, "implement")} style={{ ...BTN.primary, height: "38px", cursor: busy ? "default" : "pointer" }}>Implementar</button>
+        <button type="button" data-card-primary="" disabled={busy} onClick={() => onPlan(item, "implement")} style={{ ...BTN.primary, height: "38px", cursor: busy ? "default" : "pointer" }}>Implementar</button>
         <button type="button" disabled={busy} onClick={() => onPlan(item, "new")} title="Una tarea nueva, con su propia copia, empieza por este plan" style={{ ...BTN.outline, height: "38px", fontSize: "var(--t-ui)", cursor: busy ? "default" : "pointer" }}>En una tarea nueva</button>
         <button type="button" onClick={() => onPlan(item, "refine")} title="Escribe abajo qué cambiarías: Bruno rehace el plan" style={{ ...BTN.quiet, height: "38px", fontSize: "var(--t-ui)" }}>Refinar</button>
       </div>
