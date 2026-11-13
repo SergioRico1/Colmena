@@ -37,14 +37,14 @@ export default function DictationRow() {
   return (
     <>
       <Row as="label" anchor="dictado" title="Dictado por voz" sub={line.text} subColor={line.color} min="64px">
-        <Select aria-label="Dictado" disabled={busy || !v} value={v?.preference || "auto"} onChange={(e) => pick(e.target.value)} style={{ ...select, width: "auto", height: "36px", fontSize: "13.5px" }} options={ITEMS} />
+        <Select aria-label="Dictado" disabled={busy || !v} value={v?.preference || "auto"} onChange={(e) => pick(e.target.value)} style={{ ...select, width: "auto", height: "36px", fontSize: "var(--t-ui)" }} options={ITEMS} />
       </Row>
       {v?.problem && v.preference !== "openai" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "0 22px 14px" }}>
           <DictationHelp problem={v.problem} style={{ width: "auto", maxWidth: "none", padding: 0, boxShadow: "none", animation: "none" }} />
           <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
             <button type="button" onClick={retry} disabled={busy} style={btn("outline", 32)}>{busy ? "Comprobando…" : "Ya lo he hecho: comprobar otra vez"}</button>
-            {v.mode === "openai" ? <span style={{ fontSize: "13px", color: MUTED }}>Mientras tanto se dicta con tu clave de OpenAI.</span> : null}
+            {v.mode === "openai" ? <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Mientras tanto se dicta con tu clave de OpenAI.</span> : null}
           </span>
         </div>
       ) : null}

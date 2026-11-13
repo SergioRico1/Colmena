@@ -64,12 +64,12 @@ function EntryRow({ e, first }) {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
         <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "9px", color: "#5C606C" }}><KeyRound size={16} strokeWidth={2.1} /></span>
         <span style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-          <strong style={{ fontSize: "14px" }}>{e.label}</strong>
-          <span style={{ ...field.mono, fontSize: "12px", color: "#5C606C", overflowWrap: "anywhere" }}>{[e.domain, e.username, e.uses ? `usada ${e.uses} ${e.uses === 1 ? "vez" : "veces"}` : "sin usar", e.lastUsedAt ? "última " + dateTime(e.lastUsedAt) : null].filter(Boolean).join(" · ")}</span>
+          <strong style={{ fontSize: "var(--t-ui)" }}>{e.label}</strong>
+          <span style={{ ...field.mono, fontSize: "var(--t-caption)", color: "#5C606C", overflowWrap: "anywhere" }}>{[e.domain, e.username, e.uses ? `usada ${e.uses} ${e.uses === 1 ? "vez" : "veces"}` : "sin usar", e.lastUsedAt ? "última " + dateTime(e.lastUsedAt) : null].filter(Boolean).join(" · ")}</span>
         </span>
         {confirm ? (
           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "13px" }}>{"¿Quitarla de la bóveda?"}</span>
+            <span style={{ fontSize: "var(--t-meta)" }}>{"¿Quitarla de la bóveda?"}</span>
             <button type="button" disabled={busy} onClick={() => act(() => del(`/vault/${encodeURIComponent(e.id)}`))} style={{ ...btn.quiet, color: "#B4372A", borderColor: "#F1B5B7", fontWeight: "600" }}>{"Quitar"}</button>
             <button type="button" onClick={() => setConfirm(false)} style={btn.quiet}>{"No"}</button>
           </span>
@@ -99,7 +99,7 @@ export default function VaultCard() {
   const available = data?.available !== false;
   return (
     <Card id="boveda" title="Bóveda de contraseñas" aside={available && !adding ? <button type="button" onClick={() => setAdding(true)} style={btn.outline}><Plus size={15} strokeWidth={2.4} aria-hidden="true" />{"Añadir cuenta"}</button> : null}>
-      <p style={{ margin: "0", fontSize: "14px", lineHeight: "1.5", color: "#5C606C" }}>
+      <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>
         {"Guarda aquí las cuentas con las que quieres que tus bots puedan entrar en una web. Windows las cifra para tu usuario en este ordenador. Ningún bot ve ni escribe la contraseña: Colmena rellena el acceso en su navegador, solo si la página es de esa web, y te pide permiso la primera vez. Los códigos de verificación y los captchas siguen siendo cosa tuya."}
       </p>
       {!available ? <Notice tone="info">{"La bóveda cifrada solo funciona en Windows, en la aplicación de escritorio."}</Notice> : null}
@@ -107,7 +107,7 @@ export default function VaultCard() {
       {entries.length ? (
         <div style={{ display: "flex", flexDirection: "column" }}>{entries.map((e, i) => <EntryRow key={e.id} e={e} first={i === 0} />)}</div>
       ) : !adding ? (
-        <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "14px", lineHeight: "1.5", color: "#5C606C" }}>{loading ? "Cargando…" : "Aún no has guardado ninguna cuenta."}</p>
+        <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{loading ? "Cargando…" : "Aún no has guardado ninguna cuenta."}</p>
       ) : null}
     </Card>
   );

@@ -34,7 +34,7 @@ function parseCsv(text) {
 export function ArtifactContent({ a, loading = false, error = null }) {
   const content = a?.content ?? "";
   if (loading && !a) return <p style={{ margin: 0, color: "#4A4F5C" }}>Abriendo…</p>;
-  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "#FDECEC", border: "1px solid #F1B5B7", borderRadius: "10px", fontSize: "14px", color: "#8F1D22" }}>{`No se pudo abrir: ${error}`}</p>;
+  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "#FDECEC", border: "1px solid #F1B5B7", borderRadius: "10px", fontSize: "var(--t-ui)", color: "#8F1D22" }}>{`No se pudo abrir: ${error}`}</p>;
   if (!content) return <p style={{ margin: 0, color: "#4A4F5C" }}>{a?.status === "en curso" ? "Todavía se está haciendo. Aparecerá aquí en cuanto el bot lo termine." : "Este entregable está vacío."}</p>;
   if (isDeck(a)) return <SlideViewer artifact={a} />;
   if (isWordDoc(a)) return <DocViewer artifact={a} />;
@@ -44,7 +44,7 @@ export function ArtifactContent({ a, loading = false, error = null }) {
     const rows = parseCsv(content);
     return (
       <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", fontSize: "13px", minWidth: "100%" }}>
+        <table style={{ borderCollapse: "collapse", fontSize: "var(--t-meta)", minWidth: "100%" }}>
           <tbody>
             {rows.map((r, i) => (
               <tr key={i}>{r.map((c, j) => i === 0
@@ -58,5 +58,5 @@ export function ArtifactContent({ a, loading = false, error = null }) {
   }
   if (a.format === "html") return <iframe title={a.title} sandbox="" srcDoc={content} style={{ width: "100%", height: "70vh", border: "1px solid #E6E8EE", borderRadius: "12px", background: "#FFFFFF" }} />;
   if (a.format === "md" || a.format === "txt" || a.kind === "document" || a.kind === "slides") return <div className="colmena-md"><ReactMarkdown components={MD}>{linkifyNotes(content)}</ReactMarkdown></div>;
-  return <pre style={{ margin: 0, padding: "16px", background: "#12131A", color: "#E6E8EE", borderRadius: "12px", overflow: "auto", font: "400 13px/1.6 'Geist Mono', monospace" }}>{content}</pre>;
+  return <pre style={{ margin: 0, padding: "16px", background: "#12131A", color: "#E6E8EE", borderRadius: "12px", overflow: "auto", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace" }}>{content}</pre>;
 }

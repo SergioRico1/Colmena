@@ -9,12 +9,12 @@ import { later, useHidden } from "../../lib/undoToast.js";
 // Same language as the profile cards (Bot.jsx). The red lines always keep asking.
 
 const sectionCard = { background: "#FFFFFF", border: "0", borderRadius: "18px", padding: "22px", display: "flex", flexDirection: "column" };
-const h2 = { margin: 0, font: "600 20px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" };
-const ghost = { height: "40px", padding: "0 12px", background: "transparent", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "14px" };
-const field = { width: "100%", padding: "10px 12px", background: "#F6F6F3", border: "0", borderRadius: "10px", fontSize: "15px", lineHeight: "1.5", outlineColor: "#2F6BFF" };
-const labelText = { fontSize: "14px", fontWeight: "600" };
-const hint = { fontSize: "12px", color: "#6B6F7A", lineHeight: "1.4" };
-const dark = { display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: 0, borderRadius: "10px", cursor: "pointer", fontWeight: "600", fontSize: "14px" };
+const h2 = { margin: 0, font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" };
+const ghost = { height: "40px", padding: "0 12px", background: "transparent", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-ui)" };
+const field = { width: "100%", padding: "10px 12px", background: "#F6F6F3", border: "0", borderRadius: "10px", fontSize: "var(--t-body)", lineHeight: "1.5", outlineColor: "#2F6BFF" };
+const labelText = { fontSize: "var(--t-ui)", fontWeight: "600" };
+const hint = { fontSize: "var(--t-caption)", color: "#6B6F7A", lineHeight: "1.4" };
+const dark = { display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: 0, borderRadius: "10px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" };
 const RED_LINES = ["Enviar algo fuera", "Mover dinero", "Borrar archivos", "Instalar programas"];
 const EMPTY = { title: "", what: "", when: "", needsOk: "", stopWhen: "" };
 
@@ -56,7 +56,7 @@ function OrderForm({ bot, initial, onDone }) {
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         <span style={hint}>{"Aunque la tarea fija diga otra cosa, siempre te pide permiso para:"}</span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {RED_LINES.map((r) => <span key={r} style={{ display: "flex", alignItems: "center", height: "30px", padding: "0 10px", background: "#12131A", color: "#FFFFFF", borderRadius: "15px", fontSize: "12px" }}>{r}</span>)}
+          {RED_LINES.map((r) => <span key={r} style={{ display: "flex", alignItems: "center", height: "30px", padding: "0 10px", background: "#12131A", color: "#FFFFFF", borderRadius: "15px", fontSize: "var(--t-caption)" }}>{r}</span>)}
         </div>
       </div>
       {error ? <Notice>{error}</Notice> : null}
@@ -124,7 +124,7 @@ export default function StandingOrdersCard({ bot }) {
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "12px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <h2 id="enc-t" style={h2}>Tareas fijas</h2>
-          <p style={{ margin: 0, fontSize: "14px", color: "#6B6F7A" }}>{`Lo que ${bot.name} se ocupa de hacer siempre, sin que se lo pidas cada vez.`}</p>
+          <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#6B6F7A" }}>{`Lo que ${bot.name} se ocupa de hacer siempre, sin que se lo pidas cada vez.`}</p>
         </div>
         {editing === null ? <button type="button" onClick={() => setEditing("new")} style={{ ...ghost, display: "flex", alignItems: "center", gap: "6px", flex: "none" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Nuevo</button> : null}
       </div>
@@ -134,23 +134,23 @@ export default function StandingOrdersCard({ bot }) {
       ) : (
         <div key={o.id} style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px", border: o.active ? "1px solid rgba(18,19,26,.1)" : "1px dashed #A9AEBB", borderRadius: "14px", background: o.active ? "#FFFFFF" : "#F6F6F3" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-            <strong style={{ fontSize: "16px", color: o.active ? "#12131A" : "#5C606C" }}>{o.title}</strong>
+            <strong style={{ fontSize: "var(--t-read)", color: o.active ? "#12131A" : "#5C606C" }}>{o.title}</strong>
             <Switch on={o.active} label={`Tarea fija «${o.title}» ${o.active ? "activa" : "en pausa"}`} disabled={action.busy} onClick={() => action.act(() => patch(`/standing-orders/${o.id}`, { active: !o.active }))} />
           </div>
-          <span style={{ fontSize: "14px", lineHeight: "1.5", color: "#3D404A", whiteSpace: "pre-wrap" }}>{o.what}</span>
-          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "max-content 1fr", gap: "4px 10px", fontSize: "13px", lineHeight: "1.45" }}>
+          <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#3D404A", whiteSpace: "pre-wrap" }}>{o.what}</span>
+          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "max-content 1fr", gap: "4px 10px", fontSize: "var(--t-meta)", lineHeight: "1.45" }}>
             {o.when ? <><dt style={{ color: "#6B6F7A" }}>Cuándo</dt><dd style={{ margin: 0 }}>{o.when}</dd></> : null}
             {o.needsOk ? <><dt style={{ color: "#6B6F7A" }}>Necesita tu OK</dt><dd style={{ margin: 0 }}>{o.needsOk}</dd></> : null}
             {o.stopWhen ? <><dt style={{ color: "#6B6F7A" }}>Para y pregunta</dt><dd style={{ margin: 0 }}>{o.stopWhen}</dd></> : null}
           </dl>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", paddingTop: "4px" }}>
             {o.automationId ? (
-              <a href={`/automatizaciones?id=${encodeURIComponent(o.automationId)}`} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 12px", background: "#E1F4EC", border: "0", borderRadius: "999px", fontSize: "13px", fontWeight: "600", color: "#0B5A3E" }}>
+              <a href={`/automatizaciones?id=${encodeURIComponent(o.automationId)}`} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 12px", background: "#E1F4EC", border: "0", borderRadius: "999px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#0B5A3E" }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
                 Automatizado · ver
               </a>
             ) : o.schedule ? (
-              <button type="button" disabled={action.busy} onClick={() => action.act(() => post(`/standing-orders/${o.id}/automation`))} title={`Se pondrá en marcha cuando ${o.schedule.sentence}`} style={{ height: "36px", padding: "0 12px", background: "#FFC93C", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: "700" }}>Crear la automatización</button>
+              <button type="button" disabled={action.busy} onClick={() => action.act(() => post(`/standing-orders/${o.id}/automation`))} title={`Se pondrá en marcha cuando ${o.schedule.sentence}`} style={{ height: "36px", padding: "0 12px", background: "#FFC93C", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "700" }}>Crear la automatización</button>
             ) : null}
             {!o.automationId && o.schedule ? <span style={hint}>{`Cuando ${o.schedule.sentence}`}</span> : null}
             <span style={{ flex: "1" }} />
@@ -159,7 +159,7 @@ export default function StandingOrdersCard({ bot }) {
           </div>
         </div>
       )))}
-      {!orders.length && editing === null ? <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", color: "#6B6F7A" }}>{`Aún no tiene tareas fijas. Por ejemplo: «Cada lunes a las 9, resume los correos de clientes y dime cuáles piden respuesta».`}</p> : null}
+      {!orders.length && editing === null ? <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#6B6F7A" }}>{`Aún no tiene tareas fijas. Por ejemplo: «Cada lunes a las 9, resume los correos de clientes y dime cuáles piden respuesta».`}</p> : null}
 
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingTop: "10px", borderTop: "1px solid rgba(18,19,26,.06)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
@@ -177,9 +177,9 @@ export default function StandingOrdersCard({ bot }) {
             <div key={i.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 0", borderTop: "1px solid rgba(18,19,26,.06)" }}>
               <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
                 <span style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                  {i.keywords.map((k) => <span key={k} style={{ padding: "2px 8px", background: "#E7EEFF", border: "1px solid #B4C8FF", borderRadius: "10px", fontSize: "12px", fontWeight: "600" }}>{k}</span>)}
+                  {i.keywords.map((k) => <span key={k} style={{ padding: "2px 8px", background: "#E7EEFF", border: "1px solid #B4C8FF", borderRadius: "10px", fontSize: "var(--t-caption)", fontWeight: "600" }}>{k}</span>)}
                 </span>
-                <span style={{ fontSize: "14px", lineHeight: "1.4" }}>{i.remind}</span>
+                <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.4" }}>{i.remind}</span>
                 <span style={hint}>{[`${i.hits} de ${i.maxHits} avisos`, i.expiresAt ? (expired ? "caducado" : `hasta el ${day(i.expiresAt)}`) : null, spent ? "agotado" : null].filter(Boolean).join(" · ")}</span>
               </span>
               <Switch on={i.active && !expired} label={`Recordatorio ${i.keywords.join(", ")}`} disabled={action.busy || expired} onClick={() => action.act(() => patch(`/intents/${i.id}`, { active: !i.active }))} />
@@ -187,7 +187,7 @@ export default function StandingOrdersCard({ bot }) {
             </div>
           );
         })}
-        {!reminders.length && !addingIntent ? <p style={{ margin: 0, fontSize: "13px", color: "#6B6F7A" }}>Sin recordatorios por tema.</p> : null}
+        {!reminders.length && !addingIntent ? <p style={{ margin: 0, fontSize: "var(--t-meta)", color: "#6B6F7A" }}>Sin recordatorios por tema.</p> : null}
       </div>
       {action.error ? <Notice>{action.error}</Notice> : null}
     </section>

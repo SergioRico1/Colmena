@@ -78,7 +78,7 @@ export default function SnoozeMenu({ items, style, onError }) {
         <div ref={menu} role="menu" aria-label="Recordar después" style={{ position: "absolute", zIndex: 20, top: "calc(100% + 6px)", left: "0", minWidth: "270px", display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 24px 48px -20px rgba(18,19,26,.4)", animation: "fade .15s ease-out" }}>
           {choices.map((c) => (
             <button key={c.id} type="button" role="menuitem" disabled={busy} onClick={() => choose(c)} className="v3-hover"
-              style={{ display: "flex", alignItems: "center", minHeight: "40px", padding: "0 10px", border: "0", borderRadius: "10px", background: "transparent", textAlign: "left", cursor: busy ? "progress" : "pointer", fontSize: "14px", color: "#12131A" }}>
+              style={{ display: "flex", alignItems: "center", minHeight: "40px", padding: "0 10px", border: "0", borderRadius: "10px", background: "transparent", textAlign: "left", cursor: busy ? "progress" : "pointer", fontSize: "var(--t-ui)", color: "#12131A" }}>
               {c.label}
             </button>
           ))}

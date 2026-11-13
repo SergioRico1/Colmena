@@ -148,7 +148,7 @@ export default function NoteEditor({ page, bots = [], onSaved }) {
       <Back href={noteUrl(page.slug)} label={page.title} />
       <section aria-labelledby="edit-t" style={{ ...CARD, display: "flex", flexDirection: "column", gap: "16px", padding: "24px clamp(18px, 3vw, 30px) 26px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-          <h2 id="edit-t" style={{ margin: 0, font: "600 26px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em", overflowWrap: "anywhere" }}>{page.title}</h2>
+          <h2 id="edit-t" style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em", overflowWrap: "anywhere" }}>{page.title}</h2>
           <div role="group" aria-label="Cómo ver la nota" style={{ display: "flex", gap: "6px" }}>
             <button type="button" aria-pressed={!preview} onClick={() => setPreview(false)} style={{ ...filterChip(!preview), background: !preview ? "#12131A" : "#F1F1EC" }}>{"Escribir"}</button>
             <button type="button" aria-pressed={preview} onClick={() => { setPreview(true); setMenu(null); }} style={{ ...filterChip(preview), background: preview ? "#12131A" : "#F1F1EC" }}>{"Ver cómo queda"}</button>
@@ -159,18 +159,18 @@ export default function NoteEditor({ page, bots = [], onSaved }) {
 
         {conflict ? (
           <div role="alertdialog" aria-labelledby="conf-t" aria-describedby="conf-d" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px", borderRadius: "18px", background: "#F6F6F3" }}>
-            <h3 id="conf-t" style={{ margin: 0, fontSize: "16px", fontWeight: "600" }}>{"La nota ha cambiado mientras la editabas"}</h3>
-            <p id="conf-d" style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", color: "#4A4D57", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 6px" }}>
+            <h3 id="conf-t" style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: "600" }}>{"La nota ha cambiado mientras la editabas"}</h3>
+            <p id="conf-d" style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 6px" }}>
               {conflict.current.updatedBy?.kind === "bot" ? <>{"La cambió "}<Who by={conflict.current.updatedBy} bots={bots} /></> : "Se cambió en otra ventana"}{` (${whenShort(conflict.current.updatedAt, true)}). No se ha guardado nada todavía. Abajo, lo que cambia tu texto respecto al que hay guardado.`}
             </p>
             <NoteDiff diff={conflict.diff} label="Del texto guardado al tuyo" empty="Tu texto y el guardado dicen lo mismo." />
             <details>
-              <summary style={{ fontSize: "13.5px", color: "#1F4FD1", cursor: "pointer" }}>{"Ver los dos textos enteros"}</summary>
+              <summary style={{ fontSize: "var(--t-ui)", color: "#1F4FD1", cursor: "pointer" }}>{"Ver los dos textos enteros"}</summary>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "10px" }}>
                 {[["El que hay guardado", conflict.current.body], ["El tuyo", conflict.yours?.body ?? body]].map(([label, text]) => (
                   <div key={label} style={{ flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
                     <span style={LABEL}>{label}</span>
-                    <pre tabIndex={0} style={{ margin: 0, maxHeight: "260px", overflow: "auto", padding: "12px", borderRadius: "12px", background: "#FFFFFF", font: "400 12.5px/1.6 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{text}</pre>
+                    <pre tabIndex={0} style={{ margin: 0, maxHeight: "260px", overflow: "auto", padding: "12px", borderRadius: "12px", background: "#FFFFFF", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{text}</pre>
                   </div>
                 ))}
               </div>
@@ -180,7 +180,7 @@ export default function NoteEditor({ page, bots = [], onSaved }) {
               <button type="button" disabled={busy} onClick={keepMine} style={PILL}>{"Guardar el mío"}</button>
               <button type="button" disabled={busy} onClick={takeOther} style={PILL}>{"Quedarme con el guardado"}</button>
             </div>
-            <p style={{ ...MUTED, fontSize: "12.5px" }}>{"«Guardar el mío» pone tu texto encima del guardado (el otro queda en el historial). «Quedarme con el guardado» descarta lo que has escrito aquí."}</p>
+            <p style={{ ...MUTED, fontSize: "var(--t-meta)" }}>{"«Guardar el mío» pone tu texto encima del guardado (el otro queda en el historial). «Quedarme con el guardado» descarta lo que has escrito aquí."}</p>
           </div>
         ) : null}
 
@@ -196,27 +196,27 @@ export default function NoteEditor({ page, bots = [], onSaved }) {
                 <textarea id="note-body" ref={area} className="c-quiet" autoFocus value={body} spellCheck="true"
                   role="combobox" aria-autocomplete="list" aria-expanded={!!menu} aria-controls="note-links" aria-activedescendant={menu ? "note-link-" + menu.at : undefined} aria-describedby="note-help"
                   onChange={(e) => { setBody(e.target.value); look(e.target); }} onKeyDown={onKey} onKeyUp={(e) => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) look(e.target); }} onClick={(e) => look(e.target)} onBlur={() => setTimeout(() => setMenu(null), 150)}
-                  style={{ minHeight: "420px", resize: "vertical", padding: "14px 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "14px", background: "#FFFFFF", font: "400 14.5px/1.65 'Geist Mono', monospace", color: "#12131A" }} />
+                  style={{ minHeight: "420px", resize: "vertical", padding: "14px 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "14px", background: "#FFFFFF", font: "400 var(--t-body)/1.65 'Geist Mono', monospace", color: "#12131A" }} />
                 {menu ? (
                   <ul id="note-links" role="listbox" aria-label="Notas para enlazar" style={{ position: "absolute", zIndex: 5, top: menu.top + "px", left: "12px", width: "min(440px, calc(100% - 24px))", margin: 0, padding: "6px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "14px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 20px 44px -24px rgba(18,19,26,.4)" }}>
                     {menu.options.map((o, i) => (
                       <li key={o.kind + (o.slug || o.title)} id={"note-link-" + i} role="option" aria-selected={i === menu.at} onMouseDown={(e) => { e.preventDefault(); choose(o); }} onMouseEnter={() => setMenu((m) => (m ? { ...m, at: i } : m))}
-                        style={{ display: "flex", alignItems: "baseline", gap: "10px", minHeight: "36px", padding: "6px 10px", borderRadius: "9px", background: i === menu.at ? "#F1F1EC" : "transparent", fontSize: "14px", cursor: "pointer" }}>
+                        style={{ display: "flex", alignItems: "baseline", gap: "10px", minHeight: "36px", padding: "6px 10px", borderRadius: "9px", background: i === menu.at ? "#F1F1EC" : "transparent", fontSize: "var(--t-ui)", cursor: "pointer" }}>
                         <span style={{ flex: "1", minWidth: 0, fontWeight: "500", overflowWrap: "anywhere" }}>{o.kind === "new" ? `Enlazar con una nota nueva: «${o.title}»` : o.title}</span>
-                        <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{o.kind === "new" ? "queda por crear" : o.alias ? `también «${o.alias}»` : o.folder}</span>
+                        <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{o.kind === "new" ? "queda por crear" : o.alias ? `también «${o.alias}»` : o.folder}</span>
                       </li>
                     ))}
                   </ul>
                 ) : null}
-                <span id="note-help" style={{ fontSize: "12.5px", color: "#5C606C" }}>{"Escribe [[ para enlazar con otra nota. Ctrl+S guarda."}</span>
+                <span id="note-help" style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Escribe [[ para enlazar con otra nota. Ctrl+S guarda."}</span>
               </>
             )}
           </div>
           {other ? (
             <div style={{ flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={LABEL}>{"El otro texto (solo para copiar de él)"}</span>
-              <pre tabIndex={0} aria-label="El otro texto de la nota" style={{ flex: "1", margin: 0, maxHeight: "460px", overflow: "auto", padding: "14px 16px", borderRadius: "14px", background: "#F6F6F3", font: "400 13px/1.65 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{other.body}</pre>
-              <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{"Copia de aquí lo que quieras conservar y guarda: tu texto quedará como la versión nueva."}</span>
+              <pre tabIndex={0} aria-label="El otro texto de la nota" style={{ flex: "1", margin: 0, maxHeight: "460px", overflow: "auto", padding: "14px 16px", borderRadius: "14px", background: "#F6F6F3", font: "400 var(--t-meta)/1.65 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{other.body}</pre>
+              <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Copia de aquí lo que quieras conservar y guarda: tu texto quedará como la versión nueva."}</span>
             </div>
           ) : null}
         </div>
@@ -251,7 +251,7 @@ export default function NoteEditor({ page, bots = [], onSaved }) {
             <button type="button" onClick={discard} style={PILL}>{"Salir sin guardar"}</button>
             <button type="button" data-autofocus="" disabled={busy} onClick={() => save({ then: leaving })} style={DARK}>{"Guardar y salir"}</button>
           </>}>
-          <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{`Si sales ahora, lo que has escrito en «${page.title}» no se guarda.`}</p>
+          <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.55", color: "#3D404A" }}>{`Si sales ahora, lo que has escrito en «${page.title}» no se guarda.`}</p>
           {error ? <p role="alert" style={ERROR}>{error}</p> : null}
         </Dialog>
       ) : null}

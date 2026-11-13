@@ -108,7 +108,7 @@ export default function Select({ value, onChange, options, label, "aria-label": 
       {open ? createPortal(
         <ul ref={list} id={listId} role="listbox" aria-label={name || undefined} tabIndex={-1} onKeyDown={onKeyDown}
           onBlur={(e) => { const to = e.relatedTarget; if (to && !list.current?.contains(to) && to !== button.current) close(false); }}
-          style={{ position: "fixed", left: 0, top: 0, zIndex: LIST_Z, visibility: "hidden", boxSizing: "border-box", margin: 0, padding: "6px", listStyle: "none", display: "flex", flexDirection: "column", overflowY: "auto", overscrollBehavior: "contain", borderRadius: "var(--r-lg, 14px)", background: "#FFFFFF", color: "#12131A", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", fontSize: "var(--t-body, 14px)", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 18px 40px -16px rgba(18,19,26,.35)", WebkitAppRegion: "no-drag" }}>
+          style={{ position: "fixed", left: 0, top: 0, zIndex: LIST_Z, visibility: "hidden", boxSizing: "border-box", margin: 0, padding: "6px", listStyle: "none", display: "flex", flexDirection: "column", overflowY: "auto", overscrollBehavior: "contain", borderRadius: "var(--r-lg, 14px)", background: "#FFFFFF", color: "#12131A", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", fontSize: "var(--t-ui)", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 18px 40px -16px rgba(18,19,26,.35)", WebkitAppRegion: "no-drag" }}>
           {opts.map((o, i) => {
             const on = i === selected, active = i === at;
             return (

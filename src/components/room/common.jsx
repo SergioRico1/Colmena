@@ -62,11 +62,11 @@ export function extStyle(name) {
 export function FileCard({ file, onRemove }) {
   const s = extStyle(file.name);
   return (
-    <span style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px 10px 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", fontSize: "14px" }}>
-      <span aria-hidden="true" style={{ width: "32px", height: "38px", borderRadius: "5px", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 10px/1 'Geist Mono', monospace" }}>{s.label}</span>
+    <span style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px 10px 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+      <span aria-hidden="true" style={{ width: "32px", height: "38px", borderRadius: "5px", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 var(--t-micro)/1 'Geist Mono', monospace" }}>{s.label}</span>
       <span style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: "0" }}>
         <strong style={{ overflowWrap: "anywhere" }}>{file.name}</strong>
-        <span style={{ fontSize: "12px", color: "#555A68" }}>{fileSize(file.size)}</span>
+        <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{fileSize(file.size)}</span>
       </span>
       {onRemove ? (
         <button type="button" className="rm-focus" aria-label={`Quitar ${file.name}`} onClick={onRemove} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "8px", cursor: "pointer", color: "#555A68" }}>
@@ -81,8 +81,8 @@ export function FileCard({ file, onRemove }) {
 export function FileChip({ file, onRemove, dragUrl = null }) {
   const s = extStyle(file.name);
   return (
-    <span {...dragOutProps(dragUrl)} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px 8px 8px", border: "1px solid #DCE0E8", borderRadius: "10px", fontSize: "14px", background: "#FFFFFF" }}>
-      <span aria-hidden="true" style={{ width: "28px", height: "28px", borderRadius: "6px", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 9px/1 'Geist Mono', monospace" }}>{s.label}</span>
+    <span {...dragOutProps(dragUrl)} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px 8px 8px", border: "1px solid #DCE0E8", borderRadius: "10px", fontSize: "var(--t-ui)", background: "#FFFFFF" }}>
+      <span aria-hidden="true" style={{ width: "28px", height: "28px", borderRadius: "6px", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 var(--t-micro)/1 'Geist Mono', monospace" }}>{s.label}</span>
       {file.name}
       {onRemove ? (
         <button type="button" className="rm-focus" aria-label={`Quitar ${file.name}`} onClick={onRemove} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", color: "#555A68" }}>
@@ -129,7 +129,7 @@ export const popoverItem = {
   borderRadius: "8px",
   cursor: "pointer",
   textAlign: "left",
-  fontSize: "14px",
+  fontSize: "var(--t-ui)",
   width: "100%",
 };
 
@@ -137,7 +137,7 @@ export const popoverItem = {
 export function ErrorLine({ children, style }) {
   if (!children) return null;
   return (
-    <p role="alert" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#B4372A", ...style }}>
+    <p role="alert" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#B4372A", ...style }}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17v.5" /></svg>
       {children}
     </p>

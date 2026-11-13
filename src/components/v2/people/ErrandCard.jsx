@@ -9,7 +9,7 @@ import { useStore } from "../../../lib/store.jsx";
 // card. Nothing runs until you approve; then your bot does it in an incognito chat with the
 // tools you chose for errands, and its answer goes back to who asked.
 const TOOL_WORDS = { web: "la web", carpetas: "tus carpetas", apps: "tus apps conectadas", ordenador: "tu ordenador" };
-const pill = { display: "inline-flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "14px", fontWeight: 600 };
+const pill = { display: "inline-flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 };
 export const toolsText = (tools) => {
   const on = Object.entries(tools || {}).filter(([, v]) => v).map(([k]) => TOOL_WORDS[k]).filter(Boolean);
   return on.length ? on.slice(0, -1).join(", ") + (on.length > 1 ? " y " : "") + on.at(-1) : "ninguna herramienta: solo lo que sabe";
@@ -40,14 +40,14 @@ export default function ErrandCard({ errand }) {
       <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <BotPresence bot={bot} size={26} state={e.state === "working" ? "work" : "rest"} />
         <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-          <strong style={{ font: "600 17px/1.25 'Bricolage Grotesque', sans-serif" }}>{`${first} pide algo a ${bot.name}`}</strong>
-          <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{(e.by?.name ? `Lo pide su bot ${e.by.name} · ` : "") + "solo lo ves tú"}</span>
+          <strong style={{ font: "600 var(--t-lead)/1.25 'Bricolage Grotesque', sans-serif" }}>{`${first} pide algo a ${bot.name}`}</strong>
+          <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{(e.by?.name ? `Lo pide su bot ${e.by.name} · ` : "") + "solo lo ves tú"}</span>
         </span>
       </span>
-      <p style={{ margin: 0, padding: "12px 14px", borderRadius: "16px", background: "#F4F4F0", fontSize: "15px", lineHeight: 1.55, color: "#2B2E36", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{"«" + e.text + "»"}</p>
+      <p style={{ margin: 0, padding: "12px 14px", borderRadius: "16px", background: "#F4F4F0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "#2B2E36", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{"«" + e.text + "»"}</p>
       {e.state === "asked" ? (
         <>
-          <span style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", lineHeight: 1.5, color: "#5C606C" }}>
+          <span style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#5C606C" }}>
             <Wrench size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
             <span>{`${bot.name} lo hará en un chat de incógnito (no aprende nada de él) con ${toolsText(e.tools)}. Enviar, comprar, publicar o borrar algo te lo seguirá preguntando.`}</span>
           </span>
@@ -58,12 +58,12 @@ export default function ErrandCard({ errand }) {
           </span>
         </>
       ) : (
-        <span role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", fontSize: "14px", color: e.state === "failed" ? "#B4231A" : e.state === "done" ? "#0B6B4A" : "#5C606C" }}>
+        <span role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", fontSize: "var(--t-ui)", color: e.state === "failed" ? "#B4231A" : e.state === "done" ? "#0B6B4A" : "#5C606C" }}>
           {state}
           {e.missionId ? <a href={`/chat/${encodeURIComponent(bot.id)}?c=${encodeURIComponent(e.missionId)}`} onClick={(ev) => { ev.preventDefault(); navigate(`/chat/${encodeURIComponent(bot.id)}?c=${encodeURIComponent(e.missionId)}`); }} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600, color: "#1F4FD1", textDecoration: "none" }}>{"Ver lo que hizo"}<ArrowUpRight size={14} strokeWidth={2.2} aria-hidden="true" /></a> : null}
         </span>
       )}
-      {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4231A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4231A" }}>{error}</span> : null}
     </div>
   );
 }

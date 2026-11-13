@@ -16,15 +16,15 @@ export default function PastedCard({ file, onInline, onRemove }) {
   const ref = useDismiss(open, () => setOpen(false));
   const chars = String(file.content || "").length;
   const lines = String(file.content || "").split("\n").length;
-  const small = { height: "28px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer", color: "#12131A" };
+  const small = { height: "28px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "8px", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer", color: "#12131A" };
   return (
     <span ref={ref} style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: "10px", padding: "8px 8px 8px 10px", border: "1px solid #DCE0E8", borderRadius: "12px", background: "#F7F8FA", maxWidth: "100%" }}>
       <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", borderRadius: "8px", background: "#FFF4D1", display: "grid", placeItems: "center", color: "#12131A" }}>
         <ClipboardType size={16} strokeWidth={2} />
       </span>
       <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-        <strong style={{ fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "240px" }}>{label(file.content)}</strong>
-        <span style={{ fontSize: "12px", color: "#555A68" }}>{`Texto pegado · ${chars.toLocaleString("es-ES")} caracteres · ${lines.toLocaleString("es-ES")} ${lines === 1 ? "línea" : "líneas"}`}</span>
+        <strong style={{ fontSize: "var(--t-meta)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "240px" }}>{label(file.content)}</strong>
+        <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{`Texto pegado · ${chars.toLocaleString("es-ES")} caracteres · ${lines.toLocaleString("es-ES")} ${lines === 1 ? "línea" : "líneas"}`}</span>
       </span>
       <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} style={small}>{open ? "Ocultar" : "Ver"}</button>
       {onInline ? (

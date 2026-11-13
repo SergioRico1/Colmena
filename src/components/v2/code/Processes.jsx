@@ -19,7 +19,7 @@ const KIND = {
   child: { icon: CornerDownRight, text: () => null },
 };
 
-const pill = { height: "28px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: C.white, color: C.ink, cursor: "pointer", fontSize: "12.5px", fontWeight: 500, whiteSpace: "nowrap" };
+const pill = { height: "28px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" };
 
 function Row({ row, name, busy, onStop }) {
   const [armed, setArmed] = useState(false);
@@ -36,13 +36,13 @@ function Row({ row, name, busy, onStop }) {
       <Icon size={15} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: row.depth ? C.quiet : C.muted }} />
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
         <span style={{ display: "flex", alignItems: "baseline", gap: "8px", minWidth: 0 }}>
-          <strong style={{ flex: "none", fontSize: "13.5px", fontWeight: 600, color: C.ink }}>{row.name || "proceso"}</strong>
-          {label ? <span style={{ minWidth: 0, fontSize: "12.5px", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span> : null}
-          {row.ports.map((p) => <span key={p} style={{ flex: "none", font: `500 12px/1 ${MONO}`, color: C.blue }} title={"Escucha en http://127.0.0.1:" + p + "/"}>:{p}</span>)}
+          <strong style={{ flex: "none", fontSize: "var(--t-ui)", fontWeight: 600, color: C.ink }}>{row.name || "proceso"}</strong>
+          {label ? <span style={{ minWidth: 0, fontSize: "var(--t-meta)", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span> : null}
+          {row.ports.map((p) => <span key={p} style={{ flex: "none", font: `500 var(--t-caption)/1 ${MONO}`, color: C.blue }} title={"Escucha en http://127.0.0.1:" + p + "/"}>:{p}</span>)}
         </span>
-        <span title={row.command} style={{ font: `400 11.5px/1.3 ${MONO}`, color: C.faint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.command || "—"}</span>
+        <span title={row.command} style={{ font: `400 var(--t-caption)/1.3 ${MONO}`, color: C.faint, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.command || "—"}</span>
       </span>
-      <span style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", font: `400 11.5px/1 ${MONO}`, color: C.quiet }}>
+      <span style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", font: `400 var(--t-caption)/1 ${MONO}`, color: C.quiet }}>
         <span>PID {row.pid}</span>
         {age ? <span title={new Date(row.started).toLocaleString("es-ES")}>{age}</span> : null}
       </span>
@@ -81,7 +81,7 @@ export default function Processes({ task, name = "Bruno" }) {
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: "12px", animation: "fade .25s ease-out" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "32px" }}>
-        <span style={{ flex: 1, fontSize: "13px", color: C.muted }}>
+        <span style={{ flex: 1, fontSize: "var(--t-meta)", color: C.muted }}>
           {!data ? "Mirando qué hay en marcha…" : rows.length ? (rows.length === 1 ? "1 proceso en marcha" : rows.length + " procesos en marcha") + (rows.some((r) => r.ports.length) ? " · los puertos se ven en «Vista previa»" : "") : null}
         </span>
         {!working && leftovers.length ? (
@@ -90,11 +90,11 @@ export default function Processes({ task, name = "Bruno" }) {
           </button>
         ) : null}
       </div>
-      {error ? <p role="alert" onClick={() => setError(null)} style={{ margin: 0, fontSize: "13px", color: C.red }}>{error}</p> : null}
+      {error ? <p role="alert" onClick={() => setError(null)} style={{ margin: 0, fontSize: "var(--t-meta)", color: C.red }}>{error}</p> : null}
       {data && !rows.length ? (
         <div style={{ padding: "48px 28px", textAlign: "center", display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-          <strong style={{ fontSize: "15px" }}>No hay nada en marcha para esta tarea.</strong>
-          <span style={{ fontSize: "13px", color: C.faint, maxWidth: "320px", lineHeight: 1.5 }}>Aquí verás lo que arranquen {name} o tus terminales: servidores, tests y procesos en segundo plano.</span>
+          <strong style={{ fontSize: "var(--t-body)" }}>No hay nada en marcha para esta tarea.</strong>
+          <span style={{ fontSize: "var(--t-meta)", color: C.faint, maxWidth: "320px", lineHeight: 1.5 }}>Aquí verás lo que arranquen {name} o tus terminales: servidores, tests y procesos en segundo plano.</span>
         </div>
       ) : null}
       {rows.length ? (

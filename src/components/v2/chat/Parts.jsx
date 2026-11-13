@@ -43,7 +43,7 @@ export function TimeMark({ at }) {
   const yesterday = new Date(Date.now() - 864e5).toDateString() === d.toDateString();
   const day = today ? "Hoy" : yesterday ? "Ayer" : d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12.5px", color: "#5C606C" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
       <span style={{ flex: "1", height: "1px", background: "rgba(18,19,26,.08)" }} />
       {`${day} · ${clock(at)}`}
       <span style={{ flex: "1", height: "1px", background: "rgba(18,19,26,.08)" }} />
@@ -55,8 +55,8 @@ export function UserBubble({ message, children }) {
   return (
     <div data-message-id={message.optimistic ? undefined : message.id} aria-busy={message.optimistic ? "true" : undefined}
       style={{ alignSelf: "flex-end", maxWidth: "78%", display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-end", opacity: message.optimistic ? 0.65 : 1, transition: "opacity .2s ease" }}>
-      <div style={{ padding: "14px 18px", background: "#EBEBE6", borderRadius: "20px 20px 6px 20px", fontSize: "15.5px", lineHeight: "1.55", overflowWrap: "anywhere" }}>
-        <UserText text={message.text} size={15.5} messageId={message.optimistic ? null : message.id} />
+      <div style={{ padding: "14px 18px", background: "#EBEBE6", borderRadius: "20px 20px 6px 20px", fontSize: "var(--t-read)", lineHeight: "1.55", overflowWrap: "anywhere" }}>
+        <UserText text={message.text} size={16} messageId={message.optimistic ? null : message.id} />
       </div>
       <RefChips refs={message.refs} />
       {children}
@@ -70,8 +70,8 @@ export function AttachmentChip({ name, missionId = null }) {
   const [bg, fg] = extTint(ext);
   return (
     // Attachments live in the chat's folder under their name: in the desktop app they drag out.
-    <span {...(missionId ? dragOutProps(workFileUrl(missionId, name)) : {})} style={{ display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "30px", padding: "0 12px 0 6px", borderRadius: "10px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "13px" }}>
-      <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "6px", background: bg, color: fg, fontSize: "9px", fontWeight: 700 }}>{ext}</span>
+    <span {...(missionId ? dragOutProps(workFileUrl(missionId, name)) : {})} style={{ display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "30px", padding: "0 12px 0 6px", borderRadius: "10px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "var(--t-meta)" }}>
+      <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "6px", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 }}>{ext}</span>
       <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
     </span>
   );
@@ -82,8 +82,8 @@ export function AnswerHead({ bot, at = null, note = null, state = "rest" }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
       <BotMark bot={bot} size={20} state={state} />
-      <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{bot?.name || "Bot"}<span style={srOnly}>{", bot" + (STATE_WORDS[state] ? ", " + STATE_WORDS[state] : "")}</span></span>
-      <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[note, at ? clock(at) : null].filter(Boolean).join(" · ") || "ahora"}</span>
+      <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{bot?.name || "Bot"}<span style={srOnly}>{", bot" + (STATE_WORDS[state] ? ", " + STATE_WORDS[state] : "")}</span></span>
+      <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{[note, at ? clock(at) : null].filter(Boolean).join(" · ") || "ahora"}</span>
     </div>
   );
 }
@@ -93,7 +93,7 @@ export function DoneSteps({ tools = [], bots = [], stepId = null, seconds = null
   return <WorkLog tools={tools} bots={bots} stepId={stepId} seconds={seconds} fold={fold} />;
 }
 
-const ANSWER = { fontSize: "15.5px", lineHeight: "1.6", color: "#12131A" };
+const ANSWER = { fontSize: "var(--t-read)", lineHeight: "1.6", color: "#12131A" };
 const secondsOf = (message, step) => message?.summary?.seconds ?? (step?.startedAt && step?.completedAt ? (Date.parse(step.completedAt) - Date.parse(step.startedAt)) / 1000 : null);
 
 /**
@@ -117,7 +117,7 @@ export function WorkTrail({ step, bots = [], running = false, ticks = true, seco
   const [title, ...rest] = turn ? turn.text.split(" · ") : ["Cómo lo hizo", summary ? summary.text : `${lines.length} pasos`];
   const toggle = folds ? (
     <button type="button" className="rm-focus" data-work-fold="" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={open ? "Ocultar cómo lo hizo" : "Ver cómo lo hizo"}
-      style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: "10px", minHeight: "46px", padding: "8px 16px", border: "1px solid rgba(18,19,26,.07)", borderRadius: "16px", background: "#FFFFFF", cursor: "pointer", fontSize: "14px", color: "#12131A", textAlign: "left" }}>
+      style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: "10px", minHeight: "46px", padding: "8px 16px", border: "1px solid rgba(18,19,26,.07)", borderRadius: "16px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", color: "#12131A", textAlign: "left" }}>
       <span aria-hidden="true" style={{ color: "#0B6B4A", fontWeight: 600 }}>{"✓"}</span>
       <span style={{ flex: "1", minWidth: 0 }}><strong style={{ fontWeight: 600 }}>{title}</strong>{rest.length ? <span style={{ color: "#5C606C" }}>{" · " + rest.join(" · ")}</span> : null}</span>
       <ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#4A4D57", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
@@ -188,7 +188,7 @@ export function AnswerActions({ message, bot, onRetry = null, onEditAsk = null, 
       <button type="button" className="rm-focus" aria-label="Útil" title="Útil" aria-pressed={mine("👍") ? "true" : "false"} onClick={() => toggle("👍")} style={{ ...ICON, ...pressed(mine("👍")) }}><Glyph d={ACTION_ICONS.up} /></button>
       <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
         <button type="button" className="rm-focus" aria-label="No me sirve" title={down && downSummary(down) ? "No me sirve: " + downSummary(down) : "No me sirve"} aria-pressed={down ? "true" : "false"} aria-expanded={why ? "true" : "false"} aria-haspopup="dialog" onClick={onDown} style={{ ...ICON, ...pressed(!!down) }}><Glyph d={ACTION_ICONS.down} /></button>
-        {down && downSummary(down) && !why ? <button type="button" className="rm-focus" onClick={() => setWhy(true)} title={down.note || undefined} style={{ height: "28px", padding: "0 8px", border: 0, borderRadius: "8px", background: "transparent", color: "#5C606C", fontSize: "12.5px", cursor: "pointer" }}>{downSummary(down)}</button> : null}
+        {down && downSummary(down) && !why ? <button type="button" className="rm-focus" onClick={() => setWhy(true)} title={down.note || undefined} style={{ height: "28px", padding: "0 8px", border: 0, borderRadius: "8px", background: "transparent", color: "#5C606C", fontSize: "var(--t-meta)", cursor: "pointer" }}>{downSummary(down)}</button> : null}
         {why ? <DownReasons current={down} onSave={explain} onRemove={down ? () => toggle(DOWN) : null} onClose={() => setWhy(false)} /> : null}
       </span>
       {branch && branch.count > 1 ? <span style={{ marginLeft: "8px" }}><BranchPicker branch={branch} disabled={versionDisabled} onShow={onVersion} /></span> : null}
@@ -205,9 +205,9 @@ export function UsageLine({ message, step = null }) {
   const time = durationText(secondsOf(message, step));
   const parts = [settings.model || null, s.tokens ? `${kTokens(s.tokens)} tokens` : null, s.calls ? `${s.calls} llamada${s.calls === 1 ? "" : "s"}` : null, s.cachedPercent != null ? `caché ${s.cachedPercent} %` : null, s.reads ? `${s.reads} lectura${s.reads === 1 ? "" : "s"}` : null, time || null].filter(Boolean);
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", font: "400 12px/1.4 'Geist Mono', monospace", color: "#5C606C" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", font: "400 var(--t-caption)/1.4 'Geist Mono', monospace", color: "#5C606C" }}>
       {parts.map((p) => <span key={p}>{p}</span>)}
-      <a href="/actividad" style={{ fontFamily: "'Geist', sans-serif", fontSize: "12.5px" }}>{"Ver en Actividad"}</a>
+      <a href="/actividad" style={{ fontFamily: "'Geist', sans-serif", fontSize: "var(--t-meta)" }}>{"Ver en Actividad"}</a>
     </div>
   );
 }
@@ -221,22 +221,22 @@ export function DeliverableV2({ artifact, onOpen, extra = null }) {
   return (
     <article style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 40px -30px rgba(18,19,26,.35)", animation: "rise .5s ease-out" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "10px", background: bg, color: fg, fontSize: "10px", fontWeight: 700 }}>{ext}</span>
+        <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "10px", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 }}>{ext}</span>
         <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-          <span {...(artifact?.id && (artifact.file || artifact.workFile || isImage) ? dragOutProps(`/api/artifacts/${encodeURIComponent(artifact.id)}/file`) : {})} style={{ fontSize: "15.5px", fontWeight: 600, overflowWrap: "anywhere" }}>{artifact?.title || "Entregable"}</span>
-          <span style={{ fontSize: "13px", color: "#5C606C" }}>{[artifactMeta(artifact), pages].filter(Boolean).join(" · ")}</span>
+          <span {...(artifact?.id && (artifact.file || artifact.workFile || isImage) ? dragOutProps(`/api/artifacts/${encodeURIComponent(artifact.id)}/file`) : {})} style={{ fontSize: "var(--t-read)", fontWeight: 600, overflowWrap: "anywhere" }}>{artifact?.title || "Entregable"}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{[artifactMeta(artifact), pages].filter(Boolean).join(" · ")}</span>
         </div>
         {extra}
-        <a href={`/api/artifacts/${encodeURIComponent(artifact?.id)}/download`} download aria-label={"Descargar " + (artifact?.title || "el entregable")} title="Descargar" style={{ fontSize: "14px", fontWeight: 500, color: "#4A4D57" }}>{"Descargar"}</a>
-        <button type="button" onClick={onOpen} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: 500, color: "#1F4FD1" }}>{"Abrir"}</button>
+        <a href={`/api/artifacts/${encodeURIComponent(artifact?.id)}/download`} download aria-label={"Descargar " + (artifact?.title || "el entregable")} title="Descargar" style={{ fontSize: "var(--t-ui)", fontWeight: 500, color: "#4A4D57" }}>{"Descargar"}</a>
+        <button type="button" onClick={onOpen} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: "#1F4FD1" }}>{"Abrir"}</button>
       </div>
-      {artifact?.summary ? <span style={{ fontSize: "14px", lineHeight: "1.5", color: "#4A4D57" }}>{artifact.summary}</span> : null}
+      {artifact?.summary ? <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57" }}>{artifact.summary}</span> : null}
       {isImage && artifact?.id ? <img src={`/api/artifacts/${encodeURIComponent(artifact.id)}/file`} alt="" data-lightbox="" data-name={(artifact.title || "imagen") + ".png"} style={{ width: "100%", maxHeight: "320px", borderRadius: "14px", objectFit: "cover", cursor: "zoom-in", animation: "develop 1.2s ease-out both" }} /> : null}
     </article>
   );
 }
 
-const shimmerText = { alignSelf: "flex-start", fontSize: "14.5px", fontWeight: "500", background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
+const shimmerText = { alignSelf: "flex-start", fontSize: "var(--t-body)", fontWeight: "500", background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
 
 /**
  * The work while it happens (idea 04: «nada de procesando»): what it reads (each file with a
@@ -264,9 +264,9 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null, head 
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .4s ease-out" }}>
         <div style={{ position: "relative", height: "300px", borderRadius: "26px", overflow: "hidden", background: "#EDE8FF" }}>
           <div aria-hidden="true" style={{ position: "absolute", inset: "0", animation: "develop 4s ease-out both", background: `radial-gradient(circle at 72% 30%, #FFC93C 0 13%, rgba(255,201,60,0) 13.5%), radial-gradient(120% 70% at 20% 110%, ${color} 0 48%, rgba(0,0,0,0) 48.5%), radial-gradient(120% 80% at 90% 120%, #2F6BFF 0 45%, rgba(47,107,255,0) 45.5%), linear-gradient(180deg, #FFF4D1, #F5E9FF)` }} />
-          <span role="status" style={{ position: "absolute", left: "20px", bottom: "18px", padding: "8px 14px", borderRadius: "999px", background: "rgba(255,255,255,.8)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", fontSize: "13px", fontWeight: "500" }}>{"Revelando la imagen…"}</span>
+          <span role="status" style={{ position: "absolute", left: "20px", bottom: "18px", padding: "8px 14px", borderRadius: "999px", background: "rgba(255,255,255,.8)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", fontSize: "var(--t-meta)", fontWeight: "500" }}>{"Revelando la imagen…"}</span>
         </div>
-        {image.card?.prompt ? <span style={{ fontSize: "14px", color: "#5C606C" }}>{image.card.prompt}</span> : null}
+        {image.card?.prompt ? <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{image.card.prompt}</span> : null}
       </div>
     );
   }
@@ -282,10 +282,10 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null, head 
           const pages = t.card.pages ? (t.card.pages === 1 ? "1 página" : `${t.card.pages} páginas`) : t.card.domain || "leído";
           return (
             <div key={t.id || i} style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "58px", borderBottom: i < list.length - 1 ? "1px solid rgba(18,19,26,.06)" : "0", opacity: done || t.status === "running" ? 1 : 0.4, transition: "opacity .4s ease" }}>
-              <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", borderRadius: "10px", font: "600 9px/1 'Geist Mono', monospace", background: bg, color: fg }}>{ext}</span>
-              <span style={{ flex: "1", minWidth: 0, fontSize: "15px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+              <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", borderRadius: "10px", font: "600 var(--t-micro)/1 'Geist Mono', monospace", background: bg, color: fg }}>{ext}</span>
+              <span style={{ flex: "1", minWidth: 0, fontSize: "var(--t-body)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
               {t.status === "running" ? <span aria-label="Leyendo" style={{ width: "16px", height: "16px", flex: "none", borderRadius: "50%", border: `2px solid ${color}40`, borderTopColor: color, animation: "spin .8s linear infinite" }} /> : null}
-              {done ? <span style={{ fontSize: "13px", color: "#0B6B4A", animation: "fade .3s ease-out" }}>{pages}</span> : null}
+              {done ? <span style={{ fontSize: "var(--t-meta)", color: "#0B6B4A", animation: "fade .3s ease-out" }}>{pages}</span> : null}
             </div>
           );
         })}
@@ -300,9 +300,9 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null, head 
       <div style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "30px" }}>
         <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
           <span style={shimmerText}>{running.length ? <>{headline(running[running.length - 1], bots)}{"…"}</> : "Pensando…"}</span>
-          {narration ? <span style={{ fontSize: "13px", color: "#5C606C" }}>{narration}</span> : null}
+          {narration ? <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{narration}</span> : null}
         </span>
-        {onStop ? <button type="button" className="chat-stop" onClick={onStop} title="Parar (Esc)" style={{ flex: "none", height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "transparent", color: "#5C606C", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>{"Parar"}</button> : null}
+        {onStop ? <button type="button" className="chat-stop" onClick={onStop} title="Parar (Esc)" style={{ flex: "none", height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "transparent", color: "#5C606C", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{"Parar"}</button> : null}
       </div>
     </article>
   );
@@ -314,12 +314,12 @@ function RunningCommand({ command, stepId, narration, bots }) {
   const c = command.card || {};
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .4s ease-out" }}>
-      <span style={{ fontSize: "14px", color: "#5C606C" }}>{narration || headline(command, bots)}</span>
-      <div style={{ padding: "18px 20px", background: "#12131A", borderRadius: "22px", display: "flex", flexDirection: "column", gap: "10px", font: "400 14px/1.6 'Geist Mono', monospace", color: "#E6E7EC", overflow: "hidden" }}>
+      <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{narration || headline(command, bots)}</span>
+      <div style={{ padding: "18px 20px", background: "#12131A", borderRadius: "22px", display: "flex", flexDirection: "column", gap: "10px", font: "400 var(--t-ui)/1.6 'Geist Mono', monospace", color: "#E6E7EC", overflow: "hidden" }}>
         <span style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
           <span style={{ flex: "1", minWidth: 0, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{c.command || c.program || "…"}{shown ? null : <span aria-hidden="true" style={{ display: "inline-block", width: "8px", height: "17px", marginLeft: "6px", verticalAlign: "-3px", background: "#FFC93C", animation: "caret 1s steps(1) infinite" }} />}</span>
           <button type="button" className="rm-focus" aria-expanded={shown ? "true" : "false"} onClick={() => setShown((v) => !v)}
-            style={{ flex: "none", height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.1)", color: "#FFFFFF", cursor: "pointer", font: "600 12px/1 'Geist', sans-serif" }}>{shown ? "Ocultar la salida" : "Ver la salida"}</button>
+            style={{ flex: "none", height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.1)", color: "#FFFFFF", cursor: "pointer", font: "600 var(--t-caption)/1 'Geist', sans-serif" }}>{shown ? "Ocultar la salida" : "Ver la salida"}</button>
         </span>
         {shown ? <CommandOutput stepId={stepId} callId={command.id} running /> : null}
       </div>

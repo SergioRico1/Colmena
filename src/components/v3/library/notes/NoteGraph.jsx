@@ -35,7 +35,7 @@ export default function NoteGraph({ focus = "", title = "" }) {
     <section aria-labelledby="map-t" style={{ ...CARD, display: "flex", flexDirection: "column", gap: "14px", padding: "22px clamp(16px, 3vw, 26px) 24px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <h2 id="map-t" style={{ margin: 0, font: "600 22px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{focus ? `Alrededor de «${title || focus}»` : "Mapa de las notas"}</h2>
+          <h2 id="map-t" style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{focus ? `Alrededor de «${title || focus}»` : "Mapa de las notas"}</h2>
           <span style={MUTED}>{"Cada punto es una nota y cada línea, una que nombra a otra. Los puntos huecos están por crear."}</span>
         </div>
         {focus ? (
@@ -48,7 +48,7 @@ export default function NoteGraph({ focus = "", title = "" }) {
       {error ? <p role="alert" style={ERROR}>{error}</p> : null}
       {act.error ? <p role="alert" style={ERROR}>{act.error}</p> : null}
       {loading && !data ? <div style={{ height: "320px", borderRadius: "16px", background: "#F6F6F3", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
-      {data && !view.nodes.length ? <p style={{ margin: 0, padding: "40px 0", textAlign: "center", fontSize: "15px", color: "#5C606C" }}>{"Aún no hay notas que dibujar."}</p> : null}
+      {data && !view.nodes.length ? <p style={{ margin: 0, padding: "40px 0", textAlign: "center", fontSize: "var(--t-body)", color: "#5C606C" }}>{"Aún no hay notas que dibujar."}</p> : null}
       {view.nodes.length ? (
         <>
           <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={`Mapa con ${view.nodes.length} notas y ${view.edges.length} enlaces`} style={{ width: "100%", height: "auto", maxHeight: "70vh", borderRadius: "16px", background: "#FBFBF9", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.05)" }} onMouseLeave={() => setHot(null)}>
@@ -64,15 +64,15 @@ export default function NoteGraph({ focus = "", title = "" }) {
                   onClick={(e) => { e.preventDefault(); open(n); }} onMouseEnter={() => setHot(n.id)} onFocus={() => setHot(n.id)} onBlur={() => setHot(null)} style={{ cursor: "pointer", outlineOffset: "3px" }}>
                   <circle cx={n.x} cy={n.y} r={Math.max(n.r, 12)} fill="transparent" />
                   <circle cx={n.x} cy={n.y} r={n.r} fill={!n.exists ? "#FFFFFF" : me ? "#1F4FD1" : "#12131A"} stroke={!n.exists ? "#5C606C" : hot === n.id ? "#1F4FD1" : "#FFFFFF"} strokeWidth={!n.exists ? 1.5 : 2} strokeDasharray={n.exists ? undefined : "3 2.5"} />
-                  {labelled(n) ? <text x={n.x} y={below ? n.y + n.r + 14 : n.y - n.r - 7} textAnchor={n.x < 70 ? "start" : n.x > W - 70 ? "end" : "middle"} fontSize="11.5" fontWeight={me || hot === n.id ? 600 : 500} fill={n.exists ? "#12131A" : "#5C606C"} stroke="#FBFBF9" strokeWidth="3" paintOrder="stroke" style={{ pointerEvents: "none" }}>{clip(n.title)}</text> : null}
+                  {labelled(n) ? <text x={n.x} y={below ? n.y + n.r + 14 : n.y - n.r - 7} textAnchor={n.x < 70 ? "start" : n.x > W - 70 ? "end" : "middle"} fontSize="12" fontWeight={me || hot === n.id ? 600 : 500} fill={n.exists ? "#12131A" : "#5C606C"} stroke="#FBFBF9" strokeWidth="3" paintOrder="stroke" style={{ pointerEvents: "none" }}>{clip(n.title)}</text> : null}
                 </a>
               );
             })}
           </svg>
           {data.truncated ? <p style={MUTED}>{`Hay ${data.total?.nodes ?? "más"} notas: aquí salen las ${view.nodes.length} más enlazadas. Abre una nota y pulsa «Ver en el mapa» para ver sus alrededores.`}</p> : null}
           <details>
-            <summary style={{ fontSize: "13.5px", color: "#1F4FD1", cursor: "pointer" }}>{"Ver lo mismo como lista"}</summary>
-            <ul style={{ margin: "10px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "13.5px" }}>
+            <summary style={{ fontSize: "var(--t-ui)", color: "#1F4FD1", cursor: "pointer" }}>{"Ver lo mismo como lista"}</summary>
+            <ul style={{ margin: "10px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "var(--t-ui)" }}>
               {view.nodes.map((n) => (
                 <li key={n.id} style={{ display: "flex", flexWrap: "wrap", gap: "2px 8px" }}>
                   <a href={noteUrl(n.exists ? n.id : n.title)} onClick={n.exists ? undefined : (e) => { e.preventDefault(); open(n); }} style={n.exists ? { color: "#1F4FD1", fontWeight: n.id === focus ? "600" : "400" } : { color: "#5C606C", textDecoration: "underline dashed", textUnderlineOffset: "3px" }}>{n.title}</a>

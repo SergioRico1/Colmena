@@ -64,17 +64,17 @@ export default function LinkPreviewLayer() {
   return createPortal(
     <div role="tooltip" className="c-pop"
       style={{ position: "fixed", zIndex: 60, left: left + "px", ...(below ? { top: card.rect.bottom + 8 + "px" } : { bottom: window.innerHeight - card.rect.top + 8 + "px" }), width: width + "px", padding: "12px 14px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "14px", boxShadow: "0 16px 36px -18px rgba(18,19,26,.45)", pointerEvents: "none", display: "flex", flexDirection: "column", gap: "4px" }}>
-      <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#555A68", minWidth: 0 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "#555A68", minWidth: 0 }}>
         <Globe size={13} strokeWidth={2} aria-hidden="true" style={{ flex: "none" }} />
         <span style={{ fontWeight: 600, color: "#2B2D36", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p?.site || new URL(card.url).hostname.replace(/^www\./, "")}</span>
-        {p && p.site !== p.host ? <span style={{ font: "400 11px/1 'Geist Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.host}</span> : null}
+        {p && p.site !== p.host ? <span style={{ font: "400 var(--t-micro)/1 'Geist Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.host}</span> : null}
       </span>
       {card.loading ? (
-        <span style={{ fontSize: "13px", color: "#555A68" }}>{"Leyendo la página…"}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: "#555A68" }}>{"Leyendo la página…"}</span>
       ) : (
         <>
-          {p.title ? <strong style={{ fontSize: "14px", lineHeight: "1.35", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{p.title}</strong> : null}
-          {p.description ? <span style={{ fontSize: "13px", lineHeight: "1.45", color: "#2B2D36", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{p.description}</span> : null}
+          {p.title ? <strong style={{ fontSize: "var(--t-ui)", lineHeight: "1.35", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{p.title}</strong> : null}
+          {p.description ? <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#2B2D36", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{p.description}</span> : null}
         </>
       )}
     </div>,

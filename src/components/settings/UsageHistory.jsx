@@ -30,7 +30,7 @@ export default function UsageHistory() {
   }, [updated]);
 
   const max = useMemo(() => Math.max(1, ...(data?.days || []).map((d) => d.tokens)), [data]);
-  if (failed && !data) return <Card id="historial" title="Últimos 30 días"><span style={{ fontSize: "14px", color: "#5C606C" }}>{"No se pudo cargar el historial de uso."}</span></Card>;
+  if (failed && !data) return <Card id="historial" title="Últimos 30 días"><span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{"No se pudo cargar el historial de uso."}</span></Card>;
   if (!data) return <Card id="historial" title="Últimos 30 días"><span aria-hidden="true" className="colmena-skeleton" style={{ height: "120px", borderRadius: "12px" }} /></Card>;
 
   const today = data.days.at(-1);
@@ -45,13 +45,13 @@ export default function UsageHistory() {
 
   return (
     <Card id="historial" title="Últimos 30 días" aside={
-      <a href="/api/usage/history.csv?days=30" download className="rm-focus" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 12px", background: "#FFFFFF", color: "#12131A", border: "0", borderRadius: "999px", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>
+      <a href="/api/usage/history.csv?days=30" download className="rm-focus" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 12px", background: "#FFFFFF", color: "#12131A", border: "0", borderRadius: "999px", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>
         <Download size={14} strokeWidth={2.2} aria-hidden="true" />{"Descargar CSV"}
       </a>
     }>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 14px" }}>
-        <span style={{ font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{formatTokens(data.total)}</span>
-        <span style={{ fontSize: "14px", color: "#5C606C" }}>{`tokens · ${data.calls.toLocaleString("es-ES")} ${data.calls === 1 ? "llamada" : "llamadas"} · ${active} ${active === 1 ? "día con uso" : "días con uso"}`}</span>
+        <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{formatTokens(data.total)}</span>
+        <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{`tokens · ${data.calls.toLocaleString("es-ES")} ${data.calls === 1 ? "llamada" : "llamadas"} · ${active} ${active === 1 ? "día con uso" : "días con uso"}`}</span>
       </div>
 
       <div onMouseLeave={() => setHover(null)} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -69,10 +69,10 @@ export default function UsageHistory() {
             );
           })}
         </div>
-        <div aria-hidden="true" style={{ display: "flex", justifyContent: "space-between", font: "500 11px/1 'Geist Mono', monospace", color: "#6B6F7A" }}>
+        <div aria-hidden="true" style={{ display: "flex", justifyContent: "space-between", font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "#6B6F7A" }}>
           <span>{dayLabel(data.from)}</span><span>{dayLabel(data.days[15].date)}</span><span>{"Hoy"}</span>
         </div>
-        <span aria-live="polite" style={{ fontSize: "13px", color: "#3D404A", minHeight: "18px" }}>{caption}</span>
+        <span aria-live="polite" style={{ fontSize: "var(--t-meta)", color: "#3D404A", minHeight: "18px" }}>{caption}</span>
       </div>
 
       {rows.length ? (
@@ -80,7 +80,7 @@ export default function UsageHistory() {
           <div role="group" aria-label="Ver el uso" style={{ display: "inline-flex", alignSelf: "flex-start", padding: "3px", background: "#F4F4F0", borderRadius: "10px" }}>
             {[["bot", "Por bot"], ["sala", "Por sala o chat"]].map(([id, label]) => (
               <button key={id} type="button" aria-pressed={by === id ? "true" : "false"} onClick={() => setBy(id)} className="rm-focus"
-                style={{ height: "30px", padding: "0 12px", background: by === id ? "#FFFFFF" : "transparent", border: 0, borderRadius: "8px", boxShadow: by === id ? "0 1px 2px rgba(18,19,26,.12)" : "none", cursor: "pointer", fontSize: "13px", fontWeight: by === id ? 700 : 500, color: "#12131A" }}>{label}</button>
+                style={{ height: "30px", padding: "0 12px", background: by === id ? "#FFFFFF" : "transparent", border: 0, borderRadius: "8px", boxShadow: by === id ? "0 1px 2px rgba(18,19,26,.12)" : "none", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: by === id ? 700 : 500, color: "#12131A" }}>{label}</button>
             ))}
           </div>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -90,7 +90,7 @@ export default function UsageHistory() {
               const pct = data.total ? Math.round((r.tokens / data.total) * 100) : 0;
               const name = bot?.name || r.name;
               return (
-                <li key={r.botId || r.missionId} style={{ display: "grid", gridTemplateColumns: "minmax(140px, 220px) 1fr auto", alignItems: "center", gap: "12px", fontSize: "14px" }}>
+                <li key={r.botId || r.missionId} style={{ display: "grid", gridTemplateColumns: "minmax(140px, 220px) 1fr auto", alignItems: "center", gap: "12px", fontSize: "var(--t-ui)" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
                     {bot ? <Avatar bot={bot} size={22} /> : null}
                     {m && r.exists ? <a href={roomUrl(m)} style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>{name}</a>
@@ -99,12 +99,12 @@ export default function UsageHistory() {
                   <span aria-hidden="true" style={{ height: "8px", borderRadius: "4px", background: "#F4F4F0", overflow: "hidden" }}>
                     <span style={{ display: "block", width: Math.max(2, (r.tokens / top) * 100) + "%", height: "100%", background: "#12131A", borderRadius: "4px" }} />
                   </span>
-                  <span style={{ font: "500 12px/1 'Geist Mono', monospace", color: "#5C606C", whiteSpace: "nowrap" }}>{`${formatTokens(r.tokens)} · ${pct} %`}</span>
+                  <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#5C606C", whiteSpace: "nowrap" }}>{`${formatTokens(r.tokens)} · ${pct} %`}</span>
                 </li>
               );
             })}
           </ul>
-          {by === "sala" && data.rooms.length >= 12 ? <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{"Las 12 que más han usado. El CSV las tiene todas."}</span> : null}
+          {by === "sala" && data.rooms.length >= 12 ? <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{"Las 12 que más han usado. El CSV las tiene todas."}</span> : null}
         </div>
       ) : null}
     </Card>

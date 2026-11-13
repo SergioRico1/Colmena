@@ -35,7 +35,7 @@ function WaitNote({ approval, bots }) {
       : null;
   if (!text) return null;
   return (
-    <p style={{ margin: "0", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", lineHeight: "1.45", color: "#555A68" }}>
+    <p style={{ margin: "0", display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#555A68" }}>
       <Clock size={14} aria-hidden="true" style={{ flex: "none" }} />
       <span>{text}</span>
     </p>
@@ -69,7 +69,7 @@ function QuestionCard({ approval, text, bots, variant = "room", id }) {
     <div ref={keys} id={id} style={answered ? { ...card, boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)" } : card}>
       {/[*_`#[\n]/.test(question)
         ? <Markdown text={question} size={chat ? 16 : 15} mentions={(bots || []).map((b) => b.name)} />
-        : <p style={{ margin: "0", fontSize: chat ? "16px" : "15px", lineHeight: "1.55" }}><BoldNames text={question} bots={bots} /></p>}
+        : <p style={{ margin: "0", fontSize: chat ? "var(--t-read)" : "var(--t-body)", lineHeight: "1.55" }}><BoldNames text={question} bots={bots} /></p>}
       {answered ? (
         // Closed: its final state (answered, left unanswered, cancelled, expired), no dead buttons.
         <>
@@ -85,8 +85,8 @@ function QuestionCard({ approval, text, bots, variant = "room", id }) {
             const helperBot = chat && primary ? mentioned(o.label) : null;
             // Colmena 2.0 pills: the recommended option in ink, the rest on a soft surface.
             const style = primary
-              ? { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 20px 0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }
-              : { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 18px 0 12px", background: "#F6F6F3", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" };
+              ? { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 20px 0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }
+              : { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 18px 0 12px", background: "#F6F6F3", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" };
             return (
               <button key={o.id || i} type="button" className="rm-focus" disabled={busy || !pending} aria-busy={busy ? "true" : undefined} aria-keyshortcuts={letterOf(i) || undefined} onClick={() => answer(o)} style={style}>
                 {letterOf(i) ? <span aria-hidden="true" style={letterStyle(primary)}>{letterOf(i)}</span> : null}
@@ -98,12 +98,12 @@ function QuestionCard({ approval, text, bots, variant = "room", id }) {
         </div>
       ) : !approval ? (
         // A question message whose request is gone (an old chat): nothing to answer any more.
-        <span style={{ alignSelf: "flex-start", fontSize: "13px", color: "#6B6F7A" }}>{"Ya no espera respuesta"}</span>
+        <span style={{ alignSelf: "flex-start", fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{"Ya no espera respuesta"}</span>
       ) : null}
       {pending && !(approval.questions?.length > 1) ? <QuestionReply approval={approval} /> : null}
       {pending ? <WaitNote approval={approval} bots={bots} /> : null}
       {chat && helper && !answered ? (
-        <p style={{ margin: "0", fontSize: "13px", color: "#555A68" }}>{`${helper.name} contestará aquí mismo. No hace falta crear una sala.`}</p>
+        <p style={{ margin: "0", fontSize: "var(--t-meta)", color: "#555A68" }}>{`${helper.name} contestará aquí mismo. No hace falta crear una sala.`}</p>
       ) : null}
       <ApprovalConflict error={error} conflict={conflict} />
     </div>

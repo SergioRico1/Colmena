@@ -99,8 +99,8 @@ export function DownReasons({ current = null, onSave, onRemove, onClose, style }
       onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void save(); } }}
       style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", left: "0", width: "min(340px, 86vw)", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "14px", boxShadow: "0 14px 34px rgba(18,19,26,.16)", textAlign: "left", ...popIn("top left"), ...style }}>
       <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        <strong style={{ fontSize: "14px", fontWeight: 600, color: "#12131A" }}>{current?.reasons?.length || current?.note ? "Cambiar por qué no sirve" : "¿Qué ha fallado?"}</strong>
-        <span style={{ fontSize: "12.5px", lineHeight: 1.4, color: "#555A68" }}>Elige lo que aplique. Sirve para que aprenda; puedes cambiarlo luego.</span>
+        <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "#12131A" }}>{current?.reasons?.length || current?.note ? "Cambiar por qué no sirve" : "¿Qué ha fallado?"}</strong>
+        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.4, color: "#555A68" }}>Elige lo que aplique. Sirve para que aprenda; puedes cambiarlo luego.</span>
       </span>
       <div role="group" aria-label="Motivos" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {DOWN_REASONS.map(([code, label], i) => {
@@ -114,16 +114,16 @@ export function DownReasons({ current = null, onSave, onRemove, onClose, style }
         })}
       </div>
       <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        <span style={{ fontSize: "12.5px", fontWeight: 500, color: "#4A4D57" }}>Una nota <span style={{ fontWeight: 400, color: "#5C606C" }}>(opcional)</span></span>
+        <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: "#4A4D57" }}>Una nota <span style={{ fontWeight: 400, color: "#5C606C" }}>(opcional)</span></span>
         <textarea className="c-quiet" rows="2" value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="Por ejemplo: la cifra de marzo es de febrero"
-          style={{ padding: "8px 10px", border: "1px solid #DCE0E8", borderRadius: "10px", resize: "vertical", font: "inherit", fontSize: "14px", lineHeight: 1.45, color: "#12131A" }} />
+          style={{ padding: "8px 10px", border: "1px solid #DCE0E8", borderRadius: "10px", resize: "vertical", font: "inherit", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#12131A" }} />
       </label>
-      {error ? <span role="alert" style={{ fontSize: "12.5px", color: "#B4232A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4232A" }}>{error}</span> : null}
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {onRemove ? <button type="button" className="rm-focus" aria-label="Quitar «No me sirve»" title="Quitar «No me sirve»" onClick={() => { onRemove(); onClose(); }} style={{ height: "32px", padding: "0 8px", border: 0, borderRadius: "8px", background: "transparent", color: "#4A4D57", fontSize: "13px", whiteSpace: "nowrap", cursor: "pointer" }}>Quitar</button> : null}
+        {onRemove ? <button type="button" className="rm-focus" aria-label="Quitar «No me sirve»" title="Quitar «No me sirve»" onClick={() => { onRemove(); onClose(); }} style={{ height: "32px", padding: "0 8px", border: 0, borderRadius: "8px", background: "transparent", color: "#4A4D57", fontSize: "var(--t-meta)", whiteSpace: "nowrap", cursor: "pointer" }}>Quitar</button> : null}
         <span style={{ flex: "1" }} />
-        <button type="button" className="rm-focus" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: "1px solid #DCE0E8", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13px", fontWeight: 500, whiteSpace: "nowrap", cursor: "pointer" }}>Ahora no</button>
-        <button type="button" className="rm-focus" onClick={save} disabled={busy} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", cursor: busy ? "wait" : "pointer" }}>Guardar</button>
+        <button type="button" className="rm-focus" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: "1px solid #DCE0E8", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap", cursor: "pointer" }}>Ahora no</button>
+        <button type="button" className="rm-focus" onClick={save} disabled={busy} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", cursor: busy ? "wait" : "pointer" }}>Guardar</button>
       </div>
     </div>
   );
@@ -146,7 +146,7 @@ function grouped(list, bots) {
 const chip = (pressed) => ({
   display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 8px",
   background: pressed ? "#E7EEFF" : "#EEF0F4", border: "1px solid " + (pressed ? "#1F4FD1" : "#EEF0F4"),
-  borderRadius: "13px", cursor: "pointer", fontSize: "13px", lineHeight: "1", color: pressed ? "#1F4FD1" : "#2A2E38",
+  borderRadius: "13px", cursor: "pointer", fontSize: "var(--t-meta)", lineHeight: "1", color: pressed ? "#1F4FD1" : "#2A2E38",
 });
 
 /** Quick palette (arrow keys move, Escape closes) and «…» for any emoji. */
@@ -182,15 +182,15 @@ export function ReactionPicker({ mine = [], onPick, onClose, style }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "240px", padding: "4px" }}>
           <input ref={input} value={value} onChange={(e) => typed(e.target.value)} aria-label="Cualquier emoji" placeholder="Escribe o pega un emoji"
             onKeyDown={(e) => { if (e.key === "Backspace" && !value) setOther(false); }}
-            style={{ height: "36px", padding: "0 10px", border: "1px solid #DCE0E8", borderRadius: "8px", fontSize: "15px", font: "inherit" }} />
-          <span style={{ fontSize: "12px", color: "#555A68" }}>{value && !isEmoji(value) ? "Solo un emoji." : "Pulsa Windows + . para abrir los emojis del sistema."}</span>
+            style={{ height: "36px", padding: "0 10px", border: "1px solid #DCE0E8", borderRadius: "8px", fontSize: "var(--t-body)", font: "inherit" }} />
+          <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{value && !isEmoji(value) ? "Solo un emoji." : "Pulsa Windows + . para abrir los emojis del sistema."}</span>
         </div>
       ) : (
         <div role="toolbar" aria-label="Reacciones rápidas" style={{ display: "flex", gap: "2px" }}>
           {QUICK.map((emoji, i) => (
             <button key={emoji} ref={i === 0 ? first : null} data-pick type="button" className="rm-focus react-pick" onClick={() => pick(emoji)}
               aria-pressed={mine.includes(emoji) ? "true" : "false"} aria-label={"Reaccionar con " + emoji}
-              style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", background: mine.includes(emoji) ? "#E7EEFF" : "transparent", border: "0", borderRadius: "8px", cursor: "pointer", fontSize: "19px" }}>
+              style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", background: mine.includes(emoji) ? "#E7EEFF" : "transparent", border: "0", borderRadius: "8px", cursor: "pointer", fontSize: "var(--t-title)" }}>
               {emoji}
             </button>
           ))}
@@ -213,7 +213,7 @@ export function ReactTools({ list, toggle }) {
       {QUICK.slice(0, 3).map((emoji) => (
         <button key={emoji} type="button" className="rm-focus react-pick" onClick={() => toggle(emoji)} aria-pressed={mine.includes(emoji) ? "true" : "false"}
           aria-label={"Reaccionar con " + emoji} title={"Reaccionar con " + emoji}
-          style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: mine.includes(emoji) ? "#E7EEFF" : "transparent", border: "0", borderRadius: "8px", cursor: "pointer", fontSize: "16px" }}>
+          style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: mine.includes(emoji) ? "#E7EEFF" : "transparent", border: "0", borderRadius: "8px", cursor: "pointer", fontSize: "var(--t-read)" }}>
           {emoji}
         </button>
       ))}
@@ -249,7 +249,7 @@ export function ReactionRow({ list, toggle, bots, id = "", explain = null }) {
         return (
           <button key={g.emoji} type="button" onClick={() => toggle(g.emoji)} aria-pressed={g.mine ? "true" : "false"}
             aria-label={label + (g.mine ? ". Pulsa para quitar la tuya." : ". Pulsa para sumarte.")} title={label} className={"rm-focus react-chip" + (fresh(g.emoji) ? " c-pop" : "")} style={chip(g.mine)}>
-            <span style={{ fontSize: "15px" }} aria-hidden="true">{g.emoji}</span>
+            <span style={{ fontSize: "var(--t-body)" }} aria-hidden="true">{g.emoji}</span>
             <span key={g.count} className="react-count" style={{ fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{g.count}</span>
           </button>
         );
@@ -264,7 +264,7 @@ export function ReactionRow({ list, toggle, bots, id = "", explain = null }) {
       {down ? (
         <span style={{ position: "relative", display: "flex" }}>
           <button type="button" className="rm-focus" onClick={() => setWhy((v) => !v)} aria-expanded={why ? "true" : "false"} aria-haspopup="dialog"
-            title={down.note || undefined} style={{ height: "26px", padding: "0 8px", border: 0, borderRadius: "13px", background: "transparent", color: "#4A4F5C", fontSize: "12.5px", cursor: "pointer" }}>
+            title={down.note || undefined} style={{ height: "26px", padding: "0 8px", border: 0, borderRadius: "13px", background: "transparent", color: "#4A4F5C", fontSize: "var(--t-meta)", cursor: "pointer" }}>
             {downSummary(down) ? "No sirve: " + downSummary(down) : "¿Por qué no sirve?"}
           </button>
           {why ? <DownReasons current={down} onSave={explain} onRemove={() => toggle(DOWN)} onClose={() => setWhy(false)} /> : null}

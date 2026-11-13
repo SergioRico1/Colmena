@@ -77,11 +77,11 @@ export default function Rail({ active = "hoy" }) {
         return (
           <a key={p.id} href={p.href} aria-current={current ? "page" : undefined} style={{ ...piece, ...(current ? on : off), WebkitAppRegion: "no-drag" }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{p.icon}</svg>
-            <span style={{ fontSize: "11px", lineHeight: "1.15", fontWeight: current ? "600" : "500", textAlign: "center", letterSpacing: "0.01em" }}>
+            <span style={{ fontSize: "var(--t-micro)", lineHeight: "1.15", fontWeight: current ? "600" : "500", textAlign: "center", letterSpacing: "0.01em" }}>
               {p.label.map((l, i) => <span key={i}>{i ? <br /> : null}{l}</span>)}
             </span>
             {p.id === "hoy" && needs > 0 ? (
-              <span aria-label={needs === 1 ? "1 cosa te espera" : `${needs} cosas te esperan`} style={{ position: "absolute", top: "2px", right: "8px", minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "9px", background: "#FFC93C", color: "#12131A", font: "600 10px/18px 'Geist', sans-serif", textAlign: "center", boxShadow: "0 0 0 2px #EBEBE6" }}>{needs}</span>
+              <span aria-label={needs === 1 ? "1 cosa te espera" : `${needs} cosas te esperan`} style={{ position: "absolute", top: "2px", right: "8px", minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "9px", background: "#FFC93C", color: "#12131A", font: "600 var(--t-micro)/18px 'Geist', sans-serif", textAlign: "center", boxShadow: "0 0 0 2px #EBEBE6" }}>{needs}</span>
             ) : null}
             {p.id === "conversaciones" && mentioned && !current ? (
               <span aria-label="Te han escrito" style={{ position: "absolute", top: "6px", right: "16px", width: "9px", height: "9px", borderRadius: "50%", background: "#12131A", boxShadow: "0 0 0 2px #EBEBE6" }} />
@@ -91,8 +91,8 @@ export default function Rail({ active = "hoy" }) {
       })}
       <span style={{ flex: "1" }} />
       <a href="/ajustes" aria-label="Tu cuenta y ajustes" aria-current={active === "ajustes" ? "page" : undefined} style={{ width: "72px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px", padding: "8px 0 2px", borderRadius: "16px", color: "#4A4D57", WebkitAppRegion: "no-drag", ...(active === "ajustes" ? on : {}) }}>
-        <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 11px/1 'Geist', sans-serif" }}>{"TÚ"}</span>
-        <span style={{ fontSize: "11px", fontWeight: "500" }}>{"Ajustes"}</span>
+        <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 var(--t-micro)/1 'Geist', sans-serif" }}>{"TÚ"}</span>
+        <span style={{ fontSize: "var(--t-micro)", fontWeight: "500" }}>{"Ajustes"}</span>
       </a>
     </nav>
   );

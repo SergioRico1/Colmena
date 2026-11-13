@@ -72,9 +72,9 @@ export function StuckBand({ mission, bots }) {
   const minutes = Math.max(2, Math.round((now - Date.parse(quiet.since)) / 60000));
   const doing = quiet.verb ? quiet.verb + (quiet.detail ? " · " + quiet.detail : "") : null;
   const control = (action) => act(() => post(`/missions/${mission.id}/control`, { action }));
-  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px", borderRadius: "9px", cursor: "pointer", fontWeight: "600", fontSize: "13px" };
+  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px", borderRadius: "9px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
   return (
-    <div role="status" className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE", fontSize: "14px" }}>
+    <div role="status" className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE", fontSize: "var(--t-ui)" }}>
       {bot?.id === "atlas" ? <BotAvatar bot={bot} size={26} mood="plano" /> : <Hourglass size={18} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#4A4F5C" }} />}
       <span style={{ flex: "1 1 280px" }}>
         <strong>{(bot ? bot.name : "El equipo") + " lleva " + minutes + " min sin avanzar."}</strong>
@@ -122,13 +122,13 @@ export function BlockerBand({ mission, pending, bots }) {
       }
     : undefined;
   return (
-    <a href={href} onClick={onClick} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "#FFF4D1", borderBottom: "1px solid #F2D27A", fontSize: "14px" }}>
+    <a href={href} onClick={onClick} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "#FFF4D1", borderBottom: "1px solid #F2D27A", fontSize: "var(--t-ui)" }}>
       <BotAvatar bot={bot} size={22} mood="duda" />
       <span style={{ flex: "1 1 280px" }}>
         <strong>{`${bot.name} te espera:`}</strong>
         {" " + (text || "") + more}
       </span>
-      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "999px", fontWeight: "600", fontSize: "13px" }}>{"Responder"}</span>
+      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "999px", fontWeight: "600", fontSize: "var(--t-meta)" }}>{"Responder"}</span>
     </a>
   );
 }
@@ -147,7 +147,7 @@ function toLabel(to, bots) {
 /** How a row of the sala travelled to the people of a shared room: «Enviando…», «Visto por …». */
 function TravelLine({ peer }) {
   if (!peer) return null;
-  const style = { fontSize: "12.5px", lineHeight: "1.3", color: "#5C606C" };
+  const style = { fontSize: "var(--t-meta)", lineHeight: "1.3", color: "#5C606C" };
   if (peer.deleted) return <span style={style}>{"Borrado para todos"}</span>;
   if (peer.status === "sending") return <span role="status" style={style}>{"Enviando…"}</span>;
   if (peer.status === "failed") return <span role="alert" style={{ ...style, color: "#B4372A" }}>{"No ha salido hacia los demás. Colmena lo reintenta sola."}</span>;
@@ -215,7 +215,7 @@ function RepliesLink({ replies, bots, onOpen, pressed }) {
   const who = [...new Set(replies.map((r) => (r.role === "user" ? "user" : r.botId || "atlas")))].slice(0, 3);
   return (
     <button type="button" className="rm-focus" onClick={onOpen} aria-pressed={pressed ? "true" : "false"}
-      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "32px", padding: "2px 10px 2px 4px", background: pressed ? "#EEF0F4" : "transparent", border: "1px solid " + (pressed ? "#DCE0E8" : "transparent"), borderRadius: "10px", cursor: "pointer", fontSize: "13px" }}>
+      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "32px", padding: "2px 10px 2px 4px", background: pressed ? "#EEF0F4" : "transparent", border: "1px solid " + (pressed ? "#DCE0E8" : "transparent"), borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)" }}>
       <span style={{ display: "flex" }}>{who.map((w) => (w === "user" ? <UserAvatar key="u" size={22} /> : <BotAvatar key={w} bot={findBot(bots, w)} size={22} />))}</span>
       <strong style={{ color: "#1F4FD1" }}>{replies.length === 1 ? "1 respuesta" : replies.length + " respuestas"}</strong>
       {last?.at ? <span style={{ color: "#555A68" }}>{"última a las " + time(last.at)}</span> : null}
@@ -225,7 +225,7 @@ function RepliesLink({ replies, bots, onOpen, pressed }) {
 
 export function DaySeparator({ label }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 12px", fontSize: "12px", fontWeight: "600", color: "#555A68" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 12px", fontSize: "var(--t-caption)", fontWeight: "600", color: "#555A68" }}>
       <span style={{ flex: "1", height: "1px", background: "#E6E8EE" }} />
       <span style={{ padding: "4px 12px", border: "1px solid #E6E8EE", borderRadius: "12px" }}>{label}</span>
       <span style={{ flex: "1", height: "1px", background: "#E6E8EE" }} />
@@ -253,14 +253,14 @@ function useResend(message) {
 /** «No se envió · Reintentar · Descartar» under a message that did not reach the room. */
 export function FailedLine({ error, onRetry, onDiscard }) {
   return (
-    <span role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "13px", color: "#B4372A" }}>
+    <span role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-meta)", color: "#B4372A" }}>
       <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
       <strong>{"No se envió"}</strong>
       <span style={{ color: "#4A4F5C" }}>{error}</span>
-      <button type="button" className="rm-focus" onClick={onRetry} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 8px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "7px", cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>
+      <button type="button" className="rm-focus" onClick={onRetry} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 8px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "7px", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}>
         <RotateCcw size={12} strokeWidth={2.4} aria-hidden="true" />Reintentar
       </button>
-      <button type="button" className="rm-focus" onClick={onDiscard} style={{ height: "26px", padding: "0 8px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "7px", cursor: "pointer", fontSize: "12px", fontWeight: "600", color: "#12131A" }}>Descartar</button>
+      <button type="button" className="rm-focus" onClick={onDiscard} style={{ height: "26px", padding: "0 8px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "7px", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: "#12131A" }}>Descartar</button>
     </span>
   );
 }
@@ -271,7 +271,7 @@ export function FailedLine({ error, onRetry, onDiscard }) {
  * responde…» while it decides.
  */
 function RoutedLine({ message, bots }) {
-  const style = { fontSize: "12.5px", lineHeight: "1.3", color: "#6B6F7A" };
+  const style = { fontSize: "var(--t-meta)", lineHeight: "1.3", color: "#6B6F7A" };
   if (message.routing) return <span role="status" style={style}>{"Eligiendo quién responde…"}</span>;
   const routed = message.routed;
   const who = toLabel(routed?.to, bots);
@@ -291,7 +291,7 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
   return (
     <MessageRow mine={mine} messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<AuthorAvatar author={author} size={40} />} continued={continued} at={message.at} padding={padding} actions={<><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} />{mine ? <ForkButton message={message} /> : null}</>}>
       {continued ? null : <AuthorHead author={author} at={message.at} />}
-      {mine ? <UserText text={message.text} messageId={message.optimistic ? null : message.id} /> : <p style={{ margin: 0, fontSize: "16px", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{message.text}</p>}
+      {mine ? <UserText text={message.text} messageId={message.optimistic ? null : message.id} /> : <p style={{ margin: 0, fontSize: "var(--t-read)", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{message.text}</p>}
       <TravelLine peer={message.peer} />
       <RefChips refs={message.refs} align="flex-start" />
       <RoutedLine message={message} bots={bots} />
@@ -333,16 +333,16 @@ function PlanPhases({ assignments, bots, pending }) {
   return (
     <div style={{ maxWidth: "640px", background: "#FFFFFF", border: "0", borderRadius: "24px", boxShadow: pending ? "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)", overflow: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "12px 16px", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE" }}>
-        <span style={{ font: "500 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>{`Plan del equipo · ${assignments.length} ${assignments.length === 1 ? "tarea" : "tareas"}`}</span>
-        <span style={{ fontSize: "12px", color: "#555A68" }}>{phases.length > 1 ? `${phases.length} fases, en orden` : "Todos a la vez"}</span>
+        <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>{`Plan del equipo · ${assignments.length} ${assignments.length === 1 ? "tarea" : "tareas"}`}</span>
+        <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{phases.length > 1 ? `${phases.length} fases, en orden` : "Todos a la vez"}</span>
       </div>
       <ol style={{ margin: "0", padding: "6px 16px 10px", listStyle: "none", display: "flex", flexDirection: "column" }}>
         {phases.map((phase, p) => {
           const waitFor = [...new Set(phase.flatMap((a) => a.deps))].map((b) => findBot(bots, b).name);
           return (
             <li key={p} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "10px 0", borderTop: p ? "1px solid #E6E8EE" : "0" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontWeight: "600", color: "#4A4F5C" }}>
-                <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 11px/1 'Geist Mono', monospace" }}>{p + 1}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#4A4F5C" }}>
+                <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{p + 1}</span>
                 {waitFor.length ? `Cuando ${waitFor.length > 1 ? "terminen" : "termine"} ${names(waitFor)}` : "Empieza ya"}
               </span>
               {phase.map((a) => {
@@ -355,22 +355,22 @@ function PlanPhases({ assignments, bots, pending }) {
                   <div key={a.index} style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: "10px", padding: "8px 0 4px 32px" }}>
                     <BotAvatar bot={bot} size={28} />
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>
-                      <span style={{ fontSize: "15px", lineHeight: "1.4" }}><strong>{bot.name}</strong><span style={{ color: "#555A68" }}>{" · "}</span><span style={{ fontWeight: "600" }}>{title}</span></span>
+                      <span style={{ fontSize: "var(--t-body)", lineHeight: "1.4" }}><strong>{bot.name}</strong><span style={{ color: "#555A68" }}>{" · "}</span><span style={{ fontWeight: "600" }}>{title}</span></span>
                       {a.deliverable ? (
-                        <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "13px", lineHeight: "1.45", color: "#4A4F5C" }}>
+                        <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
                           <FileText size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
                           <span><strong style={{ fontWeight: "600", color: "#2B2D36" }}>{"Entrega: "}</strong>{plain(a.deliverable)}</span>
                         </span>
                       ) : null}
                       {a.avoid ? (
-                        <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "13px", lineHeight: "1.45", color: "#4A4F5C" }}>
+                        <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
                           <Ban size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
                           <span><strong style={{ fontWeight: "600", color: "#2B2D36" }}>{"No hace: "}</strong>{plain(a.avoid)}</span>
                         </span>
                       ) : null}
                       {showDetail ? (
                         <>
-                          <button type="button" className="rm-focus c-hit" aria-expanded={isOpen ? "true" : "false"} onClick={() => setOpen({ ...open, [a.index]: !isOpen })} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "4px", padding: "2px 0", background: "transparent", border: "0", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>
+                          <button type="button" className="rm-focus c-hit" aria-expanded={isOpen ? "true" : "false"} onClick={() => setOpen({ ...open, [a.index]: !isOpen })} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "4px", padding: "2px 0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>
                             {isOpen ? "Ocultar detalle" : "Ver detalle"}
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ transform: isOpen ? "rotate(180deg)" : "none" }}><path d="m6 9 6 6 6-6" /></svg>
                           </button>
@@ -413,12 +413,12 @@ function PlanBlock({ mission, message, bots }) {
       setNote("");
     });
   const control = (action) => act(() => post(`/missions/${mission.id}/control`, { action }));
-  const pill = { minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 14px", background: "rgba(18,19,26,.06)", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "13px" };
+  const pill = { minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 14px", background: "rgba(18,19,26,.06)", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
   const changeForm = (onSend, placeholder) => (
     <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) onSend(); }} style={{ maxWidth: "560px" }}>
       <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "12px" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Qué cambiarías del plan"}</span>
-        <input className="c-bare" type="text" autoFocus value={note} onChange={(e) => setNote(e.target.value)} placeholder={placeholder} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "14px" }} />
+        <input className="c-bare" type="text" autoFocus value={note} onChange={(e) => setNote(e.target.value)} placeholder={placeholder} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
         <button type="submit" aria-label="Enviar cambios" disabled={busy || !note.trim()} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "9px", cursor: "pointer" }}>
           <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />
         </button>
@@ -431,7 +431,7 @@ function PlanBlock({ mission, message, bots }) {
       {live ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "36px", padding: "0 4px 0 2px", fontSize: "13px", color: "#4A4F5C" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "36px", padding: "0 4px 0 2px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
               <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: paused ? "#A9AEBB" : "#0B8A5F", animation: paused ? "none" : "breathe 1.4s ease-in-out infinite" }} />
               {paused ? "En pausa" : "En marcha · puedes pararlo o cambiarlo"}
             </span>
@@ -448,15 +448,15 @@ function PlanBlock({ mission, message, bots }) {
           <ErrorLine>{error}</ErrorLine>
         </div>
       ) : plan.approved && plan.auto ? null : plan.approved ? (
-        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#E1F4EC", border: "1px solid #9ED4BC", borderRadius: "15px", fontSize: "13px", fontWeight: "600", color: "#0B5A3E" }}>
+        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#E1F4EC", border: "1px solid #9ED4BC", borderRadius: "15px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#0B5A3E" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
           {"Aprobado por ti"}
         </span>
       ) : pendingPlan ? (
         <div id="plan" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }}>{"Aprobar plan"}</button>
-            <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={{ minHeight: "46px", padding: "0 20px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}>{"Pedir cambios"}</button>
+            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>{"Aprobar plan"}</button>
+            <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={{ minHeight: "46px", padding: "0 20px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{"Pedir cambios"}</button>
           </div>
           {changing ? changeForm(() => decide("changes"), "¿Qué cambiarías del reparto?") : null}
           <ErrorLine>{error}</ErrorLine>
@@ -480,12 +480,12 @@ export function ThreadSummary({ thread, summary, bots, pressed, onClick }) {
     <button type="button" className="rm-focus" onClick={onClick} aria-pressed={pressed ? "true" : "false"} style={{ alignSelf: "stretch", maxWidth: "560px", display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", background: pressed ? "#E7EEFF" : "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", cursor: "pointer", textAlign: "left" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
         <span role="img" aria-label={botsAlt(people.map((id) => findBot(bots, id)))} style={{ display: "flex" }}>
-          {people.map((id, i) => <BotAvatar key={id} bot={findBot(bots, id)} size={22} ring={i > 0} style={i > 0 ? { marginLeft: "-4px", font: "800 10px/1 'Bricolage Grotesque', sans-serif" } : { font: "800 10px/1 'Bricolage Grotesque', sans-serif" }} />)}
+          {people.map((id, i) => <BotAvatar key={id} bot={findBot(bots, id)} size={22} ring={i > 0} style={i > 0 ? { marginLeft: "-4px", font: "800 var(--t-micro)/1 'Bricolage Grotesque', sans-serif" } : { font: "800 var(--t-micro)/1 'Bricolage Grotesque', sans-serif" }} />)}
         </span>
-        <strong style={{ fontSize: "14px", color: "#1F4FD1" }}>{`${thread.length} ${thread.length === 1 ? "respuesta" : "respuestas"} entre bots`}</strong>
-        {lastAgo ? <span style={{ fontSize: "13px", color: "#555A68" }}>{lastAgo === "ahora" ? "Última ahora mismo" : `Última ${lastAgo}`}</span> : null}
+        <strong style={{ fontSize: "var(--t-ui)", color: "#1F4FD1" }}>{`${thread.length} ${thread.length === 1 ? "respuesta" : "respuestas"} entre bots`}</strong>
+        {lastAgo ? <span style={{ fontSize: "var(--t-meta)", color: "#555A68" }}>{lastAgo === "ahora" ? "Última ahora mismo" : `Última ${lastAgo}`}</span> : null}
       </span>
-      <span style={{ fontSize: "14px", lineHeight: "1.45", color: "#2B2D36" }}>{plain(summary || last.text)}</span>
+      <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#2B2D36" }}>{plain(summary || last.text)}</span>
     </button>
   );
 }
@@ -552,8 +552,8 @@ function LiveTurnCard({ step, bot }) {
     return (
       <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
         <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
-          <strong style={{ fontSize: "14px", fontWeight: 600 }}>{bot.name}</strong>
-          <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[bot.role, "escribiendo…"].filter(Boolean).join(" · ")}</span>
+          <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{bot.name}</strong>
+          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{[bot.role, "escribiendo…"].filter(Boolean).join(" · ")}</span>
         </div>
         <div><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div>
       </MessageRow>
@@ -562,18 +562,18 @@ function LiveTurnCard({ step, bot }) {
   const shown = log.slice(-LIVE_SHOWN);
   const fresh = freshness("live:" + step.id, shown.flatMap((e, i) => [(e.callId || i) + "", (e.callId || i) + ":" + e.status]));
   const earlier = log.length - shown.length;
-  const row = { display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", lineHeight: "1.45", color: "#2B2D36" };
+  const row = { display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#2B2D36" };
   const spin = <WorkingDots style={{ flex: "none", marginTop: "4px", color: "#12131A" }} />;
   return (
     <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
-        <strong style={{ fontSize: "14px", fontWeight: 600 }}>{bot.name}</strong>
-        <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[bot.role, "trabajando…"].filter(Boolean).join(" · ")}</span>
+        <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{bot.name}</strong>
+        <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{[bot.role, "trabajando…"].filter(Boolean).join(" · ")}</span>
       </div>
       <div role="group" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "#F7F8FA", border: "1px solid #E6E8EE", borderRadius: "12px", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
-        {step.kind === "work" && step.title ? <span style={{ fontSize: "13px", fontWeight: "600", color: "#12131A" }}>{plain(step.title).replace(new RegExp("^" + bot.name + ": "), "")}</span> : null}
-        {earlier > 0 ? <span style={{ fontSize: "12px", color: "#555A68" }}>{earlier === 1 ? "1 paso antes" : earlier + " pasos antes"}</span> : null}
-        {note ? <span key={note} className="c-phrase" style={{ fontSize: "13px", lineHeight: "1.45", color: step.narration?.text ? "#12131A" : "#6B7080", fontStyle: step.narration?.text ? "normal" : "italic" }}>{note}</span> : null}
+        {step.kind === "work" && step.title ? <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A" }}>{plain(step.title).replace(new RegExp("^" + bot.name + ": "), "")}</span> : null}
+        {earlier > 0 ? <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{earlier === 1 ? "1 paso antes" : earlier + " pasos antes"}</span> : null}
+        {note ? <span key={note} className="c-phrase" style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: step.narration?.text ? "#12131A" : "#6B7080", fontStyle: step.narration?.text ? "normal" : "italic" }}>{note}</span> : null}
         {shown.map((e, i) => (
           <span key={e.callId || i} className={fresh((e.callId || i) + "") ? "c-enter" : undefined} style={row}>
             {e.status === "running" ? spin : (
@@ -603,10 +603,10 @@ function LearnedLine({ message, bot, entering = false }) {
   const Icon = message.learned?.type === "skill" ? Wrench : Brain;
   const text = undone?.text || message.text;
   const reasons = message.learned?.why || [];
-  const link = { display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600" };
+  const link = { display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" };
   return (
     <div className={entering ? "c-enter c-flash" : undefined}>
-    <p style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "13px", lineHeight: "1.45", color: "#4A4F5C" }}>
+    <p style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
       <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#555A68" }} />
       {bot ? <strong style={{ color: "#12131A" }}>{bot.name}</strong> : null}
       <span style={done ? { textDecoration: "line-through", color: "#555A68" } : null}>{text.replace(/^Deshecho: /, "")}</span>
@@ -618,14 +618,14 @@ function LearnedLine({ message, bot, entering = false }) {
       ) : null}
       {done ? <span style={{ color: "#555A68" }}>· deshecho</span> : (
         <button type="button" className="rm-focus" disabled={busy} onClick={() => act(async () => setUndone(await post("/messages/" + message.id + "/undo")))}
-          style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>
+          style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>
           <Undo2 size={13} strokeWidth={2.4} aria-hidden="true" />Deshacer
         </button>
       )}
       {error ? <span style={{ color: "#B4372A" }}>{error}</span> : null}
     </p>
     {why ? (
-      <ul style={{ margin: "0 0 6px 52px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "12px", background: "rgba(18,19,26,.04)", fontSize: "13px", lineHeight: "1.5", color: "#3D404A", animation: "rise .25s ease-out" }}>
+      <ul style={{ margin: "0 0 6px 52px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "12px", background: "rgba(18,19,26,.04)", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#3D404A", animation: "rise .25s ease-out" }}>
         {reasons.map((w, i) => (
           <li key={i}><span style={{ color: "#6B6F7A" }}>{(WHY_LABEL[w.type] || "Visto") + ": "}</span>{"«" + w.quote + "»"}</li>
         ))}
@@ -639,7 +639,7 @@ function LearnedLine({ message, bot, entering = false }) {
 function GuardLine({ message, entering = false }) {
   const Icon = message.kind === "fork" ? GitBranch : CirclePause;
   return (
-    <p role="status" className={entering ? "c-enter" : undefined} style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "13px", lineHeight: "1.45", color: "#4A4F5C" }}>
+    <p role="status" className={entering ? "c-enter" : undefined} style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
       <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px", color: "#555A68" }} />
       <span>{message.text}{message.at ? <span style={{ color: "#555A68" }}>{" · " + time(message.at)}</span> : null}</span>
     </p>
@@ -655,7 +655,7 @@ function ActivityLine({ run, bot }) {
     return bot && t.startsWith(bot.name + " ") ? t.slice(bot.name.length + 1) : t;
   };
   const last = run[run.length - 1];
-  const line = { margin: "0", padding: "4px 0 4px 52px", fontSize: "13px", lineHeight: "1.45", color: "#4A4F5C" };
+  const line = { margin: "0", padding: "4px 0 4px 52px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" };
   if (run.length === 1) {
     return (
       <p style={{ ...line, padding: "6px 0 6px 52px" }}>
@@ -673,10 +673,10 @@ function ActivityLine({ run, bot }) {
         {`hizo ${run.length} acciones · la última: ${text(last)}`}
         {last.at ? <span style={{ color: "#555A68" }}>{" · " + time(last.at)}</span> : null}
         {" "}
-        <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>{open ? "Ocultar" : `Ver las ${run.length}`}</button>
+        <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>{open ? "Ocultar" : `Ver las ${run.length}`}</button>
       </p>
       {open ? (
-        <ol style={{ margin: "4px 0 0", padding: "0 0 0 70px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "13px", color: "#4A4F5C" }}>
+        <ol style={{ margin: "4px 0 0", padding: "0 0 0 70px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
           {run.map((m, k) => <li key={m.id || k}>{text(m)}{m.at ? <span style={{ color: "#555A68" }}>{" · " + time(m.at)}</span> : null}<NoteLink link={m.link} /></li>)}
         </ol>
       ) : null}
@@ -823,7 +823,7 @@ export function NewBelow({ show, onClick }) {
   if (!show) return null;
   return (
     <button type="button" className="rm-focus c-new-below" onClick={onClick}
-      style={{ position: "absolute", left: "50%", top: "-46px", transform: "translateX(-50%)", zIndex: 4, display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "17px", boxShadow: "0 8px 20px -10px rgba(18,19,26,.6)", cursor: "pointer", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}>
+      style={{ position: "absolute", left: "50%", top: "-46px", transform: "translateX(-50%)", zIndex: 4, display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "17px", boxShadow: "0 8px 20px -10px rgba(18,19,26,.6)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" }}>
       <ArrowDown size={15} strokeWidth={2.4} aria-hidden="true" />{"Mensajes nuevos"}
     </button>
   );
@@ -840,7 +840,7 @@ export function Suggestions({ list, onPick }) {
       <Sparkles size={14} strokeWidth={2.2} aria-hidden="true" style={{ color: "#555A68" }} />
       {list.map((t, i) => (
         <button key={i} type="button" className="rm-focus" onClick={() => onPick(t)} title={i === 0 ? "Tab para usarla" : undefined}
-          style={{ height: "30px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "15px", cursor: "pointer", fontSize: "13px", color: "#2B2D36", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          style={{ height: "30px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "15px", cursor: "pointer", fontSize: "var(--t-meta)", color: "#2B2D36", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {t}
         </button>
       ))}
@@ -871,10 +871,10 @@ export function QueueModeHint({ mission }) {
     patch("/missions/" + mission.id, { queueMode: id }).catch(() => setLocal(null));
   };
   return (
-    <span ref={ref} style={{ position: "relative", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13px", color: "#4A4F5C" }}>
+    <span ref={ref} style={{ position: "relative", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
       {"Si escribes ahora, tu mensaje"}
       <button type="button" className="rm-focus" aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} title={current.detail}
-        style={{ display: "inline-flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", background: open ? "#EEF0F4" : "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#12131A" }}>
+        style={{ display: "inline-flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", background: open ? "#EEF0F4" : "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A" }}>
         {current.label}<ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" />
       </button>
       {open ? (
@@ -884,8 +884,8 @@ export function QueueModeHint({ mission }) {
               style={{ ...popoverItem, alignItems: "flex-start", background: o.id === current.id ? "#EEF0F4" : "transparent" }}>
               <span style={{ width: "16px", flex: "none", paddingTop: "2px" }}>{o.id === current.id ? <Check size={15} strokeWidth={2.4} aria-hidden="true" /> : null}</span>
               <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <strong style={{ fontSize: "14px", color: "#12131A" }}>{o.label[0].toUpperCase() + o.label.slice(1)}</strong>
-                <span style={{ fontSize: "13px", color: "#555A68", lineHeight: "1.4" }}>{o.detail}</span>
+                <strong style={{ fontSize: "var(--t-ui)", color: "#12131A" }}>{o.label[0].toUpperCase() + o.label.slice(1)}</strong>
+                <span style={{ fontSize: "var(--t-meta)", color: "#555A68", lineHeight: "1.4" }}>{o.detail}</span>
               </span>
             </button>
           ))}
@@ -1067,7 +1067,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
   if (variant === "live") {
     return (
       <form onSubmit={send} style={{ position: "sticky", bottom: "0", padding: "4px clamp(16px, 3vw, 28px) 20px", background: "#FFFFFF" }}>
-        <p style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#4A4F5C" }}>
+        <p style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
           <Dots name="dots" />
           {`${workingCount} ${workingCount === 1 ? "bot trabajando" : "bots trabajando"}`}
           <QueueModeHint mission={mission} />
@@ -1076,7 +1076,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           {mentions.menu}
           <label style={{ flex: "1", display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
-            <input className="c-bare" ref={inputRef} type="text" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "15px" }} />
+            <input className="c-bare" ref={inputRef} type="text" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />
           </label>
           <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} />
           <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer" }}>
@@ -1097,7 +1097,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
       <Suggestions list={suggestions} onPick={pickSuggestion} />
       {shared?.above || null}
       {typing || WORKING.includes(mission?.status) ? (
-        <div style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#5C606C", minHeight: "26px" }}>
+        <div style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#5C606C", minHeight: "26px" }}>
           {typing ? (
             <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
               {/* V2Sala: a bot at work is its own small shape, breathing (dots are for people typing). */}
@@ -1114,7 +1114,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
         {mentions.chips.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {mentions.chips.map((ch) => (
-              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "10px", background: "rgba(18,19,26,.06)", fontSize: "13px", fontWeight: 600 }}>
+              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "10px", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
                 {ch.icon}
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.label}</span>
                 <button type="button" onClick={() => mentions.removeRef(ch.key)} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
@@ -1127,7 +1127,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
         {chosen.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {chosenChips(chosen).map((ch) => (
-              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "30px", padding: "0 4px 0 12px", borderRadius: "999px", background: "rgba(18,19,26,.06)", fontSize: "13px", fontWeight: 600 }}>
+              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "30px", padding: "0 4px 0 12px", borderRadius: "999px", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
                 {ch.label}
                 <button type="button" onClick={() => setChosen((list) => list.filter((k) => k !== ch.key))} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
                   <X size={12} strokeWidth={2.6} aria-hidden="true" />
@@ -1144,11 +1144,11 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
         <label style={{ display: "flex", position: "relative", minWidth: 0 }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
           {/* «@Vera» as a pill while you write (MentionMirror behind the textarea). */}
-          {pills ? <MentionMirror ref={mirror} value={text} bots={bots} style={{ padding: "8px 0 4px", fontSize: "16px", lineHeight: "1.5" }} /> : null}
+          {pills ? <MentionMirror ref={mirror} value={text} bots={bots} style={{ padding: "8px 0 4px", fontSize: "var(--t-read)", lineHeight: "1.5" }} /> : null}
           <textarea className="c-bare" ref={inputRef} rows={tools ? 2 : 1} placeholder={placeholder || `Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} disabled={shared?.disabled || undefined} maxLength={shared ? 8000 : undefined}
             onInput={shared?.onTyping ? () => shared.onTyping() : undefined}
             onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
-            style={{ position: "relative", flex: "1", resize: "none", border: "0", fontSize: "16px", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
+            style={{ position: "relative", flex: "1", resize: "none", border: "0", fontSize: "var(--t-read)", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
         </label>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: tools ? "-8px" : 0 }}>
           {tools}
@@ -1156,19 +1156,19 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
             <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
           </button>
           <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={40} style={{ borderRadius: "50%", background: "rgba(18,19,26,.05)", color: "#3D404A" }} />
-          <button type="button" className="rm-focus" aria-label={shared ? "Mencionar a alguien" : "Mencionar a un bot"} title={shared ? "Mencionar a una persona o a un bot (@)" : "Mencionar a un bot (@)"} onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", font: "600 17px/1 'Geist', sans-serif", color: "#3D404A" }}>{"@"}</button>
-          <span style={{ flex: "1", textAlign: "right", fontSize: "12px", color: "#555A68", paddingRight: "4px" }}>
+          <button type="button" className="rm-focus" aria-label={shared ? "Mencionar a alguien" : "Mencionar a un bot"} title={shared ? "Mencionar a una persona o a un bot (@)" : "Mencionar a un bot (@)"} onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "#3D404A" }}>{"@"}</button>
+          <span style={{ flex: "1", textAlign: "right", fontSize: "var(--t-caption)", color: "#555A68", paddingRight: "4px" }}>
             {text.trim()
               ? working ? `Intro: ${SEND_LABEL[roomMode].toLowerCase()} · Ctrl+Intro: ${SEND_LABEL[otherMode].toLowerCase()}` : "Enter para enviar · Mayús+Enter, nueva línea"
               : working ? "Esc para pausarlos" : ""}
           </span>
-          <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Enter)"} disabled={busy} className="c-press" style={{ minWidth: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: working ? "0 16px" : "0", background: text.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "13px", transition: "background .2s ease" }}>
+          <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Enter)"} disabled={busy} className="c-press" style={{ minWidth: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: working ? "0 16px" : "0", background: text.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)", transition: "background .2s ease" }}>
             <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" /></span>
             {working ? SEND_LABEL[roomMode] : null}
           </button>
         </div>
       </div>
-      {shared && requestHint(text, mentions.picks) ? <p role="status" style={{ margin: "8px 4px 0", fontSize: "12.5px", color: "#5C606C" }}>{requestHint(text, mentions.picks) + "."}</p> : null}
+      {shared && requestHint(text, mentions.picks) ? <p role="status" style={{ margin: "8px 4px 0", fontSize: "var(--t-meta)", color: "#5C606C" }}>{requestHint(text, mentions.picks) + "."}</p> : null}
       <ErrorLine style={{ marginTop: "8px" }}>{error || fileError}</ErrorLine>
     </form>
   );
@@ -1187,11 +1187,11 @@ function PanelHead({ title, sub, onClose, closeLabel }) {
     <div style={{ minHeight: "60px", padding: "8px 10px 8px 20px", borderBottom: "1px solid #E6E8EE", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
       {sub ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-          <strong style={{ font: "700 17px/1.1 'Bricolage Grotesque', sans-serif" }}>{title}</strong>
-          <span style={{ fontSize: "12px", color: "#555A68" }}>{sub}</span>
+          <strong style={{ font: "700 var(--t-lead)/1.1 'Bricolage Grotesque', sans-serif" }}>{title}</strong>
+          <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{sub}</span>
         </div>
       ) : (
-        <strong style={{ font: "700 17px/1.1 'Bricolage Grotesque', sans-serif" }}>{title}</strong>
+        <strong style={{ font: "700 var(--t-lead)/1.1 'Bricolage Grotesque', sans-serif" }}>{title}</strong>
       )}
       <button type="button" className="rm-focus" aria-label={closeLabel} onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "10px", cursor: "pointer" }}>
         <X size={16} strokeWidth={2.2} aria-hidden="true" />
@@ -1227,8 +1227,8 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
       <div key={m.id} style={{ display: "grid", gridTemplateColumns: "30px 1fr", gap: "10px" }}>
         {user ? <UserAvatar size={30} /> : <BotAvatar bot={bot} size={30} />}
         <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>
-          <span style={{ fontSize: "13px" }}><strong>{user ? "Tú" : bot.name}</strong>{" "}<span style={{ color: "#555A68" }}>{m.at ? time(m.at) : ""}</span></span>
-          {user ? <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{m.text}</p> : <Markdown text={m.text} size={14} mentions={bots.map((b) => b.name)} />}
+          <span style={{ fontSize: "var(--t-meta)" }}><strong>{user ? "Tú" : bot.name}</strong>{" "}<span style={{ color: "#555A68" }}>{m.at ? time(m.at) : ""}</span></span>
+          {user ? <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{m.text}</p> : <Markdown text={m.text} size={14} mentions={bots.map((b) => b.name)} />}
         </div>
       </div>
     );
@@ -1238,8 +1238,8 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
       {bare ? null : resize.handle}
       {bare ? null : <PanelHead title="Hilo" sub={`# ${mission?.room || "sala"}`} onClose={onClose} closeLabel="Cerrar el hilo" />}
       <div style={{ flex: "1", minHeight: "0", overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-        {parent ? row(parent) : <p style={{ margin: 0, fontSize: "14px", color: "#4A4F5C" }}>Este mensaje ya no está.</p>}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12px", color: "#555A68" }}>
+        {parent ? row(parent) : <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#4A4F5C" }}>Este mensaje ya no está.</p>}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-caption)", color: "#555A68" }}>
           <span>{replies.length ? (replies.length === 1 ? "1 respuesta" : replies.length + " respuestas") : "Aún sin respuestas"}</span>
           <span style={{ flex: "1", height: "1px", background: "#DCE0E8" }} />
         </div>
@@ -1250,7 +1250,7 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
             <div key={step.id} style={{ display: "grid", gridTemplateColumns: "30px 1fr", gap: "10px" }}>
               <BotAvatar bot={bot} size={30} />
               <div style={{ minWidth: 0 }}>
-                <span style={{ fontSize: "13px" }}><strong>{bot.name}</strong>{" "}<span style={{ color: "#555A68" }}>{step.status === "running" ? "escribiendo…" : "responderá aquí en cuanto pueda"}</span></span>
+                <span style={{ fontSize: "var(--t-meta)" }}><strong>{bot.name}</strong>{" "}<span style={{ color: "#555A68" }}>{step.status === "running" ? "escribiendo…" : "responderá aquí en cuanto pueda"}</span></span>
                 {t ? <Markdown text={t} size={14} /> : null}
               </div>
             </div>
@@ -1260,12 +1260,12 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
       <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px", background: "#F7F8FA" }}>
         <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "14px" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
-          <textarea className="c-bare" rows="2" value={text} autoFocus onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) send(e); }} placeholder="Responder en el hilo…" style={{ flex: "1", minWidth: "0", resize: "none", border: "0", fontSize: "14px", lineHeight: "1.5", background: "transparent", padding: "4px 0" }} />
+          <textarea className="c-bare" rows="2" value={text} autoFocus onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) send(e); }} placeholder="Responder en el hilo…" style={{ flex: "1", minWidth: "0", resize: "none", border: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", background: "transparent", padding: "4px 0" }} />
           <button type="submit" aria-label="Responder" disabled={busy || !text.trim()} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", opacity: busy || !text.trim() ? 0.55 : 1 }}>
             <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </label>
-        {error ? <ErrorLine>{error}</ErrorLine> : <span style={{ fontSize: "12px", color: "#555A68" }}>{"La respuesta se queda en este hilo; no interrumpe la sala."}</span>}
+        {error ? <ErrorLine>{error}</ErrorLine> : <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{"La respuesta se queda en este hilo; no interrumpe la sala."}</span>}
       </form>
     </PanelFrame>
   );
@@ -1292,7 +1292,7 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
       <div style={bare ? { display: "flex", flexDirection: "column", flex: "1 1 auto" } : { position: "sticky", top: "0", maxHeight: "100vh", overflowY: "auto", display: "flex", flexDirection: "column", flex: "0 1 auto" }}>
       {bare ? null : <PanelHead title="Hilo entre bots" sub={`# ${mission?.room || "sala"}`} onClose={onClose} closeLabel="Cerrar hilo" />}
       <div style={{ flex: "1", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12px", color: "#555A68" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-caption)", color: "#555A68" }}>
           <span>
             {thread.length === 0
               ? "Aún no han hablado entre ellos"
@@ -1302,7 +1302,7 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
           </span>
           <span style={{ flex: "1", height: "1px", background: "#DCE0E8" }} />
           {thread.length > 5 ? (
-            <button type="button" className="rm-focus" onClick={() => setAll(!all)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "12px", fontWeight: "600", color: "#1F4FD1" }}>{all ? "Ver las últimas" : "Ver todas"}</button>
+            <button type="button" className="rm-focus" onClick={() => setAll(!all)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: "#1F4FD1" }}>{all ? "Ver las últimas" : "Ver todas"}</button>
           ) : null}
         </div>
         {shown.map((t, i) => {
@@ -1314,7 +1314,7 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
             <div key={t.id || i} style={{ display: "grid", gridTemplateColumns: "30px 1fr", gap: "10px" }}>
               {user ? <UserAvatar size={30} /> : <BotAvatar bot={bot} size={30} />}
               <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>
-                <span style={{ fontSize: "13px" }}>
+                <span style={{ fontSize: "var(--t-meta)" }}>
                   <strong>{user ? "Tú" : bot.name}</strong>
                   {" "}
                   <span style={{ color: "#555A68" }}>{time(t.at)}</span>
@@ -1328,12 +1328,12 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
       <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", bottom: "0", background: "#F7F8FA" }}>
         <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "12px" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
-          <input className="c-bare" type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Corrígeles o dales una pista…" style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "14px" }} />
+          <input className="c-bare" type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Corrígeles o dales una pista…" style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
           <button type="submit" aria-label="Enviar al hilo" disabled={busy} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "9px", cursor: "pointer" }}>
             <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </label>
-        {error ? <ErrorLine>{error}</ErrorLine> : <span style={{ fontSize: "12px", color: "#555A68" }}>{"Los bots leen el hilo y ajustan su trabajo."}</span>}
+        {error ? <ErrorLine>{error}</ErrorLine> : <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{"Los bots leen el hilo y ajustan su trabajo."}</span>}
       </form>
       </div>
     </PanelFrame>
@@ -1352,7 +1352,7 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
       {bare ? null : <PanelHead title="Progreso" onClose={onClose} closeLabel="Cerrar progreso" />}
       <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
         {work.length === 0 ? (
-          <p style={{ margin: "0", fontSize: "14px", lineHeight: "1.5", color: "#4A4F5C" }}>{`${coordinatorName(bots)} aún no ha repartido el trabajo.`}</p>
+          <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4F5C" }}>{`${coordinatorName(bots)} aún no ha repartido el trabajo.`}</p>
         ) : null}
         {work.map((s) => {
           const bot = findBot(bots, s.botId);
@@ -1360,16 +1360,16 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
           const title = <span style={{ flex: "1", minWidth: "0" }}>{s.title || bot.name}</span>;
           if (s.status === "waiting" || (waitingBots.has(s.botId) && !DONE_STEP.has(s.status))) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFF4D1", border: "2px solid #12131A", borderRadius: "12px", fontSize: "14px" }}>
-                {avatar}{title}<strong style={{ fontSize: "13px" }}>{"Te espera"}</strong>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFF4D1", border: "2px solid #12131A", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+                {avatar}{title}<strong style={{ fontSize: "var(--t-meta)" }}>{"Te espera"}</strong>
               </div>
             );
           }
           if (DONE_STEP.has(s.status)) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "14px" }}>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
                 {avatar}{title}
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", color: "#0B6B4A", fontWeight: "600" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "#0B6B4A", fontWeight: "600" }}>
                   <Check size={14} strokeWidth={2.6} aria-hidden="true" />
                   {"Hecho"}
                 </span>
@@ -1378,8 +1378,8 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
           }
           if (BLOCKED_STEP.has(s.status)) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "12px", fontSize: "14px" }}>
-                {avatar}{title}<strong style={{ fontSize: "13px", color: "#B4372A" }}>{"Bloqueado"}</strong>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+                {avatar}{title}<strong style={{ fontSize: "var(--t-meta)", color: "#B4372A" }}>{"Bloqueado"}</strong>
               </div>
             );
           }
@@ -1388,18 +1388,18 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
             const lastStepActivity = (s.activity || [])[s.activity?.length - 1];
             const detail = now?.detail || now?.verb || lastStepActivity?.text || "En marcha";
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "14px" }}>
-                {avatar}{title}<span style={{ fontSize: "13px", color: "#4A4F5C", textAlign: "right", maxWidth: "45%" }}>{detail}</span>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+                {avatar}{title}<span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C", textAlign: "right", maxWidth: "45%" }}>{detail}</span>
               </div>
             );
           }
           return (
-            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", border: "1px dashed #A9AEBB", borderRadius: "12px", fontSize: "14px" }}>
-              {avatar}{title}<span style={{ fontSize: "13px", color: "#4A4F5C" }}>{"Pendiente"}</span>
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", border: "1px dashed #A9AEBB", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+              {avatar}{title}<span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C" }}>{"Pendiente"}</span>
             </div>
           );
         })}
-        <a href={`/misiones/${mission.id}`} style={{ marginTop: "8px", fontSize: "14px", fontWeight: "600", color: "#1F4FD1" }}>{"Ver la línea de tiempo completa"}</a>
+        <a href={`/misiones/${mission.id}`} style={{ marginTop: "8px", fontSize: "var(--t-ui)", fontWeight: "600", color: "#1F4FD1" }}>{"Ver la línea de tiempo completa"}</a>
       </div>
       </div>
     </PanelFrame>
@@ -1425,7 +1425,7 @@ export function OlderMessages({ count, onShow }) {
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}>
       <button type="button" className="rm-focus" onClick={show} disabled={busy} aria-busy={busy ? "true" : undefined}
-        style={{ height: "34px", padding: "0 14px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "17px", cursor: busy ? "wait" : "pointer", fontSize: "13px", fontWeight: "600", color: "#2B2D36" }}>
+        style={{ height: "34px", padding: "0 14px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "17px", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#2B2D36" }}>
         {busy ? "Cargando…" : count === 1 ? "Ver el mensaje anterior" : `Ver mensajes anteriores · quedan ${count.toLocaleString("es-ES")}`}
       </button>
     </div>

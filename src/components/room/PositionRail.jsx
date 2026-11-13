@@ -119,8 +119,8 @@ export default function PositionRail({ scroller, items, version = 0, locate = nu
       })}
       {shown && shownMark ? (
         <div role="tooltip" className="c-pop" style={{ position: "absolute", right: "22px", top: `calc(${(shownMark.at * 100).toFixed(2)}% - 18px)`, width: "260px", padding: "10px 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", boxShadow: "0 12px 28px -16px rgba(18,19,26,.45)", pointerEvents: "none" }}>
-          <strong style={{ display: "block", fontSize: "12px", marginBottom: "3px" }}>{shown.who}</strong>
-          <span style={{ fontSize: "13px", lineHeight: "1.4", color: "#2B2D36", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          <strong style={{ display: "block", fontSize: "var(--t-caption)", marginBottom: "3px" }}>{shown.who}</strong>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#2B2D36", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {String(shown.text || "").replace(/[#*_`>|[\]()]/g, "").replace(/\s+/g, " ").trim().slice(0, PREVIEW) || "…"}
           </span>
         </div>

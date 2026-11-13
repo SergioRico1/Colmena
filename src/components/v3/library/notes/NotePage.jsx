@@ -24,7 +24,7 @@ import NoteGraph from "./NoteGraph.jsx";
 const NOT_FOUND = "Nota no encontrada.";
 const icon = { size: 13, strokeWidth: 2, "aria-hidden": true };
 const pathOf = (slug) => `/wiki/pages/${encodeURIComponent(slug)}`;
-const H3 = { margin: 0, fontSize: "13px", fontWeight: "600", color: "#5C606C" };
+const H3 = { margin: 0, fontSize: "var(--t-meta)", fontWeight: "600", color: "#5C606C" };
 
 export default function NotePage({ slug, view = "", query = {}, bots = [], missions = [], expert = false }) {
   const { data: page, error, loading, setData } = useResource(pathOf(slug));
@@ -61,8 +61,8 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
         <article aria-labelledby="note-t" style={{ ...CARD, flex: "999 1 480px", minWidth: 0, display: "flex", flexDirection: "column", gap: "18px", padding: "28px clamp(20px, 3vw, 34px) 32px" }}>
           <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <h2 id="note-t" style={{ margin: 0, font: "600 34px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{page.title}</h2>
-            <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px", fontSize: "13px", color: "#5C606C" }}>
+            <h2 id="note-t" style={{ margin: 0, font: "600 var(--t-display-s)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{page.title}</h2>
+            <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>{"Último cambio: "}<Who by={page.updatedBy} bots={bots} />{" · " + whenShort(page.updatedAt, true)}</span>
               {page.folder ? <span style={CHIP}><Folder {...icon} />{page.folder}</span> : null}
               {(page.tags || []).map((t) => <span key={t} style={CHIP}><Hash {...icon} />{t}</span>)}
@@ -74,7 +74,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
             <div role="note" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "14px 16px", borderRadius: "16px", background: "#F6F6F3" }}>
               <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "5px" }}>
                 <span style={{ alignSelf: "flex-start", ...CHIP, background: "#FFFFFF" }}><Globe {...icon} />{"Incluye texto de fuera"}</span>
-                <span style={{ fontSize: "13.5px", lineHeight: "1.5", color: "#4A4D57" }}>
+                <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57" }}>
                   {page.external.suspicious
                     ? "Parte de esta nota la escribió un bot después de leer un texto de fuera que intentaba darle órdenes. Léela con calma: tus bots la tratan como algo que no has dicho tú."
                     : `Parte de esta nota la escribió un bot después de leer algo de fuera${page.external.label ? ` (${page.external.label})` : " (una web, un correo o una app)"}. Tus bots la tratan como algo que no has dicho tú hasta que la revises.`}
@@ -85,7 +85,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
           ) : null}
           {page.body.trim()
             ? <RowBoundary label="No se ha podido mostrar el texto de esta nota" action={{ href: noteUrl(page.slug, "editar"), text: "Abrirla para editar" }} resetKey={page.revision}><Markdown text={bodyWithoutTitle(page.body, page.title)} size={16} /></RowBoundary>
-            : <p style={{ margin: 0, fontSize: "15px", color: "#5C606C" }}>{"Esta nota está vacía. "}<a href={noteUrl(page.slug, "editar")} style={{ color: "#1F4FD1" }}>{"Escribe algo"}</a>{"."}</p>}
+            : <p style={{ margin: 0, fontSize: "var(--t-body)", color: "#5C606C" }}>{"Esta nota está vacía. "}<a href={noteUrl(page.slug, "editar")} style={{ color: "#1F4FD1" }}>{"Escribe algo"}</a>{"."}</p>}
           {act.error ? <p role="alert" style={ERROR}>{act.error}</p> : null}
         </article>
 
@@ -99,7 +99,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
           <section aria-labelledby="note-back" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <h3 id="note-back" style={H3}>{nBack ? `Aparece en · ${nBack}` : "Aparece en"}</h3>
             {!nBack ? <p style={MUTED}>{"Nada la nombra todavía. Escribe [[" + page.title + "]] en otra nota o en un chat y saldrá aquí."}</p> : null}
-            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", fontSize: "13.5px" }}>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)" }}>
               {back.pages.map((b) => <li key={"p" + b.slug}><a href={noteUrl(b.slug)} style={{ color: "#1F4FD1" }}>{b.title}</a></li>)}
               {back.messages.slice(0, 8).map((m) => {
                 const mission = missionOf(m.missionId);
@@ -114,7 +114,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
           <section aria-labelledby="note-out" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <h3 id="note-out" style={H3}>{page.links?.length ? `Enlaza con · ${page.links.length}` : "Enlaza con"}</h3>
             {!page.links?.length ? <p style={MUTED}>{"No nombra ninguna otra nota."}</p> : null}
-            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexWrap: "wrap", gap: "6px 12px", fontSize: "13.5px" }}>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexWrap: "wrap", gap: "6px 12px", fontSize: "var(--t-ui)" }}>
               {(page.links || []).map((l) => (
                 <li key={l.slug}>
                   {l.exists
@@ -123,7 +123,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
                 </li>
               ))}
             </ul>
-            {(page.links || []).some((l) => !l.exists) ? <p style={{ ...MUTED, fontSize: "12.5px" }}>{"Las de línea discontinua están por crear: un clic y la escribes."}</p> : null}
+            {(page.links || []).some((l) => !l.exists) ? <p style={{ ...MUTED, fontSize: "var(--t-meta)" }}>{"Las de línea discontinua están por crear: un clic y la escribes."}</p> : null}
           </section>
           {page.aliases?.length ? (
             <section style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -138,7 +138,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
             {!page.archived ? <button type="button" disabled={act.busy} onClick={archive} style={QUIET}>{"Archivar"}</button> : null}
             {page.archived ? <button type="button" onClick={() => setDialog("delete")} style={{ ...QUIET, color: "#B4232A" }}>{"Borrar para siempre"}</button> : null}
           </div>
-          {expert ? <span style={{ padding: "10px 12px", borderRadius: "12px", background: "#F6F6F3", font: "500 12px/1.6 'Geist Mono', monospace", color: "#4A4D57", overflowWrap: "anywhere" }}>{[page.slug, `rev ${page.revision} · ${page.size} caracteres`, page.id].map((l) => <span key={l} style={{ display: "block" }}>{l}</span>)}</span> : null}
+          {expert ? <span style={{ padding: "10px 12px", borderRadius: "12px", background: "#F6F6F3", font: "500 var(--t-caption)/1.6 'Geist Mono', monospace", color: "#4A4D57", overflowWrap: "anywhere" }}>{[page.slug, `rev ${page.revision} · ${page.size} caracteres`, page.id].map((l) => <span key={l} style={{ display: "block" }}>{l}</span>)}</span> : null}
         </aside>
       </div>
       {dialog === "rename" ? <Rename page={page} onClose={() => setDialog(null)} /> : null}
@@ -157,8 +157,8 @@ function Absent({ name }) {
     <>
       <Back />
       <div style={{ ...CARD, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px", padding: "28px" }}>
-        <h2 style={{ margin: 0, font: "600 26px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em", overflowWrap: "anywhere" }}>{`«${title}» está por crear`}</h2>
-        <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.55", color: "#4A4D57" }}>{"Algo nombra esta nota, pero todavía no existe. Puedes crearla ahora y escribirla."}</p>
+        <h2 style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em", overflowWrap: "anywhere" }}>{`«${title}» está por crear`}</h2>
+        <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.55", color: "#4A4D57" }}>{"Algo nombra esta nota, pero todavía no existe. Puedes crearla ahora y escribirla."}</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           <button type="button" disabled={act.busy} onClick={() => act.act(() => createNote(title))} style={DARK}>{"Crear esta nota"}</button>
           <a href="/biblioteca/notas" style={PILL}>{"Ver todas las notas"}</a>
@@ -206,7 +206,7 @@ function Delete({ page, onClose }) {
   return (
     <Dialog title={`¿Borrar «${page.title}» para siempre?`} onClose={onClose}
       footer={<><button type="button" data-autofocus="" onClick={onClose} style={PILL}>{"No, dejarla archivada"}</button><button type="button" disabled={act.busy} onClick={go} style={{ ...DARK, background: "#B4232A" }}>{"Borrarla para siempre"}</button></>}>
-      <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.55", color: "#3D404A" }}>{"Se borra la nota con todo su historial y no se puede recuperar. Lo que la nombraba pasa a «Por crear»."}</p>
+      <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.55", color: "#3D404A" }}>{"Se borra la nota con todo su historial y no se puede recuperar. Lo que la nombraba pasa a «Por crear»."}</p>
       {act.error ? <p role="alert" style={ERROR}>{act.error}</p> : null}
     </Dialog>
   );

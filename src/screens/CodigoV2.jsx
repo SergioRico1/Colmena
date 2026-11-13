@@ -82,7 +82,7 @@ function SwitchLine({ task, engines }) {
   const e = engines.find((x) => x.id === p.engine);
   const name = (e?.label || p.engine) + " · " + (e?.models.find((m) => m.id === p.model)?.label || p.model);
   return (
-    <p role="status" style={{ margin: "0 4px 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: C.faint }}>
+    <p role="status" style={{ margin: "0 4px 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-caption)", color: C.faint }}>
       <EngineMark engine={p.engine} size={12} />Al acabar este turno sigue con {name}, con lo hablado hasta ahora.
     </p>
   );
@@ -97,7 +97,7 @@ function LimitLine({ task }) {
   const when = l.resetsAt ? new Date(l.resetsAt).toLocaleString("es-ES", { weekday: new Date(l.resetsAt).toDateString() === new Date().toDateString() ? undefined : "long", hour: "2-digit", minute: "2-digit" }) : null;
   const stop = l.status !== "allowed";
   return (
-    <p role="status" style={{ margin: "0 4px 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: stop ? C.honeyText : C.faint }}>
+    <p role="status" style={{ margin: "0 4px 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-caption)", color: stop ? C.honeyText : C.faint }}>
       <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "50%", background: stop ? C.honey : "#C9CBD1" }} />
       {stop ? `Has llegado a tu límite ${span} de ${engine}` : `Has usado el ${Math.round(l.utilization * 100)} % de tu límite ${span} de ${engine}`}{when ? ` · se renueva ${when.includes(",") ? "el " + when : "a las " + when}` : ""}.
     </p>
@@ -118,15 +118,15 @@ function GoalRow({ task, onGoal }) {
   }[g.status] || { text: g.status, fg: C.faint, bar: "#C9CBD1" };
   const pct = g.status === "complete" ? 1 : Math.min(1, (g.turns + (task.running ? 0.5 : 0)) / max);
   const live = g.status === "active";
-  const btn = { height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "12px", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" };
+  const btn = { height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" };
   return (
     <div role="status" aria-label="Objetivo" style={{ position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", padding: "8px 8px 8px 12px", borderRadius: "14px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05)", animation: "rise .25s ease-out" }}>
       <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: g.status === "complete" ? C.greenSoft : live ? "rgba(255,122,26,.12)" : C.soft, color: g.status === "complete" ? C.green : live ? C.bruno : C.muted }}>
         {g.status === "complete" ? <Check size={13} strokeWidth={2.6} /> : <Target size={13} strokeWidth={2.2} />}
       </span>
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-        <span style={{ fontSize: "13px", fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={g.text}>{g.text}</span>
-        <span style={{ fontSize: "12px", color: look.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{look.text}</span>
+        <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={g.text}>{g.text}</span>
+        <span style={{ fontSize: "var(--t-caption)", color: look.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{look.text}</span>
       </span>
       {live ? <button type="button" onClick={() => onGoal("pause")} style={btn} title="Bruno acaba el turno en curso y no sigue solo"><Pause size={11} strokeWidth={2.6} aria-hidden="true" />Pausar</button> : null}
       {["paused", "blocked", "limited"].includes(g.status) ? <button type="button" onClick={() => onGoal("resume")} style={btn} title="Bruno sigue con el objetivo"><Play size={11} strokeWidth={2.6} aria-hidden="true" />Reanudar</button> : null}
@@ -176,7 +176,7 @@ function TaskChips({ task, project, running, onMergePr = null }) {
   const ciText = !ci ? null : pr.state === "MERGED" ? "✓ Fusionada" : pr.mergeable === "CONFLICTING" ? "Conflictos con " + base : pr.checks === "failing" ? "✕ CI: falla" : pr.checks === "passing" ? "✓ CI: pasa" : "CI en curso";
   const wake = () => post("/code/tasks/" + task.id + (task.archived ? "/archive" : "/snooze"), task.archived ? { archived: false } : { until: null }).catch((e) => failure(task.archived ? "No se pudo desarchivar la tarea" : "No se pudo reanudar la tarea", e.message));
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", font: `400 12.5px/1 ${MONO}`, color: C.text2 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", font: `400 var(--t-meta)/1 ${MONO}`, color: C.text2 }}>
       {task.isolated ? (
         <span style={CHIP} title={task.saved ? "Ya está en tu carpeta. Su copia se ha limpiado; si vuelves a escribir aquí, Colmena la recupera tal cual." : "Bruno trabaja en una copia aparte (git worktree). " + base + " no cambia hasta que la fusiones."}>{task.branch} → {base}</span>
       ) : project ? <span style={CHIP} title="Bruno trabaja en la carpeta del proyecto">{project.root}</span> : null}
@@ -213,12 +213,12 @@ function Steps({ steps, approved }) {
   const look = { done: ["✓", "#E3F4EC", C.greenText, C.ink], now: ["•", "#EEF0F4", C.blue, C.ink], todo: ["", C.track, C.blue, C.muted] };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "18px", background: C.white }}>
-      <span style={{ fontSize: "13px", fontWeight: 600, color: C.muted }}>{approved ? "El plan de Bruno · aprobado" : "Los pasos de Bruno"}</span>
+      <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>{approved ? "El plan de Bruno · aprobado" : "Los pasos de Bruno"}</span>
       {steps.map((s, k) => {
         const [mark, bg, ink, text] = look[s.status] || look.todo;
         return (
-          <div key={k} style={{ display: "flex", gap: "10px", fontSize: "14px", lineHeight: 1.4 }}>
-            <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "50%", background: bg, color: ink, fontSize: "10px", fontWeight: 700 }}>{mark}</span>
+          <div key={k} style={{ display: "flex", gap: "10px", fontSize: "var(--t-ui)", lineHeight: 1.4 }}>
+            <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "50%", background: bg, color: ink, fontSize: "var(--t-micro)", fontWeight: 700 }}>{mark}</span>
             <span style={{ color: text }}>{s.text}<span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{s.status === "done" ? " (hecho)" : s.status === "now" ? " (ahora)" : ""}</span></span>
           </div>
         );
@@ -409,14 +409,14 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
     <div ref={sectionRef} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", flexDirection: "column" }}>
       <header style={{ position: "relative", flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 28px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
         <div style={{ flex: "1 1 380px", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
-          <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: C.muted }}>
+          <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: C.muted }}>
             <a href="/codigo" style={{ color: C.muted }}>Código</a><span aria-hidden="true">›</span><span style={{ fontFamily: MONO }}>{project?.name || "proyecto"}</span>
           </nav>
-          <h1 title={task.title} style={{ margin: 0, font: `600 28px/1.05 ${HEAD}`, letterSpacing: "-0.025em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.title}</h1>
+          <h1 title={task.title} style={{ margin: 0, font: `600 var(--t-headline)/1.05 ${HEAD}`, letterSpacing: "-0.025em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.title}</h1>
           <TaskChips task={task} project={project} running={running} onMergePr={openPr?.reviewDecision === "APPROVED" && !prMergeWhy && !prBusy && !running ? () => prAction("merge") : null} />
         </div>
         <div style={{ position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-          <TaskPeople taskId={task.id} project={project ? { id: project.id, name: project.name } : null} look={{ ...BTN.outline, fontSize: "14px", fontWeight: 400 }} />
+          <TaskPeople taskId={task.id} project={project ? { id: project.id, name: project.name } : null} look={{ ...BTN.outline, fontSize: "var(--t-ui)", fontWeight: 400 }} />
           <button type="button" onClick={openEditor} title={"Abre la copia de la tarea en VS Code, Cursor o Windsurf: " + task.cwd} style={BTN.outline}>Abrir en el editor</button>
           {merge}
           {fixable ? <button type="button" onClick={fix} title={"Le pasa a " + name + (findings.length ? " lo que encontró la revisión" : "") + (ciFailing ? (findings.length ? " y" : "") + " lo que falla en el CI" : "")} style={BTN.primary}>Que {name} lo arregle</button> : null}
@@ -443,16 +443,16 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
             <Rule />
             <TaskActions task={task} current done={more.close} />
           </MenuSheet>
-          {saving.error ? <p role="alert" onClick={() => saving.setError(null)} style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "340px", margin: 0, padding: "12px 14px", borderRadius: "16px", background: C.white, boxShadow: SHEET, fontSize: "13px", lineHeight: 1.45, color: C.red }}>{saving.error}</p> : null}
+          {saving.error ? <p role="alert" onClick={() => saving.setError(null)} style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "340px", margin: 0, padding: "12px 14px", borderRadius: "16px", background: C.white, boxShadow: SHEET, fontSize: "var(--t-meta)", lineHeight: 1.45, color: C.red }}>{saving.error}</p> : null}
           {saving.warn ? (
             <div role="alertdialog" aria-label="Antes de fusionar" style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "350px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", borderRadius: "20px", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>
-              <span style={{ fontSize: "14px", lineHeight: 1.5, color: C.text }}>
+              <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text }}>
                 {saving.warn.resolving ? `Hay cambios que chocan con ${base}: ${name} los está resolviendo en su copia (${saving.warn.resolving.slice(0, 3).join(", ")}). Cuando acabe, vuelve a fusionar.`
                   : `La revisión ha encontrado ${saving.warn.serious === 1 ? "un problema importante" : saving.warn.serious + " problemas importantes"} (P0–P1). Los tienes en la conversación.`}
               </span>
               <span style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
-                <button type="button" onClick={() => saving.setWarn(null)} style={{ ...BTN.quiet, height: "34px", fontSize: "13px" }}>Vale</button>
-                {saving.warn.serious ? <button type="button" onClick={() => saving.save("base", { force: true })} style={{ ...BTN.outline, height: "34px", fontSize: "13px" }}>Fusionar igualmente</button> : null}
+                <button type="button" onClick={() => saving.setWarn(null)} style={{ ...BTN.quiet, height: "34px", fontSize: "var(--t-meta)" }}>Vale</button>
+                {saving.warn.serious ? <button type="button" onClick={() => saving.save("base", { force: true })} style={{ ...BTN.outline, height: "34px", fontSize: "var(--t-meta)" }}>Fusionar igualmente</button> : null}
               </span>
             </div>
           ) : null}
@@ -472,7 +472,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
                 {blocks.map((b, k) => b.bot ? (
                   <div key={b.id} style={{ display: "flex", gap: "10px" }}>
                     <BotShape bot={bot} size={22} state={running && k === blocks.length - 1 ? "work" : "rest"} />
-                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "8px", fontSize: "14.5px", lineHeight: 1.5 }}>
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "8px", fontSize: "var(--t-body)", lineHeight: 1.5 }}>
                       <strong style={{ fontWeight: 600, lineHeight: "22px" }}>{name}</strong>
                       {b.rows.map((row) => <TimelineRow key={row.id} row={row} ctx={ctx} />)}
                       {k === blocks.length - 1 ? <LiveTail taskId={taskId} color={bot?.color || C.bruno} /> : null}
@@ -482,10 +482,10 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
                 {running && (!blocks.length || !blocks.at(-1).bot) ? (
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                     <BotShape bot={bot} size={22} state="work" />
-                    <span style={{ fontSize: "14.5px", color: C.body, whiteSpace: "pre-wrap" }}><LiveOr taskId={taskId}><span style={{ fontWeight: 500, background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>{name} está trabajando…</span></LiveOr></span>
+                    <span style={{ fontSize: "var(--t-body)", color: C.body, whiteSpace: "pre-wrap" }}><LiveOr taskId={taskId}><span style={{ fontWeight: 500, background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>{name} está trabajando…</span></LiveOr></span>
                   </div>
                 ) : null}
-                {problem ? <p role="alert" style={{ margin: 0, fontSize: "13.5px", color: C.red }}>{problem}</p> : null}
+                {problem ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: C.red }}>{problem}</p> : null}
               </div>
             </div>
             <div style={{ flex: "none", width: "100%", maxWidth: panel ? "none" : "760px", margin: "0 auto", padding: "8px 22px 20px" }}>
@@ -514,7 +514,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
             <div role="tablist" aria-label="Vista" style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", padding: "10px 20px 0", borderBottom: "1px solid rgba(18,19,26,.07)", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none" }}>
               {TABS.map(([id, text]) => {
                 const on = tab === id;
-                return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setTab(id)} style={{ flex: "none", whiteSpace: "nowrap", height: "42px", padding: "0 12px", border: 0, borderBottom: "2px solid " + (on ? C.ink : "transparent"), marginBottom: "-1px", background: "transparent", fontSize: "14px", fontWeight: on ? 600 : 500, color: on ? C.ink : C.text2, cursor: "pointer" }}>{tabLabel(id, text)}</button>;
+                return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setTab(id)} style={{ flex: "none", whiteSpace: "nowrap", height: "42px", padding: "0 12px", border: 0, borderBottom: "2px solid " + (on ? C.ink : "transparent"), marginBottom: "-1px", background: "transparent", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: on ? C.ink : C.text2, cursor: "pointer" }}>{tabLabel(id, text)}</button>;
               })}
               <span style={{ flex: 1 }} />
               <button type="button" onClick={() => onWide(!wide)} aria-pressed={wide} aria-label={wide ? "Volver a ver la conversación" : "Ampliar el espacio de trabajo"} title={wide ? "Volver a ver la conversación" : "Ampliar (la conversación se oculta)"} style={{ width: "32px", height: "32px", marginBottom: "6px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: wide ? C.track : "transparent", cursor: "pointer", color: C.muted }}>
@@ -539,17 +539,17 @@ function PlanTab({ plan, name }) {
   if (!plan) {
     return (
       <div style={{ flex: 1, margin: "16px 20px 20px", padding: "28px", borderRadius: "14px", background: C.white, display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
-        <strong style={{ fontSize: "15px" }}>Sin plan en esta tarea</strong>
-        <span style={{ fontSize: "14px", lineHeight: 1.5, color: C.text2, maxWidth: "460px" }}>{name} fue directo a los cambios. Si quieres que proponga antes de tocar nada, elige «Plan» en «…» al escribirle o empieza el mensaje con /plan.</span>
+        <strong style={{ fontSize: "var(--t-body)" }}>Sin plan en esta tarea</strong>
+        <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2, maxWidth: "460px" }}>{name} fue directo a los cambios. Si quieres que proponga antes de tocar nada, elige «Plan» en «…» al escribirle o empieza el mensaje con /plan.</span>
       </div>
     );
   }
   const state = { open: "Te espera: «Implementar» o «Refinar» en la conversación.", implemented: "Aprobado: " + name + " lo está siguiendo.", moved: "Se implementa en otra tarea.", refined: "Lo refinaste: hay una versión más nueva." }[plan.status];
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", margin: "16px 20px 20px", padding: "20px", borderRadius: "14px", background: C.white, display: "flex", flexDirection: "column", gap: "10px", fontSize: "14.5px", lineHeight: 1.55 }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", margin: "16px 20px 20px", padding: "20px", borderRadius: "14px", background: C.white, display: "flex", flexDirection: "column", gap: "10px", fontSize: "var(--t-body)", lineHeight: 1.55 }}>
       <strong>Qué voy a hacer</strong>
-      <div style={{ color: C.body }}><Markdown text={plan.text} size={14.5} /></div>
-      {state ? <span style={{ fontSize: "13px", color: plan.status === "open" ? C.honeyText : C.muted }}>{state}</span> : null}
+      <div style={{ color: C.body }}><Markdown text={plan.text} size={15} /></div>
+      {state ? <span style={{ fontSize: "var(--t-meta)", color: plan.status === "open" ? C.honeyText : C.muted }}>{state}</span> : null}
     </div>
   );
 }

@@ -120,8 +120,8 @@ export default function ConversationMap({ missionId, version, scroller, ownerOf,
       })}
       {shown ? (
         <div role="tooltip" style={{ position: "absolute", right: "28px", top: `calc(${(at(shownIndex) * 100).toFixed(3)}% - 22px)`, width: "280px", padding: "12px 14px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 18px 40px -18px rgba(18,19,26,.4)", pointerEvents: "none", display: "flex", flexDirection: "column", gap: "6px", animation: "fade .15s ease-out" }}>
-          <strong style={{ fontSize: "13px", lineHeight: "1.4", color: "#12131A" }}>{shown.title}</strong>
-          {shown.preview ? <span style={{ fontSize: "12.5px", lineHeight: "1.45", color: "#5C606C", display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{shown.preview}</span> : null}
+          <strong style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#12131A" }}>{shown.title}</strong>
+          {shown.preview ? <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C", display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{shown.preview}</span> : null}
         </div>
       ) : null}
       </div>

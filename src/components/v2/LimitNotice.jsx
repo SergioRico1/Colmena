@@ -32,7 +32,7 @@ function FullBar({ when, percent = 100, back = "vuelve" }) {
       <span aria-hidden="true" style={{ height: "8px", borderRadius: "4px", background: "#EEEEEA", overflow: "hidden" }}>
         <span style={{ display: "block", width: used + "%", height: "100%", background: "#12131A" }} />
       </span>
-      <span style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "12.5px", color: "#5C606C" }}>
+      <span style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
         <span>{used} % usado</span>
         {when ? <span>{back} {when}</span> : null}
       </span>
@@ -40,8 +40,8 @@ function FullBar({ when, percent = 100, back = "vuelve" }) {
   );
 }
 const card = { display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px", padding: "28px", borderRadius: "24px", background: "#FFFFFF", animation: "fade .3s ease-out" };
-const outline = (busy = false) => ({ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "14px", fontWeight: 500, cursor: busy ? "wait" : "pointer" });
-const link = { height: "42px", padding: "0 12px", display: "inline-flex", alignItems: "center", border: 0, background: "transparent", color: "#1F4FD1", fontSize: "14px", fontWeight: 500, cursor: "pointer", textDecoration: "none" };
+const outline = (busy = false) => ({ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: busy ? "wait" : "pointer" });
+const link = { height: "42px", padding: "0 12px", display: "inline-flex", alignItems: "center", border: 0, background: "transparent", color: "#1F4FD1", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer", textDecoration: "none" };
 
 /**
  * The chat/room banner for a mission paused by a usage limit. `botName` says who goes on.
@@ -60,8 +60,8 @@ export function LimitBanner({ mission, botName = null }) {
   // with how much is used and «Continuar ahora» for this one.
   if (limited.plan) return (
     <section role="status" aria-label="Queda poco del plan" style={{ ...card, padding: "22px 24px", boxShadow: "0 0 0 1px rgba(18,19,26,.08)" }}>
-      <span style={{ fontSize: "15.5px", fontWeight: 600 }}>{`Queda poco del plan de ${engineName(limited.engine)}`}</span>
-      <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#4A4D57" }}>
+      <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{`Queda poco del plan de ${engineName(limited.engine)}`}</span>
+      <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#4A4D57" }}>
         {`${who} lo deja en pausa para que puedas seguir chateando. ${when ? `Sigue por su cuenta cuando se renueve, ${when}` : `Lo vuelve a mirar por su cuenta ${again || "dentro de un rato"}`}; lo hecho se conserva.`}
       </span>
       {limited.percent != null ? <FullBar percent={limited.percent} when={when} back="se renueva" /> : null}
@@ -69,13 +69,13 @@ export function LimitBanner({ mission, botName = null }) {
         <button type="button" disabled={act.busy} onClick={resume} style={outline(act.busy)}>Continuar ahora</button>
         <a href="/ajustes/uso#pausa-plan" onClick={(e) => { e.preventDefault(); navigate("/ajustes/uso#pausa-plan"); }} style={link}>Cambiar cuándo se pausa</a>
       </div>
-      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "13px", color: "#B4232A" }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-meta)", color: "#B4232A" }}>{act.error}</p> : null}
     </section>
   );
   return (
     <section role="status" aria-label="Límite del plan" style={{ ...card, padding: "22px 24px", boxShadow: "0 0 0 1px rgba(18,19,26,.08)" }}>
-      <span style={{ fontSize: "15.5px", fontWeight: 600 }}>{`${engineName(limited.engine)} ha llegado a su ${limited.label || "límite de uso"}`}</span>
-      <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#4A4D57" }}>
+      <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{`${engineName(limited.engine)} ha llegado a su ${limited.label || "límite de uso"}`}</span>
+      <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#4A4D57" }}>
         {when ? `Se renueva ${when} y ${who} seguirá entonces por su cuenta; lo hecho se conserva.` : `${who} lo volverá a intentar por su cuenta ${again || "dentro de un rato"}; lo hecho se conserva.`}
       </span>
       <FullBar when={when} />
@@ -83,7 +83,7 @@ export function LimitBanner({ mission, botName = null }) {
         <button type="button" onClick={() => navigate("/ajustes/ia#respaldo")} style={outline()}>Usar otra IA mientras</button>
         <button type="button" disabled={act.busy} onClick={resume} style={{ ...link, cursor: act.busy ? "wait" : "pointer" }}>Intentar ahora</button>
       </div>
-      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "13px", color: "#B4232A" }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-meta)", color: "#B4232A" }}>{act.error}</p> : null}
     </section>
   );
 }
@@ -107,8 +107,8 @@ export function PlanLimitNotice({ style = null }) {
     : engines.find((e) => e.id === ai.fallback && e.id !== primary.id && e.connected && !e.resting) || null;
   return (
     <section role="status" aria-label="Límite del plan" style={{ ...card, ...style }}>
-      <span style={{ fontSize: "15.5px", fontWeight: 600 }}>{`${name} ha llegado a su ${primary.limit.label || "límite de uso"}`}</span>
-      <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#4A4D57" }}>
+      <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{`${name} ha llegado a su ${primary.limit.label || "límite de uso"}`}</span>
+      <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#4A4D57" }}>
         {backup
           ? `Tus bots siguen con ${backup.local ? backup.label : backup.label + ", tu cuenta de respaldo"}, como pediste en Ajustes. ${name} vuelve ${when || "dentro de un rato"}.`
           : `Tus bots esperan a que vuelva ${when || "dentro de un rato"}; lo hecho se conserva. Con una cuenta de respaldo seguirían con ella.`}
@@ -118,7 +118,7 @@ export function PlanLimitNotice({ style = null }) {
         {backup ? <button type="button" disabled={act.busy} title="Deja de usar el respaldo; lo puedes volver a elegir en Ajustes" onClick={() => act.act(() => patch("/ai/engines", { fallback: "none" }))} style={outline(act.busy)}>{`Mejor esperar a ${name}`}</button> : null}
         <a href="/ajustes/ia#respaldo" onClick={(e) => { e.preventDefault(); navigate("/ajustes/ia#respaldo"); }} style={link}>{backup ? "Cambiar el respaldo" : "Elegir un respaldo"}</a>
       </div>
-      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "13px", color: "#B4232A" }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-meta)", color: "#B4232A" }}>{act.error}</p> : null}
     </section>
   );
 }
@@ -129,7 +129,7 @@ export function LimitLine({ limited, style = null }) {
   if (!limited) return null;
   const when = renewText(limited.resetsAt || limited.resumeAt || limited.until, now);
   return (
-    <span title={limited.plan ? `Queda poco del plan de ${engineName(limited.engine)}: su trabajo largo espera a que se renueve` : `${engineName(limited.engine)} ha llegado a su ${limited.label || "límite de uso"}`} style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#4A4D57", minWidth: 0, ...style }}>
+    <span title={limited.plan ? `Queda poco del plan de ${engineName(limited.engine)}: su trabajo largo espera a que se renueve` : `${engineName(limited.engine)} ha llegado a su ${limited.label || "límite de uso"}`} style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#4A4D57", minWidth: 0, ...style }}>
       <Hourglass size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(limited.plan ? "En pausa" : "Limitado") + (when ? (limited.plan ? " · sigue " : " · vuelve ") + when : "")}</span>
     </span>

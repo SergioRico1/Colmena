@@ -12,7 +12,7 @@ import { PersonAvatar } from "./Author.jsx";
 // they will see. Whoever did not make the room asks its owner (`POST /api/rooms/:id/people`
 // answers 202: nothing has changed yet).
 const row = { display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "4px 6px 4px 8px", borderRadius: "14px" };
-const smallBtn = { flex: "none", minHeight: "34px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13px", fontWeight: 600, cursor: "pointer" };
+const smallBtn = { flex: "none", minHeight: "34px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" };
 
 export default function RoomInvite({ view, onClose, onChanged = null }) {
   const { peers } = useStore();
@@ -58,20 +58,20 @@ export default function RoomInvite({ view, onClose, onChanged = null }) {
   if (view.general) {
     return (
       <Sheet id="room-inv" title={title} onClose={onClose} width={520}>
-        <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.55 }}>{"En «general» está todo el equipo: quien entra al equipo entra aquí."}</p>
+        <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.55 }}>{"En «general» está todo el equipo: quien entra al equipo entra aquí."}</p>
         <a href="/equipo#equipo" onClick={onClose} style={{ ...darkBtn(), alignSelf: "flex-start", textDecoration: "none" }}>{"Invitar al equipo"}</a>
       </Sheet>
     );
   }
   return (
     <Sheet id="room-inv" title={title} sub={<>{truth.line + " "}<a href="/personas/como-funciona#quien-entra" onClick={onClose} style={{ color: "#1F4FD1", fontWeight: 600 }}>{"Cómo funciona"}</a></>} onClose={onClose} width={560}>
-      {truth.asks ? <p role="note" style={{ margin: 0, padding: "12px 16px", borderRadius: "14px", background: "#F4F4F0", fontSize: "14px", lineHeight: 1.5 }}>{`${truth.ask}: la sala es suya y solo ${firstName(truth.owner)} puede añadir personas.`}</p> : null}
+      {truth.asks ? <p role="note" style={{ margin: 0, padding: "12px 16px", borderRadius: "14px", background: "#F4F4F0", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>{`${truth.ask}: la sala es suya y solo ${firstName(truth.owner)} puede añadir personas.`}</p> : null}
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {all.length > 5 || query ? (
           <label style={{ ...fieldBox, padding: "0 14px" }}>
             <Search size={16} strokeWidth={2.2} aria-hidden="true" color="#5C606C" />
             <span style={hidden}>{"Buscar a una persona"}</span>
-            <input className="c-bare" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por nombre" style={{ ...fieldInput, height: "42px", fontSize: "15px" }} />
+            <input className="c-bare" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por nombre" style={{ ...fieldInput, height: "42px", fontSize: "var(--t-body)" }} />
           </label>
         ) : null}
         {shown.length ? (
@@ -82,11 +82,11 @@ export default function RoomInvite({ view, onClose, onChanged = null }) {
                 <li key={p.address} style={row}>
                   <PersonAvatar person={p} size={30} ring="#FFFFFF" presence={p.source === "equipo" || p.presence === "online" ? p.presence : null} />
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
-                    <span style={{ fontSize: "15px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{p.source === "equipo" ? "del equipo" : "ya habláis"}</span>
+                    <span style={{ fontSize: "var(--t-body)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{p.source === "equipo" ? "del equipo" : "ya habláis"}</span>
                   </span>
                   {state ? (
-                    <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#3D404A" }}>
+                    <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#3D404A" }}>
                       <Check size={14} strokeWidth={2.6} aria-hidden="true" />{state === "asked" ? `Pedido a ${firstName(truth.owner)}` : "Ya está en la sala"}
                     </span>
                   ) : (
@@ -101,15 +101,15 @@ export default function RoomInvite({ view, onClose, onChanged = null }) {
         )}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingTop: "18px", borderTop: "1px solid rgba(18,19,26,.08)" }}>
-        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 600 }}>{"Invitar con un código"}</h3>
+        <h3 style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>{"Invitar con un código"}</h3>
         {truth.asks ? (
           <p style={note}>{`Para alguien que aún no usa Colmena contigo, pídele a ${firstName(truth.owner)} que le invite con un código.`}</p>
         ) : made ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "18px", background: "#F4F4F0" }}>
-            <code style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{made.code}</code>
+            <code style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{made.code}</code>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
               <button type="button" onClick={copy} style={darkBtn()}><Copy size={15} strokeWidth={2.2} aria-hidden="true" />{copied ? "Copiada" : "Copiar invitación"}</button>
-              <span style={{ fontSize: "13px", color: "#5C606C" }}>{"24 h, un solo uso. Envíasela tú: Colmena no la manda."}</span>
+              <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"24 h, un solo uso. Envíasela tú: Colmena no la manda."}</span>
               <span role="status" style={hidden}>{copied ? "Invitación copiada" : ""}</span>
             </div>
           </div>

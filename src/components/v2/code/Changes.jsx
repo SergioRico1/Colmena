@@ -20,18 +20,18 @@ const STYLE = {
 function CommentBox({ label, onAdd, onCancel, onEditor = null }) {
   const [note, setNote] = useState("");
   return (
-    <form className="c-ring" onSubmit={(e) => { e.preventDefault(); if (note.trim()) onAdd(note.trim()); }} style={{ display: "flex", gap: "10px", margin: "6px 12px 10px 60px", padding: "10px 12px", borderRadius: "10px", background: C.card, fontFamily: "'Geist', sans-serif", fontSize: "13px", lineHeight: 1.45, whiteSpace: "normal", animation: "rise .2s ease-out" }}>
-      <span aria-hidden="true" style={{ flex: "none", width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "50%", background: C.ink, color: C.white, fontSize: "8px", fontWeight: 600 }}>TÚ</span>
+    <form className="c-ring" onSubmit={(e) => { e.preventDefault(); if (note.trim()) onAdd(note.trim()); }} style={{ display: "flex", gap: "10px", margin: "6px 12px 10px 60px", padding: "10px 12px", borderRadius: "10px", background: C.card, fontFamily: "'Geist', sans-serif", fontSize: "var(--t-meta)", lineHeight: 1.45, whiteSpace: "normal", animation: "rise .2s ease-out" }}>
+      <span aria-hidden="true" style={{ flex: "none", width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "50%", background: C.ink, color: C.white, fontSize: "var(--t-micro)", fontWeight: 600 }}>TÚ</span>
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
-        <span style={{ font: `500 11px/1 ${MONO}`, color: C.faint }}>{label}</span>
+        <span style={{ font: `500 var(--t-micro)/1 ${MONO}`, color: C.faint }}>{label}</span>
         <textarea className="c-bare" autoFocus rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué le dirías a Bruno de estas líneas?" aria-label="Comentario"
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (note.trim()) onAdd(note.trim()); } if (e.key === "Escape") onCancel(); }}
-          style={{ border: 0, resize: "none", background: "transparent", fontSize: "13px", lineHeight: 1.45 }} />
+          style={{ border: 0, resize: "none", background: "transparent", fontSize: "var(--t-meta)", lineHeight: 1.45 }} />
         <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-          <span style={{ flex: 1, fontSize: "12px", color: C.muted }}>Bruno lo verá en su siguiente paso</span>
-          {onEditor ? <button type="button" onClick={onEditor} style={{ height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "12px", fontWeight: 500, color: C.blue }}>Abrir en el editor</button> : null}
-          <button type="button" onClick={onCancel} style={{ height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "12px", fontWeight: 500, color: C.muted }}>Cancelar</button>
-          <button type="submit" disabled={!note.trim()} style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: note.trim() ? "pointer" : "default", opacity: note.trim() ? 1 : 0.45, fontSize: "12px", fontWeight: 600 }}>Añadir al mensaje</button>
+          <span style={{ flex: 1, fontSize: "var(--t-caption)", color: C.muted }}>Bruno lo verá en su siguiente paso</span>
+          {onEditor ? <button type="button" onClick={onEditor} style={{ height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 500, color: C.blue }}>Abrir en el editor</button> : null}
+          <button type="button" onClick={onCancel} style={{ height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 500, color: C.muted }}>Cancelar</button>
+          <button type="submit" disabled={!note.trim()} style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: note.trim() ? "pointer" : "default", opacity: note.trim() ? 1 : 0.45, fontSize: "var(--t-caption)", fontWeight: 600 }}>Añadir al mensaje</button>
         </span>
       </span>
     </form>
@@ -92,24 +92,24 @@ function FileDiff({ file, query, activeKey, pick = null, onPick = null, onCommen
       onEditor={onEditor ? () => onEditor(diffContext(file.path, rows, pick.from, pick.to, "").lines[0] || firstLine) : null} />
   ) : null);
   const tool = { width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: C.muted };
-  const hunk = { padding: "4px 12px 4px 60px", font: `400 11.5px/1.5 ${MONO}`, color: C.faint, background: "rgba(18,19,26,.03)", whiteSpace: "normal" };
+  const hunk = { padding: "4px 12px 4px 60px", font: `400 var(--t-caption)/1.5 ${MONO}`, color: C.faint, background: "rgba(18,19,26,.03)", whiteSpace: "normal" };
   return (
     <>
-      <div className="code-turn" style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "28px", font: `500 13px/1 ${MONO}` }}>
+      <div className="code-turn" style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "28px", font: `500 var(--t-meta)/1 ${MONO}` }}>
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={file.path}>
           {file.path}{file.status === "A" ? <span style={{ color: C.greenText }}> · nuevo</span> : file.status === "D" ? <span style={{ color: C.red }}> · borrado</span> : file.from ? <span style={{ color: C.faint }}> · antes {file.from}</span> : null}
         </span>
         {onEditor && file.status !== "D" ? <button type="button" className="code-tools" onClick={() => onEditor(firstLine)} aria-label={"Abrir " + name + " en el editor"} title={"Abrir en el editor (línea " + firstLine + ")"} style={tool}><SquareArrowOutUpRight size={14} strokeWidth={2.2} aria-hidden="true" /></button> : null}
         {onRevert ? (
           <button type="button" className={armed ? undefined : "code-tools"} onClick={() => { if (!armed) { setArmed(true); return; } setArmed(false); onRevert(); }} aria-label={armed ? "Pulsa otra vez para deshacer este archivo" : "Deshacer este archivo"} title={armed ? "Pulsa otra vez: vuelve como estaba (luego puedes «Deshacer»)" : "Deshacer los cambios de este archivo"}
-            style={armed ? { height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: "pointer", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap" } : tool}>
+            style={armed ? { height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: "pointer", fontSize: "var(--t-micro)", fontWeight: 600, whiteSpace: "nowrap" } : tool}>
             {armed ? "Deshacer archivo" : <Undo2 size={14} strokeWidth={2.2} aria-hidden="true" />}
           </button>
         ) : null}
         <span style={{ whiteSpace: "nowrap" }}>{file.add ? <span style={{ color: C.greenText }}>+{file.add}</span> : null}{file.add && file.del ? " " : ""}{file.del ? <span style={{ color: C.red }}>−{file.del}</span> : null}</span>
       </div>
-      <div style={{ borderRadius: "14px", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflowX: "auto", font: `400 12.5px/1.75 ${MONO}` }}>
-        {file.binary ? <p style={{ margin: 0, padding: "12px 16px", fontFamily: "'Geist', sans-serif", fontSize: "13px", color: C.faint }}>Archivo binario: no se puede mostrar el cambio línea a línea.</p> : null}
+      <div style={{ borderRadius: "14px", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflowX: "auto", font: `400 var(--t-meta)/1.75 ${MONO}` }}>
+        {file.binary ? <p style={{ margin: 0, padding: "12px 16px", fontFamily: "'Geist', sans-serif", fontSize: "var(--t-meta)", color: C.faint }}>Archivo binario: no se puede mostrar el cambio línea a línea.</p> : null}
         {split ? pairs.map((p) => p.type === "hunk"
           ? <div key={"h" + p.k} style={hunk}>línea {p.start}{p.text ? " · " + p.text : ""}</div>
           : (
@@ -187,8 +187,8 @@ export default function Changes({ task, turn, onTurn, onCount = null }) {
         {files.map((f) => (
           <button key={f.path} type="button" onClick={() => setFile(f.path)} aria-pressed={shown?.path === f.path} title={f.path}
             style={{ minHeight: "36px", display: "flex", alignItems: "center", gap: "8px", padding: "0 10px", border: 0, borderRadius: "9px", background: shown?.path === f.path ? C.track : "transparent", textAlign: "left", cursor: "pointer" }}>
-            <span style={{ flex: 1, minWidth: 0, font: `400 12.5px/1.2 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.path}</span>
-            <span style={{ font: `500 11.5px/1 ${MONO}`, color: f.add ? C.greenText : C.red }}>{f.add ? "+" + f.add : f.del ? "−" + f.del : ""}</span>
+            <span style={{ flex: 1, minWidth: 0, font: `400 var(--t-meta)/1.2 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.path}</span>
+            <span style={{ font: `500 var(--t-caption)/1 ${MONO}`, color: f.add ? C.greenText : C.red }}>{f.add ? "+" + f.add : f.del ? "−" + f.del : ""}</span>
           </button>
         ))}
       </div>
@@ -198,8 +198,8 @@ export default function Changes({ task, turn, onTurn, onCount = null }) {
             <label style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "999px", background: "rgba(18,19,26,.045)", color: C.muted }}>
               <Search size={13} strokeWidth={2.2} aria-hidden="true" />
               <span style={SR}>Buscar en los cambios</span>
-              <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && hits.length) { e.preventDefault(); setHit((h) => (h + (e.shiftKey ? hits.length - 1 : 1)) % hits.length); } }} placeholder="Buscar en los cambios" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "13px" }} />
-              {query ? <span style={{ font: `500 11px/1 ${MONO}`, color: C.quiet }}>{hits.length ? hit + 1 + "/" + hits.length : "0"}</span> : null}
+              <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && hits.length) { e.preventDefault(); setHit((h) => (h + (e.shiftKey ? hits.length - 1 : 1)) % hits.length); } }} placeholder="Buscar en los cambios" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />
+              {query ? <span style={{ font: `500 var(--t-micro)/1 ${MONO}`, color: C.quiet }}>{hits.length ? hit + 1 + "/" + hits.length : "0"}</span> : null}
             </label>
             <button type="button" onClick={() => setSplit(!split)} aria-pressed={split} aria-label="Ver lado a lado" title={split ? "Ver unificado" : "Ver lado a lado: antes a la izquierda, después a la derecha"}
               style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: split ? C.ink : "transparent", color: split ? C.white : C.muted, cursor: "pointer" }}>
@@ -207,12 +207,12 @@ export default function Changes({ task, turn, onTurn, onCount = null }) {
             </button>
           </div>
         ) : null}
-        {error ? <p style={{ margin: 0, fontSize: "14px", color: C.red }}>{error}</p> : null}
-        {note ? <p role="status" onClick={() => setNote(null)} style={{ margin: 0, fontSize: "13px", color: C.honeyText }}>{note}</p> : null}
+        {error ? <p style={{ margin: 0, fontSize: "var(--t-ui)", color: C.red }}>{error}</p> : null}
+        {note ? <p role="status" onClick={() => setNote(null)} style={{ margin: 0, fontSize: "var(--t-meta)", color: C.honeyText }}>{note}</p> : null}
         {data && !files.length && !error ? (
           <div style={{ padding: "48px 28px", textAlign: "center", display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-            <strong style={{ fontSize: "15px" }}>{effective === "turn" ? (n ? "Este turno no cambió archivos" : "Aún no hay cambios") : "La tarea aún no ha cambiado nada"}</strong>
-            <span style={{ fontSize: "13px", color: C.faint, maxWidth: "300px", lineHeight: 1.5 }}>Cuando Bruno edite, verás aquí cada línea que añade o quita.</span>
+            <strong style={{ fontSize: "var(--t-body)" }}>{effective === "turn" ? (n ? "Este turno no cambió archivos" : "Aún no hay cambios") : "La tarea aún no ha cambiado nada"}</strong>
+            <span style={{ fontSize: "var(--t-meta)", color: C.faint, maxWidth: "300px", lineHeight: 1.5 }}>Cuando Bruno edite, verás aquí cada línea que añade o quita.</span>
           </div>
         ) : null}
         {shown ? (
@@ -222,7 +222,7 @@ export default function Changes({ task, turn, onTurn, onCount = null }) {
             onComment={(context) => { addContext(task.id, context); setSel(null); }}
             split={split} onRevert={task.running ? null : () => revert(shown)} onEditor={(line) => editor(shown, line)} />
         ) : null}
-        {data?.truncated ? <p style={{ margin: 0, fontSize: "12px", color: C.faint }}>El cambio es muy grande: solo se muestra una parte.</p> : null}
+        {data?.truncated ? <p style={{ margin: 0, fontSize: "var(--t-caption)", color: C.faint }}>El cambio es muy grande: solo se muestra una parte.</p> : null}
       </div>
     </div>
   );

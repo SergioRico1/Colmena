@@ -57,12 +57,12 @@ function Team() {
       <main style={{ maxWidth: "1160px", margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "36px" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <h1 style={{ margin: "0", font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Equipo"}</h1>
-            <p style={{ margin: "0", fontSize: "16px", color: "#4A4D57" }}>{"Quién trabaja contigo: tus bots y las personas con las que te conectas."}</p>
+            <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Equipo"}</h1>
+            <p style={{ margin: "0", fontSize: "var(--t-read)", color: "#4A4D57" }}>{"Quién trabaja contigo: tus bots y las personas con las que te conectas."}</p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" disabled={!peers?.me || relayOff} onClick={() => setInvite(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "15px", fontWeight: "500", cursor: "pointer" }}>{"Invitar a una persona"}</button>
-            <a href="/equipo/nuevo" style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "15px", fontWeight: "600" }}>
+            <button type="button" disabled={!peers?.me || relayOff} onClick={() => setInvite(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Invitar a una persona"}</button>
+            <a href="/equipo/nuevo" style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
               {"Nuevo bot"}
             </a>
@@ -72,15 +72,15 @@ function Team() {
         <TeamSection />
         <section aria-labelledby="bots-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: "12px" }}>
-            <h2 id="bots-t" style={{ margin: "0", font: "600 24px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Bots"}</h2>
-            <span style={{ fontSize: "14px", color: "#5C606C" }}>{count}</span>
+            <h2 id="bots-t" style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Bots"}</h2>
+            <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{count}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(250px, 100%), 1fr))", gap: "12px" }}>
             {team.map((b) => <BotCard key={b.id} bot={b} row={rows.get(b.id)} ask={asks.find((a) => a.botId === b.id) || null} expert={expert} />)}
             <a href="/equipo/nuevo" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px", padding: "20px", borderRadius: "22px", border: "1.5px dashed rgba(18,19,26,.2)", color: "#12131A", minHeight: "220px" }}>
-              <span style={{ font: "600 20px/1.1 'Bricolage Grotesque', sans-serif" }}>{"Un bot nuevo"}</span>
-              <span style={{ fontSize: "14px", lineHeight: "1.45", color: "#4A4D57" }}>{"Descríbelo como a un compañero nuevo, o empieza de una plantilla: contable, atención al cliente, investigador…"}</span>
-              <span style={{ fontSize: "14px", fontWeight: "600", color: "#1F4FD1" }}>{"Crear →"}</span>
+              <span style={{ font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif" }}>{"Un bot nuevo"}</span>
+              <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#4A4D57" }}>{"Descríbelo como a un compañero nuevo, o empieza de una plantilla: contable, atención al cliente, investigador…"}</span>
+              <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#1F4FD1" }}>{"Crear →"}</span>
             </a>
           </div>
         </section>
@@ -103,24 +103,24 @@ function BotCard({ bot, row, ask, expert }) {
     <article style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "22px", background: "#FFFFFF", boxShadow: wait ? "0 0 0 1.5px #FFC93C" : "0 1px 2px rgba(18,19,26,.04)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
         <Shape bot={bot} size={48} style={{ opacity: idle ? 0.55 : 1, animation: work ? "breathe 2.6s ease-in-out infinite" : "none" }} />
-        <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", fontSize: "12px", fontWeight: "500", color: "#3D404A", whiteSpace: "nowrap" }}>{autonomyLabel(bot.autonomy)}</span>
+        <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "500", color: "#3D404A", whiteSpace: "nowrap" }}>{autonomyLabel(bot.autonomy)}</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-        <h3 style={{ margin: "0", font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{bot.name}</h3>
-        <span style={{ fontSize: "14px", color: "#4A4D57" }}>{bot.role}</span>
+        <h3 style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{bot.name}</h3>
+        <span style={{ fontSize: "var(--t-ui)", color: "#4A4D57" }}>{bot.role}</span>
       </div>
       {bot.status === "limitado" ? (
         <>
-          <LimitLine limited={bot.limited} style={{ fontSize: "13.5px" }} />
-          {wait ? <span style={{ marginTop: "-8px", fontSize: "13.5px", color: "#8A5A00", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={waits}>{waits}</span> : null}
+          <LimitLine limited={bot.limited} style={{ fontSize: "var(--t-ui)" }} />
+          {wait ? <span style={{ marginTop: "-8px", fontSize: "var(--t-ui)", color: "#8A5A00", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={waits}>{waits}</span> : null}
         </>
       ) : (
-        <span style={{ fontSize: "13.5px", color: wait ? "#8A5A00" : work ? "#3D404A" : "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={state}>{state}</span>
+        <span style={{ fontSize: "var(--t-ui)", color: wait ? "#8A5A00" : work ? "#3D404A" : "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={state}>{state}</span>
       )}
-      {expert && bot.model?.label ? <span style={{ marginTop: "-6px", font: "500 12px/1.3 'Geist Mono', monospace", color: "#5C606C" }}>{[bot.model.label, bot.thinking || "equilibrado", bot.engine || "equipo"].join(" · ")}</span> : null}
+      {expert && bot.model?.label ? <span style={{ marginTop: "-6px", font: "500 var(--t-caption)/1.3 'Geist Mono', monospace", color: "#5C606C" }}>{[bot.model.label, bot.thinking || "equilibrado", bot.engine || "equipo"].join(" · ")}</span> : null}
       <div style={{ marginTop: "auto", display: "flex", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.06)" }}>
-        <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13.5px", fontWeight: "600" }}>{"Hablar"}</a>
-        <a href={`/equipo/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", color: "#12131A", fontSize: "13.5px", fontWeight: "500" }}>{"Ficha"}</a>
+        <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Hablar"}</a>
+        <a href={`/equipo/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500" }}>{"Ficha"}</a>
       </div>
     </article>
   );

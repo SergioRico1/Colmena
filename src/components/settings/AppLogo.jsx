@@ -1,3 +1,4 @@
+import { stepOf } from "../../lib/type.js";
 import { useState } from "react";
 import {
   siAirtable, siAsana, siAtlassian, siClickup, siCloudflare, siDropbox, siFigma, siGithub, siGmail, siGooglecalendar,
@@ -33,5 +34,5 @@ export default function AppLogo({ id, name, logo = null, size = 36 }) {
         <img src={logo} alt="" width={Math.round(size * 0.6)} height={Math.round(size * 0.6)} onError={() => setBroken(true)} style={{ objectFit: "contain" }} />
       </span>
     );
-  return <span aria-hidden="true" style={{ ...tile, background: "#EEEEE9", fontSize: Math.round(size * 0.4) + "px", fontWeight: "600", color: "#12131A" }}>{(name || "?").charAt(0).toUpperCase()}</span>;
+  return <span aria-hidden="true" style={{ ...tile, background: "#EEEEE9", fontSize: stepOf(Math.round(size * 0.4)) + "px", fontWeight: "600", color: "#12131A" }}>{(name || "?").charAt(0).toUpperCase()}</span>;
 }

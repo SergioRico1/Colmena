@@ -14,11 +14,11 @@ const pageUrl = (id, n) => `/api/artifacts/${enc(id)}/thumbs/${n}`;
 const docPageUrl = (id) => `/api/artifacts/${enc(id)}/document`;
 const chartUrl = (id, n) => `/api/artifacts/${enc(id)}/charts/${n}`;
 
-const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "14px", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
+const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
 const dark = { ...pill, background: "#12131A", color: "#FFFFFF" };
 const soft = { ...pill, background: "rgba(18,19,26,.06)", color: "#12131A" };
-const kicker = { font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" };
-const cardTitle = { font: "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" };
+const kicker = { font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" };
+const cardTitle = { font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" };
 const card = { display: "flex", flexDirection: "column", gap: "16px", padding: "14px 14px 20px", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)", animation: "rise .5s ease-out" };
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
@@ -77,7 +77,7 @@ export function DocViewer({ artifact }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-        <span style={{ font: "500 13px/1 'Geist Mono', monospace", color: "#5C606C" }}>{pages ? plural(pages, "página", "páginas") : "Vista previa"}</span>
+        <span style={{ font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: "#5C606C" }}>{pages ? plural(pages, "página", "páginas") : "Vista previa"}</span>
         <span style={{ flex: 1 }} />
         <a href={fileUrl(artifact.id)} download style={dark}><Download size={16} strokeWidth={2.2} aria-hidden="true" />{"Word"}</a>
         {artifact?.pdf ? <a href={pdfUrl(artifact.id)} download style={soft}><FileText size={16} strokeWidth={2.2} aria-hidden="true" />{"PDF"}</a> : null}
@@ -88,7 +88,7 @@ export function DocViewer({ artifact }) {
             <img key={i} data-lightbox="" data-name={`${artifact?.title || "Documento"} · página ${i + 1}`} src={pageUrl(artifact.id, i + 1)} alt={`Página ${i + 1} de ${pages}`} loading={i < 2 ? "eager" : "lazy"} decoding="async"
               style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", aspectRatio: "210 / 297", background: "#FFFFFF", borderRadius: "4px", boxShadow: "0 1px 3px rgba(18,19,26,.08), 0 18px 36px -24px rgba(18,19,26,.3)" }} />
           ))}
-          {pages > count ? <p style={{ margin: 0, fontSize: "13px", color: "#555A68" }}>{`Se muestran ${count} de ${pages} páginas; descarga el PDF o el Word para verlas todas.`}</p> : null}
+          {pages > count ? <p style={{ margin: 0, fontSize: "var(--t-meta)", color: "#555A68" }}>{`Se muestran ${count} de ${pages} páginas; descarga el PDF o el Word para verlas todas.`}</p> : null}
         </div>
       ) : (
         <iframe title={artifact?.title || "Documento"} src={docPageUrl(artifact.id)} sandbox="" style={{ width: "100%", height: "78vh", border: 0, borderRadius: "16px", background: "#EDEBE5" }} />
@@ -113,7 +113,7 @@ function useWorkbook(id) {
   return state;
 }
 
-const cellBase = { padding: "0 10px", height: "30px", borderBottom: "1px solid #EEECE6", borderRight: "1px solid #F2F0EB", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "280px", fontSize: "13px" };
+const cellBase = { padding: "0 10px", height: "30px", borderBottom: "1px solid #EEECE6", borderRight: "1px solid #F2F0EB", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "280px", fontSize: "var(--t-meta)" };
 
 function cellStyle(cell, col, row) {
   const align = cell.align || col.align;
@@ -130,7 +130,7 @@ function cellStyle(cell, col, row) {
 function Grid({ sheet, dark: headBg = "12131A", maxHeight = "64vh", rows: limit = Infinity, cols: colLimit = Infinity, onPick, picked }) {
   const columns = sheet.columns.slice(0, colLimit);
   const rows = sheet.rows.slice(0, limit);
-  const mono = { font: "500 11px/1 'Geist Mono', monospace", color: "#6B6F7A" };
+  const mono = { font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "#6B6F7A" };
   return (
     <div style={{ overflow: "auto", maxHeight, border: "1px solid #E6E8EE", borderRadius: "14px", background: "#FFFFFF" }}>
       <table style={{ borderCollapse: "separate", borderSpacing: 0, minWidth: "100%" }}>
@@ -194,7 +194,7 @@ export function SheetViewer({ artifact }) {
   const { data, error, loading } = useWorkbook(artifact?.id);
   const [tab, setTab] = useState(0);
   const [picked, setPicked] = useState(null);
-  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "#FDECEC", border: "1px solid #F1B5B7", borderRadius: "10px", fontSize: "14px", color: "#8F1D22" }}>{`No se pudo abrir la vista previa: ${error}`}</p>;
+  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "#FDECEC", border: "1px solid #F1B5B7", borderRadius: "10px", fontSize: "var(--t-ui)", color: "#8F1D22" }}>{`No se pudo abrir la vista previa: ${error}`}</p>;
   if (loading || !data) return <p style={{ margin: 0, color: "#4A4F5C" }}>{"Abriendo…"}</p>;
   const sheet = data.sheets[Math.min(tab, data.sheets.length - 1)];
   // Charts are numbered across the workbook, sheet after sheet.
@@ -206,18 +206,18 @@ export function SheetViewer({ artifact }) {
         <div role="tablist" aria-label="Hojas" style={{ display: "flex", gap: "6px", flexWrap: "wrap", flex: 1 }}>
           {data.sheets.map((s, i) => (
             <button key={s.name} type="button" role="tab" aria-selected={i === tab} onClick={() => { setTab(i); setPicked(null); }}
-              style={{ ...pill, height: "34px", padding: "0 14px", fontSize: "13px", background: i === tab ? "#12131A" : "rgba(18,19,26,.06)", color: i === tab ? "#FFFFFF" : "#12131A" }}>{s.name}</button>
+              style={{ ...pill, height: "34px", padding: "0 14px", fontSize: "var(--t-meta)", background: i === tab ? "#12131A" : "rgba(18,19,26,.06)", color: i === tab ? "#FFFFFF" : "#12131A" }}>{s.name}</button>
           ))}
         </div>
         <a href={fileUrl(artifact.id)} download style={dark}><Download size={16} strokeWidth={2.2} aria-hidden="true" />{"Excel"}</a>
       </div>
-      <div aria-live="polite" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 12px", border: "1px solid #E6E8EE", borderRadius: "10px", background: "#FAFAF8", font: "400 13px/1.4 'Geist Mono', monospace", color: "#3D404A", overflow: "hidden" }}>
+      <div aria-live="polite" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 12px", border: "1px solid #E6E8EE", borderRadius: "10px", background: "#FAFAF8", font: "400 var(--t-meta)/1.4 'Geist Mono', monospace", color: "#3D404A", overflow: "hidden" }}>
         <span style={{ minWidth: "44px", color: "#6B6F7A" }}>{picked ? picked.col.letter + picked.n : ""}</span>
         <Sigma size={14} strokeWidth={2.2} aria-hidden="true" style={{ color: "#8A8D96", flex: "none" }} />
         <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{picked ? picked.cell.f || picked.cell.v : "Toca una celda para ver su fórmula"}</span>
       </div>
       <Grid sheet={sheet} dark={data.dark} onPick={pick} picked={picked} />
-      <span style={{ fontSize: "13px", color: "#555A68" }}>
+      <span style={{ fontSize: "var(--t-meta)", color: "#555A68" }}>
         {`${plural(sheet.rowCount, "fila", "filas")} de datos` + (sheet.truncated ? ` · se muestran las primeras ${sheet.rows.length}; descarga el Excel para verlas todas` : "")}
       </span>
       {sheet.charts.map((name, k) => (

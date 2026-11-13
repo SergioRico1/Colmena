@@ -81,7 +81,7 @@ export default function DebateV2({ params = {} }) {
   return (
     <Shell active="chats">
       <main style={{ maxWidth: "1140px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 52px) 40px", display: "flex", flexDirection: "column", gap: "26px" }}>
-        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "#5C606C" }}>
+        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "#5C606C" }}>
           <a href="/chats" style={{ color: "#5C606C" }}>{"Chats"}</a>
           <span aria-hidden="true">{"›"}</span>
           <a href={`/sala/${id}`} style={{ color: "#5C606C" }}>{roomName}</a>
@@ -90,8 +90,8 @@ export default function DebateV2({ params = {} }) {
         </nav>
 
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <h1 style={{ margin: 0, font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{proposals.length ? `${COUNT[proposals.length] || proposals.length + " ideas"} para «${mission.title}»` : mission.title}</h1>
-          <p style={{ margin: 0, maxWidth: "760px", fontSize: "16px", lineHeight: "1.5", color: "#4A4D57" }}>
+          <h1 style={{ margin: 0, font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{proposals.length ? `${COUNT[proposals.length] || proposals.length + " ideas"} para «${mission.title}»` : mission.title}</h1>
+          <p style={{ margin: 0, maxWidth: "760px", fontSize: "var(--t-read)", lineHeight: "1.5", color: "#4A4D57" }}>
             {first ? `Pediste «${shorten(String(first.text).replace(/\s+/g, " "), 140)}». ` : ""}{"Cada bot propuso una idea, los demás la criticaron y Atlas te resume. Elige una, o marca dos para combinarlas."}
           </p>
         </header>
@@ -99,13 +99,13 @@ export default function DebateV2({ params = {} }) {
         {synthesis ? (
           <section aria-label="Recomendación de Atlas" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 24px", padding: "22px 24px", borderRadius: "24px", background: "#12131A", color: "#FFFFFF" }}>
             <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", background: "#FFFFFF", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
-            <p style={{ flex: "1 1 420px", margin: 0, fontSize: "16px", lineHeight: "1.55", color: "#E6E7EC" }}><strong style={{ color: "#FFFFFF", fontWeight: 600 }}>{atlasLead}</strong>{" " + shorten(plain(synthesis).replace(/\s+/g, " "), 420)}</p>
-            {advised.length && deciding && !chosen ? <button type="button" onClick={() => (advised.length === 1 ? decide(advised) : setMarked(advised))} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "15px", fontWeight: 600, cursor: "pointer" }}>{"Seguir su consejo"}</button> : null}
+            <p style={{ flex: "1 1 420px", margin: 0, fontSize: "var(--t-read)", lineHeight: "1.55", color: "#E6E7EC" }}><strong style={{ color: "#FFFFFF", fontWeight: 600 }}>{atlasLead}</strong>{" " + shorten(plain(synthesis).replace(/\s+/g, " "), 420)}</p>
+            {advised.length && deciding && !chosen ? <button type="button" onClick={() => (advised.length === 1 ? decide(advised) : setMarked(advised))} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Seguir su consejo"}</button> : null}
           </section>
         ) : null}
 
         {!proposals.length ? (
-          <p style={{ margin: 0, padding: "22px 24px", borderRadius: "24px", background: "#FFFFFF", fontSize: "15px", color: "#4A4D57" }}>{"Los bots están preparando sus propuestas. Aparecerán aquí en cuanto terminen."}</p>
+          <p style={{ margin: 0, padding: "22px 24px", borderRadius: "24px", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#4A4D57" }}>{"Los bots están preparando sus propuestas. Aparecerán aquí en cuanto terminen."}</p>
         ) : (
           <div role="group" aria-label="Propuestas" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "14px" }}>
             {proposals.map((p, i) => {
@@ -126,35 +126,35 @@ export default function DebateV2({ params = {} }) {
                     {svg ? <img src={svgSrc(svg)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} /> : <>
                       <span style={{ position: "absolute", left: art.ax, top: art.ay, width: "120px", height: "120px", borderRadius: art.ar, background: art.a }} />
                       <span style={{ position: "absolute", right: "22px", bottom: "18px", width: "70px", height: "70px", borderRadius: "50%", background: art.b }} />
-                      <span style={{ position: "absolute", left: "20px", bottom: "18px", maxWidth: "70%", font: "700 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", color: art.ink, display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{shorten(headline, 70)}</span>
+                      <span style={{ position: "absolute", left: "20px", bottom: "18px", maxWidth: "70%", font: "700 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", color: art.ink, display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{shorten(headline, 70)}</span>
                     </>}
                   </div>
                   <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px 20px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "9px", background: "#12131A", color: "#FFFFFF", fontSize: "13px", fontWeight: 700 }}>{l}</span>
+                      <span style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "9px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 700 }}>{l}</span>
                       <BotMark bot={b} size={16} />
-                      <span style={{ fontSize: "14px", fontWeight: 600 }}>{b?.name || "Un bot"}</span>
-                      <span style={{ marginLeft: "auto", fontSize: "12.5px", color: "#5C606C" }}>{tag}</span>
+                      <span style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{b?.name || "Un bot"}</span>
+                      <span style={{ marginLeft: "auto", fontSize: "var(--t-meta)", color: "#5C606C" }}>{tag}</span>
                     </div>
-                    {body ? <p style={{ margin: 0, fontSize: "14.5px", lineHeight: "1.5", color: "#3D404A", ...(full ? {} : { display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }) }}>{body}</p> : null}
-                    {body.length > 260 ? <button type="button" onClick={() => setOpen(full ? null : l)} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "13.5px", fontWeight: 500, color: "#1F4FD1" }}>{full ? "Ver menos" : "Leerla entera"}</button> : null}
+                    {body ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.5", color: "#3D404A", ...(full ? {} : { display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }) }}>{body}</p> : null}
+                    {body.length > 260 ? <button type="button" onClick={() => setOpen(full ? null : l)} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: "#1F4FD1" }}>{full ? "Ver menos" : "Leerla entera"}</button> : null}
                     {(p.critiques || []).length ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px", paddingTop: "10px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
-                        <span style={{ fontSize: "12.5px", fontWeight: 600, color: "#5C606C" }}>{"Lo que opinan los demás"}</span>
-                        {p.critiques.map((c, j) => <span key={j} style={{ fontSize: "13.5px", lineHeight: "1.45", color: "#4A4D57" }}><strong style={{ fontWeight: 600, color: "#12131A" }}>{(findBot(bots, c.botId)?.name || "Un bot") + ":"}</strong>{" " + shorten(plain(c.text), 220)}</span>)}
+                        <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "#5C606C" }}>{"Lo que opinan los demás"}</span>
+                        {p.critiques.map((c, j) => <span key={j} style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#4A4D57" }}><strong style={{ fontWeight: 600, color: "#12131A" }}>{(findBot(bots, c.botId)?.name || "Un bot") + ":"}</strong>{" " + shorten(plain(c.text), 220)}</span>)}
                       </div>
                     ) : null}
                     <span style={{ flex: "1" }} />
                     {deciding && !(chosen && !isChosen) ? (
                       <div style={{ display: "flex", gap: "8px" }}>
-                        <button type="button" disabled={!!chosen} onClick={() => decide([l])} style={{ flex: "1", height: "42px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14.5px", fontWeight: 600, cursor: chosen ? "default" : "pointer", opacity: chosen && !isChosen ? 0.4 : 1 }}>{isChosen ? (chosen?.length === 2 ? "Combinada" : "Elegida") : `Elegir la ${l}`}</button>
+                        <button type="button" disabled={!!chosen} onClick={() => decide([l])} style={{ flex: "1", height: "42px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: chosen ? "default" : "pointer", opacity: chosen && !isChosen ? 0.4 : 1 }}>{isChosen ? (chosen?.length === 2 ? "Combinada" : "Elegida") : `Elegir la ${l}`}</button>
                         {chosen ? null : (
-                          <label style={{ height: "42px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", fontSize: "14px", cursor: "pointer" }}>
+                          <label style={{ height: "42px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", fontSize: "var(--t-ui)", cursor: "pointer" }}>
                             <input type="checkbox" checked={isMarked} onChange={() => mark(l)} style={{ width: "16px", height: "16px", accentColor: "#12131A" }} />{"Combinar"}
                           </label>
                         )}
                       </div>
-                    ) : isChosen ? <span style={{ fontSize: "14px", fontWeight: 600, color: "#0B6B4A" }}>{"✓ La elegiste"}</span> : null}
+                    ) : isChosen ? <span style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "#0B6B4A" }}>{"✓ La elegiste"}</span> : null}
                   </div>
                 </article>
               );
@@ -163,18 +163,18 @@ export default function DebateV2({ params = {} }) {
         )}
 
         <div style={{ position: "sticky", bottom: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 14px 14px 22px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 20px 40px -20px rgba(18,19,26,.35)" }}>
-          <span role="status" style={{ flex: "1 1 300px", fontSize: "15px" }}>{barText}</span>
+          <span role="status" style={{ flex: "1 1 300px", fontSize: "var(--t-body)" }}>{barText}</span>
           {!chosen && marked.length === 2 && deciding ? <>
             <label style={{ flex: "1 1 240px", display: "flex" }}>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Qué tomas de cada una"}</span>
-              <input className="c-quiet" type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué tomas de cada una? (opcional)" style={{ flex: "1", minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#F6F6F3", fontSize: "14.5px" }} />
+              <input className="c-quiet" type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué tomas de cada una? (opcional)" style={{ flex: "1", minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-body)" }} />
             </label>
-            <button type="button" onClick={() => decide(marked)} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "15px", fontWeight: 600, cursor: "pointer" }}>{"Combinarlas"}</button>
+            <button type="button" onClick={() => decide(marked)} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Combinarlas"}</button>
           </> : null}
           {chosen ? <>
-            {undo.waiting ? <button type="button" onClick={back} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "15px", cursor: "pointer" }}>{"Deshacer"}</button> : null}
-            <a href={`/sala/${id}`} style={{ height: "44px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "15px", fontWeight: 600 }}>{"Volver a la sala"}</a>
-          </> : decidedBefore ? <a href={`/sala/${id}`} style={{ height: "44px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "15px", fontWeight: 600 }}>{"Volver a la sala"}</a> : null}
+            {undo.waiting ? <button type="button" onClick={back} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", cursor: "pointer" }}>{"Deshacer"}</button> : null}
+            <a href={`/sala/${id}`} style={{ height: "44px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }}>{"Volver a la sala"}</a>
+          </> : decidedBefore ? <a href={`/sala/${id}`} style={{ height: "44px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }}>{"Volver a la sala"}</a> : null}
         </div>
         {error ? <p role="alert" style={{ margin: 0, color: "#B4232A" }}>{error}</p> : null}
       </main>

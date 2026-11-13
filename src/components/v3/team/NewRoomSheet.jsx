@@ -12,9 +12,9 @@ import { INK, MUTED, Sheet, darkBtn, errorLine, hidden, note, quietBtn } from ".
 // opened at /sala/<id>. People are the teammates of the chosen team (GET /api/teams/:id), or
 // the people you already talk to for a private room. Without a team or people it is the room
 // of your bots it always was.
-const label = { fontSize: "13px", fontWeight: 600, color: INK };
+const label = { fontSize: "var(--t-meta)", fontWeight: 600, color: INK };
 const group = { display: "flex", flexDirection: "column", gap: "8px", minWidth: 0, margin: 0, padding: 0, border: 0 };
-const chip = (on, off = false) => ({ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "40px", padding: "4px 12px 4px 8px", border: 0, borderRadius: "999px", background: on ? INK : "#F4F4F0", color: on ? "#FFFFFF" : INK, fontSize: "14px", textAlign: "left", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1 });
+const chip = (on, off = false) => ({ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "40px", padding: "4px 12px 4px 8px", border: 0, borderRadius: "999px", background: on ? INK : "#F4F4F0", color: on ? "#FFFFFF" : INK, fontSize: "var(--t-ui)", textAlign: "left", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1 });
 
 export default function NewRoomSheet({ onClose, preset = [] }) {
   const { bots = [], teams = [], peers = null, run } = useStore();
@@ -49,7 +49,7 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
       <form onSubmit={(e) => { e.preventDefault(); create(); }} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         <label style={group}>
           <span style={label}>{"Nombre"}</span>
-          <input className="c-quiet" autoFocus data-autofocus="" type="text" value={title} maxLength={60} onChange={(e) => { setTitle(e.target.value); setError(null); }} placeholder="lanzamiento-web" style={{ height: "48px", padding: "0 16px", border: 0, borderRadius: "14px", background: "#F2F2EE", fontSize: "16px", color: INK }} />
+          <input className="c-quiet" autoFocus data-autofocus="" type="text" value={title} maxLength={60} onChange={(e) => { setTitle(e.target.value); setError(null); }} placeholder="lanzamiento-web" style={{ height: "48px", padding: "0 16px", border: 0, borderRadius: "14px", background: "#F2F2EE", fontSize: "var(--t-read)", color: INK }} />
         </label>
 
         {mine.length ? (
@@ -95,7 +95,7 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
                     <span aria-hidden="true" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center" }}><BotMark bot={b} size={18} /></span>
                     <span style={{ display: "flex", flexDirection: "column", gap: "1px", lineHeight: 1.2 }}>
                       <span style={{ fontWeight: 600 }}>{b.name}</span>
-                      {b.role ? <span style={{ fontSize: "12px", color: on ? "#D6D8DE" : MUTED }}>{b.role}</span> : null}
+                      {b.role ? <span style={{ fontSize: "var(--t-caption)", color: on ? "#D6D8DE" : MUTED }}>{b.role}</span> : null}
                     </span>
                     {on ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : null}
                   </button>

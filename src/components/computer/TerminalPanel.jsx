@@ -26,7 +26,7 @@ const SERVER_STATUS = {
   stopped: ["Parado", "#8A8D96"],
   failed: ["No arrancó", "#FF8A80"],
 };
-const SMALL_BUTTON = { height: "32px", padding: "0 12px", borderRadius: "999px", border: "0", cursor: "pointer", fontSize: "13px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "6px" };
+const SMALL_BUTTON = { height: "32px", padding: "0 12px", borderRadius: "999px", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "6px" };
 
 /** Development servers of this conversation (server/projects), refreshed every few seconds. */
 function useDevServers(missionId) {
@@ -55,7 +55,7 @@ function ServerCard({ server, onOpenBrowser, onChanged }) {
   };
   return (
     <article style={{ borderRadius: "20px", background: "#12131A", color: "#E6E7EC", overflow: "hidden", animation: "rise .3s ease-out" }}>
-      <header style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 16px 0", fontSize: "13px" }}>
+      <header style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 16px 0", fontSize: "var(--t-meta)" }}>
         <span aria-hidden="true" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "8px", background: "rgba(255,255,255,.08)", color: "#FFFFFF" }}><Server size={14} strokeWidth={2.2} /></span>
         <strong style={{ fontWeight: 600, color: "#FFFFFF", overflowWrap: "anywhere" }}>{server.project}</strong>
         <span style={{ color: "#8A8D96" }}>{"Servidor de desarrollo"}</span>
@@ -64,7 +64,7 @@ function ServerCard({ server, onOpenBrowser, onChanged }) {
           {label}{server.status === "failed" && server.exitCode != null ? ` · código ${server.exitCode}` : ""}
         </span>
       </header>
-      <div style={{ padding: "10px 16px 14px", display: "flex", flexDirection: "column", gap: "10px", font: "400 13px/1.6 'Geist Mono', monospace" }}>
+      <div style={{ padding: "10px 16px 14px", display: "flex", flexDirection: "column", gap: "10px", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace" }}>
         {server.url ? <span style={{ color: live ? "#FFFFFF" : "#8A8D96", overflowWrap: "anywhere" }}>{server.url.replace(/\/$/, "")}</span> : null}
         {server.command ? <span style={{ color: "#8A8D96", overflowWrap: "anywhere" }}><span aria-hidden="true">{"> "}</span>{server.command}</span> : null}
         {server.logs?.length ? (
@@ -92,8 +92,8 @@ export default function TerminalPanel({ steps = [], bots = [], missionId = null,
     return (
       <div style={{ padding: "28px 22px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px" }}>
         <span aria-hidden="true" style={{ width: "44px", height: "44px", display: "grid", placeItems: "center", borderRadius: "14px", background: "#12131A", color: "#FFFFFF" }}><SquareTerminal size={20} strokeWidth={2.2} /></span>
-        <strong style={{ font: "600 20px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Aún no ha ejecutado nada"}</strong>
-        <span style={{ fontSize: "14px", lineHeight: "1.55", color: "#5C606C" }}>{"Cuando un bot ejecute un comando en tu ordenador lo verás aquí, con lo que respondió. Antes de cada comando te pide permiso."}</span>
+        <strong style={{ font: "600 var(--t-title)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Aún no ha ejecutado nada"}</strong>
+        <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.55", color: "#5C606C" }}>{"Cuando un bot ejecute un comando en tu ordenador lo verás aquí, con lo que respondió. Antes de cada comando te pide permiso."}</span>
       </div>
     );
   }
@@ -107,7 +107,7 @@ export default function TerminalPanel({ steps = [], bots = [], missionId = null,
         const [label, tint] = STATUS[r.status === "error" || failed ? "error" : r.status] || [c.exitCode != null ? "Terminó bien" : "Hecho", "#7BE0B4"];
         return (
           <article key={r.id} style={{ borderRadius: "20px", background: "#12131A", color: "#E6E7EC", overflow: "hidden", animation: "rise .3s ease-out" }}>
-            <header style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 16px 0", fontSize: "13px" }}>
+            <header style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 16px 0", fontSize: "var(--t-meta)" }}>
               <BotPresence bot={bot} size={16} state={r.status === "running" ? "work" : "rest"} />
               <strong style={{ fontWeight: 600, color: "#FFFFFF" }}>{bot?.name || "Bot"}</strong>
               <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", color: tint }}>
@@ -115,7 +115,7 @@ export default function TerminalPanel({ steps = [], bots = [], missionId = null,
                 {label}{c.exitCode != null && failed ? ` · código ${c.exitCode}` : ""}
               </span>
             </header>
-            <div style={{ padding: "10px 16px 14px", display: "flex", flexDirection: "column", gap: "6px", font: "400 13px/1.6 'Geist Mono', monospace" }}>
+            <div style={{ padding: "10px 16px 14px", display: "flex", flexDirection: "column", gap: "6px", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace" }}>
               <span style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#FFFFFF" }}><span aria-hidden="true" style={{ color: "#8A8D96" }}>{"> "}</span>{c.command || c.program || "comando"}</span>
               {c.output ? <span style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#C9CBD3" }}>{c.output}</span> : null}
             </div>

@@ -174,7 +174,7 @@ export default function WindowChrome() {
         {paint.brand ? (
           <span style={{ display: "flex", alignItems: "center", gap: "8px", pointerEvents: "none" }}>
             <LogoMark size={20} />
-            <span style={{ font: `800 14px/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: isDark(first) ? "#FFFFFF" : "#12131A" }}>Colmena</span>
+            <span style={{ font: `800 var(--t-ui)/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: isDark(first) ? "#FFFFFF" : "#12131A" }}>Colmena</span>
           </span>
         ) : <span />}
         <div role="group" aria-label="Ventana" style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" }}>

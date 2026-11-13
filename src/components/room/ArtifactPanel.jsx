@@ -40,10 +40,10 @@ export function parseCsv(text) {
 /** CSV rendered with the comparison-table styles of the Chat mockup. */
 export function CsvTable({ text }) {
   const rows = parseCsv(text);
-  if (!rows.length) return <p style={{ margin: "0", fontSize: "14px", color: "#555A68" }}>{"La tabla está vacía."}</p>;
+  if (!rows.length) return <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "#555A68" }}>{"La tabla está vacía."}</p>;
   const [head, ...body] = rows;
   return (
-    <table style={{ width: "100%", minWidth: "360px", borderCollapse: "collapse", fontSize: "14px", lineHeight: "1.4" }}>
+    <table style={{ width: "100%", minWidth: "360px", borderCollapse: "collapse", fontSize: "var(--t-ui)", lineHeight: "1.4" }}>
       <thead>
         <tr style={{ textAlign: "left" }}>
           {head.map((h, i) => <th key={i} style={{ padding: "10px 8px", borderBottom: "2px solid #12131A", fontWeight: "600" }}>{h}</th>)}
@@ -73,7 +73,7 @@ export const artifactPageUrl = (id, page, width = 900) => `/api/artifacts/${enco
 function FieldsTable({ fields }) {
   if (!fields?.length) return null;
   return (
-    <table style={{ width: "100%", minWidth: "320px", borderCollapse: "collapse", fontSize: "14px", lineHeight: "1.4" }}>
+    <table style={{ width: "100%", minWidth: "320px", borderCollapse: "collapse", fontSize: "var(--t-ui)", lineHeight: "1.4" }}>
       <thead>
         <tr style={{ textAlign: "left" }}>
           <th style={{ padding: "10px 8px", borderBottom: "2px solid #12131A", fontWeight: "600" }}>{"Campo"}</th>
@@ -99,15 +99,15 @@ function PdfPages({ artifact, meta }) {
   return (
     <div data-gallery="" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       {failed ? (
-        <p style={{ margin: "0", fontSize: "14px", lineHeight: "1.5", color: "#555A68" }}>{"No se puede mostrar la vista previa en este equipo. Descarga el PDF para verlo."}</p>
+        <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#555A68" }}>{"No se puede mostrar la vista previa en este equipo. Descarga el PDF para verlo."}</p>
       ) : (
         Array.from({ length: pages }, (_, i) => (
           <img key={i} data-lightbox="" data-name={`${artifact?.title || "Documento"} · página ${i + 1}`} src={artifactPageUrl(artifact.id, i + 1)} alt={`Página ${i + 1} de ${meta?.pages || pages}`} loading="lazy" onError={() => setFailed(true)}
             style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "12px", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />
         ))
       )}
-      {meta?.pages > 20 ? <p style={{ margin: "0", fontSize: "13px", color: "#555A68" }}>{`Se muestran 20 de ${meta.pages} páginas.`}</p> : null}
-      <a href={artifactFileUrl(artifact.id, true)} download style={{ alignSelf: "flex-start", fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>{"Descargar el PDF"}</a>
+      {meta?.pages > 20 ? <p style={{ margin: "0", fontSize: "var(--t-meta)", color: "#555A68" }}>{`Se muestran 20 de ${meta.pages} páginas.`}</p> : null}
+      <a href={artifactFileUrl(artifact.id, true)} download style={{ alignSelf: "flex-start", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>{"Descargar el PDF"}</a>
     </div>
   );
 }
@@ -127,14 +127,14 @@ export function ArtifactBody({ artifact, content, meta = null }) {
     return (
       <figure style={{ margin: "0", display: "flex", flexDirection: "column", gap: "10px" }}>
         <img data-lightbox="" data-name={(artifact?.title || "imagen") + ".png"} loading="lazy" decoding="async" src={artifactFileUrl(artifact.id)} alt={artifact?.title || "Imagen"} style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "12px", border: "1px solid #E6E8EE", background: "#F7F8FA" }} />
-        {meta?.prompt ? <figcaption style={{ fontSize: "13px", lineHeight: "1.5", color: "#555A68" }}>{`Petición: «${meta.prompt}»`}{meta.width ? ` · ${meta.width}×${meta.height}` : ""}</figcaption> : null}
+        {meta?.prompt ? <figcaption style={{ fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#555A68" }}>{`Petición: «${meta.prompt}»`}{meta.width ? ` · ${meta.width}×${meta.height}` : ""}</figcaption> : null}
       </figure>
     );
   }
   if (format === "pdf" && artifact?.id) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-        {meta?.source?.name ? <p style={{ margin: "0", fontSize: "14px", lineHeight: "1.5", color: "#2B2D36" }}>{`Copia rellena de «${meta.source.name}». El original no se ha modificado.`}</p> : null}
+        {meta?.source?.name ? <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#2B2D36" }}>{`Copia rellena de «${meta.source.name}». El original no se ha modificado.`}</p> : null}
         <FieldsTable fields={meta?.fields} />
         <PdfPages artifact={artifact} meta={meta} />
       </div>
@@ -146,7 +146,7 @@ export function ArtifactBody({ artifact, content, meta = null }) {
     return <iframe title={artifact?.title || "Vista previa"} sandbox="" srcDoc={String(content || "")} style={{ width: "100%", height: "520px", border: "1px solid #E6E8EE", borderRadius: "12px", background: "#FFFFFF" }} />;
   }
   if (kind === "code" || CODE_FORMATS.has(format) || format === "html") {
-    return <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "12px", font: "400 13px/1.75 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}>{content}</pre>;
+    return <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "12px", font: "400 var(--t-meta)/1.75 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}>{content}</pre>;
   }
   return <Markdown text={content} size={15} />;
 }
@@ -191,17 +191,17 @@ export default function ArtifactPanel({ artifactId, live, bots = [], onClose, va
       <div style={bare ? { display: "flex", flexDirection: "column" } : { position: "sticky", top: "0", maxHeight: "100vh", overflowY: "auto", display: "flex", flexDirection: "column" }}>
       <div style={{ position: "sticky", top: "0", zIndex: "1", background: "#FFFFFF", minHeight: "64px", padding: "10px 12px 10px 20px", borderBottom: "1px solid #E6E8EE", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: "0" }}>
-          <strong style={{ fontSize: "15px", overflowWrap: "anywhere" }}>{title}</strong>
-          <span style={{ fontSize: "12px", color: "#555A68" }}>{meta}</span>
+          <strong style={{ fontSize: "var(--t-body)", overflowWrap: "anywhere" }}>{title}</strong>
+          <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{meta}</span>
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
           {content && !fileBased ? (
-            <button type="button" className="rm-focus" onClick={copy} style={{ height: "40px", padding: "0 12px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "13px" }}>{copied ? <span className="c-ok"><Check size={13} strokeWidth={2.6} aria-hidden="true" />Copiado</span> : "Copiar"}</button>
+            <button type="button" className="rm-focus" onClick={copy} style={{ height: "40px", padding: "0 12px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)" }}>{copied ? <span className="c-ok"><Check size={13} strokeWidth={2.6} aria-hidden="true" />Copiado</span> : "Copiar"}</button>
           ) : null}
           {artifact && fileBased ? (
-            <a href={artifactFileUrl(artifact.id, true)} download className="rm-focus" onClick={() => setSaved(true)} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", display: "flex", alignItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: "600", textDecoration: "none" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</a>
+            <a href={artifactFileUrl(artifact.id, true)} download className="rm-focus" onClick={() => setSaved(true)} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", display: "flex", alignItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", textDecoration: "none" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</a>
           ) : artifact && content != null ? (
-            <button type="button" className="rm-focus" onClick={save} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</button>
+            <button type="button" className="rm-focus" onClick={save} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</button>
           ) : null}
           {bare ? null : <button type="button" className="rm-focus" aria-label="Cerrar panel" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "10px", cursor: "pointer" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
@@ -209,11 +209,11 @@ export default function ArtifactPanel({ artifactId, live, bots = [], onClose, va
         </div>
       </div>
       <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", gap: "18px", overflowX: "auto" }}>
-        <h2 style={{ margin: "0", font: "700 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{title}</h2>
-        {artifactId && loading && !data ? <p style={{ margin: "0", fontSize: "14px", color: "#555A68" }}>{"Abriendo…"}</p> : null}
+        <h2 style={{ margin: "0", font: "700 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{title}</h2>
+        {artifactId && loading && !data ? <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "#555A68" }}>{"Abriendo…"}</p> : null}
         {artifactId && error ? <ErrorLine>{`No he podido abrir el entregable: ${error}`}</ErrorLine> : null}
         {content != null && (artifact || live) ? <ArtifactBody artifact={artifact || { format: "md" }} content={content} meta={fileMeta} /> : null}
-        {artifact?.room ? <p style={{ margin: "0", fontSize: "13px", lineHeight: "1.5", color: "#555A68" }}>{`Guardado en la Biblioteca · sala #${artifact.room}`}</p> : null}
+        {artifact?.room ? <p style={{ margin: "0", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#555A68" }}>{`Guardado en la Biblioteca · sala #${artifact.room}`}</p> : null}
       </div>
       </div>
     </Frame>

@@ -16,27 +16,27 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
   const atlas = bots.find((b) => b.id === "atlas") || { shape: "hex", color: "#12131A" };
   const stat = (value, label) => (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "16px", background: "rgba(255,255,255,.08)" }}>
-      <span style={{ font: "600 28px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{value}</span>
-      <span style={{ fontSize: "13px", color: "#B8BBC4" }}>{label}</span>
+      <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{value}</span>
+      <span style={{ fontSize: "var(--t-meta)", color: "#B8BBC4" }}>{label}</span>
     </div>
   );
   const list = (head, items) => (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <span style={{ fontSize: "13px", fontWeight: "500", color: "#B8BBC4" }}>{head}</span>
-      <ul style={{ margin: "0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "14.5px", lineHeight: "1.5", color: "#E6E7EC" }}>
+      <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", color: "#B8BBC4" }}>{head}</span>
+      <ul style={{ margin: "0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#E6E7EC" }}>
         {items.map((t, i) => <li key={i}>{t}</li>)}
       </ul>
     </div>
   );
-  const pill = { display: "inline-flex", alignItems: "center", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "14px", fontWeight: "600" };
+  const pill = { display: "inline-flex", alignItems: "center", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: "600" };
   return (
     <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "24px 28px", borderRadius: "26px", background: "#12131A", color: "#FFFFFF", animation: "rise .5s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <BotPresence bot={atlas} size={26} state="rest" />
           <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-            <h2 id="wk-t" style={{ margin: "0", font: "600 20px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Tu semana con el equipo"}</h2>
-            <span style={{ fontSize: "13px", color: "#B8BBC4" }}>{weekRange(week.from, week.to) + " · te lo resume " + (atlas.name || "Atlas")}</span>
+            <h2 id="wk-t" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Tu semana con el equipo"}</h2>
+            <span style={{ fontSize: "var(--t-meta)", color: "#B8BBC4" }}>{weekRange(week.from, week.to) + " · te lo resume " + (atlas.name || "Atlas")}</span>
           </div>
         </div>
         <button type="button" onClick={() => { try { localStorage.setItem(key, "1"); } catch {} setDismissed(true); }} style={{ ...pill, border: "0", background: "rgba(255,255,255,.1)", color: "#FFFFFF", cursor: "pointer" }}>{"Leído"}</button>

@@ -14,8 +14,8 @@ import { Alert, Card, INK, LINE, MUTED, Panel, Row, UNDO_MS, btn, field, mono, s
 // and where Colmena keeps its data and listens.
 
 const FAMILIES = [["astra", "Astra", "Coordina el equipo y lo más difícil"], ["sol", "Sol", "Programa, analiza e investiga"], ["luna", "Luna", "Redacta y ayuda en el día a día"]];
-const value = { padding: "8px 12px", borderRadius: "10px", background: "#F6F6F3", font: `400 12.5px/1.2 ${mono}`, color: INK, overflowWrap: "anywhere", maxWidth: "100%" };
-const input = { ...field, width: "auto", flex: "1 1 220px", fontFamily: mono, fontSize: "13.5px" };
+const value = { padding: "8px 12px", borderRadius: "10px", background: "#F6F6F3", font: `400 var(--t-meta)/1.2 ${mono}`, color: INK, overflowWrap: "anywhere", maxWidth: "100%" };
+const input = { ...field, width: "auto", flex: "1 1 220px", fontFamily: mono, fontSize: "var(--t-ui)" };
 
 function McpServers() {
   const [list, setList] = useState(null);
@@ -42,22 +42,22 @@ function McpServers() {
   const shown = (list || []).filter((s) => !isHidden("mcp:" + s.id));
   return (
     <Panel anchor="mcp" title="Servidores MCP" sub="Herramientas propias para tus bots: cualquier servidor MCP por su dirección. Las apps conocidas están en Apps y carpetas."
-      aside={<button type="button" aria-expanded={adding} onClick={() => setAdding(!adding)} style={{ ...btn("outline", 36), fontSize: "13.5px", borderColor: "rgba(18,19,26,.16)" }}>{adding ? "Cancelar" : "Añadir servidor"}</button>}>
+      aside={<button type="button" aria-expanded={adding} onClick={() => setAdding(!adding)} style={{ ...btn("outline", 36), fontSize: "var(--t-ui)", borderColor: "rgba(18,19,26,.16)" }}>{adding ? "Cancelar" : "Añadir servidor"}</button>}>
       {adding ? (
         <form onSubmit={add} style={{ display: "flex", flexWrap: "wrap", gap: "8px", animation: "fade .25s ease-out" }}>
           <input autoFocus aria-label="Dirección del servidor MCP" inputMode="url" placeholder="https://mcp.ejemplo.com/mcp" value={url} onChange={(e) => setUrl(e.target.value)} style={input} />
           <button type="submit" disabled={act.busy || !url.trim()} style={btn("dark", 40)}>{act.busy ? "Conectando…" : "Conectar"}</button>
         </form>
       ) : null}
-      {list && !shown.length ? <p style={{ margin: 0, padding: "12px 0 0", borderTop: LINE, fontSize: "13.5px", color: MUTED }}>Ninguno todavía.</p> : null}
+      {list && !shown.length ? <p style={{ margin: 0, padding: "12px 0 0", borderTop: LINE, fontSize: "var(--t-ui)", color: MUTED }}>Ninguno todavía.</p> : null}
       {shown.map((s) => {
         const ok = s.status === "connected";
         const wait = s.status === "needs_auth" || s.status === "connecting";
         return (
           <div key={s.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "50px", borderTop: LINE }}>
-            <span style={{ flex: "1 1 180px", font: `500 13.5px/1.3 ${mono}` }}>{s.name}</span>
-            <span style={{ font: `400 12.5px/1.3 ${mono}`, color: MUTED, overflowWrap: "anywhere" }}>{s.url || s.command || ""}</span>
-            <span title={s.error || undefined} style={{ fontSize: "12.5px", fontWeight: 600, color: ok ? "#0B6B4A" : wait ? "#8A5A00" : "#B4232A" }}>{ok ? `● ${s.toolCount} ${s.toolCount === 1 ? "herramienta" : "herramientas"}` : wait ? "◐ pendiente de autorizar" : "○ sin conexión"}</span>
+            <span style={{ flex: "1 1 180px", font: `500 var(--t-ui)/1.3 ${mono}` }}>{s.name}</span>
+            <span style={{ font: `400 var(--t-meta)/1.3 ${mono}`, color: MUTED, overflowWrap: "anywhere" }}>{s.url || s.command || ""}</span>
+            <span title={s.error || undefined} style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: ok ? "#0B6B4A" : wait ? "#8A5A00" : "#B4232A" }}>{ok ? `● ${s.toolCount} ${s.toolCount === 1 ? "herramienta" : "herramientas"}` : wait ? "◐ pendiente de autorizar" : "○ sin conexión"}</span>
             <button type="button" onClick={() => later({ id: "mcp:" + s.id, keys: ["mcp:" + s.id], ms: UNDO_MS, text: `${s.name} quitado`, error: "No se pudo quitar", run: () => del(`/mcp/servers/${encodeURIComponent(s.id)}`).then(load) })} style={{ ...btn("ghost", 30), padding: "0 6px" }}>Quitar</button>
           </div>
         );
@@ -78,7 +78,7 @@ function LocalForm({ onDone }) {
         <input aria-label="Nombre del modelo" placeholder="llama3.1" value={model} onChange={(e) => setModel(e.target.value)} style={{ ...input, flex: "0 1 180px" }} />
         <button type="submit" disabled={act.busy || !baseUrl.trim() || !model.trim()} style={btn("dark", 40)}>{act.busy ? "Comprobando…" : "Guardar"}</button>
       </span>
-      <span style={{ fontSize: "12.5px", color: MUTED }}>Solo en este ordenador (localhost o 127.0.0.1). Lo usan de respaldo si lo eliges en Cuentas de IA.</span>
+      <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Solo en este ordenador (localhost o 127.0.0.1). Lo usan de respaldo si lo eliges en Cuentas de IA.</span>
       <Alert>{act.error}</Alert>
     </form>
   );
@@ -93,7 +93,7 @@ function KeyForm({ onDone }) {
         <input autoFocus type="password" autoComplete="off" spellCheck={false} aria-label="Clave de API de OpenAI" placeholder="sk-…" value={key} onChange={(e) => setKey(e.target.value)} style={input} />
         <button type="submit" disabled={act.busy || key.trim().length < 20} style={btn("dark", 40)}>{act.busy ? "Comprobando…" : "Guardar"}</button>
       </span>
-      <span style={{ fontSize: "12.5px", color: MUTED }}>Pago por uso en platform.openai.com, en lugar de tu plan de ChatGPT. Se guarda cifrada en este ordenador; también sirve para dictar.</span>
+      <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Pago por uso en platform.openai.com, en lugar de tu plan de ChatGPT. Se guarda cifrada en este ordenador; también sirve para dictar.</span>
       <Alert>{act.error}</Alert>
     </form>
   );
@@ -103,7 +103,7 @@ function Families({ ai }) {
   const act = useAction();
   const { run } = useStore();
   const engines = (ai?.engines || []).filter((e) => e.connected && ai?.catalog?.[e.id]);
-  if (!engines.length) return <p style={{ margin: 0, padding: "0 22px 14px", fontSize: "13px", color: MUTED }}>Conecta Claude u OpenCode Go para fijar sus modelos.</p>;
+  if (!engines.length) return <p style={{ margin: 0, padding: "0 22px 14px", fontSize: "var(--t-meta)", color: MUTED }}>Conecta Claude u OpenCode Go para fijar sus modelos.</p>;
   const pick = (engine, family, slug) => {
     const own = ai.pins?.[engine] || {};
     const next = { ...own };
@@ -117,9 +117,9 @@ function Families({ ai }) {
         const pinned = ai.pins?.[e.id]?.[family] || "";
         const auto = catalog.find((m) => m.families?.includes(family));
         return (
-          <label key={e.id + family} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 14px", minHeight: "44px", fontSize: "14px" }}>
+          <label key={e.id + family} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 14px", minHeight: "44px", fontSize: "var(--t-ui)" }}>
             <span style={{ flex: "1 1 200px" }}><strong style={{ fontWeight: 600 }}>{`${name} en ${e.label}`}</strong><span style={{ color: MUTED }}>{" · " + sub}</span></span>
-            <Select aria-label={`${name} en ${e.label}`} disabled={act.busy} value={pinned} onChange={(ev) => pick(e.id, family, ev.target.value || null)} style={{ ...select, width: "240px", height: "34px", fontSize: "13.5px" }} options={[["", "Automático" + (auto ? " · " + auto.label : "")], ...catalog.map((m) => [m.slug, m.label + (m.utility ? " (ligero)" : "")])]} />
+            <Select aria-label={`${name} en ${e.label}`} disabled={act.busy} value={pinned} onChange={(ev) => pick(e.id, family, ev.target.value || null)} style={{ ...select, width: "240px", height: "34px", fontSize: "var(--t-ui)" }} options={[["", "Automático" + (auto ? " · " + auto.label : "")], ...catalog.map((m) => [m.slug, m.label + (m.utility ? " (ligero)" : "")])]} />
           </label>
         );
       }))}

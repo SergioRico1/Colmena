@@ -13,9 +13,9 @@ export const LINE = "1px solid rgba(18,19,26,.06)";
 export function Group({ id, title, note, children, anchor }) {
   return (
     <section id={anchor || undefined} data-setting={anchor || undefined} aria-labelledby={id} style={{ display: "flex", flexDirection: "column", gap: "10px", scrollMarginTop: "24px" }}>
-      {title ? <h2 id={id} style={{ margin: "0 0 0 20px", fontSize: "13px", fontWeight: 500, color: FAINT }}>{title}</h2> : null}
+      {title ? <h2 id={id} style={{ margin: "0 0 0 20px", fontSize: "var(--t-meta)", fontWeight: 500, color: FAINT }}>{title}</h2> : null}
       <div style={{ background: "#FFFFFF", borderRadius: "26px", overflow: "hidden" }}>{children}</div>
-      {note ? <p style={{ margin: "0 20px", fontSize: "13px", lineHeight: 1.5, color: FAINT }}>{note}</p> : null}
+      {note ? <p style={{ margin: "0 20px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: FAINT }}>{note}</p> : null}
     </section>
   );
 }
@@ -31,8 +31,8 @@ export const anchorOf = (anchor) => (anchor ? { id: anchor, "data-setting": anch
 export function Text({ title, sub, subColor = MUTED }) {
   return (
     <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-      <strong style={{ fontSize: "16px", fontWeight: sub ? 600 : 400 }}>{title}</strong>
-      {sub ? <span style={{ fontSize: "14px", lineHeight: 1.45, color: subColor }}>{sub}</span> : null}
+      <strong style={{ fontSize: "var(--t-read)", fontWeight: sub ? 600 : 400 }}>{title}</strong>
+      {sub ? <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: subColor }}>{sub}</span> : null}
     </span>
   );
 }
@@ -56,7 +56,7 @@ export function LinkRow({ title, sub, value, to, last, icon = null, anchor }) {
     <a href={to} onClick={(e) => { e.preventDefault(); navigate(to); }} {...anchorOf(anchor)} style={{ ...rowStyle(last, sub ? "72px" : "64px"), textDecoration: "none", cursor: "pointer" }}>
       {icon}
       <Text title={title} sub={sub} />
-      {value ? <span style={{ fontSize: "15px", color: MUTED, whiteSpace: "nowrap" }}>{value}</span> : null}
+      {value ? <span style={{ fontSize: "var(--t-body)", color: MUTED, whiteSpace: "nowrap" }}>{value}</span> : null}
       <Chevron right />
     </a>
   );
@@ -66,8 +66,8 @@ export function FieldRow({ title, sub, children, last, anchor, control = "1 1 34
   return (
     <div {...anchorOf(anchor)} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", minHeight: "72px", padding: "12px 20px", borderBottom: last ? 0 : LINE, scrollMarginTop: "24px" }}>
       <span style={{ flex: "1 1 160px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-        <span style={{ fontSize: "16px", fontWeight: sub ? 600 : 400 }}>{title}</span>
-        {sub ? <span style={{ fontSize: "14px", lineHeight: 1.45, color: MUTED }}>{sub}</span> : null}
+        <span style={{ fontSize: "var(--t-read)", fontWeight: sub ? 600 : 400 }}>{title}</span>
+        {sub ? <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: MUTED }}>{sub}</span> : null}
       </span>
       <span style={{ flex: control, minWidth: 0 }}>{children}</span>
     </div>
@@ -78,10 +78,10 @@ export function Segmented({ label, items, value, onPick, busy }) {
     <div role="radiogroup" aria-label={label} style={{ display: "flex", gap: "2px", padding: "3px", borderRadius: "999px", background: "rgba(18,19,26,.05)" }}>
       {items.map(([v, text]) => {
         const on = value === v;
-        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ flex: 1, height: "38px", padding: "0 12px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", color: INK, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none" }}>{text}</button>;
+        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ flex: 1, height: "38px", padding: "0 12px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", color: INK, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none" }}>{text}</button>;
       })}
     </div>
   );
 }
-export const pill = (dark) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "14px", fontWeight: 600, flex: "none", whiteSpace: "nowrap", background: dark ? INK : "rgba(18,19,26,.06)", color: dark ? "#FFFFFF" : INK });
-export const inputStyle = { flex: "1 1 240px", minWidth: 0, width: "100%", height: "46px", padding: "0 16px", border: 0, borderRadius: "14px", background: "#F4F4F0", fontSize: "15px", color: INK, boxSizing: "border-box" };
+export const pill = (dark) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", whiteSpace: "nowrap", background: dark ? INK : "rgba(18,19,26,.06)", color: dark ? "#FFFFFF" : INK });
+export const inputStyle = { flex: "1 1 240px", minWidth: 0, width: "100%", height: "46px", padding: "0 16px", border: 0, borderRadius: "14px", background: "#F4F4F0", fontSize: "var(--t-body)", color: INK, boxSizing: "border-box" };

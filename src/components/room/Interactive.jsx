@@ -13,7 +13,7 @@ export const InteractiveContext = createContext({ send: null, after: [], botName
 
 const PALETTE = ["#2F6BFF", "#FFC93C", "#0B8A5F", "#FF5CA8", "#7B4DFF", "#FF7A1A", "#0E7C86"];
 const card = { background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "14px", padding: "14px 16px", display: "flex", flexDirection: "column", gap: "12px", maxWidth: "680px" };
-const titleStyle = { margin: 0, font: "700 15px/1.3 'Bricolage Grotesque', sans-serif", color: "#12131A" };
+const titleStyle = { margin: 0, font: "700 var(--t-body)/1.3 'Bricolage Grotesque', sans-serif", color: "#12131A" };
 const num = (v) => (typeof v === "number" ? v : Number(String(v).replace(/\./g, "").replace(",", ".")));
 const fmt = (v) => (Number.isFinite(v) ? v.toLocaleString("es-ES", { maximumFractionDigits: 2 }) : String(v));
 
@@ -106,7 +106,7 @@ function Chart({ spec, bare, noTitle }) {
       {!noTitle && (spec.titulo || spec.title) ? <figcaption style={titleStyle}>{spec.titulo || spec.title}</figcaption> : null}
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={spec.titulo || "Gráfico"} className={entering ? "c-chart-in" : undefined} style={{ width: "100%", height: "auto", font: "12px 'Geist', sans-serif" }}>{body}</svg>
       {type !== "tarta" && type !== "pie" && series.length > 1 ? (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", fontSize: "13px", color: "#2B2D36" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", fontSize: "var(--t-meta)", color: "#2B2D36" }}>
           {series.map((s) => <span key={s.name} style={{ display: "flex", alignItems: "center", gap: "6px" }}><span style={{ width: "10px", height: "10px", borderRadius: "3px", background: s.color }} />{s.name}</span>)}
         </div>
       ) : null}
@@ -129,7 +129,7 @@ function Table({ spec, bare, noTitle }) {
   if (!columns.length) return null;
   const csv = [columns, ...rows].map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
   const copy = (
-    <button type="button" className="rm-focus" onClick={() => navigator.clipboard?.writeText(csv).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); })} style={{ flex: "none", height: "30px", padding: "0 10px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "8px", cursor: "pointer", fontSize: "12px" }}>{copied ? <span className="c-ok"><Check size={13} strokeWidth={2.6} aria-hidden="true" />Copiada</span> : "Copiar para Excel"}</button>
+    <button type="button" className="rm-focus" onClick={() => navigator.clipboard?.writeText(csv).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); })} style={{ flex: "none", height: "30px", padding: "0 10px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "8px", cursor: "pointer", fontSize: "var(--t-caption)" }}>{copied ? <span className="c-ok"><Check size={13} strokeWidth={2.6} aria-hidden="true" />Copiada</span> : "Copiar para Excel"}</button>
   );
   return (
     <div style={bare ? { display: "flex", flexDirection: "column", gap: "10px", minWidth: 0 } : { ...card, minWidth: 0 }}>
@@ -138,7 +138,7 @@ function Table({ spec, bare, noTitle }) {
         {copy}
       </div>
       <div style={{ overflowX: "auto", margin: "0 -4px" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--t-meta)" }}>
           <thead>
             <tr>
               {columns.map((c, i) => (
@@ -188,7 +188,7 @@ function Evidence({ blocks }) {
           {evPill ? <span aria-hidden="true" className="c-seg-pill" style={{ ...evPill, background: "#FFFFFF", borderRadius: "8px", boxShadow: "0 1px 2px rgba(18,19,26,0.12)" }} /> : null}
           {blocks.map((b, i) => (
             <button key={i} type="button" role="tab" aria-selected={i === tab ? "true" : "false"} data-seg-active={i === tab ? "true" : undefined} onClick={() => setTab(i)}
-              style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", ...(i === tab ? { background: evPill ? "transparent" : "#FFFFFF", color: "#12131A", boxShadow: evPill ? "none" : "0 1px 2px rgba(18,19,26,0.12)" } : { background: "transparent", color: "#4A4F5C" }) }}>
+              style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "8px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", ...(i === tab ? { background: evPill ? "transparent" : "#FFFFFF", color: "#12131A", boxShadow: evPill ? "none" : "0 1px 2px rgba(18,19,26,0.12)" } : { background: "transparent", color: "#4A4F5C" }) }}>
               {b.spec.titulo || b.spec.title ? `${evidenceLabel(b.spec)} · ${b.spec.titulo || b.spec.title}` : evidenceLabel(b.spec)}
             </button>
           ))}
@@ -205,7 +205,7 @@ function Evidence({ blocks }) {
 const askCard = { maxWidth: "600px", background: "#FFFFFF", border: "0", borderRadius: "24px", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "12px" };
 const answeredCard = { ...askCard, border: "1px solid #DCE0E8", boxShadow: "none" };
 const doneChip = (text) => (
-  <span role="status" style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "4px 10px", background: "#E1F4EC", border: "1px solid #9ED4BC", borderRadius: "15px", fontSize: "13px", fontWeight: "600", color: "#0B5E41" }}>
+  <span role="status" style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "4px 10px", background: "#E1F4EC", border: "1px solid #9ED4BC", borderRadius: "15px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#0B5E41" }}>
     <Check size={14} strokeWidth={2.6} aria-hidden="true" />
     {text}
   </span>
@@ -230,28 +230,28 @@ function AskChoices({ spec, next }) {
   };
   return (
     <div style={chosen ? answeredCard : askCard}>
-      <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.55", fontWeight: "600" }}>{spec.pregunta || spec.titulo || "¿Qué prefieres?"}</p>
+      <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.55", fontWeight: "600" }}>{spec.pregunta || spec.titulo || "¿Qué prefieres?"}</p>
       {chosen ? doneChip(`Respondiste: ${chosen}`) : (
         <>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {options.map((o) => (
               <button key={o.label} type="button" className="rm-focus" disabled={!send} onClick={() => choose(o)} title={o.detail || undefined}
-                style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: "2px", minHeight: "44px", padding: "6px 14px", borderRadius: "10px", cursor: send ? "pointer" : "default", fontSize: "14px", fontWeight: "600", textAlign: "left", ...(o.recommended ? { background: "#12131A", color: "#FFFFFF", border: "0" } : { background: "#FFFFFF", color: "#12131A", border: "1px solid #12131A" }) }}>
+                style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: "2px", minHeight: "44px", padding: "6px 14px", borderRadius: "10px", cursor: send ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: "600", textAlign: "left", ...(o.recommended ? { background: "#12131A", color: "#FFFFFF", border: "0" } : { background: "#FFFFFF", color: "#12131A", border: "1px solid #12131A" }) }}>
                 <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   {o.label}
-                  {o.recommended ? <span style={{ font: "600 10px/1 'Geist Mono', monospace", letterSpacing: "0.04em", textTransform: "uppercase", padding: "3px 6px", borderRadius: "5px", background: "#FFC93C", color: "#12131A" }}>Recomendada</span> : null}
+                  {o.recommended ? <span style={{ font: "600 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.04em", textTransform: "uppercase", padding: "3px 6px", borderRadius: "5px", background: "#FFC93C", color: "#12131A" }}>Recomendada</span> : null}
                 </span>
-                {o.detail ? <span style={{ fontSize: "12px", fontWeight: "400", color: o.recommended ? "#C9CCD6" : "#4A4F5C" }}>{o.detail}</span> : null}
+                {o.detail ? <span style={{ fontSize: "var(--t-caption)", fontWeight: "400", color: o.recommended ? "#C9CCD6" : "#4A4F5C" }}>{o.detail}</span> : null}
               </button>
             ))}
           </div>
-          <span style={{ fontSize: "12px", color: "#555A68" }}>
+          <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>
             {!send ? "Responde desde la sala o el chat." : `Tu respuesta le llega a ${botName || "el bot"} y sigue con ello.`}
             {next ? ` Después te pedirá: ${next.titulo || "unos datos"}.` : ""}
           </span>
         </>
       )}
-      {error ? <span role="alert" style={{ fontSize: "13px", fontWeight: "600", color: "#B4372A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#B4372A" }}>{error}</span> : null}
     </div>
   );
 }
@@ -277,15 +277,15 @@ function AskForm({ spec }) {
       setError(err.message);
     }
   };
-  if (done) return <div style={answeredCard}><p style={{ margin: 0, fontSize: "15px", fontWeight: "600" }}>{title}</p>{doneChip("Enviado")}</div>;
-  const input = { height: "40px", padding: "0 12px", border: "1px solid #DCE0E8", borderRadius: "10px", fontSize: "14px", fontWeight: "400", background: "#FFFFFF", width: "100%", boxSizing: "border-box" };
+  if (done) return <div style={answeredCard}><p style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: "600" }}>{title}</p>{doneChip("Enviado")}</div>;
+  const input = { height: "40px", padding: "0 12px", border: "1px solid #DCE0E8", borderRadius: "10px", fontSize: "var(--t-ui)", fontWeight: "400", background: "#FFFFFF", width: "100%", boxSizing: "border-box" };
   return (
     <form onSubmit={submit} style={askCard}>
-      <p style={{ margin: 0, fontSize: "15px", lineHeight: "1.55", fontWeight: "600" }}>{title}</p>
-      {spec.descripcion ? <span style={{ fontSize: "13px", color: "#4A4F5C", marginTop: "-6px" }}>{spec.descripcion}</span> : null}
+      <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.55", fontWeight: "600" }}>{title}</p>
+      {spec.descripcion ? <span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C", marginTop: "-6px" }}>{spec.descripcion}</span> : null}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px 12px" }}>
         {fields.map((f) => (
-          <label key={f.id} style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: "600", gridColumn: ["texto largo", "textarea"].includes(f.type) ? "1 / -1" : undefined }}>
+          <label key={f.id} style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-meta)", fontWeight: "600", gridColumn: ["texto largo", "textarea"].includes(f.type) ? "1 / -1" : undefined }}>
             <span>{f.label}{f.required ? <span aria-hidden="true" style={{ color: "#B4372A" }}> *</span> : <span style={{ fontWeight: "400", color: "#555A68" }}> · opcional</span>}</span>
             {["opciones", "select"].includes(f.type) ? (
               <Select label={f.label} value={values[f.id]} onChange={(e) => setValues({ ...values, [f.id]: e.target.value })} style={input} options={[["", "Elige…"], ...f.options.map((o) => [String(o), String(o)])]} />
@@ -298,9 +298,9 @@ function AskForm({ spec }) {
         ))}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
-        <button type="submit" disabled={!send} style={{ height: "44px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: send ? "pointer" : "default", fontWeight: "600", fontSize: "14px", opacity: send ? 1 : 0.6 }}>{spec.boton || "Enviar"}</button>
-        {error ? <span role="alert" style={{ fontSize: "13px", fontWeight: "600", color: "#B4372A" }}>{error}</span>
-          : <span style={{ fontSize: "12px", color: "#555A68" }}>{send ? `Se lo envías a ${botName || "el bot"} como respuesta.` : "Rellénalo desde la sala o el chat."}</span>}
+        <button type="submit" disabled={!send} style={{ height: "44px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: send ? "pointer" : "default", fontWeight: "600", fontSize: "var(--t-ui)", opacity: send ? 1 : 0.6 }}>{spec.boton || "Enviar"}</button>
+        {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#B4372A" }}>{error}</span>
+          : <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{send ? `Se lo envías a ${botName || "el bot"} como respuesta.` : "Rellénalo desde la sala o el chat."}</span>}
       </div>
     </form>
   );
@@ -316,7 +316,7 @@ export function InteractiveBlock({ spec, next }) {
 }
 
 export function PendingBlock() {
-  return <div role="status" style={{ ...card, color: "#4A4F5C", fontSize: "13px" }}>Preparando…</div>;
+  return <div role="status" style={{ ...card, color: "#4A4F5C", fontSize: "var(--t-meta)" }}>Preparando…</div>;
 }
 
 /**

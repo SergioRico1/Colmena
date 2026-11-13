@@ -59,18 +59,18 @@ export default function Diagram({ source }) {
     return () => { alive = false; clearTimeout(timer); };
   }, [source, uid]);
   const code = (
-    <pre style={{ margin: 0, padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "12px", font: "400 13px/1.7 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}><code>{source}</code></pre>
+    <pre style={{ margin: 0, padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "12px", font: "400 var(--t-meta)/1.7 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}><code>{source}</code></pre>
   );
   if (failed && !svg) return code;
   return (
     <figure style={{ margin: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
       {showCode ? code : (
         <div role="img" aria-label="Diagrama" className={svg ? "c-enter" : undefined}
-          style={{ padding: "16px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", overflowX: "auto", display: "flex", justifyContent: "center", minHeight: svg ? undefined : "72px", alignItems: "center", color: "#555A68", fontSize: "13px" }}
+          style={{ padding: "16px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", overflowX: "auto", display: "flex", justifyContent: "center", minHeight: svg ? undefined : "72px", alignItems: "center", color: "#555A68", fontSize: "var(--t-meta)" }}
           {...(svg ? { dangerouslySetInnerHTML: { __html: svg } } : { children: "Dibujando el diagrama…" })} />
       )}
       {svg ? (
-        <figcaption style={{ display: "flex", gap: "12px", fontSize: "12px" }}>
+        <figcaption style={{ display: "flex", gap: "12px", fontSize: "var(--t-caption)" }}>
           <button type="button" onClick={() => setShowCode((v) => !v)} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: 0, background: "transparent", border: 0, cursor: "pointer", color: "#4A4F5C", fontWeight: "600" }}>
             <Network size={13} strokeWidth={2.2} aria-hidden="true" />{showCode ? "Ver el diagrama" : "Ver el código"}
           </button>

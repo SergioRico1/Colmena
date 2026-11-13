@@ -1,3 +1,4 @@
+import { stepOf } from "../../lib/type.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PillText } from "../v2/MentionPill.jsx";
 import { createPortal } from "react-dom";
@@ -62,7 +63,7 @@ export default function SelectionPopup({ scope, onQuote, onAsk }) {
   if (!state) return null;
   const run = (fn) => { const t = state.text; setState(null); window.getSelection?.().removeAllRanges(); fn(t); };
   const left = Math.min(Math.max(8 + 190, state.x), window.innerWidth - 8 - 190);
-  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", background: "transparent", color: "#FFFFFF", border: "0", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" };
+  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", background: "transparent", color: "#FFFFFF", border: "0", borderRadius: "8px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" };
   // Rendered outside the conversation, so it never counts as new content to scroll to.
   return createPortal((
     <div ref={box} role="toolbar" aria-label="Con el texto seleccionado" className="c-pop" onPointerDown={(e) => e.preventDefault()}
@@ -100,7 +101,7 @@ export function UserText({ text, size = 15, messageId = null }) {
         const body = b.lines.join("\n").replace(/^\n+|\n+$/g, "");
         if (!body) return null;
         return b.quoted
-          ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid #FFC93C", color: "#4A4F5C", fontSize: size - 1 + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} />} /></blockquote>
+          ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid #FFC93C", color: "#4A4F5C", fontSize: stepOf(size - 1) + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} />} /></blockquote>
           : <p key={i} style={{ margin: 0, fontSize: size + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} plain={(x) => <PillText text={x} />} />} /></p>;
       })}
     </div>

@@ -68,14 +68,14 @@ export default function PeopleSettings() {
               {isOpen ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "4px 20px 22px 76px", animation: "rise .2s ease-out" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "18px", background: "#F4F4F0" }}>
-                    <span style={{ fontSize: "13px", color: MUTED }}>{`Vuestras palabras de seguridad. ${c.name.split(" ")[0]} tiene que ver las mismas:`}</span>
-                    <strong style={{ font: "600 19px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{c.words.join(" · ")}</strong>
-                    <button type="button" onClick={() => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { verified: !c.verifiedAt }))} style={{ ...pill(!c.verifiedAt), alignSelf: "flex-start", height: "36px", fontSize: "13px" }}>{c.verifiedAt ? "Comprobadas · deshacer" : "Las hemos comprobado"}</button>
+                    <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{`Vuestras palabras de seguridad. ${c.name.split(" ")[0]} tiene que ver las mismas:`}</span>
+                    <strong style={{ font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{c.words.join(" · ")}</strong>
+                    <button type="button" onClick={() => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { verified: !c.verifiedAt }))} style={{ ...pill(!c.verifiedAt), alignSelf: "flex-start", height: "36px", fontSize: "var(--t-meta)" }}>{c.verifiedAt ? "Comprobadas · deshacer" : "Las hemos comprobado"}</button>
                   </div>
-                  <span style={{ fontSize: "13px", fontWeight: 500, color: MUTED }}>{"Lo que puede pedirte su bot"}</span>
+                  <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: MUTED }}>{"Lo que puede pedirte su bot"}</span>
                   {ASKS.map(([key, title, sub, items]) => (
                     <div key={key} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px" }}>
-                      <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "2px" }}><strong style={{ fontSize: "15px", fontWeight: 600 }}>{title}</strong><span style={{ fontSize: "13px", color: MUTED }}>{sub}</span></span>
+                      <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "2px" }}><strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{title}</strong><span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{sub}</span></span>
                       <span style={{ flex: "0 1 300px" }}><Segmented label={title} items={items} value={c.asks[key]} busy={act.busy} onPick={(v) => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { asks: { [key]: v } }))} /></span>
                     </div>
                   ))}
@@ -89,7 +89,7 @@ export default function PeopleSettings() {
           <div key={inv.id} style={rowStyle(i === peers.invites.length - 1, "64px")}>
             <PeerAvatar person={{ initials: inv.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase(), color: "#EEEAE3" }} size={40} dashed />
             <Text title={inv.name} sub={"Invitación sin aceptar · caduca el " + when(inv.expiresAt)} />
-            <button type="button" onClick={() => later({ id: "invite:" + inv.id, keys: [], text: "Invitación cancelada", run: () => act.act(() => del(`/peers/invites/${inv.id}`)) })} style={{ ...pill(false), height: "36px", fontSize: "13px" }}>{"Cancelar"}</button>
+            <button type="button" onClick={() => later({ id: "invite:" + inv.id, keys: [], text: "Invitación cancelada", run: () => act.act(() => del(`/peers/invites/${inv.id}`)) })} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)" }}>{"Cancelar"}</button>
           </div>
         ))}
       </Group>
@@ -135,21 +135,21 @@ function StatusRow({ status, act }) {
     <div id="tu-estado" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px 20px 18px", borderTop: LINE }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px" }}>
         <span style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "3px" }}>
-          <strong style={{ fontSize: "16px", fontWeight: 600 }}>{"Tu estado"}</strong>
-          <span style={{ fontSize: "14px", color: MUTED }}>{mode === "available" ? "Disponible. Lo ven las personas con las que hablas." : statusText(status) + ". Mientras tanto no te salta ni te suena ningún aviso."}</span>
+          <strong style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{"Tu estado"}</strong>
+          <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{mode === "available" ? "Disponible. Lo ven las personas con las que hablas." : statusText(status) + ". Mientras tanto no te salta ni te suena ningún aviso."}</span>
         </span>
         <span style={{ flex: "0 1 360px" }}><Segmented label="Tu estado" items={[["available", "Disponible"], ["dnd", "No molestar"], ["away", "Fuera"]]} value={picking || mode} busy={act.busy} onPick={choose} /></span>
       </div>
       {picking ? (
         <div role="group" aria-label="Hasta cuándo" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", animation: "rise .2s ease-out" }}>
-          {UNTIL[picking].map(([label, at]) => <button key={label} type="button" onClick={() => set(picking, at())} style={{ ...pill(false), height: "36px", fontSize: "13px" }}>{label}</button>)}
+          {UNTIL[picking].map(([label, at]) => <button key={label} type="button" onClick={() => set(picking, at())} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)" }}>{label}</button>)}
           {picking === "away" ? (
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: MUTED }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: MUTED }}>
               {"Hasta el"}
-              <input type="date" value={day} min={new Date(Date.now() + 864e5).toISOString().slice(0, 10)} onChange={(e) => { setDay(e.target.value); if (e.target.value) set("away", new Date(e.target.value + "T09:00:00").toISOString()); }} style={{ height: "36px", padding: "0 10px", border: 0, borderRadius: "12px", background: "#F4F4F0", font: "inherit", fontSize: "13px" }} />
+              <input type="date" value={day} min={new Date(Date.now() + 864e5).toISOString().slice(0, 10)} onChange={(e) => { setDay(e.target.value); if (e.target.value) set("away", new Date(e.target.value + "T09:00:00").toISOString()); }} style={{ height: "36px", padding: "0 10px", border: 0, borderRadius: "12px", background: "#F4F4F0", font: "inherit", fontSize: "var(--t-meta)" }} />
             </label>
           ) : null}
-          <button type="button" onClick={() => setPicking(null)} style={{ ...pill(false), height: "36px", fontSize: "13px", background: "transparent", color: MUTED }}>{"Cancelar"}</button>
+          <button type="button" onClick={() => setPicking(null)} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)", background: "transparent", color: MUTED }}>{"Cancelar"}</button>
         </div>
       ) : null}
     </div>

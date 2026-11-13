@@ -16,7 +16,7 @@ export function Notice({ children, tone = "error", style }) {
     ok: { background: "#E1F4EC", color: "#0B5A3E" },
   };
   return (
-    <p role={tone === "error" ? "alert" : "status"} style={{ margin: 0, padding: "12px 16px", borderRadius: "16px", fontSize: "14px", lineHeight: "1.45", ...tones[tone], ...style }}>
+    <p role={tone === "error" ? "alert" : "status"} style={{ margin: 0, padding: "12px 16px", borderRadius: "16px", fontSize: "var(--t-ui)", lineHeight: "1.45", ...tones[tone], ...style }}>
       {children}
     </p>
   );

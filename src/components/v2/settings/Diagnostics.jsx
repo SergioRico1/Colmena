@@ -63,7 +63,7 @@ function Command({ text }) {
   const [copied, setCopied] = useState(false);
   const copy = () => navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {});
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "2px", padding: "2px 2px 2px 10px", borderRadius: "9px", background: "#F1F1EC", font: "500 12.5px/1.4 'Geist Mono', monospace", color: INK }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "2px", padding: "2px 2px 2px 10px", borderRadius: "9px", background: "#F1F1EC", font: "500 var(--t-meta)/1.4 'Geist Mono', monospace", color: INK }}>
       {text}
       <button type="button" onClick={copy} aria-label={copied ? "Copiado" : "Copiar la orden"} title="Copiar" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "7px", background: "transparent", cursor: "pointer", color: copied ? "#0B6B4A" : MUTED }}>
         {copied ? <Check size={13} strokeWidth={2.4} aria-hidden="true" /> : <ClipboardCopy size={13} strokeWidth={2.2} aria-hidden="true" />}
@@ -76,7 +76,7 @@ const Mark = ({ status }) => {
   const [glyph, bg, ink, word] = MARK[status] || MARK.off;
   return (
     <>
-      <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: bg, color: ink, fontSize: "11px", fontWeight: 700 }}>{glyph}</span>
+      <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: bg, color: ink, fontSize: "var(--t-micro)", fontWeight: 700 }}>{glyph}</span>
       <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{word}</span>
     </>
   );
@@ -98,8 +98,8 @@ function GroupRow({ label, anchor, list, expert }) {
       <div style={{ position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", minHeight: "48px", padding: "8px 0" }}>
         <Mark status={worst.status} />
         <span style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
-          <span style={{ fontSize: "14.5px", fontWeight: 500 }}>{label}</span>
-          <span style={{ fontSize: "13px", lineHeight: 1.45, color: worst.status === "fail" ? "#8F1D22" : MUTED, overflowWrap: "anywhere" }}>{note}{bad && worst.fix ? " " + worst.fix : ""}</span>
+          <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{label}</span>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: worst.status === "fail" ? "#8F1D22" : MUTED, overflowWrap: "anywhere" }}>{note}{bad && worst.fix ? " " + worst.fix : ""}</span>
           {bad && worst.command ? <span style={{ marginTop: "4px" }}><Command text={worst.command} /></span> : null}
         </span>
         {bad && worst.to ? <Go to={worst.to} style={btn("outline", 34)}>Arreglarlo</Go> : null}
@@ -107,7 +107,7 @@ function GroupRow({ label, anchor, list, expert }) {
       {expert && sorted.length > 1 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "0 0 10px 34px" }}>
           {sorted.map((c) => (
-            <span key={c.id} style={{ position: "relative", display: "flex", alignItems: "baseline", gap: "8px", fontSize: "12.5px", lineHeight: 1.5, color: MUTED }}>
+            <span key={c.id} style={{ position: "relative", display: "flex", alignItems: "baseline", gap: "8px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: MUTED }}>
               <span aria-hidden="true" style={{ flex: "none", width: "6px", height: "6px", borderRadius: "50%", background: (MARK[c.status] || MARK.off)[2], transform: "translateY(-1px)" }} />
               <span><strong style={{ fontWeight: 600, color: SOFT }}>{c.title}</strong> · {c.text}{c.command ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{" — " + c.command}</span> : null}</span>
             </span>
@@ -158,11 +158,11 @@ export default function HelpSection() {
       <section {...anchorOf("comprobar")} aria-live="polite" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "20px", background: "#FFFFFF", scrollMarginTop: "24px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
           <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "15px", fontWeight: 600 }}>Comprueba que todo funciona</span>
-            {result?.error ? <span role="alert" style={{ fontSize: "13px", color: "#B4232A" }}>{"No pude comprobarlo: " + result.error}</span> : <span style={{ fontSize: "13px", color: MUTED }}>Tarda unos segundos y no cambia nada: solo lee.</span>}
+            <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>Comprueba que todo funciona</span>
+            {result?.error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4232A" }}>{"No pude comprobarlo: " + result.error}</span> : <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Tarda unos segundos y no cambia nada: solo lee.</span>}
           </span>
           <button type="button" onClick={() => { runDiagnostics(); updates?.check?.(); }} disabled={running} title={result?.at ? "Comprobar otra vez" : undefined}
-            style={{ ...btn("dark", 42), padding: "0 18px", fontSize: "14.5px", cursor: running ? "wait" : "pointer" }}>
+            style={{ ...btn("dark", 42), padding: "0 18px", fontSize: "var(--t-body)", cursor: running ? "wait" : "pointer" }}>
             {running ? <span aria-hidden="true" style={{ width: "14px", height: "14px", borderRadius: "50%", border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#FFFFFF", animation: "spin .9s linear infinite" }} /> : null}{label}
           </button>
         </div>
@@ -174,15 +174,15 @@ export default function HelpSection() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: "10px" }}>
         <div {...anchorOf("version")} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px 20px", borderRadius: "18px", background: "#FFFFFF", scrollMarginTop: "24px" }}>
-          <span style={{ fontSize: "13px", color: MUTED }}>Versión</span>
-          <span style={{ font: "600 22px/1 'Bricolage Grotesque', sans-serif" }}>{version}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Versión</span>
+          <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif" }}>{version}</span>
           {u ? (
             <>
-              <span {...anchorOf("canal")} style={{ fontSize: "13px", color: MUTED }}>
+              <span {...anchorOf("canal")} style={{ fontSize: "var(--t-meta)", color: MUTED }}>
                 {u.channel === "beta" ? "Canal beta · " : "Canal estable · "}
                 <button type="button" onClick={() => updates.setChannel(u.channel === "beta" ? "stable" : "beta")} style={{ padding: 0, border: 0, background: "none", font: "inherit", color: "#1F4FD1", cursor: "pointer" }}>{u.channel === "beta" ? "volver a estable" : "cambiar a beta"}</button>
               </span>
-              <span {...anchorOf("actualizaciones")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "13px", color: u.status === "error" ? "#B4232A" : u.status === "ready" ? "#0B6B4A" : MUTED }}>
+              <span {...anchorOf("actualizaciones")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-meta)", color: u.status === "error" ? "#B4232A" : u.status === "ready" ? "#0B6B4A" : MUTED }}>
                 {updateLine(u)}
                 {u.status === "ready" && !u.waiting ? <button type="button" onClick={() => updates.restart()} style={btn("dark", 30)}>Reiniciar</button>
                   : u.status === "error" && u.manual ? <button type="button" onClick={() => updates.download()} style={btn("dark", 30)}>Descargar</button>
@@ -191,16 +191,16 @@ export default function HelpSection() {
               </span>
               {u.notes && u.version ? (
                 <>
-                  <button type="button" aria-expanded={notes} onClick={() => setNotes(!notes)} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "none", font: "inherit", fontSize: "13px", fontWeight: 600, color: INK, cursor: "pointer" }}>{(notes ? "Ocultar" : "Ver") + " las novedades de la " + u.version}</button>
-                  {notes ? <p style={{ margin: 0, fontSize: "13px", lineHeight: 1.55, color: MUTED, whiteSpace: "pre-wrap", animation: "fade .25s ease-out" }}>{u.notes}</p> : null}
+                  <button type="button" aria-expanded={notes} onClick={() => setNotes(!notes)} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "none", font: "inherit", fontSize: "var(--t-meta)", fontWeight: 600, color: INK, cursor: "pointer" }}>{(notes ? "Ocultar" : "Ver") + " las novedades de la " + u.version}</button>
+                  {notes ? <p style={{ margin: 0, fontSize: "var(--t-meta)", lineHeight: 1.55, color: MUTED, whiteSpace: "pre-wrap", animation: "fade .25s ease-out" }}>{u.notes}</p> : null}
                 </>
               ) : null}
             </>
-          ) : <span {...anchorOf("actualizaciones")} style={{ fontSize: "13px", color: MUTED }}>Las actualizaciones las lleva la app de escritorio.</span>}
+          ) : <span {...anchorOf("actualizaciones")} style={{ fontSize: "var(--t-meta)", color: MUTED }}>Las actualizaciones las lleva la app de escritorio.</span>}
         </div>
         <button type="button" {...anchorOf("comentarios")} onClick={copy} disabled={!checks} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", padding: "18px 20px", border: 0, borderRadius: "18px", background: "#FFFFFF", textAlign: "left", color: INK, cursor: checks ? "pointer" : "default", scrollMarginTop: "24px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "15px", fontWeight: 600 }}>{copied ? <Check size={15} strokeWidth={2.4} color="#0B6B4A" aria-hidden="true" /> : null}{copied ? "Informe copiado" : "Enviar comentarios"}</span>
-          <span style={{ fontSize: "13px", color: MUTED }}>Copia el informe de la comprobación para pegarlo en un correo a quien te ayude.</span>
+          <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600 }}>{copied ? <Check size={15} strokeWidth={2.4} color="#0B6B4A" aria-hidden="true" /> : null}{copied ? "Informe copiado" : "Enviar comentarios"}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Copia el informe de la comprobación para pegarlo en un correo a quien te ayude.</span>
         </button>
       </div>
     </>

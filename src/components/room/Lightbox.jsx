@@ -84,8 +84,8 @@ function Lightbox({ images, index: start, onClose }) {
           style={{ animation: "c-fade 160ms ease both", maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "8px", background: "#FFFFFF", transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transition: drag.current ? "none" : "transform .14s ease", cursor: scale > 1 ? (drag.current ? "grabbing" : "grab") : "zoom-in", userSelect: "none", touchAction: "none" }} />
       </div>
       <div style={{ position: "absolute", top: "14px", left: "20px", right: "20px", display: "flex", alignItems: "center", gap: "12px", color: "#FFFFFF" }}>
-        <strong style={{ fontSize: "14px", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</strong>
-        {many ? <span style={{ fontSize: "13px", color: "#C9CCD6", flex: "none" }}>{`${index + 1} de ${images.length}`}</span> : null}
+        <strong style={{ fontSize: "var(--t-ui)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</strong>
+        {many ? <span style={{ fontSize: "var(--t-meta)", color: "#C9CCD6", flex: "none" }}>{`${index + 1} de ${images.length}`}</span> : null}
         <button type="button" className="rm-focus" aria-label="Cerrar (Esc)" title="Cerrar (Esc)" onClick={() => dialog.current.close()} style={{ ...tool, marginLeft: "auto", color: "#FFFFFF" }}>
           <X size={22} strokeWidth={2.2} aria-hidden="true" />
         </button>
@@ -98,7 +98,7 @@ function Lightbox({ images, index: start, onClose }) {
       ) : null}
       <div role="toolbar" aria-label="Zoom" style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "999px", boxShadow: "0 20px 40px -16px rgba(0,0,0,.5)" }}>
         <button type="button" className="rm-focus" aria-label="Alejar (−)" title="Alejar (−)" disabled={scale <= 1} onClick={() => zoom(1 / STEP)} style={{ ...tool, opacity: scale <= 1 ? 0.35 : 1 }}><ZoomOut size={18} strokeWidth={2.2} aria-hidden="true" /></button>
-        <span aria-live="polite" style={{ minWidth: "52px", textAlign: "center", font: "600 13px/1 'Geist Mono', monospace" }}>{Math.round(scale * 100) + " %"}</span>
+        <span aria-live="polite" style={{ minWidth: "52px", textAlign: "center", font: "600 var(--t-meta)/1 'Geist Mono', monospace" }}>{Math.round(scale * 100) + " %"}</span>
         <button type="button" className="rm-focus" aria-label="Acercar (+)" title="Acercar (+)" disabled={scale >= MAX} onClick={() => zoom(STEP)} style={{ ...tool, opacity: scale >= MAX ? 0.35 : 1 }}><ZoomIn size={18} strokeWidth={2.2} aria-hidden="true" /></button>
         <button type="button" className="rm-focus" aria-label="Tamaño ajustado (0)" title="Tamaño ajustado (0)" disabled={scale === 1} onClick={reset} style={{ ...tool, opacity: scale === 1 ? 0.35 : 1 }}><RotateCcw size={17} strokeWidth={2.2} aria-hidden="true" /></button>
         <span aria-hidden="true" style={{ width: "1px", height: "24px", background: "#DCE0E8", margin: "0 4px" }} />

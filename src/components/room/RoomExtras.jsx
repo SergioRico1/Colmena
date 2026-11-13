@@ -34,12 +34,12 @@ export function CatchUp({ count, mission, pending, id }) {
     <section aria-label="Mientras no estabas" style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px", padding: "18px 20px", borderRadius: "20px", background: "#12131A", color: "#FFFFFF", animation: "rise .4s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <span aria-hidden="true" style={{ width: "18px", height: "18px", background: "#FFFFFF", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
-        <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{"Mientras no estabas"}</span>
-        <span style={{ fontSize: "13px", color: "#C9CBD3" }}>{`${count} mensajes${need.length ? ` · ${need.length} te ${need.length === 1 ? "necesita" : "necesitan"}` : ""}`}</span>
+        <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"Mientras no estabas"}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: "#C9CBD3" }}>{`${count} mensajes${need.length ? ` · ${need.length} te ${need.length === 1 ? "necesita" : "necesitan"}` : ""}`}</span>
         <span style={{ flex: "1" }} />
-        {vote ? <a href={`/debate/${id}`} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>{"Ir a la votación"}</a> : null}
+        {vote ? <a href={`/debate/${id}`} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>{"Ir a la votación"}</a> : null}
       </div>
-      <ul style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "14px", lineHeight: "1.5", color: "#E6E7EC" }}>
+      <ul style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#E6E7EC" }}>
         {sentences.slice(0, 3).map((t, i) => <li key={i}>{t}</li>)}
         {need.length ? <li>{"Te toca: " + need[0].title.charAt(0).toLowerCase() + need[0].title.slice(1) + "."}</li> : null}
       </ul>
@@ -62,10 +62,10 @@ export function RulesPanel({ mission, bots, memberIds }) {
   return (
     <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: "22px" }}>
       <section style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <span style={{ fontSize: "13px", fontWeight: "500", color: "#6B6F7A" }}>{`Bots en la sala · ${inRoom.length}`}</span>
+        <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", color: "#6B6F7A" }}>{`Bots en la sala · ${inRoom.length}`}</span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           {inRoom.map((b) => (
-            <a key={b.id} href={`/colmena/${b.id}`} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 10px", borderRadius: "999px", background: "#F6F6F3", fontSize: "14px", fontWeight: "600" }}>
+            <a key={b.id} href={`/colmena/${b.id}`} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 10px", borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-ui)", fontWeight: "600" }}>
               <BotMark bot={b} size={18} />{b.name}
             </a>
           ))}
@@ -73,7 +73,7 @@ export function RulesPanel({ mission, bots, memberIds }) {
         {others.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {others.map((b) => (
-              <button key={b.id} type="button" disabled={busy} onClick={() => act(() => post(`/missions/${mission.id}/members`, { botId: b.id }))} style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px 0 8px", border: 0, borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", cursor: "pointer", fontSize: "13px", color: "#3D404A" }}>
+              <button key={b.id} type="button" disabled={busy} onClick={() => act(() => post(`/missions/${mission.id}/members`, { botId: b.id }))} style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px 0 8px", border: 0, borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", cursor: "pointer", fontSize: "var(--t-meta)", color: "#3D404A" }}>
                 <BotMark bot={b} size={14} />{"+ " + b.name}
               </button>
             ))}
@@ -81,12 +81,12 @@ export function RulesPanel({ mission, bots, memberIds }) {
         ) : null}
       </section>
       <section style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <span style={{ fontSize: "13px", fontWeight: "500", color: "#6B6F7A" }}>{"Cómo funciona esta sala · toca lo subrayado para elegir"}</span>
+        <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", color: "#6B6F7A" }}>{"Cómo funciona esta sala · toca lo subrayado para elegir"}</span>
         {rules.map((r) => {
           const current = r.options.find(([v]) => v === r.value)?.[1] || r.options[0][1];
           return (
             <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <p style={{ margin: 0, fontSize: "17px", lineHeight: "1.55" }}>
+              <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: "1.55" }}>
                 {r.pre}
                 <button type="button" aria-expanded={open === r.id ? "true" : "false"} onClick={() => setOpen(open === r.id ? null : r.id)} style={{ padding: "0 4px", border: 0, borderRadius: "6px", background: open === r.id ? "rgba(255,201,60,.25)" : "transparent", cursor: "pointer", font: "inherit", fontWeight: 600, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "4px" }}>{current}</button>
                 {r.post}
@@ -96,7 +96,7 @@ export function RulesPanel({ mission, bots, memberIds }) {
                   {r.options.map(([v, label]) => {
                     const on = v === r.value;
                     return (
-                      <button key={v} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => choose(r, v)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "12px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", cursor: "pointer", textAlign: "left", fontSize: "14px" }}>
+                      <button key={v} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => choose(r, v)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "12px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)" }}>
                         <span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
                           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
                         </span>
@@ -109,9 +109,9 @@ export function RulesPanel({ mission, bots, memberIds }) {
             </div>
           );
         })}
-        <p style={{ margin: 0, fontSize: "17px", lineHeight: "1.55", color: "#3D404A" }}>{mission.safety === "avisar" ? "Para enviar algo fuera o gastar dinero, te avisan antes y esperan tu OK." : "Para enviar algo fuera o gastar dinero, siempre esperan tu OK."}</p>
-        {saved ? <span role="status" style={{ fontSize: "14px", color: "#0B6B4A" }}>{"Guardado. Atlas lo tendrá en cuenta desde ahora."}</span> : null}
-        {error ? <span role="alert" style={{ fontSize: "14px", color: "#B4372A" }}>{error}</span> : null}
+        <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: "1.55", color: "#3D404A" }}>{mission.safety === "avisar" ? "Para enviar algo fuera o gastar dinero, te avisan antes y esperan tu OK." : "Para enviar algo fuera o gastar dinero, siempre esperan tu OK."}</p>
+        {saved ? <span role="status" style={{ fontSize: "var(--t-ui)", color: "#0B6B4A" }}>{"Guardado. Atlas lo tendrá en cuenta desde ahora."}</span> : null}
+        {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4372A" }}>{error}</span> : null}
       </section>
     </div>
   );
@@ -141,13 +141,13 @@ export function NewRoom({ query }) {
       <div style={{ display: "flex", height: "100%" }}>
         <section style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column" }}>
           <header style={{ flex: "none", display: "flex", flexDirection: "column", gap: "2px", padding: "14px 26px", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
-            <h1 style={{ margin: 0, fontSize: "17px", fontWeight: 600, lineHeight: 1.2 }}>{"# " + name}</h1>
-            <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Sala nueva · empieza con tu primer mensaje"}</span>
+            <h1 style={{ margin: 0, fontSize: "var(--t-lead)", fontWeight: 600, lineHeight: 1.2 }}>{"# " + name}</h1>
+            <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Sala nueva · empieza con tu primer mensaje"}</span>
           </header>
           <div style={{ flex: "1", display: "flex", flexDirection: "column", justifyContent: "flex-end", width: "100%", maxWidth: "840px", margin: "0 auto", padding: "22px clamp(20px, 4vw, 44px)", gap: "16px" }}>
             <span style={{ display: "flex", gap: "10px" }}>{members.map((b) => <BotMark key={b.id} bot={b} size={34} />)}</span>
-            <strong style={{ font: "600 30px/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{`Sala con ${members.map((b) => b.name).join(", ").replace(/, ([^,]*)$/, " y $1")}`}</strong>
-            <span style={{ fontSize: "16px", lineHeight: "1.5", color: "#5C606C" }}>{"Escribe qué necesitáis. Atlas reparte el trabajo y todos lo veis aquí."}</span>
+            <strong style={{ font: "600 var(--t-headline)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{`Sala con ${members.map((b) => b.name).join(", ").replace(/, ([^,]*)$/, " y $1")}`}</strong>
+            <span style={{ fontSize: "var(--t-read)", lineHeight: "1.5", color: "#5C606C" }}>{"Escribe qué necesitáis. Atlas reparte el trabajo y todos lo veis aquí."}</span>
             {error ? <span role="alert" style={{ color: "#B4372A" }}>{error}</span> : null}
           </div>
           <Composer value={text} onChange={setText} onSubmit={submit} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); } }} label="Primer mensaje de la sala" placeholder={`Mensaje en #${name} · qué necesitáis`} busy={busy} v3 />

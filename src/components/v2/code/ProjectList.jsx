@@ -60,15 +60,15 @@ export function MenuSheet({ menu, label, children, width = 280 }) {
 export function Item({ icon: Icon, text, note = null, onClick, tone = null, on = false, disabled = false }) {
   return (
     <button type="button" role="menuitem" disabled={disabled} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick(); }} className="code-hover"
-      style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", border: 0, borderRadius: "12px", background: on ? C.soft : "transparent", cursor: disabled ? "default" : "pointer", textAlign: "left", fontSize: "13px", fontWeight: 500, color: disabled ? C.quiet : tone || C.ink }}>
+      style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", border: 0, borderRadius: "12px", background: on ? C.soft : "transparent", cursor: disabled ? "default" : "pointer", textAlign: "left", fontSize: "var(--t-meta)", fontWeight: 500, color: disabled ? C.quiet : tone || C.ink }}>
       {Icon ? <Icon size={14} strokeWidth={2.1} aria-hidden="true" style={{ flex: "none" }} /> : <span style={{ width: "14px", flex: "none" }} />}
       <span style={{ flex: 1 }}>{text}</span>
-      {note ? <span style={{ font: `400 11px/1 ${MONO}`, color: C.quiet, whiteSpace: "nowrap" }}>{note}</span> : null}
+      {note ? <span style={{ font: `400 var(--t-micro)/1 ${MONO}`, color: C.quiet, whiteSpace: "nowrap" }}>{note}</span> : null}
     </button>
   );
 }
 export const Rule = () => <span aria-hidden="true" style={{ display: "block", height: "1px", margin: "4px 8px", background: C.rule }} />;
-export const Heading = ({ children }) => <span style={{ display: "block", padding: "8px 10px 4px", font: `500 11px/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{children}</span>;
+export const Heading = ({ children }) => <span style={{ display: "block", padding: "8px 10px 4px", font: `500 var(--t-micro)/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{children}</span>;
 
 /** Pin, snooze, archive, delete: the items of a task's «…» (the list and the task's «Más»). */
 export function TaskActions({ task, current, done }) {
@@ -110,8 +110,8 @@ export function TaskActions({ task, current, done }) {
           {snoozePresets().map((p) => <Item key={p.id} icon={AlarmClock} text={p.label} note={whenLabel(p.until)} onClick={() => snooze(p.until)} />)}
           {custom ? (
             <form onSubmit={(e) => { e.preventDefault(); const d = new Date(when); if (d > new Date()) snooze(d.toISOString()); }} style={{ display: "flex", gap: "6px", padding: "6px 8px" }}>
-              <input type="datetime-local" value={when} min={toLocalInput(new Date())} onChange={(e) => setWhen(e.target.value)} aria-label="Hasta cuándo" style={{ flex: 1, minWidth: 0, height: "32px", padding: "0 8px", border: 0, borderRadius: "10px", background: C.soft, font: `400 12px/1 ${MONO}` }} />
-              <button type="submit" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Posponer</button>
+              <input type="datetime-local" value={when} min={toLocalInput(new Date())} onChange={(e) => setWhen(e.target.value)} aria-label="Hasta cuándo" style={{ flex: 1, minWidth: 0, height: "32px", padding: "0 8px", border: 0, borderRadius: "10px", background: C.soft, font: `400 var(--t-caption)/1 ${MONO}` }} />
+              <button type="submit" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Posponer</button>
             </form>
           ) : <Item icon={CalendarClock} text="Elegir día y hora…" onClick={() => setCustom(true)} />}
           <Rule />
@@ -165,8 +165,8 @@ function metaOf(task, project) {
 }
 
 const ROW = { position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "64px", padding: "10px 18px", borderTop: "1px solid rgba(18,19,26,.05)", color: C.ink };
-const META = { font: `400 12.5px/1.3 ${MONO}`, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-const TITLE = { fontSize: "15px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const META = { font: `400 var(--t-meta)/1.3 ${MONO}`, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const TITLE = { fontSize: "var(--t-body)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 
 function TaskRow({ task, project, bots }) {
   const menu = useMenu();
@@ -184,7 +184,7 @@ function TaskRow({ task, project, bots }) {
           {task.overlaps?.length ? <OverlapChip overlap={task.overlaps[0]} more={task.overlaps.length - 1} /> : null}
         </span>
       </span>
-      {task.add || task.del ? <span style={{ font: `500 12.5px/1 ${MONO}`, whiteSpace: "nowrap" }}><span style={{ color: C.greenText }}>{task.add ? "+" + task.add : ""}</span> <span style={{ color: C.red }}>{task.del ? "−" + task.del : ""}</span></span> : null}
+      {task.add || task.del ? <span style={{ font: `500 var(--t-meta)/1 ${MONO}`, whiteSpace: "nowrap" }}><span style={{ color: C.greenText }}>{task.add ? "+" + task.add : ""}</span> <span style={{ color: C.red }}>{task.del ? "−" + task.del : ""}</span></span> : null}
       <span className="code-pill" style={{ display: "flex" }}><Pill pill={pill} /></span>
       <button type="button" className={menu.at ? undefined : "code-x"} onClick={menu.open} aria-label={"Acciones de la tarea " + task.title} aria-haspopup="menu" aria-expanded={!!menu.at} title="Fijar, posponer, archivar o borrar"
         style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", padding: 0, display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: C.white, color: C.text, cursor: "pointer" }}>
@@ -200,7 +200,7 @@ function OverlapChip({ overlap, more = 0 }) {
   const open = (e) => { e.preventDefault(); e.stopPropagation(); navigate("/codigo/" + overlap.task); };
   return (
     <button type="button" onClick={open} title={`También los cambia «${overlap.title}»: ${overlap.files.join(", ")}${overlap.count > overlap.files.length ? "…" : ""}. Al fusionar pueden chocar.`}
-      style={{ flex: "0 1 auto", minWidth: 0, display: "inline-flex", alignItems: "center", gap: "5px", height: "20px", padding: "0 8px", border: 0, borderRadius: "999px", background: "#FFF1C7", color: C.honeyText, cursor: "pointer", font: `500 11.5px/1 ${MONO}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      style={{ flex: "0 1 auto", minWidth: 0, display: "inline-flex", alignItems: "center", gap: "5px", height: "20px", padding: "0 8px", border: 0, borderRadius: "999px", background: "#FFF1C7", color: C.honeyText, cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
       <Files size={11} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>mismos archivos que «{overlap.title}»{more > 0 ? " y " + (more === 1 ? "otra" : more + " más") : ""}</span>
     </button>
@@ -234,10 +234,10 @@ function HitRow({ hit, query }) {
       <MessageSquareText size={15} strokeWidth={2.1} color={C.faint} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
         <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-          <span style={{ ...TITLE, fontSize: "14px" }}>{hit.title}</span>
-          {hit.archived ? <span style={{ flex: "none", height: "18px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.track, font: `500 11px/1 ${MONO}`, color: C.muted }}>archivada</span> : null}
+          <span style={{ ...TITLE, fontSize: "var(--t-ui)" }}>{hit.title}</span>
+          {hit.archived ? <span style={{ flex: "none", height: "18px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.track, font: `500 var(--t-micro)/1 ${MONO}`, color: C.muted }}>archivada</span> : null}
         </span>
-        <span style={{ fontSize: "13.5px", lineHeight: 1.45, color: C.text2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
+        <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: C.text2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
           {hit.who ? <span style={{ fontWeight: 600, color: C.ink }}>{hit.who}: </span> : null}<Highlight text={hit.snippet} query={query} />
         </span>
         <span style={META}>{[hit.project, timeAgo(hit.at)].filter(Boolean).join(" · ")}</span>
@@ -284,9 +284,9 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
   return (
     <section aria-labelledby="tasks-t" style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", minHeight: "22px" }}>
-        <h2 id="tasks-t" style={{ margin: 0, font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Tareas</h2>
+        <h2 id="tasks-t" style={{ margin: 0, font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Tareas</h2>
         {filtered ? (
-          <button type="button" onClick={onClearFilter} title="Ver las tareas de todos los proyectos" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 8px 0 11px", border: 0, borderRadius: "999px", background: C.track, cursor: "pointer", font: `500 12.5px/1 ${MONO}`, color: C.ink }}>
+          <button type="button" onClick={onClearFilter} title="Ver las tareas de todos los proyectos" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 8px 0 11px", border: 0, borderRadius: "999px", background: C.track, cursor: "pointer", font: `500 var(--t-meta)/1 ${MONO}`, color: C.ink }}>
             {filtered.name}<X size={13} strokeWidth={2.4} aria-label="Quitar el filtro" />
           </button>
         ) : null}
@@ -295,14 +295,14 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
           <label title="Busca en los títulos y en lo que se ha dicho en cada tarea, también en las archivadas" style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "240px", padding: "0 12px", borderRadius: "999px", background: C.white, border: "1px solid rgba(18,19,26,.1)", color: C.muted }}>
             <Search size={14} strokeWidth={2.2} aria-hidden="true" />
             <span style={SR}>Buscar en las tareas</span>
-            <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "13.5px" }} />
+            <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)" }} />
           </label>
         ) : null}
       </div>
       {!sections.length && !said.length && found.answered ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "20px", borderRadius: "18px", background: C.white }}>
-          <span style={{ fontSize: "15px", fontWeight: 600 }}>{query ? "Ninguna tarea coincide" : filtered ? "Este proyecto aún no tiene tareas" : "Aún no hay tareas"}</span>
-          <span style={{ fontSize: "14px", lineHeight: 1.5, color: C.text2 }}>{query ? "Prueba con otras palabras." : "Cuenta arriba qué quieres construir y pulsa «Empezar». Bruno trabaja en una copia aparte y aquí verás cómo va."}</span>
+          <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{query ? "Ninguna tarea coincide" : filtered ? "Este proyecto aún no tiene tareas" : "Aún no hay tareas"}</span>
+          <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2 }}>{query ? "Prueba con otras palabras." : "Cuenta arriba qué quieres construir y pulsa «Empezar». Bruno trabaja en una copia aparte y aquí verás cómo va."}</span>
         </div>
       ) : null}
       {sections.map((g) => {
@@ -311,10 +311,10 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
         return (
           <div key={g.key} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {shelf ? (
-              <button type="button" onClick={() => toggleShelf("archived")} aria-expanded={open} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", padding: "0 4px", border: 0, background: "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: C.muted }}>
+              <button type="button" onClick={() => toggleShelf("archived")} aria-expanded={open} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", padding: "0 4px", border: 0, background: "transparent", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>
                 <ChevronRight size={13} strokeWidth={2.6} aria-hidden="true" style={{ transition: "transform .2s ease", transform: open ? "rotate(90deg)" : "none" }} />{g.title} · {g.rows.length}
               </button>
-            ) : <h3 style={{ margin: 0, padding: "0 4px", fontSize: "13px", fontWeight: 600, color: C.muted }}>{g.title}</h3>}
+            ) : <h3 style={{ margin: 0, padding: "0 4px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>{g.title}</h3>}
             {open ? (
               <div style={{ display: "flex", flexDirection: "column", borderRadius: "18px", background: C.white, overflow: "hidden" }}>
                 {g.rows.map((r) => r.kind === "compare"
@@ -327,7 +327,7 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
       })}
       {said.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <h3 style={{ margin: 0, padding: "0 4px", fontSize: "13px", fontWeight: 600, color: C.muted }}>En las conversaciones · {said.length}</h3>
+          <h3 style={{ margin: 0, padding: "0 4px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>En las conversaciones · {said.length}</h3>
           <div style={{ display: "flex", flexDirection: "column", borderRadius: "18px", background: C.white, overflow: "hidden" }}>
             {said.map((h) => <HitRow key={h.itemId} hit={h} query={q.trim()} />)}
           </div>

@@ -34,15 +34,15 @@ function Preview({ source, anchor, onEnter, onLeave }) {
   return createPortal((
     <div role="tooltip" onMouseEnter={onEnter} onMouseLeave={onLeave}
       style={{ position: "fixed", zIndex: 70, ...place, padding: "14px 16px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 20px 44px -18px rgba(18,19,26,.4)", display: "flex", flexDirection: "column", gap: "8px", animation: "rise .18s ease-out" }}>
-      <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#5C606C", minWidth: 0 }}>
+      <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "#5C606C", minWidth: 0 }}>
         <Icon size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{source.site}</span>
       </span>
-      <strong style={{ fontSize: "14px", lineHeight: "1.35", color: "#12131A", overflowWrap: "anywhere" }}>{source.title}</strong>
-      {source.meta ? <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{source.meta}</span> : null}
-      {source.excerpt ? <p style={{ margin: 0, fontSize: "13px", lineHeight: "1.5", color: "#3D404A" }}>{source.excerpt}</p> : null}
+      <strong style={{ fontSize: "var(--t-ui)", lineHeight: "1.35", color: "#12131A", overflowWrap: "anywhere" }}>{source.title}</strong>
+      {source.meta ? <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{source.meta}</span> : null}
+      {source.excerpt ? <p style={{ margin: 0, fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#3D404A" }}>{source.excerpt}</p> : null}
       {source.url ? (
-        <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 14px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>
+        <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 14px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>
           {source.kind === "mail" ? "Abrir el correo" : "Abrir"}<ArrowUpRight size={13} strokeWidth={2.4} aria-hidden="true" />
         </a>
       ) : null}
@@ -71,7 +71,7 @@ function Chip({ source }) {
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
     </>
   );
-  const style = { display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "240px", height: "30px", padding: "0 12px 0 10px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", fontSize: "13px", color: "#12131A", textDecoration: "none", cursor: source.url ? "pointer" : "default" };
+  const style = { display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "240px", height: "30px", padding: "0 12px 0 10px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", fontSize: "var(--t-meta)", color: "#12131A", textDecoration: "none", cursor: source.url ? "pointer" : "default" };
   const events = { onMouseEnter: h.show, onMouseLeave: h.hide, onFocus: h.show, onBlur: h.hide, onKeyDown: (e) => { if (e.key === "Escape") h.close(); } };
   return (
     <>
@@ -88,7 +88,7 @@ export default function SourceChips({ sources = [] }) {
   if (!sources.length) return null;
   return (
     <div role="group" aria-label={`Fuentes · ${sources.length}`} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-      <span style={{ fontSize: "12px", color: "#6B6F7A", marginRight: "2px" }}>{"Fuentes"}</span>
+      <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A", marginRight: "2px" }}>{"Fuentes"}</span>
       {sources.map((s) => <Chip key={s.key} source={s} />)}
     </div>
   );

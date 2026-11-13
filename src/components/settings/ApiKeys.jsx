@@ -20,13 +20,13 @@ function KeyRow({ s, first }) {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
         <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "9px", color: "#5C606C" }}><KeyRound size={16} strokeWidth={2.1} /></span>
         <span style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-          <strong style={{ ...field.mono, fontSize: "13px", color: "#12131A" }}>{s.name}</strong>
-          <span style={{ fontSize: "12px", color: "#5C606C", overflowWrap: "anywhere" }}>{"Solo en " + s.allowedHosts.join(", ")}</span>
-          <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{meta}</span>
+          <strong style={{ ...field.mono, fontSize: "var(--t-meta)", color: "#12131A" }}>{s.name}</strong>
+          <span style={{ fontSize: "var(--t-caption)", color: "#5C606C", overflowWrap: "anywhere" }}>{"Solo en " + s.allowedHosts.join(", ")}</span>
+          <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{meta}</span>
         </span>
         {confirm ? (
           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "13px" }}>{"¿Borrarla? Los bots dejarán de poder usarla."}</span>
+            <span style={{ fontSize: "var(--t-meta)" }}>{"¿Borrarla? Los bots dejarán de poder usarla."}</span>
             <button type="button" disabled={busy} onClick={() => act(() => del(`/secrets/${encodeURIComponent(s.name)}`))} style={{ ...btn.quiet, color: "#B4372A", borderColor: "#F1B5B7", fontWeight: "600" }}>{"Borrar"}</button>
             <button type="button" onClick={() => setConfirm(false)} style={btn.quiet}>{"No"}</button>
           </span>
@@ -55,14 +55,14 @@ export default function ApiKeysCard() {
   const list = data?.secrets || [];
   return (
     <Card id="claves" title="Claves de API">
-      <p style={{ margin: "0", fontSize: "14px", lineHeight: "1.5", color: "#5C606C" }}>
+      <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>
         {"Cuando un bot necesita una clave para un servicio (Holded, Stripe, tu CRM…), te la pide en un recuadro oculto. Windows la cifra para tu usuario en este ordenador y ningún bot la ve: Colmena la pone en la llamada solo si va a uno de sus sitios. Lo que cambie algo en el servicio siempre espera tu OK."}
       </p>
       {data?.available === false ? <Notice tone="info">{"Las claves cifradas solo funcionan en Windows, en la aplicación de escritorio."}</Notice> : null}
       {list.length ? (
         <div style={{ display: "flex", flexDirection: "column" }}>{list.map((s, i) => <KeyRow key={s.name} s={s} first={i === 0} />)}</div>
       ) : (
-        <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "14px", lineHeight: "1.5", color: "#5C606C" }}>{loading ? "Cargando…" : "Aún no has dado ninguna clave. Aparecerán aquí cuando un bot te pida una y la guardes."}</p>
+        <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{loading ? "Cargando…" : "Aún no has dado ninguna clave. Aparecerán aquí cuando un bot te pida una y la guardes."}</p>
       )}
     </Card>
   );

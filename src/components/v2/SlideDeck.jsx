@@ -35,7 +35,7 @@ export function SlideImage({ artifact, n, radius = 14, eager = false }) {
   );
 }
 
-const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "14px", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
+const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
 const dark = { ...pill, background: "#12131A", color: "#FFFFFF" };
 const soft = { ...pill, background: "rgba(18,19,26,.06)", color: "#12131A" };
 
@@ -48,8 +48,8 @@ export function DeckCard({ artifact, onOpen }) {
         <SlideImage artifact={artifact} n={1} radius={18} eager />
       </button>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 10px" }}>
-        <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{`Presentación · ${n} ${n === 1 ? "diapositiva" : "diapositivas"}`}</span>
-        <strong style={{ font: "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{artifact?.title || "Presentación"}</strong>
+        <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{`Presentación · ${n} ${n === 1 ? "diapositiva" : "diapositivas"}`}</span>
+        <strong style={{ font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{artifact?.title || "Presentación"}</strong>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "0 10px" }}>
         <button type="button" onClick={onOpen} style={dark}><Presentation size={16} strokeWidth={2.2} aria-hidden="true" />{"Abrir"}</button>
@@ -88,7 +88,7 @@ export function SlideViewer({ artifact }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
         <button type="button" onClick={() => go((c) => c - 1)} disabled={n === 1} aria-label="Diapositiva anterior" style={arrow(-1)}><ChevronLeft size={18} strokeWidth={2.4} aria-hidden="true" /></button>
-        <span aria-live="polite" style={{ minWidth: "64px", textAlign: "center", font: "500 13px/1 'Geist Mono', monospace", color: "#5C606C" }}>{`${n} / ${count}`}</span>
+        <span aria-live="polite" style={{ minWidth: "64px", textAlign: "center", font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: "#5C606C" }}>{`${n} / ${count}`}</span>
         <button type="button" onClick={() => go((c) => c + 1)} disabled={n === count} aria-label="Diapositiva siguiente" style={arrow(1)}><ChevronRight size={18} strokeWidth={2.4} aria-hidden="true" /></button>
         <span style={{ flex: 1 }} />
         <button type="button" onClick={() => stage.current?.requestFullscreen?.()} style={soft}><Expand size={16} strokeWidth={2.2} aria-hidden="true" />{"Presentar"}</button>
@@ -100,7 +100,7 @@ export function SlideViewer({ artifact }) {
           <button key={k} type="button" role="tab" aria-selected={k === n} data-n={k} onClick={() => go(k)} aria-label={`Diapositiva ${k}`}
             style={{ position: "relative", padding: 0, border: 0, background: "transparent", cursor: "pointer", borderRadius: "10px", outline: k === n ? "2px solid #7B4DFF" : "none", outlineOffset: "2px" }}>
             <SlideImage artifact={artifact} n={k} radius={10} />
-            <span style={{ position: "absolute", left: "6px", bottom: "6px", padding: "2px 7px", borderRadius: "999px", background: "rgba(18,19,26,.72)", color: "#FFFFFF", font: "500 11px/1.4 'Geist Mono', monospace" }}>{k}</span>
+            <span style={{ position: "absolute", left: "6px", bottom: "6px", padding: "2px 7px", borderRadius: "999px", background: "rgba(18,19,26,.72)", color: "#FFFFFF", font: "500 var(--t-micro)/1.4 'Geist Mono', monospace" }}>{k}</span>
           </button>
         ))}
       </div>

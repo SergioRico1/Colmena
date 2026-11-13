@@ -179,8 +179,8 @@ function Connected({ row, c, first, team }) {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", minHeight: "68px", padding: "12px 18px" }}>
         <AppLogo id={meta?.id || s?.catalogId || a?.toolkit} name={label} logo={meta?.logo} size={40} />
         <span style={{ flex: "1 1 220px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-          <span style={{ fontSize: "15px", fontWeight: 600 }}>{label}</span>
-          <span style={{ fontSize: "13px", lineHeight: 1.4, color: trouble || waiting ? "#8A5A00" : MUTED }}>{note}</span>
+          <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{label}</span>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.4, color: trouble || waiting ? "#8A5A00" : MUTED }}>{note}</span>
         </span>
         {users.length ? (
           <span title={"La usan " + names(users.map((b) => b.name))} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -193,7 +193,7 @@ function Connected({ row, c, first, team }) {
       </div>
       {open ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "0 18px 14px 72px", animation: "fade .25s ease-out" }}>
-          <span style={{ fontSize: "13px", lineHeight: 1.5, color: MUTED }}>Leer y buscar, sin preguntar. Cambiar algo, con tu OK. Enviar, borrar, pagar o publicar, siempre tú.</span>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: MUTED }}>Leer y buscar, sin preguntar. Cambiar algo, con tu OK. Enviar, borrar, pagar o publicar, siempre tú.</span>
           {name !== null ? (
             <form onSubmit={(e) => { e.preventDefault(); if (name.trim()) c.rename(a, name.trim()).then((done) => done && setName(null)); }} style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               <input autoFocus aria-label="Nombre de la cuenta" value={name} maxLength={80} placeholder={appName(a.toolkit) + " trabajo"} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setName(null); }} style={{ ...select, width: "240px", padding: "0 12px", height: "34px" }} />
@@ -249,17 +249,17 @@ function Catalogue({ c, initialQuery }) {
         <label style={{ flex: "0 1 260px", display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 12px", borderRadius: "10px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
           <span style={srOnly}>Buscar una app</span>
-          <input className="c-bare" type="text" value={text} onChange={(e) => type(e.target.value)} placeholder={`Buscar entre ${c.curated.length > 30 ? "cientos de" : "todas las"} apps`} style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "14px", color: INK }} />
+          <input className="c-bare" type="text" value={text} onChange={(e) => type(e.target.value)} placeholder={`Buscar entre ${c.curated.length > 30 ? "cientos de" : "todas las"} apps`} style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: INK }} />
         </label>
       </div>
       <div role="group" aria-label="Filtrar por tipo" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {FILTERS.map(([id, label]) => {
           const sel = filter === id;
-          return <button key={id} type="button" aria-pressed={sel} onClick={() => pick(id)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: sel ? INK : "#F1F1EC", color: sel ? "#FFFFFF" : "#3D404A", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+          return <button key={id} type="button" aria-pressed={sel} onClick={() => pick(id)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: sel ? INK : "#F1F1EC", color: sel ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
         })}
       </div>
       {status ? (
-        <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 14px", borderRadius: "12px", background: c.pending || c.mcpPending ? "#FFF6DC" : "#F6F6F3", fontSize: "13.5px", lineHeight: 1.45, color: c.pending || c.mcpPending ? "#8A5A00" : SOFT }}>
+        <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 14px", borderRadius: "12px", background: c.pending || c.mcpPending ? "#FFF6DC" : "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: 1.45, color: c.pending || c.mcpPending ? "#8A5A00" : SOFT }}>
           <span style={{ flex: "1 1 260px" }}>{status}</span>
           {c.authorizationUrl && (c.pending || c.mcpPending) ? <button type="button" onClick={() => window.open(c.authorizationUrl, "_blank", "noopener")} style={btn("outline", 32)}>Abrir autorización</button> : null}
           {c.pending ? <button type="button" disabled={c.busy} onClick={() => c.action(c.load)} style={btn("outline", 32)}>Comprobar</button> : null}
@@ -267,7 +267,7 @@ function Catalogue({ c, initialQuery }) {
         </div>
       ) : null}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(172px, 100%), 1fr))", gap: "8px" }}>
-        {c.loaded && !list.length ? <p style={{ gridColumn: "1 / -1", margin: 0, padding: "18px 0", textAlign: "center", fontSize: "14px", color: MUTED }}>{text ? `No hay apps que coincidan con «${text}».` : "No hay apps en este tipo."}</p> : null}
+        {c.loaded && !list.length ? <p style={{ gridColumn: "1 / -1", margin: 0, padding: "18px 0", textAlign: "center", fontSize: "var(--t-ui)", color: MUTED }}>{text ? `No hay apps que coincidan con «${text}».` : "No hay apps en este tipo."}</p> : null}
         {!c.loaded ? Array.from({ length: 4 }, (_, i) => <span key={i} style={{ minHeight: "56px", borderRadius: "14px", background: "linear-gradient(90deg, #F6F6F3, #EEEEEA, #F6F6F3)", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} />) : null}
         {list.map((d) => {
           const isOn = on(d), wait = waiting(d);
@@ -278,14 +278,14 @@ function Catalogue({ c, initialQuery }) {
               title={blocked ? (d.via === "composio" ? (c.noAccount ? NEEDS_ACCOUNT : UNAVAILABLE) : "Las conexiones directas solo funcionan en la aplicación de escritorio.") : d.description}
               style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "56px", padding: "8px 12px 8px 10px", border: 0, borderRadius: "14px", background: "#F6F6F3", textAlign: "left", color: INK, cursor: blocked ? "default" : "pointer", opacity: blocked ? 0.55 : 1, boxShadow: wait ? "inset 0 0 0 1.5px #FFC93C" : "none", animation: "fade .3s ease-out" }}>
               <span style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "10px", background: "#FFFFFF", overflow: "hidden" }}><AppLogo id={d.id} name={d.name} logo={d.logo} size={30} /></span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: "14px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: "var(--t-ui)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
               {isOn ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6B4A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}><path d="m5 12 5 5 9-10" /></svg>
                 : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d="M12 5.5v13M5.5 12h13" /></svg>}
             </button>
           );
         })}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "6px 16px", fontSize: "13px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "6px 16px", fontSize: "var(--t-meta)" }}>
         {canMore ? <a href="#conectar-app" onClick={showMore} style={{ fontWeight: 600, color: LINK }}>{shown < all.length ? `Ver las ${all.length} apps` : "Ver más apps"}</a> : <span />}
         <span style={{ color: MUTED }}>¿Una herramienta propia o un servidor <Term tip="Model Context Protocol: una forma estándar de darle herramientas nuevas a un bot.">MCP</Term>? Va en {expert ? <Go to="/ajustes/avanzado#mcp">Avanzado</Go> : <Go to="/ajustes/general#modo-experto">Avanzado (modo experto)</Go>}.</span>
       </div>
@@ -312,25 +312,25 @@ function Folders() {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
         <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <h3 id="fold-t" style={h3}>Carpetas de este ordenador</h3>
-          <span style={{ fontSize: "13px", color: MUTED }}>Fuera de estas, tus bots no ven nada de tu disco. Borrar un archivo siempre te lo preguntan.</span>
+          <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Fuera de estas, tus bots no ven nada de tu disco. Borrar un archivo siempre te lo preguntan.</span>
         </span>
-        <button type="button" onClick={add} style={{ ...btn("outline", 36), fontSize: "13.5px" }}>Añadir carpeta…</button>
+        <button type="button" onClick={add} style={{ ...btn("outline", 36), fontSize: "var(--t-ui)" }}>Añadir carpeta…</button>
       </div>
-      {!list.length ? <p style={{ margin: 0, padding: "14px 0", borderTop: LINE, fontSize: "14px", color: MUTED }}>Ningún bot ve tus archivos hasta que les des una carpeta.</p> : null}
+      {!list.length ? <p style={{ margin: 0, padding: "14px 0", borderTop: LINE, fontSize: "var(--t-ui)", color: MUTED }}>Ningún bot ve tus archivos hasta que les des una carpeta.</p> : null}
       {list.map((f) => (
         <div key={f.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", minHeight: "62px", padding: "8px 0", borderTop: LINE }}>
           <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "10px", background: "#F1F1EC" }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="1.8" strokeLinejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" /></svg>
           </span>
           <span style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "14.5px", fontWeight: 500 }}>{f.label}<span style={{ fontWeight: 400, color: MUTED }}>{f.botIds?.length ? " · " + f.botIds.map((id) => botOf(id)?.name).filter(Boolean).join(", ") : ""}</span></span>
-            <span style={{ font: `400 12.5px/1.3 ${mono}`, color: MUTED, overflowWrap: "anywhere" }}>{f.path}</span>
+            <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{f.label}<span style={{ fontWeight: 400, color: MUTED }}>{f.botIds?.length ? " · " + f.botIds.map((id) => botOf(id)?.name).filter(Boolean).join(", ") : ""}</span></span>
+            <span style={{ font: `400 var(--t-meta)/1.3 ${mono}`, color: MUTED, overflowWrap: "anywhere" }}>{f.path}</span>
           </span>
-          <Select aria-label={`Qué pueden hacer en ${f.label}`} value={f.access} onChange={(e) => access(f, e.target.value)} style={{ ...select, width: "auto", height: "32px", borderRadius: "999px", padding: "0 10px 0 12px", fontSize: "13px" }} options={ACCESS} />
+          <Select aria-label={`Qué pueden hacer en ${f.label}`} value={f.access} onChange={(e) => access(f, e.target.value)} style={{ ...select, width: "auto", height: "32px", borderRadius: "999px", padding: "0 10px 0 12px", fontSize: "var(--t-meta)" }} options={ACCESS} />
           <button type="button" aria-label={`Quitar ${f.label}`} onClick={() => later({ id: "folder:" + f.id, keys: ["folder:" + f.id], ms: UNDO_MS, text: `Carpeta «${f.label || f.path}» quitada`, error: "No se pudo quitar la carpeta", run: () => run(() => del(`/folders/${encodeURIComponent(f.id)}`)) })} style={{ ...btn("ghost", 32), padding: "0 8px" }}>Quitar</button>
         </div>
       ))}
-      {list.length ? <Go to="/ajustes/ordenador" style={{ padding: "8px 0 6px", fontSize: "13px", fontWeight: 600 }}>Elegir qué bot ve cada carpeta</Go> : null}
+      {list.length ? <Go to="/ajustes/ordenador" style={{ padding: "8px 0 6px", fontSize: "var(--t-meta)", fontWeight: 600 }}>Elegir qué bot ve cada carpeta</Go> : null}
       <Alert>{error}</Alert>
     </section>
   );
@@ -352,7 +352,7 @@ export default function AppsSection({ query = {} }) {
         <h3 id="con-t" style={h3}>{rows.length ? `Conectadas · ${rows.length}` : "Conectadas"}</h3>
         <ul role="list" style={{ margin: 0, padding: 0, listStyle: "none", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden" }}>
           {!c.loaded ? <li style={{ height: "68px", background: "linear-gradient(90deg, #FFFFFF, #F6F6F3, #FFFFFF)", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} /> : null}
-          {c.loaded && !rows.length ? <li style={{ padding: "20px 18px", fontSize: "14.5px", color: MUTED }}>Ninguna todavía. Conecta abajo la primera: tu correo, tu calendario o tus documentos.</li> : null}
+          {c.loaded && !rows.length ? <li style={{ padding: "20px 18px", fontSize: "var(--t-body)", color: MUTED }}>Ninguna todavía. Conecta abajo la primera: tu correo, tu calendario o tus documentos.</li> : null}
           {rows.map((r, i) => <Connected key={r.key} row={r} c={c} first={i === 0} team={team} />)}
         </ul>
       </section>
@@ -362,9 +362,9 @@ export default function AppsSection({ query = {} }) {
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "10px 16px" }}>
           <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
             <h3 id="nav-t" style={h3}>Navegador propio para cada bot</h3>
-            <span style={{ fontSize: "13px", lineHeight: 1.5, color: MUTED }}>Navegan en una ventana de Colmena, no en tu Chrome. Nunca escriben contraseñas: las de la bóveda las pone Colmena y el resto te las piden a ti.</span>
+            <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: MUTED }}>Navegan en una ventana de Colmena, no en tu Chrome. Nunca escriben contraseñas: las de la bóveda las pone Colmena y el resto te las piden a ti.</span>
           </span>
-          {computer?.available ? <Chip tone="green" style={{ height: "28px", padding: "0 12px", fontSize: "13px" }}>Activo</Chip> : <Chip tone="quiet" style={{ height: "28px", padding: "0 12px", fontSize: "13px" }}>En la app de escritorio</Chip>}
+          {computer?.available ? <Chip tone="green" style={{ height: "28px", padding: "0 12px", fontSize: "var(--t-meta)" }}>Activo</Chip> : <Chip tone="quiet" style={{ height: "28px", padding: "0 12px", fontSize: "var(--t-meta)" }}>En la app de escritorio</Chip>}
         </div>
       </section>
     </>

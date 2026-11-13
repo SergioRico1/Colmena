@@ -32,8 +32,8 @@ function MenuItem({ icon, label, hint, onClick, disabled }) {
   return (
     <button type="button" role="menuitem" className="rm-item" disabled={disabled} onClick={onClick} style={{ ...popoverItem, justifyContent: "flex-start", opacity: disabled ? 0.5 : 1 }}>
       <span style={{ width: "18px", display: "grid", placeItems: "center", color: "#4A4F5C", flex: "none" }}>{icon}</span>
-      <span style={{ flex: "1", fontSize: "14px" }}>{label}</span>
-      {hint ? <span style={{ font: "500 11px/1 'Geist Mono', monospace", color: "#555A68" }}>{hint}</span> : null}
+      <span style={{ flex: "1", fontSize: "var(--t-ui)" }}>{label}</span>
+      {hint ? <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "#555A68" }}>{hint}</span> : null}
     </button>
   );
 }
@@ -104,10 +104,10 @@ export default function SideDock({ dock, tabs, addable = [], widthKey = "room", 
                 style={{ display: "flex", alignItems: "center", flex: "none", maxWidth: "200px", height: "34px", borderRadius: v3 ? "999px" : "9px", border: on ? "1px solid " + hair : "1px solid transparent", background: on && v3 ? "#F1F1EC" : undefined, opacity: drag === t.id ? 0.5 : 1, ...dropLine }}>
                 <button type="button" role="tab" data-tab={t.id} aria-selected={on ? "true" : "false"} tabIndex={on ? 0 : -1} className="rm-focus" title={t.title || t.label}
                   onClick={() => (on && t.onActivate ? t.onActivate() : dock.select(t.id))} onKeyDown={(e) => onTabKey(e, i)}
-                  style={{ display: "flex", alignItems: "center", gap: "7px", minWidth: 0, height: "32px", padding: "0 4px 0 10px", background: "transparent", border: "0", cursor: "pointer", fontSize: "13px", fontWeight: on ? "600" : "500", color: on ? "#12131A" : "#4A4F5C" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "7px", minWidth: 0, height: "32px", padding: "0 4px 0 10px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: on ? "600" : "500", color: on ? "#12131A" : "#4A4F5C" }}>
                   <span style={{ display: "grid", flex: "none" }}>{t.icon}</span>
                   <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.label}</span>
-                  {t.badge ? <span style={{ flex: "none", font: "600 11px/1 'Geist Mono', monospace", color: "#555A68" }}>{t.badge}</span> : null}
+                  {t.badge ? <span style={{ flex: "none", font: "600 var(--t-micro)/1 'Geist Mono', monospace", color: "#555A68" }}>{t.badge}</span> : null}
                 </button>
                 <button type="button" className="rm-focus c-dock-x" tabIndex={on ? 0 : -1} aria-label={"Cerrar " + t.label} title="Cerrar (o clic con la rueda)" onClick={() => dock.close(t.id)}
                   style={{ width: "24px", height: "24px", marginRight: "4px", flex: "none", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", color: "#555A68" }}>

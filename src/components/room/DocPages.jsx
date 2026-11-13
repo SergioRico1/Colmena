@@ -25,7 +25,7 @@ export function VisualNotes({ info, style }) {
   const fonts = info?.missingFonts || [];
   if (!fonts.length && !info?.engine) return null;
   return (
-    <p style={{ margin: 0, fontSize: "12px", lineHeight: 1.5, color: "#555A68", ...style }}>
+    <p style={{ margin: 0, fontSize: "var(--t-caption)", lineHeight: 1.5, color: "#555A68", ...style }}>
       {[info.engine ? `Vista preparada con ${info.engine}.` : null,
         fonts.length ? `Este equipo no tiene ${fonts.length === 1 ? "la fuente" : "las fuentes"} ${fonts.map((f) => `«${f}»`).join(", ")}: se ve con otra parecida.` : null].filter(Boolean).join(" ")}
     </p>
@@ -41,10 +41,10 @@ export default function DocPages({ info, pageUrl, max = 200, gap = "12px", label
         <figure key={i} style={{ margin: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
           <img loading="lazy" src={pageUrl(i + 1)} alt={`${label} ${i + 1} de ${info.pages}`}
             style={{ width: "100%", height: "auto", minHeight: "120px", borderRadius: "8px", background: "#FFFFFF", border: "1px solid #E6E8EE", boxShadow: "0 10px 30px -22px rgba(18,19,26,.45)" }} />
-          {info.pages > 1 ? <figcaption style={{ alignSelf: "center", font: "500 11px/1 'Geist Mono', monospace", color: "#5C606C" }}>{`${i + 1} / ${info.pages}`}</figcaption> : null}
+          {info.pages > 1 ? <figcaption style={{ alignSelf: "center", font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "#5C606C" }}>{`${i + 1} / ${info.pages}`}</figcaption> : null}
         </figure>
       ))}
-      {info?.pages > max ? <p style={{ margin: 0, fontSize: "12px", color: "#555A68" }}>{`Se muestran las primeras ${max} páginas. Descárgalo para ver el resto.`}</p> : null}
+      {info?.pages > max ? <p style={{ margin: 0, fontSize: "var(--t-caption)", color: "#555A68" }}>{`Se muestran las primeras ${max} páginas. Descárgalo para ver el resto.`}</p> : null}
     </div>
   );
 }

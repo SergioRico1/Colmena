@@ -52,19 +52,19 @@ export default function EngineModelMenu({ engines = [], current, onPick, close, 
         <div key={e.id} role="group" aria-label={e.label} style={{ display: "flex", flexDirection: "column", gap: "2px", paddingTop: k ? "6px" : 0, marginTop: k ? "4px" : 0, borderTop: k ? "1px solid " + C.rule : 0 }}>
           <span style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px 4px" }}>
             <EngineMark engine={e.id} size={14} />
-            <span style={{ flex: 1, font: `500 11px/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{e.label}</span>
-            {e.id === current?.engine ? <span style={{ font: `500 11px/1 ${MONO}`, color: C.quiet }}>ahora</span> : null}
+            <span style={{ flex: 1, font: `500 var(--t-micro)/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{e.label}</span>
+            {e.id === current?.engine ? <span style={{ font: `500 var(--t-micro)/1 ${MONO}`, color: C.quiet }}>ahora</span> : null}
           </span>
           {!e.available ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "2px 8px 6px", padding: "10px 12px", borderRadius: "14px", background: C.soft }}>
-              <span style={{ fontSize: "12px", lineHeight: 1.5, color: C.text }}>{e.installing || installing ? "Instalando OpenCode para Colmena…" : e.need || "No está disponible en este ordenador."}</span>
+              <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.5, color: C.text }}>{e.installing || installing ? "Instalando OpenCode para Colmena…" : e.need || "No está disponible en este ordenador."}</span>
               {e.installable ? (
                 <button type="button" disabled={installing || e.installing} onClick={install}
-                  style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: installing || e.installing ? "default" : "pointer", fontSize: "12px", fontWeight: 600, opacity: installing || e.installing ? 0.6 : 1 }}>
+                  style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: installing || e.installing ? "default" : "pointer", fontSize: "var(--t-caption)", fontWeight: 600, opacity: installing || e.installing ? 0.6 : 1 }}>
                   <Download size={12} strokeWidth={2.4} aria-hidden="true" />{installing || e.installing ? "Instalando…" : "Instalar OpenCode"}
                 </button>
               ) : null}
-              {error && e.installable ? <span role="alert" style={{ fontSize: "12px", color: C.red }}>{error}</span> : null}
+              {error && e.installable ? <span role="alert" style={{ fontSize: "var(--t-caption)", color: C.red }}>{error}</span> : null}
             </div>
           ) : (
             <>
@@ -74,19 +74,19 @@ export default function EngineModelMenu({ engines = [], current, onPick, close, 
                   <button key={m.id} type="button" role="menuitemradio" aria-checked={on} className="code-hover" onClick={() => { onPick(e.id, m.id); if (!multi) close?.(); }}
                     style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "9px 12px", border: 0, borderRadius: "14px", background: on ? C.soft : "transparent", cursor: "pointer", textAlign: "left" }}>
                     <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <strong style={{ fontSize: "14px", fontWeight: 600, color: C.ink }}>{m.label}</strong>
-                      {modelNote(m) ? <span style={{ fontSize: "12px", lineHeight: 1.45, color: C.muted }}>{modelNote(m)}</span> : null}
+                      <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: C.ink }}>{m.label}</strong>
+                      {modelNote(m) ? <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.45, color: C.muted }}>{modelNote(m)}</span> : null}
                     </span>
                     {on ? <Check size={15} strokeWidth={2.6} color={C.ink} aria-hidden="true" /> : null}
                   </button>
                 );
               })}
-              {e.note ? <span style={{ padding: "2px 12px 6px", fontSize: "11px", lineHeight: 1.45, color: C.faint }}>{e.note}</span> : null}
+              {e.note ? <span style={{ padding: "2px 12px 6px", fontSize: "var(--t-micro)", lineHeight: 1.45, color: C.faint }}>{e.note}</span> : null}
             </>
           )}
         </div>
       ))}
-      {switchNote ? <p style={{ margin: "6px 12px 4px", fontSize: "12px", lineHeight: 1.5, color: C.faint }}>{switchNote}</p> : null}
+      {switchNote ? <p style={{ margin: "6px 12px 4px", fontSize: "var(--t-caption)", lineHeight: 1.5, color: C.faint }}>{switchNote}</p> : null}
     </div>
   );
 }

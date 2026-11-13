@@ -97,14 +97,14 @@ function ConfirmDialog({ eyebrow, title, text, action, onConfirm, onClose }) {
     <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 16px" }}>
       <div ref={box} role="alertdialog" aria-modal="true" aria-labelledby="confirmar-t" aria-describedby="confirmar-d" style={{ width: "min(460px, 100%)", background: "#FFFFFF", color: "#12131A", border: "2px solid #12131A", borderRadius: "20px", boxShadow: "0 24px 64px -16px rgba(18,19,26,0.45)", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 22px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
-          {eyebrow ? <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68", overflowWrap: "anywhere" }}>{eyebrow}</span> : null}
-          <h2 id="confirmar-t" style={{ margin: "0", font: "700 22px/1.15 'Bricolage Grotesque', sans-serif" }}>{title}</h2>
-          <p id="confirmar-d" style={{ margin: "0", fontSize: "14px", lineHeight: "1.5", color: "#4A4F5C" }}>{text}</p>
-          {error ? <p role="alert" style={{ margin: "4px 0 0", fontSize: "13px", color: "#B4372A", fontWeight: "600" }}>{error}</p> : null}
+          {eyebrow ? <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68", overflowWrap: "anywhere" }}>{eyebrow}</span> : null}
+          <h2 id="confirmar-t" style={{ margin: "0", font: "700 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif" }}>{title}</h2>
+          <p id="confirmar-d" style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4F5C" }}>{text}</p>
+          {error ? <p role="alert" style={{ margin: "4px 0 0", fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: "600" }}>{error}</p> : null}
         </div>
         <div style={{ padding: "14px 22px 18px", borderTop: "1px solid #E6E8EE", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" data-autofocus="" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", color: "#12131A", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "14px" }}>{"Cancelar"}</button>
-          <button type="button" onClick={go} disabled={busy} aria-busy={busy ? "true" : undefined} style={{ height: "44px", padding: "0 16px", background: "#B4372A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: busy ? "default" : "pointer", fontWeight: "600", fontSize: "14px", opacity: busy ? 0.7 : 1 }}>{busy ? "Borrando…" : action}</button>
+          <button type="button" data-autofocus="" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", color: "#12131A", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-ui)" }}>{"Cancelar"}</button>
+          <button type="button" onClick={go} disabled={busy} aria-busy={busy ? "true" : undefined} style={{ height: "44px", padding: "0 16px", background: "#B4372A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: busy ? "default" : "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: busy ? 0.7 : 1 }}>{busy ? "Borrando…" : action}</button>
         </div>
       </div>
     </div>
@@ -137,17 +137,17 @@ function RenameDialog({ current, onSave, onClose }) {
     <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 16px" }}>
       <form ref={box} onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="renombrar-t" style={{ width: "min(440px, 100%)", background: "#FFFFFF", color: "#12131A", border: "2px solid #12131A", borderRadius: "20px", boxShadow: "8px 8px 0 #FFC93C", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 22px 16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-          <h2 id="renombrar-t" style={{ margin: "0", font: "700 22px/1.15 'Bricolage Grotesque', sans-serif" }}>Renombrar sala</h2>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", height: "46px", padding: "0 14px", border: "1.5px solid #12131A", borderRadius: "12px", fontSize: "16px" }}>
+          <h2 id="renombrar-t" style={{ margin: "0", font: "700 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif" }}>Renombrar sala</h2>
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", height: "46px", padding: "0 14px", border: "1.5px solid #12131A", borderRadius: "12px", fontSize: "var(--t-read)" }}>
             <span aria-hidden="true" style={{ color: "#8C91A0", fontWeight: "700" }}>#</span>
-            <input className="c-bare" ref={input} data-autofocus="" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Nombre de la sala" maxLength={60} style={{ flex: "1", minWidth: "0", border: "0", fontSize: "16px", background: "transparent" }} />
+            <input className="c-bare" ref={input} data-autofocus="" value={value} onChange={(e) => setValue(e.target.value)} aria-label="Nombre de la sala" maxLength={60} style={{ flex: "1", minWidth: "0", border: "0", fontSize: "var(--t-read)", background: "transparent" }} />
           </label>
-          <span style={{ fontSize: "13px", color: "#4A4F5C" }}>{preview ? `Quedará así: #${preview}` : "Escribe un nombre con letras o números."}</span>
-          {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4372A", fontWeight: "600" }}>{error}</span> : null}
+          <span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C" }}>{preview ? `Quedará así: #${preview}` : "Escribe un nombre con letras o números."}</span>
+          {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: "600" }}>{error}</span> : null}
         </div>
         <div style={{ padding: "14px 22px 18px", borderTop: "1px solid #E6E8EE", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "14px" }}>Cancelar</button>
-          <button type="submit" disabled={busy || !preview} style={{ height: "44px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: "pointer", fontWeight: "600", fontSize: "14px", opacity: busy || !preview ? 0.6 : 1 }}>{busy ? "Guardando…" : "Guardar"}</button>
+          <button type="button" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-ui)" }}>Cancelar</button>
+          <button type="submit" disabled={busy || !preview} style={{ height: "44px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: busy || !preview ? 0.6 : 1 }}>{busy ? "Guardando…" : "Guardar"}</button>
         </div>
       </form>
     </div>
@@ -210,8 +210,8 @@ function Menu({ menu, onClose, onReplace }) {
 
   return (
     <div ref={box} role="menu" tabIndex={-1} aria-label={menu.label || "Acciones"} onMouseDown={(e) => e.preventDefault()} onContextMenu={(e) => e.preventDefault()}
-      style={{ animation: pos.ready ? "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" : "none", transformOrigin: "top left", position: "fixed", left: pos.left + "px", top: pos.top + "px", zIndex: 2147483100, minWidth: "220px", maxWidth: "300px", padding: "6px", background: "#FFFFFF", color: "#12131A", border: "1px solid #DCE0E8", borderRadius: "12px", boxShadow: "0 14px 36px -10px rgba(18,19,26,0.32), 0 2px 6px rgba(18,19,26,0.08)", visibility: pos.ready ? "visible" : "hidden", font: "400 14px/1.2 'Geist', sans-serif", userSelect: "none" }}>
-      {menu.label ? <div style={{ padding: "6px 10px 8px", font: "500 11px/1.2 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{menu.label}</div> : null}
+      style={{ animation: pos.ready ? "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" : "none", transformOrigin: "top left", position: "fixed", left: pos.left + "px", top: pos.top + "px", zIndex: 2147483100, minWidth: "220px", maxWidth: "300px", padding: "6px", background: "#FFFFFF", color: "#12131A", border: "1px solid #DCE0E8", borderRadius: "12px", boxShadow: "0 14px 36px -10px rgba(18,19,26,0.32), 0 2px 6px rgba(18,19,26,0.08)", visibility: pos.ready ? "visible" : "hidden", font: "400 var(--t-ui)/1.2 'Geist', sans-serif", userSelect: "none" }}>
+      {menu.label ? <div style={{ padding: "6px 10px 8px", font: "500 var(--t-micro)/1.2 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{menu.label}</div> : null}
       {items.map((it, i) => it.separator
         ? <div key={i} role="separator" style={{ height: "1px", margin: "5px 6px", background: "#E6E8EE" }} />
         : (
@@ -221,7 +221,7 @@ function Menu({ menu, onClose, onReplace }) {
               color: it.disabled ? "#9DA2B0" : it.danger ? "#B4372A" : "#12131A", fontWeight: it.danger ? "600" : "400" }}>
             <span style={{ display: "grid", placeItems: "center", color: it.disabled ? "#9DA2B0" : it.danger ? "#B4372A" : "#4A4F5C" }}>{it.icon ? <Icon name={it.icon} /> : <span style={{ width: "16px" }} />}</span>
             <span style={{ flex: "1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.label}</span>
-            {it.hint ? <span style={{ font: "500 11px/1 'Geist Mono', monospace", color: "#9DA2B0" }}>{it.hint}</span> : null}
+            {it.hint ? <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "#9DA2B0" }}>{it.hint}</span> : null}
             {it.items ? <ChevronRight size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: "#9DA2B0" }} /> : null}
           </button>
         ))}

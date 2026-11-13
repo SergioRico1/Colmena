@@ -17,7 +17,7 @@ export default function ChatBlock({ message }) {
   if (!id || hidden(id)) return null;
   // Removed since (by you, from its menu): one muted line where the card was.
   if (!data?.id || data.id !== id)
-    return error ? <p data-block-gone="" style={{ margin: "0", textAlign: "center", fontSize: "13px", color: "#6B6F7A" }}>{"Aquí había un dato que ya se quitó."}</p> : <div aria-busy="true" className="colmena-skeleton" style={{ alignSelf: "stretch", maxWidth: "560px", height: "132px", borderRadius: "20px" }} />;
+    return error ? <p data-block-gone="" style={{ margin: "0", textAlign: "center", fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{"Aquí había un dato que ya se quitó."}</p> : <div aria-busy="true" className="colmena-skeleton" style={{ alignSelf: "stretch", maxWidth: "560px", height: "132px", borderRadius: "20px" }} />;
   return (
     <div data-chat-block="" style={{ alignSelf: "stretch", maxWidth: data.type === "table" ? "100%" : "560px" }}>
       <RowBoundary label="No se ha podido mostrar este dato" resetKey={id + ":" + data.updatedAt}>

@@ -120,10 +120,10 @@ export default function Revisar({ params = {} }) {
   const people = isSend ? d.to.length + d.cc.length + d.cco.length : 0;
   const affects = a.impact?.headline || (isSend ? `${people === 1 ? "1 persona" : people + " personas"}${d.cc.length ? `, ${d.cc.length} en copia` : ""}.` : null);
   const card = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px", borderRadius: "20px", background: "#FFFFFF" };
-  const h2 = { margin: "0", fontSize: "15px", fontWeight: "600" };
-  const p = { margin: "0", fontSize: "14px", lineHeight: "1.5", color: "#4A4D57" };
+  const h2 = { margin: "0", fontSize: "var(--t-body)", fontWeight: "600" };
+  const p = { margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57" };
   const chip = (field, e, i) => (
-    <span key={e + i} style={{ height: "30px", padding: "0 6px 0 12px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "999px", background: "#F1F1EC", fontSize: "13.5px" }}>
+    <span key={e + i} style={{ height: "30px", padding: "0 6px 0 12px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "999px", background: "#F1F1EC", fontSize: "var(--t-ui)" }}>
       {e}{field === "cc" ? " (CC)" : field === "cco" ? " (CCO)" : ""}
       <button type="button" aria-label={`Quitar ${e}`} onClick={() => set((n) => n[field].splice(i, 1))} style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "50%", background: "transparent", color: "#5C606C", cursor: "pointer" }}>{"×"}</button>
     </span>
@@ -132,18 +132,18 @@ export default function Revisar({ params = {} }) {
     <label key={"add" + field} style={{ display: "inline-flex", alignItems: "center" }}>
       <span style={srOnly}>{label}</span>
       <input className="c-bare" type="email" value={inputs[field]} placeholder="Añadir" onChange={(e) => setInputs({ ...inputs, [field]: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(field); } }} onBlur={() => add(field)}
-        style={{ width: "180px", height: "30px", padding: "0 10px", border: "0", background: "transparent", fontSize: "13.5px", color: "#12131A" }} />
+        style={{ width: "180px", height: "30px", padding: "0 10px", border: "0", background: "transparent", fontSize: "var(--t-ui)", color: "#12131A" }} />
     </label>
   );
   const row = { display: "flex", alignItems: "center", gap: "12px", padding: "14px 22px", borderBottom: "1px solid rgba(18,19,26,.07)" };
-  const label = { flex: "none", width: "64px", fontSize: "14px", color: "#5C606C" };
-  const pill = (dark) => ({ height: "46px", padding: dark ? "0 22px" : "0 18px", border: dark ? "0" : "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: dark ? "#12131A" : "#FFFFFF", color: dark ? "#FFFFFF" : "#12131A", fontSize: "15px", fontWeight: dark ? "600" : "500", cursor: "pointer" });
+  const label = { flex: "none", width: "64px", fontSize: "var(--t-ui)", color: "#5C606C" };
+  const pill = (dark) => ({ height: "46px", padding: dark ? "0 22px" : "0 18px", border: dark ? "0" : "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: dark ? "#12131A" : "#FFFFFF", color: dark ? "#FFFFFF" : "#12131A", fontSize: "var(--t-body)", fontWeight: dark ? "600" : "500", cursor: "pointer" });
   const crumb = isSend && data.subject ? `Enviar «${data.subject}»` : a.title;
 
   return (
     <Shell active="inicio">
       <main style={{ maxWidth: "1120px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 52px) 64px", display: "flex", flexDirection: "column", gap: "26px" }}>
-        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "#5C606C", minWidth: 0 }}>
+        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "#5C606C", minWidth: 0 }}>
           <a href="/" style={{ color: "#5C606C" }}>{"Inicio"}</a><span aria-hidden="true">{"›"}</span><span>{"Te necesita"}</span><span aria-hidden="true">{"›"}</span>
           <span style={{ color: "#12131A", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{crumb}</span>
         </nav>
@@ -152,12 +152,12 @@ export default function Revisar({ params = {} }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Shape bot={bot} size={22} />
-              <span style={{ fontSize: "14px", color: "#5C606C" }}><strong style={{ color: "#12131A", fontWeight: "600" }}>{bot?.name || "Un bot"}</strong>{isSend ? " lo preparó " : " lo pide "}{where}{" · " + day(a.createdAt) + " " + time(a.createdAt)}</span>
+              <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}><strong style={{ color: "#12131A", fontWeight: "600" }}>{bot?.name || "Un bot"}</strong>{isSend ? " lo preparó " : " lo pide "}{where}{" · " + day(a.createdAt) + " " + time(a.createdAt)}</span>
             </div>
-            <h1 style={{ margin: "0", font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{KIND_TITLE[a.kind] || "Revisa antes de aprobar"}</h1>
-            <p style={{ margin: "0", fontSize: "16px", color: "#4A4D57" }}>{KIND_LEAD[a.kind] || "Nada cambia hasta que pulses «Aprobar»."}</p>
+            <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{KIND_TITLE[a.kind] || "Revisa antes de aprobar"}</h1>
+            <p style={{ margin: "0", fontSize: "var(--t-read)", color: "#4A4D57" }}>{KIND_LEAD[a.kind] || "Nada cambia hasta que pulses «Aprobar»."}</p>
           </div>
-          {sent ? null : <span style={{ height: "30px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFC93C", fontSize: "13px", fontWeight: "600" }}>{"Te necesita"}</span>}
+          {sent ? null : <span style={{ height: "30px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFC93C", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Te necesita"}</span>}
         </header>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
@@ -171,7 +171,7 @@ export default function Revisar({ params = {} }) {
                   {!extra ? d.cco.map((e, i) => chip("cco", e, i)) : null}
                   {adder("to", "Añadir destinatario")}
                 </div>
-                <button type="button" aria-expanded={extra ? "true" : "false"} onClick={() => setExtra(!extra)} style={{ flex: "none", height: "30px", padding: "0 8px", border: "0", background: "transparent", fontSize: "13.5px", color: "#4A4D57", cursor: "pointer" }}>{"CC · CCO"}</button>
+                <button type="button" aria-expanded={extra ? "true" : "false"} onClick={() => setExtra(!extra)} style={{ flex: "none", height: "30px", padding: "0 8px", border: "0", background: "transparent", fontSize: "var(--t-ui)", color: "#4A4D57", cursor: "pointer" }}>{"CC · CCO"}</button>
               </div>
               {extra ? ["cc", "cco"].map((f) => (
                 <div key={f} style={{ ...row, animation: "fade .25s ease-out" }}>
@@ -181,11 +181,11 @@ export default function Revisar({ params = {} }) {
               )) : null}
               <label className="c-ring-in" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "0 22px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
                 <span style={label}>{"Asunto"}</span>
-                <input className="c-bare" type="text" value={d.subject} onChange={(e) => set((n) => { n.subject = e.target.value; })} style={{ flex: "1", minWidth: "0", height: "52px", border: "0", background: "transparent", fontSize: "15.5px", fontWeight: "600" }} />
+                <input className="c-bare" type="text" value={d.subject} onChange={(e) => set((n) => { n.subject = e.target.value; })} style={{ flex: "1", minWidth: "0", height: "52px", border: "0", background: "transparent", fontSize: "var(--t-read)", fontWeight: "600" }} />
               </label>
               <label className="c-ring-in" style={{ display: "flex", flexDirection: "column", padding: "18px 22px" }}>
                 <span style={srOnly}>{"Cuerpo del mensaje"}</span>
-                <textarea className="c-bare" rows="12" value={d.body} onChange={(e) => set((n) => { n.body = e.target.value; })} style={{ width: "100%", border: "0", resize: "vertical", background: "transparent", fontSize: "15.5px", lineHeight: "1.65", color: "#12131A" }} />
+                <textarea className="c-bare" rows="12" value={d.body} onChange={(e) => set((n) => { n.body = e.target.value; })} style={{ width: "100%", border: "0", resize: "vertical", background: "transparent", fontSize: "var(--t-read)", lineHeight: "1.65", color: "#12131A" }} />
               </label>
               {d.files.length ? (
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 22px", borderTop: "1px solid rgba(18,19,26,.07)", background: "#FAFAF8" }}>
@@ -193,8 +193,8 @@ export default function Revisar({ params = {} }) {
                     const e = extOf(f.name);
                     const [bg, fg] = EXT[e] || ["#EEF0F4", "#4A4F5C"];
                     return (
-                      <span key={f.name + i} style={{ height: "44px", padding: "0 6px 0 8px", display: "inline-flex", alignItems: "center", gap: "10px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "13.5px" }}>
-                        <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "8px", background: bg, color: fg, fontSize: "10px", fontWeight: "700" }}>{e}</span>
+                      <span key={f.name + i} style={{ height: "44px", padding: "0 6px 0 8px", display: "inline-flex", alignItems: "center", gap: "10px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "var(--t-ui)" }}>
+                        <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "8px", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: "700" }}>{e}</span>
                         {f.name}{f.size != null ? <span style={{ color: "#5C606C" }}>{"· " + sizeOf(f.size)}</span> : null}
                         <button type="button" aria-label={`Quitar ${f.name}`} onClick={() => set((n) => n.files.splice(i, 1))} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "50%", background: "transparent", color: "#5C606C", cursor: "pointer" }}>{"×"}</button>
                       </span>
@@ -205,11 +205,11 @@ export default function Revisar({ params = {} }) {
             </section>
           ) : (
             <section aria-label="Qué pide" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "24px", background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -32px rgba(18,19,26,.3)" }}>
-              <h2 style={{ margin: "0", font: "600 24px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{a.title}</h2>
-              {a.summary && a.summary !== a.title ? <p style={{ margin: "0", fontSize: "15.5px", lineHeight: "1.65", whiteSpace: "pre-wrap" }}>{a.summary}</p> : null}
-              {a.context ? <p style={{ margin: "0", fontSize: "14px", color: "#5C606C" }}>{a.context}</p> : null}
-              {a.kind === "plan" && mission ? <a href={`/sala/${mission.id}#plan`} style={{ alignSelf: "flex-start", fontSize: "15px", fontWeight: "600", color: "#1F4FD1" }}>{"Ver el plan en la sala"}</a> : null}
-              {a.kind === "question" && mission ? <a href={roomUrl(mission)} style={{ alignSelf: "flex-start", fontSize: "15px", fontWeight: "600", color: "#1F4FD1" }}>{"Responder en el chat"}</a> : null}
+              <h2 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{a.title}</h2>
+              {a.summary && a.summary !== a.title ? <p style={{ margin: "0", fontSize: "var(--t-read)", lineHeight: "1.65", whiteSpace: "pre-wrap" }}>{a.summary}</p> : null}
+              {a.context ? <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "#5C606C" }}>{a.context}</p> : null}
+              {a.kind === "plan" && mission ? <a href={`/sala/${mission.id}#plan`} style={{ alignSelf: "flex-start", fontSize: "var(--t-body)", fontWeight: "600", color: "#1F4FD1" }}>{"Ver el plan en la sala"}</a> : null}
+              {a.kind === "question" && mission ? <a href={roomUrl(mission)} style={{ alignSelf: "flex-start", fontSize: "var(--t-body)", fontWeight: "600", color: "#1F4FD1" }}>{"Responder en el chat"}</a> : null}
             </section>
           )}
 
@@ -222,7 +222,7 @@ export default function Revisar({ params = {} }) {
               <div style={card}>
                 <h2 style={h2}>{`${bot?.name || "El bot"} comprobó`}</h2>
                 {String(a.reviewNote).split(/\n+|(?<=\.)\s+(?=[A-ZÁÉÍÓÚ])/).filter(Boolean).slice(0, 4).map((k, i) => (
-                  <div key={i} style={{ display: "flex", gap: "10px", fontSize: "14px", lineHeight: "1.45" }}><span aria-hidden="true" style={{ color: "#0B6B4A", fontWeight: "600" }}>{"✓"}</span><span>{k}</span></div>
+                  <div key={i} style={{ display: "flex", gap: "10px", fontSize: "var(--t-ui)", lineHeight: "1.45" }}><span aria-hidden="true" style={{ color: "#0B6B4A", fontWeight: "600" }}>{"✓"}</span><span>{k}</span></div>
                 ))}
               </div>
             ) : null}
@@ -230,12 +230,12 @@ export default function Revisar({ params = {} }) {
               <div style={card}>
                 <h2 style={h2}>{"A quién afecta"}</h2>
                 {affects ? <p style={p}>{affects}</p> : null}
-                {(a.impact?.details || []).slice(0, 4).map((t, i) => <p key={i} style={{ ...p, fontSize: "13.5px" }}>{typeof t === "string" ? t : t.text || t.label}</p>)}
+                {(a.impact?.details || []).slice(0, 4).map((t, i) => <p key={i} style={{ ...p, fontSize: "var(--t-ui)" }}>{typeof t === "string" ? t : t.text || t.label}</p>)}
               </div>
             ) : null}
-            <details open={expert || undefined} style={{ padding: "16px 20px", borderRadius: "20px", background: "#FFFFFF", fontSize: "13.5px" }}>
+            <details open={expert || undefined} style={{ padding: "16px 20px", borderRadius: "20px", background: "#FFFFFF", fontSize: "var(--t-ui)" }}>
               <summary style={{ cursor: "pointer", fontWeight: "600" }}>{"Detalles técnicos"}</summary>
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "10px", font: "400 12.5px/1.6 'Geist Mono', monospace", color: "#3D404A", overflowWrap: "anywhere" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "10px", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", color: "#3D404A", overflowWrap: "anywhere" }}>
                 <span>{[a.kind, a.app, a.scopeLabel].filter(Boolean).join(" · ")}</span>
                 <span>{`${a.id} · ${a.status === "pending" ? "esperando OK" : a.status}${a.edited ? " · editado" : ""}`}</span>
                 {a.revision ? <span>{"contenido ligado: sha256 " + String(a.revision).slice(0, 4) + "…" + String(a.revision).slice(-4)}</span> : null}
@@ -246,10 +246,10 @@ export default function Revisar({ params = {} }) {
         </div>
 
         <div style={{ position: "sticky", bottom: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 12px 12px 20px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 20px 40px -20px rgba(18,19,26,.35)" }}>
-          {error ? <span role="alert" style={{ flexBasis: "100%", fontSize: "14px", color: "#B4232A" }}>{error}</span> : null}
+          {error ? <span role="alert" style={{ flexBasis: "100%", fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
           {sent ? (
             <>
-              <span role="status" style={{ flex: "1", display: "flex", alignItems: "center", gap: "10px", fontSize: "15px", fontWeight: "500", color: "#0B6B4A" }}>
+              <span role="status" style={{ flex: "1", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "#0B6B4A" }}>
                 <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
                 </span>
@@ -259,18 +259,18 @@ export default function Revisar({ params = {} }) {
             </>
           ) : undo.waiting ? (
             <>
-              <span role="status" style={{ flex: "1", fontSize: "15px", fontWeight: "500" }}>{`${isSend ? "Se envía" : "Se aprueba"} en ${undo.secs} s.${isSend && d.cc.length ? ` ${first(d.cc[0])} recibirá una copia.` : ""}`}</span>
+              <span role="status" style={{ flex: "1", fontSize: "var(--t-body)", fontWeight: "500" }}>{`${isSend ? "Se envía" : "Se aprueba"} en ${undo.secs} s.${isSend && d.cc.length ? ` ${first(d.cc[0])} recibirá una copia.` : ""}`}</span>
               <button type="button" onClick={() => cancel(key)} style={pill(true)}>{"Deshacer"}</button>
             </>
           ) : (
             <>
-              <span style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "14px", lineHeight: "1.4", color: "#5C606C" }}>
+              <span style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-ui)", lineHeight: "1.4", color: "#5C606C" }}>
                 <span role="status">
                   {saved && !changes ? "Cambios guardados. Aún no se ha enviado." : changes ? (changes === 1 ? "1 cambio sin guardar. " : `${changes} cambios sin guardar. `) + (canApprove ? "Al aprobar se guardan. " + model.undoLine : "") : canApprove ? model.undoLine : ""}
                 </span>
                 {model?.expiryLine ? <span role="timer" aria-live="off" style={{ color: model.expiryLine.urgent ? "#B4232A" : "#5C606C" }}>{model.expiryLine.text}</span> : null}
               </span>
-              <button type="button" disabled={busy} onClick={deny} style={{ height: "46px", padding: "0 14px", border: "0", background: "transparent", fontSize: "15px", fontWeight: "500", color: "#4A4D57", cursor: "pointer" }}>{denyLabel}</button>
+              <button type="button" disabled={busy} onClick={deny} style={{ height: "46px", padding: "0 14px", border: "0", background: "transparent", fontSize: "var(--t-body)", fontWeight: "500", color: "#4A4D57", cursor: "pointer" }}>{denyLabel}</button>
               {isSend ? <button type="button" disabled={busy || !changes || !d.to.length} onClick={keep} style={{ ...pill(false), opacity: changes && d.to.length ? 1 : 0.55, cursor: changes ? "pointer" : "default" }}>{busy ? "Guardando…" : "Guardar sin enviar"}</button> : null}
               {!canApprove ? null
                 : model.primary.hold ? <HoldButton disabled={busy || (isSend && !d.to.length)} onConfirm={approve} plainLabel={model.primary.plain} style={pill(true)}>{model.primary.label}</HoldButton>

@@ -109,7 +109,7 @@ export function ListenButton({ text, bot, style, label = "Escuchar", compact = f
     <button type="button" className="rm-focus" aria-pressed={on ? "true" : "false"} aria-label={on ? "Parar la lectura" : `${label}${name}`} title={on ? "Parar" : `${label} (${voice.name})`} onClick={toggle}
       style={compact
         ? { width: "40px", height: "40px", display: "grid", placeItems: "center", background: on ? "#FFF4D1" : "transparent", border: "0", borderRadius: "8px", cursor: "pointer", color: "inherit", ...style }
-        : { display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 10px", background: on ? "#FFF4D1" : "#FFFFFF", border: on ? "1.5px solid #12131A" : "1px solid #DCE0E8", borderRadius: "9px", cursor: "pointer", fontSize: "13px", fontWeight: "600", ...style }}>
+        : { display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 10px", background: on ? "#FFF4D1" : "#FFFFFF", border: on ? "1.5px solid #12131A" : "1px solid #DCE0E8", borderRadius: "9px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", ...style }}>
       {on ? (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
       ) : (

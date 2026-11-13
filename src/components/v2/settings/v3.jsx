@@ -23,8 +23,8 @@ export const srOnly = { position: "absolute", width: "1px", height: "1px", overf
 
 export const card = { display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden", scrollMarginTop: "24px" };
 export const panel = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px 22px", borderRadius: "20px", background: "#FFFFFF", scrollMarginTop: "24px" };
-export const h3 = { margin: 0, fontSize: "15px", fontWeight: 600 };
-export const field = { width: "240px", maxWidth: "100%", height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "14.5px", color: INK, boxSizing: "border-box" };
+export const h3 = { margin: 0, fontSize: "var(--t-body)", fontWeight: 600 };
+export const field = { width: "240px", maxWidth: "100%", height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK, boxSizing: "border-box" };
 export const select = { ...field, padding: "0 10px" };
 export const mono = "'Geist Mono', monospace";
 
@@ -32,7 +32,7 @@ export const mono = "'Geist Mono', monospace";
 export const btn = (kind = "outline", size = 34) => ({
   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: "none", height: size + "px",
   padding: size >= 40 ? "0 16px" : "0 12px", borderRadius: "999px", cursor: "pointer", whiteSpace: "nowrap", textDecoration: "none",
-  fontSize: size >= 40 ? "14px" : "13px", fontWeight: kind === "dark" ? 600 : 500,
+  fontSize: size >= 40 ? "var(--t-ui)" : "var(--t-meta)", fontWeight: kind === "dark" ? 600 : 500,
   border: kind === "outline" ? "1px solid rgba(18,19,26,.14)" : 0,
   background: kind === "dark" ? INK : kind === "ghost" ? "transparent" : "#FFFFFF",
   color: kind === "dark" ? "#FFFFFF" : kind === "ghost" ? SOFT : INK,
@@ -51,8 +51,8 @@ export function Panel({ title, sub, aside, anchor, children, style = null, id, b
       {title ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
           <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: big ? "4px" : "2px", marginBottom: big ? "8px" : 0 }}>
-            <h3 id={head} style={{ ...h3, fontSize: big ? "16px" : "15px" }}>{title}</h3>
-            {sub ? <span style={{ fontSize: big ? "13.5px" : "13px", lineHeight: 1.45, color: MUTED }}>{sub}</span> : null}
+            <h3 id={head} style={{ ...h3, fontSize: big ? "var(--t-read)" : "var(--t-body)" }}>{title}</h3>
+            {sub ? <span style={{ fontSize: big ? "var(--t-ui)" : "var(--t-meta)", lineHeight: 1.45, color: MUTED }}>{sub}</span> : null}
           </span>
           {aside}
         </div>
@@ -66,8 +66,8 @@ export function Panel({ title, sub, aside, anchor, children, style = null, id, b
 export function Label({ title, sub, strong = false, subColor = MUTED, basis = "220px" }) {
   return (
     <span style={{ flex: `1 1 ${basis}`, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-      <span style={{ fontSize: "15px", fontWeight: strong ? 600 : 500 }}>{title}</span>
-      {sub ? <span style={{ fontSize: "13px", lineHeight: 1.45, color: subColor }}>{sub}</span> : null}
+      <span style={{ fontSize: "var(--t-body)", fontWeight: strong ? 600 : 500 }}>{title}</span>
+      {sub ? <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: subColor }}>{sub}</span> : null}
     </span>
   );
 }
@@ -106,7 +106,7 @@ export function Pills({ label, items, value, onPick, busy = false, background = 
     <div role="radiogroup" aria-label={label} style={{ display: "inline-flex", flexWrap: "wrap", padding: "3px", gap: "2px", borderRadius: "999px", background }}>
       {items.map(([v, text]) => {
         const on = value === v;
-        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "13.5px", fontWeight: 500, color: INK, cursor: "pointer" }}>{text}</button>;
+        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, color: INK, cursor: "pointer" }}>{text}</button>;
       })}
     </div>
   );
@@ -121,8 +121,8 @@ export function Choices({ label, items, value, onPick, busy = false, min = 200 }
         return (
           <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)}
             style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px", padding: "14px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "14px", background: "#FFFFFF", textAlign: "left", color: INK, cursor: "pointer", transition: "border-color .2s ease" }}>
-            <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{text}</span>
-            {desc ? <span style={{ fontSize: "13px", color: MUTED }}>{desc}</span> : null}
+            <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{text}</span>
+            {desc ? <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{desc}</span> : null}
           </button>
         );
       })}
@@ -162,7 +162,7 @@ export function Term({ tip, children }) {
 /** A status chip: ✓ Cifrada, Principal, Sin conectar… */
 export function Chip({ children, tone = "grey", style = null }) {
   const look = { green: ["#E3F4EC", "#0B6B4A"], dark: [INK, "#FFFFFF"], grey: ["#F1F1EC", "#3D404A"], quiet: ["#F1F1EC", MUTED], red: ["#FBEAE7", "#B4232A"] }[tone] || ["#F1F1EC", "#3D404A"];
-  return <span style={{ height: "22px", padding: "0 8px", display: "inline-flex", alignItems: "center", flex: "none", borderRadius: "999px", background: look[0], color: look[1], fontSize: "11.5px", fontWeight: 600, whiteSpace: "nowrap", ...style }}>{children}</span>;
+  return <span style={{ height: "22px", padding: "0 8px", display: "inline-flex", alignItems: "center", flex: "none", borderRadius: "999px", background: look[0], color: look[1], fontSize: "var(--t-caption)", fontWeight: 600, whiteSpace: "nowrap", ...style }}>{children}</span>;
 }
 
 /** A thin bar (6–10 px) of the boards, filled to `percent`. */
@@ -209,5 +209,5 @@ export function useSettings() {
 }
 
 export function Alert({ children }) {
-  return children ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{children}</p> : null;
+  return children ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{children}</p> : null;
 }

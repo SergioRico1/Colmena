@@ -1,3 +1,4 @@
+import { stepOf } from "../../../lib/type.js";
 import { useClickAway } from "../../../lib/useClickAway.js";
 import { useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
@@ -31,7 +32,7 @@ export function Seg({ options, value, onChange, small = false, label }) {
         const on = id === value;
         return (
           <button key={id} type="button" role="radio" aria-checked={on} onClick={() => onChange(id)}
-            style={{ height: small ? "24px" : "28px", padding: small ? "0 10px" : "0 12px", border: 0, borderRadius: "999px", cursor: "pointer", whiteSpace: "nowrap", fontSize: small ? "12px" : "13px", fontWeight: 600, background: on ? C.white : "transparent", color: on ? C.ink : C.muted, boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none" }}>
+            style={{ height: small ? "24px" : "28px", padding: small ? "0 10px" : "0 12px", border: 0, borderRadius: "999px", cursor: "pointer", whiteSpace: "nowrap", fontSize: small ? "var(--t-caption)" : "var(--t-meta)", fontWeight: 600, background: on ? C.white : "transparent", color: on ? C.ink : C.muted, boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none" }}>
             {text}
           </button>
         );
@@ -48,7 +49,7 @@ export function MenuChip({ label, icon = null, title, children, up = true, width
   return (
     <div ref={ref} className={className} style={{ position: "relative", minWidth: 0 }}>
       <button type="button" title={title} aria-label={label ? undefined : title} aria-expanded={open} onClick={() => setOpen(!open)}
-        style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "34px", padding: label ? "0 10px" : "0", width: label ? undefined : "34px", justifyContent: "center", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "13px", fontWeight: 500, color: C.text, whiteSpace: "nowrap", ...look }}>
+        style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "34px", padding: label ? "0 10px" : "0", width: label ? undefined : "34px", justifyContent: "center", border: 0, borderRadius: "999px", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, color: C.text, whiteSpace: "nowrap", ...look }}>
         {icon}{label ? <span className={icon && !keepLabel ? "code-chip-label code-chip-label--icon" : "code-chip-label"}>{label}</span> : null}{chevron ? <ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} /> : null}
       </button>
       {open ? (
@@ -66,8 +67,8 @@ export function MenuItem({ title, text, on = false, onClick, right = null }) {
     <button type="button" role="menuitemradio" aria-checked={on} onClick={onClick} className="code-hover"
       style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", border: 0, borderRadius: "14px", background: on ? C.soft : "transparent", cursor: "pointer", textAlign: "left" }}>
       <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
-        <strong style={{ fontSize: "14px", fontWeight: 600, color: C.ink }}>{title}</strong>
-        {text ? <span style={{ fontSize: "12px", lineHeight: 1.45, color: C.muted }}>{text}</span> : null}
+        <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: C.ink }}>{title}</strong>
+        {text ? <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.45, color: C.muted }}>{text}</span> : null}
       </span>
       {right}
       {on ? <Check size={15} strokeWidth={2.6} color={C.ink} aria-hidden="true" /> : null}
@@ -79,7 +80,7 @@ export function MenuItem({ title, text, on = false, onClick, right = null }) {
 export function Stat({ add, del, size = 12 }) {
   if (!add && !del) return null;
   return (
-    <span className="code-stat" style={{ font: `500 ${size}px/1 ${MONO}`, whiteSpace: "nowrap" }}>
+    <span className="code-stat" style={{ font: `500 ${stepOf(size)}px/1 ${MONO}`, whiteSpace: "nowrap" }}>
       {add ? <span style={{ color: C.greenText }}>+{add}</span> : null}{add && del ? " " : ""}{del ? <span style={{ color: C.red }}>−{del}</span> : null}
     </span>
   );
@@ -103,18 +104,18 @@ export const botOf = (bots, task) => (bots || []).find((b) => b.id === (task?.bo
 
 /** A state in words (design/V3Sistema.dc.html «Estados en palabras»), from model.js pillOf. */
 export function Pill({ pill, size = "sm" }) {
-  return <span style={{ flex: "none", height: size === "sm" ? "24px" : "28px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: pill.bg, color: pill.ink, fontSize: size === "sm" ? "12px" : "13px", fontWeight: 600, whiteSpace: "nowrap" }}>{pill.text}</span>;
+  return <span style={{ flex: "none", height: size === "sm" ? "24px" : "28px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: pill.bg, color: pill.ink, fontSize: size === "sm" ? "var(--t-caption)" : "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap" }}>{pill.text}</span>;
 }
 
 /** Buttons of Colmena 3: one ink action per screen, the others outlined, the rare ones quiet. */
 export const BTN = {
-  primary: { height: "40px", padding: "0 18px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
-  outline: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "14px", fontWeight: 400, cursor: "pointer", whiteSpace: "nowrap" },
-  blocked: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px dashed rgba(18,19,26,.2)", borderRadius: "999px", background: "transparent", color: "#5C606C", fontSize: "14px", cursor: "not-allowed", whiteSpace: "nowrap" },
-  quiet: { height: "40px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "999px", background: "transparent", color: "#4A4D57", fontSize: "14px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
+  primary: { height: "40px", padding: "0 18px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
+  outline: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 400, cursor: "pointer", whiteSpace: "nowrap" },
+  blocked: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px dashed rgba(18,19,26,.2)", borderRadius: "999px", background: "transparent", color: "#5C606C", fontSize: "var(--t-ui)", cursor: "not-allowed", whiteSpace: "nowrap" },
+  quiet: { height: "40px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "999px", background: "transparent", color: "#4A4D57", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
 };
 /** The soft chips of the composers (project, engine): #F6F6F3 with a hairline. */
-export const CHIP = { height: "34px", padding: "0 12px", gap: "8px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#F6F6F3", fontSize: "13.5px", fontWeight: 400, color: "#12131A" };
+export const CHIP = { height: "34px", padding: "0 12px", gap: "8px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-ui)", fontWeight: 400, color: "#12131A" };
 export const SR = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 
 export const CODE_CSS = `

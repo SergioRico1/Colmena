@@ -1,3 +1,4 @@
+import { fitInitials, stepOf } from "../../../lib/type.js";
 import { shapeOf } from "../Presence.jsx";
 import { portraitOf } from "../../../lib/bots.js";
 
@@ -21,8 +22,8 @@ export function BotMark({ bot, size = 20, state = "rest", style = null }) {
 /** A person: a neutral circle with initials (you in ink). */
 export function PersonMark({ name, size = 32, me = false, tint = "#E6E7EC", ring = null, style = null }) {
   return (
-    <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "50%", background: me ? "#12131A" : tint, color: me ? "#FFFFFF" : "#12131A", font: `600 ${Math.max(8, Math.round(size * 0.33))}px/1 'Geist', sans-serif`, boxShadow: ring ? `0 0 0 2px ${ring}` : "none", ...style }}>
-      {me ? "TÚ" : initialsOf(name)}
+    <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "50%", background: me ? "#12131A" : tint, color: me ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size * 0.33))}px/1 'Geist', sans-serif`, boxShadow: ring ? `0 0 0 2px ${ring}` : "none", ...style }}>
+      {fitInitials(me ? "TÚ" : initialsOf(name), size)}
     </span>
   );
 }
@@ -31,6 +32,6 @@ export function PersonMark({ name, size = 32, me = false, tint = "#E6E7EC", ring
 export function RowTile({ bot = null, state = "rest", person = null, room = false }) {
   const tile = { flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "12px" };
   if (bot) return <span aria-hidden="true" style={{ ...tile, background: "#F6F6F3" }}><BotMark bot={bot} size={20} state={state} /></span>;
-  if (person) return <span aria-hidden="true" style={{ ...tile, borderRadius: "50%", background: "#E6E7EC", fontSize: "12px", fontWeight: 600, color: "#12131A" }}>{initialsOf(person)}</span>;
-  return <span aria-hidden="true" style={{ ...tile, background: "#F1F1EC", fontSize: "12px", fontWeight: 600, color: "#12131A" }}>{room ? "#" : ""}</span>;
+  if (person) return <span aria-hidden="true" style={{ ...tile, borderRadius: "50%", background: "#E6E7EC", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}>{initialsOf(person)}</span>;
+  return <span aria-hidden="true" style={{ ...tile, background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}>{room ? "#" : ""}</span>;
 }

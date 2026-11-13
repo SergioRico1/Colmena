@@ -183,20 +183,20 @@ export default function Hoy({ query = {} }) {
       <main style={{ maxWidth: "1040px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 52px) 72px", display: "flex", flexDirection: "column", gap: "36px" }}>
         <header style={{ display: "flex", flexDirection: "column", gap: "16px", animation: "rise .5s ease-out" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-            <span style={{ fontSize: "15px", color: "#5C606C" }}>{capital(now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }))}</span>
+            <span style={{ fontSize: "var(--t-body)", color: "#5C606C" }}>{capital(now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }))}</span>
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
             {/* The live blocks you pinned have their own page; here it is one click away. */}
-            <a href="/panel" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate("/panel"); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.14)", fontSize: "13.5px", fontWeight: "500", color: "#3D404A" }}>
+            <a href="/panel" onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate("/panel"); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.14)", fontSize: "var(--t-ui)", fontWeight: "500", color: "#3D404A" }}>
               <LayoutGrid size={14} strokeWidth={2.1} aria-hidden="true" />{"Panel"}{blocks.length ? <span style={{ color: "#5C606C", fontVariantNumeric: "tabular-nums" }}>{blocks.length}</span> : null}
             </a>
-            <button type="button" onClick={togglePause} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.14)", fontSize: "13.5px", fontWeight: "500", color: "#3D404A", cursor: "pointer" }}>
+            <button type="button" onClick={togglePause} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.14)", fontSize: "var(--t-ui)", fontWeight: "500", color: "#3D404A", cursor: "pointer" }}>
               {paused
                 ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" /></svg>{"Reanudar al equipo"}</>
                 : <><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>{"Pausar a todo el equipo"}</>}
             </button>
             </span>
           </div>
-          <h1 style={{ margin: "0", maxWidth: "900px", font: "600 clamp(36px, 3.9vw, 54px)/1.02 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em", textWrap: "balance" }}>
+          <h1 style={{ margin: "0", maxWidth: "900px", font: "600 clamp(var(--t-display-s), 3.75vw, var(--t-display-l))/1.02 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em", textWrap: "balance" }}>
             {hello + " "}<span style={{ color: "var(--c-display-soft)" }}>{(COUNT[n] || `${n} cosas te necesitan`) + (paused ? "; el equipo está en pausa." : "; lo demás va solo.")}</span>
           </h1>
         </header>
@@ -208,15 +208,15 @@ export default function Hoy({ query = {} }) {
         <section aria-labelledby="need-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <h2 id="need-t" style={sectionTitle}>{"Te necesitan"}</h2>
-            {n ? <span style={{ minWidth: "24px", height: "24px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "12px", background: "#FFC93C", fontSize: "12.5px", fontWeight: "600" }}>{n}</span> : null}
-            <span style={{ marginLeft: "auto", fontSize: "13.5px", color: "#5C606C" }}>{n > 1 ? "Lo más antiguo, primero" : n ? "" : "Al día"}</span>
+            {n ? <span style={{ minWidth: "24px", height: "24px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "12px", background: "#FFC93C", fontSize: "var(--t-meta)", fontWeight: "600" }}>{n}</span> : null}
+            <span style={{ marginLeft: "auto", fontSize: "var(--t-ui)", color: "#5C606C" }}>{n > 1 ? "Lo más antiguo, primero" : n ? "" : "Al día"}</span>
           </div>
           {!n && !settled.length ? (
             <div style={{ display: "flex", alignItems: "center", gap: "18px", padding: "20px 22px", background: "#FFFFFF", borderRadius: "20px", animation: "rise .4s ease-out" }}>
               <span style={{ animation: "drift 5s ease-in-out infinite" }}><BotPresence bot={botOf("atlas") || { shape: "hex", color: "#12131A" }} size={36} state="rest" /></span>
               <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <strong style={{ fontSize: "16.5px", fontWeight: "600" }}>{"Nada te espera."}</strong>
-                <span style={{ fontSize: "14.5px", color: "#4A4D57" }}>{"Tu equipo sigue trabajando. Solo te avisaremos si hace falta."}</span>
+                <strong style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{"Nada te espera."}</strong>
+                <span style={{ fontSize: "var(--t-body)", color: "#4A4D57" }}>{"Tu equipo sigue trabajando. Solo te avisaremos si hace falta."}</span>
               </span>
             </div>
           ) : null}
@@ -239,22 +239,22 @@ export default function Hoy({ query = {} }) {
               <label style={{ flex: "1", display: "flex" }}>
                 <span style={srOnly}>{"Pide algo a tu equipo"}</span>
                 <input className="c-bare" ref={input} type="text" value={ask} onChange={(e) => { setAsk(e.target.value); setSent(null); setError(null); }} placeholder={box.placeholder} disabled={box.blocked} aria-describedby={box.blocked ? "pedir-sin-cuenta" : undefined} maxLength={4000}
-                  style={{ flex: "1", minWidth: "0", height: "60px", border: "0", background: "transparent", fontSize: "19px", letterSpacing: "-0.01em" }} />
+                  style={{ flex: "1", minWidth: "0", height: "60px", border: "0", background: "transparent", fontSize: "var(--t-title)", letterSpacing: "-0.01em" }} />
               </label>
               <button type="submit" aria-label="Enviar" disabled={busy || !ask.trim() || box.blocked} style={{ width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: box.blocked ? "#C9CBD1" : "#12131A", color: "#FFFFFF", cursor: ask.trim() && !box.blocked ? "pointer" : "default", opacity: ask.trim() || busy ? 1 : 0.9 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
               </button>
             </form>
             {box.blocked ? (
-              <p id="pedir-sin-cuenta" style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", padding: "12px 8px 14px 0", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "14px", lineHeight: 1.5, color: "#3D404A" }}>
+              <p id="pedir-sin-cuenta" style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", padding: "12px 8px 14px 0", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#3D404A" }}>
                 <span style={{ flex: "1 1 320px" }}>{box.note}</span>
                 {/* The notice above carries the main button: here it is the quiet way to the same place. */}
-                <a href={box.action.href} style={{ flex: "none", height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", borderRadius: "999px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.18)", color: "#12131A", fontSize: "13.5px", fontWeight: 600, textDecoration: "none" }}>{box.action.label}</a>
+                <a href={box.action.href} style={{ flex: "none", height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", borderRadius: "999px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.18)", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>{box.action.label}</a>
               </p>
             ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", padding: "10px 8px 12px 0", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "13px", color: "#5C606C" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", padding: "10px 8px 12px 0", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-meta)", color: "#5C606C" }}>
               <span data-route-menu="" style={{ position: "relative" }}>
-                <button type="button" aria-haspopup="menu" aria-expanded={menu ? "true" : "false"} onClick={() => setMenu(!menu)} style={{ height: "32px", padding: "0 12px 0 10px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "999px", background: "#F3F3EF", fontSize: "13.5px", color: "#3D404A", cursor: "pointer" }}>
+                <button type="button" aria-haspopup="menu" aria-expanded={menu ? "true" : "false"} onClick={() => setMenu(!menu)} style={{ height: "32px", padding: "0 12px 0 10px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "999px", background: "#F3F3EF", fontSize: "var(--t-ui)", color: "#3D404A", cursor: "pointer" }}>
                   <Shape bot={route.bot} size={14} />
                   <span role="status">{route.text}</span>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
@@ -265,21 +265,21 @@ export default function Hoy({ query = {} }) {
                       const on = b.id === "atlas" ? !picked : picked?.id === b.id;
                       return (
                         <button key={b.id} type="button" role="menuitemradio" aria-checked={on ? "true" : "false"} onClick={() => { setPicked(b.id === "atlas" ? null : b); setMenu(false); input.current?.focus(); }}
-                          className="v3-hover" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "0 10px", border: "0", borderRadius: "10px", background: on ? "#F1F1EC" : "transparent", textAlign: "left", cursor: "pointer", fontSize: "14px", color: "#12131A" }}>
+                          className="v3-hover" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "0 10px", border: "0", borderRadius: "10px", background: on ? "#F1F1EC" : "transparent", textAlign: "left", cursor: "pointer", fontSize: "var(--t-ui)", color: "#12131A" }}>
                           <Shape bot={b} size={14} />
                           <span style={{ flex: "1" }}>{b.id === "atlas" ? `${b.name} decide quién lo hace` : b.name}</span>
-                          <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{b.id === "atlas" ? "" : b.role}</span>
+                          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{b.id === "atlas" ? "" : b.role}</span>
                         </button>
                       );
                     })}
                   </div>
                 ) : null}
               </span>
-              <button type="button" onClick={attach} style={{ height: "32px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "999px", background: "transparent", fontSize: "13.5px", color: "#3D404A", cursor: "pointer" }}>
+              <button type="button" onClick={attach} style={{ height: "32px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "999px", background: "transparent", fontSize: "var(--t-ui)", color: "#3D404A", cursor: "pointer" }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7-7l8.5-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.4 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8" /></svg>{"Adjuntar"}
               </button>
               {files.map((f, i) => (
-                <span key={f.name + i} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 4px 0 10px", borderRadius: "999px", background: "#F3F3EF", fontSize: "13px", color: "#12131A" }}>
+                <span key={f.name + i} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 4px 0 10px", borderRadius: "999px", background: "#F3F3EF", fontSize: "var(--t-meta)", color: "#12131A" }}>
                   {f.name}
                   <button type="button" aria-label={`Quitar ${f.name}`} onClick={() => setFiles(files.filter((_, j) => j !== i))} style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
@@ -290,11 +290,11 @@ export default function Hoy({ query = {} }) {
             </div>
             )}
           </div>
-          {sent ? <p role="status" style={{ margin: "0", padding: "0 22px", fontSize: "14.5px", color: "#0B6B4A", animation: "rise .35s ease-out" }}>{sent}</p> : null}
-          {error ? <p role="alert" style={{ margin: "0", padding: "0 22px", fontSize: "14.5px", color: "#B4232A" }}>{error}</p> : null}
+          {sent ? <p role="status" style={{ margin: "0", padding: "0 22px", fontSize: "var(--t-body)", color: "#0B6B4A", animation: "rise .35s ease-out" }}>{sent}</p> : null}
+          {error ? <p role="alert" style={{ margin: "0", padding: "0 22px", fontSize: "var(--t-body)", color: "#B4232A" }}>{error}</p> : null}
           <div style={{ display: box.blocked ? "none" : "flex", flexWrap: "wrap", gap: "8px", padding: "0 6px" }}>
             {IDEAS.map((label) => (
-              <button key={label} type="button" onClick={() => { setAsk(label); setSent(null); input.current?.focus(); }} style={{ height: "34px", padding: "0 14px", background: "transparent", border: "0", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", borderRadius: "999px", cursor: "pointer", fontSize: "13.5px", color: "#3D404A" }}>{label}</button>
+              <button key={label} type="button" onClick={() => { setAsk(label); setSent(null); input.current?.focus(); }} style={{ height: "34px", padding: "0 14px", background: "transparent", border: "0", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-ui)", color: "#3D404A" }}>{label}</button>
             ))}
           </div>
         </section>
@@ -303,7 +303,7 @@ export default function Hoy({ query = {} }) {
           <section aria-labelledby="run-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "12px" }}>
               <h2 id="run-t" style={sectionTitle}>{"En marcha"}</h2>
-              <a href="/trabajo" style={{ fontSize: "14px", fontWeight: "500", color: "#1F4FD1" }}>{"Todo el trabajo"}</a>
+              <a href="/trabajo" style={{ fontSize: "var(--t-ui)", fontWeight: "500", color: "#1F4FD1" }}>{"Todo el trabajo"}</a>
             </div>
             {running.length ? (
               <div style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF" }}>
@@ -320,15 +320,15 @@ export default function Hoy({ query = {} }) {
                       <span style={srOnly}>{botAlt(lead, { state: waits ? "wait" : moving ? "work" : null }) + ": "}</span>
                       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "6px" }}>
                         <span style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
-                          <span style={{ flex: "1", minWidth: 0, fontSize: "15px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title}</span>
-                          {m.dueAt ? <span style={{ flex: "none", fontSize: "12.5px", color: "#5C606C" }}>{dueLabel(m.dueAt)}</span> : null}
+                          <span style={{ flex: "1", minWidth: 0, fontSize: "var(--t-body)", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title}</span>
+                          {m.dueAt ? <span style={{ flex: "none", fontSize: "var(--t-meta)", color: "#5C606C" }}>{dueLabel(m.dueAt)}</span> : null}
                         </span>
-                        <span style={{ fontSize: "13.5px", color: waits ? "#8A5A00" : "#4A4D57", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.status === "paused" ? pauseLine(m, { botName: lead?.name }) : m.narration?.text || m.activityLine || m.statusLabel}</span>
+                        <span style={{ fontSize: "var(--t-ui)", color: waits ? "#8A5A00" : "#4A4D57", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.status === "paused" ? pauseLine(m, { botName: lead?.name }) : m.narration?.text || m.activityLine || m.statusLabel}</span>
                         <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                           <span aria-hidden="true" style={{ position: "relative", flex: "1", height: "4px", borderRadius: "2px", background: "#ECECE7", overflow: "hidden" }}>
                             <span style={{ position: "absolute", inset: "0 auto 0 0", width: (p ?? 4) + "%", borderRadius: "2px", background: "#12131A", transition: "width .4s ease" }} />
                           </span>
-                          <span style={{ width: "34px", textAlign: "right", fontSize: "12.5px", color: "#5C606C", fontVariantNumeric: "tabular-nums" }}>{p != null ? p + "%" : ""}</span>
+                          <span style={{ width: "34px", textAlign: "right", fontSize: "var(--t-meta)", color: "#5C606C", fontVariantNumeric: "tabular-nums" }}>{p != null ? p + "%" : ""}</span>
                         </span>
                       </span>
                     </a>
@@ -336,24 +336,24 @@ export default function Hoy({ query = {} }) {
                 })}
               </div>
             ) : (
-              <p style={{ margin: 0, padding: "18px", background: "#FFFFFF", borderRadius: "20px", fontSize: "14.5px", color: "#4A4D57" }}>{"Nada en marcha ahora mismo. Pide algo arriba y lo verás aquí mientras se hace."}</p>
+              <p style={{ margin: 0, padding: "18px", background: "#FFFFFF", borderRadius: "20px", fontSize: "var(--t-body)", color: "#4A4D57" }}>{"Nada en marcha ahora mismo. Pide algo arriba y lo verás aquí mientras se hace."}</p>
             )}
           </section>
 
           <section aria-labelledby="today-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "12px" }}>
               <h2 id="today-t" style={sectionTitle}>{"Hoy"}</h2>
-              <a href="/actividad" style={{ fontSize: "14px", fontWeight: "500", color: "#1F4FD1" }}>{"Toda la actividad"}</a>
+              <a href="/actividad" style={{ fontSize: "var(--t-ui)", fontWeight: "500", color: "#1F4FD1" }}>{"Toda la actividad"}</a>
             </div>
             <ol style={{ margin: "0", padding: "8px 0", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF" }}>
               {timeline.done.map((d) => <Moment key={d.key} item={d} done />)}
-              {!timeline.done.length ? <li style={{ padding: "9px 18px", fontSize: "14px", color: "#5C606C" }}>{"Aún no ha terminado nada hoy."}</li> : null}
+              {!timeline.done.length ? <li style={{ padding: "9px 18px", fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Aún no ha terminado nada hoy."}</li> : null}
               <li aria-label={`Ahora, ${time(now)}`} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 18px" }}>
-                <span style={{ height: "22px", padding: "0 9px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "11.5px", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{"Ahora · " + time(now)}</span>
+                <span style={{ height: "22px", padding: "0 9px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{"Ahora · " + time(now)}</span>
                 <span style={{ flex: "1", height: "1px", background: "rgba(18,19,26,.14)" }} />
               </li>
               {timeline.later.map((d) => <Moment key={d.key} item={d} />)}
-              {!timeline.later.length ? <li style={{ padding: "9px 18px", fontSize: "14px", color: "#5C606C" }}>{"Nada programado para hoy ni mañana."}</li> : null}
+              {!timeline.later.length ? <li style={{ padding: "9px 18px", fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Nada programado para hoy ni mañana."}</li> : null}
             </ol>
           </section>
         </div>
@@ -367,7 +367,7 @@ export default function Hoy({ query = {} }) {
 function Moment({ item, done = false }) {
   const text = <span style={{ color: done ? "#3D404A" : "#12131A" }}>{item.text}</span>;
   return (
-    <li style={{ display: "flex", alignItems: "baseline", gap: "12px", padding: "9px 18px", fontSize: "14px", lineHeight: "1.45" }}>
+    <li style={{ display: "flex", alignItems: "baseline", gap: "12px", padding: "9px 18px", fontSize: "var(--t-ui)", lineHeight: "1.45" }}>
       <span style={{ flex: "none", width: "66px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", color: "#5C606C" }}>{when(item.at)}</span>
       <span aria-hidden="true" style={{ flex: "none", alignSelf: "center", width: "14px", height: "14px", display: "grid", placeItems: "center", color: done ? "#0B6B4A" : "var(--c-placeholder)" }}>{done ? <Check size={14} strokeWidth={2.8} /> : <Circle size={11} strokeWidth={2.8} />}</span>
       {item.href ? <a href={item.href} className="c-hit" style={{ color: "inherit", minWidth: 0 }}>{text}</a> : text}

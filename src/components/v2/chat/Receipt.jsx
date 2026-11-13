@@ -6,7 +6,7 @@ import { findBot } from "../../room/common.jsx";
 // small mark under it: it waits for a pause, the bot read it (its shape), or it is held
 // until you give your OK. `receipt` is «wait», «hold» or «read:<botId>».
 
-const LINE = { display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", lineHeight: "16px", color: "#5C606C", whiteSpace: "nowrap" };
+const LINE = { display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", lineHeight: "16px", color: "#5C606C", whiteSpace: "nowrap" };
 
 export default function Receipt({ receipt, bots = [] }) {
   if (!receipt) return null;

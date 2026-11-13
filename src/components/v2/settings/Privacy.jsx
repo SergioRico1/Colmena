@@ -17,9 +17,9 @@ import { Alert, Go, LINE, MUTED, Row, Switch, UNDO_MS, anchorOf, btn, h3, useSet
 function Fact({ k, v, n, dot, anchor }) {
   return (
     <div {...anchorOf(anchor)} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px", borderRadius: "18px", background: "#FFFFFF", scrollMarginTop: "24px" }}>
-      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: MUTED }}><span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: dot }} />{k}</span>
-      <span style={{ fontSize: "16px", fontWeight: 600 }}>{v}</span>
-      <span style={{ fontSize: "12.5px", color: MUTED }}>{n}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: MUTED }}><span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: dot }} />{k}</span>
+      <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{v}</span>
+      <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{n}</span>
     </div>
   );
 }
@@ -63,7 +63,7 @@ export default function PrivacySection() {
       <EncryptionSettings s={s} reload={reloadEnc} />
 
       <section aria-labelledby="mem-t" style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden" }}>
-        <h3 id="mem-t" style={{ ...h3, fontSize: "16px", padding: "18px 22px 8px" }}>Memoria y conversaciones</h3>
+        <h3 id="mem-t" style={{ ...h3, fontSize: "var(--t-read)", padding: "18px 22px 8px" }}>Memoria y conversaciones</h3>
         <Row anchor="aprenden" title="Aprenden de lo que hablas" sub="Si lo apagas, siguen trabajando pero no guardan recuerdos ni habilidades nuevas. Un chat de incógnito nunca aprende." min="64px">
           <Switch on={settings.learning !== false} label="Aprenden de lo que hablas" onChange={(on) => save({ learning: on }, on ? "Vuelven a aprender" : "Ya no aprenden de lo que hablas", { learning: !on })} />
         </Row>
@@ -87,9 +87,9 @@ export default function PrivacySection() {
       <section {...anchorOf("olvidar")} aria-labelledby="danger-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 20px", padding: "18px 22px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(180,35,42,.25)", scrollMarginTop: "24px" }}>
         <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <h3 id="danger-t" style={h3}>Hacer que lo olviden todo</h3>
-          <span style={{ fontSize: "13px", color: "#4A4D57" }}>Borra lo que recuerdan de ti. Los chats y los archivos se quedan. Tienes 10 segundos para deshacerlo.</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "#4A4D57" }}>Borra lo que recuerdan de ti. Los chats y los archivos se quedan. Tienes 10 segundos para deshacerlo.</span>
         </span>
-        <button type="button" disabled={!remembered} onClick={forgetAll} style={{ ...btn("outline", 38), borderColor: "rgba(180,35,42,.35)", color: "#B4232A", fontSize: "14px", opacity: memories.length ? 1 : 0.5 }}>Olvidar todo…</button>
+        <button type="button" disabled={!remembered} onClick={forgetAll} style={{ ...btn("outline", 38), borderColor: "rgba(180,35,42,.35)", color: "#B4232A", fontSize: "var(--t-ui)", opacity: memories.length ? 1 : 0.5 }}>Olvidar todo…</button>
       </section>
     </>
   );

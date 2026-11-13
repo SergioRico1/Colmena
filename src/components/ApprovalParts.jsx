@@ -25,7 +25,7 @@ const strong = { fontWeight: "600", color: "#12131A" };
  * «Para ana@…, luis@… y 2 más», the subject and the start of the text. `subject`: false where
  * the surface's title already says it (then it is not repeated here).
  */
-export function SendWhat({ send, subject = true, size = "14.5px", style = null }) {
+export function SendWhat({ send, subject = true, size = "var(--t-body)", style = null }) {
   if (!send) return null;
   const to = send.to.length ? send.to.join(", ") + (send.moreTo ? ` y ${send.moreTo} más` : "") : "nadie todavía";
   return (
@@ -42,7 +42,7 @@ export function SendWhat({ send, subject = true, size = "14.5px", style = null }
 }
 
 /** The quiet lines of a card: what the card cut, the undo window, what happens at the deadline. */
-export function ApprovalNotes({ model, size = "13px", style = null }) {
+export function ApprovalNotes({ model, size = "var(--t-meta)", style = null }) {
   if (!model) return null;
   const lines = [model.truncatedLine, model.undoLine].filter(Boolean);
   const expiry = model.expiryLine;

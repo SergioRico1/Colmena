@@ -1,3 +1,4 @@
+import { stepOf } from "../../lib/type.js";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useStore, useResource } from "../../lib/store.jsx";
@@ -46,12 +47,12 @@ const NEW_ITEMS = [
 ];
 
 const INK = "#12131A", TEXT = "#3D404A", MUTED = "#5C606C", HONEY = "#FFC93C";
-const kbd = { font: "500 11px/1 'Geist Mono', monospace", color: MUTED };
-const rowLink = { position: "relative", flex: "none", display: "flex", alignItems: "center", gap: "10px", padding: "0 8px 0 10px", borderRadius: "9px", color: TEXT, fontSize: "14px", textDecoration: "none" };
+const kbd = { font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: MUTED };
+const rowLink = { position: "relative", flex: "none", display: "flex", alignItems: "center", gap: "10px", padding: "0 8px 0 10px", borderRadius: "9px", color: TEXT, fontSize: "var(--t-ui)", textDecoration: "none" };
 const onRow = { background: "#FFFFFF", color: INK, boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)" };
 const ellipsis = { flex: "1", minWidth: "0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 const menuBox = { position: "absolute", left: "0", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "v3sheet .18s ease-out" };
-const menuItem = { display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "6px 10px", border: "0", borderRadius: "10px", background: "transparent", color: INK, fontSize: "14px", fontWeight: "500", textAlign: "left", textDecoration: "none", cursor: "pointer" };
+const menuItem = { display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "6px 10px", border: "0", borderRadius: "10px", background: "transparent", color: INK, fontSize: "var(--t-ui)", fontWeight: "500", textAlign: "left", textDecoration: "none", cursor: "pointer" };
 const initials = (name) => String(name || "Tú").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "TÚ";
 
 // What the sidebar remembers between screens (each screen mounts its own): which groups are
@@ -71,14 +72,14 @@ function pinnedEntry(href, { bots }) {
 
 /** A neutral count (unread) or a honey one (it waits for you). */
 function Count({ n, honey = false, label }) {
-  return <span aria-hidden={label ? undefined : "true"} aria-label={label} style={{ flex: "none", minWidth: "18px", height: "18px", padding: "0 5px", boxSizing: "border-box", display: "grid", placeItems: "center", borderRadius: "9px", background: honey ? HONEY : "rgba(18,19,26,.1)", color: INK, fontSize: "11px", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{n > 99 ? "99+" : n}</span>;
+  return <span aria-hidden={label ? undefined : "true"} aria-label={label} style={{ flex: "none", minWidth: "18px", height: "18px", padding: "0 5px", boxSizing: "border-box", display: "grid", placeItems: "center", borderRadius: "9px", background: honey ? HONEY : "rgba(18,19,26,.1)", color: INK, fontSize: "var(--t-micro)", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{n > 99 ? "99+" : n}</span>;
 }
 
 /** A person: a round avatar with initials and a presence dot (filled: online; a ring: not). */
 function PersonMark({ person, size = 24, ring = "#ECECE7" }) {
   const online = person.presence === "online";
   return (
-    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "50%", background: person.color, color: INK, font: `600 ${Math.round(size / 2.5)}px/1 'Geist', sans-serif`, letterSpacing: "0.01em" }}>
+    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "50%", background: person.color, color: INK, font: `600 ${stepOf(Math.round(size / 2.5))}px/1 'Geist', sans-serif`, letterSpacing: "0.01em" }}>
       {person.initials}
       <span style={{ position: "absolute", right: "-2px", bottom: "-2px", width: "8px", height: "8px", boxSizing: "border-box", borderRadius: "50%", background: online ? "#1E9E6A" : ring, border: online ? "0" : "2px solid #8A8D96", boxShadow: `0 0 0 2px ${ring}` }} />
     </span>
@@ -205,7 +206,7 @@ export default function Sidebar({ active = "inicio" }) {
       {NEW_ITEMS.map((n) => (
         <button key={n.id} type="button" role="menuitem" onClick={() => pick(n)} className="v3-menuitem" style={{ ...menuItem, minHeight: "44px", fontWeight: "400" }}>
           <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "9px", background: "#F1F1EC" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={n.icon} /></svg></span>
-          <span style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "14px", fontWeight: "600" }}>{n.label}</span><span style={{ fontSize: "12px", color: MUTED }}>{n.hint}</span></span>
+          <span style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{n.label}</span><span style={{ fontSize: "var(--t-caption)", color: MUTED }}>{n.hint}</span></span>
         </button>
       ))}
     </div>
@@ -220,7 +221,7 @@ export default function Sidebar({ active = "inicio" }) {
   const teamMenu = menu === "team" ? (
     <div role="menu" aria-label={team.solo ? "Tu Colmena" : `Equipo ${team.name}`} onKeyDown={menuKeys} style={{ ...menuBox, top: "48px", right: folded ? "auto" : "-6px", width: folded ? "260px" : "auto" }}>
       {team.others.length ? <>
-        <span style={{ padding: "6px 10px 4px", fontSize: "12px", fontWeight: "600", color: MUTED }}>{"Cambiar de equipo"}</span>
+        <span style={{ padding: "6px 10px 4px", fontSize: "var(--t-caption)", fontWeight: "600", color: MUTED }}>{"Cambiar de equipo"}</span>
         <button type="button" role="menuitemradio" aria-checked="true" onClick={() => setMenu(null)} className="v3-menuitem" style={{ ...menuItem, fontWeight: "600" }}><span style={ellipsis}>{team.name}</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4 4 10-10" /></svg></button>
         {team.others.map((t) => <button key={t.id} type="button" role="menuitemradio" aria-checked="false" onClick={() => pickTeam(t.id)} className="v3-menuitem" style={menuItem}><span style={ellipsis}>{t.name}</span></button>)}
         {menuLine}
@@ -243,7 +244,7 @@ export default function Sidebar({ active = "inicio" }) {
         {joining.map((p) => (
           <a key={p.id} role="menuitem" href="/equipo#equipo" onClick={() => setMenu(null)} className="v3-menuitem" style={{ ...menuItem, alignItems: "flex-start", flexDirection: "column", gap: "1px" }}>
             <span style={{ ...ellipsis, flex: "none", maxWidth: "100%" }}>{p.name}</span>
-            <span style={{ fontSize: "12px", fontWeight: "400", color: MUTED }}>{p.state === "refused" ? "No has podido entrar" : p.from ? "Pendiente · te invitó " + String(p.from).trim().split(/s+/)[0] : "Pendiente: has pedido entrar"}</span>
+            <span style={{ fontSize: "var(--t-caption)", fontWeight: "400", color: MUTED }}>{p.state === "refused" ? "No has podido entrar" : p.from ? "Pendiente · te invitó " + String(p.from).trim().split(/s+/)[0] : "Pendiente: has pedido entrar"}</span>
           </a>
         ))}
       </> : null}
@@ -252,7 +253,7 @@ export default function Sidebar({ active = "inicio" }) {
 
   const groupHead = (id, label, count, addLabel, onAdd, marks) => (
     <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", marginTop: "10px" }}>
-      <button type="button" onClick={() => toggleGroup(id)} aria-expanded={!closed[id]} aria-controls={`v3-group-${id}`} className="v3-hover" style={{ flex: "1", minWidth: "0", height: "28px", display: "flex", alignItems: "center", gap: "6px", padding: "0 6px", border: "0", borderRadius: "8px", background: "transparent", color: MUTED, fontSize: "12px", fontWeight: "600", textAlign: "left", cursor: "pointer" }}>
+      <button type="button" onClick={() => toggleGroup(id)} aria-expanded={!closed[id]} aria-controls={`v3-group-${id}`} className="v3-hover" style={{ flex: "1", minWidth: "0", height: "28px", display: "flex", alignItems: "center", gap: "6px", padding: "0 6px", border: "0", borderRadius: "8px", background: "transparent", color: MUTED, fontSize: "var(--t-caption)", fontWeight: "600", textAlign: "left", cursor: "pointer" }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", transform: closed[id] ? "rotate(-90deg)" : "none", transition: "transform .15s ease" }}><path d="m6 9 6 6 6-6" /></svg>
         <span style={{ color: closed[id] && marks.unread ? INK : MUTED }}>{label}</span>
         <span style={{ fontWeight: "500", fontVariantNumeric: "tabular-nums" }}>{count}</span>
@@ -265,23 +266,23 @@ export default function Sidebar({ active = "inicio" }) {
     </div>
   );
   const sum = (rows, key) => rows.reduce((n, r) => n + (r[key] || 0), 0);
-  const empty = (text) => <span style={{ padding: "4px 10px 6px", fontSize: "12.5px", lineHeight: "1.4", color: MUTED }}>{text}</span>;
+  const empty = (text) => <span style={{ padding: "4px 10px 6px", fontSize: "var(--t-meta)", lineHeight: "1.4", color: MUTED }}>{text}</span>;
   const rowStyle = (on, h) => ({ ...rowLink, height: h + "px", ...(on ? onRow : {}) });
 
   const roomRow = (r) => {
     const on = r.href === here;
     return (
       <a key={r.id} href={r.href} aria-label={rowLabel("room", r)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={rowStyle(on, 32)}>
-        <span aria-hidden="true" style={{ flex: "none", width: "18px", textAlign: "center", font: "600 14px/1 'Geist', sans-serif", color: r.unread ? INK : MUTED }}>{"#"}</span>
+        <span aria-hidden="true" style={{ flex: "none", width: "18px", textAlign: "center", font: "600 var(--t-ui)/1 'Geist', sans-serif", color: r.unread ? INK : MUTED }}>{"#"}</span>
         <span style={{ ...ellipsis, fontWeight: r.unread ? "700" : on ? "600" : "400", color: r.unread || on ? INK : TEXT }}>{r.title}</span>
-        {r.working ? <span title={r.working === 1 ? "Un bot está trabajando aquí" : `${r.working} bots están trabajando aquí`} style={{ flex: "none", display: "inline-flex" }}>{calm ? <span aria-hidden="true" style={{ fontSize: "12px", color: MUTED }}>{"trabajando"}</span> : <WorkingDots />}</span> : null}
+        {r.working ? <span title={r.working === 1 ? "Un bot está trabajando aquí" : `${r.working} bots están trabajando aquí`} style={{ flex: "none", display: "inline-flex" }}>{calm ? <span aria-hidden="true" style={{ fontSize: "var(--t-caption)", color: MUTED }}>{"trabajando"}</span> : <WorkingDots />}</span> : null}
         {r.unread ? <Count n={r.unread} /> : null}
         {r.waiting ? <Count n={r.waiting} honey /> : null}
       </a>
     );
   };
   const botState = (b) => (
-    <span aria-hidden="true" style={{ flex: "none", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: b.state === "working" || b.state === "waiting" ? "600" : "400", color: b.state === "working" || b.state === "waiting" ? INK : MUTED }}>
+    <span aria-hidden="true" style={{ flex: "none", display: "flex", alignItems: "center", gap: "5px", fontSize: "var(--t-caption)", fontWeight: b.state === "working" || b.state === "waiting" ? "600" : "400", color: b.state === "working" || b.state === "waiting" ? INK : MUTED }}>
       {b.waiting ? <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: HONEY, boxShadow: "0 0 0 1px rgba(18,19,26,.18)" }} /> : null}
       {STATE_WORD[b.state]}
     </span>
@@ -298,7 +299,7 @@ export default function Sidebar({ active = "inicio" }) {
             {b.unread ? <Count n={b.unread} /> : null}
             {botState(b)}
           </span>
-          {b.role ? <span style={{ fontSize: "12px", lineHeight: "1.2", color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.role}</span> : null}
+          {b.role ? <span style={{ fontSize: "var(--t-caption)", lineHeight: "1.2", color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.role}</span> : null}
         </span>
       </a>
     );
@@ -309,7 +310,7 @@ export default function Sidebar({ active = "inicio" }) {
       <a key={p.id} href={p.href} aria-label={rowLabel("person", p)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={rowStyle(on, 36)}>
         <PersonMark person={p} ring={on ? "#FFFFFF" : "#ECECE7"} />
         <span style={{ ...ellipsis, fontWeight: p.unread ? "700" : on ? "600" : "400", color: p.unread || on ? INK : p.presence === "online" ? TEXT : MUTED }}>{p.name}</span>
-        {p.status ? <span aria-hidden="true" style={{ flex: "none", fontSize: "12px", color: MUTED }}>{STATUS_WORD[p.status]}</span> : null}
+        {p.status ? <span aria-hidden="true" style={{ flex: "none", fontSize: "var(--t-caption)", color: MUTED }}>{STATUS_WORD[p.status]}</span> : null}
         {p.unread ? <Count n={p.unread} /> : null}
         {p.waiting ? <Count n={p.waiting} honey /> : null}
       </a>
@@ -320,10 +321,10 @@ export default function Sidebar({ active = "inicio" }) {
     const on = p.id === current;
     const n = p.id === "inicio" ? model.waitingCount : 0;
     return (
-      <a key={p.id} href={p.href} aria-current={on ? "page" : undefined} aria-label={folded ? p.label + (n ? `, ${waitingLabel(n)}` : "") : undefined} title={folded ? `${p.label} (Ctrl ${i + 1})` : undefined} className={on ? undefined : "v3-hover"} style={{ position: "relative", flex: "none", width: folded ? "44px" : "auto", height: "36px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "11px", padding: folded ? "0" : "0 10px", borderRadius: "10px", textDecoration: "none", color: on ? INK : TEXT, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? onRow.boxShadow : "none", fontSize: "14.5px", fontWeight: on ? "600" : "500" }}>
+      <a key={p.id} href={p.href} aria-current={on ? "page" : undefined} aria-label={folded ? p.label + (n ? `, ${waitingLabel(n)}` : "") : undefined} title={folded ? `${p.label} (Ctrl ${i + 1})` : undefined} className={on ? undefined : "v3-hover"} style={{ position: "relative", flex: "none", width: folded ? "44px" : "auto", height: "36px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "11px", padding: folded ? "0" : "0 10px", borderRadius: "10px", textDecoration: "none", color: on ? INK : TEXT, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? onRow.boxShadow : "none", fontSize: "var(--t-body)", fontWeight: on ? "600" : "500" }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={p.icon} /></svg>
         {folded ? null : <span style={{ flex: "1" }}>{p.label}</span>}
-        {n ? <span aria-label={folded ? undefined : waitingLabel(n)} aria-hidden={folded ? "true" : undefined} style={{ ...(folded ? { position: "absolute", top: "-2px", right: "2px", boxShadow: "0 0 0 2px #ECECE7" } : {}), minWidth: "20px", height: "20px", padding: "0 6px", boxSizing: "border-box", display: "grid", placeItems: "center", borderRadius: "10px", background: HONEY, color: INK, fontSize: "11.5px", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{n}</span> : null}
+        {n ? <span aria-label={folded ? undefined : waitingLabel(n)} aria-hidden={folded ? "true" : undefined} style={{ ...(folded ? { position: "absolute", top: "-2px", right: "2px", boxShadow: "0 0 0 2px #ECECE7" } : {}), minWidth: "20px", height: "20px", padding: "0 6px", boxSizing: "border-box", display: "grid", placeItems: "center", borderRadius: "10px", background: HONEY, color: INK, fontSize: "var(--t-caption)", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{n}</span> : null}
         {!folded && expert && !n ? <kbd style={kbd}>{`Ctrl ${i + 1}`}</kbd> : null}
       </a>
     );
@@ -336,7 +337,7 @@ export default function Sidebar({ active = "inicio" }) {
   const rail = (
     <>
       <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "1px", margin: "6px 0", background: "rgba(18,19,26,.1)" }} />
-      <button type="button" onClick={() => setFolded(false)} aria-label={["Salas", `${model.rooms.length}`, roomsNew.unread ? `${roomsNew.unread} sin leer` : null, roomsNew.waiting ? "te esperan" : null, "desplegar la barra"].filter(Boolean).join(", ")} title="Salas" className="v3-hover" style={{ ...railTile, font: "600 16px/1 'Geist', sans-serif" }}>{"#"}{roomsNew.waiting ? railDot(true) : roomsNew.unread ? railDot(false) : null}</button>
+      <button type="button" onClick={() => setFolded(false)} aria-label={["Salas", `${model.rooms.length}`, roomsNew.unread ? `${roomsNew.unread} sin leer` : null, roomsNew.waiting ? "te esperan" : null, "desplegar la barra"].filter(Boolean).join(", ")} title="Salas" className="v3-hover" style={{ ...railTile, font: "600 var(--t-read)/1 'Geist', sans-serif" }}>{"#"}{roomsNew.waiting ? railDot(true) : roomsNew.unread ? railDot(false) : null}</button>
       {model.bots.map((b) => {
         const on = b.href === here;
         return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={calm ? "rest" : b.state === "working" ? "work" : "rest"} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
@@ -351,11 +352,11 @@ export default function Sidebar({ active = "inicio" }) {
   const groups = (
     <>
       {pinned.length ? <>
-        <span style={{ flex: "none", padding: "14px 10px 4px", fontSize: "12px", fontWeight: "600", color: MUTED }}>{"Fijados"}</span>
+        <span style={{ flex: "none", padding: "14px 10px 4px", fontSize: "var(--t-caption)", fontWeight: "600", color: MUTED }}>{"Fijados"}</span>
         {pinned.map((p) => (
           <a key={p.key} href={p.href} className="v3-hover" style={rowStyle(false, 32)}>
             {p.bot ? <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center" }}><span style={{ width: "14px", height: "14px", background: p.bot.color || "#C9CBD1", clipPath: shapeOf(p.bot).clip, borderRadius: p.bot.shape === "circle" ? "24%" : shapeOf(p.bot).radius }} /></span>
-              : <span aria-hidden="true" style={{ flex: "none", width: "18px", textAlign: "center", font: "600 9.5px/1 'Geist', sans-serif", color: TEXT }}>{p.glyph}</span>}
+              : <span aria-hidden="true" style={{ flex: "none", width: "18px", textAlign: "center", font: "600 var(--t-micro)/1 'Geist', sans-serif", color: TEXT }}>{p.glyph}</span>}
             <span style={ellipsis}>{p.label}</span>
           </a>
         ))}
@@ -367,7 +368,7 @@ export default function Sidebar({ active = "inicio" }) {
           {rooms.shown.map(roomRow)}
           {model.rooms.length ? null : empty("Aún no hay salas. Crea la primera con el +.")}
           {canFold ? (
-            <button type="button" onClick={toggleAll} aria-expanded={showAll} className="v3-hover" style={{ flex: "none", height: "28px", display: "flex", alignItems: "center", padding: "0 10px 0 38px", border: "0", borderRadius: "9px", background: "transparent", color: MUTED, fontSize: "12.5px", fontWeight: "500", textAlign: "left", cursor: "pointer" }}>{showAll ? "Ver menos" : `Ver todas (${model.rooms.length})`}</button>
+            <button type="button" onClick={toggleAll} aria-expanded={showAll} className="v3-hover" style={{ flex: "none", height: "28px", display: "flex", alignItems: "center", padding: "0 10px 0 38px", border: "0", borderRadius: "9px", background: "transparent", color: MUTED, fontSize: "var(--t-meta)", fontWeight: "500", textAlign: "left", cursor: "pointer" }}>{showAll ? "Ver menos" : `Ver todas (${model.rooms.length})`}</button>
           ) : null}
         </div>
       )}
@@ -411,8 +412,8 @@ export default function Sidebar({ active = "inicio" }) {
           <img src="/colmena-icon-128.png" alt="" width="28" height="28" style={{ flex: "none", display: "block", width: "28px", height: "28px", filter: "drop-shadow(0 2px 4px rgba(201,120,0,.35))" }} />
           {folded ? null : <>
             <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
-              <span style={{ font: `600 ${team.solo ? "20px" : "17px"}/1.1 'Bricolage Grotesque', sans-serif`, letterSpacing: "-0.03em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</span>
-              <span style={{ fontSize: "12px", lineHeight: "1.2", color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.line}</span>
+              <span style={{ font: `600 ${team.solo ? "var(--t-title)" : "var(--t-lead)"}/1.1 'Bricolage Grotesque', sans-serif`, letterSpacing: "-0.03em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</span>
+              <span style={{ fontSize: "var(--t-caption)", lineHeight: "1.2", color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.line}</span>
             </span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}><path d="m6 9 6 6 6-6" /></svg>
           </>}
@@ -421,11 +422,11 @@ export default function Sidebar({ active = "inicio" }) {
       </div>
 
       <div ref={newRef} style={{ flex: "none", position: "relative", zIndex: "5", display: "flex", flexDirection: "column", gap: "8px", ...noDrag }}>
-        <button type="button" onClick={() => setMenu(menu === "new" ? null : "new")} aria-expanded={menu === "new"} aria-haspopup="menu" aria-label={folded ? "Nuevo (Ctrl N)" : undefined} title={folded ? "Nuevo (Ctrl N)" : undefined} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0" : "0 12px 0 14px", border: "0", borderRadius: "12px", background: INK, color: "#FFFFFF", fontSize: "14.5px", fontWeight: "600", cursor: "pointer" }}>
+        <button type="button" onClick={() => setMenu(menu === "new" ? null : "new")} aria-expanded={menu === "new"} aria-haspopup="menu" aria-label={folded ? "Nuevo (Ctrl N)" : undefined} title={folded ? "Nuevo (Ctrl N)" : undefined} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0" : "0 12px 0 14px", border: "0", borderRadius: "12px", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600", cursor: "pointer" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           {folded ? null : <><span style={{ flex: "1", textAlign: "left" }}>{"Nuevo"}</span><kbd style={{ ...kbd, color: "#A9ACB6" }}>{"Ctrl N"}</kbd></>}
         </button>
-        <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:palette"))} aria-label={folded ? "Buscar o pedir (Ctrl K)" : undefined} title={folded ? "Buscar o pedir (Ctrl K)" : undefined} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0" : "0 12px", border: "0", borderRadius: "12px", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", color: MUTED, fontSize: "14px", cursor: "pointer", textAlign: "left" }}>
+        <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:palette"))} aria-label={folded ? "Buscar o pedir (Ctrl K)" : undefined} title={folded ? "Buscar o pedir (Ctrl K)" : undefined} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0" : "0 12px", border: "0", borderRadius: "12px", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", color: MUTED, fontSize: "var(--t-ui)", cursor: "pointer", textAlign: "left" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
           {folded ? null : <><span style={{ flex: "1" }}>{"Buscar o pedir"}</span><kbd style={kbd}>{"Ctrl K"}</kbd></>}
         </button>
@@ -440,9 +441,9 @@ export default function Sidebar({ active = "inicio" }) {
 
       <div style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", gap: "2px", paddingTop: "8px", borderTop: "1px solid rgba(18,19,26,.08)", ...noDrag }}>
         <a href="/ajustes" aria-current={current === "ajustes" ? "page" : undefined} aria-label={`${userName}, ${myStatus}. Ajustes`} title={folded ? "Ajustes y cuenta" : undefined} className={current === "ajustes" ? undefined : "v3-hover"} style={{ height: "44px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0 6px" : "0 8px", borderRadius: "12px", background: current === "ajustes" ? "#FFFFFF" : "transparent", color: INK, textDecoration: "none" }}>
-          <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#E6E7EC", color: INK, fontSize: "11px", fontWeight: "600" }}>{initials(userName)}</span>
+          <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#E6E7EC", color: INK, fontSize: "var(--t-micro)", fontWeight: "600" }}>{initials(userName)}</span>
           {folded ? null : <>
-            <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "14px", fontWeight: "600", ...ellipsis, flex: "none" }}>{userName}</span><span style={{ fontSize: "12px", color: MUTED, ...ellipsis, flex: "none" }}>{myStatus}</span></span>
+            <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600", ...ellipsis, flex: "none" }}>{userName}</span><span style={{ fontSize: "var(--t-caption)", color: MUTED, ...ellipsis, flex: "none" }}>{myStatus}</span></span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 4.5v5M10 14.5v5" /></svg>
           </>}
         </a>
@@ -450,14 +451,14 @@ export default function Sidebar({ active = "inicio" }) {
           {folded ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}><path d="M3 12h4l2.5-6 5 12 2.5-6H21" /></svg> : null}
           {folded ? (model.waitingCount ? railDot(true) : null) : (
             <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
-              <span style={{ fontSize: "13px", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{model.summary.text}</span>
-              {tokensLine ? <span style={{ fontSize: "12px", color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tokensLine}</span> : null}
+              <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{model.summary.text}</span>
+              {tokensLine ? <span style={{ fontSize: "var(--t-caption)", color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tokensLine}</span> : null}
             </span>
           )}
         </a>
-        <button type="button" role="switch" aria-checked={expert} onClick={() => setExpert(!expert)} aria-label={folded ? "Modo experto (Ctrl Shift E)" : undefined} title={folded ? "Modo experto (Ctrl Shift E)" : undefined} className="v3-hover" style={{ height: "34px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0 6px" : "0 8px 0 14px", border: "0", borderRadius: "10px", background: "transparent", cursor: "pointer", fontSize: "13.5px", fontWeight: "500", color: TEXT }}>
+        <button type="button" role="switch" aria-checked={expert} onClick={() => setExpert(!expert)} aria-label={folded ? "Modo experto (Ctrl Shift E)" : undefined} title={folded ? "Modo experto (Ctrl Shift E)" : undefined} className="v3-hover" style={{ height: "34px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0 6px" : "0 8px 0 14px", border: "0", borderRadius: "10px", background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "500", color: TEXT }}>
           {folded ? null : <span style={{ flex: "1", textAlign: "left" }}>{"Modo experto"}</span>}
-          {!folded && expert ? <kbd style={{ ...kbd, fontSize: "10.5px" }}>{"Ctrl ⇧ E"}</kbd> : null}
+          {!folded && expert ? <kbd style={{ ...kbd, fontSize: "var(--t-micro)" }}>{"Ctrl ⇧ E"}</kbd> : null}
           <span aria-hidden="true" style={{ position: "relative", flex: "none", width: "34px", height: "20px", borderRadius: "10px", background: expert ? INK : "#8A8D96", transition: "background .2s ease" }}><span style={{ position: "absolute", top: "2px", left: expert ? "16px" : "2px", width: "16px", height: "16px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s ease" }} /></span>
         </button>
       </div>
@@ -473,7 +474,7 @@ const SIDEBAR_CSS = `
 [data-v3-sidebar] :focus-visible{outline:2px solid #1F4FD1;outline-offset:2px}
 [data-v3-sidebar] .v3-scroll :focus-visible{outline-offset:-2px}
 [data-v3-sidebar] .v3-scroll{scrollbar-width:thin;scrollbar-color:rgba(18,19,26,.18) transparent}
-[data-v3-sidebar] .v3-skip{position:absolute;z-index:60;top:8px;left:8px;padding:9px 14px;border-radius:10px;background:#12131A;color:#FFFFFF;font-size:13.5px;font-weight:600;text-decoration:none;white-space:nowrap;transform:translateY(-220%)}
+[data-v3-sidebar] .v3-skip{position:absolute;z-index:60;top:8px;left:8px;padding:9px 14px;border-radius:10px;background:#12131A;color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;transform:translateY(-220%)}
 [data-v3-sidebar] .v3-skip:focus{transform:none;outline:2px solid #1F4FD1;outline-offset:2px}
 @keyframes v3sheet{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){[data-v3-sidebar] *{animation:none!important;transition:none!important}}

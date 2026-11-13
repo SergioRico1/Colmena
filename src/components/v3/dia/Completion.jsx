@@ -50,7 +50,7 @@ const Check = ({ size = 22 }) => (
     <svg width={size / 2} height={size / 2} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
   </span>
 );
-const fileChip = { display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "34px", padding: "0 12px", borderRadius: "10px", background: "#F3F3EF", fontSize: "13.5px", color: "#12131A" };
+const fileChip = { display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "34px", padding: "0 12px", borderRadius: "10px", background: "#F3F3EF", fontSize: "var(--t-ui)", color: "#12131A" };
 const meta = (s) => [s.who, s.took ? "en " + s.took : null].filter(Boolean).join(" · ");
 
 function Deliverables({ list }) {
@@ -89,24 +89,24 @@ export function CompletionCards() {
           <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
             <Check />
             <div role="status" style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-              <span style={{ fontSize: "16.5px", fontWeight: "600", lineHeight: "1.3", overflowWrap: "anywhere" }}>{`Terminado: ${s.title}`}</span>
-              <span style={{ fontSize: "13.5px", color: "#5C606C" }}>{meta(s)}</span>
+              <span style={{ fontSize: "var(--t-read)", fontWeight: "600", lineHeight: "1.3", overflowWrap: "anywhere" }}>{`Terminado: ${s.title}`}</span>
+              <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{meta(s)}</span>
             </div>
             <button type="button" aria-label={`Cerrar el aviso de «${s.title}»`} onClick={() => dismissCompletion(s)} style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", color: "#5C606C", cursor: "pointer" }}>
               <X size={15} strokeWidth={2.4} aria-hidden="true" />
             </button>
           </div>
-          {s.line ? <p style={{ margin: "0", fontSize: "14.5px", lineHeight: "1.5", color: "#3D404A", maxWidth: "72ch" }}>{s.line + "."}</p> : null}
+          {s.line ? <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#3D404A", maxWidth: "72ch" }}>{s.line + "."}</p> : null}
           <Deliverables list={s.deliverables} />
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
             <a href={s.open.href} onClick={go(s.open.href)} style={btn.dark}>{s.open.label}</a>
             {s.suggestions.map((t) => (
-              <button key={t} type="button" disabled={!!busy} onClick={() => follow(s, t)} style={{ ...btn.line, maxWidth: "100%", fontSize: "14px" }}>
+              <button key={t} type="button" disabled={!!busy} onClick={() => follow(s, t)} style={{ ...btn.line, maxWidth: "100%", fontSize: "var(--t-ui)" }}>
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t}</span>
               </button>
             ))}
           </div>
-          {error ? <span role="alert" style={{ fontSize: "13.5px", color: "#B4232A" }}>{error}</span> : null}
+          {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
         </article>
       ))}
     </section>
@@ -124,11 +124,11 @@ export function CompletionNote({ missionId }) {
     <section role="status" aria-label="Terminado" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", animation: "rise .3s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <Check size={20} />
-        <span style={{ flex: "1", minWidth: "180px", fontSize: "14.5px", lineHeight: "1.4" }}>
+        <span style={{ flex: "1", minWidth: "180px", fontSize: "var(--t-body)", lineHeight: "1.4" }}>
           <strong style={{ fontWeight: "600" }}>{summary.took ? `Terminado en ${summary.took}` : "Terminado"}</strong>
           {summary.deliverables.length ? <span style={{ color: "#5C606C" }}>{summary.deliverables.length === 1 ? " · 1 entrega" : ` · ${summary.deliverables.length} entregas`}</span> : null}
         </span>
-        <a href={summary.open.href} onClick={go(summary.open.href)} className="rm-focus" style={{ ...btn.dark, height: "34px", padding: "0 14px", fontSize: "13.5px" }}>{summary.open.label}</a>
+        <a href={summary.open.href} onClick={go(summary.open.href)} className="rm-focus" style={{ ...btn.dark, height: "34px", padding: "0 14px", fontSize: "var(--t-ui)" }}>{summary.open.label}</a>
       </div>
       <Deliverables list={summary.deliverables} />
     </section>

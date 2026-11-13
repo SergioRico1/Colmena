@@ -68,10 +68,10 @@ export default function DeliverableCard({ artifact, variant = "room", onOpen, pr
         {artifactIcon(artifact, chat ? 22 : 20)}
       </span>
       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
-        <strong style={{ fontSize: chat ? "15px" : "14px", overflowWrap: "anywhere" }}>{artifact.title}</strong>
-        <span style={{ fontSize: "13px", color: "#555A68" }}>{artifactMeta(artifact)}</span>
+        <strong style={{ fontSize: chat ? "var(--t-body)" : "var(--t-ui)", overflowWrap: "anywhere" }}>{artifact.title}</strong>
+        <span style={{ fontSize: "var(--t-meta)", color: "#555A68" }}>{artifactMeta(artifact)}</span>
       </span>
-      {chat ? <span style={{ fontSize: "13px", fontWeight: "600" }}>{"Abrir"}</span> : null}
+      {chat ? <span style={{ fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Abrir"}</span> : null}
     </button>
   );
   if (!spoken) return card;

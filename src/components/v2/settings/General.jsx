@@ -53,9 +53,9 @@ export default function GeneralSection() {
       <Panel anchor="atajos" title="Atajos de teclado">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: "6px 24px" }}>
           {KEYS.map(([a, k]) => (
-            <div key={a} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "34px", fontSize: "14px" }}>
+            <div key={a} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "34px", fontSize: "var(--t-ui)" }}>
               <span>{a}</span>
-              <kbd style={{ padding: "4px 8px", borderRadius: "7px", background: "#F1F1EC", font: "500 12px/1 'Geist Mono', monospace", whiteSpace: "nowrap" }}>{k}</kbd>
+              <kbd style={{ padding: "4px 8px", borderRadius: "7px", background: "#F1F1EC", font: "500 var(--t-caption)/1 'Geist Mono', monospace", whiteSpace: "nowrap" }}>{k}</kbd>
             </div>
           ))}
         </div>

@@ -22,7 +22,7 @@ const CARD = {
   chat: { padding: "18px 20px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 40px -30px rgba(18,19,26,.35)" },
   panel: { padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF" },
 };
-const quiet = { height: "32px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "999px", background: "transparent", color: SOFT, fontSize: "13.5px", fontWeight: "500", cursor: "pointer" };
+const quiet = { height: "32px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "999px", background: "transparent", color: SOFT, fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" };
 
 /** Re-renders every minute so «hace 2 h» and the stale state stay true while the screen is open. */
 function useMinute() {
@@ -52,7 +52,7 @@ function OutLink({ url, label = null }) {
   const href = externalHref(url);
   if (!href) return null;
   return (
-    <a href={href} target="_blank" rel="noreferrer noopener nofollow" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "5px", maxWidth: "100%", fontSize: "13px", fontWeight: "500", color: LINK, overflowWrap: "anywhere" }}>
+    <a href={href} target="_blank" rel="noreferrer noopener nofollow" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "5px", maxWidth: "100%", fontSize: "var(--t-meta)", fontWeight: "500", color: LINK, overflowWrap: "anywhere" }}>
       <ExternalLink size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />{label || hostOf(href)}
     </a>
   );
@@ -72,10 +72,10 @@ function Kpi({ block, stale }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "14px" }}>
       <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
-        <span style={{ fontSize: "13px", color: stale ? STALE : MUTED, overflowWrap: "anywhere" }}>{s.label}</span>
-        <span data-block-value="" style={{ font: "600 34px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: stale ? STALE : INK, overflowWrap: "anywhere" }}>{formatValue(s.value, s.unit)}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: stale ? STALE : MUTED, overflowWrap: "anywhere" }}>{s.label}</span>
+        <span data-block-value="" style={{ font: "600 var(--t-display-s)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: stale ? STALE : INK, overflowWrap: "anywhere" }}>{formatValue(s.value, s.unit)}</span>
         {delta ? (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "13px", fontWeight: "600", color: tone, fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", fontWeight: "600", color: tone, fontVariantNumeric: "tabular-nums" }}>
             <Arrow size={14} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
             <span aria-hidden="true">{delta.text}</span>
             <span style={srOnly}>{delta.spoken}</span>
@@ -94,7 +94,7 @@ function List({ block, stale }) {
         const href = externalHref(row.url);
         const label = <span style={{ flex: "1", minWidth: 0, color: stale ? STALE : INK, overflowWrap: "anywhere" }}>{row.label}</span>;
         return (
-          <li key={i} style={{ display: "flex", alignItems: "baseline", gap: "10px", minHeight: "34px", padding: "6px 0", borderTop: i ? "1px solid rgba(18,19,26,.07)" : "0", fontSize: "14px", lineHeight: "1.4" }}>
+          <li key={i} style={{ display: "flex", alignItems: "baseline", gap: "10px", minHeight: "34px", padding: "6px 0", borderTop: i ? "1px solid rgba(18,19,26,.07)" : "0", fontSize: "var(--t-ui)", lineHeight: "1.4" }}>
             {row.status ? <span style={{ alignSelf: "center", display: "inline-flex" }}><StateMark state={row.status} size={15} muted={stale} /><span style={srOnly}>{STATE_LABEL[row.status] + ": "}</span></span> : null}
             {href ? <a href={href} target="_blank" rel="noreferrer noopener nofollow" style={{ flex: "1", minWidth: 0, color: stale ? STALE : LINK, overflowWrap: "anywhere" }}>{row.label}</a> : label}
             {row.value !== undefined && row.value !== null ? <span style={{ flex: "none", maxWidth: "55%", textAlign: "right", fontWeight: "600", fontVariantNumeric: "tabular-nums", color: stale ? STALE : INK, overflowWrap: "anywhere" }}>{cellText(row.value)}</span> : null}
@@ -112,9 +112,9 @@ function Table({ block, stale }) {
   const cell = (c) => ({ padding: "7px 10px 7px 0", textAlign: numeric[c] ? "right" : "left", fontVariantNumeric: "tabular-nums", overflowWrap: "anywhere", verticalAlign: "top" });
   return (
     <div role="group" aria-label={`Tabla: ${block.title}`} tabIndex={0} style={{ overflowX: "auto", margin: "0 -4px", padding: "0 4px" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13.5px", lineHeight: "1.4", color: stale ? STALE : INK }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--t-ui)", lineHeight: "1.4", color: stale ? STALE : INK }}>
         <thead>
-          <tr>{columns.map((name, c) => <th key={c} scope="col" style={{ ...cell(c), paddingTop: "0", fontSize: "12.5px", fontWeight: "500", color: stale ? STALE : MUTED, borderBottom: "1px solid rgba(18,19,26,.12)" }}>{name}</th>)}</tr>
+          <tr>{columns.map((name, c) => <th key={c} scope="col" style={{ ...cell(c), paddingTop: "0", fontSize: "var(--t-meta)", fontWeight: "500", color: stale ? STALE : MUTED, borderBottom: "1px solid rgba(18,19,26,.12)" }}>{name}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((row, r) => <tr key={r}>{row.map((value, c) => <td key={c} style={{ ...cell(c), borderTop: r ? "1px solid rgba(18,19,26,.07)" : "0" }}>{cellText(value)}</td>)}</tr>)}
@@ -129,7 +129,7 @@ function Progress({ block, stale }) {
   const s = block.spec, p = progressPercent(s.value, s.max);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "12px", fontSize: "14px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "12px", fontSize: "var(--t-ui)" }}>
         <span style={{ minWidth: 0, color: stale ? STALE : INK, overflowWrap: "anywhere" }}>{s.label}</span>
         <span style={{ flex: "none", fontWeight: "600", fontVariantNumeric: "tabular-nums", color: stale ? STALE : INK }}>{formatValue(s.value) + " de " + formatValue(s.max, s.unit)}</span>
       </div>
@@ -144,12 +144,12 @@ function Status({ block, stale }) {
   const s = block.spec;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "15px", fontWeight: "600", color: stale ? STALE : INK }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: "600", color: stale ? STALE : INK }}>
         <StateMark state={s.state} size={18} muted={stale} />
         <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{s.label}</span>
-        <span style={{ flex: "none", marginLeft: "auto", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: stale ? "#F1F1EC" : s.state === "ok" ? "#E3F4EC" : s.state === "fallo" ? "#FBE6E3" : "#ECECE7", color: stale ? STALE : s.state === "ok" ? GOOD : s.state === "fallo" ? BAD : INK, fontSize: "12px", fontWeight: "600" }}>{STATE_LABEL[s.state] || s.state}</span>
+        <span style={{ flex: "none", marginLeft: "auto", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: stale ? "#F1F1EC" : s.state === "ok" ? "#E3F4EC" : s.state === "fallo" ? "#FBE6E3" : "#ECECE7", color: stale ? STALE : s.state === "ok" ? GOOD : s.state === "fallo" ? BAD : INK, fontSize: "var(--t-caption)", fontWeight: "600" }}>{STATE_LABEL[s.state] || s.state}</span>
       </div>
-      {s.note ? <span style={{ fontSize: "13.5px", lineHeight: "1.45", color: stale ? STALE : SOFT, overflowWrap: "anywhere" }}>{s.note}</span> : null}
+      {s.note ? <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: stale ? STALE : SOFT, overflowWrap: "anywhere" }}>{s.note}</span> : null}
     </div>
   );
 }
@@ -189,7 +189,7 @@ function BlockMenu({ block, where, move, onMove, onError }) {
   });
   const remove = () => act(async () => { later({ id: "block-del:" + block.id, text: "Dato quitado", keys: ["block:" + block.id], run: () => run(() => del(path)), error: "No se pudo quitar" }); });
   const mission = block.source?.missionId ? missions.find((m) => m.id === block.source.missionId) : null;
-  const item = { display: "flex", alignItems: "center", gap: "10px", minHeight: "38px", padding: "0 10px", border: "0", borderRadius: "10px", background: "transparent", textAlign: "left", cursor: "pointer", fontSize: "14px", color: INK, textDecoration: "none" };
+  const item = { display: "flex", alignItems: "center", gap: "10px", minHeight: "38px", padding: "0 10px", border: "0", borderRadius: "10px", background: "transparent", textAlign: "left", cursor: "pointer", fontSize: "var(--t-ui)", color: INK, textDecoration: "none" };
   const off = { ...item, color: "#A3A6AE", cursor: "default" };
   const I = { size: 16, strokeWidth: 2, "aria-hidden": "true", style: { flex: "none" } };
   return (
@@ -212,8 +212,8 @@ function BlockMenu({ block, where, move, onMove, onError }) {
           <button type="button" role="menuitem" className="blk-item" onClick={remove} style={{ ...item, color: BAD }}><Trash2 {...I} />{"Quitar"}</button>
           {block.outside || (where === "panel" && block.source?.gone) ? (
             <div style={{ margin: "4px 4px 2px", paddingTop: "8px", borderTop: "1px solid rgba(18,19,26,.08)", display: "flex", flexDirection: "column", gap: "6px" }}>
-              {block.outside ? <span role="note" data-block-outside="" style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "0 6px", fontSize: "12.5px", lineHeight: "1.4", color: MUTED }}><Globe size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />{"Incluye datos de fuera (una web, un correo o una app). Tómalo como un dato sin confirmar."}</span> : null}
-              {where === "panel" && block.source?.gone ? <span role="note" style={{ padding: "0 6px", fontSize: "12.5px", lineHeight: "1.4", color: MUTED }}>{"La conversación donde se dejó ya no existe."}</span> : null}
+              {block.outside ? <span role="note" data-block-outside="" style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "0 6px", fontSize: "var(--t-meta)", lineHeight: "1.4", color: MUTED }}><Globe size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />{"Incluye datos de fuera (una web, un correo o una app). Tómalo como un dato sin confirmar."}</span> : null}
+              {where === "panel" && block.source?.gone ? <span role="note" style={{ padding: "0 6px", fontSize: "var(--t-meta)", lineHeight: "1.4", color: MUTED }}>{"La conversación donde se dejó ya no existe."}</span> : null}
             </div>
           ) : null}
         </div>
@@ -256,17 +256,17 @@ export default function BlockCard({ block, where = "chat", move = null, onMove =
     <article data-block={block.id} data-block-type={block.type} data-stale={stale ? "true" : "false"} aria-label={block.title} style={{ ...CARD[where === "panel" ? "panel" : "chat"], minWidth: 0, display: "flex", flexDirection: "column", gap: "14px", color: INK }}>
       <header style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
         <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
-          <h3 style={{ margin: "0", fontSize: "15.5px", lineHeight: "1.3", fontWeight: "600", overflowWrap: "anywhere" }}>{block.title}</h3>
-          <span style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, fontSize: "12.5px", color: MUTED }}>
+          <h3 style={{ margin: "0", fontSize: "var(--t-read)", lineHeight: "1.3", fontWeight: "600", overflowWrap: "anywhere" }}>{block.title}</h3>
+          <span style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, fontSize: "var(--t-meta)", color: MUTED }}>
             {bot ? <Shape bot={bot} size={10} /> : null}
             <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sourceLabel(block)}</span>
           </span>
         </div>
         <BlockMenu block={block} where={where} move={move} onMove={onMove} onError={setError} />
       </header>
-      {Body ? <Body block={block} stale={stale} /> : <span style={{ fontSize: "14px", color: MUTED }}>{"Este tipo de dato no se puede mostrar en esta versión."}</span>}
+      {Body ? <Body block={block} stale={stale} /> : <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{"Este tipo de dato no se puede mostrar en esta versión."}</span>}
       {block.spec?.url ? <OutLink url={block.spec.url} /> : null}
-      <footer style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 10px", fontSize: "12.5px", color: stale ? SOFT : MUTED }}>
+      <footer style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 10px", fontSize: "var(--t-meta)", color: stale ? SOFT : MUTED }}>
         <span data-block-updated="" style={{ fontWeight: stale ? "600" : "400" }}>{updatedLabel(block, now)}</span>
         {asOf ? <span>{"· " + asOf}</span> : null}
         {/* Only a block a routine keeps can be refreshed: it runs that routine now. */}
@@ -278,7 +278,7 @@ export default function BlockCard({ block, where = "chat", move = null, onMove =
         ) : null}
       </footer>
       <span role="status" aria-live="polite" style={srOnly}>{refreshing ? "Actualizando " + block.title : ""}</span>
-      {error ? <span role="alert" style={{ fontSize: "13px", lineHeight: "1.45", fontWeight: "600", color: BAD }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", fontWeight: "600", color: BAD }}>{error}</span> : null}
     </article>
   );
 }

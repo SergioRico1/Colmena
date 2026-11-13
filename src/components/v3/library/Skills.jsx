@@ -27,19 +27,19 @@ function Steps({ skill, compare = false }) {
   const detail = useResource(`/skills/${encodeURIComponent(skill.id)}`);
   const steps = stepsOf(detail.data?.content);
   const before = new Set(stepsOf(detail.data?.previous?.content));
-  if (detail.loading && !detail.data) return <p style={{ margin: 0, fontSize: "14px", color: "#5C606C" }}>{"Cargando los pasos…"}</p>;
-  if (detail.error) return <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{detail.error}</p>;
-  if (!steps.length) return <p style={{ margin: 0, fontSize: "14px", color: "#5C606C" }}>{"Esta habilidad no tiene pasos numerados."}</p>;
+  if (detail.loading && !detail.data) return <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Cargando los pasos…"}</p>;
+  if (detail.error) return <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{detail.error}</p>;
+  if (!steps.length) return <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Esta habilidad no tiene pasos numerados."}</p>;
   return (
     <ol style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", animation: "rise .25s ease-out" }}>
       {steps.map((t, i) => {
         const added = compare && before.size > 0 && !before.has(t);
         return (
           <li key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start", padding: "10px 12px", borderRadius: "12px", background: added ? "#FFF6DC" : "#F6F6F3" }}>
-            <span style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#FFFFFF", fontSize: "12px", fontWeight: "600" }}>{String(i + 1)}</span>
-            <span style={{ flex: "1", fontSize: "14.5px", lineHeight: "1.5" }}>
+            <span style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: "600" }}>{String(i + 1)}</span>
+            <span style={{ flex: "1", fontSize: "var(--t-body)", lineHeight: "1.5" }}>
               {t}
-              {added ? <span style={{ display: "block", fontSize: "12.5px", color: "#8A5A00" }}>{"Paso nuevo en esta versión"}</span> : null}
+              {added ? <span style={{ display: "block", fontSize: "var(--t-meta)", color: "#8A5A00" }}>{"Paso nuevo en esta versión"}</span> : null}
             </span>
           </li>
         );
@@ -66,10 +66,10 @@ function PendingCard({ s, bot, open: startOpen, onApproved }) {
       <article style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 22px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 0 0 2px #FFC93C" }}>
         <Mark bot={bot} size={22} />
         <div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "2px" }}>
-          <h3 style={{ margin: "0", fontSize: "16px", fontWeight: "600" }}>{improved ? `${s.name} · versión mejorada` : s.name}</h3>
-          <span style={{ fontSize: "13.5px", color: "#5C606C" }}>{meta}</span>
+          <h3 style={{ margin: "0", fontSize: "var(--t-read)", fontWeight: "600" }}>{improved ? `${s.name} · versión mejorada` : s.name}</h3>
+          <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{meta}</span>
         </div>
-        <button type="button" onClick={() => setOpen(true)} style={{ height: "40px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", cursor: "pointer" }}>{improved ? "Ver los cambios" : "Ver los pasos"}</button>
+        <button type="button" onClick={() => setOpen(true)} style={{ height: "40px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{improved ? "Ver los cambios" : "Ver los pasos"}</button>
       </article>
     );
   }
@@ -78,16 +78,16 @@ function PendingCard({ s, bot, open: startOpen, onApproved }) {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <Mark bot={bot} size={22} />
         <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
-          <h3 style={{ margin: "0", fontSize: "17px", fontWeight: "600" }}>{improved ? `${s.name} · versión mejorada` : s.name}</h3>
-          <span style={{ fontSize: "13.5px", color: "#5C606C" }}>{meta}</span>
+          <h3 style={{ margin: "0", fontSize: "var(--t-lead)", fontWeight: "600" }}>{improved ? `${s.name} · versión mejorada` : s.name}</h3>
+          <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{meta}</span>
         </div>
       </div>
-      {s.description ? <p style={{ margin: 0, fontSize: "14.5px", lineHeight: 1.5, color: "#3D404A" }}>{s.description}</p> : null}
+      {s.description ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, color: "#3D404A" }}>{s.description}</p> : null}
       <Steps skill={s} compare={improved} />
-      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: "#B4232A" }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{act.error}</p> : null}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        <button type="button" disabled={act.busy} onClick={approve} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14.5px", fontWeight: "600", cursor: "pointer" }}>{improved ? "Usar la nueva versión" : "Aprobar y activar"}</button>
-        <button type="button" disabled={act.busy} onClick={discard} style={{ height: "42px", padding: "0 12px", border: "0", background: "transparent", fontSize: "14.5px", color: "#4A4D57", cursor: "pointer" }}>{"Descartar"}</button>
+        <button type="button" disabled={act.busy} onClick={approve} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600", cursor: "pointer" }}>{improved ? "Usar la nueva versión" : "Aprobar y activar"}</button>
+        <button type="button" disabled={act.busy} onClick={discard} style={{ height: "42px", padding: "0 12px", border: "0", background: "transparent", fontSize: "var(--t-body)", color: "#4A4D57", cursor: "pointer" }}>{"Descartar"}</button>
       </div>
     </article>
   );
@@ -113,22 +113,22 @@ function SkillTile({ s, bot, expert, onCurate }) {
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <Mark bot={bot} size={18} />
         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14.5px", fontWeight: "600" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: "600" }}>
             <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
             {s.verdict && s.verdict.value !== "dudoso" ? <VerdictMark verdict={s.verdict} compact consolidated={s.consolidated} /> : null}
           </span>
-          <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{meta}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{meta}</span>
         </span>
         <MoreMenu label={`Más opciones de ${s.name}`} items={items} />
       </div>
       {open ? (
         <>
-          {s.description ? <p style={{ margin: 0, fontSize: "14.5px", lineHeight: 1.5, color: "#3D404A" }}>{s.description}</p> : null}
+          {s.description ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, color: "#3D404A" }}>{s.description}</p> : null}
           <Steps skill={s} />
           <VerdictNote verdict={s.verdict} style={{ padding: "0 4px" }} />
         </>
       ) : null}
-      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "13px", color: "#B4232A" }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-meta)", color: "#B4232A" }}>{act.error}</p> : null}
     </div>
   );
 }
@@ -146,32 +146,32 @@ export default function Skills({ skills, bots, expert, note = null }) {
   const done = approved.filter((s) => !pending.some((p) => p.id === s.id));
   return (
     <>
-      <p style={{ margin: "0", maxWidth: "760px", fontSize: "15px", lineHeight: "1.5", color: "#4A4D57" }}>
+      <p style={{ margin: "0", maxWidth: "760px", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#4A4D57" }}>
         {"Una habilidad es una receta paso a paso que un bot aprende al repetir un trabajo. "}
         <strong style={{ color: "#12131A", fontWeight: "600" }}>{"Las que esperan tu revisión no se usan hasta que revisas sus pasos."}</strong>
       </p>
-      {note ? <p role="status" style={{ margin: 0, fontSize: "14px", color: note.error ? "#B4232A" : "#0B6B4A" }}>{note.text}</p> : null}
+      {note ? <p role="status" style={{ margin: 0, fontSize: "var(--t-ui)", color: note.error ? "#B4232A" : "#0B6B4A" }}>{note.text}</p> : null}
       {pending.length || done.length ? (
         <section aria-labelledby="rev-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <h2 id="rev-t" style={{ margin: "0", display: "flex", alignItems: "center", gap: "10px", font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
+          <h2 id="rev-t" style={{ margin: "0", display: "flex", alignItems: "center", gap: "10px", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
             {"Por revisar"}
-            {pending.length ? <span style={{ minWidth: "24px", height: "24px", padding: "0 8px", display: "grid", placeItems: "center", borderRadius: "12px", background: "#FFC93C", font: "600 12.5px/1 'Geist', sans-serif" }}>{String(pending.length)}</span> : null}
+            {pending.length ? <span style={{ minWidth: "24px", height: "24px", padding: "0 8px", display: "grid", placeItems: "center", borderRadius: "12px", background: "#FFC93C", font: "600 var(--t-meta)/1 'Geist', sans-serif" }}>{String(pending.length)}</span> : null}
           </h2>
           {pending.map((s, i) => <PendingCard key={s.id} s={s} bot={botOf(s.botId)} open={i === 0} onApproved={(x) => setApproved((list) => [...list, x])} />)}
           {done.map((s) => (
             <article key={s.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 22px", borderRadius: "22px", background: "#FFFFFF", animation: "fade .25s ease-out" }}>
               <Mark bot={botOf(s.botId)} size={22} />
               <div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <h3 style={{ margin: "0", fontSize: "16px", fontWeight: "600" }}>{s.name}</h3>
-                <span role="status" style={{ fontSize: "14.5px", fontWeight: "500", color: "#0B6B4A" }}>{`✓ Activada. ${botOf(s.botId)?.name || "El equipo"} la usará la próxima vez que haga algo parecido.`}</span>
+                <h3 style={{ margin: "0", fontSize: "var(--t-read)", fontWeight: "600" }}>{s.name}</h3>
+                <span role="status" style={{ fontSize: "var(--t-body)", fontWeight: "500", color: "#0B6B4A" }}>{`✓ Activada. ${botOf(s.botId)?.name || "El equipo"} la usará la próxima vez que haga algo parecido.`}</span>
               </div>
             </article>
           ))}
         </section>
       ) : null}
       <section aria-labelledby="act-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <h2 id="act-t" style={{ margin: "0", font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{`Activas · ${active.length}`}</h2>
-        {!active.length ? <p style={{ margin: 0, fontSize: "15px", color: "#5C606C" }}>{"Aún no han aprendido nada. Cuando un bot repita una tarea, guardará cómo la hace como habilidad."}</p> : null}
+        <h2 id="act-t" style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{`Activas · ${active.length}`}</h2>
+        {!active.length ? <p style={{ margin: 0, fontSize: "var(--t-body)", color: "#5C606C" }}>{"Aún no han aprendido nada. Cuando un bot repita una tarea, guardará cómo la hace como habilidad."}</p> : null}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "10px" }}>
           {active.map((s) => <SkillTile key={s.id} s={s} bot={botOf(s.botId)} expert={expert} onCurate={onCurate} />)}
         </div>
@@ -179,8 +179,8 @@ export default function Skills({ skills, bots, expert, note = null }) {
       {off.length ? (
         <section aria-labelledby="off-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <h2 id="off-t" style={{ margin: "0", font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{`Desactivadas y archivadas · ${off.length}`}</h2>
-            <span style={{ fontSize: "14px", color: "#5C606C" }}>{"Las que no se usan en un mes dejan de ofrecerse y a los tres se archivan; nunca se borran. Fija las que quieras conservar."}</span>
+            <h2 id="off-t" style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{`Desactivadas y archivadas · ${off.length}`}</h2>
+            <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Las que no se usan en un mes dejan de ofrecerse y a los tres se archivan; nunca se borran. Fija las que quieras conservar."}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "10px" }}>
             {off.map((s) => <SkillTile key={s.id} s={s} bot={botOf(s.botId)} expert={expert} onCurate={onCurate} />)}

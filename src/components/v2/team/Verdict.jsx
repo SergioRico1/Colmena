@@ -22,7 +22,7 @@ export function VerdictMark({ verdict, compact = false, consolidated = false }) 
   if (compact)
     return <span role="img" aria-label={words} title={words} style={{ display: "inline-flex", flex: "none", color: look.color }}><Icon size={13} strokeWidth={2.4} aria-hidden="true" /></span>;
   return (
-    <span title={verdict.summary || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 11px", borderRadius: "999px", fontSize: "13px", fontWeight: 600, background: look.bg, color: look.color, whiteSpace: "nowrap" }}>
+    <span title={verdict.summary || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 11px", borderRadius: "999px", fontSize: "var(--t-meta)", fontWeight: 600, background: look.bg, color: look.color, whiteSpace: "nowrap" }}>
       <Icon size={13} strokeWidth={2.4} aria-hidden="true" />
       {words}
     </span>
@@ -32,13 +32,13 @@ export function VerdictMark({ verdict, compact = false, consolidated = false }) 
 /** The verdict with its hint (when it applies) and what it is based on, for a detail view. */
 export function VerdictNote({ verdict, style = null }) {
   if (!verdict || !LOOK[verdict.value]) {
-    return <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.5, color: "#6B6F7A", ...style }}>Aún no se ha medido si le ayuda: se verá en las próximas tareas en las que la use.</p>;
+    return <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#6B6F7A", ...style }}>Aún no se ha medido si le ayuda: se verá en las próximas tareas en las que la use.</p>;
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px", ...style }}>
       <VerdictMark verdict={verdict} />
-      {verdict.hint ? <span style={{ fontSize: "14px", lineHeight: 1.5, color: "#3D404A" }}>{verdict.hint}</span> : null}
-      {verdict.summary ? <span style={{ fontSize: "13px", lineHeight: 1.5, color: "#6B6F7A" }}>{verdict.summary}</span> : null}
+      {verdict.hint ? <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#3D404A" }}>{verdict.hint}</span> : null}
+      {verdict.summary ? <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#6B6F7A" }}>{verdict.summary}</span> : null}
     </div>
   );
 }
@@ -53,12 +53,12 @@ export function VerdictList({ verdicts = [], limit = 4 }) {
   return (
     <ul style={{ margin: "4px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "2px" }}>
       {list.map((v) => (
-        <li key={v.id} title={[v.hint, v.summary].filter(Boolean).join(" · ")} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", fontSize: "14px" }}>
+        <li key={v.id} title={[v.hint, v.summary].filter(Boolean).join(" · ")} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", fontSize: "var(--t-ui)" }}>
           <VerdictMark verdict={v} compact />
           <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             <span style={{ color: "#6B6F7A" }}>{KIND[v.kind] + " "}</span>{v.title}
           </span>
-          <span style={{ flex: "none", fontSize: "13px", color: LOOK[v.value].color }}>{LOOK[v.value].label}</span>
+          <span style={{ flex: "none", fontSize: "var(--t-meta)", color: LOOK[v.value].color }}>{LOOK[v.value].label}</span>
         </li>
       ))}
     </ul>
