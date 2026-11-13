@@ -1,9 +1,9 @@
 import Select from "../components/Select.jsx";
+import BotFace from "../components/BotFace.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Check, ChevronDown, ImagePlus, Pin, Lock as LockGlyph } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
-import { shapeOf } from "../components/v2/Presence.jsx";
 import { portraitOf } from "../lib/bots.js";
 import PortraitPicker from "../components/team/PortraitPicker.jsx";
 import SkillReview from "../components/team/SkillReview.jsx";
@@ -161,7 +161,6 @@ export default function EquipoBot({ params = {}, query = {} }) {
   const duplicate = async () => { const copy = await act(() => post(`/bots/${encodeURIComponent(bot.id)}/duplicate`)); if (copy?.id) navigate(`/equipo/${copy.id}`); };
   const retire = () => later({ id: "bot:" + bot.id, keys: ["bot:" + bot.id], text: `${bot.name} sale del equipo`, ms: UNDO_MS, error: "No se pudo retirar", run: async () => { await act(() => patch(`/bots/${encodeURIComponent(bot.id)}`, { enabled: false })); navigate("/equipo"); } });
   const tint = `color-mix(in srgb, ${color} 14%, #FFFFFF)`;
-  const sh = shapeOf(bot);
 
   return (
     <Shell active="equipo" extraCss={MD_CSS}>
@@ -173,7 +172,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
         </nav>
         <div style={{ maxWidth: "1080px", width: "100%", margin: "0 auto", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "20px 24px" }}>
           <button type="button" onClick={() => setPortrait(true)} aria-label={portraitOf(bot) ? `Cambiar el retrato de ${bot.name}` : `Darle un retrato a ${bot.name}`} title={portraitOf(bot) ? "Cambiar el retrato" : "Darle un retrato"} style={{ position: "relative", flex: "none", padding: "0", border: "0", background: "transparent", cursor: "pointer" }}>
-            <span aria-hidden="true" style={{ display: "block", width: "92px", height: "92px", background: portraitOf(bot) ? `${color} url("${portraitOf(bot)}") center / cover no-repeat` : color, clipPath: sh.clip, borderRadius: sh.radius, animation: work ? "breathe 2.8s ease-in-out infinite" : "none", boxShadow: `0 18px 40px -16px ${color}99`, opacity: bot.status === "libre" || bot.status === "pausado" ? 0.85 : 1 }} />
+            <BotFace bot={bot} size={96} state={work ? "work" : null} decorative />
             {expert ? <span aria-hidden="true" style={{ position: "absolute", right: "-4px", bottom: "-4px", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 6px rgba(18,19,26,.2)" }}><ImagePlus size={13} strokeWidth={2.4} /></span> : null}
           </button>
           <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "6px", minWidth: "0" }}>

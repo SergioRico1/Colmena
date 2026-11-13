@@ -101,11 +101,10 @@ function BotCard({ bot, row, ask, expert, account = true }) {
   const wait = (row?.waiting || 0) > 0;
   const waits = ask?.title ? `Te espera: ${ask.title.charAt(0).toLowerCase() + ask.title.slice(1)}` : "Te espera";
   const state = work ? (cap(activity?.verb) || "Trabajando") + (wait ? " · te espera" : "") : wait ? waits : STATE[bot.status] || "Libre";
-  const idle = !work && !wait;
   return (
     <article style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: wait ? "0 0 0 1.5px #FFC93C" : "0 1px 2px rgba(18,19,26,.04)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
-        <Shape bot={bot} size={48} style={{ opacity: idle ? 0.55 : 1, animation: work ? "breathe 2.6s ease-in-out infinite" : "none" }} />
+        <Shape bot={bot} size={48} state={work ? "work" : wait ? "wait" : null} />
         {/* Autonomy only where it is not the usual («Hace y te avisa» on every card was noise). */}
         {autonomyShown(bot.autonomy) ? <span title={autonomyHint(bot.autonomy)} style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-chip)", fontSize: "var(--t-caption)", fontWeight: "500", color: "var(--c-text-2)", whiteSpace: "nowrap" }}>{autonomyLabel(bot.autonomy)}</span> : null}
       </div>

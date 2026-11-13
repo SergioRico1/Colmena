@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { shapeOf } from "../../v2/Presence.jsx";
+import BotFace from "../../BotFace.jsx";
 import { useAction, useResource } from "../../../lib/store.jsx";
 import { patch } from "../../../lib/api.js";
 import { later } from "../../../lib/undoToast.js";
@@ -18,8 +18,8 @@ const ORIGIN = { imported: "importada", learned: "aprendida", shared: "compartid
 const usedText = (n) => (n ? `usada ${n} ${n === 1 ? "vez" : "veces"}` : "aún sin usar");
 
 function Mark({ bot, size }) {
-  const sh = bot ? shapeOf(bot) : { clip: "none", radius: "50%" };
-  return <span aria-hidden="true" title={bot ? undefined : "Todo el equipo"} style={{ flex: "none", width: size + "px", height: size + "px", background: bot?.color || "#12131A", clipPath: sh.clip, borderRadius: sh.radius }} />;
+  if (bot) return <BotFace bot={bot} size={size} decorative />;
+  return <span aria-hidden="true" title="Todo el equipo" style={{ flex: "none", width: size + "px", height: size + "px", background: "var(--c-text)", borderRadius: "50%" }} />;
 }
 
 /** The steps as the board draws them: numbered rows on a soft background; new ones in honey. */

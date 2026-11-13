@@ -1,7 +1,6 @@
 import { useClickAway } from "../../../lib/useClickAway.js";
+import BotFace from "../../BotFace.jsx";
 import { useRef, useState } from "react";
-import { shapeOf } from "../../v2/Presence.jsx";
-import { portraitOf } from "../../../lib/bots.js";
 
 // Small pieces shared by Equipo, a bot's profile and «Nuevo bot» (design/V3Equipo,
 // V3Bot and V3NuevoBot.dc.html): the white section card, its title, the pill segmented
@@ -18,12 +17,9 @@ export const outline = { height: "36px", padding: "0 14px", display: "inline-fle
 export const dark = { height: "38px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
 export const quiet = { height: "30px", padding: "0 10px", border: "0", background: "transparent", fontSize: "var(--t-meta)", color: "var(--c-text-2)", cursor: "pointer" };
 
-/** A bot's flat shape as the V3 boards draw it (a portrait fills the shape when it has one). */
-export function Shape({ bot, size = 48, style = null, color = null }) {
-  const sh = shapeOf(bot);
-  const c = color || bot?.color || "#C9CBD1";
-  const portrait = portraitOf(bot);
-  return <span aria-hidden="true" style={{ flex: "none", display: "block", width: size + "px", height: size + "px", background: portrait ? `${c} url("${portrait}") center / cover no-repeat` : c, clipPath: sh.clip, borderRadius: sh.radius, ...style }} />;
+/** A bot as its pixel character (BotFace; a portrait it was given still fills its shape). */
+export function Shape({ bot, size = 48, style = null, color = null, state = null }) {
+  return <BotFace bot={color ? { ...bot, color } : bot} size={size} state={state} decorative style={style} />;
 }
 
 /** The pill segmented control of «Apps que usa» (No · Lee · Escribe). */

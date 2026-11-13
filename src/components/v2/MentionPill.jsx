@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { gloss, shapeOf } from "./Presence.jsx";
+import BotFace from "../BotFace.jsx";
 import { useStore } from "../../lib/store.jsx";
 
 // «@Vera» as a pill: the bot's own small shape and its name on a tint of its colour, the
@@ -8,8 +8,7 @@ import { useStore } from "../../lib/store.jsx";
 const tint = (color) => (/^#[0-9a-f]{6}$/i.test(String(color || "")) ? color + "24" : "rgba(31,79,209,.12)");
 
 function Shape({ bot, size }) {
-  const s = shapeOf(bot);
-  return <span aria-hidden="true" style={{ width: size, height: size, flex: "none", background: gloss(bot?.color), clipPath: s.clip, borderRadius: s.radius }} />;
+  return <BotFace bot={bot} size={parseFloat(size) || 14} decorative />;
 }
 
 /** In a message: a real pill (its padding may take room). */

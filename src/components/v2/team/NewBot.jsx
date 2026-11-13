@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import BotFace from "../../BotFace.jsx";
 import { Check } from "../../Icon.js";
 import { post, pickTextFiles } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
@@ -118,7 +119,8 @@ export default function NewBot({ onClose, onHired }) {
   const reach = (i) => i === step || i === 0 || (i === 1 && d) || (i === 2 && d && !checkAjusta());
 
   const color = d?.color || COLORS[0][0];
-  const shape = SHAPES[d?.shape] || SHAPES.leaf;
+  // The bot being made, as BotFace draws it in the preview.
+  const draftBot = { id: "nuevo", name: d?.name, role: d?.role, shape: SHAPES[d?.shape] ? d.shape : "leaf", color };
   const aud = AUDIENCE.find((a) => a[0] === audience);
   const name = step === 0 ? "Tu bot" : d?.name?.trim() || "Sin nombre";
   const role = step === 0 ? (desc.trim().length > 20 ? "Lo preparamos con lo que escribas" : "Describe lo que hará") : d?.role?.trim() || "Sin puesto";
@@ -227,7 +229,7 @@ export default function NewBot({ onClose, onHired }) {
                     const on = d.shape === id;
                     return (
                       <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ shape: id })} style={{ width: "52px", height: "52px", display: "grid", placeItems: "center", border: `2px solid ${on ? "var(--c-text)" : "rgb(var(--c-ink-rgb) / .1)"}`, borderRadius: "var(--r-lg)", background: "var(--c-card)", cursor: "pointer" }}>
-                        <span style={{ width: "26px", height: "26px", background: d.color, clipPath: SHAPES[id].clip, borderRadius: SHAPES[id].radius }} />
+                        <BotFace bot={{ id: "nuevo", shape: id, color: d.color, role: d.role }} size={32} decorative />
                       </button>
                     );
                   })}
@@ -300,8 +302,8 @@ export default function NewBot({ onClose, onHired }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "14px", minHeight: "140px", maxHeight: "380px", overflowY: "auto", padding: "18px", borderRadius: "var(--r-xl)", background: "var(--c-hover)" }}>
                 {chat.map((m, i) => (m.who === "user"
                   ? <div key={i} style={{ alignSelf: "flex-end", maxWidth: "80%", padding: "12px 16px", borderRadius: "var(--r-xl) var(--r-xl) var(--r-sm) var(--r-xl)", background: "var(--c-chip)", fontSize: "var(--t-body)" }}>{m.text}</div>
-                  : <div key={i} style={{ display: "flex", gap: "10px" }}><span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", background: color, clipPath: shape.clip, borderRadius: shape.radius }} /><span style={{ fontSize: "var(--t-body)", lineHeight: "1.55", whiteSpace: "pre-wrap" }}>{m.text}</span></div>))}
-                {busy === "ask" ? <div role="status" style={{ display: "flex", gap: "10px", alignItems: "center" }}><span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", background: color, clipPath: shape.clip, borderRadius: shape.radius, animation: "breathe 1.4s ease-in-out infinite" }} /><span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{`${d.name || "Tu bot"} está pensando…`}</span></div> : null}
+                  : <div key={i} style={{ display: "flex", gap: "10px" }}><BotFace bot={draftBot} size={24} decorative /><span style={{ fontSize: "var(--t-body)", lineHeight: "1.55", whiteSpace: "pre-wrap" }}>{m.text}</span></div>))}
+                {busy === "ask" ? <div role="status" style={{ display: "flex", gap: "10px", alignItems: "center" }}><BotFace bot={draftBot} size={24} state="work" decorative /><span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{`${d.name || "Tu bot"} está pensando…`}</span></div> : null}
                 {!chat.length && busy !== "ask" ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                     {[`¿Qué puedes hacer por mí${d.role ? ` como ${d.role.toLowerCase()}` : ""}?`, "Preséntate en dos frases"].map((t) => <button key={t} type="button" onClick={() => ask(t)} style={{ height: "34px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-meta)" }}>{t}</button>)}
@@ -332,7 +334,7 @@ export default function NewBot({ onClose, onHired }) {
         </section>
         <aside aria-label="Así se verá" style={{ flex: "1 1 280px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "16px", padding: "24px", borderRadius: "var(--r-2xl)", background: "var(--c-btn)", color: "var(--c-btn-text)" }}>
           <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{"Así se verá"}</span>
-          <span aria-hidden="true" style={{ width: "72px", height: "72px", background: color, clipPath: shape.clip, borderRadius: shape.radius, animation: "breathe 2.8s ease-in-out infinite", transition: "background .4s ease" }} />
+          <BotFace bot={draftBot} size={96} decorative />
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{name}</span>
             <span style={{ fontSize: "var(--t-body)", color: "#C9CBD3" }}>{`${role} · ${aud[3]}`}</span>

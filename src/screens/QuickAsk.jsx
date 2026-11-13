@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import BotFace from "../components/BotFace.jsx";
 import { AppWindow, ArrowUpRight, ClipboardPaste, Crop, FileText, History, LayoutGrid, LoaderCircle, Plus, X, ArrowUp } from "../components/Icon.js";
 import { pickFiles, post } from "../lib/api.js";
 import { useStore } from "../lib/store.jsx";
@@ -7,7 +8,7 @@ import { useRoom } from "../components/room/useRoom.js";
 import LiveMarkdown from "../components/room/LiveMarkdown.jsx";
 import Markdown from "../components/room/Markdown.jsx";
 import { ago, placeName, roomUrl } from "../lib/format.js";
-import { BotPresence, shapeOf } from "../components/v2/Presence.jsx";
+import { BotPresence } from "../components/v2/Presence.jsx";
 import { toPlainText } from "../lib/exporting.js";
 import WindowPicker from "../components/interaction/WindowPicker.jsx";
 
@@ -281,7 +282,7 @@ export default function QuickAsk() {
   const pill = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text-2)", fontSize: "var(--t-meta)", cursor: "pointer", whiteSpace: "nowrap" };
   const canSend = (text.trim() || attached.some((a) => a.file)) && !busy && !attached.some((a) => a.status === "busy");
   const recentWhen = (m) => { const at = m.updatedAt || m.createdAt; return at && new Date(at).toDateString() === new Date().toDateString() ? new Date(at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ago(at); };
-  const dot = (b, size) => <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", background: b?.color || "#C9CBD3", clipPath: shapeOf(b).clip, borderRadius: b ? shapeOf(b).radius : "var(--r-xs)" }} />;
+  const dot = (b, size) => (b ? <BotFace bot={b} size={Math.max(16, size)} decorative /> : <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", background: "var(--c-line-strong)", borderRadius: "var(--r-xs)" }} />);
 
   return (
     <div style={{ padding: `${PAD_TOP}px 18px ${PAD_BOTTOM}px 18px`, boxSizing: "border-box" }}>
@@ -343,7 +344,7 @@ export default function QuickAsk() {
         {sent ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)", animation: "fade .3s ease-out" }}>
             <div role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)" }}>
-              {bot ? <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", background: bot.color, clipPath: shapeOf(bot).clip, borderRadius: shapeOf(bot).radius, animation: done ? "none" : "breathe 2.4s ease-in-out infinite" }} /> : null}
+              {bot ? <BotFace bot={bot} size={20} state={done ? null : "work"} decorative /> : null}
               <span><strong style={{ fontWeight: "600" }}>{bot?.name || "Tu equipo"}</strong>{pasted ? ` · pegado en ${pasted}.` : done ? " ha terminado." : sent.conversation ? " está en ello" : " está repartiendo el trabajo"}</span>
               {done ? null : (
                 <span aria-hidden="true" style={{ display: "inline-flex", gap: "3px" }}>

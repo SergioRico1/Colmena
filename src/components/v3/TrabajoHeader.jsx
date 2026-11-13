@@ -1,6 +1,6 @@
 import { navigate } from "../../lib/router.jsx";
+import BotFace from "../BotFace.jsx";
 import { Plus } from "../Icon.js";
-import { shapeOf } from "../v2/Presence.jsx";
 
 // Colmena 3 · the head of «Trabajo» (design/V3Tareas, V3Rutinas, V3Objetivos): the place's
 // title, the one sentence that explains it, the main action on the right and the three tabs
@@ -58,6 +58,5 @@ export default function TrabajoHeader({ tab, action = null, counts = null }) {
 
 /** A bot as the boards draw it at small sizes: its flat shape, breathing while it works. */
 export function BotDot({ bot, size = 14, work = false, style = null }) {
-  const { clip, radius } = shapeOf(bot);
-  return <span aria-hidden="true" style={{ flex: "none", display: "inline-block", width: size + "px", height: size + "px", background: bot?.color || "#C9CBD1", clipPath: clip, borderRadius: radius, ...(work ? { animation: "breathe 2.4s ease-in-out infinite" } : {}), ...style }} />;
+  return <BotFace bot={bot} size={size} state={work ? "work" : "rest"} decorative style={{ display: "inline-block", ...style }} />;
 }

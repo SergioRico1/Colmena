@@ -1,4 +1,4 @@
-import { shapeOf } from "../v2/Presence.jsx";
+import BotFace from "../BotFace.jsx";
 import { useStore } from "../../lib/store.jsx";
 import { useExpert } from "../../lib/expert.js";
 import { navigate } from "../../lib/router.jsx";
@@ -13,8 +13,6 @@ import { aiConnected } from "../../lib/aiAccount.js";
 // For loading see v2/Skeleton.jsx; for plan limits,
 // v2/LimitNotice.jsx (PlanLimitNotice).
 
-const INK = "#12131A";
-const HEX = "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)";
 const pill = { height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer", textDecoration: "none" };
 
 export { aiConnected };
@@ -34,7 +32,7 @@ export function NoAccountNotice({ style = null }) {
     : "Aún no has conectado tu cuenta de IA. Conéctala una vez y se ponen a trabajar.";
   return (
     <div role="status" style={{ display: "flex", gap: "14px", padding: "18px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.1)", ...style }}>
-      <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", background: INK, clipPath: HEX }} />
+      <BotFace bot={(state.bots || []).find((b) => b.id === "atlas") || { id: "atlas", shape: "hex", color: "#5B6680", role: "Coordinador" }} size={32} state="pause" decorative />
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{"Tus bots no pueden pensar ahora"}</span>
         <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{text}</span>
@@ -51,14 +49,13 @@ export function NoAccountNotice({ style = null }) {
  */
 export function StuckBotCard({ bot, reason, detail = null, onRetry = null, retrying = false, chatHref = null, style = null }) {
   const [expert] = useExpert();
-  const s = shapeOf(bot);
   const name = bot?.name || "El bot";
   const chat = chatHref || (bot?.id ? `/chat/${bot.id}` : null);
   return (
     <div role="status" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "12px", padding: "28px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", ...style }}>
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxShadow: "inset 0 0 0 2.5px #B4232A" }}>
-          <span style={{ width: "20px", height: "20px", background: bot?.color || "#C9CBD1", clipPath: s.clip, borderRadius: s.radius }} />
+          <BotFace bot={bot} size={20} state="pause" decorative />
         </span>
         <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{`${name} se ha atascado`}</span>
       </div>

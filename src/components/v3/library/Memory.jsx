@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
+import BotFace from "../../BotFace.jsx";
 import { Archive, CircleHelp, Download, Globe, Handshake, Pin, PinOff, UserRound } from "../../Icon.js";
-import { shapeOf } from "../../v2/Presence.jsx";
 import { hrefOf } from "../dia/activityLog.js";
 import { useAction, useResource, useStore } from "../../../lib/store.jsx";
 import { del, patch, post } from "../../../lib/api.js";
@@ -49,7 +49,7 @@ function Origin({ m, mission }) {
   );
 }
 const Mark = ({ bot }) => (bot
-  ? <span aria-hidden="true" style={{ flex: "none", width: "12px", height: "12px", background: bot.color || "#C9CBD1", clipPath: shapeOf(bot).clip, borderRadius: shapeOf(bot).radius }} />
+  ? <BotFace bot={bot} size={16} decorative />
   : null);
 
 function Known({ m, bot, mission, expert }) {

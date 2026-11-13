@@ -3,7 +3,7 @@ import { srOnly } from "../../lib/alt.js";
 import { ArrowLeftRight } from "../Icon.js";
 import { BotPresence } from "../v2/Presence.jsx";
 import { createContext, useContext } from "react";
-import { BotMark, OwnerBadge, badgeSize } from "../v2/chat/Mark.jsx";
+import { BotMark } from "../v2/chat/Mark.jsx";
 import { initialsOf, personTint } from "../../lib/identity.js";
 import { authorView, handoffLine, statusLine } from "../../lib/roomView.js";
 import { time } from "../../lib/format.js";
@@ -35,7 +35,7 @@ export function PersonAvatar({ person, size = 40, ring = "var(--c-page)", presen
 /** The avatar of a row's author: round for a person, the bot's shape for a bot. */
 export function AuthorAvatar({ author, size = 40, state = "rest" }) {
   // Someone else's bot carries its owner's initials in a round chip in the corner.
-  if (author?.kind === "bot") return <span aria-hidden="true" style={{ position: badgeSize(author.owner, size) ? "relative" : undefined, width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center" }}><BotPresence bot={author} size={size} state={state} /><OwnerBadge owner={author.owner} size={size} ring="var(--c-page)" /></span>;
+  if (author?.kind === "bot") return <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", "--c-cut": "var(--c-page)" }}><BotPresence bot={author} size={size} state={state} owner={author.owner} /></span>;
   return <PersonAvatar person={author} size={size} />;
 }
 

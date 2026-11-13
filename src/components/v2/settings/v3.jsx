@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import BotFace from "../../BotFace.jsx";
 import { useStore } from "../../../lib/store.jsx";
 import { patch } from "../../../lib/api.js";
 import { reversible } from "../../../lib/undoToast.js";
 import { useExpert } from "../../../lib/expert.js";
 import { navigate } from "../../../lib/router.jsx";
-import { shapeOf } from "../Presence.jsx";
 
 // The Colmena 3 Ajustes pieces (design/V3Ajustes.dc.html and its sibling boards): white 20 px
 // cards, 64–76 px rows with the label on the left and the control on the right (it wraps under
@@ -178,8 +178,7 @@ export function Meter({ percent, height = 6, color = INK, tick = null, tickColor
 
 /** A bot's shape and colour, small (the boards' 12–18 px marks). */
 export function BotMark({ bot, size = 16 }) {
-  const { clip, radius } = shapeOf(bot);
-  return <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", background: bot?.color || "#C9CBD1", clipPath: clip, borderRadius: radius }} />;
+  return <BotFace bot={bot} size={size} decorative />;
 }
 
 /**

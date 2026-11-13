@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import BotFace from "../../BotFace.jsx";
 import { Ticket, UserPlus, Plus, Search, X, Check } from "../../Icon.js";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { needsYou } from "../../../lib/format.js";
-import { BotPresence, gloss, shapeOf } from "../Presence.jsx";
+import { BotPresence } from "../Presence.jsx";
 import { listRows } from "../../../lib/threads.js";
 import { post } from "../../../lib/api.js";
 import { shareUrl } from "../../../lib/peers.js";
@@ -205,7 +206,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
             <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)", marginRight: "4px" }}>{"Con"}</span>
             {chosen.map((b) => (
               <span key={b.id} style={{ display: "flex", alignItems: "center", gap: "7px", height: "36px", padding: "0 6px 0 8px", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: "600", animation: "pop .25s ease-out" }}>
-                <span aria-hidden="true" style={{ width: "18px", height: "18px", background: gloss(b.color), clipPath: shapeOf(b).clip, borderRadius: shapeOf(b).radius }} />
+                <BotFace bot={b} size={20} decorative />
                 {b.name}
                 <button type="button" aria-label={"Quitar a " + b.name} onClick={() => pick(b.id)} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
                   <X size={10} weight="bold" />

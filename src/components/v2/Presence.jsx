@@ -1,9 +1,11 @@
-// Colmena 2.0 presences (design/V2Principios.dc.html, idea 03): a bot is a shape and a colour
-// with a soft gloss — no letters, no labels. It breathes while it works, stays still while it
-// rests and glows honey when it waits for you. People are neutral circles with initials.
+// Presences. Colmena 4: a bot is its pixel character (components/BotFace.jsx), shape by role and
+// colour by person, with a face for each state; no letters. People are circles with initials.
+// SHAPES and shapeOf remain for the few places that clip something else to a bot's shape (a
+// portrait, NewBot's shape picker).
 import { fitInitials, stepOf } from "../../lib/type.js";
-import { portraitOf } from "../../lib/bots.js";
 import { botShape } from "../../lib/identity.js";
+import { useStore } from "../../lib/store.jsx";
+import BotFace from "../BotFace.jsx";
 
 export const SHAPES = {
   hex: { clip: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", radius: "0" },
@@ -19,41 +21,25 @@ export const SHAPES = {
 export const shapeOf = (bot) => SHAPES[botShape(bot?.shape)];
 export const gloss = (color) => `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${color || "#C9CBD1"}`;
 
-/** «trabaja» → work, «espera» → wait, everything else rests. */
+/** «trabaja» → work, «espera» → wait, paused or switched off → pause, everything else rests. */
 export function presenceState(bot) {
   if (!bot) return "rest";
   if (bot.status === "trabaja") return "work";
   if (bot.status === "espera") return "wait";
+  if (bot.status === "pausado" || bot.enabled === false) return "pause";
   return "rest";
 }
 
-// Shadow sizes the boards use at each size (rest) and the coloured halo while breathing.
-function restShadow(size) {
-  if (size >= 60) return "drop-shadow(0 4px 8px rgba(18,19,26,.16))";
-  if (size >= 44) return "drop-shadow(0 3px 6px rgba(18,19,26,.16))";
-  if (size >= 30) return "drop-shadow(0 2px 4px rgba(18,19,26,.16))";
-  return "drop-shadow(0 2px 3px rgba(18,19,26,.18))";
-}
-function workShadow(size, color) {
-  if (size >= 44) return `drop-shadow(0 5px 13px ${color}88)`;
-  return `drop-shadow(0 3px 8px ${color}88)`;
-}
-
-/** A bot as a presence. `state`: rest | work | wait (defaults to the bot's live status). */
-export function BotPresence({ bot, size = 30, state = null, style = null, title = null }) {
+/**
+ * A bot as a presence: its pixel character (Colmena 4, components/BotFace.jsx), whose mood follows
+ * `state`: rest | work | wait | pause (defaults to the bot's live status). `owner` ({name, color,
+ * you}) puts their round chip on someone else's bot. Decorative unless it gets a `title`.
+ */
+export function BotPresence({ bot, size = 30, state = null, style = null, title = null, owner = null }) {
   const s = state || presenceState(bot);
-  const shape = shapeOf(bot);
-  const color = bot?.color || "#C9CBD1";
-  const portrait = portraitOf(bot);
-  const outer = s === "work"
-    ? { filter: workShadow(size, color), animation: "breathe 2.8s ease-in-out infinite" }
-    : s === "wait"
-      ? { animation: "beckon 1.8s ease-out infinite" }
-      : { filter: restShadow(size) };
   return (
-    <span aria-hidden={title ? undefined : "true"} role={title ? "img" : undefined} aria-label={title || undefined} title={title || undefined}
-      style={{ display: "inline-grid", flex: "none", ...outer, ...style }}>
-      <span style={{ display: "block", width: size + "px", height: size + "px", background: portrait ? `${color} url("${portrait}") center / cover no-repeat` : gloss(color), clipPath: shape.clip, borderRadius: shape.radius }} />
+    <span title={title || undefined} style={{ display: "inline-grid", flex: "none", ...style }}>
+      <BotFace bot={bot} size={size} state={s} owner={owner} decorative={!title} label={title} />
     </span>
   );
 }
@@ -63,10 +49,15 @@ const initials = (name) => String(name || "").trim().split(/\s+/).slice(0, 2).ma
 const PEOPLE = ["#EFE2D3", "#DCE6F2", "#E3EEDF", "#EEE0EC", "#E9E6DA"];
 const tintOf = (name) => PEOPLE[[...String(name || "")].reduce((n, c) => n + c.charCodeAt(0), 0) % PEOPLE.length];
 
-/** A person: a neutral circle with initials. `me` is you («TÚ» in ink). */
+/**
+ * A person: a circle with initials (circles are people). `me` is you («TÚ»), tinted with your
+ * family's light tone (server/bot-looks.mjs: your bots' colour family) when you have one, else ink.
+ */
 export function PersonPresence({ name, size = 32, me = false, style = null }) {
+  const family = useStore()?.settings?.botLooks?.family?.tint || null;
+  const mine = me && family;
   return (
-    <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: me ? "var(--c-btn)" : tintOf(name), color: me ? "var(--c-btn-text)" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em", ...style }}>
+    <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: mine ? family : me ? "var(--c-btn)" : tintOf(name), color: me && !mine ? "var(--c-btn-text)" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em", ...style }}>
       {fitInitials(me ? "TÚ" : initials(name), size)}
     </span>
   );

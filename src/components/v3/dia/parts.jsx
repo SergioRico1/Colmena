@@ -1,4 +1,4 @@
-import { shapeOf } from "../../v2/Presence.jsx";
+import BotFace from "../../BotFace.jsx";
 import { useUndoable } from "../../../lib/undoable.js";
 
 // Small pieces the «Tu día» screens share (design/V3Inicio, V3Actividad, V3Revisar): a bot as a
@@ -7,8 +7,7 @@ import { useUndoable } from "../../../lib/undoable.js";
 
 /** A bot as its flat shape. `anim` breathes while it works; `halo` rings it in honey. */
 export function Shape({ bot, size = 20, anim = false, halo = false, style = null }) {
-  const s = shapeOf(bot);
-  const dot = <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", background: bot?.color || "#C9CBD3", clipPath: s.clip, borderRadius: s.radius, animation: anim ? "breathe 2.4s ease-in-out infinite" : "none", ...(halo ? null : style) }} />;
+  const dot = <BotFace bot={bot} size={size} state={anim ? "work" : halo ? "wait" : null} decorative style={halo ? null : style} />;
   if (!halo) return dot;
   return <span aria-hidden="true" style={{ flex: "none", width: size + 10 + "px", height: size + 10 + "px", margin: "-5px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxShadow: "inset 0 0 0 2px #FFC93C", ...style }}>{dot}</span>;
 }

@@ -1,10 +1,10 @@
 import { useState } from "react";
+import BotFace from "../BotFace.jsx";
 import { Check, ChevronDown, ChevronUp, CircleAlert } from "../Icon.js";
 import { plural } from "../../lib/format.js";
 import { seconds } from "./common.jsx";
 import ToolCards, { toolsLabel } from "./ToolCards.jsx";
 import WorkingDots, { useHeld } from "./Dots.jsx";
-import { shapeOf } from "../v2/Presence.jsx";
 import { usePhrase } from "./working.js";
 
 import { PLUMBING, workSummary } from "../../lib/worklog.js";
@@ -60,7 +60,7 @@ export default function ActivityLog({ bot = null, summary, activity: allActivity
   const canOpen = steps > 0;
   // V2Sala: a bot at work is its own small shape, breathing; the dots are for people typing.
   const icon = busy ? (
-    bot ? <span aria-hidden="true" style={{ width: "9px", height: "9px", flex: "none", background: bot.color || "#5C606C", clipPath: shapeOf(bot).clip, borderRadius: shapeOf(bot).radius, animation: "breathe 1.4s ease-in-out infinite" }} /> : <WorkingDots />
+    bot ? <BotFace bot={bot} size={16} state="work" decorative /> : <WorkingDots />
   ) : failed ? (
     <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ color: "var(--c-error)" }} />
   ) : (

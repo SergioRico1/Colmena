@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import BotFace from "../BotFace.jsx";
 import { useWarmOnType } from "../../lib/warm.js";
-import { shapeOf } from "../v2/Presence.jsx";
 import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, FileText, GitBranch, LoaderCircle, Sparkles, Check, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, RotateCcw, Undo2, Wrench, X } from "../Icon.js";
 import { InteractiveContext } from "./Interactive.jsx";
 import { freshness, scrollBehavior } from "../../lib/motion.js";
@@ -1105,7 +1105,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           {typing ? (
             <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
               {/* V2Sala: a bot at work is its own small shape, breathing (dots are for people typing). */}
-              {typing.bot ? <span aria-hidden="true" style={{ width: "9px", height: "9px", flex: "none", background: typing.bot.color || "#5C606C", clipPath: shapeOf(typing.bot).clip, borderRadius: shapeOf(typing.bot).radius, animation: "breathe 1.4s ease-in-out infinite" }} /> : <Dots />}
+              {typing.bot ? <BotFace bot={typing.bot} size={16} state="work" decorative /> : <Dots />}
               {typing.name ? <span>{typing.name}</span> : null}
               <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{typingLine}</span>
             </span>

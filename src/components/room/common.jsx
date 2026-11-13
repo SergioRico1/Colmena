@@ -4,7 +4,7 @@ import { BotPresence, PersonPresence } from "../v2/Presence.jsx";
 import WorkingDots from "./Dots.jsx";
 import { useRef } from "react";
 import { dragOutProps } from "../../lib/dragOut.js";
-import { avatarStyle, initial, faceOf } from "../../lib/bots.js";
+import { avatarStyle, initial } from "../../lib/bots.js";
 import { navigate } from "../../lib/router.jsx";
 
 /** « · Ver en Código» after a quiet line that points into the app (a task handed to Código). */

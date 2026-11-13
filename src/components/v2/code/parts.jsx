@@ -1,8 +1,8 @@
 import { stepOf } from "../../../lib/type.js";
+import BotFace from "../../BotFace.jsx";
 import { useClickAway } from "../../../lib/useClickAway.js";
 import { useRef, useState } from "react";
 import { Check, ChevronDown } from "../../Icon.js";
-import { SHAPES } from "../Presence.jsx";
 
 // Small pieces shared by the «Código» screen (design/V2Codigo.dc.html).
 
@@ -91,9 +91,7 @@ export function Stat({ add, del, size = 12 }) {
  * while it works, a honey ring when it waits for you. `bot` comes from the store (Bruno by default).
  */
 export function BotShape({ bot = null, size = 16, state = "rest" }) {
-  const color = bot?.color || C.bruno;
-  const shape = SHAPES[bot?.shape] || (bot ? SHAPES.circle : SHAPES.arch);
-  const mark = <span aria-hidden="true" style={{ flex: "none", display: "block", width: size + "px", height: size + "px", background: color, clipPath: shape.clip, borderRadius: shape.radius, animation: state === "work" ? "breathe 2.4s ease-in-out infinite" : "none" }} />;
+  const mark = <BotFace bot={bot || { id: "bruno", shape: "arch", color: C.bruno, role: "Código" }} size={size} state={state} decorative />;
   if (state !== "wait") return mark;
   const ring = Math.round(size * 1.6);
   return <span aria-hidden="true" style={{ flex: "none", width: ring + "px", height: ring + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxShadow: "inset 0 0 0 2px #FFC93C" }}>{mark}</span>;

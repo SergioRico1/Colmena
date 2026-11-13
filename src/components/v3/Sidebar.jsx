@@ -1,10 +1,11 @@
 import { stepOf } from "../../lib/type.js";
+import BotFace from "../BotFace.jsx";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useStore, useResource } from "../../lib/store.jsx";
 import { navigate, useRouter } from "../../lib/router.jsx";
 import { patch, put } from "../../lib/api.js";
-import { BotPresence, shapeOf } from "../v2/Presence.jsx";
+import { BotPresence } from "../v2/Presence.jsx";
 import { WindowDots } from "../v2/Rail.jsx";
 import { NewConversation } from "../v2/chat/ConvList.jsx";
 import { AcceptSheet, InviteSheet } from "../v2/people/InviteSheets.jsx";
@@ -326,7 +327,7 @@ export default function Sidebar({ active = "inicio" }) {
     const bot = { ...(botOf(b.id) || b), shape: b.shape };
     return (
       <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={rowStyle(on, 44)}>
-        <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center" }}><BotPresence bot={bot} size={20} state={calm ? "rest" : b.state === "working" || b.busy ? "work" : "rest"} /></span>
+        <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center" }}><BotPresence bot={bot} size={20} state={b.state === "working" || b.busy ? "work" : b.waiting ? "wait" : null} /></span>
         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ ...ellipsis, fontWeight: b.unread ? "700" : "500", color: "var(--c-text)" }}>{b.name}</span>
@@ -378,7 +379,7 @@ export default function Sidebar({ active = "inicio" }) {
       })}
       {model.bots.map((b) => {
         const on = b.href === here;
-        return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={calm ? "rest" : b.state === "working" || b.busy ? "work" : "rest"} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
+        return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={b.state === "working" || b.busy ? "work" : b.waiting ? "wait" : null} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
       })}
     </>
   );
@@ -389,7 +390,7 @@ export default function Sidebar({ active = "inicio" }) {
         <span style={{ flex: "none", padding: "14px 10px 4px", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>{"Fijados"}</span>
         {pinned.map((p) => (
           <a key={p.key} href={p.href} className="v3-hover" style={rowStyle(false, 32)}>
-            {p.bot ? <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center" }}><span style={{ width: "14px", height: "14px", background: p.bot.color || "var(--c-line-strong)", clipPath: shapeOf(p.bot).clip, borderRadius: p.bot.shape === "circle" ? "24%" : shapeOf(p.bot).radius }} /></span>
+            {p.bot ? <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center" }}><BotFace bot={p.bot} size={18} decorative /></span>
               : <span aria-hidden="true" style={{ flex: "none", width: "18px", textAlign: "center", font: "600 var(--t-micro)/1 'Geist', sans-serif", color: "var(--c-text-2)" }}>{p.glyph}</span>}
             <span style={ellipsis}>{p.label}</span>
           </a>

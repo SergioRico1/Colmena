@@ -1,4 +1,5 @@
 import { useClickAway } from "../../../lib/useClickAway.js";
+import BotFace from "../../BotFace.jsx";
 import { Ellipsis, Plus, Search } from "../../Icon.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../../../lib/store.jsx";
@@ -10,7 +11,6 @@ import { patch } from "../../../lib/api.js";
 import { shareUrl } from "../../../lib/peers.js";
 import { exportConversation } from "../../../lib/exportConversation.jsx";
 import { promise as toastWork, reversible } from "../../../lib/undoToast.js";
-import { shapeOf } from "../Presence.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import { NewConversation, chatUrl, salaUrl, whenLabel } from "./ConvList.jsx";
 import { RowTile } from "./Mark.jsx";
@@ -259,7 +259,7 @@ export default function ChatsHome() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
               {team.map((b) => (
                 <a key={b.id} href={`/chat/${b.id}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", padding: "12px 4px", borderRadius: "var(--r-lg)", background: "var(--c-hover)", color: "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: 500, minWidth: 0 }}>
-                  <span aria-hidden="true" style={{ width: "26px", height: "26px", background: b.color || "#C9CBD1", clipPath: shapeOf(b).clip, borderRadius: shapeOf(b).radius }} />
+                  <BotFace bot={b} size={26} decorative />
                   <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}</span>
                 </a>
               ))}

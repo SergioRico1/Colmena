@@ -1,22 +1,8 @@
 import { BotPresence } from "../v2/Presence.jsx";
-import { avatarStyle, faceOf, initial } from "../../lib/bots.js";
 
-// Font sizes the mockups use for the bot initial at each avatar size.
-const INITIAL_FONT = { 20: 9, 22: 11, 24: 12, 28: 13, 30: 12, 32: 14, 40: 17 };
-
-/** Bot avatar exactly as drawn in the mockups (shape + colour + initial). */
-export function Avatar({ bot, size = 28, style = {}, mood = null }) {
-  // Colmena 2.0: bots are presences (shape + colour, no letters) everywhere.
+/** A bot's avatar: its pixel character (BotPresence → BotFace), no letters. */
+export function Avatar({ bot, size = 28, style = {} }) {
   return <BotPresence bot={bot} size={size} state="rest" style={style} />;
-}
-function AvatarV1({ bot, size = 28, style = {}, mood = null }) {
-  const face = faceOf(bot, mood);
-  if (face) return <img src={face} alt="" aria-hidden="true" draggable="false" width={size} height={size} style={{ width: size + "px", height: size + "px", flex: "none", objectFit: "contain", ...style }} />;
-  const base = INITIAL_FONT[size] || Math.round(size * 0.45);
-  const font = bot?.shape === "diamond" ? base - (size >= 32 ? 2 : 1) : base;
-  return (
-    <BotPresence bot={bot} size={size} />
-  );
 }
 
 export const norm = (s) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();

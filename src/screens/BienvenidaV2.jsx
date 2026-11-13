@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import BotFace from "../components/BotFace.jsx";
 import { Check, ArrowUp, Lock } from "../components/Icon.js";
 import { css } from "../design/V3Bienvenida.jsx";
-import { shapeOf } from "../components/v2/Presence.jsx";
 import { WindowDots } from "../components/v2/Rail.jsx";
 import ProviderMark from "../components/v2/ProviderMark.jsx";
 import { B, ROLES, APP_TASK, ROLE_CHIPS, STEPS, nameDraft, roleChips } from "../lib/onboarding.js";
@@ -44,11 +44,10 @@ const CLAUDE_WAYS = [
   { id: "api_key", title: "Clave de API", sub: "Pago por uso desde la consola de Anthropic." },
 ];
 
-/** A bot as the board draws it: its shape, flat colour; Atlas, who coordinates, in ink. */
-function face(bot) {
-  const s = shapeOf(bot);
-  const color = bot?.id === "atlas" && (!bot.color || bot.color.toUpperCase() === "#FFC93C") ? INK : bot?.color || "#C9CBD1";
-  return { background: color, clipPath: s.clip, borderRadius: s.radius };
+/** A bot as BotFace draws it; Atlas, who coordinates, in ink until it has its own tone. */
+function faceBot(bot) {
+  const color = bot?.id === "atlas" && (!bot.color || bot.color.toUpperCase() === "#FFC93C") ? INK : bot?.color || "#5B6680";
+  return { ...bot, color };
 }
 // Pasting often brings a trailing space, a line break or an invisible character.
 const clean = (v) => String(v).replace(/[​-‍⁠﻿­]/g, "").trim();
@@ -233,7 +232,7 @@ export default function BienvenidaV2({ query = {} }) {
                   <ul aria-label="Tus bots" style={{ margin: "6px 0 4px", padding: "0", listStyle: "none", display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "14px 26px" }}>
                     {crew.map((c, i) => (
                       <li key={c.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
-                        <span aria-hidden="true" style={{ width: SIZES[i % 6] + "px", height: SIZES[i % 6] + "px", ...face(c), animation: `breathe ${PACES[i % 6]}s ease-in-out infinite`, animationDelay: i * -0.4 + "s" }} />
+                        <span aria-hidden="true" style={{ display: "inline-grid", animation: `breathe ${PACES[i % 6]}s ease-in-out infinite`, animationDelay: i * -0.4 + "s" }}><BotFace bot={faceBot(c)} size={SIZES[i % 6]} decorative /></span>
                         <span style={{ fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text-2)" }}>{c.name}</span>
                       </li>
                     ))}
@@ -309,7 +308,7 @@ export default function BienvenidaV2({ query = {} }) {
                       <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Lo justo"}</span>
                       <span style={{ fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{"Resultados y lo que te necesita. Los bots te cuentan en frases lo que hacen."}</span>
                       <span style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", borderRadius: "var(--r-md)", background: "var(--c-hover)", fontSize: "var(--t-ui)" }}>
-                        <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", ...face(writer) }} />
+                        <BotFace bot={faceBot(writer)} size={20} decorative />
                         {writer.name + " ha leído el informe"}
                       </span>
                     </button>
@@ -352,7 +351,7 @@ export default function BienvenidaV2({ query = {} }) {
                       return (
                         <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "var(--c-card)", opacity: keep ? 1 : 0.55, transition: "opacity .2s ease" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                            <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", ...face(m) }} />
+                            <BotFace bot={faceBot(m)} size={36} decorative />
                             <label htmlFor={"keep-" + m.id} title={atlas ? `${m.name} siempre está: coordina al equipo` : undefined} style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px", cursor: atlas ? "default" : "pointer" }}>
                               <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{m.name}</span>
                               <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{m.help}</span>

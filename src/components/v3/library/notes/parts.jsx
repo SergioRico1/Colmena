@@ -1,5 +1,5 @@
 import { ArrowLeft, Search } from "../../../Icon.js";
-import { shapeOf } from "../../../v2/Presence.jsx";
+import BotFace from "../../../BotFace.jsx";
 import { useDialogFocus } from "../../../../lib/useDialogFocus.js";
 import { byName } from "../../../../lib/wikiLinks.js";
 
@@ -29,7 +29,7 @@ export function Who({ by, bots = [] }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
       {by?.kind === "bot"
-        ? <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", background: bot?.color || "#C9CBD1", borderRadius: bot ? shapeOf(bot).radius : "var(--r-xs)", clipPath: bot ? shapeOf(bot).clip : undefined }} />
+        ? (bot ? <BotFace bot={bot} size={16} decorative /> : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", background: "var(--c-line-strong)", borderRadius: "var(--r-xs)" }} />)
         : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "var(--r-circle)", background: "#12131A" }} />}
       {byName(by)}
     </span>

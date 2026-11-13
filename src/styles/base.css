@@ -293,6 +293,10 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 .c-reveal{animation:c-reveal 1.3s ease-out both;border-radius:var(--r-md)}
 @media (prefers-reduced-motion:reduce){.c-reveal{animation:none;box-shadow:0 0 0 3px var(--c-focus)}}
 
+/* Colmena 4 pixel bots (components/BotFace.jsx): the «trabajando» twinkle blinks; with reduced
+   motion the rule below stops every animation and it stays lit. */
+@keyframes pb-tw{0%,55%{opacity:1}56%,100%{opacity:.15}}
+.pb-spark{animation:pb-tw 1.4s steps(1) infinite}
 /* Colmena 2.0 motion (design/V2*.dc.html): breathe, glow, appear; available before any screen. */
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 @keyframes beckon{0%{filter:drop-shadow(0 0 0 rgba(255,201,60,.95))}100%{filter:drop-shadow(0 0 14px rgba(255,201,60,0))}}

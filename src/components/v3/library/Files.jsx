@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import BotFace from "../../BotFace.jsx";
 import { Search, X } from "../../Icon.js";
-import { BotPresence, shapeOf } from "../../v2/Presence.jsx";
+import { BotPresence } from "../../v2/Presence.jsx";
 import { ArtifactContent } from "./ArtifactContent.jsx";
 import { useResource } from "../../../lib/store.jsx";
 import { download, get } from "../../../lib/api.js";
@@ -93,7 +94,7 @@ function Thumb({ a, big = false }) {
   );
 }
 const BotMark = ({ bot }) => (bot
-  ? <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", background: bot.color || "#C9CBD1", borderRadius: shapeOf(bot).radius, clipPath: shapeOf(bot).clip }} />
+  ? <BotFace bot={bot} size={16} decorative />
   : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "var(--r-circle)", background: "#12131A" }} />);
 
 const missionHref = (m) => (m ? (m.conversation && m.botIds?.length === 1 && !m.room ? `/chat/${encodeURIComponent(m.botIds[0])}?c=${encodeURIComponent(m.id)}` : isSala(m) ? `/sala/${encodeURIComponent(m.id)}` : `/encargo/${encodeURIComponent(m.id)}`) : null);

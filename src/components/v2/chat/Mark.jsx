@@ -1,42 +1,22 @@
 import { fitInitials, stepOf } from "../../../lib/type.js";
-import { shapeOf } from "../Presence.jsx";
-import { portraitOf } from "../../../lib/bots.js";
-import { ownerBadgeText, personTint } from "../../../lib/identity.js";
+import BotFace from "../../BotFace.jsx";
 
-// Colmena 3 marks (design/V3Sistema.dc.html «Presencias»): a bot is its flat shape and colour,
-// no letters; it breathes while it works and wears a honey ring (still) when it waits for you.
-// People are neutral circles with initials; you are «TÚ» in ink. A room is «#» on a tile.
+// Marks. Colmena 4: a bot is its pixel character (components/BotFace.jsx) with a face for its
+// state, no letters. People are neutral circles with initials; you are «TÚ» in ink. A room is
+// «#» on a tile.
 export const initialsOf = (name) => String(name || "").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
 
 /**
- * A bot as a flat shape. `state`: rest | work | wait. `owner` ({name, color, you}): whose it is;
- * on someone else's bot a small round person-chip with their initials sits in the corner (circles
- * are people), from 16 px up. The mark stays decorative: whoever draws it names it in words
+ * A bot: its pixel character (BotFace) with the face of `state` (rest | work | wait | pause).
+ * `owner` ({name, color, you}): whose it is; on someone else's bot a round chip with their
+ * initials sits in the corner (circles are people), cut out of the surface (`ring`, else the
+ * theme's --c-cut). The mark stays decorative: whoever draws it names it in words
  * (identity.js › botA11yName).
  */
-export function BotMark({ bot, size = 20, state = "rest", style = null, owner = null, ring = "#FFFFFF" }) {
-  const shape = shapeOf(bot);
-  const portrait = portraitOf(bot);
-  const color = bot?.color || "#C9CBD1";
-  const badge = badgeSize(owner, size);
+export function BotMark({ bot, size = 20, state = "rest", style = null, owner = null, ring = null }) {
   return (
-    <span aria-hidden="true" style={{ position: badge ? "relative" : undefined, flex: "none", display: "inline-grid", placeItems: "center", width: size + "px", height: size + "px", borderRadius: state === "wait" ? "var(--r-circle)" : undefined, boxShadow: state === "wait" ? "0 0 0 2px var(--c-cut), 0 0 0 4px #FFC93C" : "none", ...style }}>
-      <span style={{ display: "block", width: size + "px", height: size + "px", background: portrait ? `${color} url("${portrait}") center / cover no-repeat` : color, clipPath: shape.clip, borderRadius: shape.radius, animation: state === "work" ? "breathe 2.4s ease-in-out infinite" : "none" }} />
-      {badge ? <OwnerBadge owner={owner} size={size} ring={ring} /> : null}
-    </span>
-  );
-}
-
-/** The size of the owner's chip on a bot of `size`, or 0 when it is too small to carry one. */
-export const badgeSize = (owner, size) => (owner && !owner.you && size >= 16 ? Math.max(12, Math.round(size * 0.62)) : 0);
-
-/** The round person-chip in a bot's corner: whose bot it is (decorative; said in words elsewhere). */
-export function OwnerBadge({ owner, size = 20, ring = "#FFFFFF" }) {
-  const badge = badgeSize(owner, size);
-  if (!badge) return null;
-  return (
-    <span aria-hidden="true" data-owner-badge="" style={{ position: "absolute", right: -Math.round(badge * 0.3) + "px", bottom: -Math.round(badge * 0.3) + "px", width: badge + "px", height: badge + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: owner.color || personTint(owner.name), color: "#12131A", boxShadow: `0 0 0 1.5px ${ring}`, font: `700 ${Math.max(6, Math.round(badge * 0.42))}px/1 'Geist', sans-serif`, letterSpacing: 0 }}>
-      {ownerBadgeText(owner, size)}
+    <span aria-hidden="true" style={{ flex: "none", display: "inline-grid", placeItems: "center", width: size + "px", height: size + "px", ...(ring ? { "--c-cut": ring } : null), ...style }}>
+      <BotFace bot={bot} size={size} state={state} owner={owner} decorative />
     </span>
   );
 }
