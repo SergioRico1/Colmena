@@ -20,11 +20,14 @@ import { roomSlug } from "./runtime/helpers.mjs";
 import { snoozeUntil } from "./rooms.mjs";
 import { statusNow } from "./notifications.mjs";
 import { wrapReport } from "./external-content.mjs";
-import { isAddress } from "./peers/protocol.mjs";
+import { isAddress, verifyCard } from "./peers/protocol.mjs";
 import { PEER_LIMITS, botsOf, cleanBot } from "./peers/service.mjs";
 import { RoomWork } from "./room-work.mjs";
 
-export const ROOM_LIMITS = Object.freeze({ title: PEER_LIMITS.title, requests: 20, context: 30, parts: 20, bots: 6 });
+// `intros`: people one person may make known to you in a day (room.intro: the owner of a room
+// they propose you for; room.req: someone they propose for a room of yours). A person proposes a
+// few people a day at most; each one is a new key kept here.
+export const ROOM_LIMITS = Object.freeze({ title: PEER_LIMITS.title, requests: 20, context: 30, parts: 20, bots: 6, intros: 10 });
 /** Assistant rows that count as something new in a room (docs/ROOMS-CONTRACT.md › Unread). */
 const UNREAD_KINDS = new Set(["message", "deliverable", "question", "plan"]);
 const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
@@ -516,10 +519,14 @@ export class Rooms {
     if (!c || !isAddress(c.box) || !["active", "known"].includes(c.status)) throw new RoomError("Solo puedes proponer a personas con las que ya hablas.");
     const owner = p.contact(s.owner);
     if (!owner?.box) throw new RoomError("No se pudo avisar a quien creó la sala.", 409);
+    // Each of the two learns the other's key from you: only as that person signed it themselves.
+    const mine = (x) => { const card = verifyCard(x?.card); return card && card.id === x.id && card.box === x.box ? card : null; };
+    if (!mine(c)) throw new RoomError("Todavía no puedes proponer a " + c.name + ": su Colmena aún no te ha confirmado su clave. Prueba cuando haya estado conectada.", 409);
+    if (!mine(owner)) throw new RoomError("Todavía no puedes proponerlo: la Colmena de " + (owner.name || "quien creó la sala") + " aún no te ha confirmado su clave. Prueba cuando haya estado conectada.", 409);
     // A Colmena only takes a room's list from someone it knows: the person learns from you who
     // made this room (as they would learn of anyone you put in a room of yours).
-    p.enqueue(address, { type: "room.intro", share: s.id, owner: { id: owner.id, box: owner.box, name: owner.name } });
-    if (!p.enqueue(s.owner, { type: "room.req", share: s.id, op: "add", member: { id: c.id, box: c.box, name: c.name } })) throw new RoomError("No se pudo avisar a quien creó la sala.", 409);
+    p.enqueue(address, { type: "room.intro", share: s.id, owner: { id: owner.id, box: owner.box, name: owner.name, card: owner.card } });
+    if (!p.enqueue(s.owner, { type: "room.req", share: s.id, op: "add", member: { id: c.id, box: c.box, name: c.name, card: c.card } })) throw new RoomError("No se pudo avisar a quien creó la sala.", 409);
     void p.flushOutbox();
     return { asked: true, owner: { address: s.owner, name: owner?.name || "Alguien" }, person: { address, name: c.name }, text: "Se lo hemos pedido a " + (owner?.name || "quien creó la sala") + "." };
   }
@@ -559,8 +566,13 @@ export class Rooms {
     const s = typeof body.share === "string" ? this.store.get("peerShares", body.share) : null;
     if (body.op !== "add" || !s || s.kind !== "group" || s.owner !== p.address || s.general || s.leftAt || s.removedAt) return;
     if (!["owner", "member"].includes(p.roleOf(s, from.id))) return; // a guest, or someone who is not in it
-    const member = body.member;
+    // The person proposed, as they signed themselves (their address, box key and name): a key
+    // somebody else merely says is theirs is never kept. Someone already known here keeps theirs.
+    const card = verifyCard(body.member?.card), had = p.contact(body.member?.id);
+    const member = had?.box && had.status !== "removed" ? { id: had.id, box: had.box, name: had.name } : card && card.id === body.member?.id ? { id: card.id, box: card.box, name: card.name } : null;
     if (!isAddress(member?.id) || !isAddress(member.box) || member.id === p.address || s.members.some((m) => m.id === member.id)) return;
+    const day = new Date(Date.now() - 864e5).toISOString();
+    if (this.store.where("roomRequests", "from", from.id).filter((r) => String(r.at) > day).length >= ROOM_LIMITS.intros) return;
     const open = this.store.where("roomRequests", "shareId", s.id).filter((r) => r.status === "asked");
     if (open.length >= ROOM_LIMITS.requests || open.some((r) => r.member.id === member.id)) return;
     const room = this.roomOfShare(s);
@@ -574,9 +586,12 @@ export class Rooms {
    * of any room a contact of yours puts you in.
    */
   onIntro(from, body) {
-    const p = this.needPeers(), owner = body.owner;
-    if (from.status !== "active" || !isAddress(owner?.id) || !isAddress(owner.box) || owner.id === p.address || p.contact(owner.id)) return;
-    this.store.put("peerContacts", { id: owner.id, box: owner.box, name: clip(owner.name, PEER_LIMITS.name) || "Alguien", status: "known", via: "intro:" + from.id, addedAt: now() });
+    const p = this.needPeers(), owner = verifyCard(body.owner?.card);
+    // Only with the owner's own card (their address, box key and name, signed by them), and a few a day from one person.
+    if (from.status !== "active" || !owner || owner.id !== body.owner.id || owner.id === p.address || p.contact(owner.id)) return;
+    const day = new Date(Date.now() - 864e5).toISOString();
+    if (this.store.where("peerContacts", "via", "intro:" + from.id).filter((c) => String(c.addedAt) > day).length >= ROOM_LIMITS.intros) return;
+    this.store.put("peerContacts", { id: owner.id, box: owner.box, name: clip(owner.name, PEER_LIMITS.name) || "Alguien", status: "known", via: "intro:" + from.id, addedAt: now(), card: owner });
   }
   /** Your one-click answer to a «please add»: in (the new roster goes to everyone) or not. */
   decide(x, requestId, decision) {
@@ -632,13 +647,13 @@ export class Rooms {
     const p = this.peers;
     if (!p) return;
     this.greeted.set(s.id, s.version);
-    const bots = p.myBots(), signature = JSON.stringify(bots);
+    const bots = p.myBots(), signature = JSON.stringify([bots, "card"]);
     let sent = false;
     for (const id of this.roommates(s)) {
       const c = p.contact(id);
       if (c.roomBotsSig === signature) continue;
       // `hi`: both sides say it when a roster brings them together, and one roster may still be on its way.
-      if (!p.enqueue(id, { type: "room.bots", bots, hi: true, got: !!c.roomBotsAt })) continue;
+      if (!p.enqueue(id, { type: "room.bots", bots, hi: true, got: !!c.roomBotsAt, card: p.myCard() })) continue;
       this.store.patch("peerContacts", id, { roomBotsSig: signature });
       sent = true;
     }
@@ -652,8 +667,9 @@ export class Rooms {
     const p = this.needPeers();
     const together = this.store.list("peerShares").some((s) => s.kind === "group" && !s.leftAt && !s.removedAt && s.members.some((m) => m.id === from.id) && s.members.some((m) => m.id === p.address));
     if (!together || !Array.isArray(body.bots)) return;
+    p.keepCard(from.id, body.card);
     this.store.patch("peerContacts", from.id, { bots: botsOf(body), roomBotsAt: now() });
-    if (body.hi === true && body.got !== true && p.enqueue(from.id, { type: "room.bots", bots: p.myBots() })) void p.flushOutbox();
+    if (body.hi === true && body.got !== true && p.enqueue(from.id, { type: "room.bots", bots: p.myBots(), card: p.myCard() })) void p.flushOutbox();
   }
 
   // ---------------------------------------------------------------- messages

@@ -27,7 +27,7 @@
 // the team's, with `teamId` and `general: true` in its roster. An older Colmena sees a group.
 import { randomUUID } from "node:crypto";
 import { now } from "../store.mjs";
-import { isAddress, isTeamId, signTeamRoster, TEAM_MAX_MEMBERS, verifyTeamRoster } from "./protocol.mjs";
+import { isAddress, isTeamId, signTeamRoster, TEAM_MAX_MEMBERS, verifyCard, verifyTeamRoster } from "./protocol.mjs";
 import { statusNow } from "../notifications.mjs";
 import { botsOf, cleanBot, dmId, PeerError, PEER_LIMITS, statusOf } from "./service.mjs";
 
@@ -46,6 +46,9 @@ export const TEAM_LIMITS = Object.freeze({
   // request that old was held back or comes from a Colmena that has not caught up. It gets the
   // roster and asks again.
   staleVersions: 8,
+  // People one admin may bring into a team in a day (each is a new key the creator signs for
+  // everybody): half a team.
+  addsPerDay: 16,
 });
 export const GENERAL = "general";
 const ROLE = { owner: "creador", admin: "admin", member: "miembro" };
@@ -315,6 +318,22 @@ export class Teams {
     const role = on ? "admin" : "member";
     return m.role === role ? t : this.commit(t, { members: t.members.map((x) => (x.id === address ? { ...x, role } : x)) });
   }
+  /**
+   * Someone an admin asks to add, as the creator takes them: with a key the creator already
+   * holds, or with their own card (address, box key and name signed by themselves). A key an
+   * admin merely says is theirs is never signed into the roster. A few a day from one admin.
+   */
+  vouched(t, admin, member) {
+    const refuse = () => { throw new PeerError("Esa persona no es válida."); };
+    const had = this.peers.contact(member?.id);
+    const card = verifyCard(member?.card);
+    const person = had?.box && had.status !== "removed" ? { id: had.id, box: had.box, name: had.name } : card && card.id === member?.id ? { id: card.id, box: card.box, name: card.name } : refuse();
+    const day = new Date(Date.now() - 864e5).toISOString();
+    const added = (t.added || []).filter((x) => x.at > day);
+    if (added.filter((x) => x.by === admin).length >= TEAM_LIMITS.addsPerDay) refuse();
+    if (!t.members.some((m) => m.id === person.id)) this.store.patch("teams", t.id, { added: [...added, { by: admin, at: now() }].slice(-200) });
+    return person;
+  }
   /** An admin's request (or anyone's «I leave»): checked against the roster as it is now. */
   onRequest(from, body) {
     const t = this.owned(body.team);
@@ -334,7 +353,7 @@ export class Teams {
       return;
     }
     try {
-      if (body.op === "add") this.addMember(t, { id: body.member?.id, box: body.member?.box, name: body.member?.name });
+      if (body.op === "add") this.addMember(t, this.vouched(t, from.id, body.member));
       else if (body.op === "remove") this.dropMember(t, String(body.member || ""));
       else if (body.op === "rename") this.renameTeam(t, body.name);
       else if (body.op === "admin") this.adminSet(t, String(body.member || ""), body.on === true);
@@ -383,7 +402,7 @@ export class Teams {
     if (!c?.box) return;
     const no = (reason) => { this.peers.enqueue(from, { type: "team.no", team: invite.team, reason }); void this.peers.flushOutbox(); };
     if (!t || !this.admin(t)) return no("refused");
-    const person = { id: from, box: c.box, name: c.name };
+    const person = { id: from, box: c.box, name: c.name, card: c.card };
     // `made`: when the code was made (someone who was taken out returns only with a newer one).
     if (t.owner !== this.me) return this.request(t, { op: "add", member: person, v: t.version, made: invite.createdAt });
     try {
@@ -622,7 +641,7 @@ export class Teams {
   }
 
   // ---------------------------------------------------------------- teammates who are not contacts
-  profile() { return { type: "team.profile", name: this.peers.myName(), bots: this.peers.myBots(), status: this.peers.myStatus() }; }
+  profile() { return { type: "team.profile", name: this.peers.myName(), bots: this.peers.myBots(), status: this.peers.myStatus(), card: this.peers.myCard() }; }
   /**
    * Your name, bots and status to new teammates you do not talk to directly (contacts get
    * «profile»). Both sides say hello when a roster brings them together, and one of the two
@@ -646,6 +665,7 @@ export class Teams {
    */
   onProfile(from, body) {
     if (!this.teammate(from.id)) return;
+    this.peers.keepCard(from.id, body.card);
     this.store.patch("peerContacts", from.id, { profileAt: now(), ...(clip(body.name, PEER_LIMITS.name) ? { name: clip(body.name, PEER_LIMITS.name) } : {}), ...(Array.isArray(body.bots) ? { bots: botsOf(body) } : {}), ...("status" in body ? { away: statusOf(body) } : {}) });
     if (body.hi === true && body.got !== true) {
       this.peers.enqueue(from.id, this.profile());

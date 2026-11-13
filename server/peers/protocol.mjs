@@ -250,6 +250,24 @@ export function sameProof(a, b) {
   return x.length === y.length && timingSafeEqual(x, y);
 }
 
+// ------------------------------------------------------------------ cards
+// «This address uses this box key and this name», signed by that address itself. Whoever passes
+// someone else's key on (a member proposing a person to a room's owner, an admin adding someone
+// to a team) passes that person's own card: a key nobody but its owner vouched for is not used.
+/** {id, box, name, at, sig}: the card of `identity`, signed with its address key. */
+export function signCard(identity, name, at = new Date().toISOString()) {
+  const card = { kind: "card", id: identity.sign.pub, box: identity.box.pub, name: String(name || "").slice(0, 80), at };
+  return { ...card, sig: signBytes(identity.sign, canonical(card)) };
+}
+/** The card if the address it names signed exactly that; otherwise null. */
+export function verifyCard(card) {
+  if (!card || typeof card !== "object" || Array.isArray(card) || card.kind !== "card") return null;
+  if (!isAddress(card.id) || !isAddress(card.box) || typeof card.name !== "string" || card.name.length > 80 || typeof card.at !== "string" || card.at.length > 40) return null;
+  const { sig, ...unsigned } = card;
+  if (typeof sig !== "string" || Object.keys(unsigned).length !== 5 || !verifyBytes(card.id, canonical(unsigned), sig)) return null;
+  return card;
+}
+
 // ------------------------------------------------------------------ teams
 // A team is one roster signed by whoever created it (server/peers/teams.mjs):
 //   {kind: "team", id, name, owner, version, room, at, members: [{id, role, box, name}], sig}

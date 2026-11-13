@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 import { settle } from "./fixtures/runtime-fixture.mjs";
 import { addr, asks, friends, pause, peerRows, rule, sharedRoom, team, until, world } from "./fixtures/people-world.mjs";
 import { PEER_LIMITS } from "../server/peers/service.mjs";
-import { verifyTeamRoster } from "../server/peers/protocol.mjs";
+import { newIdentity, signCard, verifyCard, verifyTeamRoster } from "../server/peers/protocol.mjs";
+import { ROOM_LIMITS } from "../server/room.mjs";
 import { TEAM_LIMITS } from "../server/peers/teams.mjs";
 
 /** Sends `body` as `from` straight to `to` (what any Colmena can put in an envelope) and waits until it was handled. */
@@ -112,8 +113,7 @@ test("a change asked against an old roster is not applied: someone taken out ret
   await bring(sergio, luis, id, [sergio, marta]);
   assert.equal(has(luis), true);
   // Someone new: an add or an admin grant needs a recent roster; an older Colmena's request (no version) is not applied.
-  const { newIdentity } = await import("../server/peers/protocol.mjs");
-  const stranger = newIdentity(), other = { id: stranger.sign.pub, box: stranger.box.pub, name: "Nueva" };
+  const stranger = newIdentity(), other = { id: stranger.sign.pub, box: stranger.box.pub, name: "Nueva", card: signCard(stranger, "Nueva") };
   const now = () => roster().version;
   await raw(marta, sergio, { type: "team.req", team: id, op: "add", member: other });
   assert.equal(has(other.id), false, "no version");
@@ -205,4 +205,66 @@ test("a room's messages say the roster version: one newer than yours asks its ow
   assert.ok(held === null || held.until - marta.peers.clock() <= PEER_LIMITS.rosterHoldMs);
   marta.skew += PEER_LIMITS.rosterHoldMs + 1000;
   assert.equal(marta.peers.rosterHeld(share(marta), addr(luis)), null, "the wait is over");
+});
+
+test("a key somebody else passes on is used only with that person's own signed card; a few introductions a day from one person", async (t) => {
+  const [sergio, marta, luis] = await world(t, ["Sergio Rico", "Marta Ruiz", "Luis Vega"]);
+  await friends(sergio, marta);
+  await friends(marta, luis);
+  const room = await sharedRoom(sergio, marta);
+  // Everybody's card: their address, box key and name, signed by themselves; a contact keeps it.
+  const cardOf = (p) => p.peers.myCard();
+  assert.deepEqual(verifyCard(cardOf(luis)), cardOf(luis));
+  assert.deepEqual([cardOf(luis).id, cardOf(luis).box, cardOf(luis).name], [addr(luis), box(luis), "Luis Vega"]);
+  assert.equal(verifyCard({ ...cardOf(luis), box: box(marta) }), null, "a card with another key is nothing");
+  assert.equal(verifyCard({ ...cardOf(luis), name: "Otro" }), null);
+  await until(() => marta.peers.contact(addr(luis))?.card && marta.peers.contact(addr(sergio))?.card, "Marta tiene las tarjetas de los dos");
+  const requests = () => sergio.store.where("roomRequests", "shareId", room.id);
+  // «Please add Luis», with a key that is not his, or with no card at all: nothing is noted.
+  const swapped = { id: addr(luis), box: box(marta), name: "Luis Vega" };
+  await raw(marta, sergio, { type: "room.req", share: room.id, op: "add", member: swapped });
+  await raw(marta, sergio, { type: "room.req", share: room.id, op: "add", member: { ...swapped, card: { ...cardOf(luis), box: box(marta) } } });
+  await raw(marta, sergio, { type: "room.req", share: room.id, op: "add", member: { ...swapped, card: signCard(marta.peers.identity, "Luis Vega") } });
+  assert.deepEqual([requests().length, sergio.peers.contact(addr(luis))], [0, null]);
+  // With his own card: noted, with the key and the name he signed, whatever else was said beside it.
+  await raw(marta, sergio, { type: "room.req", share: room.id, op: "add", member: { ...swapped, name: "Un nombre falso", card: cardOf(luis) } });
+  assert.deepEqual(requests().map((r) => [r.member.id, r.member.box, r.member.name]), [[addr(luis), box(luis), "Luis Vega"]]);
+  // The same for whoever is told who made a room: only with the owner's own card.
+  await raw(marta, luis, { type: "room.intro", share: room.id, owner: { id: addr(sergio), box: box(marta), name: "Sergio Rico" } });
+  await raw(marta, luis, { type: "room.intro", share: room.id, owner: { id: addr(sergio), box: box(marta), name: "Sergio Rico", card: signCard(marta.peers.identity, "Sergio Rico") } });
+  assert.equal(luis.peers.contact(addr(sergio)), null);
+  await raw(marta, luis, { type: "room.intro", share: room.id, owner: { id: addr(sergio), box: box(marta), name: "Otro nombre", card: cardOf(sergio) } });
+  assert.deepEqual([luis.peers.contact(addr(sergio)).box, luis.peers.contact(addr(sergio)).name, luis.peers.contact(addr(sergio)).status], [box(sergio), "Sergio Rico", "known"]);
+  // The honest way through the room does all of it by itself.
+  sergio.store.remove("roomRequests", requests()[0].id);
+  const asked = await marta.rooms.invite(room.id, { address: addr(luis) });
+  assert.equal(asked.asked, true);
+  await until(() => requests().length === 1, "la petición llega con su tarjeta");
+  // A name learned from somebody else gives way to what the person signs about themselves; so does a key.
+  const renamed = signCard(sergio.peers.identity, "Sergio R.");
+  luis.peers.keepCard(addr(sergio), renamed);
+  assert.equal(luis.peers.contact(addr(sergio)).name, "Sergio R.");
+  luis.peers.keepCard(addr(sergio), signCard(marta.peers.identity, "Impostor"));
+  assert.equal(luis.peers.contact(addr(sergio)).name, "Sergio R.", "only their own card");
+  const mine = marta.peers.contact(addr(luis));
+  marta.peers.keepCard(addr(luis), signCard({ sign: luis.peers.identity.sign, box: newIdentity().box }, "Luis Vega"));
+  assert.equal(marta.peers.contact(addr(luis)).box, mine.box, "the key agreed with a direct contact stays");
+  // A few introductions a day from one person.
+  for (let i = 0; i < ROOM_LIMITS.intros + 3; i++) {
+    const someone = newIdentity();
+    await raw(marta, luis, { type: "room.intro", share: room.id, owner: { id: someone.sign.pub, box: someone.box.pub, name: "Persona " + i, card: signCard(someone, "Persona " + i) } });
+  }
+  assert.equal(luis.store.where("peerContacts", "via", "intro:" + addr(marta)).length, ROOM_LIMITS.intros);
+  // A team: what an admin asks to add is signed into the roster only with that person's card.
+  const made = await team(sergio, [marta]);
+  sergio.teams.setAdmin(made.id, addr(marta), true);
+  await until(() => marta.teams.admin(marta.store.get("teams", made.id)), "Marta administra");
+  const roster = () => sergio.store.get("teams", made.id);
+  const fresh = newIdentity(), v = () => roster().version;
+  await raw(marta, sergio, { type: "team.req", team: made.id, op: "add", v: v(), member: { id: fresh.sign.pub, box: box(marta), name: "Nueva" } });
+  await raw(marta, sergio, { type: "team.req", team: made.id, op: "add", v: v(), member: { id: fresh.sign.pub, box: box(marta), name: "Nueva", card: signCard(marta.peers.identity, "Nueva") } });
+  assert.equal(roster().members.length, 2);
+  await raw(marta, sergio, { type: "team.req", team: made.id, op: "add", v: v(), member: { id: fresh.sign.pub, box: box(marta), name: "Falso", card: signCard(fresh, "Nueva") } });
+  assert.deepEqual(roster().members.filter((m) => m.id === fresh.sign.pub).map((m) => [m.box, m.name]), [[fresh.box.pub, "Nueva"]]);
+  assert.equal(TEAM_LIMITS.addsPerDay, 16);
 });

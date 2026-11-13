@@ -17,7 +17,7 @@ import { randomUUID } from "node:crypto";
 import { now } from "../store.mjs";
 import { statusNow } from "../notifications.mjs";
 import {
-  b64u, formatInviteCode, inviteLookup, inviteProof, isAddress, newIdentity, newInviteCode, open, openInvite, parseInviteCode, ProtocolError, safetyWords, sameProof, seal, sealInvite, sha256, validIdentity, canonical, signBytes, verifyBytes,
+  b64u, formatInviteCode, inviteLookup, inviteProof, isAddress, newIdentity, newInviteCode, open, openInvite, parseInviteCode, ProtocolError, safetyWords, sameProof, seal, sealInvite, sha256, validIdentity, canonical, signBytes, verifyBytes, signCard, verifyCard,
 } from "./protocol.mjs";
 import { RelayClient } from "./relay-client.mjs";
 
@@ -228,7 +228,7 @@ export class Peers extends EventEmitter {
   myBots() {
     return this.store.list("bots").filter((b) => b.enabled !== false).slice(0, 24).map((b) => cleanBot(b)).filter(Boolean);
   }
-  myProfile() { return { name: this.myName(), box: this.identity.box.pub, bots: this.myBots(), status: this.myStatus() }; }
+  myProfile() { return { name: this.myName(), box: this.identity.box.pub, bots: this.myBots(), status: this.myStatus(), card: this.myCard() }; }
   /** Your status for other people: available, «dnd» (No molestar) or «away» (Fuera), until a time. */
   myStatus() { return statusNow(this.store.get("settings", "main"), this.clock()); }
   /** Sets your status; your contacts get it with your profile (once per change). */
@@ -240,6 +240,24 @@ export class Peers extends EventEmitter {
     this.store.patch("settings", "main", { status: mode === "available" ? null : { mode, until: end ? new Date(end).toISOString() : null, at: now() } });
     this.announceProfile();
     return this.stateView();
+  }
+  /** Your card: your address, box key and name, signed by you (protocol.mjs signCard). Made once per name. */
+  myCard() {
+    const name = clip(this.nameOf() || "", PEER_LIMITS.name) || "Sin nombre";
+    if (this.card?.name !== name || this.card.box !== this.identity.box.pub) this.card = signCard(this.identity, name, now());
+    return this.card;
+  }
+  /**
+   * The card someone sent of THEMSELVES (in their own envelope): kept with them, to pass on when
+   * they are proposed to a room or a team. What they sign about themselves counts more than
+   * what anybody else told us: the key of someone we only knew through others, and their name.
+   */
+  keepCard(from, raw) {
+    const card = verifyCard(raw), c = this.contact(from);
+    if (!card || card.id !== from || !c) return;
+    if (c.box !== card.box && c.status !== "known") return; // someone we talk to directly: their key is the one we agreed
+    const told = String(c.via || "").startsWith("intro:") || c.status === "known";
+    this.store.patch("peerContacts", from, { card, ...(c.box !== card.box ? { box: card.box } : {}), ...(told && card.name ? { name: card.name } : {}) });
   }
   /** Someone's status as they last told us (an expired one is gone). */
   awayOf(c) {
@@ -908,6 +926,7 @@ export class Peers extends EventEmitter {
     const name = clip(body.profile.name, PEER_LIMITS.name) || inv.name;
     const existing = this.contact(from);
     this.store.put("peerContacts", { ...(existing || {}), id: from, box: body.profile.box, name, invitedAs: inv.name, status: "active", via: "invitation", addedAt: existing?.addedAt || now(), lastSeenAt: now(), asks: existing?.asks || { ...ASK_DEFAULTS }, bots: botsOf(body.profile), away: statusOf(body.profile) });
+    this.keepCard(from, body.profile.card);
     this.store.patch("peerInvites", inv.id, { status: "used", usedAt: now(), usedBy: from, code: null });
     void this.client?.deleteInvite(inv.lookup);
     this.enqueue(from, { type: "welcome", profile: this.myProfile() });
@@ -927,10 +946,12 @@ export class Peers extends EventEmitter {
     switch (body.type) {
       case "welcome":
         if (c.status === "pending") this.store.patch("peerContacts", from, { status: "active", bots: botsOf(body.profile), away: statusOf(body.profile), ...(body.profile?.name ? { name: clip(body.profile.name, PEER_LIMITS.name) } : {}) });
+        this.keepCard(from, body.profile?.card);
         this.ensureDm(from);
         this.sayOnline(from);
         return;
       case "profile":
+        this.keepCard(from, body.card);
         this.store.patch("peerContacts", from, { ...(body.name ? { name: clip(body.name, PEER_LIMITS.name) } : {}), ...(Array.isArray(body.bots) ? { bots: botsOf(body) } : {}), ...("status" in body ? { away: statusOf(body) } : {}) });
         return;
       case "bye": {
@@ -1149,10 +1170,10 @@ export class Peers extends EventEmitter {
     const name = this.myName();
     const bots = this.myBots();
     const status = this.myStatus();
-    const signature = JSON.stringify([name, bots, status]);
+    const signature = JSON.stringify([name, bots, status, "card"]);
     if (this.config().announced === signature) return;
     this.store.put("peerConfig", { ...this.config(), announced: signature });
-    for (const c of this.contacts().filter((x) => x.status === "active")) this.enqueue(c.id, { type: "profile", name, bots, status });
+    for (const c of this.contacts().filter((x) => x.status === "active")) this.enqueue(c.id, { type: "profile", name, bots, status, card: this.myCard() });
     this.emit("profile-out", { name, bots, status }); // teammates who are not contacts (teams.mjs)
     void this.flushOutbox();
   }

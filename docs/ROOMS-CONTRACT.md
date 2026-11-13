@@ -200,6 +200,7 @@ choice open:
   person `room.intro` with the owner's address and key. A code (`invite`) is still the owner's
   alone: 403 «Pídele a <dueño> que le invite.». `roomRequests` are not in any «what waits for
   you» list yet: `waitingItems` belongs to another task.
+- **Cards.** `room.req.member` and `room.intro.owner` carry `card` (the person's own signed `{kind, id, box, name, at, sig}`: `protocol.mjs`); `Rooms#onRequest`, `Rooms#onIntro` and `Teams#vouched` take the key and name from a verified card (or from a contact already held) and ignore the rest. `Rooms#askOwner` answers 409 while either card is missing. `ROOM_LIMITS.intros` (10 a day per sender).
 - **Decision 2 (`room.bots`).** Team profiles cover every member of a room of a team, and
   contacts get `profile`. `room.bots` is sent only to people you share a room with who are
   neither. Their presence stays unknown (shown offline).
