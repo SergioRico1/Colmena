@@ -1,9 +1,10 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import BotFace from "../BotFace.jsx";
 import { useWarmOnType } from "../../lib/warm.js";
-import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, FileText, GitBranch, LoaderCircle, Sparkles, Check, Checks, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, RotateCcw, Undo2, Wrench, X } from "../Icon.js";
+import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, Copy, Ellipsis, FileText, GitBranch, LoaderCircle, Sparkles, Check, Checks, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, Quote, RotateCcw, Undo2, Wrench, X } from "../Icon.js";
 import { InteractiveContext } from "./Interactive.jsx";
-import { MenuButton } from "../Menu.js";
+import { MenuButton, useContextMenu } from "../Menu.js";
+import { menuGroups } from "../../lib/menu.js";
 import { freshness, scrollBehavior } from "../../lib/motion.js";
 import { ReactTools, ReactionRow, useReactions } from "./Reactions.jsx";
 import { useFileDrop, dropOverlay } from "../../lib/useFileDrop.js";
@@ -18,11 +19,11 @@ import { usePhrase, useSlowPhase, verbLabel } from "./working.js";
 import SecretPrompt, { SecretLine } from "./SecretPrompt.jsx";
 import InlineApprovals from "./InlineApprovals.jsx";
 import Sources from "./Sources.jsx";
-import { asQuote, UserText } from "./SelectionPopup.jsx";
+import { asQuote, quoteInto, UserText } from "./SelectionPopup.jsx";
 import { usePanelWidth } from "../../lib/usePanelWidth.jsx";
 import { ago, roomUrl, time } from "../../lib/format.js";
 import { navigate } from "../../lib/router.jsx";
-import { BotAvatar, UserAvatar, FileChip, ErrorLine, Dots, MentionText, NoteLink, dayLabel, findBot } from "./common.jsx";
+import { BotAvatar, UserAvatar, FileChip, ErrorLine, Dots, MentionText, NoteLink, dayLabel, findBot, copyText } from "./common.jsx";
 import PastedCard from "./PastedCard.jsx";
 import Markdown, { plain } from "./Markdown.jsx";
 import QuestionCard from "./QuestionCard.jsx";
@@ -162,20 +163,64 @@ function TravelLine({ peer }) {
   return null;
 }
 
-/** Slack-style hover toolbar: shown when the pointer (or keyboard focus) is on the message. */
-function Actions({ children }) {
-  return <span className="msg-actions" role="toolbar" aria-label="Acciones del mensaje">{children}</span>;
+/**
+ * Slack-style hover toolbar: shown when the pointer (or keyboard focus) is on the message. The
+ * one-click things are buttons; the rest is behind «…» (`menu`: entries for components/Menu.js),
+ * the same menu a right-click on the message opens.
+ */
+function Actions({ children, menu = null }) {
+  const [open, setOpen] = useState(false);
+  const entries = menu ? menu(false) : null;
+  return (
+    <span className={"msg-actions" + (open ? " is-open" : "")} role="toolbar" aria-label="Acciones del mensaje">
+      {children}
+      {entries && menuGroups(entries).length ? (
+        <MenuButton label="Más acciones" menuLabel="Acciones del mensaje" items={entries} onOpenChange={(v) => setOpen(!!v)} className="rm-focus"
+          style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text-2)" }}>
+          <Ellipsis size={16} aria-hidden="true" />
+        </MenuButton>
+      ) : null}
+    </span>
+  );
+}
+
+/** The right-click of a message: its full menu, unless text in it is selected (then «Copiar»). */
+function useMessageContext(menu) {
+  return useContextMenu((e) => {
+    if (!menu) return null;
+    const s = window.getSelection?.();
+    if (s && !s.isCollapsed && e.currentTarget.contains(s.anchorNode)) return null;
+    return { label: "Mensaje", items: menu(true) };
+  });
+}
+
+/**
+ * What can be done with a message of the room, beyond its toolbar: copy or quote its text,
+ * duplicate the room from here. `full` (the right-click) adds what the toolbar shows.
+ */
+function messageMenu({ message, onReply = null, fork = null }) {
+  const text = message?.text ? plain(message.text).trim() : "";
+  return (full) => [
+    { group: null, items: [
+      full && onReply ? { label: "Responder en un hilo", icon: MessageSquareReply, onSelect: onReply } : null,
+      text ? { label: "Copiar el texto", icon: Copy, onSelect: () => copyText(text) } : null,
+      text && message.missionId ? { label: "Citar en tu mensaje", icon: Quote, onSelect: () => quoteInto(message.missionId, text) } : null,
+    ] },
+    fork ? { label: "Duplicar desde aquí", icon: GitBranch, hint: "Una sala nueva con la conversación hasta este mensaje", onSelect: fork } : null,
+  ];
 }
 
 /** A row in the conversation (design/v4 › .msg): a 32 px face, the name line and the text; a
  *  hover highlight; a continued message (same author, minutes later) has no avatar or header,
  *  only its time in the gutter on hover. */
-function MessageRow({ id, messageId = null, avatar, continued, at, padding, children, actions, entering = false, sending = false, live = false }) {
+function MessageRow({ id, messageId = null, avatar, continued, at, padding, children, actions, menu = null, entering = false, sending = false, live = false }) {
+  const ctx = useMessageContext(menu);
   return (
-    <div id={id} data-message-id={messageId || undefined} data-live-turn={live ? "" : undefined} className={"msg-row v4-row" + (continued ? " is-continued" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ ...(padding ? { padding } : null), opacity: sending ? 0.65 : 1, transition: "opacity .2s ease" }}>
+    <div id={id} data-message-id={messageId || undefined} data-live-turn={live ? "" : undefined} onContextMenu={ctx.onContextMenu} className={"msg-row v4-row" + (continued ? " is-continued" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ ...(padding ? { padding } : null), opacity: sending ? 0.65 : 1, transition: "opacity .2s ease" }}>
       {continued ? <span className="msg-gutter-time" aria-hidden="true">{at ? time(at) : ""}</span> : avatar}
       <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>{children}</div>
-      {actions ? <Actions>{actions}</Actions> : null}
+      {actions ? <Actions menu={menu}>{actions}</Actions> : null}
+      {ctx.menu}
     </div>
   );
 }
@@ -184,9 +229,10 @@ function MessageRow({ id, messageId = null, avatar, continued, at, padding, chil
  * Your own message (design/v4 › .mine): on the right, in the soft «mine» bubble, with its time
  * and how far it got under it: «Enviando…», a tick when it is out, two and «Visto» once read.
  */
-function MineRow({ messageId = null, continued, at, children, under = null, actions, entering = false, sending = false, seen = null, failed = false }) {
+function MineRow({ messageId = null, continued, at, children, under = null, actions, menu = null, entering = false, sending = false, seen = null, failed = false }) {
+  const ctx = useMessageContext(menu);
   return (
-    <div data-message-id={messageId || undefined} className={"msg-row v4-mine" + (continued ? " is-continued" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ opacity: sending ? 0.75 : 1, transition: "opacity .2s ease", background: "transparent" }}>
+    <div data-message-id={messageId || undefined} onContextMenu={ctx.onContextMenu} className={"msg-row v4-mine" + (continued ? " is-continued" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ opacity: sending ? 0.75 : 1, transition: "opacity .2s ease", background: "transparent" }}>
       <div className="v4-bubble">{children}</div>
       {failed ? null : (
         <span className="v4-mine-meta">
@@ -195,7 +241,8 @@ function MineRow({ messageId = null, continued, at, children, under = null, acti
         </span>
       )}
       {under ? <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", marginTop: "6px", maxWidth: "min(62%, 560px)" }}>{under}</div> : null}
-      {actions ? <Actions>{actions}</Actions> : null}
+      {actions ? <Actions menu={menu}>{actions}</Actions> : null}
+      {ctx.menu}
     </div>
   );
 }
@@ -213,27 +260,21 @@ function ReplyButton({ onClick }) {
   );
 }
 
-/** «Duplicar desde aquí»: a new room with the conversation up to this message (the original stays as it is). */
-function ForkButton({ message }) {
+/** «Duplicar desde aquí»: a new room with the conversation up to this message (the original stays as it is). Null when it cannot. */
+function useFork(message) {
   const { run } = useStore();
-  const [busy, setBusy] = useState(false);
+  const busy = useRef(false);
   if (!message?.missionId || !message.id || message.optimistic || message.failed) return null;
-  const fork = async () => {
-    if (busy) return;
-    setBusy(true);
+  return async () => {
+    if (busy.current) return;
+    busy.current = true;
     try {
       const copy = await run(() => post("/missions/" + encodeURIComponent(message.missionId) + "/fork", { messageId: message.id }));
       navigate(roomUrl(copy));
     } catch {
-      setBusy(false);
+      busy.current = false;
     }
   };
-  return (
-    <button type="button" className="rm-focus" onClick={fork} disabled={busy} aria-label="Duplicar desde aquí" title="Duplicar desde aquí: una sala nueva con la conversación hasta este mensaje"
-      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: busy ? "default" : "pointer", color: "var(--c-text-2)", opacity: busy ? 0.5 : 1 }}>
-      <GitBranch size={16} strokeWidth={2} aria-hidden="true" />
-    </button>
-  );
 }
 
 /** «3 respuestas · 10:42» under a message that has a thread. */
@@ -316,7 +357,9 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
   // name, and plain text (never Markdown: it came from another computer).
   const author = authorOf(message, bots);
   const mine = author.kind !== "person" || author.you;
-  const actions = <><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} />{mine ? <ForkButton message={message} /> : null}</>;
+  const fork = useFork(mine ? message : null);
+  const actions = <><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} /></>;
+  const menu = message.optimistic ? null : messageMenu({ message, onReply, fork });
   if (mine) {
     // Yours: on the right, in the bubble; how far it got under it (people: «Visto por …»).
     const peerSeen = message.peer?.seenBy?.length ? "Visto por " + listNames(message.peer.seenBy) : null;
@@ -333,13 +376,13 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
       </>
     );
     return (
-      <MineRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} failed={!!message.failed} entering={entering} continued={continued} at={message.at} seen={peerSeen || (seen ? "Visto" : null)} actions={actions} under={under}>
+      <MineRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} failed={!!message.failed} entering={entering} continued={continued} at={message.at} seen={peerSeen || (seen ? "Visto" : null)} actions={actions} menu={menu} under={under}>
         <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
       </MineRow>
     );
   }
   return (
-    <MessageRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<AuthorAvatar author={author} size={32} />} continued={continued} at={message.at} padding={padding} actions={actions}>
+    <MessageRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<AuthorAvatar author={author} size={32} />} continued={continued} at={message.at} padding={padding} actions={actions} menu={menu}>
       {continued ? null : <AuthorHead author={author} at={message.at} />}
       <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "var(--c-text-2)", maxWidth: "72ch" }}>{message.text}</p>
       <TravelLine peer={message.peer} />
@@ -551,8 +594,13 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
   const [reactions, react, explain] = useReactions(message);
   // Atlas's face: «duda» while his question or plan waits for you, «feliz» on the final delivery.
   const mood = (isQuestion && approval?.status === "pending") || (kind === "plan" && mission?.status === "awaiting_plan") ? "duda" : message.phase === "synthesis" ? "feliz" : null;
+  // Reactions, reply and listen on the toolbar; copy, quote and «Duplicar desde aquí» in its «…».
+  const spoken = kind !== "plan" && !!message.text;
+  const placed = message.missionId || !mission?.id ? message : { ...message, missionId: mission.id };
+  const fork = useFork(spoken ? placed : null);
+  const menu = isQuestion ? null : messageMenu({ message: placed, onReply: spoken ? onReply : null, fork });
   return (
-    <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} entering={entering} avatar={<AuthorAvatar author={authorOf(message, bots)} size={32} state={mood === "duda" ? "wait" : "rest"} />} continued={continued} at={message.at} padding={padding} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{kind !== "plan" && message.text ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "var(--c-text-2)" }} /><ForkButton message={message} /></> : null}</>}>
+    <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} entering={entering} avatar={<AuthorAvatar author={authorOf(message, bots)} size={32} state={mood === "duda" ? "wait" : "rest"} />} continued={continued} at={message.at} padding={padding} menu={menu} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{spoken ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "var(--c-text-2)" }} /></> : null}</>}>
       {continued ? null : <AuthorHead author={authorOf(message, bots)} at={message.at} to={toLabel(message.to, bots)} />}
         {step?.tools?.length && (!message.part || message.summary) ? <ActivityLog bot={findBot(bots, message.botId)} summary={message.summary} activity={step.activity || []} tools={step.tools} bots={bots} onOpenArtifact={onOpenArtifact} /> : null}
         {isQuestion ? (
