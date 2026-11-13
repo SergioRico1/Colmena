@@ -523,3 +523,35 @@ test("a room somebody else made, where you have done nothing yet: a request ther
   // In a room of his own it never asked.
   assert.equal(sergio.rooms.work.takesPart(sergio.store.get("peerShares", (await sharedRoom(sergio, marta)).id)), true);
 });
+
+test("over the limit: «no atiende más peticiones» is said once per person, room and hour, and only to whoever asked", async (t) => {
+  const people = await world(t, ["Sergio Rico", "Marta Ruiz", "Luis Vega"]);
+  let [sergio] = people;
+  const [, marta, luis] = people;
+  await friends(sergio, marta);
+  await friends(sergio, luis);
+  const room = await sharedRoom(sergio, [marta, luis]);
+  rule(sergio, marta, "siempre");
+  const full = (p, n = ROOM_WORK.perHour, tag = "x") => { for (let i = 0; i < n; i++) p.store.put("roomAsks", { id: tag + "-" + i, roomId: room.id, shareId: room.id, from: addr(marta), fromName: "Marta Ruiz", botId: "vera", peerId: "peer-" + tag + "-" + i, text: "antes", rule: "siempre", state: "done", at: new Date().toISOString(), t: p.peers.clock() }); };
+  const throttles = (p) => p.out.filter((o) => o.body.type === "room.status" && o.body.state === "throttled");
+  full(sergio);
+  for (let i = 1; i <= 4; i++) await asked(marta, room, sergio, "@Vera de más " + i);
+  assert.deepEqual([sergio.calls.length, asks(sergio).length], [0, ROOM_WORK.perHour], "none was taken");
+  // One status, to Marta and nobody else.
+  assert.deepEqual(throttles(sergio).map((o) => o.to), [addr(marta)]);
+  await until(() => lines(marta, room).includes("Vera no atiende más peticiones por ahora"), "Marta lo lee");
+  await pause(300);
+  assert.deepEqual(lines(marta, room), ["Vera no atiende más peticiones por ahora"], "once");
+  assert.deepEqual([lines(luis, room), luis.store.list("roomStatus").length, luis.store.list("roomLines").length], [[], 0, 0], "Luis is told nothing");
+  assert.deepEqual(lines(sergio, room), ["Vera no atiende más peticiones por ahora"], "and Sergio sees it once on his side");
+  // Not again after a restart in the same hour.
+  sergio = await people.reopen(sergio);
+  await asked(marta, room, sergio, "@Vera tras reiniciar");
+  assert.deepEqual([throttles(sergio).length, sergio.calls.length], [0, 0]);
+  // In another hour, over the limit again: said again, once.
+  sergio.skew = ROOM_WORK.throttledMs + 60000;
+  full(sergio, ROOM_WORK.perHour, "y");
+  for (let i = 1; i <= 2; i++) await asked(marta, room, sergio, "@Vera otra hora " + i);
+  assert.deepEqual(throttles(sergio).map((o) => o.to), [addr(marta)]);
+  assert.equal(sergio.calls.length, 0);
+});

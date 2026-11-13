@@ -292,7 +292,8 @@ line. The requester's reply (linked, a mention of that bot, or their next plain 
 12 per person and hour and 40 per day over all rooms (`personHour`, `personDay`); 30 per hour for
 everybody (`allHour`); 5 requests of one person in state `asked` at once (`open`). A request
 counts when it reaches a rule other than `nunca`; over a limit it is not taken and the requester
-gets `throttled`. A reply to `ask_room` is not a request: it adds to `roomAsks.replies`, at most
+gets `throttled`: one `room.status` to the requester only, once per requester, room and hour
+(`RoomWork#throttled`, `roomThrottled {id: share:address, shareId, from, t}`, `throttledMs`). A reply to `ask_room` is not a request: it adds to `roomAsks.replies`, at most
 3 (`replies`) start a turn. In a room made by someone else where the owner of the bot has not
 taken part (`RoomWork#takesPart`: owns it, it is a team's «general», wrote there, or approved a
 request there by hand) a `siempre` request is stored with `rule: "pregunta", held: true` and

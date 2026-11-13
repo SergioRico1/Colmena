@@ -54,6 +54,7 @@ export const ROOM_WORK = Object.freeze({
   personHour: 12, personDay: 40, // requests of one person in all rooms, per hour and per day
   allHour: 30, // requests of everybody, per hour
   open: 5, // requests of one person waiting for your OK at the same time
+  throttledMs: 3600000, // «no atiende más peticiones por ahora» is said once in this long per person and room
   text: 4000, // characters of a request
   question: 2000, questions: 3, replies: 3, // ask_room: characters, how many per request, and how many answers start a turn
   replyMs: 10 * 60000, // how long an unlinked message of the requester counts as the reply to ask_room
@@ -193,7 +194,7 @@ export class RoomWork {
     // The limits (ROOM_WORK), whatever the rule: over any of them the request is not taken.
     const t = this.clock();
     if (this.overLimit(share, message.from, t)) {
-      this.say(share, bot.id, "throttled");
+      this.throttled(share, bot.id, message.from, t);
       return true;
     }
     // «Siempre» reaches the rooms you take part in. In one somebody else made and where you have
@@ -472,11 +473,24 @@ export class RoomWork {
     this.handoff(share, entry.from, entry.to);
   }
   /**
+   * A request over a limit: «Vera no atiende más peticiones por ahora», said once per person,
+   * room and hour (`roomThrottled`, kept across a restart), and only to whoever asked. What
+   * they send after that in the same hour gets no answer at all.
+   */
+  throttled(share, botId, from, t = this.clock()) {
+    const id = share.id + ":" + from;
+    const last = this.store.get("roomThrottled", id);
+    if (last && Math.abs(t - last.t) < ROOM_WORK.throttledMs) return;
+    this.store.put("roomThrottled", { id, shareId: share.id, from, t });
+    this.say(share, botId, "throttled", {}, { only: from });
+  }
+  /**
    * Tells everyone in the room the state of one of your bots, and keeps it here too. The body is
    * made by cleanStatus: an enumerated state and numbers. Live states go out without being kept
    * anywhere (to whoever is connected); the rest wait at the mailbox until they are read.
+   * `only`: it is for one person of the room and nobody else gets it.
    */
-  say(share, botId, state, extra = {}) {
+  say(share, botId, state, extra = {}, { only = null } = {}) {
     const p = this.peers;
     if (!p || !share || share.leftAt || share.removedAt) return;
     const status = cleanStatus({ bot: botId, state, at: this.clock(), ...extra }, this.clock());
@@ -494,7 +508,7 @@ export class RoomWork {
     }
     this.told.delete(id);
     let queued = false;
-    for (const to of p.others(share)) if (p.enqueue(to, body)) queued = true;
+    for (const to of p.others(share)) if ((!only || to === only) && p.enqueue(to, body)) queued = true;
     if (queued) void p.flushOutbox();
   }
   /** Two bots of yours hand work to each other in a room with people: names only, once in a while. */
