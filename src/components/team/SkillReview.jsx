@@ -5,7 +5,7 @@ import { patch } from "../../lib/api.js";
 import { useAction, useResource, useStore } from "../../lib/store.jsx";
 import { BotAvatar, Notice, Spinner, longDay } from "./common.jsx";
 import { useDialogFocus } from "../../lib/useDialogFocus.js";
-import { C, alpha } from "../../lib/theme.js";
+import { C } from "../../lib/theme.js";
 
 // «Revisar pasos» of a skill: what the bot learned, step by step, and what changed
 // since the previous version. Dialog language of the command palette mockup.

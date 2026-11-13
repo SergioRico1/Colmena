@@ -4,7 +4,7 @@ import { PeerAvatar } from "./PeerAvatar.jsx";
 import { del, patch, post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
-import { C, alpha } from "../../../lib/theme.js";
+import { C } from "../../../lib/theme.js";
 
 // Who is in a group (design/V2Personas.dc.html, paso roles): the owner renames it, chooses
 // each person's role (Miembro, or Invitado: writes and reads, wakes no bot), takes someone

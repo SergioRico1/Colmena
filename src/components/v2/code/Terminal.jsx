@@ -4,7 +4,7 @@ import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { del, get, post } from "../../../lib/api.js";
-import { C, MONO } from "./parts.jsx";
+import { MONO } from "./parts.jsx";
 import { addContext } from "./Extras.jsx";
 import { TERM, watchXtermTheme, xtermTheme } from "../../../lib/palette4.js";
 

@@ -6,7 +6,7 @@ import { roomUrl, shortDate } from "../../lib/format.js";
 import { navigate } from "../../lib/router.jsx";
 import { useAction, useResource, useStore } from "../../lib/store.jsx";
 import { useDialogFocus } from "../../lib/useDialogFocus.js";
-import { C, alpha } from "../../lib/theme.js";
+import { C } from "../../lib/theme.js";
 
 // «Qué ha aprendido» (Hermes /journey): what a bot learned, newest first, each with the room it
 // came from; memories can be corrected or forgotten in place. «Enséñale» (Hermes /learn) opens a

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, File, FileImage, FileSpreadsheet, FileText, Lock, Presentation, RotateCw, X } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
-import { C, alpha } from "../../../lib/theme.js";
+import { C } from "../../../lib/theme.js";
 
 // Files shared in a conversation with people (design/V2Personas.dc.html, paso archivo): a
 // card in the message and a viewer over the conversation. The viewer only shows plain data

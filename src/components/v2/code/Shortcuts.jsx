@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "../../Icon.js";
 import { get, put } from "../../../lib/api.js";
-import { C, HEAD, MONO, SHEET } from "./parts.jsx";
+import { C, MONO, SHEET } from "./parts.jsx";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // Keyboard shortcuts of «Código» (T3 Code keybindings): defaults you can change one by one.
