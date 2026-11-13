@@ -43,7 +43,7 @@ export function waitingItems(store, now = Date.now(), { approvals = null } = {})
   const covered = new Set(pending.map((a) => a.missionId));
   for (const a of pending) {
     if (isSnoozed(a, now)) continue;
-    items.push({ kind: "approval", id: a.id, missionId: a.missionId ?? null, roomId: a.missionId ?? null, botId: a.botId ?? null, what: a.kind || "permission", at: a.createdAt ?? null });
+    items.push({ kind: "approval", id: a.id, missionId: a.missionId ?? null, roomId: a.missionId ?? a.roomId ?? null, botId: a.botId ?? null, what: a.kind || "permission", at: a.createdAt ?? null });
   }
   for (const m of store.columns("missions", ["id", "status", "archived", "botIds", "conversation", "updatedAt", "createdAt"])) {
     if (!DECIDE.has(m.status) || m.archived || covered.has(m.id)) continue;

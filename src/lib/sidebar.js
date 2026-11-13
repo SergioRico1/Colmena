@@ -56,9 +56,12 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
   for (const r of listed || []) {
     if (!inTeam(r)) continue;
     const { missionId, shareId, href, title } = roomLinks(r, missions);
-    const waiting = (missionId && waitingIn.get(missionId)) || 0;
+    // What waits is answered in the sala (its mission) or, before the room has one, in the room.
+    const waiting = [...new Set([r.id, missionId, shareId].filter(Boolean))].reduce((n, key) => n + (waitingIn.get(key) || 0), 0);
     if (!waiting && time(r.snoozedUntil) > now) continue;
-    rooms.push({ id: r.id, href, title, unread: r.unread || 0, waiting, at: time(r.lastAt), ...(shareId ? { withPeople: true } : {}) });
+    // Bots at work here, anyone's (`activity` of the room: docs/CONTRACT.md §18).
+    const working = (r.activity || []).filter((a) => a.state === "working" || a.state === "thinking").length;
+    rooms.push({ id: r.id, href, title, unread: r.unread || 0, waiting, at: time(r.lastAt), ...(working ? { working } : {}), ...(shareId ? { withPeople: true } : {}) });
   }
   for (const m of listed ? [] : listRows(missions)) {
     if (!isSala(m) || m.incognito || !inTeam(m)) continue;
@@ -120,7 +123,7 @@ export const waitingLabel = (n) => (n === 1 ? "1 cosa te espera" : `${n} cosas t
  */
 export function foldRooms(rooms = [], { limit = ROOMS_SHOWN, current = null, all = false } = {}) {
   if (all || rooms.length <= limit) return { shown: rooms, hidden: 0 };
-  const lively = (r) => r.unread > 0 || r.waiting > 0 || r.href === current;
+  const lively = (r) => r.unread > 0 || r.waiting > 0 || r.working > 0 || r.href === current;
   const keep = new Set(rooms.filter(lively).map((r) => r.id));
   for (const r of rooms.filter((x) => !lively(x)).sort((a, b) => (b.at || 0) - (a.at || 0))) {
     if (keep.size >= limit) break;
@@ -151,6 +154,7 @@ export function rowLabel(kind, row) {
   const parts = [kind === "room" ? row.title : row.name, kind === "room" ? "sala" : kind === "bot" ? "bot" : "persona"];
   if (kind === "bot") parts.push(STATE_WORD[row.state] || STATE_WORD.free);
   if (kind === "person") { parts.push(row.presence === "online" ? "en línea" : "sin conexión"); if (row.status) parts.push(STATUS_WORD[row.status]); }
+  if (kind === "room" && row.working > 0) parts.push(row.working === 1 ? "un bot trabajando" : `${row.working} bots trabajando`);
   if (row.unread > 0) parts.push(`${row.unread} sin leer`);
   if (row.waiting > 0 && row.state !== "waiting") parts.push("te espera");
   return parts.join(", ");

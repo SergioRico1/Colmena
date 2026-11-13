@@ -74,6 +74,13 @@ async function setup(t) {
   return { store, state: async () => (await fetch(origin + "/api/state")).json() };
 }
 
+test("a request to your bot in a room that has no sala yet waits in that room", async (t) => {
+  const { store } = await setup(t);
+  store.put("approvals", { id: "roomask:r1", missionId: null, roomId: "room-1", botId: "vera", kind: "question", tool: "room_request", status: "pending", title: "Marta pide a Vera", createdAt: ago(3), roomRequest: { id: "r1", roomId: "room-1" } });
+  store.put("approvals", { id: "roomask:r2", missionId: "m-sala", roomId: "room-2", botId: "vera", kind: "question", tool: "room_request", status: "pending", title: "Luis pide a Vera", createdAt: ago(2), roomRequest: { id: "r2", roomId: "room-2" } });
+  assert.deepEqual(waitingItems(store, NOW).map((i) => [i.id, i.missionId, i.roomId]), [["roomask:r1", null, "room-1"], ["roomask:r2", "m-sala", "m-sala"]]);
+});
+
 test("waitingItems: what waits for the person, each with its room, its bot and its kind", async (t) => {
   const { store } = await setup(t);
   seed(store);

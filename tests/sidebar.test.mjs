@@ -103,6 +103,30 @@ test("rooms come from the state's room list: a sala, a room with people or both 
   assert.deepEqual(sidebarModel(old, { now: NOW }).rooms.map((r) => r.title), ["campaña-primavera", "informe-q3", "obra-nueva"]);
 });
 
+test("a room row says a bot is working there, and what waits for you in a room that has no sala yet", () => {
+  const s = snapshot();
+  s.rooms = [
+    { id: "g-obra", title: "obra-nueva", shareId: "g-obra", lastAt: ago(2), activity: [{ owner: "lucia", bot: "vera", state: "working" }, { owner: "marta", bot: "atlas", state: "thinking" }, { owner: "marta", bot: "nora", state: "waiting" }] },
+    { id: "g-gen", title: "general", shareId: "g-gen", lastAt: ago(300), activity: [{ owner: "lucia", bot: "vera", state: "done" }] },
+  ];
+  // The one list (server/waiting.mjs): a request to your bot in a room that never had a sala.
+  s.waiting = [{ kind: "approval", id: "roomask:1", missionId: null, roomId: "g-gen", botId: "vera", what: "question", at: null }, { kind: "errand", id: "e1", missionId: null, roomId: "dm-lucia", botId: "vera", what: "errand", at: null }];
+  s.approvals.push({ id: "roomask:1", missionId: null, roomId: "g-gen", botId: "vera", kind: "question", status: "pending" });
+  const { rooms, people } = sidebarModel(s, { now: NOW });
+  const by = Object.fromEntries(rooms.map((r) => [r.id, r]));
+  assert.deepEqual([by["g-obra"].working, by["g-obra"].waiting], [2, 0]);
+  assert.deepEqual([by["g-gen"].working ?? 0, by["g-gen"].waiting], [0, 1]);
+  assert.equal(rowLabel("room", by["g-obra"]), "obra-nueva, sala, 2 bots trabajando");
+  assert.equal(rowLabel("room", { title: "x", working: 1, unread: 3, waiting: 1 }), "x, sala, un bot trabajando, 3 sin leer, te espera");
+  // A person row carries what waits in your conversation with them (an errand asked of your bot).
+  assert.deepEqual(people.map((p) => [p.name, p.waiting]), [["Lucía Paz", 1], ["Marta Gil", 0]]);
+  assert.equal(rowLabel("person", people[0]), "Lucía Paz, persona, en línea, 2 sin leer, te espera");
+  // A room with a bot at work is never folded behind «Ver todas».
+  const many = Array.from({ length: 12 }, (_, i) => ({ id: "r" + i, href: "/sala/r" + i, title: "r" + i, unread: 0, waiting: 0, at: 100 - i }));
+  many[11].working = 1;
+  assert.ok(foldRooms(many).shown.some((r) => r.id === "r11"));
+});
+
 test("rooms: unread counts mentions and messages not opened; waiting counts what Inicio lists there", () => {
   const { rooms } = sidebarModel(snapshot(), { now: NOW });
   const by = Object.fromEntries(rooms.map((r) => [r.id, r]));

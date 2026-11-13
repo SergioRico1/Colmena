@@ -14,6 +14,7 @@ import { reducedMotion } from "../../lib/motion.js";
 import { statusText } from "../../lib/peers.js";
 import { failure } from "../../lib/undoToast.js";
 import { realTeams } from "../../lib/teams.js";
+import WorkingDots from "../room/Dots.jsx";
 import { STATE_WORD, STATUS_WORD, conversationPath, foldRooms, rememberConversation, rowLabel, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md): it names who you
@@ -230,7 +231,7 @@ export default function Sidebar({ active = "inicio" }) {
         {menuLine}
       </>}
       {peopleOff ? (
-        <a role="menuitem" href="/ajustes/personas" onClick={() => setMenu(null)} className="v3-menuitem" style={menuItem}>{"Conectar con otras personas"}</a>
+        <a role="menuitem" href="/ajustes/contactos" onClick={() => setMenu(null)} className="v3-menuitem" style={menuItem}>{"Conectar con otras personas"}</a>
       ) : <>
         <button type="button" role="menuitem" onClick={() => openTeamSheet("create")} className="v3-menuitem" style={menuItem}>{team.solo ? "Crear un equipo" : "Crear otro equipo"}</button>
         <button type="button" role="menuitem" onClick={() => openTeamSheet("join")} className="v3-menuitem" style={menuItem}>{"Unirme con un código"}</button>
@@ -272,6 +273,7 @@ export default function Sidebar({ active = "inicio" }) {
       <a key={r.id} href={r.href} aria-label={rowLabel("room", r)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={rowStyle(on, 32)}>
         <span aria-hidden="true" style={{ flex: "none", width: "18px", textAlign: "center", font: "600 14px/1 'Geist', sans-serif", color: r.unread ? INK : MUTED }}>{"#"}</span>
         <span style={{ ...ellipsis, fontWeight: r.unread ? "700" : on ? "600" : "400", color: r.unread || on ? INK : TEXT }}>{r.title}</span>
+        {r.working ? <span title={r.working === 1 ? "Un bot está trabajando aquí" : `${r.working} bots están trabajando aquí`} style={{ flex: "none", display: "inline-flex" }}>{calm ? <span aria-hidden="true" style={{ fontSize: "12px", color: MUTED }}>{"trabajando"}</span> : <WorkingDots />}</span> : null}
         {r.unread ? <Count n={r.unread} /> : null}
         {r.waiting ? <Count n={r.waiting} honey /> : null}
       </a>
@@ -308,6 +310,7 @@ export default function Sidebar({ active = "inicio" }) {
         <span style={{ ...ellipsis, fontWeight: p.unread ? "700" : on ? "600" : "400", color: p.unread || on ? INK : p.presence === "online" ? TEXT : MUTED }}>{p.name}</span>
         {p.status ? <span aria-hidden="true" style={{ flex: "none", fontSize: "12px", color: MUTED }}>{STATUS_WORD[p.status]}</span> : null}
         {p.unread ? <Count n={p.unread} /> : null}
+        {p.waiting ? <Count n={p.waiting} honey /> : null}
       </a>
     );
   };
@@ -339,7 +342,7 @@ export default function Sidebar({ active = "inicio" }) {
       })}
       {model.people.map((p) => {
         const on = p.href === here;
-        return <a key={p.id} href={p.href} aria-label={rowLabel("person", p)} title={[p.name, p.status ? STATUS_WORD[p.status] : null].filter(Boolean).join(" · ")} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><PersonMark person={p} size={24} ring={on ? "#FFFFFF" : "#ECECE7"} />{p.unread ? railDot(false) : null}</a>;
+        return <a key={p.id} href={p.href} aria-label={rowLabel("person", p)} title={[p.name, p.status ? STATUS_WORD[p.status] : null].filter(Boolean).join(" · ")} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><PersonMark person={p} size={24} ring={on ? "#FFFFFF" : "#ECECE7"} />{p.waiting ? railDot(true) : p.unread ? railDot(false) : null}</a>;
       })}
     </>
   );
@@ -376,7 +379,7 @@ export default function Sidebar({ active = "inicio" }) {
         </div>
       )}
 
-      {groupHead("personas", "Personas", model.people.length, "Invitar a una persona", () => (peopleOff ? navigate("/ajustes/personas") : setSheet("invitar")), { unread: sum(model.people, "unread"), waiting: 0 })}
+      {groupHead("personas", "Personas", model.people.length, "Invitar a una persona", () => (peopleOff ? navigate("/ajustes/contactos") : setSheet("invitar")), { unread: sum(model.people, "unread"), waiting: sum(model.people, "waiting") })}
       {closed.personas ? null : (
         <div id="v3-group-personas" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
           {model.people.map(personRow)}
