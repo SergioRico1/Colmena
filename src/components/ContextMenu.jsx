@@ -260,7 +260,7 @@ export default function ContextMenuLayer() {
   return (
     <>
       {/* A text field keeps focus (and its caret) while its menu is open; keys still work. */}
-      {menu ? <MenuSurface key={menu.n} entries={menu.items} label={menu.label || "Acciones"} anchor={menu.anchor} placement={menu.keyboard ? "bottom-start" : "point"} autoFocus={!menu.keep} returnFocus={menu.back} onClose={close} /> : null}
+      {menu ? <MenuSurface key={menu.n} entries={menu.items} label={menu.label || "Acciones"} anchor={menu.anchor} placement={menu.keyboard ? "bottom-start" : "point"} initial={menu.keyboard ? "first" : "none"} autoFocus={!menu.keep} returnFocus={menu.back} onClose={close} /> : null}
       {rename ? <RenameDialog {...rename} onClose={() => setRename(null)} /> : null}
       {forget ? <ForgetDialog missionId={forget.missionId} title={forget.title} onClose={() => setForget(null)} /> : null}
     </>

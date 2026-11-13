@@ -247,6 +247,14 @@ test("mounted: roles, focus in and back, arrows, a toggle, a submenu, a confirma
   assert.deepEqual(log, ["leave", "rename"]);
   assert.equal(menu(), null);
 
+  // A pointer opens it with nothing lit (focus on the menu; ↓ lands on the first item).
+  await act(() => { button.dispatchEvent(Object.assign(new window.Event("click", { bubbles: true, cancelable: true }), { detail: 1 })); });
+  assert.equal(menu().querySelectorAll("[data-active]").length, 0, "no item lit under a pointer that has not moved");
+  assert.equal(document.activeElement, menu());
+  await act(() => { press("ArrowDown"); });
+  assert.equal(document.activeElement, items()[0]);
+  await act(() => { press("Escape"); });
+
   // ↑ on the button opens it on the last item; pressing outside closes it.
   await act(() => { button.dispatchEvent(Object.assign(new window.Event("keydown", { bubbles: true, cancelable: true }), key("ArrowUp"))); });
   assert.equal(document.activeElement.textContent, "Salir de la sala");

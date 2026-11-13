@@ -446,7 +446,7 @@ export default function Sidebar({ active = "inicio" }) {
         <Search size={16} style={{ flex: "none", color: C.text3 }} />
         {folded ? null : <><span style={ellipsis}>{"Ir a…"}</span><span aria-hidden="true" style={{ display: "flex", gap: "3px" }}><Kbd>{"Ctrl"}</Kbd><Kbd>{"K"}</Kbd></span></>}
       </button>
-      <MenuButton label="Nuevo (Ctrl N)" menuLabel="Crear algo nuevo" items={newEntries} open={menu === "new"} onOpenChange={opened("new")} placement={folded ? "bottom-start" : "bottom-end"} className="v4-goto" style={{ ...iconBtn, width: folded ? "40px" : "34px", height: "34px", border: line(), background: C.raised, color: C.text2, boxSizing: "border-box" }} openStyle={{ borderColor: C.lineStrong }}>
+      <MenuButton label="Nuevo (Ctrl N)" menuLabel="Crear algo nuevo" items={newEntries} open={menu === "new"} onOpenChange={opened("new")} placement={folded ? "bottom-start" : "bottom-end"} className="v4-goto" style={{ ...iconBtn, width: folded ? "40px" : "34px", height: "34px", border: line(), background: C.raised, color: C.text2, boxSizing: "border-box" }} openStyle={{ border: `1px solid ${C.lineStrong}` }}>
         <NotePencil size={18} />
       </MenuButton>
     </div>

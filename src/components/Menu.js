@@ -45,13 +45,11 @@ function Row({ row, index, active, onPointer, onPick, expanded, menuId }) {
   const it = row.item;
   const role = itemRole(it);
   const reason = typeof it.disabled === "string" ? it.disabled : null;
-  const end = it.items
-    ? h(ChevronRight, { size: 14, "aria-hidden": "true" })
-    : typeof it.checked === "boolean"
-      ? (it.checked ? h(Check, { size: 16, weight: "bold", "aria-hidden": "true", style: { color: "var(--c-text)" } }) : null)
-      : it.shortcut
-        ? shortcutKeys(it.shortcut).map((k, i) => h("kbd", { key: i }, k))
-        : it.meta != null ? h("span", { className: "c-mi-meta" }, it.meta) : null;
+  // The right side: a submenu's chevron; otherwise the tick of a toggle (its place kept when
+  // off, so the keys line up) and then the shortcut's keys or a short note.
+  const tick = typeof it.checked === "boolean" ? (it.checked ? h(Check, { key: "c", size: 16, weight: "bold", "aria-hidden": "true", style: { color: "var(--c-text)", marginLeft: "4px" } }) : h("span", { key: "c", style: { width: "16px", marginLeft: "4px" } })) : null;
+  const trail = it.shortcut ? shortcutKeys(it.shortcut).map((k, i) => h("kbd", { key: i }, k)) : it.meta != null ? h("span", { key: "m", className: "c-mi-meta" }, it.meta) : null;
+  const end = it.items ? h(ChevronRight, { size: 14, "aria-hidden": "true" }) : tick || trail ? [trail, tick] : null;
   const props = {
     role, tabIndex: -1, "data-row": index, "data-active": active ? "" : undefined,
     className: "c-mi" + (it.danger ? " danger" : "") + (it.hint ? " has-hint" : ""),
@@ -156,12 +154,12 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
   }, [top, live[top]?.at, live[top]?.confirm, autoFocus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setLevel = (i, patch) => setStack((s) => s.slice(0, i + 1).map((lv, j) => (j === i ? { ...lv, ...patch } : lv)));
-  const openSub = (level, index) => {
+  const openSub = (level, index, lit = true) => {
     const item = live[level].rows[index]?.item;
     if (!item?.items || item.disabled) return;
     const rows = menuRows(item.items);
     const node = nodeOf(panels.current[level], index);
-    setStack((s) => [...s.slice(0, level + 1).map((lv, j) => (j === level ? { ...lv, at: index } : lv)), { rows, at: firstItem(rows), anchor: node, label: item.subLabel || item.label, confirm: -1, parent: index }]);
+    setStack((s) => [...s.slice(0, level + 1).map((lv, j) => (j === level ? { ...lv, at: index } : lv)), { rows, at: lit ? firstItem(rows) : -1, anchor: node, label: item.subLabel || item.label, confirm: -1, parent: index }]);
   };
   const back = (level) => {
     if (level <= 0) return;
@@ -182,11 +180,11 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
     run(item, e);
   };
   const hover = (level, index) => {
-    if (live[level].at === index && top === level) return;
+    if (live[level].at === index && (top === level || live[level + 1]?.parent === index)) return;
     if (live[level].confirm >= 0) return;
     const item = live[level].rows[index]?.item;
     setStack((s) => s.slice(0, level + 1).map((lv, j) => (j === level ? { ...lv, at: index } : lv)));
-    if (item?.items && !item.disabled) requestAnimationFrame(() => openSub(level, index));
+    if (item?.items && !item.disabled) requestAnimationFrame(() => openSub(level, index, false));
   };
 
   // Keys are read for the whole document while it is open, so they work with focus in a field.
@@ -248,9 +246,11 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
 export function MenuButton({ items, label, menuLabel, placement = "bottom-end", children, className, style, openStyle = OPEN, title, disabled = false, open: openProp, onOpenChange, buttonProps = null, showTitle = true, header = null }) {
   const [own, setOwn] = useState(null); // null | "first" | "last"
   // Controlled when `open` is given (a shortcut elsewhere opens it): true | "first" | "last" | false.
-  const open = openProp === undefined ? own : openProp ? (typeof openProp === "string" ? openProp : "first") : null;
+  // `how` remembers whether a pointer or a key opened it, for a controlled one too.
+  const how = useRef("first");
+  const open = openProp === undefined ? own : openProp ? (typeof openProp === "string" ? openProp : how.current) : null;
   const button = useRef(null);
-  const setOpen = (v) => { if (openProp === undefined) setOwn(v); onOpenChange?.(v || false); };
+  const setOpen = (v) => { how.current = v || "first"; if (openProp === undefined) setOwn(v); onOpenChange?.(v || false); };
   const menuId = "mb" + useId().replace(/:/g, "");
   const entries = open ? (typeof items === "function" ? items() : items) : null;
   const onKeyDown = (e) => {
@@ -261,7 +261,8 @@ export function MenuButton({ items, label, menuLabel, placement = "bottom-end", 
     h("button", {
       ref: button, type: "button", className, disabled, title: showTitle ? (title ?? label) : title,
       "aria-label": label, "aria-haspopup": "menu", "aria-expanded": open ? "true" : "false", "aria-controls": open ? menuId : undefined,
-      onClick: () => setOpen(open ? null : "first"), onKeyDown,
+      // A pointer opens it with nothing lit (the pointer picks); a key, on the first item.
+      onClick: (e) => setOpen(open ? null : e?.detail ? "none" : "first"), onKeyDown,
       style: open ? { ...style, ...openStyle } : style,
       ...buttonProps,
     }, children),
@@ -285,6 +286,6 @@ export function useContextMenu(build) {
     const target = e.currentTarget;
     setState({ ...spec, anchor: keyboard ? target.getBoundingClientRect() : { x: e.clientX, y: e.clientY }, back: document.activeElement, keyboard });
   }, [build]);
-  const menu = state ? h(MenuSurface, { entries: state.items, label: state.label, anchor: state.anchor, placement: state.keyboard ? "bottom-start" : "point", returnFocus: state.back, onClose: () => setState(null) }) : null;
+  const menu = state ? h(MenuSurface, { entries: state.items, label: state.label, anchor: state.anchor, placement: state.keyboard ? "bottom-start" : "point", initial: state.keyboard ? "first" : "none", returnFocus: state.back, onClose: () => setState(null) }) : null;
   return { onContextMenu, menu, open: !!state, close: () => setState(null) };
 }
