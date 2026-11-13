@@ -1459,7 +1459,7 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
             </div>
           );
         })}
-        <a href={`/misiones/${mission.id}`} style={{ marginTop: "8px", fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{"Ver la línea de tiempo completa"}</a>
+        <a href={`/encargo/${mission.id}`} style={{ marginTop: "8px", fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{"Ver la línea de tiempo completa"}</a>
       </div>
       </div>
     </PanelFrame>

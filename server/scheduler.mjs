@@ -76,7 +76,7 @@ export class Scheduler {
     }
     if (rule.blockedBy !== "config" || rule.error !== missing) {
       try {
-        this.notifier.notify({ kind: "failed", botId: rule.botId, title: "«" + rule.name + "» no puede ejecutarse", text: missing, url: "/automatizaciones?id=" + rule.id });
+        this.notifier.notify({ kind: "failed", botId: rule.botId, title: "«" + rule.name + "» no puede ejecutarse", text: missing, url: "/trabajo/rutinas?id=" + rule.id });
       } catch {}
     }
     return { rule: this.set(rule, { state: "blocked", blockedBy: "config", error: missing }), missing };
@@ -459,7 +459,7 @@ export class Scheduler {
     });
     this.note(rule.id, { kind: "loop", text: "Parada: «" + cleanHeader(event.summary || "lo mismo", 120) + "» la disparó más de " + LOOP.limit + " veces en un día" });
     try {
-      this.notifier.notify({ kind: "needs", botId: rule.botId, title: "He parado «" + rule.name + "»", text: LOOP_TEXT, url: "/automatizaciones?id=" + rule.id, extra: { resume: { automationId: rule.id } } });
+      this.notifier.notify({ kind: "needs", botId: rule.botId, title: "He parado «" + rule.name + "»", text: LOOP_TEXT, url: "/trabajo/rutinas?id=" + rule.id, extra: { resume: { automationId: rule.id } } });
     } catch {}
   }
   /** Switches a rule stopped by a brake back on («Reanudar»); it counts again from now. */

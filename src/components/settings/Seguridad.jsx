@@ -133,7 +133,7 @@ export default function Seguridad() {
                       <td style={{ ...cellStyle(last), fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-caption)", color: "var(--c-text-3)", whiteSpace: "nowrap" }}>{dateTime(a.decidedAt || a.createdAt)}</td>
                       <td style={cellStyle(last)}><span style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "600" }}>{b ? <BotAvatar bot={b} size={22} /> : null}{b?.name || "—"}</span></td>
                       <td style={cellStyle(last)}>
-                        {a.missionId ? <a href={`/misiones/${encodeURIComponent(a.missionId)}`}>{a.title || a.summary || "Acción"}</a> : a.title || a.summary || "Acción"}
+                        {a.missionId ? <a href={`/encargo/${encodeURIComponent(a.missionId)}`}>{a.title || a.summary || "Acción"}</a> : a.title || a.summary || "Acción"}
                         {a.denyReason ? <span style={{ display: "block", marginTop: "2px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Motivo: " + a.denyReason}</span> : null}
                       </td>
                       <td style={cellStyle(last)}><span style={{ padding: "3px 8px", borderRadius: "var(--r-xs)", fontSize: "var(--t-caption)", fontWeight: "600", ...d.style }}>{d.label}</span></td>

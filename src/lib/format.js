@@ -35,7 +35,7 @@ export function roomUrl(m) {
   if (m.mode === "debate" && m.status === "awaiting_choice") return `/sala/${m.id}/debate`;
   return `/sala/${m.id}`;
 }
-export const missionUrl = (m) => `/misiones/${m.id}`;
+export const missionUrl = (m) => `/encargo/${m.id}`;
 /** How a mission is cited («en …»): «#slug» only for a room; a task or a chat by its title. */
 export const placeName = (m) => (!m ? "" : missionKind(m) === "sala" ? "#" + (m.room || m.title || "sala") : m.title || (m.conversation ? "Conversación" : "Tarea"));
 

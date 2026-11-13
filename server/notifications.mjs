@@ -381,7 +381,7 @@ export class Notifier {
     const signature = createHash("sha256").update(keys.join("|")).digest("hex").slice(0, 32);
     const last = this.store.list("notifications").reverse().filter((n) => n.kind === "digest" && !n.weekly).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
     if (last?.signature === signature) return null; // nothing new since the last round
-    const url = f.approvals.length ? "/bandeja" : f.missions.length ? missionUrl(f.missions[0]) : f.automations.length ? "/automatizaciones?id=" + f.automations[0].id : "/biblioteca";
+    const url = f.approvals.length ? "/bandeja" : f.missions.length ? missionUrl(f.missions[0]) : f.automations.length ? "/trabajo/rutinas?id=" + f.automations[0].id : "/biblioteca";
     return this.notify({
       kind: "digest",
       missionId: f.missions[0]?.id || f.approvals[0]?.missionId || null,

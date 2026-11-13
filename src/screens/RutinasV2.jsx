@@ -131,6 +131,8 @@ export default function RutinasV2() {
   const [filter, setFilter] = useState({ encargos: "encargo", "tareas-fijas": "encargo", recordatorios: "recordatorio" }[query.pestana] || "todas");
   const [open, setOpen] = useState(query.nueva === "1");
   useEffect(() => { if (query.nueva === "1") setOpen(true); }, [query.nueva]);
+  // ?id=<rule> (links from notices and the old /automatizaciones page) opens that routine's editor.
+  useEffect(() => { if (query.id) openChange(query.id); }, [query.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [orderForm, setOrderForm] = useState(false);
   const [editing, setEditing] = useState(null);
   // The routine being changed inline, and a counter to reload it with what is saved now.
@@ -227,7 +229,7 @@ function ruleRow(a, bot, act, missions, openChange) {
     menu: [
       stopped ? ["Reanudar", () => act.act(() => patch(`/automations/${id}`, { enabled: true }))] : null,
       ["Cambiar la rutina", () => openChange(a.id)],
-      ["Ver y cambiar los detalles", () => (type === "webhook" ? openChange(a.id, "when") : navigate(`/automatizaciones?id=${id}`))],
+      type === "webhook" ? ["Ver y cambiar los detalles", () => openChange(a.id, "when")] : null,
       ["Probar ahora", () => act.act(() => post(`/automations/${id}/test`, {}))],
       a.lastMissionId ? ["Ver la última vez", () => navigate(`/encargo/${encodeURIComponent(a.lastMissionId)}`)] : null,
       ["Borrar", () => later({ id: "automation:" + a.id, keys: ["automation:" + a.id], text: "Rutina borrada", error: "No se pudo borrar la rutina", run: () => act.act(() => del(`/automations/${id}`)) })],
@@ -250,7 +252,7 @@ function orderRow(o, bot, automations, act, setEditing) {
     toggle: () => act.act(() => patch(`/standing-orders/${id}`, { active: !o.active })),
     menu: [
       ["Editar", () => setEditing(o.id)],
-      rule ? ["Ver la rutina que creó", () => navigate(`/automatizaciones?id=${encodeURIComponent(rule.id)}`)] : o.schedule ? ["Crear la rutina", () => act.act(() => post(`/standing-orders/${id}/automation`, {}))] : null,
+      rule ? ["Ver la rutina que creó", () => navigate(`/trabajo/rutinas?id=${encodeURIComponent(rule.id)}`)] : o.schedule ? ["Crear la rutina", () => act.act(() => post(`/standing-orders/${id}/automation`, {}))] : null,
       ["Borrar", () => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Tarea fija «${o.title}» borrada`, error: "No se pudo borrar la tarea fija", run: () => act.act(() => del(`/standing-orders/${id}`)) })],
     ].filter(Boolean),
   };

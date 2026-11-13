@@ -152,7 +152,7 @@ test("b) the same thing for the fourth time in a day stops the rule, tells you o
   assert.equal(created.length, 4, "the fourth run never started");
   assert.equal(notices.length, 1);
   assert.equal(notices[0].text, LOOP_TEXT);
-  assert.match(notices[0].url, /automatizaciones\?id=r$/);
+  assert.match(notices[0].url, /trabajo\/rutinas\?id=r$/);
   // Stopped: nothing fires, and nothing else is said.
   assert.equal(send("r", file("enero.pdf", 5)).status, "off");
   assert.equal(notices.length, 1);

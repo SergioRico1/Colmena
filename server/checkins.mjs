@@ -116,10 +116,10 @@ export function linkFor(store, url) {
   if (room) {
     const slug = decodeURIComponent(room[1]);
     const m = store.list("missions").find((x) => x.id === slug || x.room === slug);
-    return m ? missionHref(m) : "/misiones";
+    return m ? missionHref(m) : "/trabajo";
   }
   if (text === "/objetivos") return "/trabajo/objetivos";
-  return ["/bandeja", "/trabajo/objetivos", "/automatizaciones", "/misiones"].includes(text) ? text : "/bandeja";
+  return ["/bandeja", "/trabajo/objetivos", "/trabajo/rutinas", "/trabajo"].includes(text) ? text : "/bandeja";
 }
 
 /** Settings + due check: runs when enabled and `everyHours` passed since the last check. */

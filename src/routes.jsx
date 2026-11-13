@@ -42,11 +42,11 @@ export const routes = [
   { path: "/personas/como-funciona", screen: "PeopleHelp" },
   { path: "/sala/:id/directo", screen: "Room" },
   { path: "/sala/:id/debate", screen: "DebateV2" },
-  { path: "/misiones", screen: "Misiones" },
+  { path: "/misiones", screen: "Tareas" }, // the old list of tasks: now Trabajo
   { path: "/misiones/:id", screen: "Encargo" },
   { path: "/objetivos", screen: "ObjetivosV2" },
   { path: "/objetivos/:id", screen: "ObjetivosV2" },
-  { path: "/automatizaciones", screen: "Automatizaciones" },
+  { path: "/automatizaciones", screen: "RutinasV2" }, // the old list of rules: now Trabajo › Rutinas (?id= opens one)
   { path: "/automatizaciones/disparadores", screen: "RutinasV2" },
   { path: "/equipo", screen: "ColmenaV2" },
   { path: "/equipo/nuevo", screen: "ColmenaV2" },
@@ -60,7 +60,6 @@ export const routes = [
   // Sections (/ajustes/avisos…) and the detail pages that live below one (ordenador, personas, seguridad).
   { path: "/ajustes/:section", screen: "AjustesV2" },
   { path: "/permisos/:id", screen: "Permissions" },
-  { path: "/mapa", screen: "Mapa" },
   { path: "/rapida", screen: "QuickAsk" },
   { path: "/_design", screen: "DesignGallery" },
   { path: "/_design/:name", screen: "DesignGallery" },

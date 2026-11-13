@@ -10,8 +10,8 @@ const base = process.argv[2] || "http://localhost:4319";
 const filter = process.argv[3] || "";
 const pages = [
   ["Main", "/"], ["Bandeja", "/bandeja"], ["EditarEnvio", "/bandeja/ap-send/editar"], ["Chat", "/chat/nora?c=m-chat"],
-  ["Sala", "/sala/m-q3"], ["Debate", "/sala/m-camp/debate"], ["EnVivo", "/sala/m-fact/directo"], ["Misiones", "/misiones"],
-  ["Mision", "/misiones/m-q3"], ["Automatizaciones", "/automatizaciones"], ["Disparadores", "/automatizaciones/disparadores"],
+  ["Sala", "/sala/m-q3"], ["Debate", "/sala/m-camp/debate"], ["EnVivo", "/sala/m-fact/directo"],
+  ["Mision", "/misiones/m-q3"], ["Disparadores", "/automatizaciones/disparadores"],
   ["Equipo", "/equipo"], ["NuevoBot", "/equipo/nuevo"], ["NuevoBotAjusta", "/equipo/nuevo/ajusta"], ["Bot", "/equipo/tomas"],
   ["Biblioteca", "/biblioteca"], ["Ajustes", "/ajustes"], ["AjustesIA", "/ajustes/ia"], ["Bienvenida", "/bienvenida"],
   ["Connections", "/ajustes/conexiones"], ["Objetivos", "/objetivos"], ["Comandos", null],

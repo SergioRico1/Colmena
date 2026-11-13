@@ -189,7 +189,7 @@ export default function CommandPalette() {
       icon: chat ? (owner ? botTile(owner) : iconTile(MessageCircle)) : isSala(m) ? glyph("#") : glyph("✓"),
       title: <Highlight text={name} query={plain} />,
       meta: [chat ? m.lastLine : m.room && m.title !== m.room ? m.title : null, m.statusLabel, when].filter(Boolean).join(" · "),
-      run: () => go(m.status ? roomUrl(m) : `/misiones/${m.id}`),
+      run: () => go(m.status ? roomUrl(m) : `/encargo/${m.id}`),
       preview: {
         kind: chat ? "Chat" : m.status === "completed" ? "Tarea · hecha" : "Tarea · " + String(m.statusLabel || "").toLowerCase(),
         title: chat ? m.title || "Chat" : m.title || m.room, desc: (chat ? m.lastLine : m.activityLine) || m.prompt || "",

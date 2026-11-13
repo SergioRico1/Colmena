@@ -65,6 +65,6 @@ test("check-in links open the real room, not its #name", async (t) => {
   store.put("missions", { id: "m-1", room: "planes-valladolid", title: "Planes", kind: "sala", status: "waiting" });
   assert.equal(linkFor(store, "/sala/planes-valladolid"), "/sala/m-1");
   assert.equal(linkFor(store, "/sala/#planes-valladolid"), "/sala/m-1");
-  assert.equal(linkFor(store, "/sala/no-existe"), "/misiones");
+  assert.equal(linkFor(store, "/sala/no-existe"), "/trabajo");
   assert.equal(linkFor(store, "https://evil.example"), "/bandeja");
 });

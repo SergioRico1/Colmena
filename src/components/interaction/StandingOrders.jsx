@@ -146,7 +146,7 @@ export default function StandingOrdersCard({ bot }) {
           </dl>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", paddingTop: "4px" }}>
             {o.automationId ? (
-              <a href={`/automatizaciones?id=${encodeURIComponent(o.automationId)}`} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 12px", background: "var(--c-ok-soft)", border: "0", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
+              <a href={`/trabajo/rutinas?id=${encodeURIComponent(o.automationId)}`} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 12px", background: "var(--c-ok-soft)", border: "0", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
                 <Check size={13} weight="bold" />
                 Automatizado · ver
               </a>
