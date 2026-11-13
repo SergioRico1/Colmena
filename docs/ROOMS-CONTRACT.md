@@ -311,6 +311,29 @@ are skipped; `injectLateAnswers` adds the owner's late answer to a question of t
 `composeInstructions` leaves out memory, profile, standing orders, the skill index and the sala's
 slug. Attachments never reach a request turn (`Rooms#send` refuses them in a room with people).
 
+**A request turn's prompt, exactly** (`soul.mjs › composeInstructions` with `mission.peerErrand`):
+
+1. the SOUL every bot starts with (`renderSoulTemplate`: its name and role), never `SOUL.md` as
+   edited: the owner edits it by hand, and an approved proposal of the learning loop
+   (`learning.mjs › proposeSoulChange`) is written from the owner's own conversations, so it can
+   carry what is theirs;
+2. the AGENTS rules with the bot's autonomy;
+3. «# Identidad»: «Eres <bot>, <its role>. Forma: <shape>. Trabajas para <owner's name>.», without
+   the owner's role (`settings.userRole`) or the space's name (`settings.spaceName`);
+4. «# Personalidad» from the bot's sliders, when set;
+5. Colmena's fixed sections (questions, reactions, speed, sending, finishing, the latest word,
+   code, talking while working), «# Habilidades activas: Ninguna en este turno.» and a fixed
+   «# Memoria» note saying there is none here;
+6. «# Contexto»: today's date and the time zone of the owner's computer (and the mission's
+   «ask before sending» line when set), never the sala's `#slug`;
+7. `OTHER_PERSON_NOTE` («# Petición de otra persona»), then the tools note and the web search
+   note when they apply.
+
+Never: «# Tus instrucciones» (`bot.instructions`), the memory digest, USER.md, standing orders,
+the skill index, related memories. Its input is one message, as above (`requestHistory`). The
+tool-less answer to another person's mention (`peers/bots.mjs › sharedInstructions` with
+`forOther`) follows the same rule for the SOUL and «Tus instrucciones».
+
 **Questions.** `ask_user` is unchanged (a local approval of the owner). `ask_room {question}`
 exists only in a step with `roomAsk` (`Runtime#stepTools`): it posts the question as a plain
 message of the bot addressed to the requester and the step ends without relaying its closing

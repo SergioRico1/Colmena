@@ -270,31 +270,37 @@ export function nowNote(at = new Date()) {
 
 export function composeInstructions(store, bot, { mission = null, autonomy = null, extra = "", directory = dataDirectory } = {}) {
   const settings = store.get("settings", "main") || {};
+  // A turn for another person's request (an errand, or a request in a shared room): what the
+  // owner's bots remember and the owner's standing orders stay out of the prompt. Telling the
+  // bot not to reveal them is not enough: what it never reads it cannot be talked into saying.
+  // Nor does the owner's free text about the bot: «Tus instrucciones», the SOUL as edited (by
+  // hand or by an approved proposal of the learning loop, which is written from the owner's own
+  // conversations), the owner's role and the space's name. The bot keeps its name, role, shape
+  // and personality, and the SOUL every bot starts with (docs/ROOMS-CONTRACT.md › «A request turn»).
+  const forOther = !!mission?.peerErrand;
   let soul;
   try {
     if (directory) ensureWorkspace(bot, { store, directory });
-    soul = readSoul(bot.id, { directory, bot }) || renderSoulTemplate(bot);
+    soul = forOther ? renderSoulTemplate(bot) : readSoul(bot.id, { directory, bot }) || renderSoulTemplate(bot);
   } catch {
     soul = renderSoulTemplate(bot);
   }
   const level = autonomy || autonomyOf(bot);
   const agents = fill(TEMPLATES.agents, { autonomy: AUTONOMY_LABELS[level] });
   const { personal, team, own, meters, profile } = memoryDigest(store, bot, MEMORY_BUDGET, { directory, missionId: mission?.id || null });
-  // A turn for another person's request (an errand, or a request in a shared room): what the
-  // owner's bots remember and the owner's standing orders stay out of the prompt. Telling the
-  // bot not to reveal them is not enough: what it never reads it cannot be talked into saying.
-  const forOther = !!mission?.peerErrand;
   const tagged = !forOther && [...personal, ...team, ...own].some((l) => /\[(?:compruébalo|cómo)\]/.test(l));
   // Skills are the owner's procedures: their names and summaries stay out too.
   const skills = forOther ? [] : skillIndex(store, bot);
-  const parts = [
-    soul.trim(),
-    agents.trim(),
-    "# Identidad\nEres " + bot.name + ", " + bot.role + ". Forma: " + (SHAPES[bot.shape] || bot.shape || "—") +
-      ". Trabajas para " + (settings.userName || "la persona") + (settings.userRole ? " (" + settings.userRole + ")" : "") +
-      " en el espacio «" + (settings.spaceName || "Colmena") + "».",
-    "# Tus instrucciones\n" + String(bot.instructions || "").trim(),
-  ];
+  const identity = "# Identidad\nEres " + bot.name + ", " + bot.role + ". Forma: " + (SHAPES[bot.shape] || bot.shape || "—") +
+    ". Trabajas para " + (settings.userName || "la persona");
+  const parts = forOther
+    ? [soul.trim(), agents.trim(), identity + "."]
+    : [
+      soul.trim(),
+      agents.trim(),
+      identity + (settings.userRole ? " (" + settings.userRole + ")" : "") + " en el espacio «" + (settings.spaceName || "Colmena") + "».",
+      "# Tus instrucciones\n" + String(bot.instructions || "").trim(),
+    ];
   const hints = personalityHints(bot.personality);
   if (hints.length)
     parts.push("# Personalidad\n" + hints.map((h) => "- " + h).join("\n") + "\nEstas preferencias de estilo no cambian tus permisos ni tus límites.");

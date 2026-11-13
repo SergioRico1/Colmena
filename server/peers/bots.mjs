@@ -114,7 +114,7 @@ export class PeerBots {
       const settings = this.store.get("settings", "main") || {};
       const res = await this.runtime.infer({
         model: this.runtime.modelFor(bot, settings.model),
-        instructions: sharedInstructions(this.store, bot, share, this.peers),
+        instructions: sharedInstructions(this.store, bot, share, this.peers, { forOther: !mine }),
         input: [{ role: "user", content: this.turnText(share, message, mine) }],
         tools: [],
         reasoning: this.runtime.reasoningFor?.(bot) || null,
@@ -155,9 +155,11 @@ export class PeerBots {
 }
 
 /** Who a bot is in a shared conversation: its soul and role, never what it knows of you. */
-export function sharedInstructions(store, bot, share, peers) {
+export function sharedInstructions(store, bot, share, peers, { forOther = false } = {}) {
+  // Answering another person: none of the owner's free text about the bot (its SOUL as edited,
+  // «Tus instrucciones»), as in a request turn (soul.mjs composeInstructions).
   let soul;
-  try { soul = readSoul(bot.id, { bot }) || renderSoulTemplate(bot); } catch { soul = renderSoulTemplate(bot); }
+  try { soul = forOther ? renderSoulTemplate(bot) : readSoul(bot.id, { bot }) || renderSoulTemplate(bot); } catch { soul = renderSoulTemplate(bot); }
   const owner = peers.myName();
   const others = share.members.map((m) => m.id).filter((id) => id !== peers.address).map((id) => peers.person(id).name);
   const hints = personalityHints(bot.personality);
@@ -165,7 +167,7 @@ export function sharedInstructions(store, bot, share, peers) {
   return [
     String(soul).trim(),
     "# Identidad\nEres " + bot.name + ", " + (bot.role || "un bot") + ", el bot de " + owner + " en Colmena.",
-    "# Tus instrucciones\n" + String(bot.instructions || "").trim(),
+    ...(forOther ? [] : ["# Tus instrucciones\n" + String(bot.instructions || "").trim()]),
     ...(hints.length ? ["# Personalidad\n" + hints.map((h) => "- " + h).join("\n")] : []),
     "# Conversación compartida\n" +
       "Estás en una conversación de Colmena entre " + owner + " (tu dueño) y " + (others.length ? others.join(", ") : "otra persona") + ". Cada uno está en su ordenador; todo lo que escribas aquí lo leen todos.\n" +

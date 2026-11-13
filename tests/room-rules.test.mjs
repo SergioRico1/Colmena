@@ -13,6 +13,8 @@ import { createPage } from "../server/wiki.mjs";
 import { categoryOf } from "../server/connections.mjs";
 import { appToolNames } from "../server/apptools.mjs";
 import { computerExtraTools } from "../server/computer/wire.mjs";
+import { writeSoul } from "../server/soul.mjs";
+import { sharedInstructions } from "../server/peers/bots.mjs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -602,6 +604,39 @@ test("a request's deliverable of any kind reaches the requester (code and data a
   assert.equal(sergio.store.list("peerMessages").filter((m) => m.local && /otro\.py/.test(m.text)).length, 1, "once");
   assert.equal(logged.filter((m) => /no pudo compartirse/.test(m)).length, 1, "tried once, not once per write of the step");
   assert.ok(!marta.store.list("peerMessages").some((m) => /No he podido/.test(m.text)), "the line never travels");
+});
+
+test("a request turn's prompt keeps the bot's name, role and personality, never the owner's free text: instructions, edited SOUL, role, space name", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  const vera = sergio.store.get("bots", "vera");
+  sergio.store.patch("bots", "vera", { instructions: "INSTRUCCIONES-1212: Sergio está negociando su salida de la empresa.", personality: { tono: 90, detalle: 10, riesgo: 50 } });
+  sergio.store.patch("settings", "main", { userRole: "ROL-3434 en busca de empleo", spaceName: "ESPACIO-5656 privado" });
+  writeSoul("vera", "Eres Vera. SOUL-7878: aprendido de Sergio, que tiene deudas con su socio.", { source: "tú" });
+  // His own turn reads all of it.
+  sergio.reply = () => answer("Para Sergio.");
+  await sergio.rooms.send(room.id, { text: "@Vera hola" });
+  await botAnswer(marta, room, "Para Sergio.");
+  await settle(sergio.runtime);
+  const own = sergio.calls.at(-1).instructions;
+  for (const marker of ["INSTRUCCIONES-1212", "ROL-3434", "ESPACIO-5656", "SOUL-7878"]) assert.ok(own.includes(marker), "his own turn has " + marker);
+  // Marta's request reads none of it, and keeps who the bot is.
+  sergio.reply = () => answer("Para Marta.");
+  await ask(marta, room, sergio, "@Vera ¿quién eres?");
+  await botAnswer(marta, room, "Para Marta.");
+  await settle(sergio.runtime);
+  const theirs = sergio.calls.at(-1).instructions;
+  for (const marker of ["INSTRUCCIONES-1212", "ROL-3434", "ESPACIO-5656", "SOUL-7878", "# Tus instrucciones"]) assert.ok(!theirs.includes(marker), "a request turn never reads " + marker);
+  assert.match(theirs, new RegExp("Eres " + vera.name + ", " + vera.role));
+  assert.match(theirs, /Trabajas para Sergio Rico\./);
+  assert.match(theirs, /# Personalidad\n- Tono cercano/);
+  // The tool-less answer to another person's mention (server/peers/bots.mjs) leaves them out too.
+  const share = sergio.store.get("peerShares", room.id);
+  const toHer = sharedInstructions(sergio.store, sergio.store.get("bots", "vera"), share, sergio.peers, { forOther: true });
+  for (const marker of ["INSTRUCCIONES-1212", "SOUL-7878", "# Tus instrucciones"]) assert.ok(!toHer.includes(marker), "the tool-less answer to her never reads " + marker);
+  assert.match(sharedInstructions(sergio.store, sergio.store.get("bots", "vera"), share, sergio.peers), /INSTRUCCIONES-1212/, "to him it does");
 });
 
 test("«carpetas» for other people's requests is on or off (no per-folder choice) and off unless the owner turns it on", async (t) => {
