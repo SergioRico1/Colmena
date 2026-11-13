@@ -187,7 +187,7 @@ choice open:
   people. One decision (`Rooms#ownTurn`, called from `PeerBots#handle`) for every route. Asking a
   bot to find a meeting slot still goes to meetings. Personal bots («solo para mí») never work in
   a room. The turn is told the room is shared and gets the last 30 messages of the people as
-  outside content.
+  outside content (see «Your own turn in a shared room» below).
 - **What is relayed.** The final answer of every completed step of the shared conversation
   (`Rooms#throughShare`: it has `roomAsk`, or it started at or after `share.createdAt` and the
   message it answers — followed back through a teammate that passed the word or a late answer; for
@@ -266,6 +266,12 @@ standing write grant, no «escribe» access of the bot, no `ownAppTarget`, no au
 write, send and delete is a pending approval of the owner. A turn for another person never merges with one of the
 owner's (`deliverTurn`), is never routed, and a lost one is never given to Atlas.
 
+**Learning** (`server/learning.mjs`). A step with `roomAsk` or `capabilities` (`forOtherStep`)
+is never reviewed: a run whose last step is one is skipped («petición de otra persona»), and
+every review reads only the owner's steps and the owner's messages (`isOtherPerson` rows are
+left out of corrections, evidence, «mensajesDeLaPersona» and «resultado»). Such a step does not
+bump the `toolCalls` counter. Errands run incognito and are never reviewed either.
+
 **Decision 4.** `step.capabilities` (plus `step.roomAsk`, `step.attended`) come from the message
 (`Runtime#messageLimits`) and are inherited by whatever goes on from the step
 (`Runtime#turnLimits`: a teammate it names, a delegate, the turn after a late answer).
@@ -281,10 +287,16 @@ errand between bots) `toolsForStep` ends with an allow-list, closed by default:
 - always (`REQUEST_ALWAYS`): `ask_room`, `ask_user`, `create_deliverable`, `create_document`,
   `create_spreadsheet`, `create_presentation`, `create_image`, `read_deliverable`, `read_file`;
 - by capability (`REQUEST_BY_CAPABILITY`): web → `web_fetch` (and hosted search); carpetas →
-  `list_folder`, `read_folder_file`; apps → `apps_accounts`, `apps_search`, `apps_describe`,
-  `apps_execute`, `apps_table` and the direct app tools (`isAppToolName`); ordenador →
-  `browser_open|read|screenshot|act|fill|submit|download`, `open_app`,
-  `desktop_windows|open|look|do`;
+  `list_folder`, `read_folder_file` over every folder connected to that bot (the setting is
+  on/off, `ERRAND_TOOLS_DEFAULT.carpetas: false`; there is no per-folder choice, in the API
+  or the screen); apps → `apps_accounts`, `apps_search`, `apps_describe`,
+  `apps_execute`, `apps_table` and the direct app tools (`isAppToolName`: the registry of real
+  app tools in `server/apptools.mjs`, never a name that only starts like one); ordenador →
+  `browser_open|read|screenshot|act|fill|submit|download` only, in a browser session of that
+  step's own (`session: "req-<step id>"` on every bridge call, `server/computer/wire.mjs`): an
+  in-memory Electron partition, empty, keyed apart from the bots' persistent one, closed and
+  wiped (`clearStorageData`, `clearCache`) when the step ends (`desktop/browser.cjs`). Never
+  `desktop_*` nor `open_app`;
 - everything else is neither offered nor run, whatever adds it (`extraTools`, `stepTools`, a new
   built-in). `use_tool` and `find_tools` read the same list.
 
@@ -304,6 +316,68 @@ injected (`injectHints`, `injectMessages`, `injectRelays`, `injectBrief`, `injec
 are skipped; `injectLateAnswers` adds the owner's late answer to a question of that very step).
 `composeInstructions` leaves out memory, profile, standing orders, the skill index and the sala's
 slug. Attachments never reach a request turn (`Rooms#send` refuses them in a room with people).
+
+**A request turn's prompt, exactly** (`soul.mjs › composeInstructions` with `mission.peerErrand`):
+
+1. the SOUL every bot starts with (`renderSoulTemplate`: its name and role), never `SOUL.md` as
+   edited: the owner edits it by hand, and an approved proposal of the learning loop
+   (`learning.mjs › proposeSoulChange`) is written from the owner's own conversations, so it can
+   carry what is theirs;
+2. the AGENTS rules with the bot's autonomy;
+3. «# Identidad»: «Eres <bot>, <its role>. Forma: <shape>. Trabajas para <owner's name>.», without
+   the owner's role (`settings.userRole`) or the space's name (`settings.spaceName`);
+4. «# Personalidad» from the bot's sliders, when set;
+5. Colmena's fixed sections (questions, reactions, speed, sending, finishing, the latest word,
+   code, talking while working), «# Habilidades activas: Ninguna en este turno.» and a fixed
+   «# Memoria» note saying there is none here;
+6. «# Contexto»: today's date and the time zone of the owner's computer (and the mission's
+   «ask before sending» line when set), never the sala's `#slug`;
+7. `OTHER_PERSON_NOTE` («# Petición de otra persona»), then the tools note and the web search
+   note when they apply.
+
+Never: «# Tus instrucciones» (`bot.instructions`), the memory digest, USER.md, standing orders,
+the skill index, related memories. Its input is one message, as above (`requestHistory`). The
+tool-less answer to another person's mention (`peers/bots.mjs › sharedInstructions` with
+`forOther`) follows the same rule for the SOUL and «Tus instrucciones».
+
+**Your own turn in a shared room** (any step of a sala in `Rooms#shared` that is not for another
+person: `Runtime#sharedTurn`, hook `runtime.sharedRoom` set by `Rooms#start`).
+
+- *Other people's text.* `Rooms#sharedNoteReport` puts every message of another person, and of
+  any bot, between outside-content marks of its own (`external-content.mjs › conversationReport`,
+  `wrapReport` with `notice: false` after one `EXTERNAL_NOTICE`), with who wrote it said before
+  the marks by the server from the roster («Marta Ruiz, otra persona de la sala (no es tu
+  dueño):»); the owner's own lines go as «Tu dueño, …: «…»». Names, the room's title, file
+  names in code-share prompts, errand askers and bots are header lines cleaned with
+  `cleanLabel` (no quotes, brackets or colons). The same applies to the tool-less answer
+  (`PeerBots#turnText`), a request in the brief delta («Actualización de la misión»: the entry
+  is `outside`, its words wrapped, `tools.mjs › buildMissionBrief`), a reply in the thread of
+  another person's message (`Runtime#threadAbout`), the aside's context and errands.
+- *Flag.* Injection phrases in any of it (`detectInjection`, which now also knows «… (tu dueño)
+  escribió: …») travel as `outsideFound` on the mission message (`addMessage`); the turn that
+  answers it gets `suspicious` (`tool: "sala"`) and `outsideOrigin: true` (`Runtime#outsideFlags`),
+  as does a step whose brief delta brings a flagged request (`injectBrief`) and every teammate it
+  hands the word to (`Runtime#outsideCarried`). So the existing rules apply: no standing rule or
+  reviewer approves what it proposes, and memory, notes and blocks it writes carry the outside mark.
+- *Prompt.* `composeInstructions(…, {shared: true})`: no memory digest, USER.md, standing orders
+  or skill index; `relatedNote` is empty; a fixed «# Memoria» note says why. Tools, instructions
+  and SOUL are the owner's as always. A helper it consults (`ask_bot`) gets the same prompt.
+- *What is relayed.* Before posting, `Rooms#relay` asks `Rooms#privateUses(step)`: the kinds of
+  the owner's things the step read with tools that worked (memory, other conversations — incl.
+  `read_thread` and `mission_brief`, which carry the sala's past —, notes, skills, files, mail
+  and apps, browser or screen, other bots, Código), plus those of a step whose answer it read (the
+  one that handed it the word, earlier bots of the same chain). With any, the answer is held
+  (`step.answerHeld {uses, at}`) and the owner gets a question card `{id: "roomanswer:"+step,
+  tool: "room_answer", kind: "question", stepId: null, summary: «Esta respuesta usa cosas tuyas
+  (…). ¿La comparto en la sala?», options: share|no, roomAnswer: {shareId, stepId, bot, uses}}`,
+  not a red line. `Runtime#answer` closes it without a message (like `roomShare`);
+  `Rooms#answerDecided` (through `RoomWork#changed`) marks `step.answerShared` and relays it as
+  it would have gone. «No» keeps it local. The aside never relays.
+
+  Why this rule and not a simpler one: without memory in the prompt, what the answer can know of
+  the owner came through a tool call, and every such call is in the step's history; so holding
+  exactly those answers closes the planted-instruction scenario whatever the model obeys, and an
+  ordinary question (no lookups of the owner's things) is answered in the room as before.
 
 **Questions.** `ask_user` is unchanged (a local approval of the owner). `ask_room {question}`
 exists only in a step with `roomAsk` (`Runtime#stepTools`): it posts the question as a plain
@@ -331,7 +405,8 @@ own loop guard does.
 
 - `room.status {share, bot, state, at, tools?, ms?}`: `bot` an id, `state` one of thinking,
   working, waiting, limited, done, declined, stopped, failed, throttled, expired; `at` the sender's clock
-  in ms; `tools`/`ms` integers, only with `done`. Built and accepted by `cleanStatus`, which
+  in ms, strictly increasing per (room, bot) on the sender (`RoomWork#say`: two said in the same
+  millisecond would tie, and a receiver keeps only a newer one); `tools`/`ms` integers, only with `done`. Built and accepted by `cleanStatus`, which
   copies those fields and nothing else. `thinking`/`working` are ephemeral (not kept by the
   mailbox, refreshed every 30 s to whoever is connected); the rest are queued like any message.
   Not remembered in `peerSeen`: a status older than the last one known is ignored. The newest
@@ -340,8 +415,14 @@ own loop guard does.
 - `room.handoff {share, from, to, at}`: two bot ids of the sender (pass-the-word, a plan's
   work step, `ask_bot`/`message_bot` through the `thread` records), once a minute per pair.
 - Deliverables made in a step with `roomAsk` (its `deliverable` messages) go as files after the
-  answer (`PeerFiles#sendArtifact`, signed as the bot, `replyTo` the answer). Text deliverables
-  (md, txt, csv) are sent as a file of that format. `POST /api/rooms/:id/share` is the manual way.
+  answer (`PeerFiles#sendArtifact`, signed as the bot, `replyTo` the answer). A deliverable of a
+  format in `FILE_KINDS` travels as such; any other text (code, json, html, svg…, with or
+  without a file) travels as plain text named `<title>.<format>.txt` (`travelName`): every
+  Colmena takes it and nobody receives a file that runs. One that cannot travel (gone, or a
+  file that is not text) is tried once (`roomAsks.unshared`) and leaves the owner a local line
+  in the room («No he podido compartir «…» en la sala: …»; `RoomWork#notShared`, never sent),
+  also when a retry or an approved «Compartir» fails that way. `POST /api/rooms/:id/share` is
+  the manual way.
   Capped (`RoomWork#shareOver`): 3 files and 25 MB per request (`roomAsks.shared`, `sharedBytes`),
   10 files and 100 MB per requester and day. What is over stays (`roomAsks.kept`) and asks the
   owner: approval `{id: "roomshare:"+ask, kind: "question", tool: "room_share", options: share|no,

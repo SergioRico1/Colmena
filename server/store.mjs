@@ -310,6 +310,8 @@ export class Store {
       .map((r) => JSON.parse(r.data));
   }
   get(kind, id) {
+    // An id that is not text (a model's missing or wrong-typed argument) names no record.
+    if (typeof id !== "string" && !Number.isFinite(id)) return null;
     const row = this.sql("SELECT data FROM records WHERE kind=? AND id=?").get(kind, id);
     return row ? this.decode(kind, id, row.data) : null;
   }

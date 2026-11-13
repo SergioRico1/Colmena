@@ -334,6 +334,7 @@ export class RoomWork {
       const mission = this.rooms.missionFor(room, [bot.id]);
       if (attended) this.runtime.personSpoke?.(mission.id);
       const name = this.nameOf(ask.from);
+      const note = this.rooms.sharedNoteReport(room, share, message, { reader: ask.from });
       const about = reply
         ? "\n\n[Colmena] " + first(name) + " contesta a lo que le preguntaste en la sala («" + clip(reply.question, 600) + "»). Sigue con lo que te pidió, con esa respuesta como dato."
         : "";
@@ -341,7 +342,7 @@ export class RoomWork {
         to: [bot.id], author: { address: ask.from, name }, peerId: message.id, capabilities: this.capabilities(), roomAsk: ask.id, attended,
         // All the turn reads besides the request: the room's name and what its people already
         // said there that whoever asks can have read. Nothing of the sala (Runtime#requestHistory).
-        context: about + this.rooms.sharedNote(room, share, message, { reader: ask.from }),
+        context: about + note.text, outsideFound: note.suspicious,
       });
       if (message.thread || ask.peerThread) this.store.patch("messages", row.id, { peerThread: message.thread || ask.peerThread });
       this.store.patch("roomAsks", ask.id, { state: "working", missionId: mission.id, ...(reply ? {} : { messageId: row.id, startedAt: now(), attended: !!attended }), question: null });
@@ -509,13 +510,19 @@ export class RoomWork {
   say(share, botId, state, extra = {}, { only = null } = {}) {
     const p = this.peers;
     if (!p || !share || share.leftAt || share.removedAt) return;
-    const status = cleanStatus({ bot: botId, state, at: this.clock(), ...extra }, this.clock());
+    const id = share.id + ":" + p.address + ":" + botId;
+    // Strictly later than the last one said of this bot here: the others keep only a status newer
+    // than the newest they heard, so two said in the same millisecond (a turn that ends as its
+    // approval expires: «done», then «expired») must not tie and lose the second.
+    const at = Math.max(this.clock(), ((this.saidAt ??= new Map()).get(id) || 0) + 1);
+    this.saidAt.set(id, at);
+    if (this.saidAt.size > 2000) this.saidAt.delete(this.saidAt.keys().next().value);
+    const status = cleanStatus({ bot: botId, state, at, ...extra }, at);
     if (!status) return;
     // A turn that used no tools ends without a summary: the answer is all there is to see.
     const quiet = status.state === "done" && !status.tools;
     this.keep(share, p.address, status, { quiet });
     const body = { type: "room.status", share: share.id, ...status };
-    const id = share.id + ":" + p.address + ":" + botId;
     if (LIVE.has(state)) {
       this.told.set(id, this.clock());
       // The first one reaches everybody; refreshes only whoever is connected.
@@ -557,7 +564,7 @@ export class RoomWork {
     const ask = this.store.get("roomAsks", step.roomAsk);
     if (!ask || ask.shareId !== share.id) return [];
     const made = this.store.where("messages", "missionId", step.missionId).filter((m) => m.kind === "deliverable" && m.stepId === step.id && m.artifactId).map((m) => m.artifactId);
-    const done = new Set([...(ask.shared || []), ...(ask.kept || [])]), out = [], kept = [];
+    const done = new Set([...(ask.shared || []), ...(ask.kept || []), ...(ask.unshared || [])]), out = [], kept = [];
     const add = (id, more) => { const a = this.store.get("roomAsks", id); return this.store.patch("roomAsks", id, more(a)); };
     for (const artifactId of [...new Set(made)]) {
       // Claimed at once: a step is written several times as it ends, and each file goes once.
@@ -575,6 +582,11 @@ export class RoomWork {
         this.log("Un entregable de " + bot.name + " no pudo compartirse en la sala: " + error.message);
         // It could not leave now (the mailbox is not reachable): kept, and tried again.
         if (!error.status || error.status >= 500) this.keepUnsent({ id: "file:" + artifactId, kind: "file", shareId: share.id, askId: ask.id, artifactId, botId: bot.id, replyTo: answerId, size: await this.sizeOf(artifactId).catch(() => 0) });
+        // It never will (gone, a kind that cannot travel): once, and you are told in the room.
+        else {
+          add(ask.id, (a) => ({ unshared: [...new Set([...(a.unshared || []), artifactId])] }));
+          this.notShared(share, bot, artifactId, error);
+        }
         done.add(artifactId);
       } finally {
         this.sharing.delete(artifactId);
@@ -588,6 +600,13 @@ export class RoomWork {
    * answer, a file it made for a request): kept in `roomUnsent` and tried again every tick and
    * after a restart, for as long as the mailbox would have kept it.
    */
+  /** A file of a bot of yours that will not reach the room: a line only you see there, saying why. */
+  notShared(share, bot, artifactId, error) {
+    const title = clip(this.store.get("artifacts", String(artifactId))?.title || "un archivo", 80);
+    try {
+      this.rooms.localNote(share, bot.id, "No he podido compartir «" + title + "» en la sala: " + String(error?.message || "error desconocido").replace(/\.$/, "") + ". Sigue en tu ordenador.");
+    } catch (e) { this.log("No se pudo avisar: " + e.message); }
+  }
   keepUnsent(record) {
     if (!this.store.get("roomUnsent", record.id)) this.store.put("roomUnsent", { ...record, at: now(), t: Date.now() });
   }
@@ -613,8 +632,11 @@ export class RoomWork {
             if (ask) this.store.patch("roomAsks", ask.id, { shared: [...new Set([...(ask.shared || []), u.artifactId])], sharedBytes: (ask.sharedBytes || 0) + (u.size || 0) });
             this.sentNow(u.id);
           } catch (error) {
-            // Not a matter of waiting (the file is gone, its kind cannot travel): dropped.
-            if (error.status && error.status < 500) this.sentNow(u.id);
+            // Not a matter of waiting (the file is gone, its kind cannot travel): dropped, and you are told.
+            if (error.status && error.status < 500) {
+              this.sentNow(u.id);
+              this.notShared(share, cleanBot(bot), u.artifactId, error);
+            }
           }
         }
       }
@@ -669,6 +691,8 @@ export class RoomWork {
         if (x) this.store.patch("roomAsks", x.id, { shared: [...new Set([...(x.shared || []), artifactId])], sharedBytes: (x.sharedBytes || 0) + size });
       } catch (error) {
         this.log("Un entregable no pudo compartirse en la sala: " + error.message);
+        const share = this.store.get("peerShares", a.roomShare.shareId);
+        if (share && bot) this.notShared(share, bot, artifactId, error);
       }
     }
   }
@@ -863,7 +887,7 @@ export class RoomWork {
       const share = this.store.get("peerShares", s.shareId), room = this.rooms.ofShare(s.shareId);
       if (!share || share.leftAt || share.removedAt || !room?.missionId) continue;
       if (this.store.where("roomAsks", "shareId", share.id).some((a) => a.botId === s.bot && a.state === "asked")) continue;
-      const pending = this.store.where("approvals", "missionId", room.missionId).filter((a) => a.botId === s.bot && a.status === "pending" && !a.roomRequest && !a.roomShare);
+      const pending = this.store.where("approvals", "missionId", room.missionId).filter((a) => a.botId === s.bot && a.status === "pending" && !a.roomRequest && !a.roomShare && !a.roomAnswer);
       const dead = pending.filter((a) => { const end = approvalExpiresAt(a); return !!end && Date.parse(end) <= Date.now(); });
       if (!dead.length || dead.length < pending.length) continue;
       for (const a of dead) this.expired(a);
@@ -900,6 +924,7 @@ export class RoomWork {
     if (op === "remove" || !data) return;
     if (kind === "approvals" && data.roomRequest && data.status !== "pending" && !data.roomHandled) return this.decided(data);
     if (kind === "approvals" && data.roomShare && data.status !== "pending" && !data.roomHandled) return void this.sharedDecided(data).catch((error) => this.log(error.message));
+    if (kind === "approvals" && data.roomAnswer && data.status !== "pending" && !data.roomHandled) return this.rooms.answerDecided(data);
     if (kind === "thread" && op === "insert") return this.threadChanged(data);
     if (kind === "missions" && this.rooms.shared.has(data.id)) return this.missionChanged(data);
   }

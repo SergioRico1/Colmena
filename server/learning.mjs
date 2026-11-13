@@ -15,6 +15,7 @@ import { normalizeTrigger } from "./triggers.mjs";
 import { forget, forgetHash, isForgotten } from "./forgotten.mjs";
 import { observeMission, refreshObservations, missionEnding, isCorrection } from "./verdicts.mjs";
 import { feedbackCorrections } from "./feedback.mjs";
+import { isOtherPerson } from "./origin.mjs";
 
 export { containsSecret, forgetHash, isForgotten };
 
@@ -233,8 +234,17 @@ export function primaryBot(mission) {
   if (mission.mode === "debate") return mission.chosenBotIds?.[0] || mission.chosenBotId || mission.botIds?.[0];
   return mission.botIds?.[0];
 }
+/**
+ * A turn that answered ANOTHER person (a request in a shared room: `roomAsk`, `capabilities`):
+ * never reviewed, and nothing of it is material for learning. Their words are never the
+ * owner's, and what the bot did for them says nothing about how the owner wants things done.
+ */
+export const forOtherStep = (step) => !!step?.roomAsk || (!!step?.capabilities && typeof step.capabilities === "object");
+/** The owner's messages of a mission: role «user», written by the owner (never another person's request). */
+const ownerMessages = (store, missionId) => store.where("messages", "missionId", missionId).filter((m) => m.role === "user" && typeof m.text === "string" && !isOtherPerson(m));
+/** The steps a review may read: the owner's own turns, never those that answered another person. */
 function missionSteps(store, missionId) {
-  return store.where("steps", "missionId", missionId);
+  return store.where("steps", "missionId", missionId).filter((s) => !forOtherStep(s));
 }
 export function toolCalls(store, missionId) {
   return missionSteps(store, missionId).flatMap((s) => (stepHistory(store, s) || []).filter((x) => x.type === "function_call"));
@@ -271,7 +281,7 @@ export function similarMissions(store, mission, threshold = 0.5) {
 }
 /** What the person corrected: follow-ups (in chats only those that look like corrections), thread hints, plan changes. */
 export function personCorrections(store, mission) {
-  const own = store.where("messages", "missionId", mission.id).filter((m) => m.role === "user" && typeof m.text === "string");
+  const own = ownerMessages(store, mission.id);
   const followups = own.slice(1).map((m) => m.text).filter((t) => !mission.conversation || isCorrection(t));
   const hints = store.where("thread", "missionId", mission.id).filter((t) => t.from === "user").map((t) => t.text);
   const plans = store.where("approvals", "missionId", mission.id).filter((a) => a.kind === "plan" && a.note).map((a) => a.note);
@@ -296,7 +306,7 @@ export function recentCorrections(store, botId, exceptMissionId = null, { days =
     .filter((m) => m.id !== exceptMissionId && !m.incognito && primaryBot(m) === botId && at - (Date.parse(m.createdAt || "") || 0) <= days * 86400000)
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   for (const m of missions) {
-    const own = store.where("messages", "missionId", m.id).filter((x) => x.role === "user" && typeof x.text === "string");
+    const own = ownerMessages(store, m.id);
     for (const f of feedbackCorrections(store, m.id).reverse()) {
       out.push({ id: f.id, missionId: m.id, texto: f.text.slice(0, 600) });
       if (out.length >= limit) return out;
@@ -515,14 +525,14 @@ export function evidenceOf(store, mission, plan) {
     count[prefix] = (count[prefix] || 0) + 1;
     items.push({ alias: prefix + count[prefix], type, kind, id: recordId, missionId, text: String(text).replace(/\s+/g, " ").trim().slice(0, 400), person });
   };
-  for (const m of store.where("messages", "missionId", mission.id).filter((x) => x.role === "user" && typeof x.text === "string").slice(-12))
+  for (const m of ownerMessages(store, mission.id).slice(-12))
     add("m", "mensaje", "messages", m.id, mission.id, m.text, true);
   for (const t of store.where("thread", "missionId", mission.id).filter((x) => x.from === "user").slice(-4)) add("h", "hilo", "thread", t.id, mission.id, t.text, true);
   for (const a of store.where("approvals", "missionId", mission.id).filter((x) => x.kind === "plan" && x.note).slice(-3)) add("p", "plan", "approvals", a.id, mission.id, a.note, true);
   for (const r of plan.rejections || []) add("d", "rechazo", "approvals", r.id, r.missionId, `Paró «${r.accion}»: ${r.motivo}`, true);
   for (const c of plan.earlier || []) add("c", "correccion", "messages", c.id, c.missionId, c.texto, true);
   const receipts = [];
-  for (const step of store.where("steps", "missionId", mission.id))
+  for (const step of missionSteps(store, mission.id))
     for (const call of (stepHistory(store, step) || []).filter((x) => x.type === "function_call")) {
       const receipt = store.get("receipts", step.id + ":" + call.call_id);
       if (!receipt) continue;
@@ -710,6 +720,12 @@ export async function learnFromMission({ store, missionId, model, reviewModel = 
   // Measure first (verdicts.mjs): how this mission went says whether what the bot carried helped.
   if (mission) try { observeMission(store, missionId); } catch {}
   if (!mission) return { status: "skipped" };
+  // A run that ended with a turn for another person's request is not reviewed: that turn is
+  // theirs (and when the owner asks to learn from the room, only the owner's own turns count).
+  const all = store.where("steps", "missionId", missionId);
+  const last = [...all].filter((s) => s.completedAt || s.startedAt).sort((a, b) => String(a.completedAt || a.startedAt).localeCompare(String(b.completedAt || b.startedAt))).at(-1);
+  if (!force && forOtherStep(last)) return { status: "skipped", reasons: ["petición de otra persona"] };
+  if (all.length && all.every(forOtherStep)) return { status: "skipped", reasons: ["petición de otra persona"] };
   const ending = missionEnding(mission);
   if (!force && !["completada", "fallida", "cancelada"].includes(ending))
     return { status: "skipped", reasons: ending === "limitada" ? ["límite del proveedor: no es una lección"] : [] };
@@ -731,12 +747,15 @@ export async function learnFromMission({ store, missionId, model, reviewModel = 
     .filter((s) => (!s.botId || s.botId === bot.id) && ["active", "pending"].includes(s.status))
     .slice(-40)
     .map((s) => ({ id: s.id, nombre: s.name, descripcion: s.description, estado: s.status, version: s.version, cargada: plan.used.some((u) => u.id === s.id) }));
-  const userMessages = store.where("messages", "missionId", missionId).filter((m) => m.role === "user");
+  const userMessages = ownerMessages(store, missionId);
+  // What the run gave back: the owner's own last answer when other people's requests ran here too.
+  const theirs = all.some(forOtherStep);
+  const result = theirs ? [...missionSteps(store, missionId)].filter((s) => s.status === "completed" && String(s.text || "").trim()).sort((a, b) => String(a.completedAt || "").localeCompare(String(b.completedAt || ""))).at(-1)?.text || "" : mission.result;
   const evidence = evidenceOf(store, mission, plan);
   const payload = {
     revisar: { memoria: plan.memory, habilidades: plan.skills, motivos: plan.reasons },
     encargo: String(mission.prompt || "").slice(0, 6000),
-    resultado: String(mission.result || "").slice(0, 8000),
+    resultado: String(result || "").slice(0, 8000),
     bot: { id: bot.id, nombre: bot.name, rol: bot.role },
     herramientas: plan.outcomes,
     desenlace: plan.ending,
