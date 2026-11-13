@@ -455,7 +455,10 @@ export function isRedLine(name) {
 export const READ_TOOLS = new Set(["read_file", "read_folder_file", "web_fetch", "search_history", "read_thread", "pdf_fields", "read_deliverable"]);
 
 /** Live verb shown while a tool runs. */
-export function verbFor(name, args = {}) {
+export function verbFor(name, raw = {}) {
+  // Whatever the model sent as arguments (null, a number, an array): read as an empty object.
+  const args = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  name = typeof name === "string" ? name : "";
   if (["read_file", "read_folder_file", "web_fetch", "search_history", "read_thread", "recall", "list_folder", "list_files", "read_skill", "skill_view", "list_skills", "skills_list", "pdf_fields", "web_search", "mission_brief", "read_deliverable"].includes(name)) return "leyendo";
   if (name === "create_image") return "creando imagen";
   if (name === "fill_pdf" || name === "create_document" || name === "wiki_write") return "escribiendo";
@@ -472,7 +475,10 @@ export function verbFor(name, args = {}) {
   if (name === "desktop_windows") return "mirando las ventanas";
   if (name === "desktop_open") return "abriendo una app";
   if (name === "desktop_look") return "mirando la pantalla";
-  if (name === "desktop_do") return { type: "escribiendo", set_value: "escribiendo", key: "pulsando teclas", hotkey: "pulsando teclas", scroll: "desplazándose" }[args.action] || "haciendo clic";
+  if (name === "desktop_do") {
+    const verbs = { type: "escribiendo", set_value: "escribiendo", key: "pulsando teclas", hotkey: "pulsando teclas", scroll: "desplazándose" };
+    return typeof args.action === "string" && Object.hasOwn(verbs, args.action) ? verbs[args.action] : "haciendo clic";
+  }
   if (name === "mcp_tools" || name === "find_tools" || name === "use_tool") return "preparándose";
   if (name === "mcp_call") return "usando una app";
   if (name === "create_deliverable")

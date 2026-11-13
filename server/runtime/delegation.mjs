@@ -6,7 +6,7 @@ import { composeInstructions } from "../soul.mjs";
 import { CONTEXT, estimateTokens, trimHistory } from "../context.mjs";
 import { spillOutput } from "../spill.mjs";
 import { normalizeText } from "../learning.mjs";
-import { STUCK_ROUNDS } from "./helpers.mjs";
+import { STUCK_ROUNDS, callArgs } from "./helpers.mjs";
 
 /** Runtime methods: bots working for bots (ask_bot tasks, consults) and messages between them (message_bot). */
 export class DelegationMethods {
@@ -198,10 +198,10 @@ export class DelegationMethods {
       input = [...input, ...output];
       let ok = false;
       for (const c of calls) {
-        let args = {};
-        try { args = JSON.parse(c.arguments); } catch {}
-        this.setActivity(target.id, mission.id, null, verbFor(c.name, args), this.activityDetail(c.name, args));
-        const r = await this.tool(mission, dstep, c, signal, model);
+        // A tool this helper was never offered: refused before its activity line is written.
+        const offered = this.offers(mission, dstep, c);
+        if (offered) this.setActivity(target.id, mission.id, null, verbFor(c.name, callArgs(c)), this.activityDetail(c.name, callArgs(c)));
+        const r = offered ? await this.tool(mission, dstep, c, signal, model) : { error: "Herramienta no disponible." };
         const out = r?.waiting ? { error: "No disponible en un encargo delegado." } : r;
         // A helper's step is not stored: what it reads with injection phrases flags the step that asked for it.
         const output = this.modelOutput(mission.id, String(dstep?.id || "").split(":")[0], c, out);

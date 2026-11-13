@@ -133,12 +133,28 @@ export class EffectMethods {
   flagged(step) {
     return !!step?.suspicious?.length || isFlagged(this.store, step?.id);
   }
+  /**
+   * Whether `call` names a tool this step may run — its real list (toolsForStep), read now — or
+   * the tool search (tool-search.mjs, which reads that same list). Asked before ANYTHING else is
+   * done with a call (its activity line, its detail, its receipt), in every kind of turn: a call
+   * to a tool the step was never offered is answered with an error and nothing more.
+   */
+  offers(mission, step, call) {
+    const name = typeof call?.name === "string" ? call.name : "";
+    if (!name) return false;
+    if (isMetaTool(name)) return true;
+    const bot = this.bot(step?.botId);
+    if (!bot) return false;
+    const seen = this.turnMission(this.store.get("missions", mission?.id) || mission, step);
+    const alias = Object.hasOwn(TOOL_ALIASES, name) ? TOOL_ALIASES[name] : name;
+    return this.toolsForStep(seen, step, bot).some((t) => t.name === name || t.name === alias);
+  }
   async tool(mission, step, call, signal, model) {
     try {
       const bot = this.bot(step.botId);
       // As this step sees it (a turn for another person's request is narrowed: context.mjs turnMission).
       mission = this.turnMission(this.store.get("missions", mission.id) || mission, step);
-      const name = TOOL_ALIASES[call.name] || call.name;
+      const name = Object.hasOwn(TOOL_ALIASES, call.name) ? TOOL_ALIASES[call.name] : call.name;
       const offered = this.toolsForStep(mission, step, bot);
       // Tools on demand (tool-search.mjs). find_tools only reads the bot's own list. A valid
       // use_tool call never gets here: it became the real call when the model's answer was

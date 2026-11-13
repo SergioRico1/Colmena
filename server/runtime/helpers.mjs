@@ -184,6 +184,18 @@ export function appsLabel(name, args = {}) {
   return appActionLabel(slug) || "Usar una app conectada";
 }
 
+/**
+ * A call's arguments as the activity helpers read them: always a plain object. A model may
+ * send `null`, an array, a number or text that is not JSON; none of that reaches them.
+ */
+export function callArgs(call) {
+  let args = null;
+  try { args = typeof call?.arguments === "string" ? JSON.parse(call.arguments) : call?.arguments; } catch {}
+  return args && typeof args === "object" && !Array.isArray(args) ? args : {};
+}
+/** Text of an argument that should be text, or "" when the model sent anything else. */
+export const argText = (value, max = 200) => (typeof value === "string" ? value.slice(0, max) : "");
+
 /** Light result of a review for the API / UI. */
 export function learningSummary(result) {
   return {

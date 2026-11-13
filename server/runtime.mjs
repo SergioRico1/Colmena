@@ -34,7 +34,7 @@ import { stopReason, stoppedRecord, isContextOverflow, cleanStopWhy, stopWhyText
 import {
   STUCK_ROUNDS, WEB_SEARCH_NOTE, QUEUE_MODES, INCOGNITO_MS, PARTIAL_CODE, PARALLEL_STEPS, QUIET_MS, IDLE_ABORT_MS, AUTO_RESUMES, leavesWorkUndone,
   partialTableUnsaid, titleFromPrompt, clipWords, roomSlug, appsLabel, ACTIVE, INCOGNITO_NOTE, OTHER_PERSON_NOTE, INTERRUPT_CODE, stepLabel, MISSION_WIDE, RETRY_CODE,
-  RESUME_WINDOW_MS, LIMIT_RESUMES, runsInParallel, PROGRESS_MAX, LIVE_AFTER, countWords,
+  RESUME_WINDOW_MS, LIMIT_RESUMES, runsInParallel, PROGRESS_MAX, LIVE_AFTER, countWords, callArgs, argText,
 } from "./runtime/helpers.mjs";
 import { routed } from "./router.mjs";
 import { isOutsideOrigin } from "./origin.mjs";
@@ -1091,8 +1091,15 @@ export class Runtime {
               return;
             }
             if (open) {
-              let args = {};
-              try { args = JSON.parse(call.arguments); } catch {}
+              // A tool this step was never offered: refused before anything else is done with
+              // the call (no activity line, no detail, no receipt of an effect).
+              if (!this.offers(mission, step, call)) {
+                const refused = { error: "Herramienta no disponible." };
+                this.store.put("receipts", { id: receiptId, tool: String(call.name || ""), status: RECEIPT.done, result: refused, at: now() });
+                looping ||= this.countFailure(step.id, call, refused.error);
+                return;
+              }
+              const args = callArgs(call);
               this.setActivity(bot.id, missionId, step.id, verbFor(call.name, args), this.activityDetail(call.name, args));
               this.toolActivity(step.id, call, args, "running");
               const began = Date.now();
@@ -1531,22 +1538,26 @@ export class Runtime {
     this.touch(missionId);
     this.emit({ type: "delta", mission: missionId, stepId, botId, text });
   }
-  activityDetail(name, args) {
-    if (name === "read_file") return args.path || "";
-    if (name === "read_folder_file") return (String(args.path || "").split(/[\\/]/).pop() || "") + (args.page > 1 ? " · página " + args.page : "");
-    if (name === "web_fetch") { try { return new URL(args.url).hostname; } catch { return ""; } }
-    if (name === "ask_bot") return this.bot(args.botId)?.name || args.botId || "";
-    if (name === "create_deliverable") return args.title || "";
-    if (name === "write_file") return args.path || "";
-    if (name === "search_history") return "historial: " + (args.query || "");
-    if (name === "read_thread") return "la conversación" + (args.position > 1 ? " · desde el mensaje " + args.position : "");
-    if (name === "create_image") return args.title || "";
-    if (name === "create_presentation" || name === "create_document" || name === "create_spreadsheet") return args.title || "";
-    if (name === "fill_pdf") return args.title || "";
-    if (name === "pdf_fields") return String(args.path || "").split(/[\\/]/).pop() || "";
-    if (name === "read_deliverable") return args.title || "";
-    if (name === "desktop_open") return args.app || "";
-    if (name === "mcp_call") return this.mcp?.store?.get?.("mcpServers", args.server)?.name || args.server || "";
+  /**
+   * The detail of a tool's activity line («leyendo · informe.md»). Always text, whatever the
+   * model sent as arguments (missing, null, numbers, objects): it never fails a step.
+   */
+  activityDetail(name, raw) {
+    const args = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    const text = (key) => argText(args[key]);
+    const page = Number.isInteger(args.page) ? args.page : 0;
+    try {
+      if (name === "read_file" || name === "write_file") return text("path");
+      if (name === "read_folder_file") return (text("path").split(/[\\/]/).pop() || "") + (page > 1 ? " · página " + page : "");
+      if (name === "web_fetch") { try { return new URL(text("url")).hostname; } catch { return ""; } }
+      if (name === "ask_bot") return (text("botId") && this.bot(text("botId"))?.name) || text("botId");
+      if (name === "search_history") return "historial: " + text("query");
+      if (name === "read_thread") return "la conversación" + (Number.isInteger(args.position) && args.position > 1 ? " · desde el mensaje " + args.position : "");
+      if (["create_deliverable", "create_image", "create_presentation", "create_document", "create_spreadsheet", "fill_pdf", "read_deliverable"].includes(name)) return text("title");
+      if (name === "pdf_fields") return text("path").split(/[\\/]/).pop() || "";
+      if (name === "desktop_open") return text("app");
+      if (name === "mcp_call") return (text("server") && this.mcp?.store?.get?.("mcpServers", text("server"))?.name) || text("server");
+    } catch {}
     return "";
   }
   /** Hosted web search for bots with capability web, except plan and critique steps, while the endpoint accepts it. */
@@ -1600,7 +1611,9 @@ export class Runtime {
    * startedAt, endedAt, label?}. The verb entry just logged by setActivity for the same
    * call is merged into it so the timeline does not show it twice.
    */
-  toolActivity(stepId, call, args, status) {
+  toolActivity(stepId, call, raw, status) {
+    const args = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    if (typeof call?.name !== "string") return;
     const step = this.store.get("steps", stepId);
     if (!step) return;
     const log = [...(step.activity || [])];
