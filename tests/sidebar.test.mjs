@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { needsCount, needsOf } from "../src/components/v2/needs.js";
-import { ROOMS_SHOWN, chatsTarget, conversationPath, foldRooms, rowLabel, sidebarModel, sidebarShape, summaryOf, teamHeader } from "../src/lib/sidebar.js";
+import { readFileSync } from "node:fs";
+import { BOTS_SHOWN, ROOMS_SHOWN, chatsTarget, conversationPath, foldBots, foldRooms, rowLabel, scrollFade, sidebarModel, sidebarShape, summaryOf, teamHeader } from "../src/lib/sidebar.js";
 
 const NOW = Date.parse("2026-11-12T10:00:00Z");
 const ago = (min) => new Date(NOW - min * 60000).toISOString();
@@ -275,4 +276,28 @@ test("which addresses are a conversation", () => {
   assert.equal(conversationPath("/sala/nueva"), null);
   assert.equal(conversationPath("/chats"), null);
   assert.equal(conversationPath("/"), null);
+});
+
+test("order and folding: Salas, Personas, Bots; at most four bots, the lively ones always", () => {
+  const src = readFileSync(new URL("../src/components/v3/Sidebar.jsx", import.meta.url), "utf8");
+  const at = (id) => src.indexOf(`groupHead("${id}"`);
+  assert.ok(at("salas") > 0 && at("salas") < at("personas") && at("personas") < at("bots"), "Salas, Personas, Bots");
+  assert.ok(src.indexOf('className="v3-skip"') < src.indexOf('<div ref={teamRef}'), "the skip link stays first");
+  const bots = ["a", "b", "c", "d", "e", "f"].map((id, i) => ({ id, href: "/chat/" + id, state: "free", waiting: 0, unread: 0, at: i }));
+  assert.equal(BOTS_SHOWN, 4);
+  assert.deepEqual(foldBots(bots).shown.map((b) => b.id), ["a", "b", "c", "d"]);
+  assert.equal(foldBots(bots).hidden, 2);
+  const lively = bots.map((b) => (b.id === "f" ? { ...b, state: "waiting", waiting: 1 } : b.id === "e" ? { ...b, state: "working" } : b));
+  assert.deepEqual(foldBots(lively).shown.map((b) => b.id), ["f", "e", "a", "b"], "waiting first, then working");
+  const busy = lively.map((b) => ({ ...b, state: "working" }));
+  assert.equal(foldBots(busy).shown.length, 6, "every bot at work shows, even beyond four");
+  assert.equal(foldBots(bots, { all: true }).hidden, 0);
+  assert.deepEqual(foldBots(bots, { current: "/chat/f" }).shown.map((b) => b.id), ["f", "a", "b", "c"], "the open chat's bot stays in view");
+});
+
+test("the scroll fade: none at rest, at the top once scrolled, at the bottom while more lies below", () => {
+  assert.equal(scrollFade({ top: 0, height: 400, client: 400 }), null);
+  assert.equal(scrollFade({ top: 0, height: 900, client: 400 }), "linear-gradient(to bottom, #000 0, #000 calc(100% - 16px), transparent 100%)");
+  assert.equal(scrollFade({ top: 500, height: 900, client: 400 }), "linear-gradient(to bottom, transparent 0, #000 16px, #000 100%)");
+  assert.equal(scrollFade({ top: 200, height: 900, client: 400 }), "linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%)");
 });

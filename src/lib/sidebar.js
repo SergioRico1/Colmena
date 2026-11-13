@@ -135,6 +135,32 @@ export function foldRooms(rooms = [], { limit = ROOMS_SHOWN, current = null, all
   return { shown, hidden: rooms.length - shown.length };
 }
 
+/** Bots the Bots group shows before «Ver todos (N)». */
+export const BOTS_SHOWN = 4;
+/**
+ * Which bots show: the ones waiting for you, at work, with something unread or open now first
+ * (always, even beyond the limit), then the rest in their order up to BOTS_SHOWN. The rest fold
+ * behind «Ver todos (N)». {shown, hidden}.
+ */
+export function foldBots(bots = [], { limit = BOTS_SHOWN, current = null, all = false } = {}) {
+  if (all || bots.length <= limit) return { shown: bots, hidden: 0 };
+  const rank = (b) => (b.waiting > 0 || b.state === "waiting" ? 0 : b.state === "working" || b.busy ? 1 : b.unread > 0 || b.href === current ? 2 : 3);
+  const lively = bots.filter((b) => rank(b) < 3).sort((a, b) => rank(a) - rank(b));
+  const quiet = bots.filter((b) => rank(b) === 3);
+  const shown = [...lively, ...quiet.slice(0, Math.max(0, limit - lively.length))];
+  return { shown, hidden: bots.length - shown.length };
+}
+
+/**
+ * Where the scrolling list fades: at the top once it is scrolled (places slide under «Nuevo» and
+ * «Buscar»), at the bottom while more lies below (over the pinned foot). A CSS mask, or none.
+ */
+export function scrollFade({ top = 0, height = 0, client = 0 } = {}, size = 16) {
+  const up = top > 1, down = top + client < height - 1;
+  if (!up && !down) return null;
+  return `linear-gradient(to bottom, ${up ? "transparent 0, #000 " + size + "px" : "#000 0"}, ${down ? "#000 calc(100% - " + size + "px), transparent 100%" : "#000 100%"})`;
+}
+
 /**
  * The team header, from `GET /api/teams` → [{id, name, people, bots, admin, current}]. No teams
  * yet is «Solo tú»: your own Colmena and how many bots you have.

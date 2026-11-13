@@ -16,7 +16,7 @@ import { statusText } from "../../lib/peers.js";
 import { failure } from "../../lib/undoToast.js";
 import { realTeams } from "../../lib/teams.js";
 import WorkingDots from "../room/Dots.jsx";
-import { STATE_WORD, STATUS_WORD, conversationPath, foldRooms, rememberConversation, rowLabel, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
+import { STATE_WORD, STATUS_WORD, conversationPath, foldBots, foldRooms, rememberConversation, rowLabel, scrollFade, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md): it names who you
 // talk to. Top to bottom: your team (or «Solo tú»), «Nuevo» (Ctrl N) and «Buscar o pedir»
@@ -60,7 +60,7 @@ const initials = (name) => String(name || "Tú").trim().split(/\s+/).slice(0, 2)
 const GROUPS_KEY = "colmena:sidebar-groups";
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const writeJson = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
-let allRooms = false, scrolled = 0;
+let allRooms = false, allBots = false, scrolled = 0;
 
 /** Turns an address you pinned that no group shows (a Código task, a bot's page) into a row. */
 function pinnedEntry(href, { bots }) {
@@ -99,6 +99,10 @@ export default function Sidebar({ active = "inicio" }) {
   const [folded, setFoldedState] = useState(!!settings.sidebarFolded);
   const [closed, setClosed] = useState(() => readJson(GROUPS_KEY, {}));
   const [showAll, setShowAll] = useState(allRooms);
+  const [showBots, setShowBots] = useState(allBots);
+  // A fade where the list goes under the pinned top (Nuevo, Buscar) and over the pinned foot.
+  const [fade, setFade] = useState(null);
+  const measure = () => { const box = scroller.current; if (box) setFade(scrollFade({ top: box.scrollTop, height: box.scrollHeight, client: box.clientHeight })); };
   const newRef = useRef(null), teamRef = useRef(null), scroller = useRef(null);
   useEffect(() => setFoldedState(!!settings.sidebarFolded), [settings.sidebarFolded]);
   const setFolded = (v) => { setFoldedState(v); run(() => patch("/settings", { sidebarFolded: v })).catch(() => {}); };
@@ -115,6 +119,7 @@ export default function Sidebar({ active = "inicio" }) {
     if (a.top < b.top || a.bottom > b.bottom) row.scrollIntoView({ block: "nearest" });
   }, [folded, here]);
 
+
   // The team comes from the state (`teams`, the same list as GET /api/teams; kept live by
   // /api/events like everything else). Alone, the server sends one «solo» entry: that is no team.
   const teams = useMemo(() => realTeams(store.teams), [store.teams]);
@@ -124,6 +129,8 @@ export default function Sidebar({ active = "inicio" }) {
   const model = useMemo(() => sidebarModel(store, { team: team.id }), [store, team.id]);
   const rooms = foldRooms(model.rooms, { current: here, all: showAll });
   const canFold = showAll ? foldRooms(model.rooms, { current: here }).hidden > 0 : rooms.hidden > 0;
+  const botsFold = foldBots(model.bots, { current: here, all: showBots });
+  const canFoldBots = showBots ? foldBots(model.bots, { current: here }).hidden > 0 : botsFold.hidden > 0;
   const botOf = (id) => bots.find((b) => b.id === id) || null;
   const calm = reducedMotion();
   const peopleOff = !peers || peers.relay?.status === "off"; // no mailbox: nobody to invite yet
@@ -137,6 +144,16 @@ export default function Sidebar({ active = "inicio" }) {
 
   const toggleGroup = (id) => setClosed((c) => { const next = { ...c, [id]: !c[id] }; writeJson(GROUPS_KEY, next); return next; });
   const toggleAll = () => { allRooms = !showAll; setShowAll(allRooms); };
+  const toggleBots = () => { allBots = !showBots; setShowBots(allBots); };
+  useEffect(() => {
+    const box = scroller.current;
+    if (!box || typeof ResizeObserver === "undefined") return undefined;
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    for (const child of box.children) ro.observe(child);
+    return () => ro.disconnect();
+  }, [folded, model.rooms.length, model.people.length, model.bots.length, showAll, showBots, closed]); // eslint-disable-line react-hooks/exhaustive-deps
   // The team the bar shows is kept by the server (PUT /api/teams/current), the same in every window.
   const pickTeam = (id) => {
     setMenu(null);
@@ -338,13 +355,13 @@ export default function Sidebar({ active = "inicio" }) {
     <>
       <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "1px", margin: "6px 0", background: "rgba(18,19,26,.1)" }} />
       <button type="button" onClick={() => setFolded(false)} aria-label={["Salas", `${model.rooms.length}`, roomsNew.unread ? `${roomsNew.unread} sin leer` : null, roomsNew.waiting ? "te esperan" : null, "desplegar la barra"].filter(Boolean).join(", ")} title="Salas" className="v3-hover" style={{ ...railTile, font: "600 var(--t-read)/1 'Geist', sans-serif" }}>{"#"}{roomsNew.waiting ? railDot(true) : roomsNew.unread ? railDot(false) : null}</button>
-      {model.bots.map((b) => {
-        const on = b.href === here;
-        return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={calm ? "rest" : b.state === "working" || b.busy ? "work" : "rest"} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
-      })}
       {model.people.map((p) => {
         const on = p.href === here;
         return <a key={p.id} href={p.href} aria-label={rowLabel("person", p)} title={[p.name, p.status ? STATUS_WORD[p.status] : null].filter(Boolean).join(" · ")} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><PersonMark person={p} size={24} ring={on ? "#FFFFFF" : "#ECECE7"} />{p.waiting ? railDot(true) : p.unread ? railDot(false) : null}</a>;
+      })}
+      {model.bots.map((b) => {
+        const on = b.href === here;
+        return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={calm ? "rest" : b.state === "working" || b.busy ? "work" : "rest"} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
       })}
     </>
   );
@@ -373,14 +390,6 @@ export default function Sidebar({ active = "inicio" }) {
         </div>
       )}
 
-      {groupHead("bots", "Bots", model.bots.length, "Nuevo bot", () => navigate("/equipo/nuevo"), { unread: sum(model.bots, "unread"), waiting: sum(model.bots, "waiting") })}
-      {closed.bots ? null : (
-        <div id="v3-group-bots" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-          {model.bots.map(botRow)}
-          {model.bots.length ? null : empty("Aún no tienes bots. Crea el primero con el +.")}
-        </div>
-      )}
-
       {groupHead("personas", "Personas", model.people.length, "Invitar a una persona", () => (peopleOff ? navigate("/ajustes/contactos") : setSheet("invitar")), { unread: sum(model.people, "unread"), waiting: sum(model.people, "waiting") })}
       {closed.personas ? null : (
         <div id="v3-group-personas" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
@@ -388,6 +397,17 @@ export default function Sidebar({ active = "inicio" }) {
           {model.people.length ? null : empty(team.solo ? "Aquí verás a las personas con las que hablas a solas. Invita a alguien con el +." : "Aún no hay mensajes directos. Escribe a alguien desde Equipo.")}
         </div>
       )}
+      {groupHead("bots", "Bots", model.bots.length, "Nuevo bot", () => navigate("/equipo/nuevo"), { unread: sum(model.bots, "unread"), waiting: sum(model.bots, "waiting") })}
+      {closed.bots ? null : (
+        <div id="v3-group-bots" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+          {botsFold.shown.map(botRow)}
+          {model.bots.length ? null : empty("Aún no tienes bots. Crea el primero con el +.")}
+          {canFoldBots ? (
+            <button type="button" onClick={toggleBots} aria-expanded={showBots} className="v3-hover" style={{ flex: "none", height: "28px", display: "flex", alignItems: "center", padding: "0 10px 0 38px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", color: MUTED, fontSize: "var(--t-meta)", fontWeight: "500", textAlign: "left", cursor: "pointer" }}>{showBots ? "Ver menos" : `Ver todos (${model.bots.length})`}</button>
+          ) : null}
+        </div>
+      )}
+
     </>
   );
 
@@ -434,7 +454,7 @@ export default function Sidebar({ active = "inicio" }) {
       </div>
 
       {/* The only part that scrolls: the places and the groups. The window never does. */}
-      <div ref={scroller} onScroll={(e) => { scrolled = e.currentTarget.scrollTop; }} className="v3-scroll" style={{ flex: "1", minHeight: "0", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", gap: "2px", margin: "0 -6px", padding: "2px 6px 8px", overflowY: "auto", overflowX: "hidden", overscrollBehavior: "contain", ...noDrag }}>
+      <div ref={scroller} onScroll={(e) => { scrolled = e.currentTarget.scrollTop; measure(); }} className="v3-scroll" style={{ flex: "1", minHeight: "0", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", gap: "2px", margin: "0 -6px", padding: "2px 6px 8px", overflowY: "auto", overflowX: "hidden", overscrollBehavior: "contain", ...(fade ? { WebkitMaskImage: fade, maskImage: fade } : {}), ...noDrag }}>
         {places}
         {folded ? rail : groups}
       </div>
