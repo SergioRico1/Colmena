@@ -86,7 +86,8 @@ test("an invitation never reads «soy Sin nombre»: the sheet asks for your name
   assert.equal(lacksOwnName({ peers: null, settings: { userName: "Tu cuenta" } }), true);
   assert.equal(lacksOwnName({ peers: null, settings: {}, account: { email: "s@x.com" } }), false);
   assert.equal(lacksOwnName({ peers: null, settings: { userName: "Sergio" } }), false);
-  const sheet = read("src/components/v2/people/InviteSheets.jsx");
+  // Every code is made in one place (the «Invitar» sheet's code panel), for a room, a team or to talk.
+  const sheet = read("src/components/people/CodePanel.jsx");
   assert.ok(sheet.includes("lacksOwnName(store)") && sheet.includes('patch("/settings", { userName: mine.trim() })'));
-  assert.ok(sheet.includes("abre su página de descargas en GitHub"), "the link's text says where it leads");
+  assert.ok(sheet.includes("Ver el mensaje que se copia"), "what is copied can be read before sending it");
 });

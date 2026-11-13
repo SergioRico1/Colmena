@@ -1,6 +1,6 @@
 // The one room screen's model (docs/PLAN-equipo-y-salas.md, scope 3 and 4): who wrote a row and
 // how it is named, which rows group under one header, the quiet lines about other owners' bots,
-// the member panel, who can be invited and who «@» lists. Pure: no React, no network. It reads
+// the member panel and who «@» lists (who can be invited: lib/invite.js). Pure: no React, no network. It reads
 // the shapes of docs/CONTRACT.md §18 (`GET /api/rooms/:id`, `…/timeline`).
 import { botA11yName, botNameLabels, familyTint, firstName, listNames, ownerShort } from "./identity.js";
 
@@ -281,12 +281,12 @@ export function roomEmpty(view, { teamName = null } = {}) {
   if (view.general && alone) {
     return {
       title: teamName ? `De momento solo estás tú en «${teamName}»` : "De momento solo estás tú",
-      text: "Invita a alguien: le das un código, lo pega en su Colmena y entra aquí, en «general», con sus bots.",
-      action: "invite", actionLabel: "Invitar al equipo",
+      text: "Invita a alguien: le das un código, lo pega en «Unirme con un código» y entra aquí, en #general, con sus bots.",
+      action: "invite", actionLabel: "Invitar",
     };
   }
   if (view.general) return { title: `Aún no hay mensajes en #${name}`, text: "Aquí está todo el equipo. Escribe el primer mensaje, o nombra a un bot con @ para que conteste aquí.", action: null };
-  if (alone) return { title: `Aún no hay nadie más en #${name}`, text: "Invita a alguien a la sala. Verá lo que se escriba desde que entre, no lo anterior.", action: "invite", actionLabel: "Invitar a una persona" };
+  if (alone) return { title: `Aún no hay nadie más en #${name}`, text: "Invita a alguien de tu equipo o con quien ya hablas, o a alguien que aún no está con un código. Verá lo que se escriba a partir de ahora, no lo anterior.", action: "invite", actionLabel: "Invitar" };
   return { title: `Aún no hay mensajes en #${name}`, text: "Escribe a las personas de la sala, o nombra a un bot con @ para que conteste aquí.", action: null };
 }
 
@@ -330,40 +330,6 @@ export const ONLY_ME = "Solo para mí";
 export const ONLY_ME_HINT = "No se envía a nadie: te contestan solo tus bots y se queda en tu ordenador.";
 export function onlyMe({ mission = null, shared = false, gone = false } = {}) {
   return { label: ONLY_ME, hint: ONLY_ME_HINT, available: !gone && (!!mission || shared), needsSala: !mission && shared };
-}
-
-/* ───────────── inviting ───────────── */
-
-/**
- * Who you can add from the room: teammates of the room's team and your contacts, each once,
- * never you nor someone already in. `query` filters by name (accents and case do not matter).
- * `team`: `GET /api/teams/:id` (members) or null · `contacts`: `peers.contacts`.
- */
-export function inviteCandidates({ view, team = null, contacts = [], query = "" } = {}) {
-  const inRoom = new Set((view?.people || []).map((p) => p.address));
-  const seen = new Set();
-  const out = [];
-  const add = (address, name, source, online) => {
-    if (!address || inRoom.has(address) || seen.has(address)) return;
-    seen.add(address);
-    out.push({ address, name: name || "Alguien", source, presence: online ? "online" : "offline" });
-  };
-  for (const m of team?.members || []) if (!m.you) add(m.address, m.name, "equipo", m.presence === "online");
-  for (const c of contacts || []) if (c.status === "active") add(c.id, c.name, "contacto", !!c.online);
-  const q = fold(query).trim();
-  return out.filter((p) => !q || fold(p.name).includes(q)).sort((a, b) => (a.source === b.source ? 0 : a.source === "equipo" ? -1 : 1) || byName(a, b));
-}
-
-/** What adding someone does, said before doing it. `owner`: who made the room (when it is not you). */
-export function inviteTruth(view) {
-  const owner = (view?.people || []).find((p) => p.role === "owner");
-  const asks = !!view && !view.private && !view.mine;
-  return {
-    asks,
-    owner: owner && !owner.you ? owner.name : null,
-    line: "Verá lo que se escriba a partir de ahora, no lo anterior.",
-    ask: asks && owner ? `Se lo pediremos a ${firstName(owner.name)}` : null,
-  };
 }
 
 /* ───────────── «@» ───────────── */

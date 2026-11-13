@@ -45,7 +45,7 @@ export const STEPS = [["Hola", "Qué es Colmena"], ["Cuenta de IA", "Con qué pi
 /** «Tu equipo»: with whom you work. Nothing is required: alone is a choice like the others. */
 export const TEAM_CHOICES = [
   { id: "create", title: "Crear un equipo", text: "Ponle nombre e invita a tus compañeros con un código." },
-  { id: "join", title: "Unirme a un equipo", text: "Tengo un código que me ha mandado alguien." },
+  { id: "join", title: "Unirme con un código", text: "Me han mandado un código: de un equipo, de una sala o para hablar." },
   { id: "solo", title: "Empezar solo", text: "Solo yo y mis bots. Puedo crear un equipo o unirme a uno más adelante." },
 ];
 /** The roles the server knows (server/onboarding.mjs): the first five show; the rest wait behind «Otro». */

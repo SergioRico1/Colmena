@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { post } from "../../lib/api.js";
+import { del, post } from "../../lib/api.js";
+import { later, useHidden } from "../../lib/undoToast.js";
+import { WORDS, askedLine, expiresText, pendingCodes, roomOwner } from "../../lib/invite.js";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { SELF_FALLBACK, lacksOwnName, selfLabel } from "../../lib/ownName.js";
 import BotFace from "../BotFace.jsx";
@@ -8,13 +10,13 @@ import { QUEUE } from "./RoomExtras.jsx";
 import { compactBots, noBotsText } from "../../lib/roomView.js";
 import { firstName } from "../../lib/identity.js";
 import { srOnly } from "../../lib/alt.js";
-import { Brain, ChevronRight, FolderOpen, MessageCircleQuestion, Plus, Sliders, UserPlus } from "../Icon.js";
+import { Brain, ChevronRight, Clock3, FolderOpen, MessageCircleQuestion, Plus, Sliders, Ticket, UserPlus } from "../Icon.js";
 import "../../styles/conversation.css";
 
 // The right panel of a room (Colmena 4: design/v4 › .panel): two tabs, the bot you opened (its
 // face, role, whose it is, what it is doing, how it thinks, its autonomy, what it can use and,
 // in a room with people, who can ask it for things) and «Miembros» (Personas, Tus bots, the bots
-// of each other person as a compact row, «Invitar a la sala», the room's rules and files). A bot
+// of each other person as a compact row, what is pending about who comes in, «Invitar», the room's rules and files). A bot
 // opens here from its face or name anywhere in the conversation. What waits for someone else is
 // neutral here; only «te espera» wears honey.
 const h3 = { margin: "0 0 6px", display: "flex", gap: "6px", fontSize: "var(--t-caption)", fontWeight: 600, color: "var(--c-text-3)" };
@@ -22,29 +24,43 @@ const small = { fontSize: "var(--t-meta)", color: "var(--c-text-3)" };
 const ellipsis = { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 const faceState = (s) => (s === "working" || s === "thinking" ? "work" : s === "waiting" ? "wait" : s === "paused" || s === "limited" ? "pause" : "rest");
 
-/** «Lucía pide añadir a Marta»: informative, for whoever made the room. Neutral colours. */
-function Requests({ view, onChanged }) {
-  const [busy, setBusy] = useState(null);
-  const [error, setError] = useState(null);
-  const decide = async (r, decision) => {
-    setBusy(r.id);
-    setError(null);
-    try { await post(`/rooms/${encodeURIComponent(view.id)}/requests/${encodeURIComponent(r.id)}`, { decision }); onChanged?.(); } catch (e) { setError(e.message); } finally { setBusy(null); }
-  };
-  if (!view.requests?.length) return null;
+/**
+ * What is pending about who comes in, in neutral words (it waits for someone else): what you
+ * asked this room's owner, and the codes for this room nobody used yet (with «Revocar»).
+ */
+function Pending({ view }) {
+  const { peers } = useStore();
+  const hidden = useHidden("invite");
+  const owner = roomOwner(view);
+  const codes = pendingCodes(peers?.invites || [], { kind: "room", room: view }).filter((i) => !hidden(i.id));
+  const asked = view.asked || [];
+  if (!codes.length && !asked.length) return null;
+  const revoke = (inv) => later({ id: "invite:" + inv.id, keys: ["invite:" + inv.id], ms: 8000, text: "Código revocado: ya no sirve", error: "No se pudo revocar", run: () => del(`/peers/invites/${encodeURIComponent(inv.id)}`) });
   return (
-    <section aria-label="Peticiones para añadir personas" style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-      {view.requests.map((r) => (
-        <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", borderRadius: "var(--r-md)", background: "var(--c-sunken)", border: "1px solid var(--c-line)" }}>
-          <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45 }}><strong style={{ fontWeight: 600 }}>{r.from?.name || "Alguien"}</strong>{" pide añadir a "}<strong style={{ fontWeight: 600 }}>{r.person?.name || "una persona"}</strong>{" a la sala."}</span>
-          <span style={small}>{"Verá lo que se escriba a partir de ahora, no lo anterior."}</span>
-          <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" className="v4-btn primary" disabled={busy === r.id} onClick={() => decide(r, "approve")}>{"Añadir"}</button>
-            <button type="button" className="v4-btn" disabled={busy === r.id} onClick={() => decide(r, "decline")}>{"Ahora no"}</button>
-          </span>
-        </div>
-      ))}
-      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</span> : null}
+    <section style={{ margin: "6px 0 16px" }}>
+      <h3 style={h3}>{`${WORDS.pending} · ${codes.length + asked.length}`}</h3>
+      <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" }}>
+        {asked.map((a) => (
+          <li key={a.id} className="v4-mrow" title={askedLine([a], owner?.name)}>
+            <PersonAvatar person={a.person} size={28} ring="var(--c-app)" />
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+              <span style={{ ...ellipsis, fontSize: "var(--t-ui)", fontWeight: 500, color: "var(--c-text-2)" }}>{a.person?.name}</span>
+              <span style={{ ...ellipsis, fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{`Se lo has pedido a ${firstName(owner?.name)}`}</span>
+            </span>
+            <Clock3 size={14} style={{ flex: "none", color: "var(--c-text-3)" }} />
+          </li>
+        ))}
+        {codes.map((inv) => (
+          <li key={inv.id} className="v4-mrow">
+            <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", border: "1.5px dashed var(--c-line-strong)", color: "var(--c-text-3)" }}><Ticket size={14} /></span>
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+              <span style={{ ...ellipsis, fontSize: "var(--t-ui)", fontWeight: 500, color: "var(--c-text-2)" }}>{inv.name && inv.name !== "Alguien" ? inv.name : "Código sin nombre"}</span>
+              <span style={{ ...ellipsis, fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{"Código · " + expiresText(inv.expiresAt).toLowerCase()}</span>
+            </span>
+            <button type="button" className="v4-btn ghost" onClick={() => revoke(inv)} aria-label={`${WORDS.revoke} el código para ${inv.name || "alguien"}`} style={{ height: "28px", padding: "0 8px" }}>{WORDS.revoke}</button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -141,7 +157,7 @@ export function BotProfile({ bot, owner = null, state = null, stateWord = null, 
   );
 }
 
-export default function MemberPanel({ view, panel, mission = null, addable = [], fileCount = 0, onRules = null, onFiles = null, onInvite = null, onChanged = null, profile = null, tab = "miembros", onTab = null, onOpenBot = null }) {
+export default function MemberPanel({ view, panel, mission = null, addable = [], fileCount = 0, onRules = null, onFiles = null, onInvite = null, profile = null, tab = "miembros", onTab = null, onOpenBot = null }) {
   const { act, busy } = useAction();
   const nameless = lacksOwnName(useStore());
   const queue = QUEUE.find(([v]) => v === (mission?.queueMode || "steer"))?.[1] || QUEUE[0][1];
@@ -169,7 +185,6 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
         </div>
       ) : (
         <div id="panel-miembros" role={profile ? "tabpanel" : undefined} aria-labelledby={profile ? "panel-tab-miembros" : undefined} style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "12px 20px 20px" }}>
-          <Requests view={view} onChanged={onChanged} />
           <section style={{ margin: "6px 0 16px" }}>
             <h3 style={h3}>{`Personas · ${panel.people.length}`}</h3>
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" }}>
@@ -189,6 +204,7 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
             {/* Where your name matters (a room with people): a quiet way to set it. */}
             {nameless && panel.people.length > 1 ? <a href="/ajustes/general#tu-nombre" style={{ ...small, display: "block", lineHeight: 1.45, paddingTop: "4px", color: "var(--c-text-2)" }}>{"Los demás te ven como «Sin nombre». "}<span style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>{"Ponte un nombre"}</span></a> : null}
           </section>
+          {view.private ? null : <Pending view={view} />}
           {panel.groups.map((g) => (g.mine ? (
             <section key="mine" style={{ margin: "6px 0 16px" }}>
               <h3 style={h3}>{`${g.label} · ${g.bots.length}`}</h3>
@@ -214,7 +230,7 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
               {view.private ? null : <a href="/equipo" className="v4-btn" style={{ alignSelf: "flex-start" }}>{"Ver mis bots"}</a>}
             </section>
           )}
-          {onInvite && !view.general ? <button type="button" className="v4-invite" onClick={onInvite}><UserPlus size={16} />{"Invitar a la sala"}</button> : null}
+          {onInvite ? <button type="button" className="v4-invite" onClick={onInvite}><UserPlus size={16} />{WORDS.invite}</button> : null}
           {rules.length ? (
             <section style={{ margin: "16px 0 0", paddingTop: "14px", borderTop: "1px solid var(--c-line)" }}>
               <h3 style={h3}>{"Reglas de esta sala"}</h3>

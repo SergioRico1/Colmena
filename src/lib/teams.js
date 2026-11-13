@@ -157,7 +157,7 @@ const CODE = /COLMENA[\s-]*((?:[0-9A-Z][\s-]*){16})/i;
 /**
  * The invitation code inside whatever was pasted (the whole message is fine), written as
  * COLMENA-XXXX-XXXX-XXXX-XXXX, or null. Team, room and person codes look the same: what a code
- * is for is only known after asking (POST /api/peers/invites/preview → codeKind).
+ * is for is only known after asking (POST /api/peers/invites/preview → lib/invite.js › joinView).
  */
 export function findCode(text) {
   const m = CODE.exec(String(text || ""));
@@ -166,17 +166,6 @@ export function findCode(text) {
   if (!/^[0-9A-Z]{16}$/.test(raw)) return null;
   return "COLMENA-" + raw.match(/.{4}/g).join("-");
 }
-/**
- * What a code is for, from its preview {name, team, room, already}:
- * a team's goes to POST /api/teams/join; a room's or a person's to POST /api/peers/invites/accept.
- */
-export function codeKind(preview) {
-  const from = firstName(preview?.name);
-  if (preview?.team) return { kind: "team", title: `Entrar en el equipo «${preview.team}»`, text: `Te invita ${preview.name || "alguien"}. Verás a sus personas, los bots de cada una y la sala «general».`, confirm: `Coinciden · entrar en «${preview.team}»`, from };
-  if (preview?.room) return { kind: "room", title: `${preview.name || "Alguien"} te invita a la sala «${preview.room}»`, text: "Entrarás en esa sala y podréis escribiros a solas. No es una invitación a un equipo.", confirm: `Coinciden · entrar en «${preview.room}»`, from };
-  return { kind: "person", title: `${preview?.name || "Alguien"} te invita a hablar`, text: "Os escribiréis a solas, cada uno desde su Colmena. No es una invitación a un equipo.", confirm: `Coinciden · conectar con ${from}`, from };
-}
-
 // ---------------------------------------------------------------- «Nueva sala»
 export const ROOM_MAX_BOTS = 6;
 export const ROOM_MAX_PEOPLE = 31;

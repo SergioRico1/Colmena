@@ -7,7 +7,7 @@ import { aiConnected, askBox } from "../src/lib/aiAccount.js";
 
 test("the welcome asks for the essentials first, then with whom you work", () => {
   assert.deepEqual(STEPS.map(([label]) => label), ["Hola", "Cuenta de IA", "Tu equipo", "Cómo trabajas", "Tus bots", "Tus apps", "Primera petición"]);
-  assert.deepEqual(TEAM_CHOICES.map((c) => [c.id, c.title]), [["create", "Crear un equipo"], ["join", "Unirme a un equipo"], ["solo", "Empezar solo"]]);
+  assert.deepEqual(TEAM_CHOICES.map((c) => [c.id, c.title]), [["create", "Crear un equipo"], ["join", "Unirme con un código"], ["solo", "Empezar solo"]]);
   // Starting alone says a team can come later.
   assert.match(TEAM_CHOICES.at(-1).text, /más adelante/);
   // «Tu equipo» is the people now: the bots have their own step.

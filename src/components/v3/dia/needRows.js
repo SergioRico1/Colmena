@@ -67,6 +67,8 @@ export function needRow(entry, { botName = "", roomName = "" } = {}) {
     case "errand":
       return { who, what: entry.item.title || "Otra persona pide algo a tu bot", sub: "", action: { kind: "link", label: "Ver y decidir", href: entry.item.roomId ? `/con/${encodeURIComponent(entry.item.roomId)}` : "/equipo" } };
     default:
+      // «Please add»: someone in a room you made asks you to let a person in (server/waiting.mjs).
+      if (entry.item?.kind === "roomadd") return { who: entry.item.room || roomName ? "#" + (entry.item.room || roomName) : "Una sala tuya", what: entry.item.title || "Te piden añadir a una persona", sub: "", action: { kind: "link", label: "Ver y decidir", href: `/sala/${encodeURIComponent(entry.item.roomId)}` } };
       return { who, what: "Tiene algo para ti en su chat", sub: "", action: { kind: "link", label: "Abrir", href: entry.botId && entry.missionId ? `/chat/${entry.botId}?c=${entry.missionId}` : "/" } };
   }
 }

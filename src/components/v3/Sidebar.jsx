@@ -6,7 +6,9 @@ import { navigate, useRouter } from "../../lib/router.jsx";
 import { patch, put } from "../../lib/api.js";
 import { WindowDots } from "../v2/Rail.jsx";
 import { NewConversation } from "../v2/chat/ConvList.jsx";
-import { AcceptSheet, InviteSheet } from "../v2/people/InviteSheets.jsx";
+import InviteSheet from "../people/InviteSheet.jsx";
+import JoinSheet from "../people/JoinSheet.jsx";
+import NewMessageSheet from "../people/NewMessageSheet.jsx";
 import NewRoomSheet from "./team/NewRoomSheet.jsx";
 import TeamSheets from "./team/TeamSheets.jsx";
 import { useExpert } from "../../lib/expert.js";
@@ -20,7 +22,7 @@ import { LogoMark, LOGO_FONT } from "../Logo.jsx";
 import { C, line } from "../../lib/theme.js";
 import { STATE_WORD, STATUS_WORD, conversationPath, foldBots, foldRooms, rememberConversation, rowLabel, scrollFade, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
 import { selfName } from "../../lib/ownName.js";
-import { Bell, Books, Bot, Check, CheckSquare, ChevronDown, ChevronRight, Code, Ellipsis, Gear, Hash, House, ListChecks, LockSimple, LogOut, MessageSquare, NotePencil, Pencil, Plus, Repeat, Search, Sidebar as SidebarIcon, Smiley, Target, UsersThree } from "../Icon.js";
+import { Bell, Books, Bot, ChatCircleText, Check, CheckSquare, ChevronDown, ChevronRight, Code, Ellipsis, Gear, Hash, House, ListChecks, LockSimple, LogOut, MessageSquare, NotePencil, Pencil, Plus, Repeat, Search, Sidebar as SidebarIcon, Smiley, Target, UsersThree } from "../Icon.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md; Colmena 4:
 // design/v4/colmena-v4.html › .side). Top to bottom: the window's three dots and the wordmark,
@@ -44,14 +46,15 @@ export const placeId = (id) => ALIAS[id] || id;
 const NEW_ITEMS = [
   { id: "chat", label: "Chat con un bot", hint: "Pregunta o encarga algo", icon: MessageSquare },
   { id: "sala", label: "Sala", hint: "Con personas y varios bots", icon: Hash },
+  { id: "dm", label: "Mensaje directo", hint: "A una persona, solo vosotros dos", icon: ChatCircleText },
   { id: "tarea", label: "Tarea", hint: "Un trabajo con plan y entrega", href: "/trabajo?nueva=1", icon: CheckSquare },
   { id: "rutina", label: "Rutina", hint: "Algo que se repite solo", href: "/trabajo/rutinas?nueva=1", icon: Repeat },
   { id: "objetivo", label: "Objetivo", hint: "Una meta a largo plazo", href: "/trabajo/objetivos?nuevo=1", icon: Target },
   { id: "bot", label: "Bot", hint: "Un compañero nuevo", href: "/equipo/nuevo", icon: Bot },
   { id: "codigo", label: "Tarea de código", hint: "En uno de tus proyectos", href: "/codigo", icon: Code },
 ];
-// «Nuevo» shows four (the most used: a chat, a room, a task, a routine); «Más…» unfolds the rest.
-export const NEW_FIRST = ["chat", "sala", "tarea", "rutina"];
+// «Nuevo» shows five (the most used: a chat, a room, a direct message, a task, a routine); «Más…» unfolds the rest.
+export const NEW_FIRST = ["chat", "sala", "dm", "tarea", "rutina"];
 
 // The status you set for the people you talk to (PATCH /api/peers/status), from the profile menu.
 const atNextHour = (h) => { const d = new Date(); d.setDate(d.getDate() + (d.getHours() >= h ? 1 : 0)); d.setHours(h, 0, 0, 0); return d.toISOString(); };
@@ -113,7 +116,8 @@ export default function Sidebar({ active = "inicio" }) {
     window.addEventListener("colmena:new", open);
     return () => window.removeEventListener("colmena:new", open);
   }, []);
-  const [sheet, setSheet] = useState(null); // "chat" | "sala" | "invitar" | "aceptar"
+  const [sheet, setSheet] = useState(null); // "chat" | "sala" | "dm" | "invitar" | "aceptar"
+  const [inviteName, setInviteName] = useState("");
   const [teamSheet, setTeamSheet] = useState(null); // {kind: "create" | "join" | "invite", team?} (team/TeamSheets.jsx)
   const [folded, setFoldedState] = useState(!!settings.sidebarFolded);
   const [closed, setClosed] = useState(() => readJson(GROUPS_KEY, {}));
@@ -192,6 +196,7 @@ export default function Sidebar({ active = "inicio" }) {
   const pick = (item) => {
     setMenu(null);
     if (item.id === "chat" || item.id === "sala") return openNew(item.id);
+    if (item.id === "dm") return setSheet("dm");
     navigate(item.href);
   };
   const setStatus = (s) => {
@@ -221,9 +226,14 @@ export default function Sidebar({ active = "inicio" }) {
     };
     // The palette's «Nuevo chat» and old links ask for the sheet with this event.
     const onNew = (e) => { if (!document.querySelector("[data-chats-home], [data-convlist]")) setSheet(e?.detail?.kind === "sala" ? "sala" : "chat"); };
+    // Any screen opens the people sheets with these: «Nuevo mensaje», «Unirme con un código».
+    const onDm = () => setSheet("dm");
+    const onJoin = () => setSheet("aceptar");
     window.addEventListener("keydown", onKey);
     window.addEventListener("colmena:new-conversation", onNew);
-    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("colmena:new-conversation", onNew); };
+    window.addEventListener("colmena:new-message", onDm);
+    window.addEventListener("colmena:join", onJoin);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("colmena:new-conversation", onNew); window.removeEventListener("colmena:new-message", onDm); window.removeEventListener("colmena:join", onJoin); };
   }, [expert, folded]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!menu) return undefined;
@@ -463,11 +473,11 @@ export default function Sidebar({ active = "inicio" }) {
         </div>
       )}
 
-      {groupHead("personas", "Personas", model.people.length, "Invitar a una persona", () => (peopleOff ? navigate("/ajustes/contactos") : setSheet("invitar")), { unread: sum(model.people, "unread"), waiting: sum(model.people, "waiting") })}
+      {groupHead("personas", "Personas", model.people.length, "Nuevo mensaje", () => setSheet("dm"), { unread: sum(model.people, "unread"), waiting: sum(model.people, "waiting") })}
       {closed.personas ? null : (
         <div id="v3-group-personas" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
           {model.people.map(personRow)}
-          {model.people.length ? null : empty(team.solo ? "Aquí verás a las personas con las que hablas a solas. Invita a alguien con el +." : "Aún no hay mensajes directos. Escribe a alguien desde Equipo.")}
+          {model.people.length ? null : <span style={{ padding: "4px 8px 6px", fontSize: "var(--t-meta)", lineHeight: "1.4", color: C.text3 }}>{"Tus mensajes directos aparecen aquí. "}<button type="button" onClick={() => setSheet("dm")} style={{ padding: "0", border: "0", background: "transparent", color: C.text2, font: "inherit", fontWeight: "600", textDecoration: "underline", textUnderlineOffset: "3px", cursor: "pointer" }}>{"Nuevo mensaje"}</button></span>}
         </div>
       )}
       {groupHead("bots", "Bots", model.bots.length, "Nuevo bot", () => navigate("/equipo/nuevo"), { unread: sum(model.bots, "unread"), waiting: sum(model.bots, "waiting") })}
@@ -504,8 +514,9 @@ export default function Sidebar({ active = "inicio" }) {
   const sheets = teamSheet ? <TeamSheets sheet={teamSheet} onClose={() => setTeamSheet(null)} onSheet={setTeamSheet} />
     : sheet === "sala" ? <NewRoomSheet onClose={() => setSheet(null)} />
       : sheet === "chat" ? <NewConversation mode="chat" onClose={() => setSheet(null)} onPeople={(which) => setSheet(which)} />
-        : sheet === "invitar" ? <InviteSheet onClose={() => setSheet(null)} />
-          : sheet === "aceptar" ? <AcceptSheet onClose={() => setSheet(null)} /> : null;
+        : sheet === "dm" ? <NewMessageSheet onClose={() => setSheet(null)} onInvite={(name) => { setInviteName(name || ""); setSheet("invitar"); }} />
+          : sheet === "invitar" ? <InviteSheet initialName={inviteName} onClose={() => { setSheet(null); setInviteName(""); }} />
+            : sheet === "aceptar" ? <JoinSheet onClose={() => setSheet(null)} /> : null;
 
   const activityLabel = `Actividad: ${model.summary.text}`;
   return (

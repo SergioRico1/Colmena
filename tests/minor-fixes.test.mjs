@@ -35,7 +35,7 @@ test("Ctrl N, the palette and the «Nuevo» menu agree; places go Ctrl 1 to 5", 
   assert.match(side, /if \(k === "n"\) \{ e\.preventDefault\(\); setMenu/, "Ctrl N opens «Nuevo»");
   assert.match(palette, /label: "Nuevo…"[^\n]*kbd: inCode \? null : "Ctrl N"[^\n]*colmena:new/, "the palette's Ctrl N opens the same menu");
   assert.ok(!/label: "Nuevo chat"[^\n]*"Ctrl N"/.test(palette), "«Nuevo chat» no longer claims Ctrl N");
-  assert.match(side, /export const NEW_FIRST = \["chat", "sala", "tarea", "rutina"\]/, "four first; Sala, Chat and Tarea never hidden");
+  assert.match(side, /export const NEW_FIRST = \["chat", "sala", "dm", "tarea", "rutina"\]/, "five first; Sala, Chat, Mensaje directo and Tarea never hidden");
   assert.match(side, /if \(\/\^\[1-5\]\$\/\.test\(e\.key\)\)/);
   assert.match(src("src/components/v2/settings/General.jsx"), /"Ctrl 1 – 5"/);
   assert.match(palette, /navigate|go\("\/personas\/como-funciona"\)/, "the help page is in Ctrl+K");
@@ -56,9 +56,9 @@ test("small things a person notices: autonomy only when unusual, Modo experto sa
   assert.match(equipo, /"sin cuenta de IA"/);
   assert.match(src("src/components/v2/code/CodeHome.jsx"), /type="checkbox" checked=\{multi\}[^\n]*width: "24px", height: "24px"/);
   assert.match(src("src/styles/base.css"), /\.c-on-dark::placeholder\{color:#A9ACB6/);
-  // v4: the invitation card is a hairline card in both themes (no longer an ink panel), so its
-  // name field takes the ordinary placeholder, which already reads at 4.5:1.
-  assert.match(src("src/components/v3/team/People.jsx"), /className="c-quiet" type="text" value=\{name\}/);
+  // v4: the code's name field lives in the one «Invitar» sheet, whose placeholder reads at 4.5:1 in
+  // both themes (styles/invite.css › .inv-field input::placeholder, the faintest text token).
+  assert.match(src("src/styles/invite.css"), /\.inv-field input::placeholder\{color:var\(--c-text-4\);opacity:1\}/);
 });
 
 test("rooms: the same log structure, a subtitle that is never cut, a task's conversation says what it is", () => {

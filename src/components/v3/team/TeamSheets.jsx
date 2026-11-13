@@ -1,24 +1,20 @@
-import { useEffect, useState } from "react";
-import { Copy, X } from "../../Icon.js";
-import { get, post } from "../../../lib/api.js";
+import { useState } from "react";
+import { X } from "../../Icon.js";
+import { post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
-import { navigate } from "../../../lib/router.jsx";
-import { shareUrl } from "../../../lib/peers.js";
 import { DIALOG_VEIL, useDialogFocus } from "../../../lib/useDialogFocus.js";
-import { adminNames, codeKind, findCode, listNames } from "../../../lib/teams.js";
 import { C } from "../../../lib/theme.js";
+import InviteSheet from "../../people/InviteSheet.jsx";
+import JoinSheet from "../../people/JoinSheet.jsx";
 
 // The team's sheets (docs/PLAN-equipo-y-salas.md › 4.1), opened from the sidebar's team menu
-// and from Equipo. Same vocabulary as «Hablar con una persona» (v2/people/InviteSheets.jsx).
-//   create  «Crear un equipo»        POST /api/teams {name} → the team (you administer it)
-//   join    «Unirme con un código»   POST /api/peers/invites/preview {code} says what the code is
-//                                    for; a team's goes to POST /api/teams/join, a person's or a
-//                                    room's to POST /api/peers/invites/accept
-//   invite  «Invitar al equipo»      POST /api/teams/:id/invite {name?} → {code, text, expiresAt}
+// and from Equipo, in the one vocabulary of docs/SCREENS.md › «Invitar»:
+//   create  «Crear un equipo»        POST /api/teams {name} → the team (you administer it), then
+//                                    the «Invitar» sheet of that team
+//   join    «Unirme con un código»   people/JoinSheet.jsx (any code: a team's, a room's, a person's)
+//   invite  «Invitar»                people/InviteSheet.jsx with the team as its context
 // Colmena never sends an invitation: you copy it and send it yourself.
 export const INK = C.text, MUTED = C.text3;
-/** «Cómo funciona», at what the others see of your bots' work. */
-const HELP = "/personas/como-funciona#que-ven";
 const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: DIALOG_VEIL, animation: "fade .2s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitAppRegion: "no-drag" };
 const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .06), var(--c-shadow-pop)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
 export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", cursor: on ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: on ? "var(--c-btn)" : C.lineStrong, color: on ? "var(--c-btn-text)" : C.text2 });
@@ -44,28 +40,6 @@ export function Sheet({ id, title, sub = null, width = 540, onClose, children })
         </div>
         {children}
       </section>
-    </div>
-  );
-}
-
-/** The code and the message that goes with it, with «Copiar». */
-export function CodeCard({ made, onError }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(made.text || made.code); setCopied(true); } catch { onError("No se pudo copiar. Selecciona el texto y cópialo tú."); }
-  };
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "var(--r-2xl)", background: "var(--c-sunken)" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text)", userSelect: "text" }}>
-        {String(made.text || made.code).split("\n").map((line, i) => line === made.code
-          ? <code key={i} style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "var(--r-md)", background: "var(--c-card)", font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .08)", userSelect: "all" }}>{line}</code>
-          : <span key={i} style={{ overflowWrap: "anywhere" }}>{line}</span>)}
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
-        <button type="button" onClick={copy} data-autofocus="" style={darkBtn()}><Copy size={15} strokeWidth={2.2} aria-hidden="true" />{copied ? "Copiada" : "Copiar invitación"}</button>
-        <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"24 h, un solo uso"}</span>
-        <span role="status" style={hidden}>{copied ? "Invitación copiada" : ""}</span>
-      </div>
     </div>
   );
 }
@@ -102,137 +76,6 @@ export function CreateTeamSheet({ onClose, onCreated = null }) {
 }
 
 /**
- * «Invitar al equipo». An admin gets a code for one person; anyone else is told who can invite.
- * `team` is a row of the team list: {id, name, admin}.
- */
-export function TeamInviteSheet({ team, onClose, fresh = false }) {
-  const { run } = useStore();
-  const [name, setName] = useState("");
-  const [made, setMade] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-  const [admins, setAdmins] = useState(null);
-  useEffect(() => {
-    if (team.admin) return undefined;
-    let alive = true;
-    get(`/teams/${encodeURIComponent(team.id)}`).then((t) => { if (alive) setAdmins(adminNames(t.members)); }).catch(() => { if (alive) setAdmins([]); });
-    return () => { alive = false; };
-  }, [team.id, team.admin]);
-  const make = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try { setMade(await run(() => post(`/teams/${encodeURIComponent(team.id)}/invite`, name.trim() ? { name: name.trim() } : {}))); } catch (e) { setError(e.message); } finally { setBusy(false); }
-  };
-  if (!team.admin) {
-    return (
-      <Sheet id="team-inv-t" title={`Invitar a «${team.name}»`} onClose={onClose}>
-        <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.55 }}>
-          {admins == null ? "Buscando quién administra el equipo…" : admins.length ? `Solo invita quien administra el equipo: ${listNames(admins)}. Pídele que mande la invitación.` : "Solo invita quien administra el equipo. Pídeselo a quien lo creó."}
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          <button type="button" data-autofocus="" onClick={() => { onClose(); navigate("/equipo#equipo"); }} style={darkBtn()}>{"Ver el equipo"}</button>
-          <button type="button" onClick={onClose} style={quietBtn}>{"Cerrar"}</button>
-        </div>
-      </Sheet>
-    );
-  }
-  return (
-    <Sheet id="team-inv-t" width={560} title={made ? "Invitación lista" : fresh ? `«${team.name}» está creado` : `Invitar a «${team.name}»`} sub={made ? "Cópiala y mándasela tú. Colmena no escribe a nadie por ti." : fresh ? "Invita a la primera persona, o hazlo más tarde desde Equipo." : "Un código por persona. Quien lo use entra en el equipo y en «general»."} onClose={onClose}>
-      {made ? (
-        <>
-          <CodeCard made={made} onError={setError} />
-          <p style={note}>{"Cuando pegue el código en su Colmena con «Unirme con un código», os saldrán las mismas cuatro palabras a los dos. Si coinciden, nadie se ha puesto en medio."}</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" onClick={() => { setMade(null); setName(""); }} style={{ ...quietBtn, paddingLeft: 0 }}>{"Invitar a otra persona"}</button>
-          </div>
-        </>
-      ) : (
-        <>
-          <form onSubmit={(e) => { e.preventDefault(); make(); }} className="c-ring" style={fieldBox}>
-            <label style={{ flex: 1, display: "flex", minWidth: 0 }}>
-              <span style={hidden}>{"Nombre de la persona (opcional)"}</span>
-              <input className="c-bare" autoFocus data-autofocus="" type="text" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="¿Para quién es? (opcional)" style={fieldInput} />
-            </label>
-            <button type="submit" disabled={busy} style={darkBtn(!busy)}>{busy ? "Creando…" : "Crear invitación"}</button>
-          </form>
-          <p style={note}>{"El código sirve 24 h y una sola vez. El nombre solo es para que reconozcas la invitación en la lista. "}<a href={HELP} onClick={() => onClose()} style={{ color: "var(--c-accent-ink)", fontWeight: 600 }}>{"Qué verá quien entre"}</a></p>
-        </>
-      )}
-      {error ? <p role="alert" style={errorLine}>{error}</p> : null}
-    </Sheet>
-  );
-}
-
-/** «Unirme con un código»: one field for any code; it says what the code is for before you confirm. */
-export function JoinSheet({ onClose }) {
-  const { run } = useStore();
-  const [text, setText] = useState("");
-  const [preview, setPreview] = useState(null);
-  const [done, setDone] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-  const code = findCode(text);
-  const what = preview ? codeKind(preview) : null;
-  const look = async () => {
-    if (busy || !text.trim()) return;
-    if (!code) { setError("Eso no parece un código de Colmena. Es como COLMENA-XXXX-XXXX-XXXX-XXXX; puedes pegar el mensaje entero."); return; }
-    setBusy(true);
-    setError(null);
-    try { setPreview(await post("/peers/invites/preview", { code })); } catch (e) { setError(e.message); } finally { setBusy(false); }
-  };
-  const accept = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const out = await run(() => (what.kind === "team" ? post("/teams/join", { code }) : post("/peers/invites/accept", { code })));
-      setDone({ kind: what.kind, ...out });
-    } catch (e) { setError(e.message); } finally { setBusy(false); }
-  };
-  if (done) {
-    const team = done.kind === "team";
-    return (
-      <Sheet id="team-join-t" title={team ? `Has pedido entrar en «${done.name || preview.team}»` : `Ya puedes escribirte con ${what.from}`} sub={team ? `Estarás dentro en cuanto la Colmena de quien creó el equipo esté encendida. Mientras, lo verás en Equipo como pendiente.` : "Sus mensajes llegan cerrados con llave: solo los abre tu ordenador."} onClose={onClose}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          <button type="button" data-autofocus="" onClick={() => { onClose(); navigate(team ? "/equipo#equipo" : shareUrl(done.dm)); }} style={darkBtn()}>{team ? "Ver en Equipo" : "Abrir la conversación"}</button>
-          <button type="button" onClick={onClose} style={quietBtn}>{"Cerrar"}</button>
-        </div>
-      </Sheet>
-    );
-  }
-  if (preview) {
-    return (
-      <Sheet id="team-join-t" title={what.title} sub={what.text} onClose={onClose}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px", borderRadius: "var(--r-2xl)", background: "var(--c-sunken)" }}>
-          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
-          <strong style={{ font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{(preview.words || []).join(" · ")}</strong>
-          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-3)" }}>{`Si coinciden, la invitación es de verdad de ${what.from}. Si no, no sigas.`}</span>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <button type="button" data-autofocus="" onClick={accept} disabled={busy} style={{ ...darkBtn(!busy), minHeight: "50px", fontSize: "var(--t-body)" }}>{busy ? "Un momento…" : what.confirm}</button>
-          <button type="button" onClick={() => { setPreview(null); setError(null); }} style={quietBtn}>{"No coinciden o no le conozco"}</button>
-        </div>
-        {error ? <p role="alert" style={errorLine}>{error}</p> : null}
-      </Sheet>
-    );
-  }
-  return (
-    <Sheet id="team-join-t" title="Unirme con un código" sub="Pega el código que te han mandado. Vale el de un equipo, el de una sala o el de una persona." onClose={onClose}>
-      <form onSubmit={(e) => { e.preventDefault(); look(); }} className="c-ring" style={fieldBox}>
-        <label style={{ flex: 1, display: "flex", minWidth: 0 }}>
-          <span style={hidden}>{"Código de invitación"}</span>
-          <input className="c-bare" autoFocus data-autofocus="" type="text" value={text} maxLength={600} onChange={(e) => { setText(findCode(e.target.value) || e.target.value); setError(null); }} placeholder="COLMENA-XXXX-XXXX-XXXX-XXXX" spellCheck={false} autoComplete="off" style={{ ...fieldInput, font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.03em" }} />
-        </label>
-        <button type="submit" disabled={!text.trim() || busy} style={darkBtn(!!text.trim() && !busy)}>{busy ? "Buscando…" : "Continuar"}</button>
-      </form>
-      <p style={note}>{"Antes de entrar verás para qué es el código y de quién. Puedes pegar el mensaje entero: Colmena encuentra el código."}</p>
-      {error ? <p role="alert" style={errorLine}>{error}</p> : null}
-    </Sheet>
-  );
-}
-
-/**
  * The team's sheets by name, so the sidebar and Equipo open the same ones.
  * `sheet`: {kind: "create" | "join" | "invite", team?, fresh?}; `onSheet` opens another.
  */
@@ -240,6 +83,6 @@ export default function TeamSheets({ sheet, onClose, onSheet }) {
   if (!sheet) return null;
   if (sheet.kind === "create") return <CreateTeamSheet onClose={onClose} onCreated={(team) => onSheet({ kind: "invite", team: { id: team.id, name: team.name, admin: true }, fresh: true })} />;
   if (sheet.kind === "join") return <JoinSheet onClose={onClose} />;
-  if (sheet.kind === "invite" && sheet.team) return <TeamInviteSheet team={sheet.team} fresh={!!sheet.fresh} onClose={onClose} />;
+  if (sheet.kind === "invite" && sheet.team) return <InviteSheet context={{ kind: "team", team: sheet.team }} lead={sheet.fresh ? `«${sheet.team.name}» está creado, con su sala #general. Invita a la primera persona, o hazlo más tarde desde Equipo.` : null} onClose={onClose} />;
   return null;
 }

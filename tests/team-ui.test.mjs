@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  adminNames, avatarOf, canInvite, canMakeAdmin, canMessage, canRemove, canRename, canStepDown, canUnmakeAdmin, codeKind, countLine, creatorName, currentTeam,
+  adminNames, avatarOf, canInvite, canMakeAdmin, canMessage, canRemove, canRename, canStepDown, canUnmakeAdmin, countLine, creatorName, currentTeam,
   findCode, isAdmin, leaveText, listNames, pendingLine, presenceWords, realTeams, removeText, roleLabel, roomHint, roomPayload, roomPeople,
   sortMembers, untilText, waitingFor, waitingLine, waitingRest,
 } from "../src/lib/teams.js";
@@ -150,19 +150,6 @@ test("the join field finds the code in whatever is pasted", () => {
   assert.equal(findCode(""), null);
   // What the server takes: 16 to 60 characters (POST /api/teams/join).
   assert.ok(findCode("ab12cd34ef56gh78").length >= 16 && findCode("ab12cd34ef56gh78").length <= 60);
-});
-
-test("what a code is for, before you confirm", () => {
-  const team = codeKind({ name: "Sergio Rico", team: "Acme", room: null, words: [] });
-  assert.deepEqual([team.kind, team.title, team.confirm, team.from], ["team", "Entrar en el equipo «Acme»", "Coinciden · entrar en «Acme»", "Sergio"]);
-  const room = codeKind({ name: "Sergio Rico", team: null, room: "ventas" });
-  assert.deepEqual([room.kind, room.title], ["room", "Sergio Rico te invita a la sala «ventas»"]);
-  assert.match(room.text, /No es una invitación a un equipo/);
-  const person = codeKind({ name: "Sergio Rico", team: null, room: null });
-  assert.deepEqual([person.kind, person.confirm], ["person", "Coinciden · conectar con Sergio"]);
-  // A team wins over a room: that code goes to /api/teams/join.
-  assert.equal(codeKind({ name: "S", team: "Acme", room: "general" }).kind, "team");
-  assert.equal(codeKind(null).kind, "person");
 });
 
 test("«Nueva sala»: who can go in and what is sent", () => {

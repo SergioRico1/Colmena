@@ -1,11 +1,11 @@
 // The one room screen's model (src/lib/roomView.js, src/lib/identity.js): who wrote a row, how
-// rows group, the quiet lines about other owners' bots, the member panel, the invite sheet's
-// candidates and what «@» lists. Pure functions: no browser, no server.
+// rows group, the quiet lines about other owners' bots, the member panel and what «@» lists
+// (who can be invited: tests/invite-ui.test.mjs). Pure functions: no browser, no server.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { botShape, firstName, initialsOf, listNames } from "../src/lib/identity.js";
 import {
-  askChoices, askWaiting, noBotsText, roomEmpty, liveLines, thinkingLeft, withoutRepeats, authorKey, authorOf, authorView, continues, durationText, groupFlags, handoffLine, inviteCandidates, inviteTruth, itemType, joinItems,
+  askChoices, askWaiting, noBotsText, roomEmpty, liveLines, thinkingLeft, withoutRepeats, authorKey, authorOf, authorView, continues, durationText, groupFlags, handoffLine, itemType, joinItems,
   memberPanel, mentionGroups, mentionTargets, requestHint, presenceWord, roomPlace, roomRole, stackLabel, stateWord, statusLine,
 } from "../src/lib/roomView.js";
 import { mentionItems } from "../src/lib/mentionMenu.js";
@@ -165,22 +165,6 @@ test("the member panel: people with their role and presence in words, bots group
   assert.equal(roomPlace({ ...view(), teamId: null }).text, "Por invitación");
 });
 
-test("the invite sheet: teammates and contacts, each once, never you nor who is already in", () => {
-  const team = { members: [{ address: ME, name: "Sergio Rico", you: true }, { address: LUCIA, name: "Lucía Martín", presence: "online" }, { address: "pablo", name: "Pablo Ruiz", presence: "offline" }, { address: "alvaro", name: "Álvaro Gil", presence: "online" }] };
-  const contacts = [{ id: "pablo", name: "Pablo Ruiz", status: "active", online: true }, { id: "zoe", name: "Zoe Lara", status: "active" }, { id: "pending", name: "Sin aceptar", status: "pending" }, { id: MARTA, name: "Marta Soler", status: "active" }];
-  const list = inviteCandidates({ view: view(), team, contacts });
-  assert.deepEqual(list.map((p) => [p.name, p.source, p.presence]), [["Álvaro Gil", "equipo", "online"], ["Pablo Ruiz", "equipo", "offline"], ["Zoe Lara", "contacto", "offline"]]);
-  assert.deepEqual(inviteCandidates({ view: view(), team, contacts, query: "ALVARO" }).map((p) => p.name), ["Álvaro Gil"]);
-  assert.deepEqual(inviteCandidates({ view: view(), team, contacts, query: "nadie" }), []);
-  assert.deepEqual(inviteCandidates({ view: { people: [] }, contacts }).map((p) => p.name), ["Marta Soler", "Pablo Ruiz", "Zoe Lara"]);
-  // The truth, said before adding; whoever did not make the room asks its owner.
-  assert.deepEqual(inviteTruth(view()), { asks: false, owner: null, line: "Verá lo que se escriba a partir de ahora, no lo anterior.", ask: null });
-  const notMine = { ...view(), mine: false, people: [{ address: LUCIA, name: "Lucía Martín", role: "owner", you: false }, { address: ME, name: "Sergio", role: "member", you: true }] };
-  assert.equal(inviteTruth(notMine).asks, true);
-  assert.equal(inviteTruth(notMine).ask, "Se lo pediremos a Lucía");
-  assert.equal(inviteTruth({ private: true, mine: true, people: [] }).asks, false);
-});
-
 test("«@» lists your bots first, then the people, then each owner's bots", () => {
   const groups = mentionGroups({ view: view() });
   assert.deepEqual(groups.map((g) => g.label), ["Tus bots", "Personas", "Bots de Lucía"]);
@@ -298,14 +282,14 @@ test("a room with nothing said yet says what it is for and the one thing to do",
   const me = { address: "me", you: true }, lucia = { address: "l", name: "Lucía" };
   // A new team with nobody else: «general» invites, with the code action.
   assert.deepEqual(roomEmpty({ title: "general", general: true, teamId: "t", people: [me] }, { teamName: "Lumbre" }), {
-    title: "De momento solo estás tú en «Lumbre»", text: "Invita a alguien: le das un código, lo pega en su Colmena y entra aquí, en «general», con sus bots.", action: "invite", actionLabel: "Invitar al equipo",
+    title: "De momento solo estás tú en «Lumbre»", text: "Invita a alguien: le das un código, lo pega en «Unirme con un código» y entra aquí, en #general, con sus bots.", action: "invite", actionLabel: "Invitar",
   });
   // «general» with people and no messages.
   const general = roomEmpty({ title: "general", general: true, people: [me, lucia] });
   assert.deepEqual([general.title, general.action], ["Aún no hay mensajes en #general", null]);
   assert.match(general.text, /todo el equipo/);
   // A room with people where you are still alone, one with company, and a private one.
-  assert.equal(roomEmpty({ title: "Legal", shareId: "x", people: [me] }).actionLabel, "Invitar a una persona");
+  assert.equal(roomEmpty({ title: "Legal", shareId: "x", people: [me] }).actionLabel, "Invitar");
   assert.match(roomEmpty({ title: "Legal", shareId: "x", people: [me, lucia] }).text, /nombra a un bot con @/);
   assert.deepEqual([roomEmpty({ title: "informe", private: true, people: [me] }).action, roomEmpty(null).action], [null, null]);
   // No bots in the room yet.

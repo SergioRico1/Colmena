@@ -73,6 +73,7 @@ export const Ban = /* @__PURE__ */ icon(G.Prohibit, "Ban");
 export const Banknote = /* @__PURE__ */ icon(G.Money, "Banknote");
 export const Bell = /* @__PURE__ */ icon(G.Bell, "Bell");
 export const BellRing = /* @__PURE__ */ icon(G.BellRinging, "BellRing");
+export const BellSlash = /* @__PURE__ */ icon(G.BellSlash, "BellSlash");
 export const Bookmark = /* @__PURE__ */ icon(G.BookmarkSimple, "Bookmark");
 export const Books = /* @__PURE__ */ icon(G.Books, "Books");
 export const Bot = /* @__PURE__ */ icon(G.Robot, "Bot");

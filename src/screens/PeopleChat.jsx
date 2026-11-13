@@ -13,11 +13,12 @@ import ShareSearch from "../components/v2/people/ShareSearch.jsx";
 import { fileBase64, useShareChat, RELAY_LABEL, statusText, unsendMessage, whenText } from "../lib/peers.js";
 import { useRevealMessage } from "../lib/reveal.js";
 import { isHidden, later, useToasts } from "../lib/undoToast.js";
-import { useAction, useStore } from "../lib/store.jsx";
+import { useAction, useResource, useStore } from "../lib/store.jsx";
 import { patch, post } from "../lib/api.js";
 import { extOf, extTint } from "../components/v2/chat/Parts.jsx";
 import { FileViewer } from "../components/v2/people/PeerFiles.jsx";
-import RoomSheet from "../components/v2/people/RoomSheet.jsx";
+import DmMenu from "../components/people/DmMenu.jsx";
+import { currentTeam } from "../lib/teams.js";
 import { navigate } from "../lib/router.jsx";
 import NotFound from "./NotFound.jsx";
 import { authorOf, authorView, continues } from "../lib/roomView.js";
@@ -41,12 +42,15 @@ const NOTHING = []; // nothing waits for an OK in a chat between people
 
 export default function PeopleChat({ params = {}, query = {} }) {
   const id = params.id;
-  const { peers, bots: myBots = [], artifacts = [], rooms = [] } = useStore();
+  const { peers, bots: myBots = [], artifacts = [], rooms = [], teams = [] } = useStore();
   const [viewing, setViewing] = useState(null); // a shared file open in the viewer
   const [sending, setSending] = useState([]); // names of files being sealed and sent
   const closeViewer = useCallback(() => setViewing(null), []);
-  const [room, setRoom] = useState(false); // «Personas» of a group: roles, invite, rename
-  const closeRoom = useCallback(() => setRoom(false), []);
+  // The profile on the right (who it is, your safety words, what their bots may ask you): «Ver perfil».
+  const [profile, setProfile] = useState(true);
+  // The team you share with this person, said in the header («Equipo Acme»).
+  const team = currentTeam(teams);
+  const teamView = useResource(team ? `/teams/${encodeURIComponent(team.id)}` : null);
   useToasts(); // a message being deleted hides until its «Deshacer» runs out
   const chat = useShareChat(id);
   const [error, setError] = useState(null);
@@ -97,6 +101,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
   const status = !share ? "" : dm
     ? (other?.status === "pending" ? "Esperando a que acepte en su Colmena" : other?.away ? statusText(other.away) : other?.online ? "En línea" : "No está conectada ahora")
     : `${others.length + 1} personas`;
+  const sameTeam = dm && other && teamView.data?.members?.some((m) => m.address === other.id) ? teamView.data.name : null;
   // What you shared here (newest first), for «Compartido» on the right.
   const sharedFiles = chat.messages.filter((m) => m.file && !m.deleted).map((m) => ({ ...m.file, id: m.file.id || m.id })).reverse().slice(0, 6);
   const leave = async () => {
@@ -141,18 +146,20 @@ export default function PeopleChat({ params = {}, query = {} }) {
                 <h1 style={{ margin: 0, font: "600 var(--t-lead)/1.2 'Geist', sans-serif", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share ? (dm ? share.title : "# " + share.title) : " "}</h1>
                 <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
                   {status}
+                  {sameTeam ? <span>{"· Equipo " + sameTeam}</span> : null}
+                  {share?.muted ? <span>{"· silenciada"}</span> : null}
                   {share ? <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Lock size={12} strokeWidth={2.2} aria-hidden="true" />{dm ? "solo lo leéis vosotros dos, cifrado" : "solo lo leéis quienes estáis aquí, cifrado"}</span> : null}
                 </span>
               </div>
               {share ? <button type="button" className="v4-ib" aria-label="Buscar en esta conversación" title="Buscar en esta conversación" aria-expanded={searching ? "true" : "false"} onClick={() => setSearching((s) => !s)}><Search size={18} /></button> : null}
-              {!dm && share ? <button type="button" onClick={() => setRoom(true)} aria-label={"Personas de " + share.title} title={names(others.map((o) => o.name))} className="v4-btn">{share.mine ? "Personas" : "de " + (share.members.find((m) => m.id === share.owner)?.name.split(" ")[0] || "")}</button> : null}
+              {dm && share && other ? <DmMenu share={share} other={other} onChanged={chat.load} onProfile={() => { setProfile(true); requestAnimationFrame(() => document.getElementById("dm-perfil")?.focus()); }} /> : null}
               {!dm && share && !gone ? <button type="button" onClick={leave} title={share.mine ? "La cierras para todos" : "Dejas de recibir sus mensajes"} className="v4-btn"><LogOut size={15} />{share.mine ? "Cerrar para todos" : "Salir"}</button> : null}
             </div>
             {searching && share ? <ShareSearch shareId={id} onClose={() => setSearching(false)} /> : null}
           </header>
           {relay !== "online" && share ? (
             <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "var(--c-honey-soft)", color: "var(--c-honey-text)", fontSize: "var(--t-ui)" }}>
-              {relay === "off" ? "Falta conectar Colmena al buzón de mensajes: Ajustes › Personas." : RELAY_LABEL[relay] + ". Lo que escribas saldrá en cuanto vuelva."}
+              {relay === "off" ? "Falta activar el buzón cifrado por el que viajan los mensajes: Ajustes › Contactos y equipos." : RELAY_LABEL[relay] + ". Lo que escribas saldrá en cuanto vuelva."}
             </p>
           ) : null}
           <Announcer text={said} />
@@ -211,9 +218,8 @@ export default function PeopleChat({ params = {}, query = {} }) {
             {share && !gone && !guest ? <p style={{ margin: "8px 0 0", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Tus bots aquí no ven tu correo ni tu memoria: solo lo que escribís en este chat."}</p> : null}
           </div>
         </section>
-        {share && !threadId ? <PeopleAside share={share} other={other} dm={dm} files={sharedFiles} onPeople={() => setRoom(true)} onOpenFile={setViewing} /> : null}
+        {share && !threadId && profile ? <PeopleAside share={share} other={other} dm={dm} files={sharedFiles} onOpenFile={setViewing} /> : null}
         {viewing ? <FileViewer file={viewing} onClose={closeViewer} /> : null}
-        {room && share && !dm ? <RoomSheet share={share} onClose={closeRoom} onChanged={chat.load} /> : null}
         {threadId && share ? <ThreadPanel key={threadId} shareId={id} rootId={threadId} dm={dm} botOf={botOf} shared={shared} composer={composer} revealId={query.m || null} onClose={closeThread} onDelete={remove} onError={setError} /> : null}
       </div>
     </Shell>
@@ -224,7 +230,7 @@ const ENCARGOS = [["pregunta", "Preguntarme siempre"], ["siempre", "Sí, sin pre
 const since = (iso) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" }).replace(".", "") : null);
 
 /** On the right (V3Personas): who it is, your safety words, what their bots may ask yours, what you shared. */
-function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
+function PeopleAside({ share, other, dm, files, onOpenFile }) {
   const { peers } = useStore();
   const { act, busy } = useAction();
   const contact = dm && other ? (peers?.contacts || []).find((c) => c.id === other.id) || null : null;
@@ -233,7 +239,7 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
   const head = { fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-3)" };
   const freeOn = asks.libre && asks.libre !== "nunca";
   return (
-    <aside aria-label={dm && other ? "Sobre " + other.name : "Personas de la conversación"} style={{ flex: "1 1 300px", maxWidth: "360px", minWidth: "280px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px", padding: "22px 20px", background: "var(--c-card)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
+    <aside id="dm-perfil" tabIndex={-1} aria-label={dm && other ? "Sobre " + other.name : "Personas de la conversación"} style={{ flex: "1 1 300px", maxWidth: "360px", minWidth: "280px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px", padding: "22px 20px", background: "var(--c-card)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
       {dm && other ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
           <PeerAvatar person={other} size={64} ring="var(--c-app)" />
@@ -250,7 +256,6 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
               <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{p.id === share.owner ? "creó la conversación" : p.role === "guest" ? "invitado" : p.online ? "aquí ahora" : ""}</span>
             </div>
           ))}
-          {share.mine ? <button type="button" onClick={onPeople} style={{ alignSelf: "flex-start", marginTop: "4px", height: "34px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Invitar o cambiar"}</button> : null}
         </div>
       )}
       {contact?.words?.length ? (

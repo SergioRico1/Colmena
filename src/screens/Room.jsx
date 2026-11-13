@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, FolderOpen, Globe, Hash, ListChecks, Lock, LockSimple, MessageSquareReply, MessagesSquare, PanelRight, Search, SquareTerminal, Users, Ellipsis } from "../components/Icon.js";
+import { FileText, FolderOpen, Globe, Hash, ListChecks, Lock, LockSimple, MessageSquareReply, MessagesSquare, PanelRight, Search, SquareTerminal, UserPlus, Users, Ellipsis } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
 import BotFace from "../components/BotFace.jsx";
@@ -26,7 +26,8 @@ import { BlockerBand, StuckBand, RepliesPanel, ProgressPanel, RoomComposer, Room
 import { CatchUp, NewRoom, RulesPanel, useSince } from "../components/room/RoomExtras.jsx";
 import { BotNames, HandoffLine, OpenBot, PersonAvatar, StatusLine } from "../components/room/Author.jsx";
 import MemberPanel from "../components/room/MemberPanel.jsx";
-import RoomInvite from "../components/room/RoomInvite.jsx";
+import InviteSheet from "../components/people/InviteSheet.jsx";
+import RoomAddRequests from "../components/room/RoomAddRequests.jsx";
 import RoomAsks from "../components/room/RoomAsks.jsx";
 import RowBoundary from "../components/RowBoundary.jsx";
 import PeopleMessage from "../components/v2/people/PeopleMessage.jsx";
@@ -157,7 +158,8 @@ function Room({ id, query }) {
   const asks = view?.asks || EMPTY;
   // Its approval reaches the state before the room view is read again: never drawn from there too.
   const pending = useMemo(() => (room.pending.some((a) => a.roomRequest) ? room.pending.filter((a) => !a.roomRequest) : room.pending), [room.pending]);
-  const requestKey = (store.approvals || EMPTY).filter((a) => a.roomRequest && (a.roomId === roomId || a.roomRequest.roomId === roomId)).map((a) => a.id + ":" + a.status).join(",");
+  // A «please add» for this room arrives through the one list of what waits (server/waiting.mjs).
+  const requestKey = [...(store.approvals || EMPTY).filter((a) => a.roomRequest && (a.roomId === roomId || a.roomRequest.roomId === roomId)).map((a) => a.id + ":" + a.status), ...(store.waiting || EMPTY).filter((w) => w.kind === "roomadd" && w.roomId === roomId).map((w) => w.id)].join(",");
   useEffect(() => { if (shared && requestKey) refreshView(); }, [shared, requestKey, refreshView]);
   const [sharedOut, setSharedOut] = useState({}); // artifact id → "busy" | "done"
   const shareArtifact = async (artifact) => {
@@ -382,7 +384,6 @@ function Room({ id, query }) {
   };
   const menu = [
     ...(shown?.mine && !shown?.general ? [["Cambiar el nombre", () => setRenaming(title)]] : []),
-    ...(!gone && !guest ? [["Invitar a la sala", () => setSheet("invitar")]] : []),
     ...(mission ? [
       ["Reglas de la sala", () => dock.toggle(TABS.reglas)],
       ["Archivos de la sala", () => dock.toggle(TABS.archivos)],
@@ -479,6 +480,8 @@ function Room({ id, query }) {
                     <span style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" }}>
                       {/* A debate waiting for your choice is decided from the banner below: one action, one honey element. */}
                       {mission?.mode === "debate" && mission.status !== "awaiting_choice" ? <a href={`/debate/${missionId}`} className="v4-btn" style={{ marginRight: "6px" }}>{"Ver las propuestas"}</a> : null}
+                      {/* «Invitar», where a team chat has it: beside who is here. */}
+                      {view && !gone && !guest && !taskTalk ? <button type="button" className="v4-btn" onClick={() => setSheet("invitar")} style={{ marginRight: "4px" }}><UserPlus size={16} />{"Invitar"}</button> : null}
                       {/* Who is here (design/v4 › .stack): it opens «Miembros». */}
                       <button type="button" className="v4-stack" aria-label={stackLabel(panel) + ". Ver los miembros"} title="Ver los miembros" onClick={() => showMembers()}>
                         <span aria-hidden="true" style={{ display: "flex" }}>
@@ -508,7 +511,7 @@ function Room({ id, query }) {
                 {mission ? <StuckBand mission={mission} bots={bots} /> : null}
                 {shared && relay !== "online" ? (
                   <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "var(--c-chip)", color: "var(--c-text-2)", fontSize: "var(--t-ui)" }}>
-                    {relay === "off" ? "Falta conectar Colmena al buzón de mensajes: Ajustes › Personas." : (RELAY_LABEL[relay] || "Sin conexión con el buzón") + ". Lo que escribas saldrá en cuanto vuelva."}
+                    {relay === "off" ? "Falta activar el buzón cifrado por el que viajan los mensajes: Ajustes › Contactos y equipos." : (RELAY_LABEL[relay] || "Sin conexión con el buzón") + ". Lo que escribas saldrá en cuanto vuelva."}
                   </p>
                 ) : null}
                 {gone ? <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "var(--c-chip)", color: "var(--c-text-2)", fontSize: "var(--t-ui)" }}>{view.removed ? "Ya no estás en esta sala. Puedes leer lo que tenías." : "Saliste de esta sala. Puedes leer lo que tenías."}</p> : null}
@@ -543,6 +546,7 @@ function Room({ id, query }) {
                   <div style={{ width: "100%", maxWidth: "1040px", padding: "0 24px", boxSizing: "border-box" }}>
                     {mission ? <NowBar missionId={missionId} active={["running", "planning"].includes(mission.status) && (activity.length > 0 || live.length > 0)} steps={steps} bots={bots} scroller={scroller} selector="[data-live-turn], [data-room-end]"
                       onShow={follow.toEnd} onStop={() => { post(`/missions/${missionId}/control`, { action: "pause" }).catch(() => {}); }} style={{ margin: "0 0 6px" }} /> : null}
+                    {shared && view?.requests?.length ? <RoomAddRequests roomId={roomId} title={title} requests={view.requests} onDecided={refreshView} /> : null}
                     {shared ? <RoomAsks roomId={roomId} asks={asks} onDecided={refreshView} /> : null}
                     <RoomComposer mission={mission} bots={bots} memberIds={shared ? myBots.map((b) => b.id) : memberIds} typing={typing} messages={missionRows} below={follow.below} onJump={follow.toEnd} onSent={follow.toEnd}
                       secrets={pending.filter((a) => a.kind === "secret")} approvals={pending.filter((a) => a.kind !== "secret" && a.kind !== "question" && !rows.some((m) => m.approvalId === a.id))}
@@ -558,10 +562,10 @@ function Room({ id, query }) {
           {ready2 && mission && dockShown ? <SideDock dock={dockView} tabs={tabs} addable={addableTabs} widthKey="sala" label="Panel de la sala" tone="v3" /> : null}
           {ready2 && panelOpen ? (
             <MemberPanel view={shown} panel={panel} mission={mission} addable={addableBots} fileCount={fileCount} onRules={mission ? () => dock.open(TABS.reglas) : null} onFiles={mission ? () => dock.open(TABS.archivos) : null}
-              onInvite={!gone && !guest ? () => setSheet("invitar") : null} onChanged={refreshView} profile={profile} tab={panelTab} onTab={setPanelTab} onOpenBot={(b) => { setProfile(b); setPanelTab("perfil"); }} />
+              onInvite={!gone && !guest ? () => setSheet("invitar") : null} profile={profile} tab={panelTab} onTab={setPanelTab} onOpenBot={(b) => { setProfile(b); setPanelTab("perfil"); }} />
           ) : null}
           {viewing ? <FileViewer file={viewing} onClose={closeViewer} /> : null}
-          {sheet === "invitar" && shown ? <RoomInvite view={shown} onClose={() => setSheet(null)} onChanged={refreshView} /> : null}
+          {sheet === "invitar" && shown ? <InviteSheet context={{ kind: "room", room: shown }} onClose={() => setSheet(null)} onChanged={refreshView} /> : null}
           {threadId && view ? <PeopleThread key={threadId} shareId={shareId} rootId={threadId} dm={false} botOf={botOf} shared={sameName} revealId={query?.m || null} onClose={closeThread} onDelete={remove} onError={setError}
             composer={{ others, mentionable: guest ? EMPTY : mentionable, mineEnabled: guest ? EMPTY : bots.filter((b) => b.enabled !== false), me: peers?.me?.address || null, disabled: gone, onTyping: tl.typingNow }} /> : null}
         </div>

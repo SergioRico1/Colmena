@@ -2,15 +2,15 @@ import { useState } from "react";
 import { Check } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
-import { codeKind, findCode } from "../../../lib/teams.js";
 import { TEAM_CHOICES } from "../../../lib/onboarding.js";
-import { CodeCard } from "../team/TeamSheets.jsx";
+import CodePanel from "../../people/CodePanel.jsx";
+import { JoinFlow } from "../../people/JoinSheet.jsx";
 import { C } from "../../../lib/theme.js";
 
 // Bienvenida › «Tu equipo» (docs/PLAN-equipo-y-salas.md, scope 5): create a team, join one
-// with a code, or start alone. The same calls as the team's sheets (v3/team/TeamSheets.jsx):
-//   POST /api/teams {name} · POST /api/teams/:id/invite {name?} → {code, text}
-//   POST /api/peers/invites/preview {code} · POST /api/teams/join | /api/peers/invites/accept
+// with a code, or start alone. The same pieces and words as everywhere (docs/SCREENS.md ›
+// «Invitar»): POST /api/teams {name}, then the code panel of the «Invitar» sheet for that team
+// (people/CodePanel.jsx); «Unirme con un código» is the same flow as its sheet (people/JoinSheet.jsx).
 // Nothing here is needed to go on: «Empezar solo» is a choice like the others, and a team
 // can be created or joined later from the bar's header.
 const INK = C.text, GREEN = C.okInk;
@@ -18,7 +18,6 @@ const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "h
 const fieldRow = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" };
 const input = { flex: "1 1 240px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-lg)", background: "var(--c-card)", fontSize: "var(--t-body)", color: "var(--c-text)" };
 const dark = (on = true) => ({ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: on ? "pointer" : "default", opacity: on ? 1 : 0.5, flex: "none" });
-const quiet = { height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
 const note = { margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-3)" };
 const body = { display: "flex", flexDirection: "column", gap: "12px", padding: "0 20px 20px 20px", animation: "rise .25s ease-out" };
 
@@ -29,59 +28,26 @@ const body = { display: "flex", flexDirection: "column", gap: "12px", padding: "
 export default function TeamStep({ value, onChange, off = false }) {
   const { run } = useStore();
   const [name, setName] = useState("");
-  const [person, setPerson] = useState("");
-  const [made, setMade] = useState(null);
-  const [text, setText] = useState("");
-  const [preview, setPreview] = useState(null);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const choice = value?.choice || "solo";
   const pick = (id) => { if (id !== choice) { setError(null); onChange({ ...value, choice: id }); } };
-  const act = async (key, fn) => {
+  const create = async () => {
     if (busy) return;
-    setBusy(key);
+    setBusy("create");
     setError(null);
-    try { await fn(); } catch (e) { setError(e.message); } finally { setBusy(null); }
+    try {
+      const team = await run(() => post("/teams", { name: name.trim() }));
+      onChange({ ...value, choice: "create", team: { id: team.id, name: team.name } });
+    } catch (e) { setError(e.message); } finally { setBusy(null); }
   };
-  const create = () => act("create", async () => {
-    const team = await run(() => post("/teams", { name: name.trim() }));
-    onChange({ ...value, choice: "create", team: { id: team.id, name: team.name } });
-  });
-  const invite = () => act("invite", async () => setMade(await run(() => post(`/teams/${encodeURIComponent(value.team.id)}/invite`, person.trim() ? { name: person.trim() } : {}))));
-  const code = findCode(text);
-  const what = preview ? codeKind(preview) : null;
-  const look = () => {
-    if (!code) { setError("Eso no parece un código de Colmena. Es como COLMENA-XXXX-XXXX-XXXX-XXXX; puedes pegar el mensaje entero."); return; }
-    act("look", async () => setPreview(await post("/peers/invites/preview", { code })));
-  };
-  const accept = () => act("join", async () => {
-    const out = await run(() => (what.kind === "team" ? post("/teams/join", { code }) : post("/peers/invites/accept", { code })));
-    onChange({ ...value, choice: "join", joined: { kind: what.kind, name: what.kind === "team" ? out?.name || preview.team : what.from } });
-  });
-
-  const offNote = <p role="note" style={note}>{"Para trabajar con otras personas, Colmena tiene que estar conectada al buzón de mensajes. Lo activas en Ajustes › Personas conectadas; puedes seguir y hacerlo después."}</p>;
+  const offNote = <p role="note" style={note}>{"Para invitar a gente, Colmena usa un buzón cifrado: por él viajan los mensajes cerrados con llave. Lo activas en Ajustes › Contactos y equipos; puedes seguir y hacerlo después."}</p>;
   const panels = {
     create: value?.team ? (
       <div style={body}>
-        <p role="status" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600, color: "var(--c-ok-ink)" }}><Check size={16} strokeWidth={2.8} aria-hidden="true" />{`«${value.team.name}» está creado, con su sala «general».`}</p>
-        {made ? (
-          <>
-            <CodeCard made={made} onError={setError} />
-            <p style={note}>{"Mándasela tú, por donde quieras: Colmena no escribe a nadie por ti. Cuando pegue el código os saldrán las mismas cuatro palabras a los dos."}</p>
-            <button type="button" onClick={() => { setMade(null); setPerson(""); }} style={{ ...quiet, alignSelf: "flex-start", paddingLeft: 0 }}>{"Invitar a otra persona"}</button>
-          </>
-        ) : (
-          <>
-            <form onSubmit={(e) => { e.preventDefault(); invite(); }} style={fieldRow}>
-              <label style={{ flex: "1 1 240px", display: "flex", minWidth: 0 }}>
-                <span style={hidden}>{"Nombre de la primera persona (opcional)"}</span>
-                <input className="c-quiet" type="text" value={person} maxLength={80} onChange={(e) => setPerson(e.target.value)} placeholder="¿A quién invitas primero? (opcional)" style={input} />
-              </label>
-              <button type="submit" disabled={!!busy} style={dark(!busy)}>{busy === "invite" ? "Creando…" : "Crear invitación"}</button>
-            </form>
-            <p style={note}>{"Te damos un código para que se lo mandes. Vale 24 horas y una sola vez. También puedes invitar más tarde, desde Equipo."}</p>
-          </>
-        )}
+        <p role="status" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600, color: "var(--c-ok-ink)" }}><Check size={16} strokeWidth={2.8} aria-hidden="true" />{`«${value.team.name}» está creado, con su sala #general.`}</p>
+        <CodePanel context={{ kind: "team", team: { id: value.team.id, name: value.team.name, admin: true } }} />
+        <p style={note}>{"También puedes invitar más tarde, con «Invitar» en Equipo o en la cabecera de la barra."}</p>
       </div>
     ) : (
       <div style={body}>
@@ -97,38 +63,9 @@ export default function TeamStep({ value, onChange, off = false }) {
         <p style={note}>{"Nace con una sala de todos, «general». Lo administras tú. Cada persona sigue con sus bots en su ordenador: el equipo comparte la conversación, no los datos."}</p>
       </div>
     ),
-    join: value?.joined ? (
+    join: (
       <div style={body}>
-        <p role="status" style={{ margin: 0, display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-body)", lineHeight: 1.45, fontWeight: 600, color: "var(--c-ok-ink)" }}>
-          <Check size={16} strokeWidth={2.8} aria-hidden="true" style={{ flex: "none", marginTop: "3px" }} />
-          {value.joined.kind === "team" ? `Has pedido entrar en «${value.joined.name}».` : `Ya puedes escribirte con ${value.joined.name}.`}
-        </p>
-        {value.joined.kind === "team" ? <p style={note}>{"Estarás dentro en cuanto la Colmena de quien creó el equipo esté encendida. Mientras, lo verás como pendiente arriba, en la barra."}</p> : null}
-      </div>
-    ) : preview ? (
-      <div style={body}>
-        <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5 }}><strong style={{ fontWeight: 600 }}>{what.title + "."}</strong>{" " + what.text}</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-sunken)" }}>
-          <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
-          <strong style={{ font: "600 var(--t-title)/1.25 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{(preview.words || []).join(" · ")}</strong>
-        </div>
-        <div style={fieldRow}>
-          <button type="button" onClick={accept} disabled={!!busy} style={dark(!busy)}>{busy === "join" ? "Un momento…" : what.confirm}</button>
-          <button type="button" onClick={() => { setPreview(null); setError(null); }} style={quiet}>{"No coinciden o no le conozco"}</button>
-        </div>
-      </div>
-    ) : (
-      <div style={body}>
-        {off ? offNote : (
-          <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) look(); }} style={fieldRow}>
-            <label style={{ flex: "1 1 240px", display: "flex", minWidth: 0 }}>
-              <span style={hidden}>{"Código de invitación"}</span>
-              <input className="c-quiet" type="text" value={text} maxLength={600} onChange={(e) => { setText(findCode(e.target.value) || e.target.value); setError(null); }} placeholder="COLMENA-XXXX-XXXX-XXXX-XXXX" spellCheck={false} autoComplete="off" style={{ ...input, font: "500 var(--t-body)/1 'Geist Mono', monospace" }} />
-            </label>
-            <button type="submit" disabled={!text.trim() || !!busy} style={dark(!!text.trim() && !busy)}>{busy === "look" ? "Buscando…" : "Continuar"}</button>
-          </form>
-        )}
-        <p style={note}>{"Pega el código que te han mandado, o el mensaje entero. Antes de entrar verás de quién es y para qué."}</p>
+        {off ? offNote : <JoinFlow inline onDone={(done) => onChange({ ...value, choice: "join", joined: { kind: done.kind, name: done.name } })} />}
       </div>
     ),
     solo: (
