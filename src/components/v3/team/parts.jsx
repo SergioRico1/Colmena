@@ -1,7 +1,6 @@
-import { useClickAway } from "../../../lib/useClickAway.js";
 import BotFace from "../../BotFace.jsx";
-import { useRef, useState } from "react";
 import { Ellipsis } from "../../Icon.js";
+import { MenuButton } from "../../Menu.js";
 import { C } from "../../../lib/theme.js";
 
 // Small pieces shared by Equipo, a bot's profile and «Nuevo bot» (design/V3Equipo,
@@ -51,32 +50,22 @@ export function Toggle({ on, label, onClick, disabled = false, title = null }) {
   );
 }
 
-/** «···»: what is used rarely. `round` draws it as a 36 px outlined button for a header. */
+/**
+ * «···»: what is used rarely, in the app's one menu (components/Menu.js). `items`: menu entries
+ * ({ label, icon, hint, onSelect | run, disabled, danger, confirm } or groups); destructive ones
+ * go last. `round` draws it as a 36 px outlined button for a header.
+ */
 export function More({ label = "Más", items, round = false, light = false }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useClickAway(open, ref, () => setOpen(false));
-  const shown = items.filter(Boolean);
   const trigger = round
     ? { width: "36px", height: "36px", display: "grid", placeItems: "center", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: light ? "color-mix(in srgb, var(--c-raised) 70%, transparent)" : "var(--c-raised)" }
-    : { width: "32px", height: "32px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-sm)", background: open ? "var(--c-chip)" : "transparent" };
+    : { width: "32px", height: "32px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-sm)", background: "transparent" };
   return (
-    <span ref={ref} style={{ position: "relative", flex: "none", display: "inline-flex" }}>
-      <button type="button" aria-label={label} title={label} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((x) => !x)} style={{ ...trigger, padding: "0", color: "var(--c-text-2)", cursor: "pointer" }}><Ellipsis size={18} weight="bold" /></button>
-      {open ? (
-        <span role="menu" style={{ position: "absolute", right: "0", top: round ? "42px" : "36px", zIndex: 20, minWidth: "220px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-md)", background: "var(--c-raised)", border: "1px solid var(--c-line)", boxShadow: "var(--c-shadow-pop)", animation: "rise .18s ease-out" }}>
-          {shown.map((it) => (
-            <button key={it.label} type="button" role="menuitem" disabled={it.disabled} onClick={() => { setOpen(false); it.run(); }}
-              style={{ minHeight: "34px", padding: "0 10px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", textAlign: "left", fontSize: "var(--t-ui)", color: it.danger ? "var(--c-error)" : "var(--c-text)", cursor: it.disabled ? "default" : "pointer", opacity: it.disabled ? 0.5 : 1 }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = C.hover; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-              {it.label}
-            </button>
-          ))}
-        </span>
-      ) : null}
-    </span>
+    <MenuButton label={label} items={withRun(items)} style={{ ...trigger, flex: "none", padding: "0", color: "var(--c-text-2)", cursor: "pointer" }}><Ellipsis size={18} weight="bold" /></MenuButton>
   );
 }
+
+/** Entries written with `run` (the older menus' word) read as `onSelect`. */
+export const withRun = (items) => (items || []).map((it) => (!it ? it : Array.isArray(it.items) && "group" in it ? { ...it, items: withRun(it.items) } : it.run && !it.onSelect ? { ...it, onSelect: it.run } : it));
 
 /** The autonomy levels in the V3 boards' words. */
 export const AUTONOMY = [

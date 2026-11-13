@@ -3,6 +3,7 @@ import BotFace from "../BotFace.jsx";
 import { useWarmOnType } from "../../lib/warm.js";
 import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, FileText, GitBranch, LoaderCircle, Sparkles, Check, Checks, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, RotateCcw, Undo2, Wrench, X } from "../Icon.js";
 import { InteractiveContext } from "./Interactive.jsx";
+import { MenuButton } from "../Menu.js";
 import { freshness, scrollBehavior } from "../../lib/motion.js";
 import { ReactTools, ReactionRow, useReactions } from "./Reactions.jsx";
 import { useFileDrop, dropOverlay } from "../../lib/useFileDrop.js";
@@ -21,7 +22,7 @@ import { asQuote, UserText } from "./SelectionPopup.jsx";
 import { usePanelWidth } from "../../lib/usePanelWidth.jsx";
 import { ago, roomUrl, time } from "../../lib/format.js";
 import { navigate } from "../../lib/router.jsx";
-import { BotAvatar, UserAvatar, FileChip, ErrorLine, Dots, MentionText, NoteLink, dayLabel, findBot, useDismiss, popoverStyle, popoverItem } from "./common.jsx";
+import { BotAvatar, UserAvatar, FileChip, ErrorLine, Dots, MentionText, NoteLink, dayLabel, findBot } from "./common.jsx";
 import PastedCard from "./PastedCard.jsx";
 import Markdown, { plain } from "./Markdown.jsx";
 import QuestionCard from "./QuestionCard.jsx";
@@ -906,38 +907,22 @@ const WORKING = ["running", "planning", "queued"];
 
 /** «Si escribes ahora, tu mensaje les reorienta ▾» — only while they work; saved per room. */
 export function QueueModeHint({ mission }) {
-  const [open, setOpen] = useState(false);
   const [local, setLocal] = useState(null);
-  const close = useCallback(() => setOpen(false), []);
-  const ref = useDismiss(open, close);
   if (!mission || !WORKING.includes(mission.status)) return null;
   const current = QUEUE_OPTIONS.find((o) => o.id === (local || mission.queueMode)) || QUEUE_OPTIONS[0];
   const pick = (id) => {
     setLocal(id);
-    setOpen(false);
     patch("/missions/" + mission.id, { queueMode: id }).catch(() => setLocal(null));
   };
+  // A choice of one, as radio items of the app's one menu (components/Menu.js), each saying what it does.
+  const items = QUEUE_OPTIONS.map((o) => ({ label: o.label[0].toUpperCase() + o.label.slice(1), hint: o.detail, radio: "queue", checked: o.id === current.id, onSelect: () => pick(o.id) }));
   return (
-    <span ref={ref} style={{ position: "relative", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
+    <span style={{ position: "relative", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
       {"Si escribes ahora, tu mensaje"}
-      <button type="button" className="rm-focus" aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} title={current.detail}
-        style={{ display: "inline-flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", background: open ? "var(--c-chip)" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text)" }}>
+      <MenuButton className="rm-focus" title={current.detail} showTitle={false} menuLabel="Qué hace tu mensaje mientras trabajan" items={items} placement="top-end"
+        style={{ display: "inline-flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text)" }}>
         {current.label}<ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" />
-      </button>
-      {open ? (
-        <span role="menu" aria-label="Qué hace tu mensaje mientras trabajan" style={{ ...popoverStyle, bottom: "calc(100% + 6px)", right: "0", minWidth: "300px" }}>
-          {QUEUE_OPTIONS.map((o) => (
-            <button key={o.id} type="button" role="menuitemradio" aria-checked={o.id === current.id ? "true" : "false"} className="rm-focus" onClick={() => pick(o.id)}
-              style={{ ...popoverItem, alignItems: "flex-start", background: o.id === current.id ? "var(--c-chip)" : "transparent" }}>
-              <span style={{ width: "16px", flex: "none", paddingTop: "2px" }}>{o.id === current.id ? <Check size={15} strokeWidth={2.4} aria-hidden="true" /> : null}</span>
-              <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <strong style={{ fontSize: "var(--t-ui)", color: "var(--c-text)" }}>{o.label[0].toUpperCase() + o.label.slice(1)}</strong>
-                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", lineHeight: "1.4" }}>{o.detail}</span>
-              </span>
-            </button>
-          ))}
-        </span>
-      ) : null}
+      </MenuButton>
     </span>
   );
 }

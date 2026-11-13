@@ -1,6 +1,6 @@
-import { useClickAway } from "../../../lib/useClickAway.js";
 import BotFace from "../../BotFace.jsx";
-import { Ellipsis, Plus, Search } from "../../Icon.js";
+import { AlarmClock, Archive, BellRing, Ellipsis, FileDown, Hash, PencilLine, Pin, PinOff, Plus, Search } from "../../Icon.js";
+import { MenuButton } from "../../Menu.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../../../lib/store.jsx";
 import { needsYou } from "../../../lib/format.js";
@@ -127,20 +127,25 @@ export default function ChatsHome() {
     if (!v || !r.m) return;
     run(() => patch(`/missions/${encodeURIComponent(r.m.id)}`, r.type === "salas" ? { room: v } : { title: v })).catch(() => {});
   };
+  // A row's «···» (components/Menu.js): keep it in view (pin, rename, with their keys), put it
+  // away for a while or take it elsewhere, and archive it last (it undoes from its notice).
   const itemsFor = (r) => {
     const isPinned = pinned.includes(r.pinHref);
-    const list = [{ label: isPinned ? "Quitar de fijados" : "Fijar arriba", key: "Ctrl P", run: () => togglePin(r) }];
-    if (r.m) {
-      list.push({ label: "Renombrar…", key: "F2", run: () => setRenaming({ key: r.key, value: r.type === "salas" ? r.m.room || r.m.title || "" : r.m.title || "" }) });
-      const snoozed = r.m.snoozedUntil && Date.parse(r.m.snoozedUntil) > Date.now();
-      list.push(snoozed
-        ? { label: "Dejar de silenciar", run: () => run(() => patch(`/missions/${encodeURIComponent(r.m.id)}`, { snoozedUntil: null })).catch(() => {}) }
-        : { label: "Silenciar hasta mañana", run: () => tidy(r, { snooze: "manana" }, "Silenciado hasta mañana", { snoozedUntil: null }) });
-      if (r.type === "bots") list.push({ label: "Llevar a una sala", run: () => setSheet({ mode: "sala", preset: r.m.botIds || [] }) });
-      list.push({ label: "Exportar conversación", run: () => toastWork(() => exportConversation(r.m.id, "word", { bots }), { loading: "Exportando la conversación a Word…", success: "Conversación exportada a Word", error: "No se pudo exportar" }) });
-      if (!["queued", "running", "planning"].includes(r.m.status)) list.push({ label: "Archivar", danger: true, run: () => tidy(r, { archived: true }, r.type === "salas" ? "Sala archivada" : "Conversación archivada", { archived: false }) });
-    }
-    return list;
+    const snoozed = r.m?.snoozedUntil && Date.parse(r.m.snoozedUntil) > Date.now();
+    return [
+      { group: null, items: [
+        { label: isPinned ? "Quitar de fijados" : "Fijar arriba", icon: isPinned ? PinOff : Pin, shortcut: "Ctrl+P", onSelect: () => togglePin(r) },
+        r.m ? { label: "Cambiar el nombre", icon: PencilLine, shortcut: "F2", onSelect: () => setRenaming({ key: r.key, value: r.type === "salas" ? r.m.room || r.m.title || "" : r.m.title || "" }) } : null,
+      ] },
+      r.m ? { group: null, items: [
+        snoozed
+          ? { label: "Mostrar ya", icon: BellRing, onSelect: () => run(() => patch(`/missions/${encodeURIComponent(r.m.id)}`, { snoozedUntil: null })).catch(() => {}) }
+          : { label: "Posponer hasta mañana", icon: AlarmClock, hint: "Sale de la lista hasta mañana a las 9:00", onSelect: () => tidy(r, { snooze: "manana" }, "Pospuesto hasta mañana", { snoozedUntil: null }) },
+        r.type === "bots" ? { label: "Llevar a una sala", icon: Hash, onSelect: () => setSheet({ mode: "sala", preset: r.m.botIds || [] }) } : null,
+        { label: "Exportar a Word", icon: FileDown, onSelect: () => toastWork(() => exportConversation(r.m.id, "word", { bots }), { loading: "Exportando la conversación a Word…", success: "Conversación exportada a Word", error: "No se pudo exportar" }) },
+      ] } : null,
+      r.m && !["queued", "running", "planning"].includes(r.m.status) ? { group: null, items: [{ label: "Archivar", icon: Archive, onSelect: () => tidy(r, { archived: true }, r.type === "salas" ? "Sala archivada" : "Conversación archivada", { archived: false }) }] } : null,
+    ];
   };
   // Ctrl P pins and F2 renames the row under the pointer (or with the focus).
   useEffect(() => {
@@ -149,12 +154,10 @@ export default function ChatsHome() {
       if (!r || e.target.closest?.("input, textarea")) return;
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "p") { e.preventDefault(); togglePin(r); }
       else if (e.key === "F2" && r.m) { e.preventDefault(); setRenaming({ key: r.key, value: r.type === "salas" ? r.m.room || r.m.title || "" : r.m.title || "" }); }
-      else if (e.key === "Escape") setMenu(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }); // eslint-disable-line react-hooks/exhaustive-deps
-  useClickAway(!!menu, (target) => target.closest?.("[data-row-menu]"), () => setMenu(null), { escape: false, event: "pointerdown" });
 
   const team = bots.filter((b) => b.enabled !== false);
   const tabsDef = [["todos", "Todos"], ["bots", "Bots"], ["salas", "Salas"], ["personas", "Personas"], ["sinleer", "Sin leer"]];
@@ -230,19 +233,9 @@ export default function ChatsHome() {
                         <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{whenLabel(r.at)}</span>
                         {r.badge ? <span aria-label={r.attention ? "Te necesita" : "Mensajes sin leer"} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: r.attention ? "var(--c-honey)" : "var(--c-btn)", color: r.attention ? "var(--c-honey-ink)" : "var(--c-btn-text)", fontSize: "var(--t-caption)", fontWeight: 600 }}>{r.badge}</span> : null}
                       </span>
-                      <button type="button" aria-label={"Más opciones de " + r.name} aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setMenu(open ? null : r.key)} style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>
+                      <MenuButton label={"Más opciones de " + r.name} menuLabel={r.name} items={() => itemsFor(r)} onOpenChange={(v) => setMenu(v ? r.key : null)} style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>
                         <Ellipsis size={18} />
-                      </button>
-                      {open ? (
-                        <div role="menu" aria-label="Opciones" style={{ position: "absolute", zIndex: 5, right: "14px", top: "58px", width: "230px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", animation: "rise .15s ease-out" }}>
-                          {itemsFor(r).map((it) => (
-                            <button key={it.label} type="button" role="menuitem" onClick={() => { setMenu(null); it.run(); }} style={{ height: "38px", padding: "0 12px", display: "flex", alignItems: "center", justifyContent: "space-between", border: 0, borderRadius: "var(--r-sm)", background: "transparent", fontSize: "var(--t-ui)", color: it.danger ? "var(--c-error)" : "var(--c-text)", textAlign: "left", cursor: "pointer" }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--c-hover)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-                              {it.label}<span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{it.key || ""}</span>
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
+                      </MenuButton>
                     </div>
                   );
                 })}

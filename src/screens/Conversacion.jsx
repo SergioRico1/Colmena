@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWarmOnType } from "../lib/warm.js";
-import { FileText, FolderOpen, Globe, MessageCircleQuestion, PanelRight, SquareTerminal, ChevronDown, Ellipsis } from "../components/Icon.js";
+import { Copy, EyeOff, FileDown, FileText, FolderOpen, Globe, Lock, MessageCircleQuestion, Microphone, PanelRight, SquareTerminal, ChevronDown, Ellipsis, UserRound } from "../components/Icon.js";
+import { MenuButton } from "../components/Menu.js";
 import VoiceCall from "../components/v2/chat/VoiceCall.jsx";
 import Shell from "../components/v2/Shell.jsx";
 import Announcer from "../components/Announcer.jsx";
@@ -184,7 +185,6 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const [plusOpen, setPlusOpen] = useState(false);
   const [chosen, setChosen] = useState([]);
   const toggleChosen = (key) => setChosen((list) => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]));
-  const [moreOpen, setMoreOpen] = useState(false);
   const [roomSheet, setRoomSheet] = useState(false);
   // The bot's profile on the right (design/v4 › .panel): from its face or name, or the header's panel button.
   const [profileOpen, setProfileOpen] = useState(false);
@@ -206,7 +206,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   // The message of yours being written again (Versions.jsx), and the spots with versions.
   const [editing, setEditing] = useState(null);
   const branches = room.branches;
-  useEffect(() => { setIncognito(privateNew); setMoreOpen(false); setShowOlder(false); setEditing(null); }, [c, botId, privateNew]);
+  useEffect(() => { setIncognito(privateNew); setShowOlder(false); setEditing(null); }, [c, botId, privateNew]);
   const privateChat = c ? !!mission?.incognito : incognito;
   // A draft left here is offered, not poured into the box (DraftOffer.jsx).
   const draft = useDraftOffer(privateChat ? null : "chat:" + (c || botId), text, setText, { label: bot?.name ? `Para ${bot.name}` : null });
@@ -687,16 +687,24 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     <button type="button" aria-label="Comandos" aria-pressed={slashOpen ? "true" : "false"} title="Comandos (/)" onClick={() => setSlashOpen((v) => !v)} style={ghostKey(slashOpen)}>{"/"}</button>
     <button type="button" onClick={toggleDeep} aria-pressed={chosen.includes("deep") ? "true" : "false"} title={chosen.includes("deep") ? "Pensará a fondo en el próximo mensaje" : "Pensar a fondo en el próximo mensaje"} style={{ ...tool, marginLeft: "4px" }}>{`Piensa: ${thinking}`}{caret}</button>
   </>;
-  const moreItems = [
-    c && !isOlder ? ["Hablar en voz alta", () => setTalking(true)] : null,
-    [`Sobre ${bot?.name || "el bot"}`, () => navigate(`/equipo/${botId}`)],
-    c ? ["Archivos de la conversación", () => dock.toggle(FILES_TAB)] : null,
-    c ? ["Preguntar aparte", () => dock.toggle(ASIDE_TAB)] : null,
-    c ? ["Exportar a Word", () => toastWork(() => exportConversation(c, "word", { bots }), { loading: "Exportando la conversación a Word…", success: "Conversación exportada a Word", error: "No se pudo exportar" })] : null,
-    c ? ["Exportar a Markdown", () => toastWork(() => exportConversation(c, "markdown", { bots }), { loading: "Exportando la conversación…", success: "Conversación exportada a Markdown", error: "No se pudo exportar" })] : null,
-    c ? ["Copiar como Markdown", () => exportConversation(c, "copy", { bots })] : null,
-    ["Chat de incógnito", () => navigate(`/chat/${botId}?nuevo=incognito`)],
-  ].filter(Boolean);
+  // The chat's «…» (components/Menu.js), by intent: talk, what the side panel shows, take it
+  // out (one «Exportar» submenu instead of three rows), a new private chat, and the bot itself.
+  const moreItems = () => [
+    c && !isOlder ? { label: "Hablar en voz alta", icon: Microphone, hint: "Una llamada de voz con " + (bot?.name || "el bot"), onSelect: () => setTalking(true) } : null,
+    c ? { group: null, items: [
+      { label: "Archivos de la conversación", icon: FolderOpen, checked: dock.isVisible(FILES_TAB.id), onSelect: () => dock.toggle(FILES_TAB) },
+      { label: "Preguntar aparte", icon: Lock, hint: "Solo lo ves tú; no entra en la conversación", checked: dock.isVisible(ASIDE_TAB.id), onSelect: () => dock.toggle(ASIDE_TAB) },
+    ] } : null,
+    c ? { group: null, items: [{ label: "Exportar", icon: FileDown, subLabel: "Exportar la conversación", items: [
+      { label: "Documento de Word", icon: FileDown, meta: ".doc", onSelect: () => toastWork(() => exportConversation(c, "word", { bots }), { loading: "Exportando la conversación a Word…", success: "Conversación exportada a Word", error: "No se pudo exportar" }) },
+      { label: "Markdown", icon: FileDown, meta: ".md", onSelect: () => toastWork(() => exportConversation(c, "markdown", { bots }), { loading: "Exportando la conversación…", success: "Conversación exportada a Markdown", error: "No se pudo exportar" }) },
+      { label: "Copiar como Markdown", icon: Copy, onSelect: () => exportConversation(c, "copy", { bots }) },
+    ] }] } : null,
+    { group: null, items: [
+      { label: "Nuevo chat de incógnito", icon: EyeOff, hint: "No guarda nada y se borra en 24 horas", onSelect: () => navigate(`/chat/${botId}?nuevo=incognito`) },
+      { label: `Sobre ${bot?.name || "el bot"}`, icon: UserRound, onSelect: () => navigate(`/equipo/${botId}`) },
+    ] },
+  ];
 
   return (
     <InteractiveContext.Provider value={{ send: c ? (t) => post(`/missions/${c}/messages`, { text: t }) : null }}>
@@ -730,18 +738,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
                 </> : null}
                 <button type="button" onClick={() => setRoomSheet(true)} className="v4-btn">{"Llevar a una sala"}</button>
                 <button type="button" className="v4-ib" aria-label={profileOpen ? "Ocultar el perfil" : "Ver el perfil de " + (bot?.name || "este bot")} title={profileOpen ? "Ocultar el perfil" : "Ver el perfil"} aria-pressed={profileOpen} aria-controls="chat-perfil" onClick={() => setProfileOpen((v) => !v)}><PanelRight size={18} active={profileOpen} /></button>
-                <span style={{ position: "relative" }}>
-                  <button type="button" className="v4-ib" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)}>
-                    <Ellipsis size={18} />
-                  </button>
-                  {moreOpen ? (
-                    <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "240px", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-raised)", border: "1px solid var(--c-line)", boxShadow: "var(--c-shadow-pop)", animation: "rise .15s ease-out", display: "flex", flexDirection: "column" }}>
-                      {moreItems.map(([label, fn]) => (
-                        <button key={label} type="button" role="menuitem" className="v4-menu-item" onClick={() => { setMoreOpen(false); Promise.resolve(fn()).catch(() => {}); }} style={{ height: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "var(--c-text)" }}>{label}</button>
-                      ))}
-                    </div>
-                  ) : null}
-                </span>
+                <MenuButton label="Más opciones" menuLabel={`Más opciones del chat con ${bot?.name || "el bot"}`} items={moreItems} className="v4-ib"><Ellipsis size={18} /></MenuButton>
               </span>
             </header>
             {mission?.incognito ? <p role="note" style={{ flex: "none", margin: 0, padding: "10px 28px", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-meta)" }}>{`De incógnito: ${bot?.name || "el bot"} no guarda nada de esta conversación y se borra en 24 horas.`}</p> : null}

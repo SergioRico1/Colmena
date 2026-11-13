@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock3, MessageSquare, UserPlus } from "../../Icon.js";
+import { Clock3, DoorOpen, KeyRound, MessageSquare, Pencil, Plus, Shield, ShieldCheck, UserMinus, UserPlus } from "../../Icon.js";
 import { del, get, patch, post, put } from "../../../lib/api.js";
 import { useResource, useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
@@ -202,11 +202,11 @@ export default function TeamSection() {
               {/* «Invitar» is the page's own button (screens/ColmenaV2.jsx): one door, not two. */}
               {team ? (
                 <More label="Más acciones del equipo" items={[
-                  canRename(team.role) ? { label: "Cambiar el nombre", run: () => { setError(null); setRenaming(team.name); } } : null,
-                  !canInvite(team.role) ? { label: "Quién puede invitar", run: () => setSheet({ kind: "invite", team: current }) } : null,
-                  { label: "Crear otro equipo", run: () => setSheet({ kind: "create" }), disabled: peopleOff },
-                  { label: "Unirme con un código", run: () => setSheet({ kind: "join" }), disabled: peopleOff },
-                  { label: leaving.action, danger: true, run: () => setConfirm("leave") },
+                  canRename(team.role) ? { label: "Cambiar el nombre", icon: Pencil, run: () => { setError(null); setRenaming(team.name); } } : null,
+                  !canInvite(team.role) ? { label: "Quién puede invitar", icon: UserPlus, run: () => setSheet({ kind: "invite", team: current }) } : null,
+                  { label: "Crear otro equipo", icon: Plus, run: () => setSheet({ kind: "create" }), disabled: peopleOff },
+                  { label: "Unirme con un código", icon: KeyRound, run: () => setSheet({ kind: "join" }), disabled: peopleOff },
+                  { label: leaving.action, icon: DoorOpen, danger: true, run: () => setConfirm("leave") },
                 ]} />
               ) : null}
             </div>
@@ -229,10 +229,10 @@ export default function TeamSection() {
                 const asking = confirm === m.address;
                 const removing = removeText(team, m);
                 const more = [
-                  canMakeAdmin(team.role, m) ? { label: "Hacer administrador", run: () => change("admin:" + m.address, () => put(admin(m))) } : null,
-                  canUnmakeAdmin(team.role, m) ? { label: "Quitar como administrador", run: () => change("admin:" + m.address, () => del(admin(m))) } : null,
-                  canStepDown(team.role, m) ? { label: "Dejar de administrar", run: () => change("admin:" + m.address, () => del(admin(m))) } : null,
-                  canRemove(team.role, m) ? { label: "Quitar del equipo", danger: true, run: () => { setError(null); setConfirm(m.address); } } : null,
+                  canMakeAdmin(team.role, m) ? { label: "Hacer administrador", icon: ShieldCheck, run: () => change("admin:" + m.address, () => put(admin(m))) } : null,
+                  canUnmakeAdmin(team.role, m) ? { label: "Quitar como administrador", icon: Shield, run: () => change("admin:" + m.address, () => del(admin(m))) } : null,
+                  canStepDown(team.role, m) ? { label: "Dejar de administrar", icon: Shield, run: () => change("admin:" + m.address, () => del(admin(m))) } : null,
+                  canRemove(team.role, m) ? { label: "Quitar del equipo", icon: UserMinus, danger: true, run: () => { setError(null); setConfirm(m.address); } } : null,
                 ].filter(Boolean);
                 return (
                   <li key={m.address || "tu"} style={{ display: "flex", flexDirection: "column", borderTop: i ? LINE : 0 }}>
