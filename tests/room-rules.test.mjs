@@ -568,6 +568,35 @@ test("over the limit: «no atiende más peticiones» is said once per person, ro
   assert.equal(sergio.calls.length, 0);
 });
 
+test("«carpetas» for other people's requests is on or off (no per-folder choice) and off unless the owner turns it on", async (t) => {
+  const [sergio, marta] = await world(t, ["Sergio Rico", "Marta Ruiz"], { app: ["Sergio Rico"] });
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  // Vera has a folder of Sergio's connected; nobody has touched Ajustes › Personas › Encargos.
+  sergio.store.put("folders", { id: "f-privada", path: sergio.runtime.root("x"), label: "Privada", botIds: ["vera"], access: "lee" });
+  assert.equal(sergio.store.get("settings", "main").peerErrandTools, undefined);
+  assert.equal(sergio.rooms.work.capabilities().carpetas, false, "off by default for requests in rooms");
+  assert.equal(sergio.peers.errands.settings().carpetas, false, "and for errands");
+  assert.deepEqual(sergio.peers.errands.settings(), { web: true, carpetas: false, apps: false, ordenador: false });
+  const offered = async (text) => {
+    sergio.reply = () => answer(text);
+    await ask(marta, room, sergio, "@Vera " + text);
+    await botAnswer(marta, room, text);
+    await settle(sergio.runtime);
+    return sergio.calls.at(-1).tools.map((x) => x.name);
+  };
+  for (const name of ["list_folder", "read_folder_file"]) assert.ok(!(await offered("Por defecto " + name + ".")).includes(name), name + " is not offered by default");
+  // Only a real «on» counts; the setting is a yes or no and nothing else (there is no list of folders to choose).
+  sergio.store.patch("settings", "main", { peerErrandTools: { carpetas: "true" } });
+  assert.ok(!(await offered("Con texto.")).includes("list_folder"));
+  sergio.store.patch("settings", "main", { peerErrandTools: {} });
+  assert.equal(sergio.peers.errands.setTools({ carpetas: ["f-privada"] }).carpetas, false, "a list of folders is not a setting");
+  assert.equal("folders" in sergio.peers.errands.setTools({ folders: ["f-privada"] }), false);
+  assert.equal(sergio.peers.errands.setTools({ carpetas: true }).carpetas, true);
+  assert.ok((await offered("Encendido.")).includes("list_folder"), "on: the folders that bot has");
+});
+
 test("«ordenador» for another person's request: the browser runs in a session of that turn's own, wiped at its end; never the owner's screen or apps", async (t) => {
   const [sergio, marta] = await world(t);
   await friends(sergio, marta);
