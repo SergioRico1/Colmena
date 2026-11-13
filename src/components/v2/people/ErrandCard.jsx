@@ -8,7 +8,7 @@ import { useStore } from "../../../lib/store.jsx";
 // An errand for one of your bots (design/V2Personas.dc.html, paso encargo): only you see this
 // card. Nothing runs until you approve; then your bot does it in an incognito chat with the
 // tools you chose for errands, and its answer goes back to who asked.
-const TOOL_WORDS = { web: "la web", carpetas: "tus carpetas", apps: "tus apps conectadas", ordenador: "tu ordenador" };
+const TOOL_WORDS = { web: "la web", carpetas: "tus carpetas", apps: "tus apps conectadas", ordenador: "un navegador aparte" };
 const pill = { display: "inline-flex", alignItems: "center", gap: "6px", height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 };
 export const toolsText = (tools) => {
   const on = Object.entries(tools || {}).filter(([, v]) => v).map(([k]) => TOOL_WORDS[k]).filter(Boolean);

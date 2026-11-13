@@ -158,7 +158,7 @@ function StatusRow({ status, act }) {
 
 // «Encargos» (design/V2Personas.dc.html, paso encargo): what your bots may use when they do
 // something another person's bot asked. Never more than each bot already has.
-const ERRAND_TOOLS = [["web", "La web", "Buscar y leer páginas."], ["carpetas", "Tus carpetas", "Las que cada bot tiene permitidas."], ["apps", "Tus apps conectadas", "Correo, calendario, documentos… Enviar algo siempre te pregunta."], ["ordenador", "Tu ordenador", "Ver la pantalla y usar programas."]];
+const ERRAND_TOOLS = [["web", "La web", "Buscar y leer páginas."], ["carpetas", "Tus carpetas", "Las que cada bot tiene permitidas."], ["apps", "Tus apps conectadas", "Correo, calendario, documentos… Enviar algo siempre te pregunta."], ["ordenador", "Un navegador aparte", "Abrir y usar páginas en un navegador vacío, sin tus sesiones iniciadas. Nunca tu pantalla ni tus programas."]];
 function ErrandTools({ act }) {
   const [tools, setTools] = useState(null);
   useEffect(() => { get("/peers/errand-tools").then(setTools).catch(() => setTools(null)); }, []);
