@@ -232,7 +232,7 @@ function NewGoal({ onClose, onCreated, initialTitle = "", ownerName = "Atlas" })
   };
   const field = { width: "100%", height: "46px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .1)", borderRadius: "var(--r-md)", background: "var(--c-card)", fontSize: "var(--t-body)", boxSizing: "border-box" };
   return (
-    <div onClick={(e) => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px", background: alpha(.28), WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
+    <div onClick={(e) => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px", background: "var(--c-scrim)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
       <form ref={box} onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="ng-t" style={{ width: "min(560px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "26px 28px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <h2 id="ng-t" style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>Nuevo objetivo</h2>
         <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>{`Algo que quieres conseguir en semanas o meses. ${ownerName} lo partirá en hitos.`}</p>

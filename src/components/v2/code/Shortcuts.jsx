@@ -96,7 +96,7 @@ export default function ShortcutsSheet({ onClose }) {
   const box = useDialogFocus({ onEscape: () => { if (!recording) onClose(); } });
   const reset = async () => { setData(await put("/code/keybindings", { bindings: {} })); await loadBindings(true); setError(null); };
   return (
-    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 900, background: "rgb(var(--c-ink-rgb) / .28)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", display: "grid", placeItems: "center", padding: "24px", animation: "fade .2s ease-out" }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 900, background: "var(--c-scrim)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", display: "grid", placeItems: "center", padding: "24px", animation: "fade .2s ease-out" }}>
       <div ref={box} role="dialog" aria-modal="true" aria-label="Atajos de Código" style={{ width: "min(560px, 100%)", maxHeight: "86vh", display: "flex", flexDirection: "column", borderRadius: "var(--r-3xl)", background: C.white, boxShadow: SHEET, animation: "sheet .35s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "22px 22px 12px" }}>
           <h2 style={{ flex: 1, margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>Atajos de Código</h2>

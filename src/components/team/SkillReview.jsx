@@ -97,7 +97,7 @@ export default function SkillReview({ skillId, onClose }) {
   };
 
   return (
-    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 50, background: alpha(0.55), display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 32px", overflowY: "auto" }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 50, background: "var(--c-scrim)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 32px", overflowY: "auto" }}>
       <style>{MD_CSS}</style>
       <div ref={dialog} tabIndex={-1} data-autofocus="" role="dialog" aria-modal="true" aria-labelledby="skill-review-t" style={{ width: "min(720px, 100%)", maxHeight: "calc(100vh - 128px)", background: "var(--c-card)", border: "0", borderRadius: "var(--r-md)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", padding: "20px 22px 16px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>

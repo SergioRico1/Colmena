@@ -6,6 +6,7 @@
      av-*     a person's round avatar: their colour mixed into the surface, and into the ink for the initials
      paper    the page of a document preview (white in light, a raised grey in dark)
      knob     the thumb of a switch (light on any track, in both themes)
+     scrim    the shade behind a dialog (it darkens in both themes; an ink alpha would lighten dark)
    Inline styles use them as var(--c-…) or through src/lib/palette4.js. */
 :root{
   --c-term-bg:#F7F7F4;--c-term-fg:#33363F;--c-term-strong:#12131A;--c-term-dim:#5C606C;
@@ -28,7 +29,7 @@
   --c-warn-soft:#FFF1E0;--c-warn:#9A4A00;
   --c-paper:#FFFFFF;--c-paper-line:#E6E7EC;
   --c-av-base:#FFFFFF;--c-av-mix:24%;--c-av-ink:#12131A;--c-av-ink-mix:72%;
-  --c-knob:#FFFFFF;
+  --c-knob:#FFFFFF;--c-scrim:rgb(18 19 26 / .4);
 }
 [data-theme="dark"]{
   --c-term-bg:#111216;--c-term-fg:#D6D7DD;--c-term-strong:#F1F1F4;--c-term-dim:#8F929D;
@@ -51,7 +52,7 @@
   --c-warn-soft:rgb(255 150 80 / .14);--c-warn:#FFB27A;
   --c-paper:#2A2C36;--c-paper-line:#3B3E49;
   --c-av-base:#22232B;--c-av-mix:38%;--c-av-ink:#FFFFFF;--c-av-ink-mix:40%;
-  --c-knob:#E9EAEE;
+  --c-knob:#E9EAEE;--c-scrim:rgb(0 0 0 / .6);
 }
 
 /* Hover states of the v4 pieces in src/lib/ui4.js (inline styles cannot say :hover):

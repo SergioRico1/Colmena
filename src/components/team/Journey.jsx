@@ -103,7 +103,7 @@ export function TeachDialog({ bot, onClose }) {
   };
   const field = { width: "100%", minHeight: "44px", padding: "0 12px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", color: "var(--c-text)" };
   return (
-    <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: alpha(0.55), display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "80px 16px 16px", overflowY: "auto" }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "var(--c-scrim)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "80px 16px 16px", overflowY: "auto" }}>
       <form ref={box} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="ensena-t" style={{ width: "min(560px, 100%)", background: "var(--c-card)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-md)", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 22px 16px", display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
