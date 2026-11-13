@@ -30,6 +30,8 @@ export const canRename = (myRole) => isAdmin(myRole);
 export const canRemove = (myRole, target) => isAdmin(myRole) && !!target && !target.you && target.role !== "creador";
 export const canMakeAdmin = (myRole, target) => isAdmin(myRole) && !!target && !target.you && target.role === "miembro";
 export const canUnmakeAdmin = (myRole, target) => isAdmin(myRole) && !!target && !target.you && target.role === "admin";
+/** An admin (never the creator) can stop administering: they stay in the team as a member. */
+export const canStepDown = (myRole, target) => myRole === "admin" && !!target?.you && target.role === "admin";
 /** A direct conversation needs the other person's address (a team of one has none). */
 export const canMessage = (target) => !!target && !target.you && !!target.address;
 
@@ -103,7 +105,10 @@ export function waitingLine(entry, members = []) {
   const who = members.find((m) => m.address && m.address === entry?.address);
   const name = who ? firstName(who.name) : null;
   const what = entry?.op === "remove" ? (name ? `Quitar a ${name}` : "Quitar a una persona")
-    : entry?.op === "admin" ? (name ? `Cambiar si ${name} administra` : "Cambiar quién administra")
+    // `on` says which way (server/peers/teams.mjs); an entry from before it only says that it changes.
+    : entry?.op === "admin" ? (entry.on === true ? (name ? `Hacer administrador a ${name}` : "Nombrar a un administrador")
+      : entry.on === false ? (who?.you ? "Dejar de administrar" : name ? `Quitar a ${name} como administrador` : "Quitar a un administrador")
+        : name ? `Cambiar si ${name} administra` : "Cambiar quién administra")
       : entry?.op === "rename" ? "Cambiar el nombre"
         : entry?.op === "add" ? (name ? `Añadir a ${name}` : "Añadir a una persona") : "Un cambio";
   return `${what} · pendiente: se aplicará cuando ${creatorName(members)} se conecte`;
@@ -141,9 +146,10 @@ export function removeText(team, member) {
 /** A team you asked to join and are not in yet: {text, action}. */
 export function pendingLine(p) {
   if (p?.state === "refused") {
-    return { refused: true, action: "Descartar", text: p.reason === "full" ? "El equipo está completo. Pide que hagan sitio y que te manden otra invitación." : "No se pudo entrar. Pide otra invitación a quien te la mandó." };
+    return { refused: true, action: "Descartar", text: p.reason === "full" ? "El equipo está completo. Pide que hagan sitio y que te manden otra invitación." : `No se pudo entrar. Pide otra invitación a ${p.from ? firstName(p.from) : "quien te la mandó"}.` };
   }
-  return { refused: false, action: "Cancelar la petición", text: "Has pedido entrar. Estarás dentro cuando la Colmena de quien creó el equipo esté encendida." };
+  // `from`: who gave you the code (their name, when this Colmena knows it).
+  return { refused: false, action: "Cancelar la petición", text: (p?.from ? `Te invitó ${p.from}. ` : "Has pedido entrar. ") + "Estarás dentro cuando la Colmena de quien creó el equipo esté encendida." };
 }
 
 // ---------------------------------------------------------------- codes

@@ -10,7 +10,7 @@ import { PeerAvatar } from "../../v2/people/PeerAvatar.jsx";
 import { More, Seg, outline } from "./parts.jsx";
 import TeamSheets from "./TeamSheets.jsx";
 import {
-  avatarOf, canInvite, canMakeAdmin, canMessage, canRemove, canRename, canUnmakeAdmin, countLine, currentTeam, leaveText, pendingLine,
+  avatarOf, canInvite, canMakeAdmin, canMessage, canRemove, canRename, canStepDown, canUnmakeAdmin, countLine, currentTeam, leaveText, pendingLine,
   presenceWords, realTeams, removeText, roleLabel, sortMembers, untilText, waitingFor, waitingLine, waitingRest,
 } from "../../../lib/teams.js";
 
@@ -230,6 +230,7 @@ export default function TeamSection() {
                 const more = [
                   canMakeAdmin(team.role, m) ? { label: "Hacer administrador", run: () => change("admin:" + m.address, () => put(admin(m))) } : null,
                   canUnmakeAdmin(team.role, m) ? { label: "Quitar como administrador", run: () => change("admin:" + m.address, () => del(admin(m))) } : null,
+                  canStepDown(team.role, m) ? { label: "Dejar de administrar", run: () => change("admin:" + m.address, () => del(admin(m))) } : null,
                   canRemove(team.role, m) ? { label: "Quitar del equipo", danger: true, run: () => { setError(null); setConfirm(m.address); } } : null,
                 ].filter(Boolean);
                 return (

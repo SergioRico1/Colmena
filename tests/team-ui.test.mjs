@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  adminNames, avatarOf, canInvite, canMakeAdmin, canMessage, canRemove, canRename, canUnmakeAdmin, codeKind, countLine, creatorName, currentTeam,
+  adminNames, avatarOf, canInvite, canMakeAdmin, canMessage, canRemove, canRename, canStepDown, canUnmakeAdmin, codeKind, countLine, creatorName, currentTeam,
   findCode, isAdmin, leaveText, listNames, pendingLine, presenceWords, realTeams, removeText, roleLabel, roomHint, roomPayload, roomPeople,
   sortMembers, untilText, waitingFor, waitingLine, waitingRest,
 } from "../src/lib/teams.js";
@@ -39,6 +39,11 @@ test("what each role may do to each member", () => {
   assert.equal(canUnmakeAdmin("admin", sergio), false);
   assert.equal(canUnmakeAdmin("admin", marta), false, "not on yourself");
   assert.equal(canUnmakeAdmin("miembro", ana), false);
+  // An admin can stop administering; the creator never, and nobody does it for another this way.
+  assert.equal(canStepDown("admin", marta), true);
+  assert.equal(canStepDown("creador", { ...sergio, you: true }), false);
+  assert.equal(canStepDown("admin", ana), false);
+  assert.equal(canStepDown("miembro", { ...marta, role: "miembro" }), false);
   // A direct message goes to anyone else with an address.
   assert.equal(canMessage(luis), true);
   assert.equal(canMessage(marta), false);
@@ -98,6 +103,11 @@ test("what waits for the creator is said in words", () => {
   assert.equal(waitingLine(waiting[1], members), "Cambiar el nombre · pendiente: se aplicará cuando Sergio se conecte");
   assert.equal(waitingLine(waiting[2], members), "Cambiar si Ana administra · pendiente: se aplicará cuando Sergio se conecte");
   assert.equal(waitingLine(waiting[3], members), "Añadir a una persona · pendiente: se aplicará cuando Sergio se conecte");
+  // Which way an admin change goes (`on`), and your own.
+  assert.equal(waitingLine({ op: "admin", address: ana.address, on: true }, members), "Hacer administrador a Ana · pendiente: se aplicará cuando Sergio se conecte");
+  assert.equal(waitingLine({ op: "admin", address: ana.address, on: false }, members), "Quitar a Ana como administrador · pendiente: se aplicará cuando Sergio se conecte");
+  assert.equal(waitingLine({ op: "admin", address: marta.address, on: false }, members), "Dejar de administrar · pendiente: se aplicará cuando Sergio se conecte");
+  assert.equal(waitingLine({ op: "admin", on: true }, members), "Nombrar a un administrador · pendiente: se aplicará cuando Sergio se conecte");
   assert.match(waitingLine({ op: "otra" }, []), /^Un cambio · pendiente: se aplicará cuando quien creó el equipo se conecte$/);
   assert.deepEqual(waitingFor(waiting, luis.address).map((w) => w.op), ["remove"]);
   assert.deepEqual(waitingFor(waiting, null), []);
@@ -126,6 +136,8 @@ test("teams you asked to join", () => {
   assert.match(pendingLine({ state: "refused", reason: "full" }).text, /completo/);
   assert.match(pendingLine({ state: "refused", reason: "refused" }).text, /otra invitación/);
   assert.equal(pendingLine({ state: "refused", reason: null }).action, "Descartar");
+  assert.equal(pendingLine({ state: "joining", from: "Marta Gil" }).text, "Te invitó Marta Gil. Estarás dentro cuando la Colmena de quien creó el equipo esté encendida.");
+  assert.equal(pendingLine({ state: "refused", reason: "refused", from: "Marta Gil" }).text, "No se pudo entrar. Pide otra invitación a Marta.");
 });
 
 test("the join field finds the code in whatever is pasted", () => {

@@ -242,7 +242,7 @@ export default function Sidebar({ active = "inicio" }) {
         {joining.map((p) => (
           <a key={p.id} role="menuitem" href="/equipo#equipo" onClick={() => setMenu(null)} className="v3-menuitem" style={{ ...menuItem, alignItems: "flex-start", flexDirection: "column", gap: "1px" }}>
             <span style={{ ...ellipsis, flex: "none", maxWidth: "100%" }}>{p.name}</span>
-            <span style={{ fontSize: "12px", fontWeight: "400", color: MUTED }}>{p.state === "refused" ? "No has podido entrar" : "Pendiente: has pedido entrar"}</span>
+            <span style={{ fontSize: "12px", fontWeight: "400", color: MUTED }}>{p.state === "refused" ? "No has podido entrar" : p.from ? "Pendiente · te invitó " + String(p.from).trim().split(/s+/)[0] : "Pendiente: has pedido entrar"}</span>
           </a>
         ))}
       </> : null}

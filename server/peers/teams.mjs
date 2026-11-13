@@ -178,7 +178,8 @@ export class Teams {
   /** Teams you asked to join and are not in yet (waiting, or refused). */
   pending() {
     return this.store.list("teamMemberships").filter((m) => ["joining", "refused"].includes(m.state))
-      .map((m) => ({ id: m.id, name: m.name || "Equipo", state: m.state, reason: m.reason || null, since: m.askedAt || null }));
+      // `from`: the name of whoever gave you the code, as this Colmena knows them.
+      .map((m) => ({ id: m.id, name: m.name || "Equipo", state: m.state, reason: m.reason || null, since: m.askedAt || null, from: (m.via && this.peers.contact(m.via)?.name) || null }));
   }
   memberView(m) {
     if (m.id === this.me) return { address: m.id, name: this.peers.myName(), role: ROLE[m.role], presence: "online", status: this.peers.myStatus(), bots: this.peers.myBots(), you: true, contact: false, dm: null };
@@ -345,7 +346,7 @@ export class Teams {
   request(t, body) {
     if (!this.peers.enqueue(t.owner, { type: "team.req", team: t.id, ...body })) throw new PeerError("No se pudo avisar a quien creó el equipo.", 409);
     const target = typeof body.member === "string" ? body.member : body.member?.id || null;
-    this.store.patch("teamMemberships", t.id, (ms) => ({ waiting: [...(ms.waiting || []), { op: body.op, ...(target ? { address: target } : {}), at: now() }].slice(-TEAM_LIMITS.waiting) }));
+    this.store.patch("teamMemberships", t.id, (ms) => ({ waiting: [...(ms.waiting || []), { op: body.op, ...(target ? { address: target } : {}), ...(body.op === "admin" ? { on: body.on === true } : {}), at: now() }].slice(-TEAM_LIMITS.waiting) }));
     void this.peers.flushOutbox();
   }
   rename(id, name) {

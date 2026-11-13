@@ -310,6 +310,13 @@ test("admins ask the creator: grant, rename, invite and remove; several teams; a
   // Nobody can demote or remove the creator; an admin cannot be told apart by the roster from afar: only Sergio signs.
   assert.throws(() => marta.teams.remove(team.id, addr(sergio)), (e) => e.status === 409);
   assert.throws(() => marta.teams.setAdmin(team.id, addr(sergio), false), (e) => e.status === 409);
+  // What an admin asks about who administers says which way it goes while it waits; and an
+  // admin can stop administering (she stays in as a member).
+  assert.deepEqual(marta.teams.setAdmin(team.id, addr(luis), true).waiting.map((w) => [w.op, w.address, w.on]), [["admin", addr(luis), true]]);
+  await until(() => marta.teams.view(team.id).waiting.length === 0 && memberIn(marta, team.id, luis).role === "admin", "Luis administra");
+  assert.deepEqual(luis.teams.setAdmin(team.id, addr(luis), false).waiting.map((w) => [w.op, w.address, w.on]), [["admin", addr(luis), false]]);
+  await until(() => luis.teams.view(team.id).role === "miembro" && luis.teams.view(team.id).waiting.length === 0, "Luis deja de administrar");
+  assert.equal(memberIn(sergio, team.id, luis).role, "miembro");
   // Several teams: Marta creates another and Sergio joins it; each list says where you administer.
   const other = marta.teams.create("Familia");
   await bring(marta, sergio, other.id);
@@ -456,7 +463,7 @@ test("a full team refuses, and whoever was waiting learns it", async (t) => {
   await assert.rejects(sergio.teams.invite(team.id, "Otra"), /está completo/);
   await marta.teams.join(inv.code);
   await until(() => marta.teams.membership(team.id).state === "refused", "Marta sabe que no ha entrado");
-  assert.deepEqual(marta.teams.pending().map((x) => [x.name, x.state, x.reason]), [["Acme", "refused", "full"]]);
+  assert.deepEqual(marta.teams.pending().map((x) => [x.name, x.state, x.reason, x.from]), [["Acme", "refused", "full", "Sergio Rico"]], "and who gave her the code");
   assert.deepEqual(marta.teams.list(), []);
   assert.equal(rosterOf(sergio, team.id).members.length, 32);
   // She clears it; nothing is left of a team she was never in.
