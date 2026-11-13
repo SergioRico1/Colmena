@@ -15,6 +15,7 @@ import { z } from "zod";
 import { now, id as newId } from "../store.mjs";
 import { deniedResult } from "../denial.mjs";
 import { computer as defaultComputer } from "../computer/bridge.mjs";
+import { sessionFor, PRINCIPAL } from "../computer/sessions.mjs";
 import {
   TEMPLATES, PROJECTS_DIR, createProject, editProjectFile, listProjectFiles, projectFile, projectName, projectRoot,
   trashProjectPath, writeProjectFile,
@@ -417,8 +418,11 @@ export class Projects {
     const url = new URL(route, server.url).href;
     let page;
     if (this.computer?.available) {
+      // The same tab the bot's browser tools use: its named session (server/computer/sessions.mjs).
+      const profile = this.store && !mission.peerErrand ? sessionFor(this.store, mission, this.store.get("bots", bot.id) || bot) : PRINCIPAL;
       page = await this.computer.call("preview", {
         missionId: mission.id, botId: bot.id, botName: bot.name, color: bot.color || "#FFC93C", url, port: server.port, waitMs: 1500,
+        ...(profile !== PRINCIPAL ? { profile } : {}),
       }, { signal, timeout: 70000 });
       this.computer.rememberFrame?.(mission.id, { botId: bot.id, url: page.url, title: page.title, jpegBase64: page.jpegBase64 });
     } else {

@@ -66,7 +66,7 @@ export function computerToolDefs(bot, { available = false, settings = {}, vault 
       }),
       fn("browser_submit", "Pulsa el botón que envía, compra, publica o paga (ref) después de revisarlo. SIEMPRE espera la aprobación de la persona, que verá una captura y los campos. summary: qué se envía y a quién, en una frase.", { ref: text, summary: text }),
       fn("browser_download", "Descarga el archivo de un enlace o botón (ref) a la carpeta de la misión. Nunca se abre ni se ejecuta solo.", { ref: text }),
-      ...(vault.length ? [fn("browser_sign_in", "Inicia sesión en la página de acceso que tienes abierta con una cuenta que la persona guardó en la bóveda de Colmena. Tú nunca ves ni escribes la contraseña: Colmena rellena el usuario y la contraseña y entra, solo si la página es de ese sitio. La primera vez pide permiso. Cuentas (entry): " + vaultCatalog(vault) + ". Si después aparece un código de verificación o un captcha, pide a la persona que tome el control.", { entry: text })] : []),
+      ...(vault.length ? [fn("browser_sign_in", "Inicia sesión en la página de acceso que tienes abierta con una cuenta que la persona guardó en la bóveda de Colmena o te dejó usar de su gestor de contraseñas. Tú nunca ves ni escribes la contraseña: Colmena rellena el usuario y la contraseña y entra, solo si la página es de ese sitio. Una cuenta de la bóveda que la persona aún no te dio pide permiso la primera vez. Cuentas (entry): " + vaultCatalog(vault) + ". Si después aparece un código de verificación o un captcha, pide a la persona que tome el control.", { entry: text })] : []),
       fn("open_file", "Abre con su programa habitual un documento (PDF, Word, Excel, imagen…) de una carpeta compartida (folderId de list_folder) o de la carpeta de la misión (folderId 'misión', p. ej. lo descargado en 'descargas/…'). Nunca programas ni scripts.", { folderId: text, path: text }),
     );
     if (apps.length)
@@ -137,10 +137,30 @@ function bridgeArgs(ctx, extra = {}) {
     missionId: ctx.missionId, botId: ctx.botId, botName: ctx.bot?.name || ctx.botId, color: ctx.bot?.color || "#FFC93C",
     downloadsDir: ctx.missionRoot ? path.join(ctx.missionRoot, "descargas") : null,
     // A turn for another person: its own empty, in-memory browser session (desktop/browser.cjs).
-    ...(ctx.session ? { session: ctx.session } : {}), ...extra,
+    ...(ctx.session ? { session: ctx.session } : {}),
+    // Your own turns: the named session of the bot or the mission (Principal when absent).
+    ...(!ctx.session && ctx.profile ? { profile: ctx.profile } : {}), ...extra,
   };
 }
 const bridgeOf = (ctx) => ctx.computer || defaultComputer;
+
+/**
+ * Where an account for browser_sign_in comes from: the vault (`vault:<id>`, approved once per
+ * bot, or ticked in Ajustes) or a password manager's login (`login:<id>`, only for the bots the
+ * person ticked). Never in a turn for another person, a separate browser session or incognito
+ * (`ctx.noPasswords`, server/computer/wire.mjs).
+ */
+function signInSource(ctx, entryId) {
+  if (ctx.noPasswords || ctx.session) throw Error("En este turno no se usan las contraseñas de la persona. Si hace falta entrar, pide que lo haga ella.");
+  if (ctx.vault && (!ctx.managers || ctx.vault.has?.(entryId) || !ctx.managers.has?.(entryId))) return { kind: "vault", book: ctx.vault, scope: "vault:" + entryId };
+  if (ctx.managers?.has?.(entryId)) {
+    const scope = "login:" + entryId;
+    if (!ctx.store || !findComputerGrant(ctx.store, { botId: ctx.botId, tool: "browser_sign_in", scope }))
+      throw Error((ctx.bot?.name || "Este bot") + " no tiene permiso para usar ese inicio de sesión. La persona lo da en Ajustes › Memoria y privacidad › Contraseñas de webs, o en la ficha del bot.");
+    return { kind: "login", book: ctx.managers, scope };
+  }
+  throw Error("La bóveda de contraseñas no está disponible aquí.");
+}
 
 async function call(ctx, op, args = {}) {
   try {
@@ -231,15 +251,16 @@ export async function planComputerCall(name, rawArgs, ctx = {}) {
   }
   if (name === "browser_open") info.domain = hostOf(args.url);
   // A vault account only signs in on its own site: checked here and again in the browser.
-  let account = null;
+  let account = null, source = null;
   if (name === "browser_sign_in") {
-    if (!ctx.vault) throw Error("La bóveda de contraseñas no está disponible aquí.");
-    account = ctx.vault.entry(args.entry);
+    source = signInSource(ctx, args.entry);
+    account = source.book.entry(args.entry);
     const page = (await currentPage(ctx))?.url || "";
     if (!sameSite(hostOf(page), account.domain))
       throw Error("La página abierta " + (hostOf(page) ? "es de " + hostOf(page) : "está vacía") + ", no de " + account.domain + ". Abre primero con browser_open la página de inicio de sesión de " + account.domain + ".");
     info.domain = account.domain;
     info.username = account.username;
+    info.manager = source.kind === "login" ? account.managerLabel : null;
   }
 
   const confinement = name === "run_command" ? await commandConfinement(args, ctx) : {};
@@ -296,8 +317,8 @@ export async function planComputerCall(name, rawArgs, ctx = {}) {
       info.shot = capture.shot;
       if (name !== "browser_submit") grantScope = "dominio:" + (computer.domain || "desconocido");
       if (account) {
-        grantScope = "vault:" + account.id;
-        Object.assign(computer, { domain: account.domain, account: account.label || account.domain, username: account.username });
+        grantScope = source.scope;
+        Object.assign(computer, { domain: account.domain, account: account.label || account.domain, username: account.username, ...(info.manager ? { manager: info.manager } : {}) });
         info.domain = account.domain;
       }
     }
@@ -393,14 +414,21 @@ export async function executeComputerTool(name, rawArgs, ctx = {}) {
       return withNotice(await call(ctx, "act", { kind: "click", ref: args.ref, text: "", allowSubmit: true }));
     }
     case "browser_sign_in": {
-      if (!ctx.vault) throw Error("La bóveda de contraseñas no está disponible aquí.");
+      const source = signInSource(ctx, args.entry);
       const approved = ctx.approval?.computer?.domain;
-      const secret = await ctx.vault.secret(args.entry);
+      // Read from the vault or the manager now; it goes straight to the browser of this bot and
+      // is dropped. The result, the receipt and the logs never carry it.
+      let secret = await source.book.secret(args.entry);
       if (approved && approved !== secret.domain) throw Error("Esa cuenta es de otro sitio que el aprobado. Vuelve a pedir permiso.");
-      // The password goes straight to the browser of this bot; the result never carries it.
-      const done = await call(ctx, "signIn", { domain: secret.domain, username: secret.username, password: secret.password });
-      secret.password = null;
-      ctx.vault.used(args.entry);
+      let done;
+      try {
+        done = await call(ctx, "signIn", { domain: secret.domain, username: secret.username, password: secret.password });
+      } finally {
+        secret.password = null;
+        secret.username = null;
+        secret = null;
+      }
+      source.book.used(args.entry);
       return { signedIn: !!done.submitted, url: done.url, title: done.title, filled: done.filled, blocker: done.blocker || null, notice: "Colmena ha rellenado el acceso por ti; tú no has visto la contraseña. Lee la página para comprobar si has entrado." };
     }
     case "browser_download": {

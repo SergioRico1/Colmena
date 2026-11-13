@@ -222,8 +222,8 @@ export function describeForApproval(name, args = {}, info = {}) {
     case "browser_sign_in":
       return {
         title: "Iniciar sesión en " + domain,
-        summary: who + " quiere entrar en " + domain + " con tu cuenta «" + (info.username || "de la bóveda") + "». Colmena rellena el usuario y la contraseña en su navegador solo si la página es de " + domain + "; " + who + " nunca ve la contraseña.",
-        scope: "Bóveda · " + domain,
+        summary: who + " quiere entrar en " + domain + " con tu cuenta «" + (info.username || "de la bóveda") + "»" + (info.manager ? " de " + info.manager : "") + ". Colmena rellena el usuario y la contraseña en su navegador solo si la página es de " + domain + "; " + who + " nunca ve la contraseña.",
+        scope: (info.manager || "Bóveda") + " · " + domain,
         ...image,
       };
     case "browser_download":

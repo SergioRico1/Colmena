@@ -353,7 +353,7 @@ export function missionSummary(m, ctx) {
   });
 }
 
-const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "monthlyTokens", "previousNames", "look", "createdAt", "updatedAt"];
+const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "monthlyTokens", "previousNames", "look", "browserSession", "createdAt", "updatedAt"];
 export function botView(b, ctx) {
   const mine = ctx.missionsByBot.get(b.id) || [];
   const open = mine.filter((m) => OPEN.has(m.status));

@@ -19,15 +19,51 @@ function sessionOf(args) {
   const s = args && typeof args.session === "string" ? args.session : "";
   return SESSION_RE.test(s) ? s : "";
 }
-/** The tab of a call: mission and bot, and the separate session when there is one. */
-function tabKey(args) {
-  const session = sessionOf(args);
-  return String(args && args.missionId) + ":" + String(args && args.botId) + (session ? "#" + session : "");
+// Named sessions («Sesiones del navegador», server/computer/sessions.mjs): args.profile is
+// the id of one; each has its own persistent partition. "principal" (or none) is PARTITION,
+// the one every bot used before, so nothing is lost.
+const PROFILE_RE = /^[a-z0-9]{1,40}$/;
+const PROFILE_PREFIX = "persist:colmena-s-";
+/** The named session of a call, or "" (Principal). A separate session always wins over it. */
+function profileOf(args) {
+  const p = args && typeof args.profile === "string" ? args.profile : "";
+  return !sessionOf(args) && PROFILE_RE.test(p) && p !== "principal" ? p : "";
 }
-/** The partition of a call: the persistent one, or a fresh in-memory one per separate session. */
+/** The tab of a call: mission and bot, and the separate or named session when there is one. */
+function tabKey(args) {
+  const session = sessionOf(args), profile = profileOf(args);
+  return String(args && args.missionId) + ":" + String(args && args.botId) + (session ? "#" + session : profile ? "@" + profile : "");
+}
+/** The partition of a call: a fresh in-memory one per separate session, a named session's, or Principal. */
 function partitionFor(args, base = PARTITION) {
-  const session = sessionOf(args);
-  return session ? "colmena-aparte-" + session.replace(/[^A-Za-z0-9_-]/g, "_") : base;
+  const session = sessionOf(args), profile = profileOf(args);
+  return session ? "colmena-aparte-" + session.replace(/[^A-Za-z0-9_-]/g, "_") : profile ? PROFILE_PREFIX + profile : base;
+}
+/** The persistent partition of a named session id ("principal" → PARTITION). Null when malformed. */
+function profilePartition(id, base = PARTITION) {
+  if (id === "principal" || id === "" || id == null) return base;
+  return PROFILE_RE.test(String(id)) ? PROFILE_PREFIX + id : null;
+}
+/** Cookie domains → the sites a person recognises: no leading dot, no www., unique, sorted. */
+function cookieSites(cookies) {
+  const out = new Set();
+  for (const c of cookies || []) {
+    const d = String((c && c.domain) || "").toLowerCase().replace(/^\./, "").replace(/^www\./, "");
+    if (d && d.includes(".")) out.add(d);
+  }
+  return [...out].sort();
+}
+// The address bar of «Iniciar sesión a mano»: a form without JavaScript; Colmena catches its
+// colmena-nav:// navigation and opens the address in the page below.
+function manualBarHtml(name) {
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const html = `<!doctype html><meta charset="utf-8"><style>
+body{margin:0;height:${BAR}px;display:flex;align-items:center;gap:10px;padding:0 12px;box-sizing:border-box;font:13px system-ui,sans-serif;background:#1E1B16;color:#FFF}
+form{flex:1;display:flex;gap:8px;margin:0}input{flex:1;height:28px;border:0;border-radius:6px;padding:0 10px;font:inherit}
+button,a{height:28px;padding:0 12px;border:0;border-radius:6px;background:#FFF;color:#1E1B16;font:600 13px system-ui,sans-serif;display:inline-flex;align-items:center;text-decoration:none;cursor:pointer}
+span{white-space:nowrap;opacity:.85}</style>
+<span>Sesión «${esc(name)}»</span><form action="colmena-nav://go" method="get"><input name="u" placeholder="Escribe la web donde quieres entrar (por ejemplo, holded.com)" autofocus><button>Ir</button></form><a href="colmena-control://done">Listo</a>`;
+  return "data:text/html;charset=utf-8," + encodeURIComponent(html);
 }
 const VIEW = { width: 1280, height: 800 };
 const BAR = 44;
@@ -845,8 +881,85 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
     });
   }
 
+  // «Iniciar sesión a mano»: one window per named session, driven by the person only (no CDP,
+  // no frames, no bot). Same network guard as the bots' tabs (setupSession).
+  const manual = new Map(); // profile → {win, bar, view}
+  function openManual({ profile, name, url }) {
+    const part = profilePartition(profile, partition);
+    if (!part) throw codedError("Sesión no válida.", "BAD_SESSION");
+    const go = (raw) => {
+      const text = String(raw || "").trim();
+      if (!text) return;
+      const target = /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : "https://" + text;
+      const entry = manual.get(profile);
+      if (!entry || allowed(target)) return;
+      entry.view.webContents.loadURL(target).catch(() => {});
+    };
+    const existing = manual.get(profile);
+    if (existing && !existing.win.isDestroyed()) {
+      existing.win.show();
+      existing.win.focus();
+      if (url) go(url);
+      return { opened: true, profile };
+    }
+    setupSession(part);
+    const win = new BaseWindow({ width: VIEW.width, height: VIEW.height + BAR, useContentSize: true, show: false, title: "Colmena · Sesión «" + name + "»", backgroundColor: "#FFFFFF", autoHideMenuBar: true });
+    const bar = new WebContentsView({ webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, javascript: false } });
+    const view = new WebContentsView({ webPreferences: { partition: part, sandbox: true, contextIsolation: true, nodeIntegration: false, nodeIntegrationInSubFrames: false, webviewTag: false, spellcheck: false, safeDialogs: true, navigateOnDragDrop: false } });
+    win.contentView.addChildView(bar);
+    win.contentView.addChildView(view);
+    const entry = { win, bar, view };
+    manual.set(profile, entry);
+    layout(entry);
+    win.on("resize", () => layout(entry));
+    win.on("closed", () => manual.delete(profile));
+    bar.webContents.on("will-navigate", (event, target) => {
+      event.preventDefault();
+      if (String(target).startsWith("colmena-control://")) win.close();
+      else if (String(target).startsWith("colmena-nav://")) {
+        try { go(new URL(target).searchParams.get("u")); } catch {}
+      }
+    });
+    bar.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+    const wc = view.webContents;
+    wc.setWindowOpenHandler(({ url: next }) => {
+      if (!allowed(next)) setImmediate(() => wc.loadURL(next).catch(() => {}));
+      return { action: "deny" };
+    });
+    const guard = (event, next) => { if (allowed(next)) event.preventDefault(); };
+    wc.on("will-navigate", guard);
+    wc.on("will-redirect", guard);
+    bar.webContents.loadURL(manualBarHtml(name || "Sesión")).catch(() => {});
+    if (url) go(url);
+    win.show();
+    win.focus();
+    return { opened: true, profile };
+  }
+  async function clearProfile(profile) {
+    const part = profilePartition(profile, partition);
+    if (!part) throw codedError("Sesión no válida.", "BAD_SESSION");
+    for (const tab of [...tabs.values()]) if (tab.partition === part) closeTab(tab);
+    const m = manual.get(profile);
+    if (m && !m.win.isDestroyed()) m.win.close();
+    const ses = electronSession.fromPartition(part);
+    await ses.clearStorageData();
+    await ses.clearCache().catch(() => {});
+    await ses.clearAuthCache().catch(() => {});
+    return { cleared: true };
+  }
+
   async function handle(op, args = {}) {
     switch (op) {
+      case "sessionSites": {
+        const part = profilePartition(args.profile, partition);
+        if (!part) throw codedError("Sesión no válida.", "BAD_SESSION");
+        // Domains only: no cookie name or value leaves this process.
+        return { domains: cookieSites(await electronSession.fromPartition(part).cookies.get({})) };
+      }
+      case "sessionClear":
+        return clearProfile(args.profile);
+      case "sessionOpen":
+        return openManual({ profile: String(args.profile || ""), name: String(args.name || "Sesión").slice(0, 40), url: args.url || "" });
       case "preview":
         return preview(args);
       case "previewRevoke": {
@@ -993,6 +1106,7 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
     shuttingDown = true;
     clearInterval(timer);
     for (const tab of [...tabs.values()]) closeTab(tab);
+    for (const m of manual.values()) try { if (!m.win.isDestroyed()) m.win.destroy(); } catch {}
   }
 
   return { handle, shutdown, tabs };
@@ -1018,4 +1132,4 @@ function attachBackend(child, manager) {
   });
 }
 
-module.exports = { consoleEntry, createBrowserManager, attachBackend, toBackend, tabKey, partitionFor, PARTITION, PASSWORD_MESSAGE, SUBMIT_WORDS, BLOCKED_DOWNLOAD };
+module.exports = { consoleEntry, createBrowserManager, attachBackend, toBackend, tabKey, partitionFor, profilePartition, cookieSites, PARTITION, PASSWORD_MESSAGE, SUBMIT_WORDS, BLOCKED_DOWNLOAD };

@@ -51,6 +51,9 @@ export class SiteVault {
   list() {
     return this.store.list("vault").map(entryView).sort((a, b) => a.label.localeCompare(b.label, "es"));
   }
+  has(entryId) {
+    return !!this.store.get("vault", String(entryId || ""));
+  }
   entry(entryId) {
     const e = this.store.get("vault", entryId);
     if (!e) throw Object.assign(Error("Esa cuenta ya no está en la bóveda."), { status: 404 });

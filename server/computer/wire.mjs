@@ -10,6 +10,24 @@ import { deniedResult } from "../denial.mjs";
 import { commandOutput } from "../command-output.mjs";
 import { sandboxKey } from "./sandbox.mjs";
 import { deferredResult } from "../redlines.mjs";
+import { sessionFor, PRINCIPAL } from "./sessions.mjs";
+
+/**
+ * No saved password (the vault or a password manager) in a turn for another person, a separate
+ * browser session or an incognito conversation: browser_sign_in is neither offered nor run.
+ */
+export const passwordsAllowed = (mission, step = null) => !mission?.peerErrand && !mission?.incognito && !browserSessionOf(mission, step);
+
+/**
+ * The accounts a bot may be offered for browser_sign_in: every vault entry (the first use asks,
+ * unless the person ticked the bot) and only the manager logins the person gave that bot.
+ */
+export function signInCatalog(runtime, bot) {
+  const vault = runtime.vault?.available ? runtime.vault.list() : [];
+  const granted = new Set(runtime.store.list("grants").filter((g) => g.active !== false && g.botId === bot?.id && g.tool === "browser_sign_in" && String(g.scope || "").startsWith("login:")).map((g) => g.scope.slice(6)));
+  const logins = runtime.managers ? runtime.managers.list().filter((l) => granted.has(l.id)) : [];
+  return [...vault, ...logins];
+}
 
 export { isComputerTool };
 
@@ -40,8 +58,8 @@ function closeSessionsAtEnd(runtime, computer) {
 
 export function computerExtraTools(runtime, { computer = defaultComputer } = {}) {
   closeSessionsAtEnd(runtime, computer);
-  return (bot) =>
-    computerToolDefs(bot, { available: computer.available, settings: runtime.settings(), vault: runtime.vault?.available ? runtime.vault.list() : [] }).map(({ type: _type, ...def }) => ({
+  return (bot, mission) =>
+    computerToolDefs(bot, { available: computer.available, settings: runtime.settings(), vault: passwordsAllowed(mission) ? signInCatalog(runtime, bot) : [] }).map(({ type: _type, ...def }) => ({
       ...def,
       run: (args, ctx) => runComputerTool(runtime, computer, def.name, args, ctx),
     }));
@@ -63,10 +81,15 @@ async function runComputerTool(runtime, computer, name, rawArgs, { mission, step
   const session = browserSessionOf(mission, step);
   const stored = session && name.startsWith("browser_") ? store.get("steps", step.id) : null;
   if (stored && stored.browserSession !== session) store.patch("steps", step.id, { browserSession: session });
+  // Your own turns browse in the bot's named session (or the mission's); a turn for another
+  // person never does: its separate session wins (desktop/browser.cjs partitionFor).
+  const profile = session ? PRINCIPAL : sessionFor(store, mission, store.get("bots", bot.id) || bot);
   const ctx = {
     ...(session ? { session } : {}),
+    ...(profile !== PRINCIPAL ? { profile } : {}),
     missionId: mission.id, botId: bot.id, bot, autonomy: runtime.autonomy(mission, bot), missionRoot: runtime.root(mission.id),
     folders: accessibleFolders(store, bot.id), settings: runtime.settings(), computer, signal, vault: runtime.vault || null,
+    managers: runtime.managers || null, store, noPasswords: !passwordsAllowed(mission, step),
     // Commands run confined when the server has a sandbox (undefined: not configured, as before).
     ...(runtime.sandbox !== undefined ? { sandbox: runtime.sandbox } : {}),
     // The same command the sandbox just blocked, asked again: a wider run waits for the person (once).

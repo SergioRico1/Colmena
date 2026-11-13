@@ -8,6 +8,8 @@ import * as providers from "./provider.mjs";
 import { Runtime } from "./runtime.mjs";
 import { Scheduler } from "./scheduler.mjs";
 import { SiteVault } from "./vault.mjs";
+import { PasswordManagers } from "./managers/index.mjs";
+import { BrowserSessions } from "./computer/sessions.mjs";
 import { SecretStore, secretsExtraTools } from "./secrets.mjs";
 import { importNexoComposio } from "./nexo/import.mjs";
 import { McpHub } from "./mcp/hub.mjs";
@@ -115,6 +117,8 @@ const scheduler = new Scheduler(store, runtime, aiConnected, { connections });
 setInterval(() => { if (aiConnected()) try { runtime.sweepQuestions(); } catch {} }, 60000).unref();
 let origin = "http://127.0.0.1:4317";
 runtime.vault = new SiteVault(store); // site passwords for browser_sign_in (DPAPI)
+runtime.managers = new PasswordManagers(store); // 1Password (op) and Bitwarden (bw) logins, read at fill time
+runtime.browserSessions = new BrowserSessions(store, { computer }); // «Sesiones del navegador»
 runtime.mcp = new McpHub(store); // MCP connections (catalogue in Ajustes › Conexiones)
 // Commands and project scripts bots run go through a process sandbox when this computer has
 // one (Codex CLI on Windows, sandbox-exec on macOS, bwrap on Linux); bot-written code without

@@ -4,6 +4,9 @@ import { createLiveSnapshot } from "./live-snapshot.mjs";
 import { commandOutput } from "./command-output.mjs";
 import { watchQueues } from "./queue.mjs";
 import { SiteVault, registerVaultRoutes } from "./vault.mjs";
+import { PasswordManagers } from "./managers/index.mjs";
+import { registerManagerRoutes } from "./managers/routes.mjs";
+import { BrowserSessions } from "./computer/sessions.mjs";
 import { McpHub } from "./mcp/hub.mjs";
 import { registerMcpRoutes } from "./mcp/routes.mjs";
 import { registerWorkFileRoutes } from "./workfiles.mjs";
@@ -448,6 +451,10 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   // Password vault: the runtime's (the bots sign in with it), or one of its own in tests.
   if (runtime && !runtime.vault) runtime.vault = new SiteVault(store);
   registerVaultRoutes(app, { vault: runtime?.vault || new SiteVault(store), z });
+  // Password managers (1Password, Bitwarden) and named browser sessions: the runtime's, or their own in tests.
+  if (runtime && !runtime.managers) runtime.managers = new PasswordManagers(store);
+  if (runtime && !runtime.browserSessions) runtime.browserSessions = new BrowserSessions(store, { computer });
+  registerManagerRoutes(app, { store, managers: runtime?.managers || new PasswordManagers(store), sessions: runtime?.browserSessions || new BrowserSessions(store, { computer }), z });
   // API keys (request_secret / api_request): the runtime's store, or one of its own in tests.
   if (runtime && !runtime.secrets) runtime.secrets = new SecretStore(store);
   registerSecretRoutes(app, { store, runtime, secrets: runtime?.secrets || new SecretStore(store) });
