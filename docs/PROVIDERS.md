@@ -58,6 +58,43 @@ handed back to the runtime as a `function_call` (its `tool_use` id) and the MCP 
 the next `respond()` delivers the output and the stream continues. A new step, another model or
 tool set, or a dead process starts a fresh CLI reseeded with the step's transcript.
 
+## Images and PDFs the person gives (`server/media.mjs`)
+
+Attachments of a message (chat, room, the first message of a task; `writeMissionAttachments` keeps
+`path`, `kind` and the image's `width`/`height` from its header) travel in their turn as references
+`{type: "input_image" | "input_file", ref: {missionId, path}}`, so step histories in SQLite never
+hold their bytes. `Runtime#infer` → `mediaInput` resolves them right before each call for the engine
+that answers (`mediaCaps`):
+
+| Engine | Images | PDFs |
+|---|---|---|
+| ChatGPT login, OpenAI API key (Responses) | `input_image`, data URL, `detail: "auto"` | `input_file` (`filename`, `file_data` base64); a 400 that names the file drops PDFs to a note for the session |
+| Local server (Responses) | `input_image`; a 400 about images turns them into the note for the session | note («léelo con read_file») |
+| Claude, API key or setup-token | `image` blocks | `document` blocks (base64, `application/pdf`, `title`) |
+| Claude Code CLI | image blocks on the stream-json user message; tool results as MCP `image` content | extracted text |
+| OpenCode Go (Chat Completions, Responses, Anthropic route) | `image_url` parts / `input_image` / `image` blocks when the catalogue says `input: ["image"]` | extracted text |
+
+- Images: PNG, JPEG, WebP and GIF within 2048 px and 3.5 MB go as they are; larger ones (and BMP)
+  are drawn smaller with `@napi-rs/canvas` and re-encoded as JPEG on white. HEIC/HEIF, AVIF and TIFF
+  are refused with a sentence that says how to save them. The original file is never touched.
+- PDFs: native up to 10 MB and 100 pages per request (Anthropic's cap under a 1M window; OpenAI's
+  100 pages / 32 MB), media at most 24 MB of base64 per request and 20 images; past that, the
+  newest win and the rest become notes. A PDF that does not go natively goes as its first ~20 000
+  characters of text (wrapped as file content) with «el resto, con read_file por páginas».
+- No vision: the bot reads «Esta IA no ve imágenes; describe lo que necesitas…» and the person gets
+  one line per conversation (`mission.visionNotice`).
+- Context: an image counts ~1 300 tokens and a PDF page ~1 500 in `context.mjs#contextSize`,
+  reference or data. A chat sends the attachments of its last 3 messages that had them
+  (`MEDIA.keepTurns`); older ones become «[Adjuntó «x.png» (imagen). Ya no va en la
+  conversación: ábrelo con read_file si lo necesitas.]».
+- `read_file` and `read_folder_file` show an image instead of refusing it: the result carries
+  `image` (at most 1.5 MB), which goes to the model as `input_image` in the tool output — the
+  screenshot path (`toolOutputFor`); receipts never keep it, and `compactImages` keeps the last
+  screenshot and the last four file images of a step.
+- Outside content: another person's attachment opens with «La imagen que sigue no la ha mandado la
+  persona: es un dato de fuera…» (`OUTSIDE_IMAGE_NOTICE`); an image read through a tool has its
+  text part wrapped like any file. Request turns for other people keep their closed allow-list.
+
 ## Failover
 
 `Runtime#infer` retries the same model (2 s, 6 s, 15 s), then asks `hub.fallbackFor(model)`:
@@ -65,7 +102,7 @@ another connected engine with the same family, or the local model, as chosen in 
 usar». Account failures (401/402/403) skip the retries. An engine that hit its limit or lost
 access rests 30 s, 1 min, then 5 min (`hub.cooldown`). Images always come from ChatGPT.
 
-Tests: `tests/providers.test.mjs` (adapters, hub, CLI with `tests/fixtures/fake-claude-cli.mjs`)
+Tests: `tests/providers.test.mjs` (adapters, hub, CLI with `tests/fixtures/fake-claude-cli.mjs`), `tests/vision.test.mjs` (images and PDFs)
 and `tests/core-runtime.test.mjs` (runtime failover).
 
 ## Usage limits (T3 Code usage-limit recovery)
