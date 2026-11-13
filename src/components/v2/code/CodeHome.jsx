@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, FolderOpen,GitBranch, Sparkles, Ellipsis } from "../../Icon.js";
+import { Check, FolderOpen, FolderCode, GitBranch, Sparkles, Ellipsis } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { useStore } from "../../../lib/store.jsx";
@@ -15,6 +15,9 @@ import { sharedStatus } from "../people/SharedTasks.jsx";
 // («Empezar»), the tasks by state and, beside them, the projects, the engines of this computer
 // and what people hand over to you. Open a folder, clone a repository or start from scratch from
 // «Abrir un proyecto».
+
+/** «E:\\a\\b\\c\\proyecto» → «…\\c\\proyecto»: where it is, without the long head. */
+export const shortPath = (p) => { const parts = String(p || "").split(/[\\/]/).filter(Boolean); return parts.length > 2 ? "…" + (String(p).includes("\\") ? "\\" : "/") + parts.slice(-2).join(String(p).includes("\\") ? "\\" : "/") : String(p || ""); };
 
 export async function pickProjectFolder() {
   const api = typeof window !== "undefined" ? window.colmenaWindow : null;
@@ -38,7 +41,7 @@ function ProjectRow({ p, n, on, onPick }) {
         <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: on ? C.ink : C.track, color: on ? C.white : C.ink, font: `600 var(--t-micro)/1 ${MONO}` }}>&lt;/&gt;</span>
         <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
           <span style={{ font: `500 var(--t-ui)/1.2 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-          <span title={p.root} style={{ fontSize: "var(--t-meta)", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.root}</span>
+          <span title={p.root} style={{ font: `400 var(--t-caption)/1.3 ${MONO}`, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", direction: "rtl", textAlign: "left" }}>{"\u200e" + shortPath(p.root)}</span>
         </span>
         <span className="code-stat" style={{ fontSize: "var(--t-meta)", color: C.muted, whiteSpace: "nowrap" }}>{n === 1 ? "1 tarea" : n + " tareas"}</span>
       </button>
@@ -206,8 +209,8 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
                 label={project ? <><span style={{ font: `500 var(--t-caption)/1 ${MONO}`, color: C.ink }}>{project.name}</span>{project.repo ? <span style={{ color: C.muted }}> {project.base || "main"}</span> : null}</> : "Proyecto nuevo"}>
                 {(close) => (
                   <>
-                    {projects.map((p) => <MenuItem key={p.id} title={p.name} text={p.root} on={project?.id === p.id} onClick={() => { onSelect(p.id); close(); }} />)}
-                    <MenuItem title="Abrir otra carpeta…" onClick={() => { close(); openFolder(); }} />
+                    {projects.map((p) => <MenuItem key={p.id} icon={<FolderCode size={16} />} title={p.name} text={p.root} on={project?.id === p.id} onClick={() => { onSelect(p.id); close(); }} />)}
+                    <MenuItem icon={<FolderOpen size={16} />} title="Abrir otra carpeta…" onClick={() => { close(); openFolder(); }} />
                   </>
                 )}
               </MenuChip>

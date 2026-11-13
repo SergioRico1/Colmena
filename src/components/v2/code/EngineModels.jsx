@@ -52,7 +52,7 @@ export default function EngineModelMenu({ engines = [], current, onPick, close, 
         <div key={e.id} role="group" aria-label={e.label} style={{ display: "flex", flexDirection: "column", gap: "2px", paddingTop: k ? "6px" : 0, marginTop: k ? "4px" : 0, borderTop: k ? "1px solid " + C.rule : 0 }}>
           <span style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px 4px" }}>
             <EngineMark engine={e.id} size={14} />
-            <span style={{ flex: 1, font: `500 var(--t-micro)/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{e.label}</span>
+            <span style={{ flex: 1, fontSize: "var(--t-caption)", fontWeight: 600, color: C.muted }}>{e.label}</span>
             {e.id === current?.engine ? <span style={{ font: `500 var(--t-micro)/1 ${MONO}`, color: C.quiet }}>ahora</span> : null}
           </span>
           {!e.available ? (
@@ -71,8 +71,9 @@ export default function EngineModelMenu({ engines = [], current, onPick, close, 
               {e.models.map((m) => {
                 const on = multi ? multi.some((x) => x.engine === e.id && x.model === m.id) : current?.engine === e.id && current?.model === m.id;
                 return (
-                  <button key={m.id} type="button" role="menuitemradio" aria-checked={on} className="code-hover" onClick={() => { onPick(e.id, m.id); if (!multi) close?.(); }}
+                  <button key={m.id} type="button" role="menuitemradio" aria-checked={on} data-label={m.label} className="code-hover" onClick={() => { onPick(e.id, m.id); if (!multi) close?.(); }}
                     style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "9px 12px", border: 0, borderRadius: "var(--r-lg)", background: on ? C.soft : "transparent", cursor: "pointer", textAlign: "left" }}>
+                    <span aria-hidden="true" style={{ flex: "none", display: "inline-flex", alignSelf: "flex-start", marginTop: "2px" }}><EngineMark engine={e.id} size={16} /></span>
                     <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
                       <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: C.ink }}>{m.label}</strong>
                       {modelNote(m) ? <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.45, color: C.muted }}>{modelNote(m)}</span> : null}
