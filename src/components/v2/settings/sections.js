@@ -160,7 +160,7 @@ export const SECTIONS = [
     items: [
       ["tu-identidad", "Tú en otras Colmenas", "nombre identidad"],
       ["tu-estado", "Tu estado", "no molestar fuera vacaciones ausente disponible silencio hasta"],
-      ["invitar", "Invitar a alguien", "invitación código compartir chatear persona amigo compañero"],
+      ["invitar", "Invitar a alguien que aún no está", "invitar invitación código compartir chatear persona amigo compañero"],
       ["contactos", "Personas conectadas", "contactos amigos hablar palabras de seguridad quitar"],
       ["encargos", "Encargos de otras personas", "encargos bots herramientas pedir otra persona aprobar incógnito"],
       ["buzon", "Cómo os llegan los mensajes", "buzón relé relay servidor cifrado conexión"],

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Plus } from "../components/Icon.js";
+import { Plus, UserPlus } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NewBot from "../components/v2/team/NewBot.jsx";
 import EquipoPeople from "../components/v3/team/People.jsx";
 import TeamSection from "../components/v3/team/TeamSection.jsx";
-import { InviteSheet } from "../components/v2/people/InviteSheets.jsx";
+import InviteSheet from "../components/people/InviteSheet.jsx";
+import { currentTeam } from "../lib/teams.js";
 import { LimitLine } from "../components/v2/LimitNotice.jsx";
 import { Shape, autonomyHint, autonomyLabel, autonomyShown } from "../components/v3/team/parts.jsx";
 import { useStore } from "../lib/store.jsx";
@@ -57,7 +58,9 @@ function Team({ query = {} }) {
   const rows = new Map(model.bots.map((r) => [r.id, r]));
   const { asks } = needsOf(store);
   const count = [String(team.length), model.summary.working ? `${model.summary.working} trabajando` : null, model.waitingCount ? waitingLabel(model.waitingCount) : null].filter(Boolean).join(" · ");
-  const relayOff = peers?.relay?.status === "off";
+  // «Invitar» here is your team's when you administer one; otherwise a code to talk to someone.
+  const current = currentTeam(store.teams);
+  const inviteTo = current?.admin ? { kind: "team", team: { id: current.id, name: current.name, admin: true } } : null;
   return (
     <Shell active="equipo" background="var(--c-app)">
       <main style={{ maxWidth: "1180px", margin: "0 auto", padding: "28px clamp(20px, 3.4vw, 40px) 56px", display: "flex", flexDirection: "column", gap: "28px" }}>
@@ -67,7 +70,7 @@ function Team({ query = {} }) {
             <p style={LEAD}>{"Quién trabaja contigo: tus bots y las personas con las que te conectas."}</p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" disabled={!peers?.me || relayOff} onClick={() => setInvite(true)} className="u4-sec" style={{ ...B.secondary, ...B.lg }}>{"Invitar a una persona"}</button>
+            <button type="button" onClick={() => setInvite(true)} className="u4-sec" style={{ ...B.secondary, ...B.lg }}><UserPlus size={16} />{"Invitar"}</button>
             <a href="/equipo/nuevo" className="u4-pri" style={{ ...B.primary, ...B.lg }}>
               <Plus size={16} weight="bold" />
               {"Nuevo bot"}
@@ -92,7 +95,7 @@ function Team({ query = {} }) {
         </section>
         <EquipoPeople peers={peers} />
       </main>
-      {invite ? <InviteSheet onClose={() => setInvite(false)} /> : null}
+      {invite ? <InviteSheet context={inviteTo} onClose={() => setInvite(false)} /> : null}
     </Shell>
   );
 }

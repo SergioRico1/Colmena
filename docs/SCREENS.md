@@ -117,6 +117,51 @@ con estas tres piezas; no hay colores, iconos ni bots dibujados a mano.
 - Ya lo usan `BotPresence`, `BotMark`, `AuthorAvatar`, las marcas de menciones, Equipo, la ficha del bot, Inicio, la barra
   lateral, Biblioteca, Código, Bienvenida y Pregunta rápida. Un retrato elegido para el bot se sigue mostrando.
 
+## Invitar: un solo modelo y unas mismas palabras
+Traer a alguien a Colmena, a una sala o a un mensaje directo usa siempre las mismas piezas
+(`src/components/people/`, reglas puras en `src/lib/invite.js`, estilos en `src/styles/invite.css`).
+
+- **Una sola hoja «Invitar»** (`InviteSheet`), abierta con su contexto:
+  - una sala (`{kind: "room", room}`): «Personas» (busca entre tu equipo y quien ya habla contigo, elige varias, papel
+    Miembro o Invitado explicado en una línea, «Añadir a …»; si la sala no es tuya, «Pedírselo a <dueño>») y
+    «Invitar a alguien que aún no está» (un código para esa sala). Siempre dice antes la verdad: «Verán lo que se escriba
+    a partir de ahora, no lo anterior.»;
+  - un equipo (`{kind: "team", team}`): un código (entrar en un equipo lo decide quien entra, también si ya habláis);
+    quien no administra lee quién puede invitar;
+  - nada: un código para hablar a solas.
+- **El código** (`CodePanel`): grande y seleccionable, «Copiar mensaje» (el `inviteText` del servidor: quién eres, qué es
+  Colmena, dónde se instala y dónde pegar el código), «Copiar código», «Caduca en 24 h · sirve una sola vez», el mensaje
+  que se copia a la vista y por qué se comparan de viva voz las cuatro palabras. Debajo, los códigos de ese contexto sin
+  usar con «Copiar de nuevo» y «Revocar».
+- **«Nuevo mensaje»** (`NewMessageSheet`): el «+» de Personas y «Nuevo › Mensaje directo». Elegir a alguien abre su
+  conversación al momento (a un compañero de equipo no le hace falta código); a quien aún no alcanzas, «Invitar a alguien
+  que aún no está» desde el mismo sitio.
+- **«Unirme con un código»** (`JoinSheet`, `JoinFlow` en la bienvenida): un campo para cualquier código; al pegarlo dice qué
+  es (de equipo, de sala, para hablar), quién invita y a qué, las cuatro palabras y «Coinciden · …»; estados claros para
+  caducado/usado/revocado, buzón inalcanzable y éxito (a dónde lleva).
+- **Pendiente**: en neutro donde corresponde (el panel de miembros de la sala, Equipo, Ajustes › Contactos y equipos). La
+  petición «añade a esta persona» es miel solo para el dueño de la sala (`RoomAddRequests`, sobre el cuadro de escribir,
+  y en «Te necesitan»); quien la pidió lee «Pendiente: se lo hemos pedido a Sergio».
+- **Mensaje directo**: la cabecera dice quién es (avatar, nombre, presencia, estado, equipo) y su menú «…» (`DmMenu`):
+  «Ver perfil», «Silenciar», «Archivar», «Quitar de contactos», cada uno con lo que significa debajo.
+- **Sin poder invitar** (`inviteBlock`): sin buzón, «Para invitar a gente, Colmena usa un buzón cifrado.» con «Actívalo»;
+  sin conexión, los códigos esperan a que vuelva; preparando las claves, en unos segundos.
+
+Vocabulario (`WORDS` en `src/lib/invite.js`; no se usan otras formas):
+
+| Palabra | Dónde |
+| --- | --- |
+| «Invitar» | el verbo de los botones (cabecera de la sala, panel de miembros, Equipo, vacíos) |
+| «Invitar a alguien que aún no está» | el camino del código, en todas partes |
+| «Unirme con un código» | el único sitio donde se pega un código (también lo dice el mensaje que se copia) |
+| «Mensaje directo» / «Nuevo mensaje» | hablar a solas con una persona / la hoja para empezar a hacerlo |
+| «Pendiente» | lo que espera a otra persona: un código sin usar, una petición al dueño |
+| «Revocar» | un código deja de servir al momento |
+| «Copiar mensaje», «Copiar código», «Copiar de nuevo» | lo que copias para mandarlo tú |
+
+Retirados: «Invitar a una persona», «Invitar a alguien», «Invitar a la sala», «Hablar con una persona», «Tengo una
+invitación», «Unirme a un equipo», «Reenviar», «Cancelar la invitación», «Invitar con un código».
+
 ## Comprobación
 - `npx vite build` sin errores.
 - `node scripts/a11y-scan.mjs <url>` (servidor con datos de QA, `scripts/seed-qa.mjs`): recorre las rutas principales y avisa de

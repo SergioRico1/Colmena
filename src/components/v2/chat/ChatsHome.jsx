@@ -3,7 +3,6 @@ import BotFace from "../../BotFace.jsx";
 import { Ellipsis, Plus, Search } from "../../Icon.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../../../lib/store.jsx";
-import { navigate } from "../../../lib/router.jsx";
 import { needsYou } from "../../../lib/format.js";
 import { listRows } from "../../../lib/threads.js";
 import { isBotChat, isTask } from "../../../lib/rooms.js";
@@ -196,7 +195,7 @@ export default function ChatsHome() {
           {ready && !grouped.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "22px 24px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
               <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{q.trim() ? "Ningún chat coincide" : tab === "sinleer" ? "Lo tienes todo leído" : "Aún no hay chats aquí"}</strong>
-              <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{q.trim() ? "Prueba con otro nombre o con una palabra del mensaje." : "Empieza a hablar con un bot, crea una sala o invita a una persona."}</span>
+              <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{q.trim() ? "Prueba con otro nombre o con una palabra del mensaje." : "Empieza a hablar con un bot, crea una sala o escribe a una persona."}</span>
             </div>
           ) : null}
           {grouped.map((g) => (
@@ -265,7 +264,7 @@ export default function ChatsHome() {
               ))}
             </div>
             <button type="button" onClick={() => setSheet({ mode: "sala", preset: [] })} style={ghost}><span aria-hidden="true" style={{ fontWeight: 600, color: "var(--c-text-3)" }}>{"#"}</span>{"Crear una sala"}</button>
-            <button type="button" onClick={() => (peers?.me ? setPeerSheet("invitar") : navigate("/equipo"))} style={ghost}><span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-chip)", fontSize: "var(--t-micro)", fontWeight: 600 }}>{"+"}</span>{"Invitar a una persona"}</button>
+            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:new-message"))} style={ghost}><span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-chip)", fontSize: "var(--t-micro)", fontWeight: 600 }}>{"+"}</span>{"Mensaje directo"}</button>
           </div>
           <p style={{ margin: 0, padding: "0 6px", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{"Clic derecho en un chat: fijar, renombrar, silenciar, llevar a una sala o archivar."}</p>
         </aside>

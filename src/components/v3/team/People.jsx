@@ -1,20 +1,21 @@
 import Select from "../../Select.jsx";
 import { useState } from "react";
-import { ShieldCheck } from "../../Icon.js";
+import { ShieldCheck, UserPlus } from "../../Icon.js";
 import { useAction } from "../../../lib/store.jsx";
-import { del, patch, post } from "../../../lib/api.js";
+import { del, get, patch } from "../../../lib/api.js";
 import { later, useHidden } from "../../../lib/undoToast.js";
 import { statusText } from "../../../lib/peers.js";
 import { ago } from "../../../lib/format.js";
 import { AcceptSheet, InviteSheet } from "../../v2/people/InviteSheets.jsx";
+import { useCopy } from "../../people/parts.jsx";
+import { WORDS, expiresText } from "../../../lib/invite.js";
 import { HELP_URL, INTRO_STEPS } from "../../v2/people/PeopleIntro.jsx";
 import { Segmented } from "../../v2/settings/rows.jsx";
-import { More } from "./parts.jsx";
 import { C } from "../../../lib/theme.js";
 
 // Equipo › Personas (design/V3Equipo.dc.html): people with their own Colmena. One row each
-// (initials, a status dot, rooms in common, «Chatear»), the invitations not yet accepted
-// («Reenviar» makes a new code), the dark «Invitar con un código» card and «Tu estado para
+// (initials, a status dot, rooms in common, «Chatear»), the codes to talk nobody used yet
+// («Copiar de nuevo», «Revocar»), «Invitar a alguien que aún no está» and «Tu estado para
 // los demás». A row opens what Ajustes › Personas showed: the safety words and what their bot
 // may ask you. The mailbox and errand tools stay in Ajustes › Personas.
 const UNDO_MS = 10000;
@@ -63,13 +64,15 @@ export default function EquipoPeople({ peers }) {
   const hiddenInvite = useHidden("invite");
   const [sheet, setSheet] = useState(null); // { kind: "invitar" | "aceptar", name }
   const [open, setOpen] = useState(null);
-  const relayOff = peers?.relay?.status === "off";
   const contacts = (peers?.contacts || []).filter((c) => !hiddenPeer(c.id));
-  const invites = (peers?.invites || []).filter((i) => !hiddenInvite(i.id));
+  // Codes to talk (a room's or a team's are listed in that room and in the team).
+  const invites = (peers?.invites || []).filter((i) => (i.kind || "person") === "person" && !hiddenInvite(i.id));
+  const [copied, copy] = useCopy();
+  const again = async (inv) => { try { const full = await get(`/peers/invites/${encodeURIComponent(inv.id)}`); await copy(inv.id, full.text); } catch { /* expired meanwhile: the list refreshes */ } };
   const shares = peers?.shares || [];
   const rooms = (c) => shares.filter((s) => s.kind !== "dm" && !s.left && s.members?.some((m) => m.id === c.id)).length;
   const remove = (c) => later({ id: "peer:" + c.id, keys: ["peer:" + c.id], ms: UNDO_MS, text: `Has dejado de hablar con ${first(c.name)}`, error: "No se pudo quitar", run: () => del(`/peers/contacts/${encodeURIComponent(c.id)}`) });
-  const cancel = (inv) => later({ id: "invite:" + inv.id, keys: ["invite:" + inv.id], ms: UNDO_MS, text: "Invitación cancelada", error: "No se pudo cancelar", run: () => del(`/peers/invites/${encodeURIComponent(inv.id)}`) });
+  const cancel = (inv) => later({ id: "invite:" + inv.id, keys: ["invite:" + inv.id], ms: UNDO_MS, text: "Código revocado: ya no sirve", error: "No se pudo revocar", run: () => del(`/peers/invites/${encodeURIComponent(inv.id)}`) });
   const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", minHeight: "64px", padding: "10px 18px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)" };
   return (
     <section aria-labelledby="ppl-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -109,7 +112,7 @@ export default function EquipoPeople({ peers }) {
                     </span>
                   </button>
                   <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>{status}</span>
-                  {c.dm ? <a href={`/con/${encodeURIComponent(c.dm)}`} style={ctaStyle}>{"Chatear"}</a> : c.status === "known" ? <button type="button" disabled={relayOff} onClick={() => setSheet({ kind: "invitar", name: c.name })} style={ctaStyle}>{"Invitar"}</button> : null}
+                  {c.dm ? <a href={`/con/${encodeURIComponent(c.dm)}`} style={ctaStyle}>{WORDS.dm}</a> : c.status === "known" ? <button type="button" onClick={() => setSheet({ kind: "invitar", name: c.name })} style={ctaStyle} title="Os conocéis por una sala: para hablar a solas hace falta un código">{WORDS.invite}</button> : null}
                 </div>
                 {isOpen ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 18px 20px 70px", animation: "rise .2s ease-out" }}>
@@ -139,16 +142,16 @@ export default function EquipoPeople({ peers }) {
               <Avatar ini={initialsOf(inv.name)} dot="transparent" dashed />
               <span style={{ flex: "1 1 200px", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
                 <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{inv.name}</span>
-                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Invitación enviada " + sinceText(inv.createdAt)}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Código creado " + sinceText(inv.createdAt) + " · " + expiresText(inv.expiresAt).toLowerCase()}</span>
               </span>
-              <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>{"Esperando"}</span>
-              <button type="button" disabled={relayOff} onClick={() => setSheet({ kind: "invitar", name: inv.name })} style={ctaStyle}>{"Reenviar"}</button>
-              <More label={`Más sobre la invitación a ${inv.name}`} items={[{ label: "Cancelar la invitación", run: () => cancel(inv), danger: true }]} />
+              <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>{WORDS.pending}</span>
+              <button type="button" onClick={() => again(inv)} style={ctaStyle} aria-label={`${WORDS.copyAgain}: el mensaje para ${inv.name}`}>{copied === inv.id ? "Copiado" : WORDS.copyAgain}</button>
+              <button type="button" onClick={() => cancel(inv)} style={ctaStyle} aria-label={`${WORDS.revoke} el código para ${inv.name}`}>{WORDS.revoke}</button>
             </div>
           ))}
         </div>
         <aside style={{ flex: "1 1 280px", minWidth: "0", display: "flex", flexDirection: "column", gap: "12px" }}>
-          <InviteCard disabled={!peers?.me || relayOff} onAccept={() => setSheet({ kind: "aceptar" })} />
+          <InviteCard onInvite={() => setSheet({ kind: "invitar" })} onJoin={() => setSheet({ kind: "aceptar" })} />
           {peers?.me ? <StatusCard status={peers.me.status} act={act} /> : null}
           <a href="/ajustes/contactos#buzon" style={{ padding: "0 6px", fontSize: "var(--t-ui)", color: "var(--c-accent-ink)" }}>{"El buzón y los encargos de otras personas, en Ajustes"}</a>
           {act.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{act.error}</p> : null}
@@ -161,48 +164,17 @@ export default function EquipoPeople({ peers }) {
 }
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
-// «Invitar con un código»: Colmena never sends it; you copy it and send it yourself.
-function InviteCard({ disabled, onAccept }) {
-  const [name, setName] = useState("");
-  const [made, setMade] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-  const make = async () => {
-    if (!name.trim() || busy) return;
-    setBusy(true); setError(null);
-    try { setMade(await post("/peers/invites", { name: name.trim() })); setCopied(false); } catch (e) { setError(e.message); } finally { setBusy(false); }
-  };
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(made.text); setCopied(true); } catch { setError("No se pudo copiar. Selecciona el código y cópialo tú."); }
-  };
-  const white = { height: "36px", border: "1px solid var(--c-btn)", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
+// «Invitar a alguien que aún no está» and «Unirme con un código»: the same two doors as everywhere.
+function InviteCard({ onInvite, onJoin }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", color: "var(--c-text)" }}>
-      <h3 style={{ margin: "0", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Invitar con un código"}</h3>
-      <p style={{ margin: "0", fontSize: "var(--t-meta)", lineHeight: "1.5", color: C.text3 }}>{"Le mandas un código de un solo uso. Al aceptarlo, los dos veréis las mismas cuatro palabras: así sabéis que sois vosotros."}</p>
-      {made ? (
-        <>
-          <span style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: "var(--c-sunken)", border: "1px solid var(--c-line)", font: "500 var(--t-ui)/1.3 'Geist Mono', monospace", letterSpacing: ".04em", userSelect: "all", overflowWrap: "anywhere" }}>{made.code}</span>
-          <span style={{ fontSize: "var(--t-meta)", color: C.text3 }}>{`Para ${made.name || name}. Caduca en 24 horas.`}</span>
-          <button type="button" onClick={copy} style={white}>{copied ? "Copiada" : "Copiar invitación"}</button>
-          <button type="button" onClick={() => { setMade(null); setName(""); }} style={{ height: "30px", border: "0", background: "transparent", color: C.text3, fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Invitar a otra persona"}</button>
-        </>
-      ) : (
-        <>
-          <label style={{ display: "flex" }}>
-            <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre de la persona"}</span>
-            <input className="c-quiet" type="text" value={name} maxLength={80} disabled={disabled} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: "1", minWidth: "0", height: "36px", padding: "0 10px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-card)", color: C.text, fontSize: "var(--t-ui)" }} />
-          </label>
-          <button type="button" disabled={disabled || !name.trim() || busy} onClick={make} style={{ ...white, opacity: disabled || !name.trim() ? 0.6 : 1 }}>{busy ? "Creando…" : "Crear la invitación"}</button>
-        </>
-      )}
-      <button type="button" disabled={disabled} onClick={onAccept} style={{ height: "30px", border: "0", background: "transparent", color: C.accentInk, fontSize: "var(--t-meta)", fontWeight: "500", cursor: "pointer" }}>{"Tengo una invitación"}</button>
-      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: C.error }}>{error}</span> : null}
+      <h3 style={{ margin: "0", fontSize: "var(--t-body)", fontWeight: "600" }}>{WORDS.newcomer}</h3>
+      <p style={{ margin: "0", fontSize: "var(--t-meta)", lineHeight: "1.5", color: C.text3 }}>{"Te damos un código de un solo uso, que caduca en 24 h, con un mensaje listo para mandárselo tú. Al usarlo, los dos veréis las mismas cuatro palabras: así sabéis que sois vosotros."}</p>
+      <button type="button" onClick={onInvite} className="v4-btn primary lg" style={{ alignSelf: "flex-start" }}><UserPlus size={16} />{WORDS.invite}</button>
+      <button type="button" onClick={onJoin} className="v4-btn ghost" style={{ alignSelf: "flex-start", paddingLeft: 0 }}>{WORDS.join}</button>
     </div>
   );
 }
-
 function StatusCard({ status, act }) {
   const mode = status?.mode || "available";
   const current = mode === "available" ? "available" : "now";

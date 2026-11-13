@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, Ticket, UserPlus } from "../../Icon.js";
 import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, get, patch, put } from "../../../lib/api.js";
-import { later, isHidden } from "../../../lib/undoToast.js";
+import { later, isHidden, useHidden } from "../../../lib/undoToast.js";
+import { WORDS, expiresText } from "../../../lib/invite.js";
+import { useCopy } from "../../people/parts.jsx";
 import { RELAY_LABEL, statusText } from "../../../lib/peers.js";
 import { PeerAvatar } from "../people/PeerAvatar.jsx";
-import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
+import InviteSheet from "../../people/InviteSheet.jsx";
+import JoinSheet from "../../people/JoinSheet.jsx";
 import PeopleIntro, { HELP_URL } from "../people/PeopleIntro.jsx";
 import { Chevron, FieldRow, Group, LINE, LinkRow, Segmented, SwitchRow, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
 import { C } from "../../../lib/theme.js";
@@ -27,6 +30,8 @@ export default function PeopleSettings() {
   const act = useAction();
   const [sheet, setSheet] = useState(null);
   const [open, setOpen] = useState(null);
+  const hiddenInvite = useHidden("invite");
+  const [copied, copy] = useCopy();
   useEffect(() => {
     // /ajustes/contactos#<address> opens that person.
     const hash = decodeURIComponent(window.location.hash.slice(1));
@@ -36,6 +41,9 @@ export default function PeopleSettings() {
   const contacts = peers.contacts.filter((c) => c.status !== "known" && !isHidden("peer:" + c.id));
   const known = peers.contacts.filter((c) => c.status === "known");
   const relay = peers.relay || {};
+  // Every code nobody used yet, whatever it opens (a room, your team, a conversation).
+  const invites = (peers.invites || []).filter((i) => !hiddenInvite(i.id));
+  const again = async (inv) => { try { const full = await get(`/peers/invites/${encodeURIComponent(inv.id)}`); await copy(inv.id, full.text); } catch (e) { act.setError?.(e.message); } };
   const remove = (c) => later({
     id: "peer:" + c.id, keys: ["peer:" + c.id], text: `Has dejado de hablar con ${c.name.split(" ")[0]}`, error: "No se pudo quitar",
     run: () => act.act(() => del(`/peers/contacts/${encodeURIComponent(c.id)}`)),
@@ -47,19 +55,19 @@ export default function PeopleSettings() {
           <PeerAvatar person={{ me: true }} size={56} />
           <Text title={peers.me.name} sub="Hablas desde Colmena con otras personas, cada una en su ordenador." />
           <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" id="invitar" onClick={() => setSheet("invitar")} disabled={relay.status === "off"} style={pill(true)}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
-            <button type="button" onClick={() => setSheet("aceptar")} disabled={relay.status === "off"} style={pill(false)}><Ticket size={15} strokeWidth={2.2} aria-hidden="true" />{"Tengo una invitación"}</button>
+            <button type="button" id="invitar" onClick={() => setSheet("invitar")} style={pill(true)}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{WORDS.newcomer}</button>
+            <button type="button" onClick={() => setSheet("aceptar")} style={pill(false)}><Ticket size={15} strokeWidth={2.2} aria-hidden="true" />{WORDS.join}</button>
           </span>
         </div>
         <StatusRow status={peers.me.status} act={act} />
       </Group>
 
       <Group id="pp-ct" title={`Conectadas · ${contacts.length}`} anchor="contactos" note={contacts.length ? "Enviar, comprar, publicar o pagar por algo que pida otra persona o su bot siempre te pregunta, aunque digas «Siempre» aquí." : null}>
-        {contacts.length === 0 ? <div style={{ borderBottom: peers.invites.length ? LINE : 0 }}><PeopleIntro onInvite={relay.status === "off" ? null : () => setSheet("invitar")} onCode={relay.status === "off" ? null : () => setSheet("aceptar")} /></div> : null}
+        {contacts.length === 0 ? <div style={{ borderBottom: invites.length ? LINE : 0 }}><PeopleIntro onInvite={() => setSheet("invitar")} onCode={() => setSheet("aceptar")} /></div> : null}
         {contacts.map((c, i) => {
           const isOpen = open === c.id;
           return (
-            <div key={c.id} id={c.id} style={{ borderBottom: i === contacts.length - 1 && !peers.invites.length ? 0 : LINE }}>
+            <div key={c.id} id={c.id} style={{ borderBottom: i === contacts.length - 1 && !invites.length ? 0 : LINE }}>
               <button type="button" onClick={() => setOpen(isOpen ? null : c.id)} aria-expanded={isOpen} style={{ ...rowStyle(true, "68px"), cursor: "pointer" }}>
                 <PeerAvatar person={c} size={40} dot ring={C.card} dashed={c.status === "pending"} />
                 <Text title={c.name} sub={seenText(c)} />
@@ -86,11 +94,12 @@ export default function PeopleSettings() {
             </div>
           );
         })}
-        {peers.invites.map((inv, i) => (
-          <div key={inv.id} style={rowStyle(i === peers.invites.length - 1, "64px")}>
+        {invites.map((inv, i) => (
+          <div key={inv.id} style={rowStyle(i === invites.length - 1, "64px")}>
             <PeerAvatar person={{ initials: inv.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase(), color: C.chip }} size={40} dashed />
-            <Text title={inv.name} sub={"Invitación sin aceptar · caduca el " + when(inv.expiresAt)} />
-            <button type="button" onClick={() => later({ id: "invite:" + inv.id, keys: [], text: "Invitación cancelada", run: () => act.act(() => del(`/peers/invites/${inv.id}`)) })} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)" }}>{"Cancelar"}</button>
+            <Text title={`${WORDS.pending} · ${inv.name}`} sub={(inv.kind === "room" ? `Código para la sala #${inv.roomTitle || "sala"}` : inv.kind === "team" ? "Código para tu equipo" : "Código para hablar a solas") + " · " + expiresText(inv.expiresAt).toLowerCase()} />
+            <button type="button" onClick={() => again(inv)} aria-label={`${WORDS.copyAgain}: el mensaje para ${inv.name}`} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)" }}>{copied === inv.id ? "Copiado" : WORDS.copyAgain}</button>
+            <button type="button" onClick={() => later({ id: "invite:" + inv.id, keys: ["invite:" + inv.id], text: "Código revocado: ya no sirve", error: "No se pudo revocar", run: () => act.act(() => del(`/peers/invites/${inv.id}`)) })} aria-label={`${WORDS.revoke} el código para ${inv.name}`} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)" }}>{WORDS.revoke}</button>
           </div>
         ))}
       </Group>
@@ -113,7 +122,7 @@ export default function PeopleSettings() {
       <ErrandTools act={act} />
       <RelayGroup relay={relay} act={act} />
       {sheet === "invitar" ? <InviteSheet onClose={() => setSheet(null)} /> : null}
-      {sheet === "aceptar" ? <AcceptSheet onClose={() => setSheet(null)} /> : null}
+      {sheet === "aceptar" ? <JoinSheet onClose={() => setSheet(null)} /> : null}
     </>
   );
 }

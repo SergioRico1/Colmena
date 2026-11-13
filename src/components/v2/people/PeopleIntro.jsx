@@ -1,5 +1,6 @@
 import { KeyRound, Laptop, LockKeyhole, UserPlus } from "../../Icon.js";
 import { navigate } from "../../../lib/router.jsx";
+import { WORDS } from "../../../lib/invite.js";
 
 // «Personas» the first time (design/V2Personas.dc.html, paso primera): three short lines —
 // everyone on their own computer, nobody else can read it, you invite with a code — and
@@ -8,7 +9,7 @@ export const HELP_URL = "/personas/como-funciona";
 export const INTRO_STEPS = [
   [Laptop, "Cada uno en su ordenador", "No hay ninguna empresa guardando vuestras conversaciones: cada persona usa su propia Colmena."],
   [LockKeyhole, "Nadie más puede leerlo", "Cada mensaje sale cerrado con llave y solo lo abre el ordenador de quien lo recibe."],
-  [KeyRound, "Invitas con un código", "Se lo mandas por WhatsApp o correo, lo pega en su Colmena y comprobáis cuatro palabras."],
+  [KeyRound, "Invitas con un código", "Se lo mandas tú por WhatsApp o correo, lo pega en «Unirme con un código» y comprobáis de viva voz cuatro palabras."],
 ];
 
 export default function PeopleIntro({ onInvite = null, onCode = null, compact = false }) {
@@ -32,8 +33,8 @@ export default function PeopleIntro({ onInvite = null, onCode = null, compact = 
         ))}
       </ol>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        {onInvite ? <button type="button" onClick={onInvite} style={{ display: "flex", alignItems: "center", gap: "8px", height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button> : null}
-        {onCode ? <button type="button" onClick={onCode} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{"Tengo una invitación"}</button> : null}
+        {onInvite ? <button type="button" onClick={onInvite} style={{ display: "flex", alignItems: "center", gap: "8px", height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{WORDS.invite}</button> : null}
+        {onCode ? <button type="button" onClick={onCode} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{WORDS.join}</button> : null}
         <a href={HELP_URL} onClick={(e) => { e.preventDefault(); navigate(HELP_URL); }} style={{ padding: "0 8px", fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-accent-ink)", textDecoration: "none" }}>{"Cómo funciona"}</a>
       </div>
     </div>

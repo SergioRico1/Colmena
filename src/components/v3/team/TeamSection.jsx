@@ -3,7 +3,7 @@ import { Clock3, MessageSquare, UserPlus } from "../../Icon.js";
 import { del, get, patch, post, put } from "../../../lib/api.js";
 import { useResource, useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
-import { later, promise, useHidden } from "../../../lib/undoToast.js";
+import { promise } from "../../../lib/undoToast.js";
 import { scrollBehavior } from "../../../lib/motion.js";
 import { BotMark } from "../../v2/chat/Mark.jsx";
 import { botA11yName } from "../../../lib/identity.js";
@@ -11,9 +11,10 @@ import { srOnly } from "../../../lib/alt.js";
 import { PeerAvatar } from "../../v2/people/PeerAvatar.jsx";
 import { More, Seg, outline } from "./parts.jsx";
 import TeamSheets from "./TeamSheets.jsx";
+import { PendingCodes } from "../../people/CodePanel.jsx";
 import {
   avatarOf, canInvite, canMakeAdmin, canMessage, canRemove, canRename, canStepDown, canUnmakeAdmin, countLine, currentTeam, leaveText, pendingLine,
-  presenceWords, realTeams, removeText, roleLabel, sortMembers, untilText, waitingFor, waitingLine, waitingRest,
+  presenceWords, realTeams, removeText, roleLabel, sortMembers, waitingFor, waitingLine, waitingRest,
 } from "../../../lib/teams.js";
 import { C } from "../../../lib/theme.js";
 
@@ -76,7 +77,6 @@ export default function TeamSection() {
   const path = current ? `/teams/${encodeURIComponent(current.id)}` : null;
   const detail = useResource(path);
   const team = current && detail.data?.id === current.id && detail.data.state === "active" ? detail.data : null;
-  const hiddenInvite = useHidden("invite");
   const [sheet, setSheet] = useState(null);
   const [busy, setBusy] = useState(null); // what is on its way: "leave", "rename", "<op>:<address>"
   const [error, setError] = useState(null);
@@ -137,14 +137,12 @@ export default function TeamSection() {
     promise(run(() => post(`${base}/leave`)), { loading: team?.role === "creador" ? "Cerrando el equipo…" : "Saliendo del equipo…", success: team?.role === "creador" ? `«${name}» está cerrado` : `Has salido de «${name}»`, error: team?.role === "creador" ? "No se pudo cerrar el equipo" : "No se pudo salir del equipo" })
       .then(() => setConfirm(null), () => {}).finally(() => setBusy(null));
   };
-  const cancelInvite = (inv) => later({ id: "invite:" + inv.id, keys: ["invite:" + inv.id], ms: 10000, text: "Invitación cancelada", error: "No se pudo cancelar", run: () => run(() => del(`/peers/invites/${encodeURIComponent(inv.id)}`)) });
   const discard = (p) => promise(run(() => post(`/teams/${encodeURIComponent(p.id)}/leave`)), { loading: "Un momento…", success: p.state === "refused" ? "Descartado" : `Ya no pides entrar en «${p.name}»`, error: "No se pudo descartar" }).catch(() => {});
   const switchTeam = (id) => promise(run(() => put("/teams/current", { id })), { loading: "Cambiando de equipo…", success: "Equipo cambiado", error: "No se pudo cambiar de equipo" }).catch(() => {});
   const seen = (n) => run(() => post("/notifications/read", { ids: [n.id] })).catch(() => {});
 
   const news = notifications.filter((n) => n.kind === "team" && !n.read);
   const members = team ? sortMembers(team.members) : [];
-  const invitations = (team?.invitations || []).filter((i) => !hiddenInvite(i.id));
   const rest = team ? waitingRest(team.waiting, team.members) : [];
   const leaving = current ? leaveText(team || current, team?.role) : null;
 
@@ -174,7 +172,7 @@ export default function TeamSection() {
           <div style={{ ...panel, gap: "14px", padding: "22px" }}>
             <p style={{ margin: 0, maxWidth: "68ch", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)" }}>{"Con un equipo hablas con tus compañeros y con los bots de todos en las mismas salas. Cada bot sigue trabajando en el ordenador de su dueño, con su cuenta y sus datos: el equipo comparte la conversación, nada más."}</p>
             {peopleOff ? (
-              <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{peers?.me ? "Para crear un equipo o entrar en uno, primero conecta Colmena al buzón. " : "Colmena está preparando las claves de este ordenador. En unos segundos podrás crear un equipo. "}{peers?.me ? <a href="/ajustes/personas" style={{ fontWeight: 600, color: "var(--c-accent-ink)" }}>{"Abrir Ajustes › Personas"}</a> : null}</p>
+              <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{peers?.me ? "Para crear un equipo o entrar en uno, primero conecta Colmena al buzón. " : "Colmena está preparando las claves de este ordenador. En unos segundos podrás crear un equipo. "}{peers?.me ? <a href="/ajustes/personas" style={{ fontWeight: 600, color: "var(--c-accent-ink)" }}>{"Abrir Ajustes › Contactos y equipos"}</a> : null}</p>
             ) : (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 <button type="button" onClick={() => setSheet({ kind: "create" })} style={{ ...dark, height: "44px", padding: "0 20px", fontSize: "var(--t-body)" }}>{"Crear un equipo"}</button>
@@ -201,7 +199,7 @@ export default function TeamSection() {
             )}
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
               {mine.length > 1 ? <Seg label="Cambiar de equipo" items={mine.map((t) => [t.id, t.name])} value={current.id} onPick={switchTeam} /> : null}
-              {team && canInvite(team.role) ? <button type="button" onClick={() => setSheet({ kind: "invite", team: current })} disabled={peopleOff} style={dark}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar"}</button> : null}
+              {/* «Invitar» is the page's own button (screens/ColmenaV2.jsx): one door, not two. */}
               {team ? (
                 <More label="Más acciones del equipo" items={[
                   canRename(team.role) ? { label: "Cambiar el nombre", run: () => { setError(null); setRenaming(team.name); } } : null,
@@ -257,7 +255,7 @@ export default function TeamSection() {
                         </ul>
                       ) : <span style={{ flex: "2 1 280px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Sin bots a la vista"}</span>}
                       <span style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px", minWidth: "36px", justifyContent: "flex-end" }}>
-                        {canMessage(m) ? <button type="button" onClick={() => message(m)} disabled={busy === "dm:" + m.address} aria-label={`Mensaje directo a ${m.name}`} style={outline}><MessageSquare size={14} strokeWidth={2.2} aria-hidden="true" />{busy === "dm:" + m.address ? "Abriendo…" : "Mensaje"}</button> : null}
+                        {canMessage(m) ? <button type="button" onClick={() => message(m)} disabled={busy === "dm:" + m.address} aria-label={`Mensaje directo a ${m.name}`} style={outline}><MessageSquare size={14} strokeWidth={2.2} aria-hidden="true" />{busy === "dm:" + m.address ? "Abriendo…" : "Mensaje directo"}</button> : null}
                         {more.length ? <More label={`Más acciones para ${m.name}`} items={more} /> : null}
                       </span>
                     </div>
@@ -270,30 +268,14 @@ export default function TeamSection() {
           {team && members.length === 1 ? (
             <div style={{ ...panel, padding: "18px", gap: "10px", alignItems: "flex-start" }}>
               <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"De momento solo estás tú"}</strong>
-              <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{"Invita a alguien: le das un código, lo pega en su Colmena y entra en el equipo y en la sala «general», con sus bots."}</span>
-              {canInvite(team.role) ? <button type="button" onClick={() => setSheet({ kind: "invite", team: current })} disabled={peopleOff} style={dark}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Crear un código de invitación"}</button> : null}
+              <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{"Invita a alguien: le das un código, lo pega en «Unirme con un código» y entra en el equipo y en #general, con sus bots."}</span>
+              {canInvite(team.role) ? <button type="button" onClick={() => setSheet({ kind: "invite", team: current })} disabled={peopleOff} style={dark}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar"}</button> : null}
             </div>
           ) : null}
 
-          {invitations.length ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <h3 style={h3}>{"Invitaciones sin usar"}</h3>
-              <ul style={{ ...panel, margin: 0, padding: 0, listStyle: "none" }}>
-                {invitations.map((inv, i) => (
-                  <li key={inv.id} style={{ ...row, minHeight: "52px", borderTop: i ? LINE : 0 }}>
-                    <span style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ fontSize: "var(--t-body)", fontWeight: 600, overflowWrap: "anywhere" }}>{inv.name || "Alguien"}</span>
-                      <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`Aún no la ha usado · vale ${untilText(inv.expiresAt)}`}</span>
-                    </span>
-                    <button type="button" onClick={() => cancelInvite(inv)} aria-label={`Cancelar la invitación de ${inv.name || "alguien"}`} style={outline}>{"Cancelar"}</button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          {team && canInvite(team.role) ? <PendingCodes context={{ kind: "team", team: current }} title="Pendiente: códigos sin usar" onError={setError} boxStyle={{ ...panel, padding: "12px 18px" }} /> : null}
         </>
       )}
-
       {teamsPending.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <h3 style={h3}>{"Equipos en los que has pedido entrar"}</h3>

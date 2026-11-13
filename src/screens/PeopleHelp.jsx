@@ -8,7 +8,7 @@ import { scrollBehavior } from "../lib/motion.js";
 // «Cómo funciona» (docs/PLAN-equipo-y-salas.md, scope 5; docs/PEOPLE.md): teams, rooms, whose
 // bot is whose, what the others see of your bot's work, who approves what, what happens when a
 // computer is off and what someone invited to a room sees. One page, from the team menu, the
-// invitation sheets, Ajustes › Personas and Ctrl+K. Short paragraphs, the person's words, no
+// invitation sheets, Ajustes › Contactos y equipos and Ctrl+K. Short paragraphs, the person's words, no
 // jargon; every sentence says what the code does (docs/PEOPLE.md is the source).
 export const HELP_SECTIONS = [
   ["equipos", Users, "Equipos", [
@@ -18,13 +18,13 @@ export const HELP_SECTIONS = [
   ]],
   ["salas", Hash, "Salas", [
     "Una sala es una conversación con personas y bots a la vez. Las personas llevan un círculo con sus iniciales; los bots, su forma, su papel y de quién son.",
-    "Una sala privada es solo tuya y de tus bots. Cuando invitas a alguien pasa a ser una sala con personas. Solo añade gente quien la creó; los demás se lo piden desde «Invitar» y a esa persona le llega la petición.",
+    "Una sala privada es solo tuya y de tus bots. Cuando invitas a alguien pasa a ser una sala con personas. Solo añade gente quien la creó; los demás se lo piden desde «Invitar»: a quien la creó le llega la petición para decidir, y quien la pidió la ve como «Pendiente».",
     "«Solo para mí», junto al cuadro de escribir, está en todas las salas y es igual para todos: lo que preguntes ahí no se envía a nadie, te contestan solo tus bots y se queda en tu ordenador. No entra en la conversación de la sala.",
   ]],
   ["de-quien", Bot, "De quién es cada bot", [
     "Cada bot es de una persona y trabaja en el ordenador de esa persona, con su cuenta de IA y sus datos. En la sala lo lees junto a su nombre: «Vera · bot de Lucía».",
     "Tus bots contestan en una sala con personas cuando los nombras con @ o respondes en el hilo de algo que dijeron. Un mensaje que no nombra a ningún bot es para las personas.",
-    "Puedes pedir algo al bot de otra persona eligiéndolo con @. Decide su dueño: te puede tener en «Pregúntame» (le sale una tarjeta para decidir), «Siempre» o «Nunca». Tú eliges lo mismo para cada persona en Ajustes › Personas.",
+    "Puedes pedir algo al bot de otra persona eligiéndolo con @. Decide su dueño: te puede tener en «Pregúntame» (le sale una tarjeta para decidir), «Siempre» o «Nunca». Tú eliges lo mismo para cada persona en Ajustes › Contactos y equipos.",
   ]],
   ["que-ven", Eye, "Qué ven los demás del trabajo de tu bot", [
     "Tres cosas: lo que contesta, una línea de estado («Vera está trabajando», «Vera usó 4 herramientas · 12 min», «Vera espera el OK de Sergio») y lo que entrega para quien se lo pidió.",
@@ -33,7 +33,7 @@ export const HELP_SECTIONS = [
   ]],
   ["quien-aprueba", ShieldCheck, "Quién aprueba qué", [
     "Cada dueño aprueba lo que sale de su ordenador. Enviar, comprar, publicar, pagar o borrar te lo pregunta tu bot a ti, también cuando lo pidió otra persona y aunque la tengas en «Siempre».",
-    "Lo que pide otra persona nunca cuenta como palabras tuyas: tu bot lo recibe como un dato de fuera y solo con las herramientas que dejas usar para peticiones de otros (Ajustes › Personas).",
+    "Lo que pide otra persona nunca cuenta como palabras tuyas: tu bot lo recibe como un dato de fuera y solo con las herramientas que dejas usar para peticiones de otros (Ajustes › Contactos y equipos).",
     "Los demás solo ven que tu bot espera tu OK, nunca qué espera. La tarjeta en color miel la ve únicamente quien tiene que decidir.",
     "Hay un límite de peticiones por hora a los bots de otra persona. Si se alcanza, se dice en la sala: «Vera no atiende más peticiones por ahora».",
   ]],
@@ -50,10 +50,11 @@ export const HELP_SECTIONS = [
 
 /** The rest: how each thing is done, for whoever looks for it. */
 const SECTIONS = [
-  ["invitar", KeyRound, "Invitar a alguien", [
-    "Al equipo: en la cabecera de la barra, «Invitar al equipo». A una sala: «Invitar», arriba en la sala. A hablar a solas: el «+» de Personas. En los tres casos Colmena te da un mensaje listo para copiar, con el enlace para instalarla y un código.",
-    "Se lo mandas tú, por donde quieras: Colmena no escribe a nadie por ti. El código vale una sola vez y caduca en 24 horas; si caduca, crea otro.",
-    "La otra persona lo pega en «Unirme con un código». A los dos os salen cuatro palabras: decíoslas en persona o por teléfono. Si coinciden, nadie se ha puesto en medio.",
+  ["invitar", KeyRound, "Invitar", [
+    "A una sala: «Invitar», arriba en la sala. Eliges entre tu equipo y las personas con las que ya hablas, sin código, y si entra como miembro o como invitado. Al equipo: «Invitar al equipo», en la cabecera de la barra. A hablar a solas con alguien de tu equipo o con quien ya hablas: «Nuevo mensaje», en el «+» de Personas; no hace falta código.",
+    "«Invitar a alguien que aún no está» crea un código para esa sala, ese equipo o para hablar, con un mensaje listo para copiar: qué es Colmena, dónde instalarla y dónde pegar el código. Se lo mandas tú, por donde quieras: Colmena no escribe a nadie por ti. Vale una sola vez y caduca en 24 horas.",
+    "La otra persona lo pega en «Unirme con un código» y ve quién la invita y a qué. A los dos os salen cuatro palabras: decíoslas de viva voz, en persona o por teléfono. Si coinciden, nadie se ha puesto en medio.",
+    "Los códigos sin usar se ven como «Pendiente» en la sala, en Equipo y en Ajustes › Contactos y equipos. «Copiar de nuevo» copia otra vez el mensaje; «Revocar» hace que el código deje de servir al momento.",
   ]],
   ["hilos", MessageSquare, "Hilos, editar, borrar y buscar", [
     "Pasa el ratón por un mensaje y pulsa el bocadillo para responder en un hilo. Se abre al lado y solo avisa a quien está en él: quien lo empezó, quien responde y quien mencionas.",
@@ -66,13 +67,13 @@ const SECTIONS = [
     "Se ve dentro de Colmena: las páginas del PDF, el texto del Word, los valores del Excel o el texto de cada diapositiva. Nada del archivo se ejecuta. «Guardar» lo deja en tu ordenador; si lo borras para todos, desaparece también del buzón y de las otras Colmenas.",
   ]],
   ["estado", Moon, "Tu estado y las menciones", [
-    "En Ajustes › Personas › «Tu estado» pon «No molestar» (una hora, tres, hasta mañana) o «Fuera» (hasta mañana, hasta el lunes o hasta un día). Las personas con las que hablas lo ven junto a tu nombre.",
+    "En Ajustes › Contactos y equipos › «Tu estado» pon «No molestar» (una hora, tres, hasta mañana) o «Fuera» (hasta mañana, hasta el lunes o hasta un día). Las personas con las que hablas lo ven junto a tu nombre.",
     "Mientras dure, los mensajes te siguen llegando pero no te salta ningún aviso ni te suena nada: los encuentras en Inicio y en la barra. Al acabar el plazo vuelves a «Disponible» solo.",
     "Si alguien te menciona con @ suena distinto que un mensaje normal. Puedes escuchar los dos en Ajustes › Avisos.",
   ]],
   ["encargos", Send, "Encargos entre bots", [
     "Pide a tu bot, por ejemplo, «Vera, pide a la Nora de Marta el resumen del informe». Vera se lo encarga a la Colmena de Marta y espera unos minutos; si la respuesta tarda, aparece luego en ese mismo chat.",
-    "En la Colmena de Marta no pasa nada sin ella: le sale una tarjeta para aprobarlo (o lo tiene permitido para ti en Ajustes › Personas). Nora lo hace en un chat de incógnito, sin aprender nada, y solo con las herramientas que Marta eligió para encargos. Enviar, comprar, publicar o borrar sigue preguntándole.",
+    "En la Colmena de Marta no pasa nada sin ella: le sale una tarjeta para aprobarlo (o lo tiene permitido para ti en Ajustes › Contactos y equipos). Nora lo hace en un chat de incógnito, sin aprender nada, y solo con las herramientas que Marta eligió para encargos. Enviar, comprar, publicar o borrar sigue preguntándole.",
     "Lo que contesta Nora le llega a Vera como contenido de otra persona: datos, nunca órdenes. Si intenta dar instrucciones, Vera lo ve marcado.",
   ]],
   ["reuniones", CalendarClock, "Acordar una reunión", [
@@ -94,7 +95,7 @@ const SECTIONS = [
     "Si alguien no está conectado, su sobre espera hasta 7 días y se borra en cuanto le llega. Tus correos, archivos y lo que saben de ti tus bots nunca salen de tu ordenador.",
   ]],
   ["quitar", UserMinus, "Dejar de hablar con alguien", [
-    "En Ajustes › Personas, abre a esa persona y pulsa «Dejar de hablar con…». Se le avisa y sus mensajes dejan de llegarte.",
+    "En Ajustes › Contactos y equipos, abre a esa persona y pulsa «Dejar de hablar con…». Se le avisa y sus mensajes dejan de llegarte.",
     "Lo que ya os escribisteis se queda en tu Colmena. Para volver a hablar, invítala otra vez.",
   ]],
 ];

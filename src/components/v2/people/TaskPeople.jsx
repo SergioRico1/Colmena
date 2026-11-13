@@ -13,7 +13,7 @@ import { C } from "../../../lib/theme.js";
 // it from their Colmena, who is looking now, and the sheet to choose them. They see what it
 // is doing, Bruno's plan and the PR; never your code, your files or your chat with Bruno.
 // Always there, even before you talk to anyone: then each part says what it does and offers
-// «Invitar a alguien» (the invitation sheet), and you come back here when it is done.
+// «Invitar a alguien que aún no está» (the invitation sheet), and you come back here when it is done.
 const ASKS = [["pregunta", "Pregúntame"], ["siempre", "Siempre"], ["nunca", "Nunca"]];
 
 export default function TaskPeople({ taskId, project = null, look = null }) {
@@ -46,7 +46,7 @@ export default function TaskPeople({ taskId, project = null, look = null }) {
   const nobody = (what) => (
     <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>
       {"Primero conéctate con quien " + what + "."}
-      <button type="button" onClick={toInvite} style={{ display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "color-mix(in srgb, var(--c-accent-ink) 8%, transparent)", color: C.accentInk, cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}><UserPlus size={13} strokeWidth={2.4} aria-hidden="true" />{"Invitar a alguien"}</button>
+      <button type="button" onClick={toInvite} style={{ display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "color-mix(in srgb, var(--c-accent-ink) 8%, transparent)", color: C.accentInk, cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}><UserPlus size={13} strokeWidth={2.4} aria-hidden="true" />{"Invitar"}</button>
     </span>
   );
   return (
@@ -81,11 +81,11 @@ export default function TaskPeople({ taskId, project = null, look = null }) {
             }) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "var(--r-lg)", background: "var(--c-sunken)" }}>
                 <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{"Aún no hablas con nadie desde Colmena. Invita a quien quieras que la vea: le das un código, lo pega en su Colmena y aparece aquí."}</span>
-                <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
+                <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien que aún no está"}</button>
               </div>
             )}
             {waiting.map((i) => <span key={i.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}><Clock3 size={14} strokeWidth={2.2} aria-hidden="true" />{"Esperando a que " + i.name.split(" ")[0] + " acepte tu invitación"}</span>)}
-            {contacts.length ? <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "4px", height: "30px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-accent-ink)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><UserPlus size={14} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien más"}</button> : null}
+            {contacts.length ? <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "4px", height: "30px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-accent-ink)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><UserPlus size={14} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien que aún no está"}</button> : null}
           </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
               <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
