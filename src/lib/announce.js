@@ -53,14 +53,21 @@ export function announcement(items = [], waiting = []) {
  * Which entries are new since the last look. `seen` (a Set) is updated in place. An entry
  * is { id, done, skip }: one that is still being written (`done: false`) is not marked, so
  * it is said once, when it ends; a skipped one (yours, a system line) is marked and never said.
+ * Entries come in the order they are shown: only what sits after the last one already known
+ * is news. What appears before it is history (an older page being loaded) and is marked
+ * without a word.
  */
 export function fresh(seen, entries = []) {
   const out = [];
-  for (const e of entries) {
-    if (!e || e.id === undefined || e.id === null || seen.has(e.id) || e.done === false) continue;
+  let lastKnown = -1;
+  entries.forEach((e, i) => { if (e && seen.has(e.id)) lastKnown = i; });
+  entries.forEach((e, i) => {
+    if (!e || e.id === undefined || e.id === null || seen.has(e.id)) return;
+    if (i < lastKnown) { seen.add(e.id); return; }
+    if (e.done === false) return;
     seen.add(e.id);
     if (!e.skip) out.push(e);
-  }
+  });
   return out;
 }
 

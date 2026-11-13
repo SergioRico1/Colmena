@@ -31,7 +31,7 @@ async function mount(props) {
 const tick = (ms) => act(async () => { mock.timers.tick(ms); });
 
 test("a conversation has one polite region, empty until something arrives", async () => {
-  mock.timers.enable({ apis: ["setTimeout"] });
+  mock.timers.enable({ apis: ["setTimeout", "Date"] });
   const view = await mount({ scope: "m1", items: [{ id: "1", name: "Nora", text: "ya estaba" }], waiting: [{ id: "ap-old", name: "Vera" }] });
   const regions = document.querySelectorAll("[aria-live='polite']");
   assert.equal(regions.length, 1);
@@ -43,7 +43,7 @@ test("a conversation has one polite region, empty until something arrives", asyn
 });
 
 test("a finished message is said once, with its author; yours is not", async () => {
-  mock.timers.enable({ apis: ["setTimeout"] });
+  mock.timers.enable({ apis: ["setTimeout", "Date"] });
   const first = [{ id: "1", name: "Nora", text: "antes" }];
   const view = await mount({ scope: "m1", items: first, waiting: NONE });
   const mine = [...first, { id: "2", name: "Tú", text: "hola", skip: true }];
@@ -64,8 +64,9 @@ test("a finished message is said once, with its author; yours is not", async () 
 });
 
 test("text being written is never said token by token: once, when it ends", async () => {
-  mock.timers.enable({ apis: ["setTimeout"] });
+  mock.timers.enable({ apis: ["setTimeout", "Date"] });
   const view = await mount({ scope: "m1", items: NONE, waiting: NONE });
+  await tick(2000); // past the first moments, when what loads was already there
   for (const text of ["Com", "Compara", "Comparativa lis"]) {
     await view.render({ scope: "m1", items: [{ id: "9", name: "Nora", text, done: false }], waiting: NONE });
     await tick(1500);
@@ -79,8 +80,9 @@ test("text being written is never said token by token: once, when it ends", asyn
 });
 
 test("several arrivals in the same moment are one count", async () => {
-  mock.timers.enable({ apis: ["setTimeout"] });
+  mock.timers.enable({ apis: ["setTimeout", "Date"] });
   const view = await mount({ scope: "m1", items: NONE, waiting: NONE });
+  await tick(2000); // past the first moments, when what loads was already there
   const a = [{ id: "1", name: "Nora", text: "uno" }];
   const b = [...a, { id: "2", name: "Vera", text: "dos" }];
   const c = [...b, { id: "3", name: "Nora", text: "tres" }];
@@ -97,8 +99,9 @@ test("several arrivals in the same moment are one count", async () => {
 });
 
 test("something that starts waiting is said by name, once", async () => {
-  mock.timers.enable({ apis: ["setTimeout"] });
+  mock.timers.enable({ apis: ["setTimeout", "Date"] });
   const view = await mount({ scope: "m1", items: NONE, waiting: NONE });
+  await tick(2000); // past the first moments, when what loads was already there
   const waits = [{ id: "ap-1", name: "Vera", kind: "send" }];
   await view.render({ scope: "m1", items: NONE, waiting: waits });
   await tick(1200);
@@ -112,7 +115,7 @@ test("something that starts waiting is said by name, once", async () => {
 });
 
 test("opening another conversation starts again without reading it out", async () => {
-  mock.timers.enable({ apis: ["setTimeout"] });
+  mock.timers.enable({ apis: ["setTimeout", "Date"] });
   const view = await mount({ scope: "m1", items: [{ id: "1", name: "Nora", text: "a" }], waiting: NONE });
   await view.render({ scope: "m2", items: [{ id: "7", name: "Vera", text: "otra sala" }, { id: "8", name: "Vera", text: "más" }], waiting: [{ id: "ap-2", name: "Vera" }] });
   await tick(3000);

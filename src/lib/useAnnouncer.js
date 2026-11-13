@@ -15,6 +15,7 @@ import { createAnnouncer, fresh } from "./announce.js";
 // What is there when the conversation opens is never read out; only what arrives after.
 
 const CLEAR_MS = 5000; // the line is emptied afterwards, so the same words can be said again
+const SETTLE_MS = 1500; // what shows up this soon after opening was already in the conversation
 
 export function useAnnouncer({ scope = "", ready = true, items, waiting }) {
   const [text, setText] = useState("");
@@ -36,15 +37,16 @@ export function useAnnouncer({ scope = "", ready = true, items, waiting }) {
     if (!state.current || state.current.scope !== scope) {
       // First look at this conversation: everything here is already known.
       announcer.current.cancel();
-      state.current = { scope, seen: new Set(), waited: new Set(waits.map((w) => w.id)) };
-      fresh(state.current.seen, list);
-      return;
+      state.current = { scope, opened: Date.now(), seen: new Set(), waited: new Set() };
     }
     const news = fresh(state.current.seen, list);
     const waited = state.current.waited;
     const started = waits.filter((w) => !waited.has(w.id));
     // Something answered can wait again later (a new question reuses nothing, but be safe).
     state.current.waited = new Set(waits.map((w) => w.id));
+    // A conversation fills in over its first moments (the sala, then its rows, then what
+    // waits): all of that was already there, so none of it is said.
+    if (Date.now() - state.current.opened < SETTLE_MS) return;
     announcer.current.add(news, started);
   }, [scope, ready, items, waiting]);
   useEffect(() => () => { announcer.current?.cancel(); clearTimeout(clear.current); }, []);
