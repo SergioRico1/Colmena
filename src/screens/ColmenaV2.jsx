@@ -5,7 +5,7 @@ import EquipoPeople from "../components/v3/team/People.jsx";
 import TeamSection from "../components/v3/team/TeamSection.jsx";
 import { InviteSheet } from "../components/v2/people/InviteSheets.jsx";
 import { LimitLine } from "../components/v2/LimitNotice.jsx";
-import { Shape, autonomyLabel } from "../components/v3/team/parts.jsx";
+import { Shape, autonomyHint, autonomyLabel, autonomyShown } from "../components/v3/team/parts.jsx";
 import { useStore } from "../lib/store.jsx";
 import { useActivity } from "../lib/liveStore.js";
 import { useHidden } from "../lib/undoToast.js";
@@ -14,6 +14,7 @@ import { useExpert } from "../lib/expert.js";
 import { sidebarModel, waitingLabel } from "../lib/sidebar.js";
 import { needsOf } from "../components/v2/needs.js";
 import EquipoBot from "./EquipoBot.jsx";
+import { aiConnected } from "../lib/aiAccount.js";
 
 // Colmena 3 · «Equipo» (design/V3Equipo.dc.html): who works with you. Your bots as cards
 // (shape, autonomy, what each is doing; «Hablar» and «Ficha»), «Un bot nuevo», and the people
@@ -39,6 +40,7 @@ function NewBotPage() {
 
 function Team() {
   const store = useStore();
+  const connected = aiConnected(store);
   const { bots = [], peers = null } = store;
   const hiddenBot = useHidden("bot");
   const [expert] = useExpert();
@@ -76,7 +78,7 @@ function Team() {
             <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{count}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(250px, 100%), 1fr))", gap: "12px" }}>
-            {team.map((b) => <BotCard key={b.id} bot={b} row={rows.get(b.id)} ask={asks.find((a) => a.botId === b.id) || null} expert={expert} />)}
+            {team.map((b) => <BotCard key={b.id} bot={b} row={rows.get(b.id)} ask={asks.find((a) => a.botId === b.id) || null} expert={expert} account={connected} />)}
             <a href="/equipo/nuevo" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px", padding: "20px", borderRadius: "var(--r-2xl)", border: "1.5px dashed rgba(18,19,26,.2)", color: "#12131A", minHeight: "220px" }}>
               <span style={{ font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif" }}>{"Un bot nuevo"}</span>
               <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#4A4D57" }}>{"Descríbelo como a un compañero nuevo, o empieza de una plantilla: contable, atención al cliente, investigador…"}</span>
@@ -92,7 +94,7 @@ function Team() {
 }
 
 /** `row`: this bot in the sidebar's model (state, how many things of it wait for you); `ask`: the oldest of them. */
-function BotCard({ bot, row, ask, expert }) {
+function BotCard({ bot, row, ask, expert, account = true }) {
   const activity = useActivity(bot.id);
   const work = row?.state === "working";
   const wait = (row?.waiting || 0) > 0;
@@ -103,7 +105,8 @@ function BotCard({ bot, row, ask, expert }) {
     <article style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: wait ? "0 0 0 1.5px #FFC93C" : "0 1px 2px rgba(18,19,26,.04)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
         <Shape bot={bot} size={48} style={{ opacity: idle ? 0.55 : 1, animation: work ? "breathe 2.6s ease-in-out infinite" : "none" }} />
-        <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "500", color: "#3D404A", whiteSpace: "nowrap" }}>{autonomyLabel(bot.autonomy)}</span>
+        {/* Autonomy only where it is not the usual («Hace y te avisa» on every card was noise). */}
+        {autonomyShown(bot.autonomy) ? <span title={autonomyHint(bot.autonomy)} style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "500", color: "#3D404A", whiteSpace: "nowrap" }}>{autonomyLabel(bot.autonomy)}</span> : null}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
         <h3 style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{bot.name}</h3>
@@ -117,7 +120,8 @@ function BotCard({ bot, row, ask, expert }) {
       ) : (
         <span style={{ fontSize: "var(--t-ui)", color: wait ? "#8A5A00" : work ? "#3D404A" : "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={state}>{state}</span>
       )}
-      {expert && bot.model?.label ? <span style={{ marginTop: "-6px", font: "500 var(--t-caption)/1.3 'Geist Mono', monospace", color: "#5C606C" }}>{[bot.model.label, bot.thinking || "equilibrado", bot.engine || "equipo"].join(" · ")}</span> : null}
+      {/* Modo experto says the real state: no AI account, no model at work («sin cuenta»). */}
+      {expert && (bot.model?.label || !account) ? <span style={{ marginTop: "-6px", font: "500 var(--t-caption)/1.3 'Geist Mono', monospace", color: "#5C606C" }}>{account || bot.engine ? [bot.model?.label || "sin modelo", bot.thinking || "equilibrado", bot.engine || "equipo"].join(" · ") : "sin cuenta de IA"}</span> : null}
       <div style={{ marginTop: "auto", display: "flex", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.06)" }}>
         <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Hablar"}</a>
         <a href={`/equipo/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500" }}>{"Ficha"}</a>

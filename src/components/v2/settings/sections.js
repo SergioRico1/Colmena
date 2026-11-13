@@ -43,7 +43,7 @@ export const SECTIONS = [
       ["sugerencias", "Respuestas sugeridas", "sugerencias botones respuesta rápida"],
       ["quien-responde", "Elegir solo quién responde en las salas", "enrutador quién responde sala atlas reparte mención"],
       ["quien-usa", "Quién usa este ordenador", "personas del espacio miembros firmar aprobar asignar rol"],
-      ["personas", "Personas con las que hablas", "contactos compañeros invitar equipo conectar"],
+      ["personas", "Contactos y equipos", "personas contactos compañeros invitar equipo conectar"],
       ["atajos", "Atajos de teclado", "ctrl k teclado shortcuts paleta"],
     ],
   },
@@ -174,7 +174,7 @@ export const SECTIONS = [
   // People now live in Equipo › Personas; until that screen lists them, /ajustes/contactos keeps
   // the editor. It is not in the list of sections, but the search and old links still reach it.
   {
-    id: "contactos", label: "Personas", icon: drawn(SECTION_PATHS.contactos), hidden: true,
+    id: "contactos", label: "Contactos y equipos", icon: drawn(SECTION_PATHS.contactos), hidden: true,
     lead: "Con quién hablas desde Colmena, qué puede pedirte cada uno y por dónde os llegan los mensajes.",
     items: [
       ["tu-identidad", "Tú en otras Colmenas", "nombre identidad"],

@@ -17,10 +17,11 @@ import { failure } from "../../lib/undoToast.js";
 import { realTeams } from "../../lib/teams.js";
 import WorkingDots from "../room/Dots.jsx";
 import { STATE_WORD, STATUS_WORD, conversationPath, foldBots, foldRooms, rememberConversation, rowLabel, scrollFade, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
+import { selfName } from "../../lib/ownName.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md): it names who you
 // talk to. Top to bottom: your team (or «Solo tú»), «Nuevo» (Ctrl N) and «Buscar o pedir»
-// (Ctrl K), five places (Ctrl 1–5), and three live groups — Salas, Bots, Personas — that fold
+// (Ctrl K), five places (Ctrl 1–5), and three live groups — Salas, Personas, Bots — that fold
 // and remember it; at the foot, you, one line of activity and the «Modo experto» switch
 // (Ctrl Shift E). Ctrl B folds it to a rail of icons and avatars. Honey only marks what waits
 // for you; unread is bold with a neutral count. The rows come from src/lib/sidebar.js.
@@ -45,6 +46,8 @@ const NEW_ITEMS = [
   { id: "bot", label: "Bot", hint: "Un compañero nuevo", href: "/equipo/nuevo", icon: "M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z" },
   { id: "codigo", label: "Tarea de código", hint: "En uno de tus proyectos", href: "/codigo", icon: "m18 16 4-4-4-4M6 8l-4 4 4 4" },
 ];
+// «Nuevo» shows four (the most used: a chat, a room, a task, a routine); «Más…» unfolds the rest.
+export const NEW_FIRST = ["chat", "sala", "tarea", "rutina"];
 
 const INK = "#12131A", TEXT = "#3D404A", MUTED = "#5C606C", HONEY = "#FFC93C";
 const kbd = { font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: MUTED };
@@ -94,6 +97,14 @@ export default function Sidebar({ active = "inicio" }) {
   const here = conversationPath(pathname);
   const [expert, setExpert] = useExpert();
   const [menu, setMenu] = useState(null); // "new" | "team"
+  const [moreNew, setMoreNew] = useState(false);
+  useEffect(() => { if (menu !== "new") setMoreNew(false); }, [menu]);
+  // Ctrl+K's «Nuevo…» opens this same menu (the palette shows its shortcut, Ctrl N).
+  useEffect(() => {
+    const open = () => setMenu("new");
+    window.addEventListener("colmena:new", open);
+    return () => window.removeEventListener("colmena:new", open);
+  }, []);
   const [sheet, setSheet] = useState(null); // "chat" | "sala" | "invitar" | "aceptar"
   const [teamSheet, setTeamSheet] = useState(null); // {kind: "create" | "join" | "invite", team?} (team/TeamSheets.jsx)
   const [folded, setFoldedState] = useState(!!settings.sidebarFolded);
@@ -139,7 +150,7 @@ export default function Sidebar({ active = "inicio" }) {
   const usage = useResource(expert ? "/usage/overview?days=1" : null);
   const today = usage?.data?.total;
   const tokensLine = expert && today ? `${new Intl.NumberFormat("es-ES", { notation: "compact" }).format(today.tokens || 0)} tokens hoy${today.cachePercent != null ? ` · caché ${today.cachePercent} %` : ""}` : null;
-  const userName = settings.userName || "Tú";
+  const userName = selfName(store);
   const myStatus = peers?.me ? statusText(peers.me.status?.mode && peers.me.status.mode !== "available" ? peers.me.status : null) || "Disponible" : "Ajustes y cuenta";
 
   const toggleGroup = (id) => setClosed((c) => { const next = { ...c, [id]: !c[id] }; writeJson(GROUPS_KEY, next); return next; });
@@ -220,12 +231,18 @@ export default function Sidebar({ active = "inicio" }) {
   const noDrag = { WebkitAppRegion: "no-drag" };
   const newMenu = menu === "new" ? (
     <div role="menu" aria-label="Crear algo nuevo" onKeyDown={menuKeys} style={{ ...menuBox, top: "46px", right: folded ? "auto" : "-6px", width: folded ? "260px" : "auto" }}>
-      {NEW_ITEMS.map((n) => (
+      {NEW_ITEMS.filter((n) => moreNew || NEW_FIRST.includes(n.id)).map((n) => (
         <button key={n.id} type="button" role="menuitem" onClick={() => pick(n)} className="v3-menuitem" style={{ ...menuItem, minHeight: "44px", fontWeight: "400" }}>
           <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "#F1F1EC" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={n.icon} /></svg></span>
           <span style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{n.label}</span><span style={{ fontSize: "var(--t-caption)", color: MUTED }}>{n.hint}</span></span>
         </button>
       ))}
+      {moreNew ? null : (
+        <button type="button" role="menuitem" aria-expanded="false" onClick={(e) => { const box = e.currentTarget.parentElement; setMoreNew(true); requestAnimationFrame(() => box?.querySelectorAll("[role^=menuitem]")[NEW_FIRST.length]?.focus()); }} className="v3-menuitem" style={{ ...menuItem, minHeight: "36px", color: MUTED }}>
+          <span aria-hidden="true" style={{ flex: "none", width: "28px", textAlign: "center" }}>{"···"}</span>
+          {`Más: ${NEW_ITEMS.filter((n) => !NEW_FIRST.includes(n.id)).map((n) => n.label.toLowerCase()).join(", ")}`}
+        </button>
+      )}
     </div>
   ) : null;
 

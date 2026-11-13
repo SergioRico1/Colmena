@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, Keyboard, ListChecks, MessageCircle, MessageSquareText, NotebookText, Pause, Play, Settings2, Sparkles, Stethoscope, Target, Undo2, UsersRound } from "lucide-react";
+import { ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, Keyboard, ListChecks, MessageCircle, MessageSquareText, NotebookText, Pause, Play, Plus, Settings2, Sparkles, Stethoscope, Target, Undo2, UsersRound } from "lucide-react";
 import { plainLinks } from "../lib/wikiLinks.js";
 import { Highlight, matchBots, mentionAt, mentionedBots } from "../components/home/shared.jsx";
 import { Shape } from "../components/v3/dia/parts.jsx";
@@ -296,7 +296,9 @@ export default function CommandPalette() {
     const inCode = location.pathname.startsWith("/codigo");
     const cmd = (o) => ({ scope: "comandos", group: "Comandos", meta: o.hint || "Comando", ...o, name: o.label, title: o.label, preview: { kind: "Comando", title: o.label, desc: o.hint || "", facts: o.kbd ? [["Atajo", o.kbd]] : [], cta: "Ejecutar" } });
     const out = [
-      cmd({ key: "new-chat", icon: iconTile(MessageCircle), label: "Nuevo chat", hint: "Habla con un bot, en privado o de incógnito", terms: ["Nuevo chat", "conversación hablar bot privado incógnito"], kbd: inCode ? null : "Ctrl N", run: () => { close(); openNewChat(); } }),
+      // Ctrl N opens «Nuevo» (chat, sala, tarea, rutina and more): the palette says so where it does it.
+      cmd({ key: "new", icon: iconTile(Plus), label: "Nuevo…", hint: "Chat, sala, tarea, rutina y más", terms: ["Nuevo crear", "sala tarea rutina objetivo bot código"], kbd: inCode ? null : "Ctrl N", run: () => { close(); window.dispatchEvent(new CustomEvent("colmena:new")); } }),
+      cmd({ key: "new-chat", icon: iconTile(MessageCircle), label: "Nuevo chat", hint: "Habla con un bot, en privado o de incógnito", terms: ["Nuevo chat", "conversación hablar bot privado incógnito"], run: () => { close(); openNewChat(); } }),
       cmd({ key: "new-task", icon: iconTile(ListChecks), label: "Nueva tarea", hint: "Un trabajo con plan y entrega", terms: ["Nueva tarea", "encargo trabajo plan"], run: () => go("/trabajo?nueva=1") }),
       cmd({ key: "auto", icon: iconTile(Clock), label: "Nueva rutina", hint: "Algo que se repite solo", terms: ["Nueva rutina", "automatización cada día programar horario"], run: () => go("/trabajo/rutinas?nueva=1") }),
       cmd({ key: "goal", icon: iconTile(Target), label: "Nuevo objetivo", hint: "Una meta a largo plazo", terms: ["Nuevo objetivo", "meta largo plazo"], run: () => go("/trabajo/objetivos?nuevo=1") }),
@@ -308,6 +310,7 @@ export default function CommandPalette() {
         ? cmd({ key: "pause", icon: iconTile(Play), label: "Reanudar a todo el equipo", hint: "Todos siguen donde lo dejaron", terms: ["Reanudar a todo el equipo", "seguir continuar"], kbd: "Ctrl ⇧ P", run: togglePause })
         : cmd({ key: "pause", icon: iconTile(Pause), label: "Pausar a todo el equipo", hint: "Para a todos los bots y rutinas al momento; lo hecho se conserva", terms: ["Pausar a todo el equipo", "parar detener"], kbd: "Ctrl ⇧ P", run: togglePause }),
       cmd({ key: "activity", icon: pathTile("M3 12h4l2.5-6 5 12 2.5-6H21"), label: "Ver la actividad", hint: "Qué hace cada bot ahora y qué ha hecho", terms: ["Ver la actividad", "registro qué hace historial log"], run: () => go("/actividad") }),
+      cmd({ key: "help-rooms", icon: iconTile(UsersRound), label: "Cómo funcionan los equipos y las salas", hint: "De quién es cada bot, qué ven los demás y quién aprueba", terms: ["Cómo funciona", "ayuda guía equipos salas personas bots de quién qué ven aprobar solo para mí"], run: () => go("/personas/como-funciona") }),
       cmd({ key: "doctor", icon: iconTile(Stethoscope), label: "Comprobar que todo funciona", hint: "Ajustes › Ayuda y diagnóstico", terms: ["Comprobar que todo funciona", "diagnóstico problema error lento doctor"], run: () => go("/ajustes/ayuda") }),
       cmd({ key: "usage", icon: iconTile(ChartColumn), label: "Ver lo que gastan", hint: "Ajustes › Uso y límites", terms: ["Ver lo que gastan", "uso tokens límite plan caché"], run: () => go("/ajustes/uso") }),
       cmd({ key: "settings", icon: iconTile(Settings2), label: "Abrir Ajustes", hint: "Todas las secciones, con buscador", terms: ["Abrir Ajustes", "configuración preferencias"], run: () => go("/ajustes") }),

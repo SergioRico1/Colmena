@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { post } from "../../lib/api.js";
-import { useAction } from "../../lib/store.jsx";
+import { useAction, useStore } from "../../lib/store.jsx";
+import { SELF_FALLBACK, lacksOwnName, selfLabel } from "../../lib/ownName.js";
 import { BotMark } from "../v2/chat/Mark.jsx";
 import { PersonAvatar } from "./Author.jsx";
 import { QUEUE } from "./RoomExtras.jsx";
@@ -75,6 +76,7 @@ function OwnerBots({ group }) {
 
 export default function MemberPanel({ view, panel, mission = null, addable = [], fileCount = 0, onRules = null, onFiles = null, onInvite = null, onChanged = null }) {
   const { act, busy } = useAction();
+  const nameless = lacksOwnName(useStore());
   const queue = QUEUE.find(([v]) => v === (mission?.queueMode || "steer"))?.[1] || QUEUE[0][1];
   const rules = mission ? [
     ["Si escribes mientras trabajan", queue.charAt(0).toUpperCase() + queue.slice(1)],
@@ -91,13 +93,15 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
             <li key={p.address || p.name} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "44px" }}>
               <PersonAvatar person={p} size={28} ring="#FFFFFF" presence={p.you ? null : p.presence === "online" ? "online" : "offline"} />
               <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
-                <span style={{ ...ellipsis, fontSize: "var(--t-ui)", fontWeight: 500 }}>{p.you ? `${p.name} (tú)` : p.name}</span>
+                <span style={{ ...ellipsis, fontSize: "var(--t-ui)", fontWeight: 500 }}>{p.you ? (selfLabel(p.name) === SELF_FALLBACK ? SELF_FALLBACK : `${p.name} (tú)`) : p.name}</span>
                 <span style={{ ...ellipsis, ...small }}>{p.roleWord}</span>
               </span>
               <span style={{ flex: "none", ...small }}>{p.presenceWord}</span>
             </li>
           ))}
         </ul>
+        {/* Where your name matters (a room with people): a quiet way to set it. */}
+        {nameless && panel.people.length > 1 ? <a href="/ajustes/general#tu-nombre" style={{ ...small, lineHeight: 1.45, paddingTop: "2px", color: "#3D404A" }}>{"Los demás te ven como «Sin nombre». "}<span style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>{"Ponte un nombre"}</span></a> : null}
         {onInvite && !view.general ? <button type="button" onClick={onInvite} style={{ ...pill, alignSelf: "flex-start", marginTop: "6px" }}>{"Invitar a una persona"}</button> : null}
       </section>
       {panel.groups.map((g) => (g.mine ? (
@@ -143,6 +147,8 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
           {onRules ? <button type="button" onClick={onRules} style={{ ...pill, alignSelf: "flex-start" }}>{"Cambiar reglas"}</button> : null}
         </section>
       ) : null}
+      {/* How rooms, people and bots work: the help page, one step away from where it matters. */}
+      {view.private ? null : <a href="/personas/como-funciona" style={{ ...small, alignSelf: "flex-start", minHeight: "24px", display: "inline-flex", alignItems: "center", color: "#3D404A", textDecoration: "underline", textUnderlineOffset: "3px" }}>{"Cómo funciona"}</a>}
       {onFiles ? <button type="button" onClick={onFiles} style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: "44px", padding: "0 14px", borderRadius: "var(--r-md)", border: "1px solid rgba(18,19,26,.1)", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{"Archivos de la sala"}<span style={{ color: "#5C606C" }}>{fileCount}</span></button> : null}
     </aside>
   );

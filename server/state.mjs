@@ -500,7 +500,7 @@ export function buildState(store, runtime, extras = {}) {
   // Your name: the one you set, else the name of your ChatGPT account (or its email),
   // never the placeholder «Tu cuenta» when we know better.
   const fromEmail = (e) => String(e || "").split("@")[0].split(/[._-]+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
-  const ownName = settings.userName && settings.userName !== "Tu cuenta" ? settings.userName : (account?.name || fromEmail(account?.email) || "Tu cuenta");
+  const ownName = settings.userName && settings.userName !== "Tu cuenta" ? settings.userName : (account?.name || fromEmail(account?.email) || "Tú");
   const user = { id: "me", name: ownName, email: account?.email || null, role: settings.userRole || "Administrador", self: true };
   return {
     account,

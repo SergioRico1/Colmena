@@ -60,6 +60,9 @@ const field = { flex: "1 1 240px", minWidth: "0", height: "44px", padding: "0 16
 const h1 = { margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" };
 const lead = { margin: "0", fontSize: "var(--t-lead)", lineHeight: "1.5", color: TEXT2 };
 
+/** No mailbox: nobody to reach yet, so a team cannot be made here (TeamStep says so). */
+const peopleOffFor = (peers) => !peers || peers.relay?.status === "off";
+
 export default function BienvenidaV2({ query = {} }) {
   const { bots = [], settings = {}, provider, authError, ai, account = null, peers = null, teams = [] } = useStore();
   const [expert, setExpert] = useExpert();
@@ -167,6 +170,11 @@ export default function BienvenidaV2({ query = {} }) {
     : step === STEP.apps && busy === "team" ? "Preparando tus bots…" : "Seguir";
   // While a sign-in or a connect panel is open, its own button is the one to press.
   const connecting = step === STEP.cuenta && !chosen?.connected && (!!waiting || panel);
+  // «¿Con quién trabajas?»: one primary action per state. While a team is chosen but not made (or
+  // a code not used), its own button («Crear equipo», «Continuar») is the one; «Seguir» waits and says why.
+  const teamPending = step === STEP.equipo && !peopleOffFor(peers) && ((who.choice === "create" && !who.team) || (who.choice === "join" && !who.joined))
+    ? (who.choice === "create" ? "Ponle nombre al equipo y pulsa «Crear equipo», o elige «Empezar solo»." : "Pega el código y pulsa «Continuar», o elige «Empezar solo».")
+    : null;
   const showSkip = step === STEP.apps || (step === STEP.cuenta && !anyConnected);
   const peopleOff = !peers || peers.relay?.status === "off";
   const chips = roleChips(role, moreRoles);
@@ -427,8 +435,9 @@ export default function BienvenidaV2({ query = {} }) {
               {step > 0 ? <button type="button" onClick={() => setStep(step - 1)} style={ghost}>{"Atrás"}</button> : null}
               <span style={{ flex: "1" }} />
               {showSkip ? <button type="button" disabled={!!busy} onClick={skip} style={ghost}>{"Ahora no"}</button> : null}
+              {teamPending ? <span id="team-pending" style={{ fontSize: "var(--t-ui)", color: MUTED, textAlign: "right", maxWidth: "340px" }}>{teamPending}</span> : null}
               {step < LAST ? (
-                <button type="button" disabled={!!busy || connecting} onClick={next} style={primary(!!busy || connecting)}>{nextLabel}</button>
+                <button type="button" disabled={!!busy || connecting || !!teamPending} aria-describedby={teamPending ? "team-pending" : undefined} onClick={next} style={primary(!!busy || connecting || !!teamPending)}>{nextLabel}</button>
               ) : (
                 <button type="button" disabled={!!busy} onClick={send} style={primary(!!busy)}>{busy === "send" || busy === "team" ? "Enviando…" : anyConnected ? "Enviar y entrar en Colmena" : "Entrar en Colmena"}</button>
               )}

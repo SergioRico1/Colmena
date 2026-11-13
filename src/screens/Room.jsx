@@ -222,7 +222,11 @@ function Room({ id, query }) {
   // A name two visible bots share reads «Vera · de Lucía» in every author line (identity.js).
   const botNames = useMemo(() => botNameLabels(shown?.bots || EMPTY), [shown]);
   const title = shown?.title || mission?.room || mission?.title || "sala";
+  // A task's conversation («Hablar con el equipo» on its page: ?conversacion=1) is not a room:
+  // it says so, and leads back to the task (it is never listed in Salas).
+  const taskTalk = query?.conversacion && mission && isTask(missions.find((m) => m.id === missionId) || mission) ? { title: mission.title || title } : null;
   const place = roomPlace(shown, teams);
+  const subtitle = [place.text, place.private ? place.hint : shown?.general ? "todo el equipo" : null, mission?.statusLabel].filter(Boolean).join(" · ");
   const myBots = useMemo(() => (shown?.bots || EMPTY).filter((g) => g.owner?.you).flatMap((g) => g.bots), [shown]);
   const gone = !!(view?.left || view?.removed);
   const guest = !!view?.people?.find((p) => p.you && p.role === "guest");
@@ -425,7 +429,7 @@ function Room({ id, query }) {
       <BotNames.Provider value={botNames}>
       <Shell active="chats" scroll={false}>
         <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
-          <main aria-label={"Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
+          <main aria-label={taskTalk ? "Conversación de la tarea " + taskTalk.title : "Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
             <Announcer text={news} />
             {ready2 ? (
               <>
@@ -442,12 +446,15 @@ function Room({ id, query }) {
                           <button type="submit" style={{ ...outline, height: "34px", background: "#12131A", borderColor: "#12131A", color: "#FFFFFF" }}>{"Guardar"}</button>
                           <button type="button" onClick={() => setRenaming(null)} style={{ ...outline, height: "34px" }}>{"Cancelar"}</button>
                         </form>
-                      ) : <h1 style={{ margin: 0, fontSize: "var(--t-lead)", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"# " + title}</h1>}
-                      <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C", minWidth: 0 }}>
-                        {place.private ? <Lock size={12} strokeWidth={2.3} aria-hidden="true" style={{ flex: "none" }} /> : null}
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {[place.text, place.private ? place.hint : shown.general ? "todo el equipo" : null, mission?.statusLabel].filter(Boolean).join(" · ")}
-                          {mission ? <>{" · "}<a href={`/encargo/${missionId}`}>{"ver la tarea"}</a></> : null}
+                      ) : <h1 style={{ margin: 0, fontSize: "var(--t-lead)", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{taskTalk ? `Conversación de la tarea «${taskTalk.title}»` : "# " + title}</h1>}
+                      <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C", minWidth: 0 }}>
+                        {place.private && !taskTalk ? <Lock size={12} strokeWidth={2.3} aria-hidden="true" style={{ flex: "none", marginTop: "3px" }} /> : null}
+                        {/* Up to two lines, the whole of it on hover and to a screen reader (it is all in the page). */}
+                        <span title={subtitle} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 }}>
+                          {taskTalk ? <>{"Lo que habláis tú y los bots sobre esta tarea · "}<a href={`/encargo/${encodeURIComponent(missionId)}`}>{"volver a la tarea"}</a></> : <>
+                            {subtitle}
+                            {mission ? <>{" · "}<a href={`/encargo/${missionId}`}>{"ver la tarea"}</a></> : null}
+                          </>}
                         </span>
                       </span>
                     </div>
@@ -485,7 +492,8 @@ function Room({ id, query }) {
                 {gone ? <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "#ECECE7", color: "#3D404A", fontSize: "var(--t-ui)" }}>{view.removed ? "Ya no estás en esta sala. Puedes leer lo que tenías." : "Saliste de esta sala. Puedes leer lo que tenías."}</p> : null}
                 <div style={{ flex: "1", minHeight: 0, display: "flex", flexDirection: "column" }}>
                   <div ref={(el) => { follow.ref(el); scroller.current = el; }} {...messageListProps("Mensajes de la sala")} style={{ flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", display: "flex", flexDirection: "column" }}>
-                    <div ref={scope} style={{ width: "100%", maxWidth: "860px", margin: "auto auto 0", padding: "20px 26px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {/* role="log" as in a chat (Timeline.jsx), private or with people; new rows are spoken by the Announcer. */}
+                    <div ref={scope} role="log" aria-live="off" style={{ width: "100%", maxWidth: "860px", margin: "auto auto 0", padding: "20px 26px", display: "flex", flexDirection: "column", gap: "6px" }}>
                       {mission ? <SelectionPopup scope={scope} askLabel={ONLY_ME} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
                       {mission ? <CatchUp count={since} mission={mission} pending={pending} id={missionId} /> : null}
                       {shared ? (tl.more ? <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}><button type="button" onClick={olderPage} style={{ ...outline, height: "34px", fontSize: "var(--t-meta)", fontWeight: 600 }}>{"Ver mensajes anteriores"}</button></div> : null) : <OlderMessages count={room.olderCount} onShow={room.showOlder} />}

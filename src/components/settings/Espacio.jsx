@@ -99,7 +99,7 @@ export default function Espacio() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
           <label style={{ ...field.label, flex: "1 1 220px" }}>
             Tu nombre
-            <input className="c-quiet" value={form.userName} onChange={(e) => setForm({ ...form, userName: e.target.value })} maxLength={80} placeholder="Tu cuenta" style={field.input} />
+            <input className="c-quiet" value={form.userName} onChange={(e) => setForm({ ...form, userName: e.target.value })} maxLength={80} placeholder="Tu nombre" style={field.input} />
           </label>
           <label style={{ ...field.label, flex: "1 1 220px" }}>
             Tu rol

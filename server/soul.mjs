@@ -150,7 +150,8 @@ export function ensureWorkspace(bot, { store = null, directory = dataDirectory }
   if (store) {
     const settings = store.get("settings", "main") || {};
     writeIfChanged(path.join(folder, "USER.md"), fill(TEMPLATES.user, {
-      userName: settings.userName || "Tu cuenta",
+      // No name yet: the bot asks before signing anything in the person's name (never «Tu nombre»).
+      userName: settings.userName && settings.userName !== "Tu cuenta" ? settings.userName : "(aún no ha dicho su nombre: pregúntaselo antes de firmar nada en su nombre)",
       userRole: settings.userRole || "Administrador",
       spaceName: settings.spaceName || "Colmena",
     }));

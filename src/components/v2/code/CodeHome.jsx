@@ -228,7 +228,7 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
               </div>
               {everyEngine.length > 1 ? (
                 <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "34px", padding: "0 6px", fontSize: "var(--t-ui)", cursor: "pointer" }}>
-                  <input type="checkbox" checked={multi} onChange={(e) => { setMulti(e.target.checked); setPicks(e.target.checked ? everyEngine : []); }} style={{ width: "16px", height: "16px", accentColor: C.ink }} />
+                  <input type="checkbox" checked={multi} onChange={(e) => { setMulti(e.target.checked); setPicks(e.target.checked ? everyEngine : []); }} style={{ width: "24px", height: "24px", margin: 0, accentColor: C.ink }} />
                   {multi && picks.length > 1 ? `Probar con ${picks.length} ${distinct === picks.length ? "motores" : "modelos"} y comparar` : `Probar con ${everyEngine.length} motores y comparar`}
                 </label>
               ) : null}

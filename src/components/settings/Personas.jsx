@@ -56,7 +56,7 @@ export default function Personas() {
 
       <Card id="personas-lista" title="En este ordenador" aside={<span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#5C606C" }}>{people.length || 1} {people.length > 1 ? "personas" : "persona"}</span>}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          {row(people.find((p) => p.self) || { name: settings.userName || "Tu cuenta", role: settings.userRole || "Administrador" }, true, 0)}
+          {row(people.find((p) => p.self) || { name: settings.userName && settings.userName !== "Tu cuenta" ? settings.userName : "Tú", role: settings.userRole || "Administrador" }, true, 0)}
           {people.filter((p) => !p.self).map((p, i) => row(p, false, i + 1))}
         </div>
       </Card>
