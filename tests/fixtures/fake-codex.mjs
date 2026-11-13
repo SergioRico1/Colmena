@@ -1,6 +1,8 @@
 // A stand-in for `codex app-server` in «Código» tests: JSON-RPC over stdio like the real one.
 // Words in the message choose what it does: «escribe» changes nota.txt (asking for the file
-// change), «push» runs git push (asking for the command), «plan» mode answers with a plan.
+// change), «push» runs git push (asking for the command), «plan» mode answers with a plan,
+// «despacio» works until a correction comes (turn/steer) and answers it, «muere» closes as
+// soon as one comes (before reading it). `--old` plays a CLI without turn/steer.
 import { createInterface } from "node:readline";
 import { readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -20,6 +22,7 @@ const saveTurns = () => { try { writeFileSync(ledger, JSON.stringify({ turns }))
 
 async function turn(id, params) {
   const turnId = "turn-" + ++n;
+  active = turnId;
   out({ id, result: { turn: { id: turnId, items: [], status: "inProgress" } } });
   notify("turn/started", { threadId: thread, turn: { id: turnId, status: "inProgress" } });
   const text = params.input?.[0]?.text || "";
@@ -40,6 +43,23 @@ async function turn(id, params) {
     notify("item/completed", { threadId: thread, turnId, item: { ...item, status: r.decision === "accept" ? "completed" : "declined" } });
     notify("item/agentMessage/delta", { threadId: thread, turnId, itemId: "m" + n, delta: "Hecho" });
     notify("item/completed", { threadId: thread, turnId, item: { type: "agentMessage", id: "m" + n, text: "He escrito la nota.", phase: "final_answer" } });
+  } else if (/despacio|muere/.test(text)) {
+    // A long turn: it waits for a correction (turn/steer) and takes it at its next step.
+    notify("item/completed", { threadId: thread, turnId, item: { type: "agentMessage", id: "m" + n + "a", text: "Empiezo.", phase: "commentary" } });
+    const end = Date.now() + 4000;
+    while (!steers.length && !stopNow && Date.now() < end) await new Promise((r) => setTimeout(r, 30));
+    if (stopNow) {
+      stopNow = false; active = null;
+      return notify("turn/completed", { threadId: thread, turn: { id: turnId, status: "interrupted", items: [] } });
+    }
+    if (/muere/.test(text) && steers.length) process.exit(3); // closes before reading it
+    for (const s of steers.splice(0)) {
+      const item = { type: "userMessage", id: "um-" + n, clientId: s.clientUserMessageId || null, content: s.input };
+      notify("item/started", { threadId: thread, turnId, item });
+      notify("item/completed", { threadId: thread, turnId, item });
+      notify("item/completed", { threadId: thread, turnId, item: { type: "agentMessage", id: "m" + n + "s", text: "Corregido: " + (s.input?.[0]?.text || ""), phase: "commentary" } });
+    }
+    notify("item/completed", { threadId: thread, turnId, item: { type: "agentMessage", id: "m" + n, text: "Terminado.", phase: "final_answer" } });
   } else if (/push/.test(text)) {
     const item = { type: "commandExecution", id: "cmd-" + n, command: '"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -Command "git push origin main"', commandActions: [{ type: "unknown", command: "git push origin main" }], status: "inProgress" };
     notify("item/started", { threadId: thread, turnId, item });
@@ -51,7 +71,20 @@ async function turn(id, params) {
   }
   turns++;
   saveTurns();
+  active = null;
   notify("turn/completed", { threadId: thread, turn: { id: turnId, status: "completed", items: [] } });
+}
+
+// `turn/steer` (codex 0.167): needs the active turn's id; `--old` plays a CLI from before it.
+const OLD = process.argv.includes("--old");
+let active = null, stopNow = false;
+const steers = [];
+function steer(m) {
+  if (OLD) return out({ id: m.id, error: { code: -32600, message: "Invalid request: unknown variant `turn/steer`" } });
+  if (!active) return out({ id: m.id, error: { code: -32600, message: "no active turn to steer" } });
+  if (m.params.expectedTurnId !== active) return out({ id: m.id, error: { code: -32600, message: "expected turn id mismatch" } });
+  steers.push(m.params);
+  out({ id: m.id, result: { turnId: active } });
 }
 
 createInterface({ input: process.stdin }).on("line", (line) => {
@@ -64,7 +97,8 @@ createInterface({ input: process.stdin }).on("line", (line) => {
   if (m.method === "thread/resume") { thread = m.params.threadId; loadTurns(); return out({ id: m.id, result: { thread: { id: thread } } }); }
   if (m.method === "thread/rollback") { turns -= m.params.numTurns; saveTurns(); return out({ id: m.id, result: { thread: { id: thread } } }); }
   if (m.method === "turn/start") return void turn(m.id, m.params);
-  if (m.method === "turn/interrupt" || m.method === "turn/steer") return out({ id: m.id, result: {} });
+  if (m.method === "turn/steer") return steer(m);
+  if (m.method === "turn/interrupt") { if (active) stopNow = true; return out({ id: m.id, result: {} }); }
   if (m.method === "model/list") return out({ id: m.id, result: { data: [{ id: "gpt-test", displayName: "GPT Test", isDefault: true, hidden: false, supportedReasoningEfforts: [{ reasoningEffort: "low" }], defaultReasoningEffort: "low", description: "" }] } });
   out({ id: m.id, error: { code: -32601, message: "unknown " + m.method } });
 }).on("close", () => process.exit(0));

@@ -316,9 +316,14 @@ export class OpenCodeEngine extends EventEmitter {
     this.planTexts = [];
     await this.api("POST", "/session/" + this.sessionId + "/prompt_async", this.body(text, this.mode));
   }
-  /** OpenCode takes a message sent while it works at its next step. */
-  steer(text) {
-    return this.api("POST", "/session/" + this.sessionId + "/prompt_async", this.body(text, this.mode || "build"));
+  /**
+   * A correction mid-turn: OpenCode adds the message to the busy session and its loop takes it
+   * at the next step (the session stays busy until it is answered too).
+   */
+  async steer(text) {
+    if (!this.turn) throw Object.assign(Error("OpenCode no está trabajando."), { ended: true });
+    await this.api("POST", "/session/" + this.sessionId + "/prompt_async", this.body(text, this.mode || "build"));
+    return { ack: "sent" };
   }
   interrupt() { this.aborted = true; return this.api("POST", "/session/" + this.sessionId + "/abort").catch(() => null); }
   async compact() {

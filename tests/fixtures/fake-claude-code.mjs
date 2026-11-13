@@ -84,13 +84,33 @@ if (!args.includes("--input-format")) {
       goals++;
       const mark = /(Tu objetivo es|Sigue con el objetivo): [^\n]*bloquea/.test(text) ? "[objetivo: bloqueado — falta la clave de la API]" : goals < 2 ? "[objetivo: sigue]" : "[objetivo: cumplido]";
       assistant([{ type: "text", text: "Vuelta " + goals + ".\n\n" + mark }]);
+    } else if (/despacio|remata/.test(text)) {
+      // A long turn. «despacio» takes a message written meanwhile at its next step; «remata» is
+      // already giving its last answer, so that message runs after it as a turn of its own.
+      assistant([{ type: "text", text: "Empiezo." }]);
+      const end = Date.now() + 4000;
+      while (!pending.length && !stopNow && Date.now() < end) await new Promise((r) => setTimeout(r, 30));
+      if (stopNow) { stopNow = false; return out({ type: "result", subtype: "error_during_execution", is_error: true, session_id: session, result: "" }); }
+      if (/despacio/.test(text)) for (const said of pending.splice(0)) assistant([{ type: "text", text: "Corregido: " + said }]);
+      else await new Promise((r) => setTimeout(r, 100));
+      assistant([{ type: "text", text: "Terminado." }]);
+    } else if (/^corrige/.test(text)) {
+      assistant([{ type: "text", text: "Sigo con: " + text }]);
     } else {
       assistant([{ type: "text", text: "Vale." }]);
     }
     result();
   }
   let goals = 0;
-  let chain = Promise.resolve();
+  // Like the real CLI: a message written while a turn runs waits in its queue (see «despacio»).
+  const pending = [];
+  let busy = false, stopNow = false;
+  const pump = async () => {
+    if (busy) return;
+    busy = true;
+    while (pending.length) { stopNow = false; await turn(pending.shift()); }
+    busy = false;
+  };
   createInterface({ input: process.stdin }).on("line", (line) => {
     let m;
     try { m = JSON.parse(line); } catch { return; }
@@ -101,6 +121,7 @@ if (!args.includes("--input-format")) {
       mode = m.request.mode;
       out({ type: "control_response", response: { subtype: "success", request_id: m.request_id, response: {} } });
     } else if (m.type === "control_request" && m.request?.subtype === "interrupt") {
+      if (busy) stopNow = true;
       out({ type: "control_response", response: { subtype: "success", request_id: m.request_id, response: {} } });
     } else if (m.type === "control_response") {
       const resolve = waiting.get(m.response.request_id);
@@ -108,7 +129,8 @@ if (!args.includes("--input-format")) {
       resolve?.(m.response.response || {});
     } else if (m.type === "user") {
       const text = typeof m.message.content === "string" ? m.message.content : "";
-      chain = chain.then(() => turn(text));
+      pending.push(text);
+      void pump();
     }
   }).on("close", () => process.exit(0));
 }

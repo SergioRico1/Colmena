@@ -167,19 +167,41 @@ export class CodexEngine extends EventEmitter {
   /** Starts a turn; «plan» turns use Codex's plan collaboration mode. */
   async send(text, { mode = "build" } = {}) {
     const input = [{ type: "text", text: String(text), text_elements: [] }];
-    const r = await this.call("turn/start", {
+    this.sending = this.call("turn/start", {
       threadId: this.threadId, input, cwd: this.o.cwd, model: this.o.model || null, effort: this.o.effort || null,
       approvalPolicy: "untrusted", sandboxPolicy: SANDBOX_POLICY[this.o.access] || SANDBOX_POLICY.project,
       collaborationMode: { mode: mode === "plan" ? "plan" : "default", settings: { model: this.o.model || "", reasoning_effort: this.o.effort || null, developer_instructions: null } },
     }, 60000);
-    this.turnId = r?.turn?.id || this.turnId;
+    try {
+      const r = await this.sending;
+      this.turnId = r?.turn?.id || this.turnId;
+    } finally { this.sending = null; }
     return this.turnId;
   }
 
-  /** A message mid-turn: Codex takes it in the running turn. */
-  steer(text) {
-    if (!this.turnId) throw Error("Codex no está trabajando.");
-    return this.call("turn/steer", { threadId: this.threadId, expectedTurnId: this.turnId, input: [{ type: "text", text: String(text), text_elements: [] }] });
+  /**
+   * A correction mid-turn (`turn/steer`): Codex adds it to the running turn, at its next step.
+   * `id` goes as clientUserMessageId, so the userMessage item that records it says it was read
+   * (event «steerRead»). Rejects with `unsupported` (a CLI without turn/steer: it stays off for
+   * this process) or `ended` (no turn running any more): the caller queues it instead.
+   */
+  async steer(text, { id = null } = {}) {
+    if (this.steerable === false) throw Object.assign(Error("Esta versión de Codex no deja corregir mientras trabaja."), { unsupported: true });
+    if (!this.turnId && this.sending) await this.sending.catch(() => null);
+    if (!this.turnId) throw Object.assign(Error("Codex no está trabajando."), { ended: true });
+    const input = [{ type: "text", text: String(text), text_elements: [] }];
+    try {
+      const r = await this.call("turn/steer", { threadId: this.threadId, expectedTurnId: this.turnId, input, ...(id ? { clientUserMessageId: id } : {}) });
+      this.steerable = true;
+      return { ack: "received", turnId: r?.turnId || this.turnId };
+    } catch (error) {
+      // An app-server from before turn/steer answers «method not found» / «unknown variant».
+      if (error.code === -32601 || /unknown (variant|method)|method not found|not supported/i.test(error.message)) {
+        this.steerable = false;
+        throw Object.assign(Error("Esta versión de Codex no deja corregir mientras trabaja."), { unsupported: true });
+      }
+      throw Object.assign(error, { ended: true });
+    }
   }
 
   /** «Compactar»: Codex summarizes the thread; it ends like a turn. */
@@ -262,6 +284,8 @@ export class CodexEngine extends EventEmitter {
       }
       case "item/started": {
         const item = p.item || {};
+        // A correction (turn/steer) is recorded as a userMessage item with our id: it was read.
+        if (item.type === "userMessage") { if (item.clientId) out({ type: "steerRead", id: item.clientId }); return; }
         if (item.type === "fileChange") this.changes.set(item.id, (item.changes || []).map((c) => c.path));
         const tool = toolOf(item);
         if (tool) out({ type: "tool", id: item.id, name: tool.name, input: tool.input });

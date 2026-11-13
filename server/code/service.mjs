@@ -36,6 +36,7 @@ import { GoalMethods } from "./goals.mjs";
 import { OverlapMethods } from "./overlaps.mjs";
 import { PrWatchMethods } from "./pr-watch.mjs";
 import { SaveMethods } from "./save.mjs";
+import { SteerMethods } from "./steer.mjs";
 export { HANDOFF_BYTES, handoffContext } from "./handoff.mjs";
 export {
   CODE_MODELS, CODEX_FALLBACK, ENGINES, ENGINE_LABEL, EFFORTS, KEYBINDINGS, PREVIEW_CLI, CODE_RESUMES, ARCHIVE_DEFAULTS, PR_POLL_MS, KEEP_SAVED_MS,
@@ -249,6 +250,8 @@ export class CodeService {
       pendingSwitch: t.pendingSwitch || null, handoff: t.handoff ? { from: t.handoff.from, pending: !!t.handoff.pending } : null,
       group: t.group || null, label: t.label || null, tests: t.tests ? { status: t.tests.status, code: t.tests.code, durationMs: t.tests.durationMs, at: t.tests.at } : null, pr: t.pr || null, allow: t.allow || [],
       overlaps: t.overlaps?.length ? t.overlaps : null,
+      // A correction reaches the running turn (false: this Codex has no turn/steer, it waits).
+      steer: live?.engine ? live.engine.steerable !== false : true,
     };
   }
 
@@ -522,15 +525,16 @@ export class CodeService {
       if (back) { this.emit({ type: "projects" }); void this.checkOverlaps(taskId); }
     }
     const live = this.engines.get(taskId);
+    let note;
+    if (when === "steer" && live?.turn) {
+      const r = await this.steer(taskId, live, task, message, files, notes);
+      if (r.steered) return r;
+      note = r.note;
+    }
     if (live?.turn || this.starting.has(taskId)) {
-      if (when === "steer" && live?.turn) {
-        await live.engine.steer(await this.prepare(task, message, files, notes));
-        this.addItem(taskId, { kind: "user", text: message, attachments: files.length ? files : undefined, contexts: notes.length ? notes : undefined, steer: true, turn: live.turn.n });
-        return { steered: true };
-      }
-      const queue = [...(task.queue || []), { id: randomUUID().slice(0, 8), text: message, mode, attachments: files, contexts: notes, line, at: now() }];
+      const queue = [...(this.mustTask(taskId).queue || []), { id: randomUUID().slice(0, 8), text: message, mode, attachments: files, contexts: notes, line, at: now() }];
       this.setTask(taskId, { queue });
-      return { queued: true };
+      return note ? { queued: true, note } : { queued: true };
     }
     // A copy cleaned up after «Guardar en …» comes back from its hidden ref to go on.
     if (task.saved) task = await this.recover(taskId);
@@ -567,7 +571,8 @@ export class CodeService {
   }
 
   async startTurn(task, text, mode = "build", { attachments = [], contexts = [], compact = false, goal = null } = {}) {
-    const n = (task.turns || []).length + 1;
+    // After the turns saved, or after one still being saved (a Claude Code follow-up, steer.mjs).
+    const n = Math.max((task.turns || []).length, this.engines.get(task.id)?.lastN || 0) + 1;
     this.starting.add(task.id);
     try {
       // A goal's own turns show as a quiet line, not as a message of the person.
@@ -588,6 +593,9 @@ export class CodeService {
       }
       clearTimeout(entry.idle);
       entry.turn = { n, mode, compact, startSnap, userItemId: user.id, started: Date.now(), live: "", tools: new Map(), lastAssistant: null };
+      entry.lastN = n;
+      // A Claude Code correction still to run comes first in this turn: its end is not this one's.
+      if (entry.overrun) { entry.overrun = null; entry.turn.steered = 1; }
       try {
         if (compact) await (entry.engine.compact ? entry.engine.compact() : entry.engine.send("/compact", { mode: "build" }));
         else {
@@ -610,7 +618,7 @@ export class CodeService {
 
   /** The events of any engine (claude.mjs normalize, codex.mjs notification). */
   onEvent(taskId, entry, e) {
-    const turn = entry.turn;
+    let turn = entry.turn;
     if (e.type === "session") {
       if (e.id) this.store.patch("codeTasks", taskId, (t) => ({ session: { ...(t.session || {}), id: e.id, started: true } }));
       return;
@@ -620,6 +628,9 @@ export class CodeService {
       return;
     }
     if (e.type === "usage") { this.setTask(taskId, { usage: { used: e.used, window: e.window || null, at: now() } }); return; }
+    if (e.type === "steerRead") { this.steerRead(taskId, e.id); return; }
+    // No turn open: a correction Claude Code runs as a turn of its own (steer.mjs), or nothing.
+    if (!turn) turn = this.strayEvent(taskId, entry, e);
     if (!turn) return;
     if (e.type === "child") {
       const row = turn.tools.get(e.parent);
@@ -670,6 +681,7 @@ export class CodeService {
     if (!turn) return;
     entry.turn = null;
     if (this.closed) return; // cut by the close: shutdown() marked it, the next start resumes it
+    this.overrunAfter(entry, turn, { failed: !!error && !interrupted && !turn.stopped, stopped: !!turn.stopped || interrupted });
     const task = this.mustTask(taskId);
     for (const id of turn.tools.values()) {
       const item = this.store.get("codeItems", id);
@@ -678,8 +690,12 @@ export class CodeService {
     if (turn.live.trim()) this.addItem(taskId, { kind: "text", text: turn.live, turn: turn.n });
     this.emit({ type: "delta", task: taskId, reset: true });
     let endSnap = null, stat = { files: [], add: 0, del: 0 };
+    // Its end is where a Claude Code follow-up turn (steer.mjs) starts.
+    const ending = Promise.resolve().then(() => this.snapsOf(task).capture("t" + turn.n + "-end-" + Date.now())).catch(() => null);
+    entry.lastEnd = ending;
     try {
-      endSnap = await this.snapsOf(task).capture("t" + turn.n + "-end-" + Date.now());
+      turn.startSnap = await turn.startSnap;
+      endSnap = await ending;
       stat = await this.snapsOf(task).diff(turn.startSnap, endSnap);
     } catch {}
     const files = stat.files.map((f) => ({ path: f.path, status: f.status, add: f.add, del: f.del }));
@@ -699,9 +715,14 @@ export class CodeService {
     if (failed) this.addItem(taskId, { kind: "error", text: clip(error.message || "Bruno no pudo terminar este turno.", 600), turn: turn.n });
     if (turn.stopped) this.addItem(taskId, { kind: "notice", text: "Has parado a Bruno.", turn: turn.n });
     // A plan waits for the person (Implementar · En una tarea nueva · Refinar).
-    const next = this.setTask(taskId, { turns: [...(task.turns || []), record], status: failed ? "error" : turn.plan ? "planned" : "idle", error: failed ? "turn" : null, activeAt: now() });
+    const turns = [...(this.mustTask(taskId).turns || []), record].sort((a, b) => a.n - b.n);
+    let next = this.setTask(taskId, { turns, status: entry.turn ? "working" : failed ? "error" : turn.plan ? "planned" : "idle", error: failed ? "turn" : null, activeAt: now() });
     entry.idle = setTimeout(() => { if (!entry.turn && this.engines.get(taskId) === entry) this.closeEngine(taskId); }, IDLE_MS);
     entry.idle.unref?.();
+    // Corrections: lost ones wait in the queue; a Claude Code one may still come as its own turn,
+    // which then takes over what follows (the queue, the goal, the notice).
+    if (await this.afterSteers(taskId, entry, turn, { cut: failed, stopped: !!turn.stopped || interrupted })) return;
+    if (turn.steered) next = this.mustTask(taskId);
     // A model of another engine chosen while it worked: the next turn goes with that engine.
     if (next.pendingSwitch) {
       try { this.switchEngine(taskId, next.pendingSwitch); } catch (e) {
@@ -712,6 +733,8 @@ export class CodeService {
     // Conflicts with the base: closed when Bruno left no marks. The preview: looked at after a change.
     if (next.merging && !failed && !turn.stopped) await this.closeMerge(taskId).catch((e) => console.warn("Código: merge abierto: " + e.message));
     if (files.length && !failed && !turn.stopped) void this.checkAfterTurn(taskId, turn.n);
+    // The person started the next turn during the wait for a correction's follow-up: it goes on.
+    if (turn.steered && (entry.turn || this.engines.get(taskId)?.turn || this.starting.has(taskId))) return;
     const goal = turn.compact ? null : this.goalAfter(taskId, turn, { failed, stopped: !!turn.stopped || interrupted });
     // The queue goes on by itself (T3 Code): the next message starts the next turn.
     const [first, ...rest] = next.queue || [];
@@ -761,6 +784,8 @@ export class CodeService {
 
   async stop(taskId) {
     const entry = this.engines.get(taskId);
+    // Between turns, a Claude Code correction still to come is not run (steer.mjs).
+    if (entry && !entry.turn && entry.overrun) { entry.overrun.adopted?.(); entry.overrun = null; entry.discard = Date.now() + 30000; }
     if (!entry?.turn) return { ok: true };
     entry.turn.stopped = true;
     for (const [askId, pending] of this.asks) if (pending.taskId === taskId) { pending.resolve({ behavior: "deny", message: "La persona ha parado la tarea." }); this.asks.delete(askId); this.patchItem(askId, { status: "expired" }); }
@@ -1281,3 +1306,4 @@ installMethods(CodeService, GoalMethods);
 installMethods(CodeService, OverlapMethods);
 installMethods(CodeService, PrWatchMethods);
 installMethods(CodeService, SaveMethods);
+installMethods(CodeService, SteerMethods);

@@ -125,14 +125,24 @@ export class ClaudeCodeEngine extends EventEmitter {
       await this.setPermissionMode(mode === "plan" ? "plan" : this.o.permissionMode || "default");
       this.mode = mode;
     }
-    return this.steer(text);
+    return this.user(text);
   }
 
-  /** A message from the person mid-turn: Claude Code takes it at its next step. */
-  steer(text, uuid = randomUUID()) {
+  user(text, uuid = randomUUID()) {
     const content = Array.isArray(text) ? text : String(text);
-    if (!this.write({ type: "user", message: { role: "user", content }, parent_tool_use_id: null, uuid, session_id: this.sessionId })) throw Error("Claude Code no está en marcha.");
+    if (!this.write({ type: "user", message: { role: "user", content }, parent_tool_use_id: null, uuid, session_id: this.sessionId })) throw Object.assign(Error("Claude Code no está en marcha."), { ended: true });
     return uuid;
+  }
+
+  /**
+   * A correction mid-turn: written to stdin like any message (stream-json input). Claude Code
+   * queues it and takes it in at its next step (between tool calls); if the turn is already
+   * giving its last answer, it runs right after as a turn of its own (service.mjs «overrun»).
+   * Claude Code says nothing when it reads it: the acknowledgement is «sent».
+   */
+  steer(text, { id = randomUUID() } = {}) {
+    this.user(text, id);
+    return { ack: "sent" };
   }
 
   interrupt() { return this.control({ subtype: "interrupt" }, 15000).catch(() => null); }
