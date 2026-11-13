@@ -38,7 +38,7 @@ import { RELAY_LABEL, editMessage, fileBase64, unsendMessage } from "../lib/peer
 import { isHidden, later, reversible, useToasts } from "../lib/undoToast.js";
 import { roomLinks } from "../lib/rooms.js";
 import { firstName, initialsOf, listNames } from "../lib/identity.js";
-import { askWaiting, itemType, liveLines, memberPanel, newsLine, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
+import { askWaiting, itemType, liveLines, roomEmpty, memberPanel, newsLine, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
 import { useRoomTimeline } from "../lib/useRoomTimeline.js";
 import { CompletionNote } from "../components/v3/dia/Completion.jsx";
 import NotFound from "./NotFound.jsx";
@@ -484,12 +484,16 @@ function Room({ id, query }) {
                       {mission ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
                       {mission ? <CatchUp count={since} mission={mission} pending={pending} id={missionId} /> : null}
                       {shared ? (tl.more ? <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}><button type="button" onClick={olderPage} style={{ ...outline, height: "34px", fontSize: "13px", fontWeight: 600 }}>{"Ver mensajes anteriores"}</button></div> : null) : <OlderMessages count={room.olderCount} onShow={room.showOlder} />}
-                      {loaded && !rows.length ? (
-                        <div style={{ alignSelf: "center", maxWidth: "520px", margin: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
-                          <strong style={{ font: "600 22px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Aún no hay mensajes en #" + title}</strong>
-                          <span style={{ fontSize: "15px", lineHeight: 1.55, color: "#4A4D57" }}>{shared ? "Escribe a las personas de la sala, o nombra a un bot con @ para que conteste aquí." : "Escribe qué necesitas. Tus bots se reparten el trabajo y lo ves aquí."}</span>
-                        </div>
-                      ) : null}
+                      {loaded && !rows.length ? (() => {
+                        const empty = roomEmpty(shown, { teamName: shown?.teamId ? place.text : null });
+                        return (
+                          <div style={{ alignSelf: "center", maxWidth: "520px", margin: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
+                            <strong style={{ font: "600 22px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", textWrap: "balance" }}>{empty.title}</strong>
+                            <span style={{ fontSize: "15px", lineHeight: 1.55, color: "#4A4D57" }}>{empty.text}</span>
+                            {empty.action === "invite" && !gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={{ ...outline, marginTop: "6px", background: "#12131A", borderColor: "#12131A", color: "#FFFFFF" }}>{empty.actionLabel}</button> : null}
+                          </div>
+                        );
+                      })() : null}
                       <RoomMessages mission={mission} messages={rows} thread={thread} bots={bots} approvals={approvals} artifacts={artifacts} steps={steps} onOpenArtifact={openDoc} openArtifactId={null} showThread={false} onOpenReplies={mission ? openReplies : null}
                         foreign={shared ? foreign : null} renderForeign={shared ? renderForeign : null} shareSlot={shared && !gone ? shareSlot : null} />
                       {/* A visible end when the sala finishes while you are here (lib/completion.js). */}

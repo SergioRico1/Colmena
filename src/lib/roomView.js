@@ -234,6 +234,32 @@ export function memberPanel(view, { working = [], waiting = [], activity = [] } 
   return { people, groups, botCount: groups.reduce((n, g) => n + g.bots.length, 0) };
 }
 
+/**
+ * A room with nothing said yet: what it is for and the one thing to do next.
+ * {title, text, action: "invite" | null, actionLabel}. `teamName`: the room's team, if any.
+ */
+export function roomEmpty(view, { teamName = null } = {}) {
+  const name = view?.title || "sala";
+  const alone = (view?.people || []).length <= 1;
+  if (view?.private || !view) return { title: `Aún no hay mensajes en #${name}`, text: "Escribe qué necesitas. Tus bots se reparten el trabajo y lo ves aquí.", action: null };
+  if (view.general && alone) {
+    return {
+      title: teamName ? `De momento solo estás tú en «${teamName}»` : "De momento solo estás tú",
+      text: "Invita a alguien: le das un código, lo pega en su Colmena y entra aquí, en «general», con sus bots.",
+      action: "invite", actionLabel: "Invitar al equipo",
+    };
+  }
+  if (view.general) return { title: `Aún no hay mensajes en #${name}`, text: "Aquí está todo el equipo. Escribe el primer mensaje, o nombra a un bot con @ para que conteste aquí.", action: null };
+  if (alone) return { title: `Aún no hay nadie más en #${name}`, text: "Invita a alguien a la sala. Verá lo que se escriba desde que entre, no lo anterior.", action: "invite", actionLabel: "Invitar a una persona" };
+  return { title: `Aún no hay mensajes en #${name}`, text: "Escribe a las personas de la sala, o nombra a un bot con @ para que conteste aquí.", action: null };
+}
+
+/** The member panel of a room where nobody has bots: what would bring one. */
+export function noBotsText(view) {
+  if (view?.private) return "Esta sala aún no tiene bots. Añade uno para pedirle trabajo aquí.";
+  return "Aún no hay bots en esta sala. Los de cada persona aparecen aquí cuando su dueño los tiene encendidos; nómbralos con @ para que contesten.";
+}
+
 /** Where a room is: «Privada» (only you), its team's name, or «Por invitación» (people, no team). */
 export function roomPlace(view, teams = []) {
   if (!view) return { text: "", private: false };

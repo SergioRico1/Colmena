@@ -155,7 +155,7 @@ choice open:
   else a task) and backfilled in the sweep without touching `updatedAt`. For older missions it is
   inferred: a named team mission is a sala, one titled from its prompt, with a due date or for one
   bot is a task; in doubt, a sala. `/api/state` only says a kind the shape does not give away.
-  Trabajo (`Tareas.jsx`) still lists salas too: it was not this task's file.
+  Trabajo (`Tareas.jsx`) lists tasks only, by this kind (`src/lib/rooms.js › tasksOf`).
 - **A room and its share always have the same id.** It follows from the id rules, and the code
   relies on it: `ensureForShare` adopts the room with the share's id.
 - **`createdBy`** is null for a private room made before «Personas» had its keys; views fill in

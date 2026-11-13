@@ -237,6 +237,7 @@ export default function Sidebar({ active = "inicio" }) {
         <button type="button" role="menuitem" onClick={() => openTeamSheet("join")} className="v3-menuitem" style={menuItem}>{"Unirme con un código"}</button>
       </>}
       {team.solo ? <a role="menuitem" href="/equipo" onClick={() => setMenu(null)} className="v3-menuitem" style={menuItem}>{"Ver tus bots y personas"}</a> : null}
+      <a role="menuitem" href="/personas/como-funciona#equipos" onClick={() => setMenu(null)} className="v3-menuitem" style={menuItem}>{"Cómo funcionan los equipos"}</a>
       {joining.length ? <>
         {menuLine}
         {joining.map((p) => (
@@ -383,7 +384,7 @@ export default function Sidebar({ active = "inicio" }) {
       {closed.personas ? null : (
         <div id="v3-group-personas" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
           {model.people.map(personRow)}
-          {model.people.length ? null : empty("Aquí verás a las personas con las que hablas. Invita a alguien con el +.")}
+          {model.people.length ? null : empty(team.solo ? "Aquí verás a las personas con las que hablas a solas. Invita a alguien con el +." : "Aún no hay mensajes directos. Escribe a alguien desde Equipo.")}
         </div>
       )}
     </>

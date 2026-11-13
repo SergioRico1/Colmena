@@ -4,6 +4,7 @@ import { useAction } from "../../lib/store.jsx";
 import { BotMark } from "../v2/chat/Mark.jsx";
 import { PersonAvatar } from "./Author.jsx";
 import { QUEUE } from "./RoomExtras.jsx";
+import { noBotsText } from "../../lib/roomView.js";
 
 // The member panel of a room (docs/PLAN-equipo-y-salas.md, scope 3), on the right while no other
 // panel is open: «Personas · N» with their role in the room and their presence in words, «Bots»
@@ -99,6 +100,13 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
           {g.mine && !view.private ? <span style={{ ...small, lineHeight: 1.45, paddingTop: "4px" }}>{"Trabajan en tu ordenador, con tu cuenta. Nómbralos con @ para que contesten aquí."}</span> : null}
         </section>
       ))}
+      {panel.groups.length ? null : (
+        <section style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <h2 style={head}>{"Bots · 0"}</h2>
+          <span style={{ ...small, lineHeight: 1.5 }}>{noBotsText(view)}</span>
+          {view.private ? null : <a href="/equipo" style={{ ...pill, alignSelf: "flex-start", marginTop: "4px", display: "inline-flex", alignItems: "center", textDecoration: "none", color: "#12131A" }}>{"Ver mis bots"}</a>}
+        </section>
+      )}
       {rules.length ? (
         <section style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "16px", background: "#F6F6F3" }}>
           <h2 style={{ margin: 0, fontSize: "14px", fontWeight: 600 }}>{"Reglas de esta sala"}</h2>

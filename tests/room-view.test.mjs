@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { botShape, firstName, initialsOf, listNames } from "../src/lib/identity.js";
 import {
-  askChoices, askWaiting, liveLines, thinkingLeft, withoutRepeats, authorKey, authorOf, authorView, continues, durationText, groupFlags, handoffLine, inviteCandidates, inviteTruth, itemType, joinItems,
+  askChoices, askWaiting, noBotsText, roomEmpty, liveLines, thinkingLeft, withoutRepeats, authorKey, authorOf, authorView, continues, durationText, groupFlags, handoffLine, inviteCandidates, inviteTruth, itemType, joinItems,
   memberPanel, mentionGroups, mentionTargets, newsLine, requestHint, presenceWord, roomPlace, roomRole, stackLabel, stateWord, statusLine,
 } from "../src/lib/roomView.js";
 import { mentionItems } from "../src/lib/mentionMenu.js";
@@ -305,4 +305,23 @@ test("Trabajo lists tasks by their stored kind: never a sala, a chat or a cancel
   ];
   assert.deepEqual(tasksOf(missions).map((m) => m.id), ["t1", "t2"]);
   assert.deepEqual(tasksOf(), []);
+});
+
+test("a room with nothing said yet says what it is for and the one thing to do", () => {
+  const me = { address: "me", you: true }, lucia = { address: "l", name: "Lucía" };
+  // A new team with nobody else: «general» invites, with the code action.
+  assert.deepEqual(roomEmpty({ title: "general", general: true, teamId: "t", people: [me] }, { teamName: "Lumbre" }), {
+    title: "De momento solo estás tú en «Lumbre»", text: "Invita a alguien: le das un código, lo pega en su Colmena y entra aquí, en «general», con sus bots.", action: "invite", actionLabel: "Invitar al equipo",
+  });
+  // «general» with people and no messages.
+  const general = roomEmpty({ title: "general", general: true, people: [me, lucia] });
+  assert.deepEqual([general.title, general.action], ["Aún no hay mensajes en #general", null]);
+  assert.match(general.text, /todo el equipo/);
+  // A room with people where you are still alone, one with company, and a private one.
+  assert.equal(roomEmpty({ title: "Legal", shareId: "x", people: [me] }).actionLabel, "Invitar a una persona");
+  assert.match(roomEmpty({ title: "Legal", shareId: "x", people: [me, lucia] }).text, /nombra a un bot con @/);
+  assert.deepEqual([roomEmpty({ title: "informe", private: true, people: [me] }).action, roomEmpty(null).action], [null, null]);
+  // No bots in the room yet.
+  assert.match(noBotsText({ private: true }), /Añade uno/);
+  assert.match(noBotsText({ private: false }), /nómbralos con @/);
 });

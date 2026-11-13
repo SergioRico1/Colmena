@@ -264,7 +264,13 @@ export default function TeamSection() {
               })}
             </ul>
           )}
-          {team && members.length === 1 ? <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.5, color: MUTED }}>{"De momento solo estás tú. Invita a la primera persona: entrará también en la sala «general»."}</p> : null}
+          {team && members.length === 1 ? (
+            <div style={{ ...panel, padding: "18px", gap: "10px", alignItems: "flex-start" }}>
+              <strong style={{ fontSize: "15px", fontWeight: 600 }}>{"De momento solo estás tú"}</strong>
+              <span style={{ fontSize: "14px", lineHeight: 1.5, color: TEXT }}>{"Invita a alguien: le das un código, lo pega en su Colmena y entra en el equipo y en la sala «general», con sus bots."}</span>
+              {canInvite(team.role) ? <button type="button" onClick={() => setSheet({ kind: "invite", team: current })} disabled={peopleOff} style={dark}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Crear un código de invitación"}</button> : null}
+            </div>
+          ) : null}
 
           {invitations.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
