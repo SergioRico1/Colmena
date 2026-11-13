@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useAction } from "../../../lib/store.jsx";
@@ -207,10 +208,7 @@ function StatusCard({ status, act }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF", fontSize: "14px", fontWeight: "600" }}>
       {"Tu estado para los demás"}
-      <select value={current} disabled={act.busy} onChange={(e) => { const s = STATUS.find((x) => x[0] === e.target.value); if (s) act.act(() => patch("/peers/status", s[2]())); }} style={{ height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", background: "#FFFFFF", fontSize: "14px", fontWeight: "400" }}>
-        {mode !== "available" ? <option value="now">{statusText(status)}</option> : null}
-        {STATUS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-      </select>
+      <Select label="Tu estado para los demás" value={current} disabled={act.busy} onChange={(e) => { const s = STATUS.find((x) => x[0] === e.target.value); if (s) act.act(() => patch("/peers/status", s[2]())); }} style={{ height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", background: "#FFFFFF", fontSize: "14px", fontWeight: "400" }} options={[...(mode !== "available" ? [["now", statusText(status)]] : []), ...STATUS]} />
       <span style={{ fontSize: "12.5px", fontWeight: "400", color: "#5C606C" }}>{mode === "available" ? "Lo ven las personas con las que hablas." : "Mientras tanto no te salta ni te suena ningún aviso."}</span>
     </label>
   );

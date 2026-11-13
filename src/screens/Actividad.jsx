@@ -1,3 +1,4 @@
+import Select from "../components/Select.jsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Shell from "../components/v2/Shell.jsx";
 import { Shape, sectionTitle } from "../components/v3/dia/parts.jsx";
@@ -233,9 +234,7 @@ export default function Actividad() {
               <span style={{ flex: "1" }} />
               <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#5C606C" }}>
                 {"Desde"}
-                <select value={range} onChange={(e) => setRange(e.target.value)} style={{ height: "30px", padding: "0 8px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "13px" }}>
-                  {RANGES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-                </select>
+                <Select label="Desde" value={range} onChange={(e) => setRange(e.target.value)} style={{ height: "30px", padding: "0 8px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "13px" }} options={RANGES} />
               </label>
             </div>
           ) : null}

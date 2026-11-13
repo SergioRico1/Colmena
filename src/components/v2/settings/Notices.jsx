@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useEffect, useState } from "react";
 import { Calendar, FileText, Folder, Mail, MessageSquare, Volume2 } from "lucide-react";
 import { playNoticeSound } from "../../../lib/noticeSounds.js";
@@ -120,13 +121,9 @@ function CheckinRows() {
           </Row>
           <Row title="En qué horario" sub={when ? `Última: ${when}${state.lastResult ? " · " + (CHECKIN_RESULT[state.lastResult] || state.lastResult) : ""}` : "Aún no ha revisado."}>
             <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "14px" }}>
-              <select aria-label="Desde" disabled={busy} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={hour}>
-                {Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{h + ":00"}</option>)}
-              </select>
+              <Select aria-label="Desde" disabled={busy} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={hour} options={Array.from({ length: 24 }, (_, h) => [h, h + ":00"])} />
               a
-              <select aria-label="Hasta" disabled={busy} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={hour}>
-                {Array.from({ length: 24 }, (_, h) => h + 1).map((h) => <option key={h} value={h}>{h + ":00"}</option>)}
-              </select>
+              <Select aria-label="Hasta" disabled={busy} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={hour} options={Array.from({ length: 24 }, (_, h) => [h + 1, (h + 1) + ":00"])} />
               <label style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <input type="checkbox" disabled={busy} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} style={{ accentColor: INK }} />
                 y fines de semana
@@ -159,10 +156,7 @@ export default function NoticesSection() {
         <SwitchRow first anchor="como-avisa" title="Notificaciones del sistema" sub="Aunque Colmena esté cerrada en la bandeja." on={windows} onChange={(v) => setMode(modeOf(v, sound), v ? "Notificaciones encendidas" : "Notificaciones apagadas")} />
         <Row as="label" anchor="sonido-avisos" title="Sonido" sub="Uno si ha terminado y otro si te necesita.">
           <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-            <select aria-label="Sonido" value={sound ? "on" : "off"} onChange={(e) => setMode(modeOf(windows, e.target.value === "on"), e.target.value === "on" ? "Con sonido" : "Sin sonido")} style={{ ...select, width: "220px" }}>
-              <option value="on">Un sonido para cada aviso</option>
-              <option value="off">Sin sonido</option>
-            </select>
+            <Select aria-label="Sonido" value={sound ? "on" : "off"} onChange={(e) => setMode(modeOf(windows, e.target.value === "on"), e.target.value === "on" ? "Con sonido" : "Sin sonido")} style={{ ...select, width: "220px" }} options={[["on", "Un sonido para cada aviso"], ["off", "Sin sonido"]]} />
             {sound ? <button type="button" aria-label="Escuchar el sonido de «te necesita»" title="Escuchar" onClick={(e) => { e.preventDefault(); playNoticeSound("needs"); }} style={{ ...btn("outline", 40), width: "40px", padding: 0 }}><Volume2 size={16} strokeWidth={2} aria-hidden="true" /></button> : null}
           </span>
         </Row>

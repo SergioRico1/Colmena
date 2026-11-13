@@ -1,3 +1,4 @@
+import Select from "./Select.jsx";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { get } from "../lib/api.js";
 
@@ -289,9 +290,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
   const zoneSelect = (
     <label style={labelStyle}>
       {"Zona horaria"}
-      <select value={s.zona || ZONES[0][0]} onChange={set("zona")} style={selectStyle}>
-        {zoneOptions.map(([z, label]) => <option key={z} value={z}>{`${label} (${zoneOffset(z)})`}</option>)}
-      </select>
+      <Select label="Zona horaria" value={s.zona || ZONES[0][0]} onChange={set("zona")} style={selectStyle} options={zoneOptions.map(([z, label]) => [z, `${label} (${zoneOffset(z)})`])} />
     </label>
   );
   const connectorWarning = (() => {
@@ -398,12 +397,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <label style={labelStyle}>{"Hora"}<input type="time" value={s.hora} onChange={set("hora")} style={timeInput} /></label>
               <label style={labelStyle}>
                 {"Cada cuántas semanas"}
-                <select value={String(s.cada)} onChange={set("cada", true)} style={selectStyle}>
-                  <option value="1">{"Cada semana"}</option>
-                  <option value="2">{"Cada 2 semanas"}</option>
-                  <option value="3">{"Cada 3 semanas"}</option>
-                  <option value="4">{"Cada 4 semanas"}</option>
-                </select>
+                <Select label="Cada cuántas semanas" value={String(s.cada)} onChange={set("cada", true)} style={selectStyle} options={[["1", "Cada semana"], ["2", "Cada 2 semanas"], ["3", "Cada 3 semanas"], ["4", "Cada 4 semanas"]]} />
               </label>
             </div>
             {zoneSelect}
@@ -498,10 +492,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                     </span>
                   ))}
                   <span style={{ flex: "1" }} />
-                  <select aria-label="Cambiar carpeta" value={folder?.id || ""} onChange={(e) => { const f = folders.find((x) => x.id === e.target.value); if (f) update({ carpetaId: f.id, carpeta: folderPath(f) }); }} style={{ height: "36px", padding: "0 8px", border: "0", borderRadius: "999px", fontFamily: "inherit", fontSize: "13px", color: "#12131A", background: "#FFFFFF" }}>
-                    {folder ? null : <option value="">{"Elige una carpeta"}</option>}
-                    {folders.map((f) => <option key={f.id} value={f.id}>{folderPath(f).split("/").filter(Boolean).join(" / ")}</option>)}
-                  </select>
+                  <Select aria-label="Cambiar carpeta" value={folder?.id || ""} onChange={(e) => { const f = folders.find((x) => x.id === e.target.value); if (f) update({ carpetaId: f.id, carpeta: folderPath(f) }); }} style={{ height: "36px", padding: "0 8px", border: "0", borderRadius: "999px", fontFamily: "inherit", fontSize: "13px", color: "#12131A", background: "#FFFFFF" }} options={[...(folder ? [] : [["", "Elige una carpeta"]]), ...folders.map((f) => [f.id, folderPath(f).split("/").filter(Boolean).join(" / ")])]} />
                 </div>
               ) : (
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "6px 6px 6px 12px", border: "0", borderRadius: "10px", fontSize: "14px", color: "#5C606C" , background: "#FFFFFF"}}>
@@ -523,11 +514,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <label style={labelStyle}>{"El nombre contiene"}<input type="text" value={s.nombre} onChange={set("nombre")} placeholder="Opcional, p. ej. «factura»" style={inputStyle} /></label>
               <label style={labelStyle}>
                 {"Quién lo sube"}
-                <select value={s.quien} onChange={set("quien")} style={selectStyle}>
-                  <option value="todos">{"Cualquiera"}</option>
-                  <option value="equipo">{"Solo gente del equipo"}</option>
-                  <option value="fuera">{"Solo gente de fuera"}</option>
-                </select>
+                <Select label="Quién lo sube" value={s.quien} onChange={set("quien")} style={selectStyle} options={[["todos", "Cualquiera"], ["equipo", "Solo gente del equipo"], ["fuera", "Solo gente de fuera"]]} />
               </label>
             </div>
           </div>
@@ -549,11 +536,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <span style={fieldTitle}>{"Con cuánta antelación"}</span>
               <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: "8px" }}>
                 <input type="number" min="1" max="99" aria-label="Cantidad" value={s.antelacion} onChange={(e) => update({ antelacion: Math.max(1, Math.min(99, Number(e.target.value) || 1)) })} style={timeInput} />
-                <select aria-label="Unidad" value={s.unidad} onChange={set("unidad")} style={selectStyle}>
-                  <option value="minutos">{"minutos antes"}</option>
-                  <option value="horas">{"horas antes"}</option>
-                  <option value="días">{"días antes"}</option>
-                </select>
+                <Select aria-label="Unidad" value={s.unidad} onChange={set("unidad")} style={selectStyle} options={[["minutos", "minutos antes"], ["horas", "horas antes"], ["días", "días antes"]]} />
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
@@ -571,11 +554,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
           <div style={col18}>
             <label style={labelStyle}>
               {"En qué sala"}
-              <select value={s.sala || "*"} onChange={(e) => { const r = rooms.find((x) => x.room === e.target.value); update({ sala: e.target.value, missionId: r?.id || null }); }} style={selectStyle}>
-                {rooms.map((r) => <option key={r.id} value={r.room}>{"# " + r.room}</option>)}
-                {s.sala && s.sala !== "*" && !rooms.some((r) => r.room === s.sala) ? <option value={s.sala}>{"# " + s.sala}</option> : null}
-                <option value="*">{"Cualquier sala"}</option>
-              </select>
+              <Select label="En qué sala" value={s.sala || "*"} onChange={(e) => { const r = rooms.find((x) => x.room === e.target.value); update({ sala: e.target.value, missionId: r?.id || null }); }} style={selectStyle} options={[...rooms.map((r) => [r.room, "# " + r.room]), ...(s.sala && s.sala !== "*" && !rooms.some((r) => r.room === s.sala) ? [[s.sala, "# " + s.sala]] : []), ["*", "Cualquier sala"]]} />
             </label>
             <div style={col8}>
               <span style={fieldTitle}>{"Cuándo cuenta"}</span>
@@ -594,10 +573,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
             </div>
             <label style={labelStyle}>
               {"De quién"}
-              <select value={s.deQuien} onChange={set("deQuien")} style={selectStyle}>
-                <option value="personas">{"Solo personas"}</option>
-                <option value="todos">{"Personas y bots"}</option>
-              </select>
+              <Select label="De quién" value={s.deQuien} onChange={set("deQuien")} style={selectStyle} options={[["personas", "Solo personas"], ["todos", "Personas y bots"]]} />
             </label>
             <span style={{ fontSize: "13px", lineHeight: "1.45", color: "#5C606C" }}>{"Para evitar bucles, los mensajes del propio bot nunca lo vuelven a poner en marcha."}</span>
           </div>

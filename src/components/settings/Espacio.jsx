@@ -1,3 +1,4 @@
+import Select from "../Select.jsx";
 import { useEffect, useState } from "react";
 import { Card, Notice, PageHeader, Toggle, btn, field } from "./SettingsShell.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
@@ -47,13 +48,9 @@ function CheckinCard() {
         </span>
         <span role="group" aria-label="En qué horario" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
           <span style={{ color: "#5C606C" }}>de</span>
-          <select aria-label="Desde" disabled={busy || !state.enabled} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "999px", background: "#FFFFFF", fontSize: "13px" }}>
-            {Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{String(h).padStart(2, "0") + ":00"}</option>)}
-          </select>
+          <Select aria-label="Desde" disabled={busy || !state.enabled} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "999px", background: "#FFFFFF", fontSize: "13px" }} options={Array.from({ length: 24 }, (_, h) => [h, String(h).padStart(2, "0") + ":00"])} />
           <span style={{ color: "#5C606C" }}>a</span>
-          <select aria-label="Hasta" disabled={busy || !state.enabled} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "999px", background: "#FFFFFF", fontSize: "13px" }}>
-            {Array.from({ length: 24 }, (_, h) => h + 1).map((h) => <option key={h} value={h}>{String(h).padStart(2, "0") + ":00"}</option>)}
-          </select>
+          <Select aria-label="Hasta" disabled={busy || !state.enabled} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "999px", background: "#FFFFFF", fontSize: "13px" }} options={Array.from({ length: 24 }, (_, h) => [h + 1, String(h + 1).padStart(2, "0") + ":00"])} />
           <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "6px", color: "#5C606C" }}>
             <input type="checkbox" disabled={busy || !state.enabled} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} />
             {"también fines de semana"}

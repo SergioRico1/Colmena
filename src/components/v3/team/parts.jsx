@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useClickAway } from "../../../lib/useClickAway.js";
+import { useRef, useState } from "react";
 import { shapeOf } from "../../v2/Presence.jsx";
 import { portraitOf } from "../../../lib/bots.js";
 
@@ -56,14 +57,7 @@ export function Toggle({ on, label, onClick, disabled = false, title = null }) {
 export function More({ label = "Más", items, round = false, light = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const away = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
-    const key = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", away);
-    document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", key); };
-  }, [open]);
+  useClickAway(open, ref, () => setOpen(false));
   const shown = items.filter(Boolean);
   const trigger = round
     ? { width: "44px", height: "44px", border: "1px solid rgba(18,19,26,.18)", borderRadius: "999px", background: light ? "rgba(255,255,255,.6)" : "#FFFFFF", fontSize: "15px" }

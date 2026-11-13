@@ -1,3 +1,4 @@
+import Select from "../Select.jsx";
 import { useState } from "react";
 import { patch } from "../../lib/api.js";
 import { useAction } from "../../lib/store.jsx";
@@ -38,9 +39,7 @@ export function VoicePicker({ bot, onSaved }) {
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
           <label style={{ flex: "1 1 220px", display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{`Voz de ${bot.name}`}</span>
-            <select value={current?.voiceURI || ""} disabled={busy} onChange={(e) => choose(e.target.value)} style={{ flex: "1", minWidth: 0, height: "40px", padding: "0 10px", background: "#FFFFFF", border: "0", borderRadius: "999px", fontSize: "14px", cursor: "pointer" }}>
-              {options.map((v) => <option key={v.voiceURI} value={v.voiceURI}>{`${v.name.replace(/^Microsoft\s+/i, "").replace(/\s+-\s+.*$/, "")} · ${v.lang}`}</option>)}
-            </select>
+            <Select label={`Voz de ${bot.name}`} value={current?.voiceURI || ""} disabled={busy} onChange={(e) => choose(e.target.value)} style={{ flex: "1", minWidth: 0, height: "40px", padding: "0 10px", background: "#FFFFFF", border: "0", borderRadius: "999px", fontSize: "14px", cursor: "pointer" }} options={options.map((v) => [v.voiceURI, `${v.name.replace(/^Microsoft\s+/i, "").replace(/\s+-\s+.*$/, "")} · ${v.lang}`])} />
           </label>
           <button type="button" onClick={tryIt} aria-pressed={trying ? "true" : "false"} style={{ height: "40px", padding: "0 12px", background: "transparent", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "14px" }}>{trying ? "Parar" : "Probar"}</button>
         </div>

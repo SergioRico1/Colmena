@@ -1,3 +1,4 @@
+import Select from "../Select.jsx";
 import { useState } from "react";
 import { Card, Notice, PageHeader, btn, field } from "./SettingsShell.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
@@ -76,9 +77,7 @@ export default function Personas() {
           </label>
           <label style={{ ...field.label, flex: "1 1 180px" }}>
             Rol
-            <select className="c-quiet" value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })} style={{ ...field.input, cursor: "pointer", fontWeight: "600" }}>
-              {ROLES.map((r) => <option key={r}>{r}</option>)}
-            </select>
+            <Select label="Rol" className="c-quiet" value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })} style={{ ...field.input, cursor: "pointer", fontWeight: "600" }} options={ROLES} />
           </label>
         </div>
         <span style={{ fontSize: "13px", color: "#5C606C" }}>{ROLE_HELP[draft.role]}</span>

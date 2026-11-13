@@ -1,3 +1,4 @@
+import { useClickAway } from "../../../lib/useClickAway.js";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Ellipsis, Pin, PinOff, AlarmClock, Archive, ArchiveRestore, Trash2, ChevronRight, Sun, CalendarClock, Search, X, Files, MessageSquareText } from "lucide-react";
@@ -28,14 +29,12 @@ const toLocalInput = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000
 export function useMenu(width = 280) {
   const [at, setAt] = useState(null);
   const ref = useRef(null);
+  useClickAway(!!at, ref, () => setAt(null));
   useEffect(() => {
     if (!at) return undefined;
-    const close = (e) => { if (!ref.current?.contains(e.target)) setAt(null); };
-    const key = (e) => { if (e.key === "Escape") setAt(null); };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", key);
-    window.addEventListener("resize", () => setAt(null), { once: true });
-    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", key); };
+    const shut = () => setAt(null);
+    window.addEventListener("resize", shut, { once: true });
+    return () => window.removeEventListener("resize", shut);
   }, [at]);
   const open = (e) => {
     e.preventDefault(); e.stopPropagation();

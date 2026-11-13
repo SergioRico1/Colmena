@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useClickAway } from "../../../lib/useClickAway.js";
+import { useRef, useState } from "react";
 import { Check, Clock3, UserPlus } from "lucide-react";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { useStore } from "../../../lib/store.jsx";
@@ -22,14 +23,7 @@ export default function TaskPeople({ taskId, project = null, look = null }) {
   const [handing, setHanding] = useState(null); // {person, busy, done}
   const [inviting, setInviting] = useState(false);
   const box = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const away = (e) => { if (!box.current?.contains(e.target)) setOpen(false); };
-    const esc = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", away);
-    document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
-  }, [open]);
+  useClickAway(open, box, () => setOpen(false));
   if (!peers?.me || !view) return null;
   const contacts = (peers.contacts || []).filter((c) => c.status === "active");
   const members = view.project?.people || [];

@@ -1,3 +1,4 @@
+import { useClickAway } from "../../../lib/useClickAway.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppWindow, Brain, Check, Crop, Globe, Monitor, Paperclip, Plus, Repeat, SquareTerminal, Target } from "lucide-react";
 import AppLogo from "../../settings/AppLogo.jsx";
@@ -100,12 +101,7 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
   }, [apps, computer?.available, onFiles, onCapture, onError, text, botId]); // eslint-disable-line react-hooks/exhaustive-deps
   const flat = sections.flatMap((s) => s.items);
   useEffect(() => { if (open) { setAt(0); requestAnimationFrame(() => box.current?.focus()); } }, [open]);
-  useEffect(() => {
-    if (!open) return undefined;
-    const away = (e) => { if (box.current && !box.current.contains(e.target) && !e.target.closest?.("[data-plus-toggle]")) onClose(); };
-    window.addEventListener("pointerdown", away);
-    return () => window.removeEventListener("pointerdown", away);
-  }, [open, onClose]);
+  useClickAway(open, (target) => !box.current || box.current.contains(target) || target.closest?.("[data-plus-toggle]"), () => onClose(), { escape: false, event: "pointerdown" });
   if (!open) return null;
   if (view === "windows") {
     return (

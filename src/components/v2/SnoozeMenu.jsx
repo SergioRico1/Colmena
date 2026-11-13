@@ -1,3 +1,4 @@
+import { useClickAway } from "../../lib/useClickAway.js";
 import { useEffect, useRef, useState } from "react";
 import { AlarmClock } from "lucide-react";
 import { post } from "../../lib/api.js";
@@ -30,12 +31,9 @@ export default function SnoozeMenu({ items, style, onError }) {
   const button = useRef(null);
   const menu = useRef(null);
   useEffect(() => {
-    if (!open) return undefined;
-    menu.current?.querySelector("[role='menuitem']")?.focus({ preventScroll: true });
-    const away = (e) => { if (!box.current?.contains(e.target)) setOpen(false); };
-    window.addEventListener("mousedown", away);
-    return () => window.removeEventListener("mousedown", away);
+    if (open) menu.current?.querySelector("[role='menuitem']")?.focus({ preventScroll: true });
   }, [open]);
+  useClickAway(open, box, () => setOpen(false), { escape: false });
 
   const choices = snoozeChoicesFor(items);
   if (!choices.length) return null;

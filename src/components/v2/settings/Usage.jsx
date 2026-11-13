@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useState, useSyncExternalStore } from "react";
 import { useResource, useStore } from "../../../lib/store.jsx";
 import { useExpert } from "../../../lib/expert.js";
@@ -175,9 +176,7 @@ export default function UsageSection() {
 
       <Card label="Límites">
         <Row as="label" first anchor="limite-mensual" title="Límite al mes" sub="Un tope para todo el espacio, aparte del de tu plan. Cuenta todo lo que leen y escriben." min="64px">
-          <select aria-label="Límite al mes" value={limits.monthlyTokens ?? ""} onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setLimit({ monthlyTokens: v }, v ? "Límite al mes: " + fmt(u, v) : "Sin límite al mes"); }} style={{ ...select, width: "170px" }}>
-            {LIMITS.map(([v, l]) => <option key={String(v)} value={v ?? ""}>{v ? fmt(u, l) : l}</option>)}
-          </select>
+          <Select aria-label="Límite al mes" value={limits.monthlyTokens ?? ""} onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setLimit({ monthlyTokens: v }, v ? "Límite al mes: " + fmt(u, v) : "Sin límite al mes"); }} style={{ ...select, width: "170px" }} options={LIMITS.map(([v, l]) => [v ?? "", v ? fmt(u, l) : l])} />
         </Row>
         <Row anchor="pausar-limite" title="Pausar al llegar al límite" sub="Terminan el paso en curso y esperan hasta el mes siguiente o hasta que lo subas." min="64px">
           <Switch on={limits.pauseAtLimit !== false} label="Pausar al llegar al límite" onChange={(v) => setLimit({ pauseAtLimit: v }, v ? "Se pausan al llegar al límite" : "No se pausan al llegar al límite")} />
@@ -186,9 +185,7 @@ export default function UsageSection() {
           <Switch on={limits.warnAt80 !== false} label="Avisarme al 80 por ciento" onChange={(v) => setLimit({ warnAt80: v }, v ? "Te avisarán al 80 %" : "Sin aviso al 80 %")} />
         </Row>
         <Row as="label" anchor="pausa-plan" title="Guardar el final del plan para chatear" sub="Cuando a tu plan de IA le queda poco, las rutinas y los trabajos largos esperan a que se renueve. Lo que tú escribes se responde igual, y puedes pulsar «Continuar ahora»." min="64px">
-          <select aria-label="Guardar el final del plan para chatear" value={planPause ?? ""} onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setLimit({ planPauseAt: v }, v ? `El trabajo largo espera al ${v} % del plan` : "El trabajo largo no espera por el plan"); }} style={{ ...select, width: "170px" }}>
-            {(PLAN_PAUSE.some(([v]) => v === planPause) ? PLAN_PAUSE : [[planPause, `Al ${planPause} % usado`], ...PLAN_PAUSE]).map(([v, l]) => <option key={String(v)} value={v ?? ""}>{l}</option>)}
-          </select>
+          <Select aria-label="Guardar el final del plan para chatear" value={planPause ?? ""} onChange={(e) => { const v = e.target.value ? Number(e.target.value) : null; setLimit({ planPauseAt: v }, v ? `El trabajo largo espera al ${v} % del plan` : "El trabajo largo no espera por el plan"); }} style={{ ...select, width: "170px" }} options={(PLAN_PAUSE.some(([v]) => v === planPause) ? PLAN_PAUSE : [[planPause, `Al ${planPause} % usado`], ...PLAN_PAUSE]).map(([v, l]) => [v ?? "", l])} />
         </Row>
         <Row anchor="csv" title="Descargar el uso en CSV" min="64px">
           <a href={`/api/usage/history.csv?days=${days}`} download style={{ ...btn("outline", 36), fontSize: "13.5px" }}>Descargar</a>

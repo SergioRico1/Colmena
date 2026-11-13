@@ -1,3 +1,4 @@
+import Select from "../Select.jsx";
 import { useRef, useState } from "react";
 import { Brain, Check, FolderOpen, Globe, GraduationCap, MessagesSquare, PencilLine, Sparkles, Trash2, Type, Wrench, X } from "lucide-react";
 import { del, patch, post } from "../../lib/api.js";
@@ -127,17 +128,11 @@ export function TeachDialog({ bot, onClose }) {
             </div>
             {type === "texto" ? <textarea value={value} maxLength={20000} onChange={(e) => setValue(e.target.value)} rows={5} placeholder="Pega aquí un ejemplo o explícale los pasos (opcional)" aria-label="Material" style={{ ...field, padding: "10px 12px", lineHeight: "1.5", resize: "vertical" }} /> : null}
             {type === "sala" ? (
-              <select value={value} onChange={(e) => setValue(e.target.value)} aria-label="Conversación" style={field}>
-                <option value="">{rooms.length ? "Elige una conversación o sala" : "Aún no hay conversaciones"}</option>
-                {rooms.map((m) => <option key={m.id} value={m.id}>{(m.conversation ? "" : "#") + (m.conversation ? m.title : m.room || m.title)}</option>)}
-              </select>
+              <Select value={value} onChange={(e) => setValue(e.target.value)} aria-label="Conversación" style={field} options={[["", rooms.length ? "Elige una conversación o sala" : "Aún no hay conversaciones"], ...rooms.map((m) => [m.id, (m.conversation ? "" : "#") + (m.conversation ? m.title : m.room || m.title)])]} />
             ) : null}
             {type === "carpeta" ? (
               folders.length ? (
-                <select value={value} onChange={(e) => setValue(e.target.value)} aria-label="Carpeta" style={field}>
-                  <option value="">{"Elige una carpeta"}</option>
-                  {folders.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
-                </select>
+                <Select value={value} onChange={(e) => setValue(e.target.value)} aria-label="Carpeta" style={field} options={[["", "Elige una carpeta"], ...folders.map((f) => [f.id, f.label])]} />
               ) : <p style={{ margin: 0, fontSize: "14px", color: "#5C606C" }}>Añade antes una carpeta en <a href="/ajustes/ordenador" style={{ color: "#1F4FD1", fontWeight: "600" }}>Ajustes › Este ordenador</a>.</p>
             ) : null}
             {type === "web" ? <input value={value} onChange={(e) => setValue(e.target.value)} type="url" inputMode="url" placeholder="https://…" aria-label="Dirección de la página" style={field} /> : null}

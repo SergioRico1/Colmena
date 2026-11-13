@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useEffect, useState } from "react";
 import { ArrowRight, Copy, ExternalLink, Eye, FileDiff, GitBranch, GitPullRequest, Lock, MessageSquare } from "lucide-react";
 import { PeerAvatar } from "./PeerAvatar.jsx";
@@ -309,9 +310,7 @@ export function HandoffPage({ id }) {
             <span style={{ fontSize: "13px", lineHeight: 1.5, color: "#5C606C" }}>{"Elige el proyecto donde tienes ese repositorio" + (h.remote ? " (" + h.remote + ")" : "") + ". Colmena trae la rama y tu Bruno empieza con un plan a partir del traspaso; nada cambia hasta que digas «Implementar»."}</span>
             {h.projects.length ? (
               <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-                <select value={project} onChange={(e) => setProject(e.target.value)} aria-label="Proyecto" style={{ height: "42px", padding: "0 12px", border: 0, borderRadius: "12px", background: "#FFFFFF", font: "inherit", fontSize: "14px" }}>
-                  {h.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                <Select value={project} onChange={(e) => setProject(e.target.value)} aria-label="Proyecto" style={{ height: "42px", padding: "0 12px", border: 0, borderRadius: "12px", background: "#FFFFFF", font: "inherit", fontSize: "14px" }} options={h.projects.map((p) => [p.id, p.name])} />
                 <button type="button" disabled={busy || !project} onClick={take} style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>{busy ? "Trayendo la rama…" : "Seguir en mi Colmena"}<ArrowRight size={15} strokeWidth={2.4} aria-hidden="true" /></button>
               </span>
             ) : <span style={{ fontSize: "14px", color: "#6B4E00" }}>{"Aún no tienes ese proyecto en Código. Clónalo" + (h.remote ? " (git clone " + h.remote + ")" : "") + " y ábrelo con «Abrir otro proyecto»."}</span>}

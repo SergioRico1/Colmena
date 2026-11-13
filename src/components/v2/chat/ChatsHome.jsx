@@ -1,3 +1,4 @@
+import { useClickAway } from "../../../lib/useClickAway.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
@@ -153,12 +154,7 @@ export default function ChatsHome() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!menu) return undefined;
-    const onDown = (e) => { if (!e.target.closest?.("[data-row-menu]")) setMenu(null); };
-    window.addEventListener("pointerdown", onDown);
-    return () => window.removeEventListener("pointerdown", onDown);
-  }, [menu]);
+  useClickAway(!!menu, (target) => target.closest?.("[data-row-menu]"), () => setMenu(null), { escape: false, event: "pointerdown" });
 
   const team = bots.filter((b) => b.enabled !== false);
   const tabsDef = [["todos", "Todos"], ["bots", "Bots"], ["salas", "Salas"], ["personas", "Personas"], ["sinleer", "Sin leer"]];

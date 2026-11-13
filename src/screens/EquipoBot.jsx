@@ -1,3 +1,4 @@
+import Select from "../components/Select.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Check, ChevronDown, ImagePlus, Pin } from "lucide-react";
@@ -657,9 +658,7 @@ function Usage({ bot, usage, missions, settings, expert, learning, busy, change 
               : `Un tope solo para ${bot.name}, aparte del límite del espacio. Al llegar, para y te lo dice.`}
           </span>
         </span>
-        <select aria-label={`Presupuesto al mes de ${bot.name}`} disabled={busy} value={budget ?? ""} onChange={setBudget} style={{ width: "240px", maxWidth: "100%", height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", color: INK, fontSize: "14.5px", boxSizing: "border-box", cursor: busy ? "wait" : "pointer" }}>
-          {budgets.map(([v, l]) => <option key={String(v)} value={v ?? ""}>{l}</option>)}
-        </select>
+        <Select aria-label={`Presupuesto al mes de ${bot.name}`} disabled={busy} value={budget ?? ""} onChange={setBudget} style={{ width: "240px", maxWidth: "100%", height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", color: INK, fontSize: "14.5px", boxSizing: "border-box", cursor: busy ? "wait" : "pointer" }} options={budgets.map(([v, l]) => [v ?? "", l])} />
       </label>
     </section>
   );

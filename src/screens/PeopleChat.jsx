@@ -1,3 +1,4 @@
+import Select from "../components/Select.jsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Lock, LogOut, Search } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
@@ -248,9 +249,7 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
           <span style={head}>{"Qué pueden pedirte sus bots"}</span>
           <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "14px" }}>
             {"Encargos a tus bots"}
-            <select value={asks.encargos || "pregunta"} disabled={busy} onChange={(e) => setAsk("encargos", e.target.value)} style={{ width: "100%", height: "38px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "13.5px" }}>
-              {ENCARGOS.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
-            </select>
+            <Select label="Encargos a tus bots" value={asks.encargos || "pregunta"} disabled={busy} onChange={(e) => setAsk("encargos", e.target.value)} style={{ width: "100%", height: "38px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "13.5px" }} options={ENCARGOS} />
           </label>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "40px", fontSize: "14px" }}>
             <span>{"Ver si estoy libre u ocupado"}</span>

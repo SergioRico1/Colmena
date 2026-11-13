@@ -1,18 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useClickAway } from "../../../lib/useClickAway.js";
+import { useRef, useState } from "react";
 
 // «···» (design/V3Habilidades.dc.html): what is used rarely, behind one small button. A plain
 // list of actions that opens below the button and closes on Escape, outside clicks or a pick.
 export default function MoreMenu({ label, items, style = null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const away = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
-    const key = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", away);
-    document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", key); };
-  }, [open]);
+  useClickAway(open, ref, () => setOpen(false));
   const shown = items.filter(Boolean);
   return (
     <span ref={ref} style={{ position: "relative", flex: "none", display: "inline-flex", ...style }}>

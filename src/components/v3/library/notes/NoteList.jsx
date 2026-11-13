@@ -1,3 +1,4 @@
+import Select from "../../../Select.jsx";
 import { useEffect, useState } from "react";
 import { Archive, Folder, Globe, Hash } from "lucide-react";
 import RowBoundary from "../../../RowBoundary.jsx";
@@ -87,10 +88,7 @@ export default function NoteList({ view = "notas", bots = [], onNew }) {
             <SearchBox value={text} onChange={setText} label="Buscar en las notas" placeholder="Buscar por título o por lo que dicen" />
             <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13.5px", color: "#5C606C" }}>
               {"Orden"}
-              <select className="c-quiet" value={q ? "relevance" : sort} disabled={!!q} onChange={(e) => setSort(e.target.value)} style={{ height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.08)", borderRadius: "12px", background: "#FFFFFF", fontSize: "14px", color: "#12131A" }}>
-                {q ? <option value="relevance">{"Lo que más se parece"}</option> : null}
-                {SORTS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-              </select>
+              <Select label="Orden" className="c-quiet" value={q ? "relevance" : sort} disabled={!!q} onChange={(e) => setSort(e.target.value)} style={{ height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.08)", borderRadius: "12px", background: "#FFFFFF", fontSize: "14px", color: "#12131A" }} options={[...(q ? [["relevance", "Lo que más se parece"]] : []), ...SORTS]} />
             </label>
           </div>
           {folders.length ? (

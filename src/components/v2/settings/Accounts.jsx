@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useEffect, useState } from "react";
 import ProviderMark from "../ProviderMark.jsx";
 import { ClaudePanel, OpenCodePanel } from "./Engines.jsx";
@@ -106,17 +107,12 @@ function PerBot({ bots, engines, team, busy, setBot }) {
               <span role="rowheader" style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}><BotMark bot={b} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}</span></span>
               <span role="cell">
                 {live.length > 1 ? (
-                  <select aria-label={"Cuenta de " + b.name} disabled={busy} value={own?.id || ""} onChange={(e) => setBot(b, { engine: e.target.value || null }, "cuenta")} style={small}>
-                    <option value="">{team ? `Como el equipo (${team.label})` : "Como el equipo"}</option>
-                    {live.map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
-                  </select>
+                  <Select aria-label={"Cuenta de " + b.name} disabled={busy} value={own?.id || ""} onChange={(e) => setBot(b, { engine: e.target.value || null }, "cuenta")} style={small} options={[["", team ? `Como el equipo (${team.label})` : "Como el equipo"], ...live.map((e) => [e.id, e.label])]} />
                 ) : own?.label || team?.label || "—"}
               </span>
               <span role="cell" title={b.model?.reason ? "Elegido porque " + b.model.reason : undefined} style={{ font: `400 12.5px/1.2 ${mono}`, color: "#3D404A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.model?.slug ? String(b.model.slug).replace(/^[a-z-]+\//, "") : "Sin modelo todavía"}</span>
               <span role="cell">
-                <select aria-label={"Cuánto piensa " + b.name} disabled={busy} value={b.thinking || "equilibrado"} onChange={(e) => setBot(b, { thinking: e.target.value }, "piensa")} style={{ ...small, color: SOFT }}>
-                  {THINK.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
+                <Select aria-label={"Cuánto piensa " + b.name} disabled={busy} value={b.thinking || "equilibrado"} onChange={(e) => setBot(b, { thinking: e.target.value }, "piensa")} style={{ ...small, color: SOFT }} options={THINK} />
               </span>
             </div>
           );
@@ -177,21 +173,15 @@ export default function AccountsSection() {
 
       <Card label="Qué usan">
         <Row as="label" first anchor="piensan-con" title="Piensan con" sub={live.length ? "La cuenta que usan por defecto." : "Conecta una cuenta para que tus bots puedan pensar."}>
-          <select aria-label="Piensan con" disabled={live.length < 2 || act.busy} value={primary || ""} onChange={(e) => setEngines({ primary: e.target.value }, "Tu equipo piensa con " + engine(e.target.value)?.label, { primary })} style={{ ...select, width: "220px" }}>
-            {live.length ? live.map((e) => <option key={e.id} value={e.id}>{e.label}</option>) : <option value="">Ninguna todavía</option>}
-          </select>
+          <Select aria-label="Piensan con" disabled={live.length < 2 || act.busy} value={primary || ""} onChange={(e) => setEngines({ primary: e.target.value }, "Tu equipo piensa con " + engine(e.target.value)?.label, { primary })} style={{ ...select, width: "220px" }} options={live.length ? live.map((e) => [e.id, e.label]) : [["", "Ninguna todavía"]]} />
         </Row>
         <Row as="label" anchor="respaldo" title="Si falla o llega al límite, usar"
           sub={fallback === "none" ? "Si la principal llega a su límite, paran y te avisan; lo hecho se conserva." : "Siguen trabajando sin que tengas que hacer nada, con todo lo que llevaban."}>
-          <select aria-label="Si falla o llega al límite, usar" disabled={!live.length || act.busy} value={fallback} onChange={(e) => setEngines({ fallback: e.target.value }, "Respaldo cambiado", { fallback })} style={{ ...select, width: "220px" }}>
-            {fallbacks.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          <Select aria-label="Si falla o llega al límite, usar" disabled={!live.length || act.busy} value={fallback} onChange={(e) => setEngines({ fallback: e.target.value }, "Respaldo cambiado", { fallback })} style={{ ...select, width: "220px" }} options={fallbacks} />
         </Row>
         {gptOn && gptModels.length ? (
           <Row as="label" anchor="modelo" title="Modelo de ChatGPT" sub="El que usan cuando piensan con ChatGPT.">
-            <select aria-label="Modelo de ChatGPT" value={settings.model || ""} onChange={(e) => save({ model: e.target.value }, "Modelo cambiado", { model: settings.model })} style={{ ...select, width: "220px" }}>
-              {gptModels.map((m) => <option key={m.slug} value={m.slug}>{m.label || m.slug}</option>)}
-            </select>
+            <Select aria-label="Modelo de ChatGPT" value={settings.model || ""} onChange={(e) => save({ model: e.target.value }, "Modelo cambiado", { model: settings.model })} style={{ ...select, width: "220px" }} options={gptModels.map((m) => [m.slug, m.label || m.slug])} />
           </Row>
         ) : null}
         <div {...anchorOf("cuanto-piensan")} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px 22px", borderTop: LINE, scrollMarginTop: "24px" }}>

@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { del, get, patch, post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
@@ -325,9 +326,7 @@ function Folders() {
             <span style={{ fontSize: "14.5px", fontWeight: 500 }}>{f.label}<span style={{ fontWeight: 400, color: MUTED }}>{f.botIds?.length ? " · " + f.botIds.map((id) => botOf(id)?.name).filter(Boolean).join(", ") : ""}</span></span>
             <span style={{ font: `400 12.5px/1.3 ${mono}`, color: MUTED, overflowWrap: "anywhere" }}>{f.path}</span>
           </span>
-          <select aria-label={`Qué pueden hacer en ${f.label}`} value={f.access} onChange={(e) => access(f, e.target.value)} style={{ ...select, width: "auto", height: "32px", borderRadius: "999px", padding: "0 10px 0 12px", fontSize: "13px" }}>
-            {ACCESS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          <Select aria-label={`Qué pueden hacer en ${f.label}`} value={f.access} onChange={(e) => access(f, e.target.value)} style={{ ...select, width: "auto", height: "32px", borderRadius: "999px", padding: "0 10px 0 12px", fontSize: "13px" }} options={ACCESS} />
           <button type="button" aria-label={`Quitar ${f.label}`} onClick={() => later({ id: "folder:" + f.id, keys: ["folder:" + f.id], ms: UNDO_MS, text: `Carpeta «${f.label || f.path}» quitada`, error: "No se pudo quitar la carpeta", run: () => run(() => del(`/folders/${encodeURIComponent(f.id)}`)) })} style={{ ...btn("ghost", 32), padding: "0 8px" }}>Quitar</button>
         </div>
       ))}

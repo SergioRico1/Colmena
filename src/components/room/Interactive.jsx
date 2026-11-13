@@ -1,3 +1,4 @@
+import Select from "../Select.jsx";
 import { useSlidingPill } from "../../lib/useSlidingPill.js";
 import { createContext, useContext, useMemo, useState } from "react";
 import { Check } from "lucide-react";
@@ -287,10 +288,7 @@ function AskForm({ spec }) {
           <label key={f.id} style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: "600", gridColumn: ["texto largo", "textarea"].includes(f.type) ? "1 / -1" : undefined }}>
             <span>{f.label}{f.required ? <span aria-hidden="true" style={{ color: "#B4372A" }}> *</span> : <span style={{ fontWeight: "400", color: "#555A68" }}> · opcional</span>}</span>
             {["opciones", "select"].includes(f.type) ? (
-              <select value={values[f.id]} onChange={(e) => setValues({ ...values, [f.id]: e.target.value })} style={input}>
-                <option value="">Elige…</option>
-                {f.options.map((o) => <option key={String(o)} value={String(o)}>{String(o)}</option>)}
-              </select>
+              <Select label={f.label} value={values[f.id]} onChange={(e) => setValues({ ...values, [f.id]: e.target.value })} style={input} options={[["", "Elige…"], ...f.options.map((o) => [String(o), String(o)])]} />
             ) : ["texto largo", "textarea"].includes(f.type) ? (
               <textarea rows="2" value={values[f.id]} placeholder={f.placeholder} onChange={(e) => setValues({ ...values, [f.id]: e.target.value })} style={{ ...input, height: "auto", padding: "8px 12px", resize: "vertical" }} />
             ) : (

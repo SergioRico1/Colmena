@@ -1,3 +1,4 @@
+import { useClickAway } from "../../lib/useClickAway.js";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight, CircleCheck, CircleX, Ellipsis, ExternalLink, Globe, MessageCircle, Minus, Pin, PinOff, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
 import { Shape } from "../v3/dia/parts.jsx";
@@ -162,12 +163,9 @@ function BlockMenu({ block, where, move, onMove, onError }) {
   const [open, setOpen] = useState(false);
   const box = useRef(null), button = useRef(null), menu = useRef(null);
   useEffect(() => {
-    if (!open) return undefined;
-    menu.current?.querySelector("[role='menuitem']:not([aria-disabled='true'])")?.focus({ preventScroll: true });
-    const away = (e) => { if (!box.current?.contains(e.target)) setOpen(false); };
-    window.addEventListener("mousedown", away);
-    return () => window.removeEventListener("mousedown", away);
+    if (open) menu.current?.querySelector("[role='menuitem']:not([aria-disabled='true'])")?.focus({ preventScroll: true });
   }, [open]);
+  useClickAway(open, box, () => setOpen(false), { escape: false });
   const close = (refocus = true) => { setOpen(false); if (refocus) button.current?.focus({ preventScroll: true }); };
   const onKeyDown = (e) => {
     if (!open) return;

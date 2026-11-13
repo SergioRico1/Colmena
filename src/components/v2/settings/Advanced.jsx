@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useEffect, useState } from "react";
 import { useAction, useResource, useStore } from "../../../lib/store.jsx";
 import { del, get, patch, post } from "../../../lib/api.js";
@@ -118,10 +119,7 @@ function Families({ ai }) {
         return (
           <label key={e.id + family} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 14px", minHeight: "44px", fontSize: "14px" }}>
             <span style={{ flex: "1 1 200px" }}><strong style={{ fontWeight: 600 }}>{`${name} en ${e.label}`}</strong><span style={{ color: MUTED }}>{" · " + sub}</span></span>
-            <select aria-label={`${name} en ${e.label}`} disabled={act.busy} value={pinned} onChange={(ev) => pick(e.id, family, ev.target.value || null)} style={{ ...select, width: "240px", height: "34px", fontSize: "13.5px" }}>
-              <option value="">{"Automático" + (auto ? " · " + auto.label : "")}</option>
-              {catalog.map((m) => <option key={m.slug} value={m.slug}>{m.label}{m.utility ? " (ligero)" : ""}</option>)}
-            </select>
+            <Select aria-label={`${name} en ${e.label}`} disabled={act.busy} value={pinned} onChange={(ev) => pick(e.id, family, ev.target.value || null)} style={{ ...select, width: "240px", height: "34px", fontSize: "13.5px" }} options={[["", "Automático" + (auto ? " · " + auto.label : "")], ...catalog.map((m) => [m.slug, m.label + (m.utility ? " (ligero)" : "")])]} />
           </label>
         );
       }))}

@@ -1,3 +1,4 @@
+import { useClickAway } from "../lib/useClickAway.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Circle, LayoutGrid } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
@@ -82,13 +83,7 @@ export default function Hoy({ query = {} }) {
       if (draft) { setAsk(draftText(draft)); sessionStorage.removeItem("colmena:draft"); }
     } catch {}
   }, []);
-  useEffect(() => {
-    if (!menu) return undefined;
-    const close = (e) => { if (e.type === "keydown" ? e.key === "Escape" : !e.target.closest?.("[data-route-menu]")) setMenu(false); };
-    window.addEventListener("mousedown", close);
-    window.addEventListener("keydown", close);
-    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", close); };
-  }, [menu]);
+  useClickAway(!!menu, (target) => target.closest?.("[data-route-menu]"), () => setMenu(false));
 
   // Without an AI account the box does not invite a request nobody can do (lib/aiAccount.js).
   const box = askBox(store);

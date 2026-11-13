@@ -1,6 +1,7 @@
+import { useClickAway } from "../../lib/useClickAway.js";
 import { BotPresence, PersonPresence } from "../v2/Presence.jsx";
 import WorkingDots from "./Dots.jsx";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { dragOutProps } from "../../lib/dragOut.js";
 import { avatarStyle, initial, faceOf } from "../../lib/bots.js";
 import { navigate } from "../../lib/router.jsx";
@@ -95,21 +96,7 @@ export function FileChip({ file, onRemove, dragUrl = null }) {
 /** Closes on outside click / Escape. */
 export function useDismiss(open, onClose) {
   const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const down = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
-    };
-    const key = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("mousedown", down);
-    document.addEventListener("keydown", key);
-    return () => {
-      document.removeEventListener("mousedown", down);
-      document.removeEventListener("keydown", key);
-    };
-  }, [open, onClose]);
+  useClickAway(open, (target) => !ref.current || ref.current.contains(target), () => onClose());
   return ref;
 }
 

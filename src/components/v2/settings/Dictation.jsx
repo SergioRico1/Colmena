@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useState } from "react";
 import { DictationHelp, refreshVoiceStatus, setDictationEngine, useVoiceStatus } from "../../interaction/Dictation.jsx";
 import { reversible } from "../../../lib/undoToast.js";
@@ -36,9 +37,7 @@ export default function DictationRow() {
   return (
     <>
       <Row as="label" anchor="dictado" title="Dictado por voz" sub={line.text} subColor={line.color} min="64px">
-        <select aria-label="Dictado" disabled={busy || !v} value={v?.preference || "auto"} onChange={(e) => pick(e.target.value)} style={{ ...select, width: "auto", height: "36px", fontSize: "13.5px" }}>
-          {ITEMS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-        </select>
+        <Select aria-label="Dictado" disabled={busy || !v} value={v?.preference || "auto"} onChange={(e) => pick(e.target.value)} style={{ ...select, width: "auto", height: "36px", fontSize: "13.5px" }} options={ITEMS} />
       </Row>
       {v?.problem && v.preference !== "openai" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "0 22px 14px" }}>

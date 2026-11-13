@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useClickAway } from "../../../lib/useClickAway.js";
+import { useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { SHAPES } from "../Presence.jsx";
 
@@ -43,14 +44,7 @@ export function Seg({ options, value, onChange, small = false, label }) {
 export function MenuChip({ label, icon = null, title, children, up = true, width = 320, align = "left", chevron = true, className = "", keepLabel = false, look = null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
-    const key = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", key);
-    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", key); };
-  }, [open]);
+  useClickAway(open, ref, () => setOpen(false));
   return (
     <div ref={ref} className={className} style={{ position: "relative", minWidth: 0 }}>
       <button type="button" title={title} aria-label={label ? undefined : title} aria-expanded={open} onClick={() => setOpen(!open)}
