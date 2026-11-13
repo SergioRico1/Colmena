@@ -332,6 +332,11 @@ own loop guard does.
 - Deliverables made in a step with `roomAsk` (its `deliverable` messages) go as files after the
   answer (`PeerFiles#sendArtifact`, signed as the bot, `replyTo` the answer). Text deliverables
   (md, txt, csv) are sent as a file of that format. `POST /api/rooms/:id/share` is the manual way.
+  Capped (`RoomWork#shareOver`): 3 files and 25 MB per request (`roomAsks.shared`, `sharedBytes`),
+  10 files and 100 MB per requester and day. What is over stays (`roomAsks.kept`) and asks the
+  owner: approval `{id: "roomshare:"+ask, kind: "question", tool: "room_share", options: share|no,
+  roomShare: {askId, shareId, artifactIds, bot, replyTo}}`, closed by `Runtime#answer` like a
+  `roomRequest` card (no message is written).
 - Nothing from a routine's turn or an incognito conversation (`RoomWork#silent`).
 
 **Receiving.** `roomStatus {id: share:owner:bot, shareId, owner, bot, state, since, at, tools?,

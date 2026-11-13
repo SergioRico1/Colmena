@@ -23,6 +23,7 @@
 //    itself (a bot that «works» is refreshed by its owner's Colmena; with no news it is dropped,
 //    or shown as «Sergio no está» when its owner went offline), and lines in the conversation.
 import { createHash, randomUUID } from "node:crypto";
+import { stat } from "node:fs/promises";
 import { now } from "./store.mjs";
 import { isAutomated } from "./origin.mjs";
 import { ERRAND_LIMITS, ERRAND_TOOLS_DEFAULT } from "./peers/errands.mjs";
@@ -54,6 +55,10 @@ export const ROOM_WORK = Object.freeze({
   personHour: 12, personDay: 40, // requests of one person in all rooms, per hour and per day
   allHour: 30, // requests of everybody, per hour
   open: 5, // requests of one person waiting for your OK at the same time
+  // What a request may share in the room by itself (its deliverables): a few files and one
+  // mailbox file's worth per request; per person and day, half of what your Colmena may upload
+  // in a day (200 MB). Past that the files stay here and you are asked.
+  files: 3, fileBytes: 25 * 1024 * 1024, filesDay: 10, fileBytesDay: 100 * 1024 * 1024,
   throttledMs: 3600000, // «no atiende más peticiones por ahora» is said once in this long per person and room
   text: 4000, // characters of a request
   question: 2000, questions: 3, replies: 3, // ask_room: characters, how many per request, and how many answers start a turn
@@ -532,29 +537,90 @@ export class RoomWork {
    * The deliverables a bot made in a turn for a request you allowed go to the room as files,
    * after its answer (they were made for whoever asked). Nothing else is ever shared by itself.
    */
-  async deliver(share, step, bot, answerId = null) {
+  deliver(share, step, bot, answerId = null) {
+    // One at a time: a step is written several times as it ends, and what one delivery shared counts for the next.
+    const run = (this.delivering || Promise.resolve()).then(() => this.deliverNow(share, step, bot, answerId));
+    this.delivering = run.catch(() => {});
+    return run;
+  }
+  async deliverNow(share, step, bot, answerId = null) {
     const files = this.peers?.files;
     if (!files || !step?.roomAsk || step.skipped) return [];
     const ask = this.store.get("roomAsks", step.roomAsk);
     if (!ask || ask.shareId !== share.id) return [];
     const made = this.store.where("messages", "missionId", step.missionId).filter((m) => m.kind === "deliverable" && m.stepId === step.id && m.artifactId).map((m) => m.artifactId);
-    const done = new Set(ask.shared || []), out = [];
+    const done = new Set([...(ask.shared || []), ...(ask.kept || [])]), out = [], kept = [];
+    const add = (id, more) => { const a = this.store.get("roomAsks", id); return this.store.patch("roomAsks", id, more(a)); };
     for (const artifactId of [...new Set(made)]) {
       // Claimed at once: a step is written several times as it ends, and each file goes once.
       if (done.has(artifactId) || this.sharing.has(artifactId)) continue;
       this.sharing.add(artifactId);
       try {
+        const size = await this.sizeOf(artifactId);
+        // Over what a request may share by itself (ROOM_WORK.files…): it stays, and you are asked.
+        if (this.shareOver(this.store.get("roomAsks", ask.id), size)) { kept.push(artifactId); continue; }
         const sent = await files.sendArtifact(share.id, artifactId, "", { bot: cleanBot(bot), replyTo: answerId });
         out.push(sent.message.id);
         done.add(artifactId);
-        this.store.patch("roomAsks", ask.id, { shared: [...new Set([...(this.store.get("roomAsks", ask.id)?.shared || []), artifactId])] });
+        add(ask.id, (a) => ({ shared: [...new Set([...(a.shared || []), artifactId])], sharedBytes: (a.sharedBytes || 0) + size }));
       } catch (error) {
         this.log("Un entregable de " + bot.name + " no pudo compartirse en la sala: " + error.message);
       } finally {
         this.sharing.delete(artifactId);
       }
     }
+    if (kept.length) this.askShare(add(ask.id, (a) => ({ kept: [...new Set([...(a.kept || []), ...kept])] })), share, bot, kept, answerId);
     return out;
+  }
+  /** What a deliverable weighs as it would travel (its file and the PDF that shows it). */
+  async sizeOf(artifactId) {
+    const a = await this.peers?.files?.artifactFile?.(artifactId);
+    if (!a) return 0;
+    const of = async (file) => (file ? (await stat(file).catch(() => null))?.size || 0 : 0);
+    return (a.bytes ? a.bytes.length : await of(a.path)) + await of(a.pdf);
+  }
+  /** Whether one more file of `size` is over what request `ask` may share by itself: per request, and per person and day. */
+  shareOver(ask, size) {
+    if ((ask.shared || []).length >= ROOM_WORK.files || (ask.sharedBytes || 0) + size > ROOM_WORK.fileBytes) return true;
+    const t = this.clock(), when = (a) => (Number.isFinite(a.t) ? a.t : Date.parse(a.at) || 0);
+    const today = this.store.where("roomAsks", "from", ask.from).filter((a) => t - when(a) < 864e5);
+    return today.reduce((n, a) => n + (a.shared || []).length, 0) >= ROOM_WORK.filesDay || today.reduce((n, a) => n + (a.sharedBytes || 0), 0) + size > ROOM_WORK.fileBytesDay;
+  }
+  /** Files a request made beyond what it may share by itself: a card for you, «¿Los comparto en la sala?». */
+  askShare(ask, share, bot, artifactIds, answerId = null) {
+    const id = "roomshare:" + ask.id, who = first(ask.fromName);
+    const old = this.store.get("approvals", id);
+    const ids = [...new Set([...(old?.status === "pending" ? old.roomShare.artifactIds : []), ...artifactIds])];
+    const titles = ids.map((x) => "«" + clip(this.store.get("artifacts", x)?.title || "archivo", 60) + "»");
+    const room = this.rooms.ofShare(share.id);
+    this.store.put("approvals", {
+      id, missionId: room?.missionId || null, roomId: room?.id || share.id, botId: bot.id, stepId: null, callId: null, tool: "room_share", kind: "question",
+      title: clip(bot.name + " ha hecho más archivos para " + who, 140),
+      summary: bot.name + " ha hecho para " + who + " más de lo que se comparte solo en «" + share.title + "»: " + titles.join(", ") + ". ¿" + (ids.length === 1 ? "Lo comparto" : "Los comparto") + " en la sala?",
+      context: bot.name + " · " + share.title, blocks: 1,
+      options: [{ id: "share", label: "Compartir", primary: true }, { id: "no", label: "No compartir" }],
+      email: null, canAlways: false, status: "pending", createdAt: old?.createdAt || now(), decidedAt: null, decidedBy: null, resolution: null,
+      roomShare: { askId: ask.id, shareId: share.id, artifactIds: ids, bot: { id: bot.id, name: bot.name }, replyTo: answerId || old?.roomShare?.replyTo || null },
+    });
+    try {
+      this.peers.notifier?.notify({ kind: "needs", title: bot.name + " ha hecho más archivos para " + who, text: titles.join(", "), url: room ? this.rooms.view(room).href : "/", extra: { roomId: room?.id || share.id, approvalId: id, peerShare: share.id } });
+    } catch (error) { this.log("No se pudo avisar: " + error.message); }
+  }
+  /** Your answer to that card: the files go to the room, or stay here. */
+  async sharedDecided(a) {
+    this.store.patch("approvals", a.id, { roomHandled: true });
+    if (a.status !== "answered" || a.answer?.optionId !== "share") return;
+    const bot = cleanBot(this.store.get("bots", a.roomShare.bot?.id));
+    for (const artifactId of a.roomShare.artifactIds) {
+      try {
+        const size = await this.sizeOf(artifactId);
+        await this.peers.files.sendArtifact(a.roomShare.shareId, artifactId, "", { bot, replyTo: a.roomShare.replyTo });
+        const x = this.store.get("roomAsks", a.roomShare.askId);
+        if (x) this.store.patch("roomAsks", x.id, { shared: [...new Set([...(x.shared || []), artifactId])], sharedBytes: (x.sharedBytes || 0) + size });
+      } catch (error) {
+        this.log("Un entregable no pudo compartirse en la sala: " + error.message);
+      }
+    }
   }
   /** You share a deliverable of yours with the room by hand (POST /api/rooms/:id/share). */
   async shareArtifact(roomId, artifactId, caption = "") {
@@ -732,6 +798,7 @@ export class RoomWork {
   changed({ kind, op, data }) {
     if (op === "remove" || !data) return;
     if (kind === "approvals" && data.roomRequest && data.status !== "pending" && !data.roomHandled) return this.decided(data);
+    if (kind === "approvals" && data.roomShare && data.status !== "pending" && !data.roomHandled) return void this.sharedDecided(data).catch((error) => this.log(error.message));
     if (kind === "thread" && op === "insert") return this.threadChanged(data);
     if (kind === "missions" && this.rooms.shared.has(data.id)) return this.missionChanged(data);
   }

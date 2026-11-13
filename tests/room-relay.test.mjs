@@ -4,6 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { answer, settle } from "./fixtures/runtime-fixture.mjs";
+import { ROOM_WORK } from "../server/room-work.mjs";
 import { addr, ask, botAnswer, card, friends, lines, pause, peerRows, rule, sharedRoom, until, world } from "./fixtures/people-world.mjs";
 
 const botSaid = (p, roomId) => peerRows(p, roomId).filter((m) => m.bot).map((m) => m.text);
@@ -101,4 +102,56 @@ test("an old status sent again after a restart is ignored: the newest one heard 
   marta.rooms.work.onStatus({ id: addr(sergio) }, { share: room.id, bot: "vera", state: "waiting", at: marta.peers.clock() });
   assert.deepEqual(activity(marta), ["waiting"]);
   rule(sergio, marta, "pregunta");
+});
+
+test("what a request shares by itself is capped per request and per person and day; beyond it the owner is asked", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  assert.deepEqual([ROOM_WORK.files, ROOM_WORK.fileBytes, ROOM_WORK.filesDay, ROOM_WORK.fileBytesDay], [3, 25 * 1024 * 1024, 10, 100 * 1024 * 1024]);
+  const files = (p) => p.store.list("peerFiles").filter((f) => f.status === "ready").map((f) => f.name).sort();
+  const make = (n) => ({ text: "", output: Array.from({ length: n }, (_, i) => ({ type: "function_call", name: "create_deliverable", arguments: JSON.stringify({ title: "Parte " + (i + 1), kind: "document", format: "md", content: "# Parte " + (i + 1) }), call_id: "d" + i })) });
+  // Five deliverables in one request: three go with the answer, two stay and Sergio is asked.
+  sergio.reply = ({ input }) => (input.some((x) => x.type === "function_call_output") ? answer("Aquí van.") : make(5));
+  await ask(marta, room, sergio, "@Vera hazme el informe por partes");
+  await botAnswer(marta, room, "Aquí van.");
+  await settle(sergio.runtime);
+  await until(() => files(marta).length === 3, "Marta recibe tres");
+  const a = await until(() => sergio.store.list("approvals").find((x) => x.roomShare && x.status === "pending"), "la tarjeta de Sergio");
+  assert.deepEqual([a.kind, a.tool, a.roomShare.artifactIds.length, a.options.map((o) => o.label)], ["question", "room_share", 2, ["Compartir", "No compartir"]]);
+  assert.match(a.summary, /¿Los comparto en la sala\?/);
+  assert.ok(sergio.notices.some((n) => n.kind === "needs" && /más archivos para Marta/.test(n.title)));
+  await pause(300);
+  assert.deepEqual(files(marta), ["Parte 1.md", "Parte 2.md", "Parte 3.md"]);
+  const request = sergio.store.list("roomAsks")[0];
+  assert.deepEqual([request.shared.length, request.kept.length, request.sharedBytes > 0], [3, 2, true]);
+  // He says yes: the rest goes. No message of his is left in the room for it.
+  sergio.runtime.answer(a.id, { optionId: "share" });
+  await until(() => files(marta).length === 5, "Marta recibe el resto");
+  assert.deepEqual(sergio.store.where("messages", "missionId", room.missionId).filter((m) => m.role === "user" && !m.author), []);
+  // «No compartir» keeps them here.
+  sergio.reply = ({ input }) => (input.some((x) => x.type === "function_call_output") ? answer("Otra tanda.") : make(4));
+  await ask(marta, room, sergio, "@Vera otra vez");
+  await botAnswer(marta, room, "Otra tanda.");
+  await settle(sergio.runtime);
+  const b = await until(() => sergio.store.list("approvals").find((x) => x.roomShare && x.status === "pending"), "otra tarjeta");
+  sergio.runtime.answer(b.id, { optionId: "no" });
+  await until(() => files(marta).length === 8, "tres más");
+  await pause(300);
+  assert.equal(files(marta).length, 8);
+  // Ten files a day for one person: with eight sent by themselves… the next request shares two and asks for the third.
+  assert.equal(sergio.store.list("roomAsks").reduce((n, x) => n + (x.shared || []).length, 0), 8);
+  sergio.reply = ({ input }) => (input.some((x) => x.type === "function_call_output") ? answer("Y otra.") : make(3));
+  await ask(marta, room, sergio, "@Vera una más");
+  await botAnswer(marta, room, "Y otra.");
+  await settle(sergio.runtime);
+  const c = await until(() => sergio.store.list("approvals").find((x) => x.roomShare && x.status === "pending"), "la del límite diario");
+  assert.equal(c.roomShare.artifactIds.length, 1);
+  await until(() => files(marta).length === 10, "dos más");
+  // Size counts too: per request and per day.
+  const work = sergio.rooms.work, fresh = { from: addr(sergio), shared: [], sharedBytes: 0 };
+  assert.deepEqual([work.shareOver(fresh, 1024), work.shareOver(fresh, ROOM_WORK.fileBytes + 1), work.shareOver({ ...fresh, sharedBytes: ROOM_WORK.fileBytes - 10 }, 11), work.shareOver({ ...fresh, shared: ["a", "b", "c"] }, 1)], [false, true, true, true]);
+  sergio.store.put("roomAsks", { id: "big", roomId: room.id, shareId: room.id, from: addr(sergio), botId: "vera", peerId: "p-big", text: "x", state: "done", at: new Date().toISOString(), t: sergio.peers.clock(), shared: ["x"], sharedBytes: ROOM_WORK.fileBytesDay - 100 });
+  assert.deepEqual([work.shareOver(fresh, 50), work.shareOver(fresh, 200)], [false, true]);
 });
