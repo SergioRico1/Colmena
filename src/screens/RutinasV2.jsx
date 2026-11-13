@@ -164,7 +164,7 @@ export default function RutinasV2() {
 
   return (
     <Shell active="trabajo">
-      <main style={trabajoMain("1140px")}>
+      <main style={trabajoMain()}>
         <TrabajoHeader tab="rutinas" action={{ label: "Nueva rutina", onClick: openNew }} />
         {open ? <RoutineBuilder team={team} skills={skills} missions={missions} initialWhat={query.texto || ""} initialWho={query.bot || null} onClose={() => setOpen(false)} onSaved={(id) => openChange(id, "when")} /> : null}
         {changingRule ? <RoutineBuilder key={changing + ":" + reloads} team={team} skills={skills} missions={missions} rule={changingRule} initialOpen={changingPart} onReload={() => setReloads((n) => n + 1)} onClose={() => setChanging(null)} /> : null}
@@ -277,10 +277,10 @@ function RoutineRow({ r, first, busy }) {
   const [menu, setMenu] = useState(false);
   const on = r.on;
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "16px 20px", borderTop: first ? 0 : "1px solid rgba(18,19,26,.06)", opacity: on ? 1 : 0.6, transition: "opacity .3s ease", animation: "fade .3s ease-out" }}>
-      <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "11px", background: "#F1F1EC" }}>{r.bot ? <BotDot bot={r.bot} size={18} work={r.work} /> : null}</span>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "16px 20px", borderTop: first ? 0 : "1px solid rgba(18,19,26,.06)", animation: "fade .3s ease-out" }}>
+      <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "11px", background: "#F1F1EC", opacity: on ? 1 : 0.6, transition: "opacity .3s ease" }}>{r.bot ? <BotDot bot={r.bot} size={18} work={r.work} /> : null}</span>
       <span style={{ flex: "1 1 360px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-        <span style={{ fontSize: "15px", lineHeight: 1.4 }}>{r.text}</span>
+        <span style={{ fontSize: "15px", lineHeight: 1.4, color: on ? undefined : MUTED, transition: "color .3s ease" }}>{r.text}</span>
         <span style={{ fontSize: "13px", color: FAINT }}>{r.meta}</span>
       </span>
       {r.status ? <span style={{ flex: "none", height: "26px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: r.status[1], color: r.status[2], fontSize: "12.5px", fontWeight: 600 }}>{r.status[0]}</span> : null}

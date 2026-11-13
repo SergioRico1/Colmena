@@ -16,7 +16,7 @@ import {
 // Colours follow the design system: ink for the value, green and red only for «better» and
 // «worse», never honey (honey means «te necesita»).
 
-const INK = "#12131A", MUTED = "#5C606C", SOFT = "#4A4D57", GOOD = "#0B6B4A", BAD = "#B4372A", STALE = "#8A8D96", LINK = "#1F4FD1";
+const INK = "#12131A", MUTED = "#5C606C", SOFT = "#4A4D57", GOOD = "#0B6B4A", BAD = "#B4372A", STALE = "#666A75", LINK = "#1F4FD1";
 const CARD = {
   chat: { padding: "18px 20px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 40px -30px rgba(18,19,26,.35)" },
   panel: { padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF" },

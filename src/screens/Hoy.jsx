@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LayoutGrid } from "lucide-react";
+import { Check, Circle, LayoutGrid } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { needsOf } from "../components/v2/needs.js";
@@ -201,7 +201,7 @@ export default function Hoy({ query = {} }) {
             </span>
           </div>
           <h1 style={{ margin: "0", maxWidth: "900px", font: "600 clamp(36px, 3.9vw, 54px)/1.02 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em", textWrap: "balance" }}>
-            {hello + " "}<span style={{ color: "#8A8D96" }}>{(COUNT[n] || `${n} cosas te necesitan`) + (paused ? "; el equipo está en pausa." : "; lo demás va solo.")}</span>
+            {hello + " "}<span style={{ color: "var(--c-display-soft)" }}>{(COUNT[n] || `${n} cosas te necesitan`) + (paused ? "; el equipo está en pausa." : "; lo demás va solo.")}</span>
           </h1>
         </header>
 
@@ -372,7 +372,7 @@ function Moment({ item, done = false }) {
   return (
     <li style={{ display: "flex", alignItems: "baseline", gap: "12px", padding: "9px 18px", fontSize: "14px", lineHeight: "1.45" }}>
       <span style={{ flex: "none", width: "66px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", color: "#5C606C" }}>{when(item.at)}</span>
-      <span aria-hidden="true" style={{ flex: "none", width: "14px", color: done ? "#0B6B4A" : "#8A8D96", fontWeight: "700" }}>{done ? "✓" : "○"}</span>
+      <span aria-hidden="true" style={{ flex: "none", alignSelf: "center", width: "14px", height: "14px", display: "grid", placeItems: "center", color: done ? "#0B6B4A" : "var(--c-placeholder)" }}>{done ? <Check size={14} strokeWidth={2.8} /> : <Circle size={11} strokeWidth={2.8} />}</span>
       {item.href ? <a href={item.href} style={{ color: "inherit", minWidth: 0 }}>{text}</a> : text}
     </li>
   );

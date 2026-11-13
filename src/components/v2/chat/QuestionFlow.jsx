@@ -112,7 +112,7 @@ export function AnswerList({ answers = [] }) {
       {answers.map((a, i) => (
         <li key={a.id || i} style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "14px", lineHeight: "1.45" }}>
           <span style={{ color: "#5C606C" }}>{a.question}</span>
-          <strong style={{ fontWeight: 600, color: a.skipped ? "#8A8D96" : "#12131A" }}>{a.skipped ? "Sin responder" : a.text || a.label}</strong>
+          <strong style={{ fontWeight: 600, color: a.skipped ? "#666A75" : "#12131A" }}>{a.skipped ? "Sin responder" : a.text || a.label}</strong>
         </li>
       ))}
     </ol>
