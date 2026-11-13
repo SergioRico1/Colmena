@@ -41,6 +41,7 @@ const DIRECTIONS = {
   synthesis: "Integra el trabajo del equipo en una entrega final util y guardala con create_deliverable si es un documento. Conserva limitaciones y fuentes. No declares realizadas acciones que el equipo no ejecuto.",
   proposal: "Crea una propuesta independiente y completa desde tu especialidad. Explica criterios y limitaciones.",
   critique: "Critica las propuestas de los otros bots (no la tuya). Escribe un parrafo breve por cada una que empiece exactamente por «Sobre <Nombre>:» con su principal ventaja y su principal debilidad. Termina con una linea «Recomiendo: ...». No ejecutes ninguna propuesta.",
+  request: "Responde a esa petición con lo que te dan en ella y lo que encuentres con las herramientas de este turno. No tienes delante nada más de esta sala ni de tu dueño, y no lo necesitas. Si produces un documento, una tabla o una hoja, guárdalo con su herramienta: se compartirá en la sala con tu respuesta.",
   debate_summary: "Resume el debate para la persona en dos o tres frases: en que coinciden las propuestas, en que difieren y que eleccion o combinacion recomiendas y por que. No elijas por ella ni uses herramientas.",
 };
 

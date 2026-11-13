@@ -238,6 +238,7 @@ export class Rooms {
   shareChanged(s) {
     if (s?.kind !== "group") return;
     this.ensureForShare(s);
+    this.work.sawMembers(s);
     if (!s.leftAt && !s.removedAt && this.greeted.get(s.id) !== s.version) this.greetRoommates(s);
   }
   shareGone(shareId) {
@@ -721,13 +722,19 @@ export class Rooms {
     const missing = botIds.filter((b) => b !== "atlas" && !m.botIds.includes(b)).slice(0, Math.max(0, ROOM_LIMITS.bots - m.botIds.length));
     return missing.length ? this.store.patch("missions", m.id, { botIds: [...m.botIds, ...missing] }) : m;
   }
-  /** What your bot is told about where it is, and what the people said before (outside content). */
-  sharedNote(room, share, message) {
+  /**
+   * What your bot is told about where it is, and what the people said before (outside content).
+   * It is read from the conversation the people share, never from the sala: what was said here
+   * before the room had people, and what only you see, is not in it. `reader`: the turn answers
+   * that person's request, so it gets only what they can have read (from when they came in).
+   */
+  sharedNote(room, share, message, { reader = null } = {}) {
     const p = this.needPeers();
     const others = share.members.map((m) => m.id).filter((id) => id !== p.address).map((id) => p.person(id).name);
     const owner = p.myName();
+    const since = reader ? this.work.since(share, reader) : "";
     const said = this.store.ordered("peerMessages", "shareId", share.id, { before: { at: message.at, id: message.id }, limit: ROOM_LIMITS.context, lacks: "thread" })
-      .filter((m) => !m.local && !m.deletedAt && m.text).reverse();
+      .filter((m) => !m.local && !m.deletedAt && m.text && (!reader || (m.status !== "failed" && String(m.at) >= since))).reverse();
     const who = (m) => (m.bot ? m.bot.name + " (bot de " + p.person(m.from).name + ")" : p.person(m.from).name);
     const lines = said.map((m) => `[${hhmm(m.at)}] ${who(m)}: ${m.text}`);
     return "\n\n[Colmena] Esto se ha escrito en la sala «" + share.title + "», que " + owner + " comparte con " + (others.length ? others.join(", ") : "otras personas") + ". Tu respuesta final la leerán todos, cada uno en su ordenador: " +

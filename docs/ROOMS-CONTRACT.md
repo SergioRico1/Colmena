@@ -249,6 +249,36 @@ Código, errands, memory or soul tools; hosted web search follows `web`). It is 
 `toolsForStep`, `runStep` and `tool`; nothing is stored on the mission. The capabilities are the
 errand ones (`settings.peerErrandTools`: web, carpetas, apps, ordenador).
 
+**A request turn (`server/request-turn.mjs`).** With `peerErrand` set (a request in a room, or an
+errand between bots) `toolsForStep` ends with an allow-list, closed by default:
+
+- always (`REQUEST_ALWAYS`): `ask_room`, `ask_user`, `create_deliverable`, `create_document`,
+  `create_spreadsheet`, `create_presentation`, `create_image`, `read_deliverable`, `read_file`;
+- by capability (`REQUEST_BY_CAPABILITY`): web → `web_fetch` (and hosted search); carpetas →
+  `list_folder`, `read_folder_file`; apps → `apps_accounts`, `apps_search`, `apps_describe`,
+  `apps_execute`, `apps_table` and the direct app tools (`isAppToolName`); ordenador →
+  `browser_open|read|screenshot|act|fill|submit|download`, `open_app`,
+  `desktop_windows|open|look|do`;
+- everything else is neither offered nor run, whatever adds it (`extraTools`, `stepTools`, a new
+  built-in). `use_tool` and `find_tools` read the same list.
+
+`read_file`, `read_deliverable`, the files a deliverable tool embeds (`image`, `rows_from`) and
+the version a deliverable follows are scoped to the artifacts of that request
+(`EffectMethods#requestArtifacts`: steps with the same `roomAsk`; an errand's own mission). A
+request's `create_deliverable` writes no working file in the sala's folder.
+
+What such a step reads (`ContextMethods#requestHistory`): one message with `step.request` — the
+requester's words wrapped as outside content, the room's title and `Rooms#sharedNote(…, {reader})`,
+i.e. up to 30 messages of the share (`peerMessages`: not local, not failed, not in a thread) sent
+since the requester was first seen in the room (`roomMembers {id: share:address, shareId, address,
+since}`, kept by `RoomWork#sawMembers`). A turn that goes on from the request (a teammate named,
+a late answer) gets the first turn's `request` before its own. Never: `priorMessages`, the brief,
+«Resultados previos», hints, reactions, sibling answers. While it runs nothing of the sala is
+injected (`injectHints`, `injectMessages`, `injectRelays`, `injectBrief`, `injectPermissionChange`
+are skipped; `injectLateAnswers` adds the owner's late answer to a question of that very step).
+`composeInstructions` leaves out memory, profile, standing orders, the skill index and the sala's
+slug. Attachments never reach a request turn (`Rooms#send` refuses them in a room with people).
+
 **Questions.** `ask_user` is unchanged (a local approval of the owner). `ask_room {question}`
 exists only in a step with `roomAsk` (`Runtime#stepTools`): it posts the question as a plain
 message of the bot addressed to the requester and the step ends without relaying its closing
@@ -294,8 +324,7 @@ bullet of «One count»): `roomId` is on the approval and in `roomRequest.roomId
 approval. Questions and red lines raised inside a request turn are ordinary approvals of the
 room's mission (`missionId`; the room is `rooms.ofMission(missionId)`).
 
-**Not done.** The memory digest is still in the bot's prompt in a request turn (as in an
-errand): the turn is told not to tell, but only the tools are enforced. Today's sala screen
+**Not done.** Today's sala screen
 (`/sala/:mission`) shows a request as a message of its author; statuses of a room without a
 share do not exist. Ajustes › Personas lists the rule for contacts; a teammate who is not a
 contact gets theirs from the card («Siempre/Nunca para…») or `PATCH /api/peers/contacts/:id`.

@@ -108,6 +108,7 @@ export class RoomWork {
     this.passed = new Map(); // shareId:a:b → when that hand-off was last said
     this.shown = new Map(); // room id → signature of the activity last announced
     this.sharing = new Set(); // deliverables on their way to a room
+    this.members = new Map(); // shareId → the roster version whose people were noted (sawMembers)
     this.timer = null;
   }
   get runtime() { return this.rooms.runtime; }
@@ -137,6 +138,26 @@ export class RoomWork {
     if (c) this.store.patch("peerContacts", address, { asks: { ...(c.asks || {}), encargos: rule } });
   }
   nameOf(address) { return this.peers?.person(address).name || "Alguien"; }
+  /**
+   * When each person was first in a room, as this Colmena saw it (`roomMembers`): what they can
+   * have read of it starts there, and a turn for their request is told nothing older. Someone
+   * who went out and came back starts again.
+   */
+  sawMembers(share) {
+    if (share?.kind !== "group" || this.members.get(share.id) === share.version) return;
+    this.members.set(share.id, share.version);
+    const known = this.store.where("roomMembers", "shareId", share.id);
+    const inIt = new Set(share.members.map((m) => m.id));
+    for (const r of known) if (!inIt.has(r.address)) this.store.remove("roomMembers", r.id);
+    const have = new Set(known.map((r) => r.address));
+    // The first time the room is seen, whoever is in it was there from the start.
+    const start = known.length ? null : share.createdAt || now();
+    for (const m of share.members) if (!have.has(m.id)) this.store.put("roomMembers", { id: share.id + ":" + m.id, shareId: share.id, address: m.id, since: m.addedAt || start || now() });
+  }
+  since(share, address) {
+    this.sawMembers(share);
+    return this.store.get("roomMembers", share.id + ":" + address)?.since || now();
+  }
 
   // ---------------------------------------------------------------- 1 · a request arrives
   /**
@@ -258,7 +279,9 @@ export class RoomWork {
         : "";
       const row = this.runtime.addMessage(mission.id, reply ? message.text : ask.text, [], {
         to: [bot.id], author: { address: ask.from, name }, peerId: message.id, capabilities: this.capabilities(), roomAsk: ask.id, attended,
-        context: about + this.rooms.sharedNote(room, share, message),
+        // All the turn reads besides the request: the room's name and what its people already
+        // said there that whoever asks can have read. Nothing of the sala (Runtime#requestHistory).
+        context: about + this.rooms.sharedNote(room, share, message, { reader: ask.from }),
       });
       if (message.thread || ask.peerThread) this.store.patch("messages", row.id, { peerThread: message.thread || ask.peerThread });
       this.store.patch("roomAsks", ask.id, { state: "working", missionId: mission.id, ...(reply ? {} : { messageId: row.id, startedAt: now(), attended: !!attended }), question: null });

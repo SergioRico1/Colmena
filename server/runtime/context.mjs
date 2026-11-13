@@ -22,6 +22,7 @@ import { lateAnswerText } from "../questions.mjs";
 import { relatedMemories } from "../memory.mjs";
 import { wikiPromoted } from "../wiki-tools.mjs";
 import { blocksPromoted } from "../blocks.mjs";
+import { requestTools } from "../request-turn.mjs";
 import {
   MEMORY_FLUSH, COMPACT_INSTRUCTIONS, WEB_SEARCH_NOTE, THREAD_WINDOW, threadCut, DIRECTIONS, INCOGNITO_DENY, watchSourcesNote, BRIEF_KINDS,
 } from "./helpers.mjs";
@@ -143,7 +144,48 @@ export class ContextMethods {
       return "";
     }
   }
+  /**
+   * Whether `step` is a turn for another person's request in a room (Runtime#turnMission): it
+   * reads nothing of the sala it runs in, only what that person can already see.
+   */
+  forOther(step) {
+    return !!step?.capabilities && typeof step.capabilities === "object";
+  }
+  /**
+   * The first message of a turn for another person's request in a room: the request itself (as
+   * outside content, with the room's name and what was said in the conversation they share:
+   * server/room-work.mjs builds it from the share's messages) and nothing of the sala. No brief,
+   * no results of other turns, no notes of the owner, no reactions, no earlier messages.
+   * A turn that goes on from the request (a teammate that was named, the turn after a late
+   * answer) reads the request first, then what it was handed.
+   */
+  requestHistory(mission, step) {
+    const asked = step.ackOn ? this.store.get("messages", step.ackOn) : null;
+    const own = !!asked?.author && (asked.roomAsk || null) === (step.roomAsk || null);
+    const first = !own && step.roomAsk
+      ? this.steps(mission.id).find((s) => s.roomAsk === step.roomAsk && s.id !== step.id && !s.passedBy && this.store.get("messages", s.ackOn || "")?.roomAsk === step.roomAsk)
+      : null;
+    const lines = [];
+    if (first?.request) lines.push("La petición de la que viene este turno (dato de fuera):", first.request, "");
+    lines.push(step.request || "", "", DIRECTIONS.request, nowNote());
+    return [{ role: "user", content: lines.join("\n") }];
+  }
+  /**
+   * In a turn for another person's request only one thing joins on the way: the owner's late
+   * answer to a question this very step asked (ask_user). Nothing else of the sala does.
+   */
+  injectLateAnswers(mission, step) {
+    const seen = new Set(step.seenMessages || []);
+    const fresh = this.store.where("messages", "missionId", mission.id)
+      .filter((x) => x.role === "user" && x.lateAnswer && x.text && !seen.has(x.id) && this.store.get("approvals", x.approvalId)?.stepId === step.id);
+    if (!fresh.length) return step;
+    return this.patchStep(step, {
+      history: [...step.history, ...fresh.map((x) => ({ role: "user", content: lateAnswerText(x.answersQuestion, x.text) }))],
+      seenMessages: [...seen, ...fresh.map((x) => x.id)],
+    });
+  }
   initialHistory(mission, step, hints = this.startHints(mission, step)) {
+    if (this.forOther(step)) return this.requestHistory(mission, step);
     // The person's reactions since this bot's last turn: context, never a turn of their own.
     const reacted = [reactionNotices(this.store, mission.id, step.botId, (b) => this.bot(b)?.name || b), this.takenNote(step), this.restoredNote(mission.id, step.botId)].filter(Boolean).join("\n\n");
     // Several bots answering the same message: who else answers, and what they already said.
@@ -262,7 +304,8 @@ export class ContextMethods {
   steeredSince(missionId, step) {
     const since = step.roundAt || step.pendingAt;
     const mission = this.store.get("missions", missionId);
-    if (!since) return false;
+    // A turn for another person's request is not steered by what the owner writes in the sala (it never reads it).
+    if (!since || this.forOther(step)) return false;
     // Each message steers with its own mode (Ctrl+Enter) or the room's; a message for
     // teammates is context for this bot, not a reason to drop what it was about to do.
     const steers = (x) => (x.mode || mission?.queueMode || "steer") === "steer";
@@ -434,9 +477,11 @@ export class ContextMethods {
       code: !!this.code && canDelegateCode(bot) && !mission?.peerErrand,
       coordinator: bot?.id === "atlas" && !mission?.conversation && (mission?.botIds || []).some((b) => b !== "atlas"),
     });
+    // A turn that answers another person (a request in a room, an errand): an allow-list, closed
+    // by default (server/request-turn.mjs). Whatever is not on it is neither offered nor run.
+    if (mission?.peerErrand) return requestTools(tools, capabilities);
     // Incognito (OpenClaw): nothing of this conversation goes into memory, skills or the soul.
-    // The same for a turn that answers another person: what they ask teaches the bot nothing.
-    return mission?.incognito || mission?.roomAsk ? tools.filter((t) => !INCOGNITO_DENY.has(t.name)) : tools;
+    return mission?.incognito ? tools.filter((t) => !INCOGNITO_DENY.has(t.name)) : tools;
   }
   /** Runtime#stepTools (set by server/room.mjs): tools of this very step, each with its own `run`. */
   stepToolList(mission, step, bot) {
