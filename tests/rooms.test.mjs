@@ -891,3 +891,27 @@ test("the API: rooms over HTTP, in /api/state, and the routes of today's screens
   assert.equal((await call("GET", "/peers/shares/" + room.id + "/messages")).status, 200);
   assert.equal((await call("GET", "/missions/" + room.missionId + "/history?antes=" + encodeURIComponent(older.items[0].id))).status, 200);
 });
+
+test("«Solo para mí» works in a room you were invited to and is never relayed", async (t) => {
+  const [sergio, marta] = await world(t, ["Sergio Rico", "Marta Ruiz"], { app: ["Sergio Rico", "Marta Ruiz"] });
+  await friends(sergio, marta);
+  const view = await sharedRoom(sergio, marta);
+  const room = await until(() => marta.rooms.resolveRoom(view.id), "Marta tiene la sala");
+  assert.equal(room.missionId ?? null, null, "Marta's bots never worked here: no sala of hers yet");
+  marta.reply = () => answer("Vera ha dicho que el informe va bien.");
+  const made = await marta.call("POST", `/rooms/${encodeURIComponent(room.id)}/aside`, {});
+  assert.equal(made.status, 200);
+  const missionId = made.json.missionId;
+  assert.equal(marta.rooms.resolveRoom(room.id).missionId, missionId, "the room's sala, on her computer");
+  assert.equal((await marta.call("POST", `/rooms/${encodeURIComponent(room.id)}/aside`, {})).json.missionId, missionId, "made once");
+  // An answered aside (the model call itself is tests/interaction-aside.test.mjs) and «Pasarla
+  // a la sala», which keeps it in her sala: still nothing leaves her computer.
+  marta.store.put("asides", { id: "aside-1", missionId, botId: "atlas", question: "¿Qué tal va el informe? Esto es solo para mí", answer: "Vera ha dicho que el informe va bien.", at: new Date().toISOString(), shared: false });
+  assert.equal((await marta.call("GET", `/missions/${missionId}/aside`)).json.length, 1);
+  assert.equal((await marta.call("POST", `/missions/${missionId}/aside/aside-1/share`, {})).status, 200);
+  await pause(600);
+  const leaked = (p) => peerRows(p, view.shareId || view.id).some((m) => /solo para mí|el informe va bien/i.test(m.text || ""));
+  assert.equal(leaked(sergio), false, "Sergio never receives it");
+  assert.equal(leaked(marta), false, "not even as a message of hers to the room");
+  assert.equal(marta.store.list("peerOutbox").filter((o) => JSON.stringify(o).includes("solo para mí")).length, 0);
+});

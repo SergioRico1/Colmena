@@ -15,7 +15,7 @@ const I = { size: 14, strokeWidth: 2.3, "aria-hidden": "true" };
 const MAX = 4000;
 
 /** `scope`: ref of the element whose messages (marked data-message-id) can be quoted. */
-export default function SelectionPopup({ scope, onQuote, onAsk }) {
+export default function SelectionPopup({ scope, onQuote, onAsk, askLabel = "Preguntar aparte" }) {
   const [state, setState] = useState(null); // {text, x, y, below}
   const [copied, setCopied] = useState(false);
   const box = useRef(null);
@@ -69,7 +69,7 @@ export default function SelectionPopup({ scope, onQuote, onAsk }) {
     <div ref={box} role="toolbar" aria-label="Con el texto seleccionado" className="c-pop" onPointerDown={(e) => e.preventDefault()}
       style={{ position: "fixed", zIndex: 60, left: left + "px", top: state.y + "px", transform: state.below ? "translate(-50%, 0)" : "translate(-50%, -100%)", display: "flex", gap: "2px", padding: "4px", background: "#12131A", borderRadius: "var(--r-md)", boxShadow: "0 10px 24px -10px rgba(18,19,26,.55)" }}>
       {onQuote ? <button type="button" className="rm-focus c-sel-btn" onClick={() => run(onQuote)} title="Lo pone en tu mensaje como cita" style={btn}><Quote {...I} />Citar en el mensaje</button> : null}
-      {onAsk ? <button type="button" className="rm-focus c-sel-btn" onClick={() => run(onAsk)} title="Pregunta sobre esto sin interrumpir" style={btn}><MessageCircleQuestion {...I} />Preguntar aparte</button> : null}
+      {onAsk ? <button type="button" className="rm-focus c-sel-btn" onClick={() => run(onAsk)} title="Pregunta sobre esto sin interrumpir" style={btn}><MessageCircleQuestion {...I} />{askLabel}</button> : null}
       <button type="button" className="rm-focus c-sel-btn" onClick={async () => { await copyText(state.text); setCopied(true); setTimeout(() => setState(null), 700); }} style={btn}>{copied ? <Check {...I} /> : <Copy {...I} />}{copied ? "Copiado" : "Copiar"}</button>
     </div>
   ), document.body);

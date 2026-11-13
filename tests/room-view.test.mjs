@@ -312,3 +312,15 @@ test("a room with nothing said yet says what it is for and the one thing to do",
   assert.match(noBotsText({ private: true }), /Añade uno/);
   assert.match(noBotsText({ private: false }), /nómbralos con @/);
 });
+
+test("«Solo para mí»: one control, one label, in every room kind and for everyone", async () => {
+  const { ONLY_ME, onlyMe } = await import("../src/lib/roomView.js");
+  const kinds = [onlyMe({ mission: { id: "m" }, shared: false }), onlyMe({ mission: { id: "m" }, shared: true }), onlyMe({ mission: null, shared: true })];
+  assert.deepEqual(kinds.map((k) => k.label), [ONLY_ME, ONLY_ME, ONLY_ME]);
+  assert.equal(ONLY_ME, "Solo para mí");
+  assert.ok(kinds.every((k) => k.available), "private, yours with people, and one you were invited to");
+  assert.ok(kinds.every((k) => /no se envía a nadie/i.test(k.hint) && /tus bots/.test(k.hint)));
+  assert.deepEqual(kinds.map((k) => k.needsSala), [false, false, true], "where your bots never worked, its sala is made first");
+  assert.equal(onlyMe({ mission: { id: "m" }, shared: true, gone: true }).available, false, "not in a room you left");
+  assert.equal(onlyMe({}).available, false, "no room yet");
+});

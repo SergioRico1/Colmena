@@ -313,6 +313,21 @@ export function stackLabel(panel) {
   return parts.join(". ");
 }
 
+/* ───────────── «Solo para mí» ───────────── */
+
+/**
+ * The one composer control of every room (critique 2026-11-13, P2): «Solo para mí» means not sent
+ * to anyone, answered by your own bots only, kept on this computer (the aside, which is never
+ * relayed). The same label and meaning in a private room, a shared one you made and one you
+ * were invited to; where your bots have not worked yet (`mission` null) turning it on first makes
+ * the room's sala on this computer (`POST /api/rooms/:id/aside`). {label, hint, available, needsSala}.
+ */
+export const ONLY_ME = "Solo para mí";
+export const ONLY_ME_HINT = "No se envía a nadie: te contestan solo tus bots y se queda en tu ordenador.";
+export function onlyMe({ mission = null, shared = false, gone = false } = {}) {
+  return { label: ONLY_ME, hint: ONLY_ME_HINT, available: !gone && (!!mission || shared), needsSala: !mission && shared };
+}
+
 /* ───────────── inviting ───────────── */
 
 /**

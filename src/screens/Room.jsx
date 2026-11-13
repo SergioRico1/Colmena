@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, FolderOpen, Globe, ListChecks, Lock, MessageCircleQuestion, MessageSquareReply, MessagesSquare, SquareTerminal, Users } from "lucide-react";
+import { FileText, FolderOpen, Globe, ListChecks, Lock, MessageSquareReply, MessagesSquare, SquareTerminal, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
 import { BotMark } from "../components/v2/chat/Mark.jsx";
@@ -39,7 +39,7 @@ import { isHidden, later, reversible, useToasts } from "../lib/undoToast.js";
 import { isTask, roomLinks } from "../lib/rooms.js";
 import { waitingBy, waitingOf } from "../components/v2/needs.js";
 import { botNameLabels, firstName, initialsOf, listNames } from "../lib/identity.js";
-import { askWaiting, authorOf, authorView, headerBots, itemType, liveLines, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
+import { ONLY_ME, ONLY_ME_HINT, askWaiting, authorOf, authorView, headerBots, itemType, liveLines, onlyMe, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
 import { useAnnouncer } from "../lib/useAnnouncer.js";
 import { messageListProps } from "../lib/messageKeys.js";
 import Announcer from "../components/Announcer.jsx";
@@ -144,6 +144,7 @@ function Room({ id, query }) {
   const [viewing, setViewing] = useState(null); // a shared file open in the viewer
   const [sending, setSending] = useState(EMPTY); // names of files being sealed and sent
   const [error, setError] = useState(null);
+  const [wantAside, setWantAside] = useState(false); // «Solo para mí» asked before the room had its sala here
   const closeViewer = useCallback(() => setViewing(null), []);
   useEffect(() => { setError(null); setSearching(false); setLeaving(false); setRenaming(null); setSheet(null); }, [roomId]);
 
@@ -184,6 +185,7 @@ function Room({ id, query }) {
   useRevealMessage(query?.hilo ? null : query?.m || null, { ready: loaded && (shared || !!mission), olderCount: shared ? (tl.more ? 1 : 0) : room.olderCount, showOlder: shared ? tl.older : room.showOlder });
   const since = useSince(roomId, missionRows);
   const dock = useDock(roomId, { transient: (t) => t.kind === "navegador" });
+  useEffect(() => { if (wantAside && mission) { setWantAside(false); dock.open(TABS.aparte); } }, [wantAside, mission]); // eslint-disable-line react-hooks/exhaustive-deps
   const progress = mission?.progress || { done: steps.filter((s) => ["completed", "done"].includes(s.status)).length, total: steps.filter((s) => s.kind !== "plan").length };
   const typing = mission ? typingInfo({ mission, activity, live, bots, steps }) : null;
   useEffect(() => { if (query?.panel && TABS[query.panel]) dock.open(TABS[query.panel]); }, [query?.panel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -327,7 +329,7 @@ function Room({ id, query }) {
   // ---- panels on the right
   const resolve = (t) => {
     if (t.kind === "reglas") return { label: "Bots y reglas", icon: <Users {...I} />, title: "Bots y reglas · " + comboLabel(SHORTCUTS.reglas), render: () => <RulesPanel mission={mission} bots={bots} memberIds={memberIds} /> };
-    if (t.kind === "aparte") return { label: "Preguntar aparte", icon: <MessageCircleQuestion {...I} />, title: "Preguntar aparte · " + comboLabel(SHORTCUTS.aparte), render: () => <>{shared ? <p role="note" style={{ margin: "14px 20px 0", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#3D404A" }}>{"Aparte, solo para ti: lo que preguntes aquí no se envía a nadie de la sala. Se queda en tu ordenador."}</p> : null}<AsidePanel mission={mission} /></> };
+    if (t.kind === "aparte") return { label: ONLY_ME, icon: <Lock {...I} />, title: ONLY_ME + " · " + comboLabel(SHORTCUTS.aparte), render: () => <><p role="note" style={{ margin: "14px 20px 0", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#3D404A" }}>{ONLY_ME + ": " + ONLY_ME_HINT.charAt(0).toLowerCase() + ONLY_ME_HINT.slice(1) + " No entra en la conversación de la sala."}</p><AsidePanel mission={mission} /></> };
     if (t.kind === "hilo") return { label: "Entre bots", icon: <MessagesSquare {...I} />, badge: thread.length || null, render: () => <ThreadPanel bare mission={mission} thread={thread} bots={bots} /> };
     if (t.kind === "progreso") return { label: "Progreso", icon: <ListChecks {...I} />, badge: `${progress.done || 0}/${progress.total || 0}`, render: () => <ProgressPanel bare mission={mission} steps={steps} pending={pending} activity={activity} bots={bots} /> };
     if (t.kind === "archivos") return { label: "Archivos de la sala", icon: <FolderOpen {...I} />, render: () => <FilesPanel missionId={missionId} onOpen={openFile} version={workVersion} /> };
@@ -339,7 +341,7 @@ function Room({ id, query }) {
     return null;
   };
   const tabs = mission ? dock.tabs.map((t) => { const r = resolve(t); return r ? { ...t, ...r } : null; }).filter(Boolean) : [];
-  const addableTabs = [["reglas", "Bots y reglas", <Users {...I} />], ["aparte", "Preguntar aparte", <MessageCircleQuestion {...I} />], ["archivos", "Archivos", <FolderOpen {...I} />], ["progreso", "Progreso", <ListChecks {...I} />], ["hilo", "Entre bots", <MessagesSquare {...I} />], ["navegador", "Navegador", <Globe {...I} />], ["terminal", "Terminal", <SquareTerminal {...I} />]]
+  const addableTabs = [["reglas", "Bots y reglas", <Users {...I} />], ["aparte", ONLY_ME, <Lock {...I} />], ["archivos", "Archivos", <FolderOpen {...I} />], ["progreso", "Progreso", <ListChecks {...I} />], ["hilo", "Entre bots", <MessagesSquare {...I} />], ["navegador", "Navegador", <Globe {...I} />], ["terminal", "Terminal", <SquareTerminal {...I} />]]
     .map(([key, label, icon]) => ({ key, label, icon, combo: SHORTCUTS[key], tab: TABS[key] })).filter((a) => !dock.tabs.some((t) => t.id === a.tab.id));
 
   if (ready && viewRes.error && !view && !listed && !missionId && !viewRes.loading) return <NotFound active="chats" title="Esta sala ya no está" text="Puede que alguien la cerrara o que se archivara. No se ha perdido nada de lo tuyo." />;
@@ -378,7 +380,7 @@ function Room({ id, query }) {
     ...(mission ? [
       ["Reglas de la sala", () => dock.toggle(TABS.reglas)],
       ["Archivos de la sala", () => dock.toggle(TABS.archivos)],
-      [shared ? "Preguntar aparte (solo para ti)" : "Preguntar aparte", () => dock.toggle(TABS.aparte)],
+      [ONLY_ME, () => dock.toggle(TABS.aparte)],
       ["Progreso", () => dock.toggle(TABS.progreso)],
       ["Entre bots", () => dock.toggle(TABS.hilo)],
       ["Navegador", () => dock.toggle(TABS.navegador)],
@@ -390,20 +392,23 @@ function Room({ id, query }) {
     ...(shared && !view?.general && !gone ? [[view?.mine ? "Cerrar la sala para todos" : "Salir de la sala", () => setLeaving(true), "danger"]] : []),
   ];
 
-  const audience = mission && !shared ? (
-    <div role="radiogroup" aria-label="Quién lo ve" style={{ display: "inline-flex", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "#F1F1EC" }}>
-      {[["sala", "Toda la sala", !aside], ["yo", "Solo yo y un bot", aside]].map(([key, label, on]) => (
-        <button key={key} type="button" role="radio" aria-checked={on ? "true" : "false"} title={key === "yo" ? "Pregunta a un bot sin que la sala lo vea (Preguntar aparte)" : "Lo leen todos los de la sala"}
-          onClick={() => { if (key === "yo" ? !aside : aside) dock.toggle(TABS.aparte); }}
-          style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-meta)", fontWeight: 500, color: "#12131A", cursor: "pointer" }}>{label}</button>
-      ))}
-    </div>
-  ) : mission && shared ? (
-    // With colleagues in the room «Solo yo y un bot» is a private aside: never relayed.
-    <button type="button" aria-pressed={aside ? "true" : "false"} onClick={() => dock.toggle(TABS.aparte)} title="Pregunta a uno de tus bots sin que la sala lo vea. No se envía a nadie."
-      style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: aside ? "#12131A" : "#F1F1EC", color: aside ? "#FFFFFF" : "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
-      <MessageCircleQuestion {...I} />{"Aparte, solo para ti"}
-    </button>
+  // One control in every room: «Solo para mí» (lib/roomView.js › onlyMe). It opens the aside
+  // (asked of your own bots, never sent to anyone); where your bots never worked, the room's
+  // sala is made on this computer first.
+  const only = onlyMe({ mission, shared, gone });
+  const toggleAside = async () => {
+    if (mission) return dock.toggle(TABS.aparte);
+    try { await post(`/rooms/${encodeURIComponent(roomId)}/aside`); setWantAside(true); refreshView(); } catch (err) { setError(err.message); }
+    return undefined;
+  };
+  const audience = only.available ? (
+    <span className="c-tip-wrap">
+      <button type="button" aria-pressed={aside ? "true" : "false"} aria-describedby="solo-para-mi" onClick={toggleAside}
+        style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: aside ? "#12131A" : "#F1F1EC", color: aside ? "#FFFFFF" : "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
+        <Lock {...I} />{only.label}
+      </button>
+      <span role="tooltip" id="solo-para-mi" className="c-tip">{only.hint}</span>
+    </span>
   ) : null;
 
   // People typing and other people's bots thinking; files on their way; what went wrong.
@@ -485,7 +490,7 @@ function Room({ id, query }) {
                 <div style={{ flex: "1", minHeight: 0, display: "flex", flexDirection: "column" }}>
                   <div ref={(el) => { follow.ref(el); scroller.current = el; }} {...messageListProps("Mensajes de la sala")} style={{ flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", display: "flex", flexDirection: "column" }}>
                     <div ref={scope} style={{ width: "100%", maxWidth: "860px", margin: "auto auto 0", padding: "20px 26px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      {mission ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
+                      {mission ? <SelectionPopup scope={scope} askLabel={ONLY_ME} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
                       {mission ? <CatchUp count={since} mission={mission} pending={pending} id={missionId} /> : null}
                       {shared ? (tl.more ? <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}><button type="button" onClick={olderPage} style={{ ...outline, height: "34px", fontSize: "var(--t-meta)", fontWeight: 600 }}>{"Ver mensajes anteriores"}</button></div> : null) : <OlderMessages count={room.olderCount} onShow={room.showOlder} />}
                       {loaded && !rows.length ? (() => {

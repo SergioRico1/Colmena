@@ -918,7 +918,7 @@ export function typingInfo({ mission, activity, live, bots, steps = [] }) {
 /** What a message sent now does while they work (the send button says it). */
 const SEND_LABEL = { steer: "Reconducir", followup: "En cola", collect: "En cola", interrupt: "Interrumpir" };
 
-// `tools` (Colmena 3 Sala: «Toda la sala | Solo yo y un bot») goes first in the toolbar; `placeholder` replaces «Mensaje a #sala».
+// `tools` (the room's one «Solo para mí» toggle) goes first in the toolbar; `placeholder` replaces «Mensaje a #sala».
 // `shared` ({roomId, view, onTyping, onSent(result), onFiles(FileList), disabled, typingLine}): the room has
 // people. The message goes to `POST /api/rooms/:id/messages` with who «@» named (`to`, `mentions`,
 // `people`); files travel sealed, each on its own (`onFiles`); `mission` may still be null.
