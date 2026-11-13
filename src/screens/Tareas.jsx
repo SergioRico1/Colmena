@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import TrabajoHeader, { BotDot, trabajoMain } from "../components/v3/TrabajoHeader.jsx";
+import { botsAlt } from "../lib/alt.js";
 import { useAction, useStore } from "../lib/store.jsx";
 import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
@@ -167,7 +168,7 @@ export default function Tareas({ query = {} }) {
         </span>
       ) : null}
       <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: "#5C606C" }}>
-        {t.bots.map(({ b, work }) => <BotDot key={b.id} bot={b} work={work} />)}
+        {t.bots.length ? <span role="img" aria-label={botsAlt(t.bots)} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>{t.bots.map(({ b, work }) => <BotDot key={b.id} bot={b} work={work} />)}</span> : null}
         <span style={{ marginLeft: "4px", minWidth: 0 }}>{t.meta}</span>
       </span>
       {expert ? <span style={{ font: "400 11.5px/1.3 'Geist Mono', monospace", color: "#5C606C" }}>{`${t.m.mode} · ${t.m.status}${t.m.progress?.total ? ` · ${t.m.progress.done || 0}/${t.m.progress.total} pasos` : ""}`}</span> : null}
@@ -256,7 +257,7 @@ export default function Tareas({ query = {} }) {
                   <span style={{ fontSize: "13px", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.now}</span>
                 </span>
                 <span><span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: t.sBg, color: t.sInk, fontSize: "12px", fontWeight: 600 }}>{t.status}</span></span>
-                <span style={{ display: "flex", gap: "4px" }}>{t.bots.map(({ b, work }) => <BotDot key={b.id} bot={b} size={16} work={work} />)}</span>
+                <span role={t.bots.length ? "img" : undefined} aria-label={t.bots.length ? botsAlt(t.bots) : undefined} style={{ display: "flex", gap: "4px" }}>{t.bots.map(({ b, work }) => <BotDot key={b.id} bot={b} size={16} work={work} />)}</span>
                 <span style={{ color: "#4A4D57" }}>{t.due}{expert ? <span style={{ display: "block", font: "400 11.5px/1.3 'Geist Mono', monospace", color: "#5C606C" }}>{t.m.status}</span> : null}</span>
               </a>
             )) : <p style={{ margin: 0, padding: "20px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "14.5px", color: "#5C606C" }}>{q || botId ? "Ninguna tarea coincide." : "Aún no hay tareas. Pide algo con «Nueva tarea»."}</p>}

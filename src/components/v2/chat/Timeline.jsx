@@ -1,3 +1,4 @@
+import { messageListProps } from "../../../lib/messageKeys.js";
 import { memo, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown } from "lucide-react";
@@ -248,7 +249,7 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
 
   return (
     <div style={{ flex: "1", minWidth: 0, minHeight: "0", position: "relative", display: "flex" }}>
-    <div ref={(el) => { scroller.current = el; if (typeof scrollerRef === "function") scrollerRef(el); else if (scrollerRef) scrollerRef.current = el; }} onScroll={onScroll} tabIndex={-1}
+    <div ref={(el) => { scroller.current = el; if (typeof scrollerRef === "function") scrollerRef(el); else if (scrollerRef) scrollerRef.current = el; }} onScroll={onScroll} {...messageListProps()}
       style={{ flex: "1", minWidth: 0, minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", overflowAnchor: "none", ...style }}>
       <div ref={(el) => { content.current = el; if (typeof contentRef === "function") contentRef(el); else if (contentRef) contentRef.current = el; }} role="log" aria-live="off" style={{ position: "relative", width: "100%", height: total + lift + "px", visibility: placed ? "visible" : "hidden" }}>
         {loadingOlder || olderError ? (

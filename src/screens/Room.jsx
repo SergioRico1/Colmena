@@ -38,7 +38,10 @@ import { RELAY_LABEL, editMessage, fileBase64, unsendMessage } from "../lib/peer
 import { isHidden, later, reversible, useToasts } from "../lib/undoToast.js";
 import { roomLinks } from "../lib/rooms.js";
 import { firstName, initialsOf, listNames } from "../lib/identity.js";
-import { askWaiting, itemType, liveLines, roomEmpty, memberPanel, newsLine, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
+import { askWaiting, authorOf, authorView, itemType, liveLines, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
+import { useAnnouncer } from "../lib/useAnnouncer.js";
+import { messageListProps } from "../lib/messageKeys.js";
+import Announcer from "../components/Announcer.jsx";
 import { useRoomTimeline } from "../lib/useRoomTimeline.js";
 import { CompletionNote } from "../components/v3/dia/Completion.jsx";
 import NotFound from "./NotFound.jsx";
@@ -57,8 +60,8 @@ const TABS = Object.fromEntries(["hilo", "progreso", "archivos", "navegador", "t
 const popover = { position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "260px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "14px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" };
 const menuItem = { minHeight: "38px", display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", border: 0, borderRadius: "9px", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "14px", color: "#12131A", width: "100%" };
 const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13.5px", fontWeight: 500, cursor: "pointer" };
-const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 const MEMBERS_KEY = "colmena:room-members";
+const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 const EMPTY = [];
 
 export default function RoomScreen({ params = {}, query = {} }) {
@@ -71,31 +74,6 @@ function useMembersOpen() {
   const [open, setOpen] = useState(() => { try { return localStorage.getItem(MEMBERS_KEY) !== "0"; } catch { return true; } });
   const set = useCallback((v) => { setOpen(v); try { localStorage.setItem(MEMBERS_KEY, v ? "1" : "0"); } catch {} }, []);
   return [open, set];
-}
-
-/**
- * New rows and «te espera», said once to a screen reader: batched (never per token: only
- * records reach here), and never about what you wrote yourself.
- */
-function useNews(rows, waiting, bots, ready) {
-  const [text, setText] = useState("");
-  const seen = useRef(null);
-  const queue = useRef([]);
-  const lastWaiting = useRef(waiting);
-  const timer = useRef(null);
-  useEffect(() => {
-    if (!ready) return undefined;
-    if (!seen.current) { seen.current = new Set(rows.map((m) => m.id)); lastWaiting.current = waiting; return undefined; }
-    for (const m of rows) if (m.id && !seen.current.has(m.id)) { seen.current.add(m.id); if (!m.optimistic && m.kind !== "progress") queue.current.push(m); }
-    const more = Math.max(0, waiting - lastWaiting.current);
-    lastWaiting.current = waiting;
-    if (!queue.current.length && !more) return undefined;
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => { const line = newsLine(queue.current, { bots, waiting: more }); queue.current = []; if (line) setText(line); }, 1200);
-    return undefined;
-  }, [rows, waiting, bots, ready]);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  return text;
 }
 
 /** A small menu under a header button: Escape or a click outside closes it; arrows move. */
@@ -171,7 +149,6 @@ function Room({ id, query }) {
   const pending = useMemo(() => (room.pending.some((a) => a.roomRequest) ? room.pending.filter((a) => !a.roomRequest) : room.pending), [room.pending]);
   const requestKey = (store.approvals || EMPTY).filter((a) => a.roomRequest && (a.roomId === roomId || a.roomRequest.roomId === roomId)).map((a) => a.id + ":" + a.status).join(",");
   useEffect(() => { if (shared && requestKey) refreshView(); }, [shared, requestKey, refreshView]);
-  const waitingCount = pending.length + asks.filter((a) => a.state === "asked").length;
   const [sharedOut, setSharedOut] = useState({}); // artifact id → "busy" | "done"
   const shareArtifact = async (artifact) => {
     setSharedOut((x) => ({ ...x, [artifact.id]: "busy" }));
@@ -318,7 +295,17 @@ function Room({ id, query }) {
   }, [shared, refreshView]);
   useEffect(() => { if (shared) refreshView(); }, [shared, tl.top.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const news = useNews(rows, waitingCount, bots, loaded);
+  // New rows and «te espera», said once to a screen reader (lib/useAnnouncer.js): only records
+  // reach here, never text as it is written, and never what you wrote yourself.
+  const spokenRows = useMemo(() => rows.map((m) => {
+    const a = authorOf(m, bots);
+    return { id: m.id, name: authorView(a).name, text: m.deleted ? "" : m.text || "", skip: !!m.optimistic || !!m.local || m.kind === "progress" || a.kind === "system" || (a.kind === "person" && a.you) };
+  }), [rows, bots]);
+  const waitingNow = useMemo(() => [
+    ...pending.map((a) => ({ id: a.id, name: bots.find((b) => b.id === a.botId)?.name || "", kind: a.kind })),
+    ...asks.filter((a) => a.state === "asked").map((a) => ({ id: "ask:" + a.id, name: a.bot?.name || "", kind: "ask" })),
+  ], [pending, asks, bots]);
+  const news = useAnnouncer({ scope: roomId, ready: loaded, items: spokenRows, waiting: waitingNow });
   // The page before: what you were reading stays where it was.
   const olderPage = async () => {
     const el = scroller.current, before = el ? el.scrollHeight - el.scrollTop : 0;
@@ -422,7 +409,7 @@ function Room({ id, query }) {
       <Shell active="chats" scroll={false}>
         <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
           <main aria-label={"Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
-            <p role="status" aria-live="polite" style={hidden}>{news}</p>
+            <Announcer text={news} />
             {ready2 ? (
               <>
                 <header style={{ position: "relative", zIndex: 5, flex: "none", background: "rgba(245,245,242,.92)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
@@ -479,7 +466,7 @@ function Room({ id, query }) {
                 ) : null}
                 {gone ? <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "#ECECE7", color: "#3D404A", fontSize: "14px" }}>{view.removed ? "Ya no estás en esta sala. Puedes leer lo que tenías." : "Saliste de esta sala. Puedes leer lo que tenías."}</p> : null}
                 <div style={{ flex: "1", minHeight: 0, display: "flex", flexDirection: "column" }}>
-                  <div ref={(el) => { follow.ref(el); scroller.current = el; }} style={{ flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", display: "flex", flexDirection: "column" }}>
+                  <div ref={(el) => { follow.ref(el); scroller.current = el; }} {...messageListProps("Mensajes de la sala")} style={{ flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", display: "flex", flexDirection: "column" }}>
                     <div ref={scope} style={{ width: "100%", maxWidth: "860px", margin: "auto auto 0", padding: "20px 26px", display: "flex", flexDirection: "column", gap: "6px" }}>
                       {mission ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
                       {mission ? <CatchUp count={since} mission={mission} pending={pending} id={missionId} /> : null}
@@ -498,7 +485,7 @@ function Room({ id, query }) {
                         foreign={shared ? foreign : null} renderForeign={shared ? renderForeign : null} shareSlot={shared && !gone ? shareSlot : null} />
                       {/* A visible end when the sala finishes while you are here (lib/completion.js). */}
                       {mission ? <CompletionNote missionId={missionId} /> : null}
-                      {liveNow.length ? <div role="status" aria-label="Bots de otras personas en esta sala" style={{ display: "flex", flexDirection: "column" }}>{liveNow.map((line) => <StatusLine key={line.id} item={line} />)}</div> : null}
+                      {liveNow.length ? <div role="group" aria-label="Bots de otras personas en esta sala" style={{ display: "flex", flexDirection: "column" }}>{liveNow.map((line) => <StatusLine key={line.id} item={line} />)}</div> : null}
                       {mission?.limited ? <LimitBanner mission={mission} botName={mission.limited.botIds?.length === 1 ? findBot(bots, mission.limited.botIds[0])?.name : null} /> : null}
                       {/* Where the bots' live work shows: «qué está haciendo ahora» appears when this is out of view. */}
                       <span aria-hidden="true" data-room-end="" style={{ display: "block", height: "1px", marginTop: "-1px" }} />

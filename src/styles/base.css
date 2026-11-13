@@ -72,6 +72,10 @@ html.colmena-desktop[data-v2] #root{padding-top:0}
 /* Things that only take focus from code (a dialog, a menu, the chat scroller, a heading):
    no ring around the whole block. */
 :where(div,section,form,aside,main,nav,span,p,ul,h1,h2,h3,h4)[tabindex="-1"]:focus-visible{outline:none}
+/* The messages of a conversation (lib/messageKeys.js): the list is one Tab stop and the
+   arrows move between messages. Both show the ring, drawn inside so nothing clips it. */
+[data-message-list]:focus-visible{outline:2px solid #2F6BFF;outline-offset:-2px}
+[data-message-list] [data-message-id][tabindex="-1"]:focus-visible{outline:2px solid #2F6BFF;outline-offset:-2px;border-radius:10px}
 /* Text fields that live in a box of their own. A click leaves them as they are; moving with
    the keyboard (<html data-kbd>, lib/focusModality.js) draws the same ring as everywhere:
      .c-quiet    a field with its own border or fill: the ring goes on the field

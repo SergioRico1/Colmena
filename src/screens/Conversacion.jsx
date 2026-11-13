@@ -3,6 +3,9 @@ import { useWarmOnType } from "../lib/warm.js";
 import { FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal } from "lucide-react";
 import VoiceCall from "../components/v2/chat/VoiceCall.jsx";
 import Shell from "../components/v2/Shell.jsx";
+import Announcer from "../components/Announcer.jsx";
+import { useAnnouncer } from "../lib/useAnnouncer.js";
+import { leaveComposer } from "../lib/messageKeys.js";
 import { whenLabel } from "../components/v2/chat/ConvList.jsx";
 import NewRoomSheet from "../components/v3/team/NewRoomSheet.jsx";
 import ChatsHome from "../components/v2/chat/ChatsHome.jsx";
@@ -314,6 +317,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     if (e.key === "Tab" && !e.shiftKey && !text && suggestions.length) { e.preventDefault(); setText(suggestions[0]); return; }
     if (e.key === "Escape" && slashOpen) { e.preventDefault(); setSlashOpen(false); return; }
     if (e.key === "Escape" && turn && !text.trim()) { e.preventDefault(); stopTurn(); return; }
+    // Any other Esc leaves the box for the messages (lib/messageKeys.js).
+    if (leaveComposer(e)) return;
     if (e.key === "Enter" && !e.shiftKey && SLASH.some((x) => x.cmd === text.trim() && !x.insert)) { e.preventDefault(); runSlash(text.trim()); return; }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (e.repeat) return; submit(e, { now: e.ctrlKey || e.metaKey }); }
   };
@@ -353,6 +358,18 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   useOpenFileRequests(c, (f) => dock.open({ id: "file:" + f.path, kind: "file", path: f.path, name: f.name, type: f.type }));
   const now = activity.find((a) => a.botId) || null;
   const runningStep = steps.find((s) => s.status === "running") || null;
+  // New answers and «te espera», said once to a screen reader (lib/useAnnouncer.js): a message
+  // is said when it is finished (never as it is written), and never what you wrote yourself.
+  const writing = live.map((l) => l.stepId).join(",");
+  const spokenRows = useMemo(() => {
+    const busy = new Set(writing ? writing.split(",") : []);
+    return messages.map((m) => ({
+      id: m.id, name: m.role === "assistant" ? findBot(bots, m.botId || botId)?.name || "" : "", text: m.text || m.title || "",
+      skip: m.role !== "assistant" || !!m.optimistic || m.kind === "progress" || m.kind === "secret", done: !(m.stepId && busy.has(m.stepId)),
+    }));
+  }, [messages, bots, botId, writing]);
+  const waitingNow = useMemo(() => pending.map((a) => ({ id: a.id, name: findBot(bots, a.botId || botId)?.name || "", kind: a.kind })), [pending, bots, botId]);
+  const said = useAnnouncer({ scope: c || "nuevo:" + botId, ready: !room.loading, items: spokenRows, waiting: waitingNow });
   const needs = pending.filter((a) => a.kind !== "secret" && !(a.kind === "question" && messages.some((m) => m.approvalId === a.id)));
   const lastAssistant = (() => { for (let i = messages.length - 1; i >= 0; i--) if (messages[i].role === "assistant" && messages[i].text && !["question", "activity", "deliverable"].includes(messages[i].kind)) return i; return -1; })();
   const lastMessage = messages[messages.length - 1];
@@ -674,6 +691,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       <Shell active="chats" scroll={false}>
         <div style={{ display: "flex", height: "100%", alignItems: "stretch" }}>
           <section ref={chatRoot} aria-label={`Conversación con ${bot?.name || ""}`} style={{ position: "relative", flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
+            <Announcer text={said} />
             {talking && c ? <VoiceCall bot={bot} missionId={c} onClose={() => setTalking(false)} /> : null}
             <header style={{ position: "relative", zIndex: 3, flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: expert ? "10px" : "12px", padding: expert ? "14px 24px" : "16px 28px", background: "rgba(245,245,242,.92)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
               <BotMark bot={bot} size={expert ? 28 : 30} state={state} />
@@ -682,7 +700,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
                 {expert ? (
                   <span style={{ font: "400 12px/1.2 'Geist Mono', monospace", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c ? [`chat ${c.slice(-4)}`, `sesión ${botId}:${c.slice(-4)}`, lastUsage?.cachedPercent != null ? `caché ${lastUsage.cachedPercent} %` : null, status || null].filter(Boolean).join(" · ") : "chat nuevo · sin sesión"}</span>
                 ) : (
-                  <span role="status" style={{ fontSize: "13px", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bot?.role}{status ? <span style={{ color: statusColor, transition: "color .3s ease" }}>{(bot?.role ? " · " : "") + status}</span> : null}</span>
+                  <span style={{ fontSize: "13px", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bot?.role}{status ? <span style={{ color: statusColor, transition: "color .3s ease" }}>{(bot?.role ? " · " : "") + status}</span> : null}</span>
                 )}
               </div>
               {expert ? <>

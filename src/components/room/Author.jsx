@@ -1,3 +1,4 @@
+import { srOnly } from "../../lib/alt.js";
 import { ArrowLeftRight } from "lucide-react";
 import { BotPresence } from "../v2/Presence.jsx";
 import { BotMark } from "../v2/chat/Mark.jsx";
@@ -36,6 +37,8 @@ export function AuthorHead({ author, at = null, to = null, note = null, children
   return (
     <span style={{ fontSize: "14px", lineHeight: "1.3", marginBottom: "-2px" }}>
       <strong style={{ fontWeight: "600" }}>{v.name}</strong>
+      {/* A bot of yours shows its role only: «bot» is said to a screen reader (someone else's says «bot de …»). */}
+      {v.kind === "bot" && v.mine ? <span style={srOnly}>{", bot"}</span> : null}
       {v.kind === "bot" && v.sub ? <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{" · " + v.sub}</span> : null}
       {tail.length ? <span style={{ color: "#5C606C" }}>{" " + tail.map((x) => "· " + x).join(" ")}</span> : null}
       {children}

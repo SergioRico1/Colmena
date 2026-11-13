@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { botShape, firstName, initialsOf, listNames } from "../src/lib/identity.js";
 import {
   askChoices, askWaiting, noBotsText, roomEmpty, liveLines, thinkingLeft, withoutRepeats, authorKey, authorOf, authorView, continues, durationText, groupFlags, handoffLine, inviteCandidates, inviteTruth, itemType, joinItems,
-  memberPanel, mentionGroups, mentionTargets, newsLine, requestHint, presenceWord, roomPlace, roomRole, stackLabel, stateWord, statusLine,
+  memberPanel, mentionGroups, mentionTargets, requestHint, presenceWord, roomPlace, roomRole, stackLabel, stateWord, statusLine,
 } from "../src/lib/roomView.js";
 import { mentionItems } from "../src/lib/mentionMenu.js";
 import { roomLinks, tasksOf } from "../src/lib/rooms.js";
@@ -223,20 +223,6 @@ test("naming someone else's bot is a request to its owner, said once; the owner'
   // The member panel reads the live states as built (`activity` with `text`), throttled included.
   const panel = memberPanel(view(), { activity: [{ owner: lucia, bot: { id: "leo", name: "Leo" }, state: "throttled", text: "Leo está en pausa" }] });
   assert.equal(panel.groups[1].bots.find((b) => b.id === "leo").stateWord, "en pausa");
-});
-
-test("new rows are announced once, in one sentence, never your own", () => {
-  const rows = [
-    { id: "1", role: "user", text: "mío" },
-    { id: "2", engine: "peer", author: { kind: "person", ...lucia }, text: "hola" },
-    { id: "3", engine: "peer", author: { kind: "person", ...lucia }, text: "otra" },
-    { id: "4", role: "assistant", botId: "vera", text: "hecho" },
-  ];
-  assert.equal(newsLine(rows, { bots: [vera] }), "3 mensajes nuevos de Lucía Martín y Vera");
-  assert.equal(newsLine([rows[1]]), "Mensaje nuevo de Lucía Martín");
-  assert.equal(newsLine([rows[0]]), "");
-  assert.equal(newsLine([], { waiting: 1 }), "Algo te espera en esta sala");
-  assert.equal(newsLine([rows[3]], { bots: [vera], waiting: 2 }), "Mensaje nuevo de Vera. 2 cosas te esperan en esta sala");
 });
 
 test("pages of the timeline join into one list, each row once, in order", () => {

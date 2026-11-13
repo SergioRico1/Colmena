@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Circle, LayoutGrid } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
+import { botAlt } from "../lib/alt.js";
 import { needsOf } from "../components/v2/needs.js";
 import { ApprovalNeed, ChoiceNeed, ErrandNeed, GroupNeed, SnoozedNeeds, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
 import NeedRows from "../components/v3/dia/NeedRows.jsx";
@@ -316,6 +317,7 @@ export default function Hoy({ query = {} }) {
                       <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "24px", margin: "-2px -4px 0", display: "grid", placeItems: "center", borderRadius: "50%", boxShadow: waits ? "inset 0 0 0 2px #FFC93C" : "none" }}>
                         <Shape bot={lead} size={14} anim={moving && !waits} />
                       </span>
+                      <span style={srOnly}>{botAlt(lead, { state: waits ? "wait" : moving ? "work" : null }) + ": "}</span>
                       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "6px" }}>
                         <span style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
                           <span style={{ flex: "1", minWidth: 0, fontSize: "15px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title}</span>

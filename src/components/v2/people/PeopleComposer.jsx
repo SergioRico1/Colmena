@@ -4,6 +4,7 @@ import { PeerAvatar } from "./PeerAvatar.jsx";
 import { BotPresence } from "../Presence.jsx";
 import { MentionPill } from "./PeopleMessage.jsx";
 import { resolveMentions, resolvePeople } from "../../../lib/mentions.js";
+import { leaveComposer } from "../../../lib/messageKeys.js";
 
 // Where you write in a conversation with people, or in one of its threads
 // (design/V2Personas.dc.html, pasos persona and hilo). «@» opens who you can name: the
@@ -118,7 +119,7 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje"}</span>
           <textarea className="c-bare" ref={input} rows={1} value={text} disabled={disabled} maxLength={8000}
             onChange={(e) => { const v = e.target.value; setText(v); if (v.trim()) onTyping(); if (/(^|\s)@$/.test(v)) setOpen(true); else if (open && !/@\S*$/.test(v)) setOpen(false); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
-            onKeyDown={(e) => { if (e.key === "Escape" && open) { e.preventDefault(); setOpen(false); return; } if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
+            onKeyDown={(e) => { if (e.key === "Escape" && open) { e.preventDefault(); setOpen(false); return; } if (leaveComposer(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
             placeholder={placeholder}
             style={{ flex: 1, minWidth: 0, minHeight: compact ? "40px" : "44px", maxHeight: "200px", padding: compact ? "9px 12px" : "11px 14px", border: 0, resize: "none", background: "transparent", font: "inherit", fontSize: compact ? "15px" : "16px", lineHeight: 1.4 }} />
         </label>

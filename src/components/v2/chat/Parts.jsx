@@ -1,3 +1,4 @@
+import { STATE_WORDS, srOnly } from "../../../lib/alt.js";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { ListenButton } from "../../interaction/Voice.jsx";
@@ -81,7 +82,7 @@ export function AnswerHead({ bot, at = null, note = null, state = "rest" }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
       <BotMark bot={bot} size={20} state={state} />
-      <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{bot?.name || "Bot"}</span>
+      <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{bot?.name || "Bot"}<span style={srOnly}>{", bot" + (STATE_WORDS[state] ? ", " + STATE_WORDS[state] : "")}</span></span>
       <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[note, at ? clock(at) : null].filter(Boolean).join(" · ") || "ahora"}</span>
     </div>
   );
@@ -252,7 +253,7 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null, head 
   // The answer as it is written looks like the answer it becomes: same text, same place.
   if (live?.text) {
     return (
-      <div aria-live="polite" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         {head ? <AnswerHead bot={bot} state="work" /> : null}
         <LiveMarkdown text={live.text} size={16} style={ANSWER} caret streamKey={step?.id || live.stepId} />
       </div>

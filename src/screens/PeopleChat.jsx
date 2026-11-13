@@ -17,7 +17,10 @@ import { FileViewer } from "../components/v2/people/PeerFiles.jsx";
 import RoomSheet from "../components/v2/people/RoomSheet.jsx";
 import { navigate } from "../lib/router.jsx";
 import NotFound from "./NotFound.jsx";
-import { continues } from "../lib/roomView.js";
+import { authorOf, authorView, continues } from "../lib/roomView.js";
+import { useAnnouncer } from "../lib/useAnnouncer.js";
+import { messageListProps } from "../lib/messageKeys.js";
+import Announcer from "../components/Announcer.jsx";
 
 // A direct conversation with a person (design/V3Personas.dc.html; V2Personas for persona, hilo,
 // buscar). A group is a room: its address opens the one room screen (/sala/:id, screens/Room.jsx).
@@ -30,6 +33,8 @@ const dayLabel = (iso) => {
   if (new Date(Date.now() - 864e5).toDateString() === d.toDateString()) return "Ayer";
   return d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
 };
+
+const NOTHING = []; // nothing waits for an OK in a chat between people
 
 export default function PeopleChat({ params = {}, query = {} }) {
   const id = params.id;
@@ -74,6 +79,13 @@ export default function PeopleChat({ params = {}, query = {} }) {
   useRevealMessage(threadId ? null : query.m || null, { ready: !chat.loading && !!share, olderCount: chat.more ? chat.messages.length : 0, showOlder: chat.older });
   const openThread = useCallback((m) => navigate("/con/" + id + "?hilo=" + encodeURIComponent(m.id)), [id]);
   const closeThread = useCallback(() => navigate("/con/" + id, { replace: true }), [id]);
+  // What arrives while you are here, said once to a screen reader (lib/useAnnouncer.js): the
+  // other person's messages and what bots answer, never what you wrote.
+  const spokenRows = useMemo(() => chat.messages.map((m) => {
+    const a = authorOf(m);
+    return { id: m.id, name: authorView(a).name, text: m.deleted ? "" : m.text || (m.file ? "ha compartido " + (m.file.name || "un archivo") : ""), skip: !!m.local || !!m.deleted || a.kind === "system" || (a.kind === "person" && a.you) };
+  }), [chat.messages]);
+  const said = useAnnouncer({ scope: id, ready: !chat.loading && !!share, items: spokenRows, waiting: NOTHING });
   if (isRoom) return null;
   if (chat.error === "missing") return <NotFound active="chats" title="Esta conversación ya no está" text="Puede que la otra persona la cerrara. No se ha perdido nada de lo tuyo." />;
   const dm = share?.kind === "dm";
@@ -141,7 +153,8 @@ export default function PeopleChat({ params = {}, query = {} }) {
               {relay === "off" ? "Falta conectar Colmena al buzón de mensajes: Ajustes › Personas." : RELAY_LABEL[relay] + ". Lo que escribas saldrá en cuanto vuelva."}
             </p>
           ) : null}
-          <div style={{ flex: "1", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
+          <Announcer text={said} />
+          <div {...messageListProps("Mensajes de la conversación")} style={{ flex: "1", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
             <div style={{ width: "100%", maxWidth: "840px", margin: "0 auto", padding: "22px 26px", display: "flex", flexDirection: "column", gap: "8px", boxSizing: "border-box" }}>
               {chat.more ? <button type="button" onClick={chat.older} style={{ alignSelf: "center", height: "32px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 500 }}>{"Ver mensajes anteriores"}</button> : null}
               {!chat.loading && !chat.messages.length ? (
@@ -166,7 +179,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
             </div>
           </div>
           <div style={{ flex: "none", width: "100%", maxWidth: "840px", margin: "0 auto", padding: "0 26px 18px", boxSizing: "border-box" }}>
-            <p role="status" style={{ margin: "0 0 8px 18px", minHeight: "18px", display: "flex", gap: "16px", fontSize: "13px", color: "#5C606C" }}>
+            <p style={{ margin: "0 0 8px 18px", minHeight: "18px", display: "flex", gap: "16px", fontSize: "13px", color: "#5C606C" }}>
               {chat.typing.length ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <span aria-hidden="true" style={{ display: "flex", gap: "3px" }}>{[0, 0.15, 0.3].map((d) => <span key={d} style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#5C606C", animation: `dots 1.2s ${d}s infinite` }} />)}</span>

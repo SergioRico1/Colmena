@@ -10,6 +10,8 @@ import { post, patch, pickFiles } from "../../lib/api.js";
 import { failSent, showSent, unshowSent, useAction, useStore } from "../../lib/store.jsx";
 import { useLiveSelector, useLiveStepIds, useLiveText } from "../../lib/liveStore.js";
 import { useDraft, useInputHistory } from "../../lib/composer.js";
+import { leaveComposer } from "../../lib/messageKeys.js";
+import { botsAlt } from "../../lib/alt.js";
 import LiveMarkdown, { markLive, wasLive } from "./LiveMarkdown.jsx";
 import { usePhrase, useSlowPhase, verbLabel } from "./working.js";
 import SecretPrompt, { SecretLine } from "./SecretPrompt.jsx";
@@ -477,7 +479,7 @@ export function ThreadSummary({ thread, summary, bots, pressed, onClick }) {
   return (
     <button type="button" className="rm-focus" onClick={onClick} aria-pressed={pressed ? "true" : "false"} style={{ alignSelf: "stretch", maxWidth: "560px", display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", background: pressed ? "#E7EEFF" : "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", cursor: "pointer", textAlign: "left" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-        <span aria-hidden="true" style={{ display: "flex" }}>
+        <span role="img" aria-label={botsAlt(people.map((id) => findBot(bots, id)))} style={{ display: "flex" }}>
           {people.map((id, i) => <BotAvatar key={id} bot={findBot(bots, id)} size={22} ring={i > 0} style={i > 0 ? { marginLeft: "-4px", font: "800 10px/1 'Bricolage Grotesque', sans-serif" } : { font: "800 10px/1 'Bricolage Grotesque', sans-serif" }} />)}
         </span>
         <strong style={{ fontSize: "14px", color: "#1F4FD1" }}>{`${thread.length} ${thread.length === 1 ? "respuesta" : "respuestas"} entre bots`}</strong>
@@ -553,7 +555,7 @@ function LiveTurnCard({ step, bot }) {
           <strong style={{ fontSize: "14px", fontWeight: 600 }}>{bot.name}</strong>
           <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[bot.role, "escribiendo…"].filter(Boolean).join(" · ")}</span>
         </div>
-        <div aria-live="polite"><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div>
+        <div><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div>
       </MessageRow>
     );
   }
@@ -568,7 +570,7 @@ function LiveTurnCard({ step, bot }) {
         <strong style={{ fontSize: "14px", fontWeight: 600 }}>{bot.name}</strong>
         <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{[bot.role, "trabajando…"].filter(Boolean).join(" · ")}</span>
       </div>
-      <div role="status" aria-live="polite" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "#F7F8FA", border: "1px solid #E6E8EE", borderRadius: "12px", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
+      <div role="group" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "#F7F8FA", border: "1px solid #E6E8EE", borderRadius: "12px", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
         {step.kind === "work" && step.title ? <span style={{ fontSize: "13px", fontWeight: "600", color: "#12131A" }}>{plain(step.title).replace(new RegExp("^" + bot.name + ": "), "")}</span> : null}
         {earlier > 0 ? <span style={{ fontSize: "12px", color: "#555A68" }}>{earlier === 1 ? "1 paso antes" : earlier + " pasos antes"}</span> : null}
         {note ? <span key={note} className="c-phrase" style={{ fontSize: "13px", lineHeight: "1.45", color: step.narration?.text ? "#12131A" : "#6B7080", fontStyle: step.narration?.text ? "normal" : "italic" }}>{note}</span> : null}
@@ -585,7 +587,7 @@ function LiveTurnCard({ step, bot }) {
           </span>
         ))}
       </div>
-      {text.trim() ? <div aria-live="polite"><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div> : null}
+      {text.trim() ? <div><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div> : null}
     </MessageRow>
   );
 }
@@ -1053,6 +1055,8 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
       stopAll();
       return;
     }
+    // Any other Esc leaves the box for the messages (lib/messageKeys.js).
+    if (leaveComposer(e)) return;
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       if (e.repeat) return; // holding Enter never sends twice
