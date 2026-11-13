@@ -11,7 +11,7 @@ const pill = { height: "32px", padding: "0 12px", border: 0, borderRadius: "var(
 export default function DraftOffer({ offer, onRecover, onLater, onDiscard }) {
   if (!offer) return null;
   return (
-    <div role="status" aria-label="Mensaje sin enviar" style={{ display: "flex", alignItems: "center", gap: "10px", margin: "0 0 10px", padding: "8px 8px 8px 14px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 10px 26px -18px rgba(18,19,26,.35)", animation: "rise .3s ease-out" }}>
+    <div role="status" aria-label="Mensaje sin enviar" style={{ display: "flex", alignItems: "center", gap: "10px", margin: "0 0 10px", padding: "8px 8px 8px 14px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .06), var(--c-shadow-pop)", animation: "rise .3s ease-out" }}>
       <PencilLine size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-3)" }} />
       <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
         <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{`Tenías un mensaje sin enviar${offer.at ? " · " + whenLabel(new Date(offer.at).toISOString()) : ""}`}</span>

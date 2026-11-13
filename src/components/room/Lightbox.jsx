@@ -74,7 +74,7 @@ function Lightbox({ images, index: start, onClose }) {
   return (
     <dialog ref={dialog} onClose={onClose} onKeyDown={onKeyDown} aria-label={many ? `Imagen ${index + 1} de ${images.length}` : "Imagen ampliada"}
       onClick={(e) => { if (e.target === e.currentTarget) dialog.current.close(); }}
-      style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", maxWidth: "none", maxHeight: "none", margin: 0, padding: 0, border: 0, background: "rgba(18,19,26,.92)", overflow: "hidden" }}>
+      style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", maxWidth: "none", maxHeight: "none", margin: 0, padding: 0, border: 0, background: "color-mix(in oklab, var(--c-app) 94%, transparent)", overflow: "hidden" }}>
       <div onWheel={onWheel} onClick={(e) => { if (e.target === e.currentTarget) dialog.current.close(); }}
         style={{ position: "absolute", inset: "56px 84px 92px", display: "grid", placeItems: "center", overflow: "hidden" }}>
         {/* Not zoomed, in the desktop app, a picture of a file drags out into other apps. */}
@@ -83,10 +83,10 @@ function Lightbox({ images, index: start, onClose }) {
           onDoubleClick={() => (scale === 1 ? zoom(2) : reset())}
           style={{ animation: "c-fade 160ms ease both", maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "var(--r-sm)", background: "var(--c-card)", transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transition: drag.current ? "none" : "transform .14s ease", cursor: scale > 1 ? (drag.current ? "grabbing" : "grab") : "zoom-in", userSelect: "none", touchAction: "none" }} />
       </div>
-      <div style={{ position: "absolute", top: "14px", left: "20px", right: "20px", display: "flex", alignItems: "center", gap: "12px", color: "#FFFFFF" }}>
+      <div style={{ position: "absolute", top: "14px", left: "20px", right: "20px", display: "flex", alignItems: "center", gap: "12px", color: "var(--c-text)" }}>
         <strong style={{ fontSize: "var(--t-ui)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</strong>
-        {many ? <span style={{ fontSize: "var(--t-meta)", color: "#C9CCD6", flex: "none" }}>{`${index + 1} de ${images.length}`}</span> : null}
-        <button type="button" className="rm-focus" aria-label="Cerrar (Esc)" title="Cerrar (Esc)" onClick={() => dialog.current.close()} style={{ ...tool, marginLeft: "auto", color: "#FFFFFF" }}>
+        {many ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", flex: "none" }}>{`${index + 1} de ${images.length}`}</span> : null}
+        <button type="button" className="rm-focus" aria-label="Cerrar (Esc)" title="Cerrar (Esc)" onClick={() => dialog.current.close()} style={{ ...tool, marginLeft: "auto", color: "var(--c-text)" }}>
           <X size={22} strokeWidth={2.2} aria-hidden="true" />
         </button>
       </div>
@@ -96,7 +96,7 @@ function Lightbox({ images, index: start, onClose }) {
           <button type="button" className="rm-focus c-press" aria-label="Siguiente (→)" title="Siguiente (→)" onClick={() => go(1)} style={side("right")}><ChevronRight size={22} strokeWidth={2.4} aria-hidden="true" /></button>
         </>
       ) : null}
-      <div role="toolbar" aria-label="Zoom" style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-pill)", boxShadow: "0 20px 40px -16px rgba(0,0,0,.5)" }}>
+      <div role="toolbar" aria-label="Zoom" style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-pill)", boxShadow: "var(--c-shadow-pop)" }}>
         <button type="button" className="rm-focus" aria-label="Alejar (−)" title="Alejar (−)" disabled={scale <= 1} onClick={() => zoom(1 / STEP)} style={{ ...tool, opacity: scale <= 1 ? 0.35 : 1 }}><ZoomOut size={18} strokeWidth={2.2} aria-hidden="true" /></button>
         <span aria-live="polite" style={{ minWidth: "52px", textAlign: "center", font: "600 var(--t-meta)/1 'Geist Mono', monospace" }}>{Math.round(scale * 100) + " %"}</span>
         <button type="button" className="rm-focus" aria-label="Acercar (+)" title="Acercar (+)" disabled={scale >= MAX} onClick={() => zoom(STEP)} style={{ ...tool, opacity: scale >= MAX ? 0.35 : 1 }}><ZoomIn size={18} strokeWidth={2.2} aria-hidden="true" /></button>

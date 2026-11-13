@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import BotFace from "../BotFace.jsx";
 import { useWarmOnType } from "../../lib/warm.js";
-import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, FileText, GitBranch, LoaderCircle, Sparkles, Check, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, RotateCcw, Undo2, Wrench, X } from "../Icon.js";
+import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, FileText, GitBranch, LoaderCircle, Sparkles, Check, Checks, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, RotateCcw, Undo2, Wrench, X } from "../Icon.js";
 import { InteractiveContext } from "./Interactive.jsx";
 import { freshness, scrollBehavior } from "../../lib/motion.js";
 import { ReactTools, ReactionRow, useReactions } from "./Reactions.jsx";
@@ -40,6 +40,8 @@ import ChangedFiles, { TurnFileLinks } from "../v2/chat/ChangedFiles.jsx";
 import { workFileUrl } from "../../lib/dragOut.js";
 import ChatBlock from "../blocks/ChatBlock.jsx";
 import { AuthorAvatar, AuthorHead } from "./Author.jsx";
+import { AddressChip, EmojiButton } from "./ComposerBits.jsx";
+import { PaperPlaneRight, Paperclip } from "../Icon.js";
 import { authorOf, continues, mentionTargets, requestHint } from "../../lib/roomView.js";
 import { listNames } from "../../lib/identity.js";
 
@@ -164,13 +166,34 @@ function Actions({ children }) {
   return <span className="msg-actions" role="toolbar" aria-label="Acciones del mensaje">{children}</span>;
 }
 
-/** A row in the conversation: hover highlight; a continued message (same author, minutes
- *  later) has no avatar or header, only its time in the gutter on hover. */
-function MessageRow({ id, messageId = null, avatar, continued, at, padding, children, actions, mine = false, entering = false, sending = false, live = false }) {
+/** A row in the conversation (design/v4 › .msg): a 32 px face, the name line and the text; a
+ *  hover highlight; a continued message (same author, minutes later) has no avatar or header,
+ *  only its time in the gutter on hover. */
+function MessageRow({ id, messageId = null, avatar, continued, at, padding, children, actions, entering = false, sending = false, live = false }) {
   return (
-    <div id={id} data-message-id={messageId || undefined} data-live-turn={live ? "" : undefined} className={"msg-row" + (mine ? " msg-row--mine" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ display: "grid", gridTemplateColumns: "40px 1fr", gap: "12px", padding: padding || (continued ? "2px 16px" : "8px 16px"), margin: "0 -16px", opacity: sending ? 0.65 : 1, transition: "opacity .2s ease" }}>
+    <div id={id} data-message-id={messageId || undefined} data-live-turn={live ? "" : undefined} className={"msg-row v4-row" + (continued ? " is-continued" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ ...(padding ? { padding } : null), opacity: sending ? 0.65 : 1, transition: "opacity .2s ease" }}>
       {continued ? <span className="msg-gutter-time" aria-hidden="true">{at ? time(at) : ""}</span> : avatar}
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "0" }}>{children}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>{children}</div>
+      {actions ? <Actions>{actions}</Actions> : null}
+    </div>
+  );
+}
+
+/**
+ * Your own message (design/v4 › .mine): on the right, in the soft «mine» bubble, with its time
+ * and how far it got under it: «Enviando…», a tick when it is out, two and «Visto» once read.
+ */
+function MineRow({ messageId = null, continued, at, children, under = null, actions, entering = false, sending = false, seen = null, failed = false }) {
+  return (
+    <div data-message-id={messageId || undefined} className={"msg-row v4-mine" + (continued ? " is-continued" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ opacity: sending ? 0.75 : 1, transition: "opacity .2s ease", background: "transparent" }}>
+      <div className="v4-bubble">{children}</div>
+      {failed ? null : (
+        <span className="v4-mine-meta">
+          {at ? <time dateTime={at}>{time(at)}</time> : null}
+          {sending ? <span>{"Enviando…"}</span> : seen ? <><Checks size={15} aria-hidden="true" /><span>{seen}</span></> : at ? <Check size={14} aria-label="Enviado" /> : null}
+        </span>
+      )}
+      {under ? <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", marginTop: "6px", maxWidth: "min(62%, 560px)" }}>{under}</div> : null}
       {actions ? <Actions>{actions}</Actions> : null}
     </div>
   );
@@ -219,7 +242,7 @@ function RepliesLink({ replies, bots, onOpen, pressed }) {
   const who = [...new Set(replies.map((r) => (r.role === "user" ? "user" : r.botId || "atlas")))].slice(0, 3);
   return (
     <button type="button" className="rm-focus" onClick={onOpen} aria-pressed={pressed ? "true" : "false"}
-      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "32px", padding: "2px 10px 2px 4px", background: pressed ? "var(--c-chip)" : "transparent", border: "1px solid " + (pressed ? "#DCE0E8" : "transparent"), borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)" }}>
+      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "32px", padding: "2px 10px 2px 4px", background: pressed ? "var(--c-chip)" : "transparent", border: "1px solid " + (pressed ? "var(--c-line)" : "transparent"), borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)" }}>
       <span style={{ display: "flex" }}>{who.map((w) => (w === "user" ? <UserAvatar key="u" size={22} /> : <BotAvatar key={w} bot={findBot(bots, w)} size={22} />))}</span>
       <strong style={{ color: "var(--c-accent-ink)" }}>{replies.length === 1 ? "1 respuesta" : replies.length + " respuestas"}</strong>
       {last?.at ? <span style={{ color: "var(--c-text-3)" }}>{"última a las " + time(last.at)}</span> : null}
@@ -229,10 +252,10 @@ function RepliesLink({ replies, bots, onOpen, pressed }) {
 
 export function DaySeparator({ label }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 12px", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>
-      <span style={{ flex: "1", height: "1px", background: "var(--c-line)" }} />
-      <span style={{ padding: "4px 12px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)" }}>{label}</span>
-      <span style={{ flex: "1", height: "1px", background: "var(--c-line)" }} />
+    <div role="separator" aria-label={label} style={{ display: "flex", alignItems: "center", gap: "12px", margin: "12px 0 6px", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>
+      <span aria-hidden="true" style={{ flex: "1", height: "1px", background: "var(--c-line)" }} />
+      <span aria-hidden="true">{label}</span>
+      <span aria-hidden="true" style={{ flex: "1", height: "1px", background: "var(--c-line)" }} />
     </div>
   );
 }
@@ -285,17 +308,39 @@ function RoutedLine({ message, bots }) {
   return <span title={routed.why || undefined} style={style}>{`Para ${who} · ${how}`}</span>;
 }
 
-export function UserMessage({ message, padding = null, replies = null, bots = [], onReply = null, repliesOpen = false, continued = false, entering = false, receipt = null }) {
+export function UserMessage({ message, padding = null, replies = null, bots = [], onReply = null, repliesOpen = false, continued = false, entering = false, receipt = null, seen = false }) {
   const [reactions, react] = useReactions(message);
   const resend = useResend(message);
   // In a room with people a row of the sala can be someone else's words: their round avatar and
   // name, and plain text (never Markdown: it came from another computer).
   const author = authorOf(message, bots);
   const mine = author.kind !== "person" || author.you;
+  const actions = <><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} />{mine ? <ForkButton message={message} /> : null}</>;
+  if (mine) {
+    // Yours: on the right, in the bubble; how far it got under it (people: «Visto por …»).
+    const peerSeen = message.peer?.seenBy?.length ? "Visto por " + listNames(message.peer.seenBy) : null;
+    const under = (
+      <>
+        {message.peer && !peerSeen ? <TravelLine peer={message.peer} /> : null}
+        <RefChips refs={message.refs} align="flex-end" />
+        <RoutedLine message={message} bots={bots} />
+        {receipt ? <Receipt receipt={receipt} bots={bots} /> : null}
+        {message.failed ? <FailedLine error={message.failed} onRetry={resend.retry} onDiscard={resend.discard} /> : null}
+        {(message.attachments || []).map((f, i) => <FileChip key={i} file={f} dragUrl={message.missionId && f?.name ? workFileUrl(message.missionId, f.name) : null} />)}
+        <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />
+        <RepliesLink replies={replies} bots={bots} onOpen={onReply} pressed={repliesOpen} />
+      </>
+    );
+    return (
+      <MineRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} failed={!!message.failed} entering={entering} continued={continued} at={message.at} seen={peerSeen || (seen ? "Visto" : null)} actions={actions} under={under}>
+        <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
+      </MineRow>
+    );
+  }
   return (
-    <MessageRow mine={mine} messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<AuthorAvatar author={author} size={40} />} continued={continued} at={message.at} padding={padding} actions={<><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} />{mine ? <ForkButton message={message} /> : null}</>}>
+    <MessageRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<AuthorAvatar author={author} size={32} />} continued={continued} at={message.at} padding={padding} actions={actions}>
       {continued ? null : <AuthorHead author={author} at={message.at} />}
-      {mine ? <UserText text={message.text} messageId={message.optimistic ? null : message.id} /> : <p style={{ margin: 0, fontSize: "var(--t-read)", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{message.text}</p>}
+      <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "var(--c-text-2)", maxWidth: "72ch" }}>{message.text}</p>
       <TravelLine peer={message.peer} />
       <RefChips refs={message.refs} align="flex-start" />
       <RoutedLine message={message} bots={bots} />
@@ -335,7 +380,7 @@ function PlanPhases({ assignments, bots, pending }) {
   const [open, setOpen] = useState({});
   const phases = planPhases(assignments);
   return (
-    <div style={{ maxWidth: "640px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", boxShadow: pending ? "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)", overflow: "hidden" }}>
+    <div style={{ maxWidth: "640px", background: "var(--c-raised)", borderRadius: "var(--r-md)", border: pending ? "1px solid var(--c-honey-ring)" : "1px solid var(--c-line)", boxShadow: "none", overflow: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "12px 16px", background: "var(--c-sunken)", borderBottom: "1px solid var(--c-line)" }}>
         <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>{`Plan del equipo · ${assignments.length} ${assignments.length === 1 ? "tarea" : "tareas"}`}</span>
         <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{phases.length > 1 ? `${phases.length} fases, en orden` : "Todos a la vez"}</span>
@@ -417,7 +462,7 @@ function PlanBlock({ mission, message, bots }) {
       setNote("");
     });
   const control = (action) => act(() => post(`/missions/${mission.id}/control`, { action }));
-  const pill = { minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 14px", background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
+  const pill = null;
   const changeForm = (onSend, placeholder) => (
     <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) onSend(); }} style={{ maxWidth: "560px" }}>
       <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "var(--c-card)", border: "1.5px solid var(--c-line-strong)", borderRadius: "var(--r-md)" }}>
@@ -436,14 +481,14 @@ function PlanBlock({ mission, message, bots }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "36px", padding: "0 4px 0 2px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
-              <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: paused ? "#A9AEBB" : "#0B8A5F", animation: paused ? "none" : "breathe 1.4s ease-in-out infinite" }} />
+              <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: paused ? "var(--c-text-4)" : "var(--c-ok)", animation: paused ? "none" : "breathe 1.4s ease-in-out infinite" }} />
               {paused ? "En pausa" : "En marcha · puedes pararlo o cambiarlo"}
             </span>
-            <button type="button" className="rm-focus" disabled={busy} onClick={() => control(paused ? "resume" : "pause")} style={pill}>
+            <button type="button" disabled={busy} onClick={() => control(paused ? "resume" : "pause")} className="v4-btn" style={pill}>
               {paused ? <Play size={14} strokeWidth={2.4} aria-hidden="true" /> : <Pause size={14} strokeWidth={2.4} aria-hidden="true" />}
               {paused ? "Seguir" : "Parar"}
             </button>
-            <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={pill}>
+            <button type="button" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} className="v4-btn" style={pill}>
               <PenLine size={14} strokeWidth={2.4} aria-hidden="true" />
               {"Cambiar"}
             </button>
@@ -452,15 +497,15 @@ function PlanBlock({ mission, message, bots }) {
           <ErrorLine>{error}</ErrorLine>
         </div>
       ) : plan.approved && plan.auto ? null : plan.approved ? (
-        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "var(--c-ok-soft)", border: "1px solid #9ED4BC", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
+        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "var(--c-ok-soft)", border: "1px solid color-mix(in oklab, var(--c-ok) 40%, transparent)", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
           <Check size={14} weight="bold" />
           {"Aprobado por ti"}
         </span>
       ) : pendingPlan ? (
         <div id="plan" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>{"Aprobar plan"}</button>
-            <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={{ minHeight: "46px", padding: "0 20px", background: "rgb(var(--c-ink-rgb) / .06)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{"Pedir cambios"}</button>
+            <button type="button" className="v4-btn primary lg" disabled={busy} onClick={() => decide("approved")}>{"Aprobar plan"}</button>
+            <button type="button" className="v4-btn lg" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)}>{"Pedir cambios"}</button>
           </div>
           {changing ? changeForm(() => decide("changes"), "¿Qué cambiarías del reparto?") : null}
           <ErrorLine>{error}</ErrorLine>
@@ -506,13 +551,13 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
   // Atlas's face: «duda» while his question or plan waits for you, «feliz» on the final delivery.
   const mood = (isQuestion && approval?.status === "pending") || (kind === "plan" && mission?.status === "awaiting_plan") ? "duda" : message.phase === "synthesis" ? "feliz" : null;
   return (
-    <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} entering={entering} avatar={<BotAvatar bot={bot} size={40} mood={mood} />} continued={continued} at={message.at} padding={padding} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{kind !== "plan" && message.text ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "var(--c-text-2)" }} /><ForkButton message={message} /></> : null}</>}>
+    <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} entering={entering} avatar={<AuthorAvatar author={authorOf(message, bots)} size={32} state={mood === "duda" ? "wait" : "rest"} />} continued={continued} at={message.at} padding={padding} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{kind !== "plan" && message.text ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "var(--c-text-2)" }} /><ForkButton message={message} /></> : null}</>}>
       {continued ? null : <AuthorHead author={authorOf(message, bots)} at={message.at} to={toLabel(message.to, bots)} />}
         {step?.tools?.length && (!message.part || message.summary) ? <ActivityLog bot={findBot(bots, message.botId)} summary={message.summary} activity={step.activity || []} tools={step.tools} bots={bots} onOpenArtifact={onOpenArtifact} /> : null}
         {isQuestion ? (
           <QuestionCard approval={approval} text={message.text} bots={bots} variant="room" />
         ) : message.text ? (
-          <Markdown text={message.text} size={16} />
+          <div style={{ maxWidth: "72ch", color: "var(--c-text-2)" }}><Markdown text={message.text} size={15} /></div>
         ) : null}
         {step?.tools?.length && message.text ? <Sources text={message.text} tools={step.tools} /> : null}
         {kind === "plan" ? <PlanBlock mission={mission} message={message} bots={bots} /> : null}
@@ -554,10 +599,9 @@ function LiveTurnCard({ step, bot }) {
   if (!log.length) {
     // Only writing: its words as they come, where the answer will stay.
     return (
-      <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
+      <MessageRow live avatar={<BotFace bot={bot} size={32} state="work" decorative />} at={null}>
         <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
-          <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{bot.name}</strong>
-          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[bot.role, "escribiendo…"].filter(Boolean).join(" · ")}</span>
+          <span className="v4-head" style={{ margin: 0 }}><span className="n">{bot.name}</span>{bot.role ? <span className="v4-tag">{bot.role}</span> : null}<span className="of">{"escribiendo…"}</span></span>
         </div>
         <div><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div>
       </MessageRow>
@@ -569,10 +613,9 @@ function LiveTurnCard({ step, bot }) {
   const row = { display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text)" };
   const spin = <WorkingDots style={{ flex: "none", marginTop: "4px", color: "var(--c-text)" }} />;
   return (
-    <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
+    <MessageRow live avatar={<BotFace bot={bot} size={32} state="work" decorative />} at={null}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
-        <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{bot.name}</strong>
-        <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[bot.role, "trabajando…"].filter(Boolean).join(" · ")}</span>
+        <span className="v4-head" style={{ margin: 0 }}><span className="n">{bot.name}</span>{bot.role ? <span className="v4-tag">{bot.role}</span> : null}<span className="of">{"trabajando…"}</span></span>
       </div>
       <div role="group" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "var(--c-sunken)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
         {step.kind === "work" && step.title ? <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text)" }}>{plain(step.title).replace(new RegExp("^" + bot.name + ": "), "")}</span> : null}
@@ -584,7 +627,7 @@ function LiveTurnCard({ step, bot }) {
               <span key={e.status} className={fresh((e.callId || i) + ":" + e.status) ? "c-pop" : undefined} style={{ display: "inline-flex", flex: "none", marginTop: "2px" }}>
                 {e.status === "error"
                   ? <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ color: "var(--c-error)" }} />
-                  : <Check size={14} strokeWidth={2.6} aria-hidden="true" style={{ color: "#0B8A5F" }} />}
+                  : <Check size={14} strokeWidth={2.6} aria-hidden="true" style={{ color: "var(--c-ok)" }} />}
               </span>
             )}
             <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{cap(e.label || e.text || e.verb)}</span>
@@ -610,7 +653,7 @@ function LearnedLine({ message, bot, entering = false }) {
   const link = { display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" };
   return (
     <div className={entering ? "c-enter c-flash" : undefined}>
-    <p style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
+    <p style={{ margin: "0", padding: "6px 0 6px 44px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
       <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-3)" }} />
       {bot ? <strong style={{ color: "var(--c-text)" }}>{bot.name}</strong> : null}
       <span style={done ? { textDecoration: "line-through", color: "var(--c-text-3)" } : null}>{text.replace(/^Deshecho: /, "")}</span>
@@ -629,7 +672,7 @@ function LearnedLine({ message, bot, entering = false }) {
       {error ? <span style={{ color: "var(--c-error)" }}>{error}</span> : null}
     </p>
     {why ? (
-      <ul style={{ margin: "0 0 6px 52px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "var(--r-md)", background: "rgb(var(--c-ink-rgb) / .04)", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-2)", animation: "rise .25s ease-out" }}>
+      <ul style={{ margin: "0 0 6px 44px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "var(--r-md)", background: "rgb(var(--c-ink-rgb) / .04)", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-2)", animation: "rise .25s ease-out" }}>
         {reasons.map((w, i) => (
           <li key={i}><span style={{ color: "var(--c-text-3)" }}>{(WHY_LABEL[w.type] || "Visto") + ": "}</span>{"«" + w.quote + "»"}</li>
         ))}
@@ -643,7 +686,7 @@ function LearnedLine({ message, bot, entering = false }) {
 function GuardLine({ message, entering = false }) {
   const Icon = message.kind === "fork" ? GitBranch : CirclePause;
   return (
-    <p role="status" className={entering ? "c-enter" : undefined} style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
+    <p role="status" className={entering ? "c-enter" : undefined} style={{ margin: "0", padding: "6px 0 6px 44px", display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
       <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px", color: "var(--c-text-3)" }} />
       <span>{message.text}{message.at ? <span style={{ color: "var(--c-text-3)" }}>{" · " + time(message.at)}</span> : null}</span>
     </p>
@@ -659,10 +702,10 @@ function ActivityLine({ run, bot }) {
     return bot && t.startsWith(bot.name + " ") ? t.slice(bot.name.length + 1) : t;
   };
   const last = run[run.length - 1];
-  const line = { margin: "0", padding: "4px 0 4px 52px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" };
+  const line = { margin: "0", padding: "4px 0 4px 44px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" };
   if (run.length === 1) {
     return (
-      <p style={{ ...line, padding: "6px 0 6px 52px" }}>
+      <p style={{ ...line, padding: "6px 0 6px 44px" }}>
         {bot ? <strong style={{ color: "var(--c-text)" }}>{bot.name + " "}</strong> : null}
         {text(last)}
         {last.at ? <span style={{ color: "var(--c-text-3)" }}>{" · " + time(last.at)}</span> : null}
@@ -680,7 +723,7 @@ function ActivityLine({ run, bot }) {
         <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{open ? "Ocultar" : `Ver las ${run.length}`}</button>
       </p>
       {open ? (
-        <ol style={{ margin: "4px 0 0", padding: "0 0 0 70px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
+        <ol style={{ margin: "4px 0 0", padding: "0 0 0 62px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
           {run.map((m, k) => <li key={m.id || k}>{text(m)}{m.at ? <span style={{ color: "var(--c-text-3)" }}>{" · " + time(m.at)}</span> : null}<NoteLink link={m.link} /></li>)}
         </ol>
       ) : null}
@@ -736,7 +779,7 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
   const undoChip = (i, m) => {
     const u = undoAt.get(i);
     return u ? (
-      <div key={"undo-" + u.cp.id} style={{ padding: "2px 0 8px 52px", display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div key={"undo-" + u.cp.id} style={{ padding: "2px 0 8px 44px", display: "flex", flexDirection: "column", gap: "10px" }}>
         <ChangedFiles cp={u.cp} missionId={mission.id} />
         <UndoChanges cp={u.cp} missionId={mission.id} bot={findBot(bots, m.botId || u.cp.botId)} working={["running", "planning", "queued"].includes(mission?.status)} later={u.later} />
       </div>
@@ -804,7 +847,7 @@ export function RoomMessages({ mission, messages, thread, bots, approvals, artif
     }
   });
   if (showThread && planIndex === -1 && thread.length) {
-    out.push(<div key="thread" style={{ padding: "6px 0 6px 52px", display: "flex" }}>{threadButton}</div>);
+    out.push(<div key="thread" style={{ padding: "6px 0 6px 44px", display: "flex" }}>{threadButton}</div>);
   }
   // The bots at work, each in the place its answer will take.
   for (const s of steps.filter((x) => x.status === "running" && !x.stalled && !x.replyTo))
@@ -827,7 +870,7 @@ export function NewBelow({ show, onClick }) {
   if (!show) return null;
   return (
     <button type="button" className="rm-focus c-new-below" onClick={onClick}
-      style={{ position: "absolute", left: "50%", top: "-46px", transform: "translateX(-50%)", zIndex: 4, display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", boxShadow: "0 8px 20px -10px rgba(18,19,26,.6)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" }}>
+      style={{ position: "absolute", left: "50%", top: "-46px", transform: "translateX(-50%)", zIndex: 4, display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", boxShadow: "var(--c-shadow-pop)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" }}>
       <ArrowDown size={15} strokeWidth={2.4} aria-hidden="true" />{"Mensajes nuevos"}
     </button>
   );
@@ -923,7 +966,7 @@ const SEND_LABEL = { steer: "Reconducir", followup: "En cola", collect: "En cola
 // `shared` ({roomId, view, onTyping, onSent(result), onFiles(FileList), disabled, typingLine}): the room has
 // people. The message goes to `POST /api/rooms/:id/messages` with who «@» named (`to`, `mentions`,
 // `people`); files travel sealed, each on its own (`onFiles`); `mission` may still be null.
-export function RoomComposer({ mission, bots, memberIds, variant = "sala", typing, workingCount, onSent = null, messages = [], below = false, onJump = null, secrets = [], approvals = [], tools = null, placeholder = null, shared = null }) {
+export function RoomComposer({ mission, bots, memberIds, variant = "sala", typing, workingCount, onSent = null, messages = [], below = false, onJump = null, secrets = [], approvals = [], tools = null, aside = null, placeholder = null, shared = null }) {
   const [text, setText] = useState("");
   useWarmOnType(mission?.id, text);
   // «Nora está preparando el contexto» only when it lasts; her own line when she wrote one.
@@ -1092,8 +1135,26 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
     );
   }
 
+  // Who the message is for (design/v4 › the chip): the whole room, one of the bots here (an «@»
+  // at the start, so the mention rules decide as always) or «Solo para mí» (the aside).
+  const addressable = memberIds.map((id) => findBot(bots, id)).filter((b) => b && b.enabled !== false);
+  const lead = /^@(\S+)\s/.exec(text);
+  const addressed = lead ? addressable.find((b) => b.name.toLowerCase() === lead[1].toLowerCase()) || null : null;
+  const addressTo = (bot) => {
+    const rest = addressed ? text.slice(lead[0].length) : text;
+    setText(bot ? `@${bot.name} ${rest}` : rest);
+    if (bot) mentions.address?.(bot);
+    requestAnimationFrame(() => { const el = inputRef.current; if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } });
+  };
+  const insertAtCaret = (s) => {
+    const el = inputRef.current;
+    const at = el?.selectionStart ?? text.length, end = el?.selectionEnd ?? at;
+    setText(text.slice(0, at) + s + text.slice(end));
+    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(at + s.length, at + s.length); });
+  };
+
   return (
-    <form onSubmit={send} {...(sharedDrop || drop.props)} style={{ position: "sticky", bottom: "0", padding: "4px clamp(16px, 3vw, 28px) 20px", background: "transparent" }}>
+    <form onSubmit={send} {...(sharedDrop || drop.props)} style={{ position: "sticky", bottom: "0", padding: "0 0 18px", background: "transparent" }}>
       {shared ? <input ref={filePicker} type="file" multiple hidden accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.docx,.xlsx,.pptx,.txt,.md,.csv" onChange={(e) => { shareFiles(e.target.files); e.target.value = ""; }} /> : null}
       <NewBelow show={below} onClick={onJump} />
       {secrets.map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
@@ -1113,65 +1174,60 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <QueueModeHint mission={mission} />
         </div>
       ) : null}
-      <div className="c-ring" style={{ position: "relative", background: "var(--c-card)", borderRadius: tools ? "var(--r-2xl)" : "var(--r-3xl)", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging && !shared ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "var(--r-2xl)" : "var(--r-3xl)" }}>Suelta aquí para adjuntar</div> : null}
-        {plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={shared ? () => filePicker.current?.click() : attach} onCapture={shared ? null : (file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /> : mentions.menu}
-        {mentions.chips.length ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {mentions.chips.map((ch) => (
-              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "var(--r-md)", background: "rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
-                {ch.icon}
-                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.label}</span>
-                <button type="button" onClick={() => mentions.removeRef(ch.key)} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
-                  <X size={12} strokeWidth={2.6} aria-hidden="true" />
-                </button>
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {chosen.length ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {chosenChips(chosen).map((ch) => (
-              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "30px", padding: "0 4px 0 12px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
-                {ch.label}
-                <button type="button" onClick={() => setChosen((list) => list.filter((k) => k !== ch.key))} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
-                  <X size={12} strokeWidth={2.6} aria-hidden="true" />
-                </button>
-              </span>
-            ))}
-          </div>
-        ) : null}
-        {files.length ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {files.map((f, i) => <span key={f.name + ":" + i} className="c-pop" style={{ display: "inline-flex", maxWidth: "100%" }}>{f.pasted ? <PastedCard file={f} onInline={() => inlinePasted(i)} onRemove={() => setFiles(files.filter((_, j) => j !== i))} /> : <FileChip file={f} onRemove={() => setFiles(files.filter((_, j) => j !== i))} />}</span>)}
-          </div>
-        ) : null}
-        <label style={{ display: "flex", position: "relative", minWidth: 0 }}>
-          <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
+      {plusOpen ? <div style={{ position: "relative" }}><PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={shared ? () => filePicker.current?.click() : attach} onCapture={shared ? null : (file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /></div> : <div style={{ position: "relative" }}>{mentions.menu}</div>}
+      {mentions.chips.length || chosen.length || files.length ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "0 0 8px" }}>
+          {mentions.chips.map((ch) => (
+            <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", border: "1px solid var(--c-line)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              {ch.icon}
+              <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.label}</span>
+              <button type="button" onClick={() => mentions.removeRef(ch.key)} aria-label={"Quitar " + ch.label} className="c-hit" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-xs)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
+                <X size={12} strokeWidth={2.6} aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+          {chosenChips(chosen).map((ch) => (
+            <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "30px", padding: "0 4px 0 10px", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", border: "1px solid var(--c-line)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              {ch.label}
+              <button type="button" onClick={() => setChosen((list) => list.filter((k) => k !== ch.key))} aria-label={"Quitar " + ch.label} className="c-hit" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-xs)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
+                <X size={12} strokeWidth={2.6} aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+          {files.map((f, i) => <span key={f.name + ":" + i} className="c-pop" style={{ display: "inline-flex", maxWidth: "100%" }}>{f.pasted ? <PastedCard file={f} onInline={() => inlinePasted(i)} onRemove={() => setFiles(files.filter((_, j) => j !== i))} /> : <FileChip file={f} onRemove={() => setFiles(files.filter((_, j) => j !== i))} />}</span>)}
+        </div>
+      ) : null}
+      {/* One bar (design/v4 › .cbox): who it is for · attach, emoji · the text · dictation, send. */}
+      <div className="v4-cbox" style={{ position: "relative" }}>{drop.dragging && !shared ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: "var(--r-md)" }}>Suelta aquí para adjuntar</div> : null}
+        <AddressChip bots={addressable} current={addressed} aside={aside} shared={!!shared} onAll={() => { if (aside?.on) aside.toggle(); addressTo(null); }} onBot={(b) => { if (aside?.on) aside.toggle(); addressTo(b); }} />
+        {tools && !aside ? tools : null}
+        <span className="v4-csep" aria-hidden="true" />
+        <button type="button" className="v4-ib" data-plus-toggle="" aria-label={shared ? "Adjuntar o elegir herramientas" : "Adjuntar archivos, herramientas o apps"} aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title={shared ? "Compartir un archivo, o elegir herramientas para tus bots" : "Añadir archivos, herramientas o apps"} onClick={() => setPlusOpen((v) => !v)}>
+          <Paperclip size={18} />
+        </button>
+        <EmojiButton onPick={insertAtCaret} />
+        <label style={{ flex: "1 1 auto", display: "flex", position: "relative", minWidth: 0, alignSelf: "center" }}>
+          <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{placeholder ? placeholder.split(" · ")[0] : "Mensaje a la sala"}</span>
           {/* «@Vera» as a pill while you write (MentionMirror behind the textarea). */}
-          {pills ? <MentionMirror ref={mirror} value={text} bots={bots} style={{ padding: "8px 0 4px", fontSize: "var(--t-read)", lineHeight: "1.5" }} /> : null}
-          <textarea className="c-bare" ref={inputRef} rows={tools ? 2 : 1} placeholder={placeholder || `Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} disabled={shared?.disabled || undefined} maxLength={shared ? 8000 : undefined}
+          {pills ? <MentionMirror ref={mirror} value={text} bots={bots} style={{ padding: "5px 6px", fontSize: "var(--t-read)", lineHeight: "1.4" }} /> : null}
+          <textarea className="c-bare" ref={inputRef} rows={1} placeholder={placeholder || `Mensaje en #${room} · @ para nombrar a alguien`} {...mentions.inputProps} onKeyDown={onKeyDown} disabled={shared?.disabled || undefined} maxLength={shared ? 8000 : undefined}
             onInput={shared?.onTyping ? () => shared.onTyping() : undefined}
             onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
-            style={{ position: "relative", flex: "1", resize: "none", border: "0", fontSize: "var(--t-read)", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "var(--c-text)" } : {}) }} />
+            style={{ position: "relative", flex: "1", minWidth: 0, resize: "none", border: "0", fontSize: "var(--t-read)", lineHeight: "1.4", padding: "5px 6px", background: "transparent", color: "var(--c-text)", fieldSizing: "content", minHeight: "32px", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "var(--c-text)" } : {}) }} />
         </label>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: tools ? "-8px" : 0 }}>
-          {tools}
-          <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title={shared ? "Compartir un archivo, o elegir herramientas para tus bots" : "Añadir archivos, herramientas o apps"} onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .05)", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", color: plusOpen ? "var(--c-btn-text)" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
-            <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
-          </button>
-          <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={40} style={{ borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .05)", color: "var(--c-text-2)" }} />
-          <button type="button" className="rm-focus" aria-label={shared ? "Mencionar a alguien" : "Mencionar a un bot"} title={shared ? "Mencionar a una persona o a un bot (@)" : "Mencionar a un bot (@)"} onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgb(var(--c-ink-rgb) / .05)", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "var(--c-text-2)" }}>{"@"}</button>
-          <span style={{ flex: "1", textAlign: "right", fontSize: "var(--t-caption)", color: "var(--c-text-3)", paddingRight: "4px" }}>
-            {text.trim()
-              ? working ? `Intro: ${SEND_LABEL[roomMode].toLowerCase()} · Ctrl+Intro: ${SEND_LABEL[otherMode].toLowerCase()}` : "Enter para enviar · Mayús+Enter, nueva línea"
-              : working ? "Esc para pausarlos" : ""}
-          </span>
-          <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Enter)"} disabled={busy} className="c-press" style={{ minWidth: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: working ? "0 16px" : "0", background: text.trim() ? "var(--c-btn)" : "#C9CBD1", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)", transition: "background .2s ease" }}>
-            <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" /></span>
-            {working ? SEND_LABEL[roomMode] : null}
-          </button>
-        </div>
+        <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={32} style={{ borderRadius: "var(--r-sm)" }} />
+        <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Intro)"} disabled={busy || !text.trim()} className="v4-send c-press" style={working ? { width: "auto", padding: "0 12px", gap: "6px", display: "flex", alignItems: "center", fontSize: "var(--t-meta)", fontWeight: 600 } : null}>
+          <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><PaperPlaneRight size={18} weight="fill" /></span>
+          {working ? SEND_LABEL[roomMode] : null}
+        </button>
       </div>
+      {text.trim() || working ? (
+        <p style={{ margin: "6px 4px 0", fontSize: "var(--t-caption)", color: "var(--c-text-4)" }}>
+          {text.trim()
+            ? working ? `Intro: ${SEND_LABEL[roomMode].toLowerCase()} · Ctrl+Intro: ${SEND_LABEL[otherMode].toLowerCase()}` : "Intro para enviar · Mayús+Intro, nueva línea"
+            : "Esc para pausarlos"}
+        </p>
+      ) : null}
       {shared && requestHint(text, mentions.picks) ? <p role="status" style={{ margin: "8px 4px 0", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{requestHint(text, mentions.picks) + "."}</p> : null}
       <ErrorLine style={{ marginTop: "8px" }}>{error || fileError}</ErrorLine>
     </form>
@@ -1382,7 +1438,7 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
           }
           if (BLOCKED_STEP.has(s.status)) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "var(--c-error-soft)", border: "1px solid var(--c-error)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
                 {avatar}{title}<strong style={{ fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{"Bloqueado"}</strong>
               </div>
             );

@@ -95,7 +95,7 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
     // «Te espera» first: a bot with something waiting for you says so, even while it works.
     const busy = !paused && (b.status === "trabaja" || !!b.busy);
     const state = paused || b.status === "pausado" ? "paused" : waiting ? "waiting" : busy ? "working" : b.status === "limitado" ? "limited" : b.status === "bloqueado" ? "stuck" : "free";
-    return { id: b.id, href: `/chat/${b.id}`, name: b.name || "Bot", role: b.role || "", shape: sidebarShape(b.shape), color: b.color || "#C9CBD1", portrait: b.portrait ?? null, state, waiting, unread: unreadOf.get(b.id) || 0, ...(busy && state !== "working" ? { busy: true } : {}) };
+    return { id: b.id, href: `/chat/${b.id}`, name: b.name || "Bot", role: b.role || "", shape: sidebarShape(b.shape), color: b.color || undefined, portrait: b.portrait ?? null, state, waiting, unread: unreadOf.get(b.id) || 0, ...(busy && state !== "working" ? { busy: true } : {}) };
   });
 
   const waitingCount = waitingNow.length;
@@ -104,7 +104,7 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
 
 function personRow({ id, href, name, person, unread, waiting = 0 }) {
   const status = STATUS_WORD[person?.away?.mode] ? person.away.mode : null;
-  return { id, href, name: name || "Alguien", initials: person?.initials || initialsOf(name), color: person?.color || "#E9E6DA", presence: person?.online ? "online" : "offline", status, unread, waiting };
+  return { id, href, name: name || "Alguien", initials: person?.initials || initialsOf(name), color: person?.color || null, presence: person?.online ? "online" : "offline", status, unread, waiting };
 }
 
 /** The foot's line. It counts the same rows the Bots group shows and the same number as Inicio. */

@@ -114,12 +114,12 @@ export default function ConversationMap({ missionId, version, scroller, ownerOf,
             tabIndex={t.id === focusable ? 0 : -1} aria-current={on ? "true" : undefined} aria-label={`Tu mensaje ${i + 1} de ${turns.length}: ${t.title}`}
             onMouseEnter={() => setHover(t.id)} onFocus={() => setHover(t.id)} onBlur={() => setHover(null)} onClick={() => go(t.id)} onKeyDown={(e) => onKey(e, i)}
             style={{ position: "absolute", left: 0, top: `calc(${(at(i) * 100).toFixed(3)}% - 5px)`, width: "20px", height: "10px", padding: 0, border: 0, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-end", pointerEvents: "none" }}>
-            <span style={{ visibility: drawn ? "visible" : "hidden", width: on || hover === t.id ? "16px" : seen ? "12px" : "8px", height: on ? "3px" : "2px", borderRadius: "var(--r-xs)", background: on ? "#12131A" : seen ? "#8C91A0" : "#C9CCD6", transition: "width .15s ease, background .15s ease" }} />
+            <span style={{ visibility: drawn ? "visible" : "hidden", width: on || hover === t.id ? "16px" : seen ? "12px" : "8px", height: on ? "3px" : "2px", borderRadius: "var(--r-xs)", background: on ? "var(--c-text)" : seen ? "var(--c-text-4)" : "var(--c-line-strong)", transition: "width .15s ease, background .15s ease" }} />
           </button>
         );
       })}
       {shown ? (
-        <div role="tooltip" style={{ position: "absolute", right: "28px", top: `calc(${(at(shownIndex) * 100).toFixed(3)}% - 22px)`, width: "280px", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 18px 40px -18px rgba(18,19,26,.4)", pointerEvents: "none", display: "flex", flexDirection: "column", gap: "6px", animation: "fade .15s ease-out" }}>
+        <div role="tooltip" style={{ position: "absolute", right: "28px", top: `calc(${(at(shownIndex) * 100).toFixed(3)}% - 22px)`, width: "280px", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .06), var(--c-shadow-pop)", pointerEvents: "none", display: "flex", flexDirection: "column", gap: "6px", animation: "fade .15s ease-out" }}>
           <strong style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "var(--c-text)" }}>{shown.title}</strong>
           {shown.preview ? <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)", display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{shown.preview}</span> : null}
         </div>

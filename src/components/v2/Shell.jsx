@@ -1,10 +1,12 @@
 import { useLayoutEffect, useRef } from "react";
 import { css } from "../../design/V2Hoy.jsx";
 import Sidebar from "../v3/Sidebar.jsx";
+import "../../styles/conversation.css";
 
-// Every place: the Colmena 3 sidebar on the left (never moves) and the content beside it,
-// which is the only thing that scrolls. The window as a whole never scrolls. In the desktop
-// app an invisible strip along the top lets you drag the window (the rail drags too).
+// Every place: the Colmena sidebar on the left (never moves) and the content beside it, which
+// is the only thing that scrolls. The window as a whole never scrolls. In the desktop app the
+// sidebar's title strip and an invisible strip along the top of the content drag the window.
+// `background`: the content's ground (Colmena 3 screens: the paper `page`; v4 screens: `app`).
 export default function Shell({ active, children, background = "var(--c-page)", scroll = true, extraCss = null }) {
   useLayoutEffect(() => {
     document.documentElement.dataset.v2 = "1";
@@ -26,10 +28,10 @@ export default function Shell({ active, children, background = "var(--c-page)", 
       {extraCss ? <style>{extraCss}</style> : null}
       <div style={{ position: "relative", display: "flex", height: "100vh", overflow: "hidden", background }}>
         <Sidebar active={active} />
-        <div ref={content} id="contenido" data-v2-content="" style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", overflowY: scroll ? "auto" : "hidden", overscrollBehavior: "contain" }}>
+        <div ref={content} id="contenido" data-v2-content="" style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", overflowY: scroll ? "auto" : "hidden", overscrollBehavior: "contain", background }}>
           {children}
         </div>
-        {desktop ? <div aria-hidden="true" style={{ position: "fixed", top: 0, left: "0", right: 0, height: "22px", zIndex: 30, WebkitAppRegion: "drag" }} /> : null}
+        {desktop ? <div aria-hidden="true" style={{ position: "fixed", top: 0, left: "0", right: 0, height: "10px", zIndex: 30, WebkitAppRegion: "drag" }} /> : null}
       </div>
     </>
   );

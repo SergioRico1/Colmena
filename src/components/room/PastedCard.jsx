@@ -37,7 +37,7 @@ export default function PastedCard({ file, onInline, onRemove }) {
         <X size={14} strokeWidth={2.4} aria-hidden="true" />
       </button>
       {open ? (
-        <span role="dialog" aria-label="Texto pegado" className="c-pop" style={{ position: "absolute", left: 0, bottom: "calc(100% + 8px)", zIndex: 30, width: "min(560px, 80vw)", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", boxShadow: "0 16px 36px -18px rgba(18,19,26,.45)", overflow: "hidden" }}>
+        <span role="dialog" aria-label="Texto pegado" className="c-pop" style={{ position: "absolute", left: 0, bottom: "calc(100% + 8px)", zIndex: 30, width: "min(560px, 80vw)", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)", overflow: "hidden" }}>
           <pre style={{ margin: 0, padding: "14px 16px", maxHeight: "300px", overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", font: "13px/1.5 'Geist Mono', monospace", color: "var(--c-text)" }}>{file.content}</pre>
         </span>
       ) : null}

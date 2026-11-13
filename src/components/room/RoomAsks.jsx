@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { post } from "../../lib/api.js";
-import { BotMark } from "../v2/chat/Mark.jsx";
+import BotFace from "../BotFace.jsx";
+import { Desktop } from "../Icon.js";
 import { askChoices } from "../../lib/roomView.js";
+import { PersonAvatar } from "./Author.jsx";
+import { WaitPill } from "./InlineApprovals.jsx";
+import "../../styles/conversation.css";
 
 // What other people asked YOUR bots in this room and waits for you (`asks` of the room view,
-// docs/CONTRACT.md §18). It waits for you, so it is honey; everyone else sees the neutral line
-// «Vera espera el OK de Sergio». Shown once, here (not again among the composer's approvals).
-const btn = { minHeight: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" };
-
+// docs/CONTRACT.md §18; Colmena 4: design/v4 › the colleague's request). It waits for you, so it
+// wears the honey pill on the muted amber card; everyone else sees the neutral line «Vera espera
+// el OK de Sergio». Shown once, here (not again among the composer's approvals): what they asked,
+// where it will run, and «Adelante» · «Ahora no» · «Siempre para Lucía» · «Nunca para Lucía».
 export default function RoomAsks({ roomId, asks = [], onDecided = null }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
@@ -21,21 +25,35 @@ export default function RoomAsks({ roomId, asks = [], onDecided = null }) {
     finally { setBusy(null); onDecided?.(); }
   };
   return (
-    <section aria-label="Te esperan en esta sala" style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "0 clamp(16px, 3vw, 28px) 10px" }}>
-      {waiting.map((ask) => (
-        <div key={ask.id} id={"peticion-" + ask.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-honey-soft)", boxShadow: "inset 0 0 0 1px #F2D27A" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
-            {ask.bot ? <BotMark bot={ask.bot} size={16} /> : null}
-            <span><strong style={{ fontWeight: 600 }}>{ask.from?.name || "Alguien"}</strong>{" pide algo a "}<strong style={{ fontWeight: 600 }}>{ask.bot?.name || "tu bot"}</strong>{". Trabajará en tu ordenador, con tu cuenta."}</span>
-          </span>
-          {ask.text ? <p style={{ margin: 0, padding: "8px 12px", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.7)", fontSize: "var(--t-ui)", lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{ask.text}</p> : null}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {askChoices(ask).map(([decision, label], i) => (
-              <button key={decision} type="button" disabled={busy === ask.id} onClick={() => decide(ask, decision)} style={i === 0 ? { ...btn, background: "var(--c-btn)", borderColor: "var(--c-text)", color: "var(--c-btn-text)" } : btn}>{label}</button>
-            ))}
-          </div>
-        </div>
-      ))}
+    <section aria-label="Te esperan en esta sala" style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "0 0 10px" }}>
+      {waiting.map((ask) => {
+        const who = ask.from?.name || "Alguien";
+        const first = who.split(" ")[0];
+        const choices = askChoices(ask);
+        return (
+          <section key={ask.id} id={"peticion-" + ask.id} aria-labelledby={"peticion-t-" + ask.id} className="v4-need" style={{ width: "100%" }}>
+            <div className="v4-need-h">
+              <WaitPill />
+              <span className="t" id={"peticion-t-" + ask.id}>
+                {ask.from ? <PersonAvatar person={ask.from} size={20} /> : null}
+                <span>{`${first} pide algo a `}</span>
+                {ask.bot ? <BotFace bot={ask.bot} size={20} decorative /> : null}
+                <span>{ask.bot?.name || "tu bot"}</span>
+              </span>
+            </div>
+            {ask.text ? <p className="v4-need-q" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{`«${ask.text}»`}</p> : null}
+            <div className="v4-need-w"><Desktop size={16} style={{ flex: "none", color: "var(--c-text-3)" }} />{`Trabajará en tu ordenador, con tu cuenta. ${first} solo verá la respuesta.`}</div>
+            <div className="v4-need-f">
+              {choices.map(([decision, label], i) => (
+                <span key={decision} style={{ display: "contents" }}>
+                  {i === 2 ? <span style={{ flex: 1 }} /> : null}
+                  <button type="button" className={i === 0 ? "v4-btn primary" : i === 1 ? "v4-btn" : "v4-btn ghost"} disabled={busy === ask.id} onClick={() => decide(ask, decision)}>{label}</button>
+                </span>
+              ))}
+            </div>
+          </section>
+        );
+      })}
       {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</span> : null}
     </section>
   );

@@ -30,8 +30,11 @@ import SnoozeMenu, { snooze } from "./SnoozeMenu.jsx";
 // pass first; a card put off turns calm and says when it comes back. A question's options
 // read A, B, C… and the letter key answers (lib/choiceKeys.js). A card that fails to draw
 // becomes one muted pill (RowBoundary.jsx).
-export const HONEY = "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)";
-export const CALM = "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)";
+// Colmena 4 (design/v4 › .need): what waits for you sits on the muted amber ground with a thin
+// honey line, no glow; a card that waits for its undo or was put off turns calm (raised, a line).
+export const HONEY = "0 0 0 1px var(--c-honey-ring)";
+export const CALM = "0 0 0 1px var(--c-line)";
+const ground = (calm) => (calm ? "var(--c-raised)" : "var(--c-honey-soft)");
 
 const tag = (label) => (
   <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-honey-text)" }}>
@@ -39,12 +42,12 @@ const tag = (label) => (
     {label}
   </span>
 );
-const QUIET = { height: "50px", padding: "0 14px", border: "0", background: "transparent", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-text-3)" };
+const QUIET = { height: "36px", padding: "0 12px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-text-2)" };
 // The primary action is the product's dark button: honey stays on the card's ring and its label.
-const APPROVE = { flex: "1", height: "50px", padding: "0 22px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "600", whiteSpace: "nowrap" };
-const SOFT = { height: "50px", padding: "0 22px", border: "0", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "600", whiteSpace: "nowrap" };
+const APPROVE = { height: "36px", padding: "0 14px", border: "1px solid var(--c-btn)", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600", whiteSpace: "nowrap" };
+const SOFT = { height: "36px", padding: "0 14px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: "var(--c-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600", whiteSpace: "nowrap" };
 const ext = (name) => (String(name || "").split(".").pop() || "").slice(0, 4).toUpperCase();
-const EXT_TINT = { PDF: ["#FBE7DF", "#8E2A1F"], XLSX: ["#E1F4EC", "#0B5A3E"], CSV: ["#E1F4EC", "#0B5A3E"], DOCX: ["#E3EAFB", "#1F3F99"], PPTX: ["#FBEADF", "#8A3B12"] };
+const EXT_TINT = { PDF: ["var(--c-error-soft)", "var(--c-error)"], XLSX: ["var(--c-ok-soft)", "var(--c-ok-ink)"], CSV: ["var(--c-ok-soft)", "var(--c-ok-ink)"], DOCX: ["var(--c-accent-soft)", "var(--c-accent-ink)"], PPTX: ["var(--c-error-soft)", "var(--c-error)"] };
 
 function Header({ bot, who, mission, at, label }) {
   return (
@@ -70,7 +73,7 @@ function Countdown({ id, onUndo, text = "Se envía en" }) {
         <button type="button" onClick={onUndo} style={{ height: "40px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Deshacer"}</button>
       </div>
       <span style={{ height: "4px", borderRadius: "var(--r-xs)", background: "rgb(var(--c-ink-rgb) / .08)", overflow: "hidden" }}>
-        <span style={{ display: "block", height: "100%", background: "#12131A", transition: "width .25s linear", width: Math.round(fraction * 100) + "%" }} />
+        <span style={{ display: "block", height: "100%", background: "var(--c-text)", transition: "width .25s linear", width: Math.round(fraction * 100) + "%" }} />
       </span>
     </div>
   );
@@ -79,8 +82,8 @@ function Countdown({ id, onUndo, text = "Se envía en" }) {
 function Sent({ text }) {
   return (
     <span role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-ok-ink)", animation: "fade .3s ease-out" }}>
-      <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
-        <Check size={12} weight="bold" color="#FFFFFF" />
+      <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-ok)", animation: "pop .4s ease-out" }}>
+        <Check size={12} weight="bold" color="var(--c-app)" />
       </span>
       {text}
     </span>
@@ -153,7 +156,7 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
 
   if (settled) {
     return (
-      <article style={{ padding: "26px", background: "var(--c-card)", borderRadius: "var(--r-3xl)", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: CALM }}>
+      <article style={{ padding: "16px", background: ground(true), borderRadius: "var(--r-md)", display: "flex", flexDirection: "column", gap: "14px", transition: "box-shadow .5s ease", boxShadow: CALM }}>
         <Header bot={bot} mission={mission} at={a.createdAt} />
         <h3 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em" }}>{a.title}</h3>
         <Sent text={settled} />
@@ -161,7 +164,7 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
     );
   }
   return (
-    <article ref={keys} style={{ padding: "26px", background: "var(--c-card)", borderRadius: inline ? "var(--r-3xl)" : "var(--r-3xl)", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
+    <article ref={keys} style={{ padding: "16px", background: ground(waiting || snoozed), borderRadius: "var(--r-md)", display: "flex", flexDirection: "column", gap: "14px", transition: "box-shadow .5s ease, background .3s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
       {inline ? (snoozed ? null : tag("Te necesita")) : <Header bot={bot} who={a.external ? "fuera de tu empresa" : null} mission={mission} at={a.createdAt} label={snoozed ? null : label} />}
       <h3 style={{ margin: "0", font: inline ? "600 var(--t-heading)/1.25 'Bricolage Grotesque', sans-serif" : "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{model.title}</h3>
       {isSend && email ? (
@@ -170,7 +173,7 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
           <SendWhat send={model.send} subject={!model.send.subject} size="var(--t-body)" />
           {(email.attachments || []).map((f, i) => {
             const e = ext(f.name || f);
-            const [bg, fg] = EXT_TINT[e] || ["#EEF0F4", "#4A4F5C"];
+            const [bg, fg] = EXT_TINT[e] || ["var(--c-sunken)", "var(--c-text-2)"];
             return (
               <span key={i} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px 6px 6px", background: "var(--c-card)", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)" }}>
                 <span aria-hidden="true" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: bg, color: fg, font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{e}</span>
@@ -293,7 +296,7 @@ export const NeedGroupCard = withRowBoundary(function NeedGroupCard({ group, bot
     );
   }
   return (
-    <article aria-label={heading} style={{ padding: "26px", background: "var(--c-card)", borderRadius: inline ? "var(--r-3xl)" : "var(--r-3xl)", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
+    <article aria-label={heading} style={{ padding: "16px", background: ground(waiting || snoozed), borderRadius: "var(--r-md)", display: "flex", flexDirection: "column", gap: "14px", transition: "box-shadow .5s ease, background .3s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
       {inline ? (snoozed ? null : tag("Te necesita")) : <Header bot={bot} mission={mission} at={items[0].createdAt} label={snoozed ? null : "Aprobar"} />}
       <h3 style={{ margin: "0", font: inline ? "600 var(--t-heading)/1.25 'Bricolage Grotesque', sans-serif" : "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{heading}</h3>
       <ul style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -330,7 +333,7 @@ export function ChoiceCard({ m, bots }) {
   const lead = bots.find((b) => b.id === (m.botIds?.[0] || "atlas")) || bots.find((b) => b.id === "atlas");
   const isPlan = m.status === "awaiting_plan";
   return (
-    <article style={{ padding: "26px", background: "var(--c-card)", borderRadius: "var(--r-3xl)", display: "flex", flexDirection: "column", gap: "18px", boxShadow: HONEY }}>
+    <article style={{ padding: "16px", background: ground(false), borderRadius: "var(--r-md)", display: "flex", flexDirection: "column", gap: "14px", boxShadow: HONEY }}>
       <Header bot={lead} mission={m} at={m.updatedAt} label={isPlan ? "Revisar" : "Elegir"} />
       <h3 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em" }}>{m.title}</h3>
       <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.55", color: "var(--c-text-2)" }}>{isPlan ? "El plan está listo. Revísalo y dale el OK para que empiecen." : m.activityLine || "Las propuestas están listas: elige una."}</p>

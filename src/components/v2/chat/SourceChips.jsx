@@ -33,7 +33,7 @@ function Preview({ source, anchor, onEnter, onLeave }) {
   const Icon = ICON[source.kind] || Globe;
   return createPortal((
     <div role="tooltip" onMouseEnter={onEnter} onMouseLeave={onLeave}
-      style={{ position: "fixed", zIndex: 70, ...place, padding: "14px 16px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 20px 44px -18px rgba(18,19,26,.4)", display: "flex", flexDirection: "column", gap: "8px", animation: "rise .18s ease-out" }}>
+      style={{ position: "fixed", zIndex: 70, ...place, padding: "14px 16px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .06), var(--c-shadow-pop)", display: "flex", flexDirection: "column", gap: "8px", animation: "rise .18s ease-out" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "var(--c-text-3)", minWidth: 0 }}>
         <Icon size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{source.site}</span>
@@ -71,7 +71,7 @@ function Chip({ source }) {
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
     </>
   );
-  const style = { display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "240px", height: "30px", padding: "0 12px 0 10px", borderRadius: "var(--r-pill)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", fontSize: "var(--t-meta)", color: "var(--c-text)", textDecoration: "none", cursor: source.url ? "pointer" : "default" };
+  const style = { display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "240px", height: "30px", padding: "0 12px 0 10px", borderRadius: "var(--r-pill)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .08)", fontSize: "var(--t-meta)", color: "var(--c-text)", textDecoration: "none", cursor: source.url ? "pointer" : "default" };
   const events = { onMouseEnter: h.show, onMouseLeave: h.hide, onFocus: h.show, onBlur: h.hide, onKeyDown: (e) => { if (e.key === "Escape") h.close(); } };
   return (
     <>

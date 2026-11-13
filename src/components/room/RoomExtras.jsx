@@ -37,11 +37,11 @@ export function CatchUp({ count, mission, pending, id }) {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <span aria-hidden="true" style={{ width: "18px", height: "18px", background: "var(--c-card)", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
         <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"Mientras no estabas"}</span>
-        <span style={{ fontSize: "var(--t-meta)", color: "#C9CBD3" }}>{`${count} mensajes${need.length ? ` · ${need.length} te ${need.length === 1 ? "necesita" : "necesitan"}` : ""}`}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: "color-mix(in oklab, var(--c-btn-text) 75%, var(--c-btn))" }}>{`${count} mensajes${need.length ? ` · ${need.length} te ${need.length === 1 ? "necesita" : "necesitan"}` : ""}`}</span>
         <span style={{ flex: "1" }} />
         {vote ? <a href={`/debate/${id}`} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>{"Ir a la votación"}</a> : null}
       </div>
-      <ul style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#E6E7EC" }}>
+      <ul style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "color-mix(in oklab, var(--c-btn-text) 90%, var(--c-btn))" }}>
         {sentences.slice(0, 3).map((t, i) => <li key={i}>{t}</li>)}
         {need.length ? <li>{"Te toca: " + need[0].title.charAt(0).toLowerCase() + need[0].title.slice(1) + "."}</li> : null}
       </ul>
@@ -90,7 +90,7 @@ export function RulesPanel({ mission, bots, memberIds }) {
             <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: "1.55" }}>
                 {r.pre}
-                <button type="button" aria-expanded={open === r.id ? "true" : "false"} onClick={() => setOpen(open === r.id ? null : r.id)} style={{ padding: "0 4px", border: 0, borderRadius: "var(--r-sm)", background: open === r.id ? "rgba(255,201,60,.25)" : "transparent", cursor: "pointer", font: "inherit", fontWeight: 600, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "4px" }}>{current}</button>
+                <button type="button" aria-expanded={open === r.id ? "true" : "false"} onClick={() => setOpen(open === r.id ? null : r.id)} style={{ padding: "0 4px", border: 0, borderRadius: "var(--r-sm)", background: open === r.id ? "var(--c-accent-soft)" : "transparent", cursor: "pointer", font: "inherit", fontWeight: 600, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "4px" }}>{current}</button>
                 {r.post}
               </p>
               {open === r.id ? (
@@ -98,9 +98,9 @@ export function RulesPanel({ mission, bots, memberIds }) {
                   {r.options.map(([v, label]) => {
                     const on = v === r.value;
                     return (
-                      <button key={v} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => choose(r, v)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)" }}>
-                        <span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
-                          <Check size={9} weight="bold" color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
+                      <button key={v} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => choose(r, v)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)" }}>
+                        <span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "var(--c-btn)" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
+                          <Check size={9} weight="bold" color="var(--c-btn-text)" style={{ opacity: on ? 1 : 0 }} />
                         </span>
                         {label.charAt(0).toUpperCase() + label.slice(1)}
                       </button>

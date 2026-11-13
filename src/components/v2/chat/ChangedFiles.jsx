@@ -16,7 +16,7 @@ import { plural } from "../../../lib/undo.js";
 
 const ICON = { created: FilePlus2, edited: FilePen, deleted: FileX2 };
 const MONO = "'Geist Mono', monospace";
-const GREEN = "#0B6B4A", RED = "#B4232A";
+const GREEN = "var(--c-ok-ink)", RED = "var(--c-error)";
 
 /** Opens a file of the chat's folder in the side panel of the screen that shows it. */
 export function openWorkFile(missionId, file) {
@@ -74,7 +74,7 @@ export default function ChangedFiles({ cp, missionId }) {
   if (error || (data && !files.length)) return null;
   const total = files.length + (data?.more || 0);
   return (
-    <section aria-label="Archivos cambiados" style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 10px 10px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 40px -32px rgba(18,19,26,.35)", animation: "fade .3s ease-out" }}>
+    <section aria-label="Archivos cambiados" style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 10px 10px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", animation: "fade .3s ease-out" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", padding: "0 8px 4px" }}>
         <span style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text)" }}>{"Archivos cambiados"}</span>
         <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{data ? plural(total, "archivo", "archivos") : "Mirando los cambios…"}</span>
@@ -86,7 +86,7 @@ export default function ChangedFiles({ cp, missionId }) {
           <button key={f.scope + "/" + f.path} type="button" className="rm-focus msg-row" onClick={() => setComparing(f)} title={`Ver antes y después de ${f.path}`}
             {...(f.openable ? dragOutProps(workFileUrl(missionId, f.path)) : {})}
             style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", margin: 0, padding: "6px 8px", border: 0, borderRadius: "var(--r-md)", background: "transparent", cursor: "pointer", textAlign: "left" }}>
-            <Icon size={16} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: f.change === "deleted" ? "#8C91A0" : "var(--c-text-2)" }} />
+            <Icon size={16} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: f.change === "deleted" ? "var(--c-text-4)" : "var(--c-text-2)" }} />
             <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "baseline", gap: "8px" }}>
               <span style={{ minWidth: 0, font: `500 var(--t-meta)/1.35 ${MONO}`, color: f.change === "deleted" ? "var(--c-text-3)" : "var(--c-text)", textDecoration: f.change === "deleted" ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.path}</span>
               <span style={{ flex: "none", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{[CHANGE_WORD[f.change], f.folder ? `en «${f.folder}»` : null].filter(Boolean).join(" · ")}</span>
@@ -96,7 +96,7 @@ export default function ChangedFiles({ cp, missionId }) {
                 <>{d.added ? <span style={{ color: "var(--c-ok-ink)" }}>{"+" + d.added}</span> : null}{d.added && d.removed ? " " : ""}{d.removed ? <span style={{ color: "var(--c-error)" }}>{"−" + d.removed}</span> : null}{!d.added && !d.removed ? <span style={{ color: "var(--c-text-3)" }}>{"="}</span> : null}</>
               ) : <span style={{ color: "var(--c-text-3)" }}>{d.text}</span>}
             </span>
-            <ChevronRight size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#8C91A0" }} />
+            <ChevronRight size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-4)" }} />
           </button>
         );
       })}
@@ -107,9 +107,9 @@ export default function ChangedFiles({ cp, missionId }) {
 }
 
 const STYLE = {
-  add: { bg: "#EAF7F0", fg: GREEN, sign: "+" },
-  del: { bg: "#FBEDEE", fg: RED, sign: "−" },
-  ctx: { bg: "transparent", fg: "#3D404A", sign: " " },
+  add: { bg: "var(--c-ok-soft)", fg: GREEN, sign: "+" },
+  del: { bg: "var(--c-error-soft)", fg: RED, sign: "−" },
+  ctx: { bg: "transparent", fg: "var(--c-text-2)", sign: " " },
 };
 
 function Unified({ rows }) {
@@ -132,7 +132,7 @@ function Split({ rows }) {
     const bg = row.type === "ctx" ? "transparent" : s.bg;
     return (
       <>
-        <span style={{ paddingRight: "8px", textAlign: "right", color: "#5C606C", background: bg, userSelect: "none" }}>{(side === "left" ? row.a : row.b) ?? ""}</span>
+        <span style={{ paddingRight: "8px", textAlign: "right", color: "var(--c-text-3)", background: bg, userSelect: "none" }}>{(side === "left" ? row.a : row.b) ?? ""}</span>
         <span style={{ minWidth: 0, padding: "0 10px 0 4px", whiteSpace: "pre-wrap", wordBreak: "break-word", color: s.fg, background: bg }}>{row.text || " "}</span>
       </>
     );
@@ -200,11 +200,11 @@ export function CompareDialog({ missionId, cpId, file, onClose }) {
   const textual = diff && (diff.mode === "text" || diff.mode === "document");
   const showPages = diff?.mode === "visual" || (diff?.mode === "document" && diff.visual && look === "pages");
   const d = deltaLabel(file);
-  const seg = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", color: on ? "var(--c-text)" : "var(--c-text-2)" });
+  const seg = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none", color: on ? "var(--c-text)" : "var(--c-text-2)" });
   const fileForVisual = { ...file, kind: diff?.mode === "document" ? "office" : file.kind, before: diff?.before ?? (file.before != null ? { size: file.before } : null), after: diff?.after ?? (file.after != null ? { size: file.after } : null) };
   return (
     <dialog ref={dialog} onClose={onClose} aria-labelledby={titleId} onClick={(e) => { if (e.target === e.currentTarget) dialog.current.close(); }}
-      style={{ width: "min(1120px, calc(100vw - 48px))", maxWidth: "none", height: "min(820px, calc(100vh - 48px))", maxHeight: "none", padding: 0, border: 0, borderRadius: "var(--r-2xl)", background: "var(--c-sunken)", boxShadow: "0 40px 80px -30px rgba(18,19,26,.45)", overflow: "hidden" }}>
+      style={{ width: "min(1120px, calc(100vw - 48px))", maxWidth: "none", height: "min(820px, calc(100vh - 48px))", maxHeight: "none", padding: 0, border: 0, borderRadius: "var(--r-2xl)", background: "var(--c-sunken)", boxShadow: "var(--c-shadow-pop)", overflow: "hidden" }}>
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "18px 20px 14px", background: "var(--c-card)", borderBottom: "1px solid var(--c-line)" }}>
           <span style={{ flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>

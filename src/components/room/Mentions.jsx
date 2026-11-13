@@ -11,18 +11,18 @@ import { firstName } from "../../lib/identity.js";
 
 // The tints of the attachment tiles (v2/chat/Parts.jsx, which shows these chips: kept here so
 // neither imports the other).
-const TINT = { pdf: ["#FBE9EA", "#B4232A"], xlsx: ["#E3F4EC", "#0B6B4A"], xls: ["#E3F4EC", "#0B6B4A"], csv: ["#E3F4EC", "#0B6B4A"], docx: ["#E3EBFF", "#1F4FD1"], doc: ["#E3EBFF", "#1F4FD1"], md: ["#E3EBFF", "#1F4FD1"], txt: ["#E3EBFF", "#1F4FD1"], pptx: ["#FFE9DC", "#C2410C"] };
+const TINT = { pdf: ["var(--c-error-soft)", "var(--c-error)"], xlsx: ["var(--c-ok-soft)", "var(--c-ok-ink)"], xls: ["var(--c-ok-soft)", "var(--c-ok-ink)"], csv: ["var(--c-ok-soft)", "var(--c-ok-ink)"], docx: ["var(--c-accent-soft)", "var(--c-accent-ink)"], doc: ["var(--c-accent-soft)", "var(--c-accent-ink)"], md: ["var(--c-accent-soft)", "var(--c-accent-ink)"], txt: ["var(--c-accent-soft)", "var(--c-accent-ink)"], pptx: ["color-mix(in oklab, var(--c-error) 14%, var(--c-card))", "var(--c-error)"] };
 const extOf = (name) => (String(name || "").split(".").pop() || "").toLowerCase();
-const extTint = (ext) => TINT[ext] || ["#F1F1EC", "#4A4D57"];
+const extTint = (ext) => TINT[ext] || ["var(--c-chip)", "var(--c-text-3)"];
 
 const TRIGGER = /(^|\s)@([\p{L}\d_.-]*)$/u;
 const I = { size: 13, strokeWidth: 2.2, "aria-hidden": "true" };
 // design/V3Chat.dc.html «Mencionar»: a white card over the box, rows of 42 px with a small
 // glyph, the name and what it is on the right.
-const MENU = { position: "absolute", zIndex: 30, left: "0", bottom: "calc(100% + 8px)", width: "320px", maxWidth: "calc(100vw - 32px)", maxHeight: "360px", overflowY: "auto", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" };
+const MENU = { position: "absolute", zIndex: 30, left: "0", bottom: "calc(100% + 8px)", width: "320px", maxWidth: "calc(100vw - 32px)", maxHeight: "360px", overflowY: "auto", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", animation: "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" };
 const ROW = { minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", cursor: "pointer", width: "100%", flex: "none", color: "var(--c-text)" };
 const HEAD = { flex: "none", display: "block", padding: "8px 10px 4px", fontSize: "var(--t-caption)", fontWeight: 600, color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-const tile = (bg, fg = "#3D404A") => ({ width: "18px", height: "18px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-xs)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 });
+const tile = (bg, fg = "var(--c-text-2)") => ({ width: "18px", height: "18px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-xs)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 });
 
 function FileGlyph({ name }) {
   const ext = extOf(name);
@@ -33,8 +33,8 @@ function FileGlyph({ name }) {
 /** The glyph of a pick, in the menu and on its chip. */
 export function RefGlyph({ kind, name, room = false }) {
   if (kind === "file") return <FileGlyph name={name} />;
-  if (kind === "folder") return <span aria-hidden="true" style={tile("#F1F1EC")}><Folder size={11} strokeWidth={2.3} /></span>;
-  return <span aria-hidden="true" style={tile("#E3EBFF", "#1F4FD1")}>{room ? <Hash size={11} strokeWidth={2.4} /> : <MessagesSquare size={11} strokeWidth={2.3} />}</span>;
+  if (kind === "folder") return <span aria-hidden="true" style={tile("var(--c-chip)")}><Folder size={11} strokeWidth={2.3} /></span>;
+  return <span aria-hidden="true" style={tile("var(--c-accent-soft)", "var(--c-accent-ink)")}>{room ? <Hash size={11} strokeWidth={2.4} /> : <MessagesSquare size={11} strokeWidth={2.3} />}</span>;
 }
 
 /** Under your message: what you pointed at with «@» (files, folders, conversations). */
@@ -195,11 +195,11 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null, r
     // Someone else's bot carries its owner's chip; the second option for a name you share reads «¿Vera, de Lucía?».
     if (item.type === "peerbot") return [<BotMark key="g" bot={item.bot} size={18} owner={item.owner} />, item.ask || item.bot.name, item.ask ? "bot de " + firstName(item.owner?.name) : item.bot.role || "bot"];
     if (item.type === "bot") return [<BotMark key="g" bot={item.bot} size={18} />, item.bot.name, item.bot.role || "bot"];
-    if (item.type === "person") return [<PersonAvatar key="g" person={item.person} size={20} ring="#FFFFFF" />, item.person.name, item.person.presence === "online" ? "en línea" : "persona"];
+    if (item.type === "person") return [<PersonAvatar key="g" person={item.person} size={20} ring="var(--c-card)" />, item.person.name, item.person.presence === "online" ? "en línea" : "persona"];
     if (item.type === "file") return [<RefGlyph key="g" kind="file" name={item.name} />, item.name, "archivo"];
     if (item.type === "folder") return [<RefGlyph key="g" kind="folder" />, item.name, <span key="k" style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>{"carpeta"}<ChevronRight {...I} style={{ opacity: selected ? 1 : 0.6 }} /></span>];
     if (item.type === "up") return [<span key="g" aria-hidden="true" style={tile("transparent")}><ChevronLeft size={14} strokeWidth={2.3} /></span>, "Atrás", ""];
-    if (item.type === "here") return [<span key="g" aria-hidden="true" style={tile("#F1F1EC")}><FolderCheck size={11} strokeWidth={2.3} /></span>, "Toda la carpeta «" + item.name + "»", "carpeta"];
+    if (item.type === "here") return [<span key="g" aria-hidden="true" style={tile("var(--c-chip)")}><FolderCheck size={11} strokeWidth={2.3} /></span>, "Toda la carpeta «" + item.name + "»", "carpeta"];
     return [<RefGlyph key="g" kind="chat" room={item.chat.room} />, item.chat.title, item.chat.room ? "sala" : "chat"];
   };
 
@@ -225,8 +225,14 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null, r
 
   const chips = refs.map((r) => ({ key: r.key, label: r.label, icon: <RefGlyph kind={r.kind} name={r.label} room={r.room} /> }));
   const removeRef = (key) => setRefs((list) => list.filter((r) => r.key !== key));
+  /** One of your bots addressed from the composer's chip («@Vera» at the start): in a room with people it is picked too. */
+  const address = (bot) => {
+    if (!room || !bot) return;
+    const pick = { type: "bot", id: bot.id, owner: null, ownerName: null, label: bot.name };
+    setPicks((list) => (list.some((x) => x.type === "bot" && x.id === bot.id) ? list : [...list, pick]));
+  };
   return {
-    inputProps, handleKey, menu, start, composing: (e) => ime.key(e?.nativeEvent || e),
+    inputProps, handleKey, menu, start, address, composing: (e) => ime.key(e?.nativeEvent || e),
     picks, clearPicks: () => setPicks([]), restorePicks: setPicks,
     refs, chips, removeRef, isRef: (key) => String(key || "").startsWith("ref:"),
     refsBody: () => (refs.length ? { refs: refBody(refs) } : {}), clearRefs: () => setRefs([]), restoreRefs: setRefs,

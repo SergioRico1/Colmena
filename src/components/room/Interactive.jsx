@@ -11,7 +11,8 @@ import { Check } from "../Icon.js";
 // from the person, through InteractiveContext (rooms and chats provide `send`).
 export const InteractiveContext = createContext({ send: null, after: [], botName: null });
 
-const PALETTE = ["#2F6BFF", "#FFC93C", "#0B8A5F", "#FF5CA8", "#7B4DFF", "#FF7A1A", "#0E7C86"];
+// Series colours, from the theme tokens (never honey: it only means «te necesita»).
+const PALETTE = ["var(--c-accent)", "var(--c-ok)", "var(--c-error)", "color-mix(in oklab, var(--c-accent) 50%, var(--c-error))", "color-mix(in oklab, var(--c-ok) 50%, var(--c-accent))", "var(--c-text-3)", "color-mix(in oklab, var(--c-accent) 45%, var(--c-text))"];
 const card = { background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: "14px 16px", display: "flex", flexDirection: "column", gap: "12px", maxWidth: "680px" };
 const titleStyle = { margin: 0, font: "700 var(--t-body)/1.3 'Bricolage Grotesque', sans-serif", color: "var(--c-text)" };
 const num = (v) => (typeof v === "number" ? v : Number(String(v).replace(/\./g, "").replace(",", ".")));
@@ -63,12 +64,12 @@ function Chart({ spec, bare, noTitle }) {
           const large = a2 - angle > Math.PI ? 1 : 0;
           const d = `M${cx},${cy} L${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)} A${r},${r} 0 ${large} 1 ${cx + r * Math.cos(a2)},${cy + r * Math.sin(a2)} Z`;
           angle = a2;
-          return <path key={i} data-slice="" style={{ animationDelay: i * 40 + "ms" }} d={d} fill={PALETTE[i % PALETTE.length]} stroke="#FFFFFF" strokeWidth="2"><title>{`${labels[i]}: ${fmt(v)} ${unit} (${Math.round((v / total) * 100)} %)`}</title></path>;
+          return <path key={i} data-slice="" style={{ animationDelay: i * 40 + "ms" }} d={d} fill={PALETTE[i % PALETTE.length]} stroke="var(--c-card)" strokeWidth="2"><title>{`${labels[i]}: ${fmt(v)} ${unit} (${Math.round((v / total) * 100)} %)`}</title></path>;
         })}
         {labels.map((l, i) => (
           <g key={l + i} transform={`translate(270, ${24 + i * 22})`}>
             <rect width="12" height="12" rx="3" fill={PALETTE[i % PALETTE.length]} />
-            <text x="20" y="11" fontSize="13" fill="#2B2D36">{`${l} · ${fmt(values[i])} ${unit} (${Math.round((values[i] / total) * 100)} %)`}</text>
+            <text x="20" y="11" fontSize="13" fill="var(--c-text-2)">{`${l} · ${fmt(values[i])} ${unit} (${Math.round((values[i] / total) * 100)} %)`}</text>
           </g>
         ))}
       </>
@@ -78,11 +79,11 @@ function Chart({ spec, bare, noTitle }) {
       <>
         {ticks.map((t, i) => (
           <g key={i}>
-            <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="#E6E8EE" />
-            <text x={L - 6} y={y(t) + 4} fontSize="11" textAnchor="end" fill="#555A68">{fmt(Math.round(t * 100) / 100)}</text>
+            <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--c-line)" />
+            <text x={L - 6} y={y(t) + 4} fontSize="11" textAnchor="end" fill="var(--c-text-3)">{fmt(Math.round(t * 100) / 100)}</text>
           </g>
         ))}
-        {labels.map((l, i) => <text key={l + i} x={L + step * i + step / 2} y={H - 12} fontSize="11" textAnchor="middle" fill="#4A4F5C">{l.length > Math.max(6, Math.floor(step / 7)) ? l.slice(0, Math.max(5, Math.floor(step / 7) - 1)) + "…" : l}</text>)}
+        {labels.map((l, i) => <text key={l + i} x={L + step * i + step / 2} y={H - 12} fontSize="11" textAnchor="middle" fill="var(--c-text-3)">{l.length > Math.max(6, Math.floor(step / 7)) ? l.slice(0, Math.max(5, Math.floor(step / 7) - 1)) + "…" : l}</text>)}
         {type === "lineas" || type === "line"
           ? series.map((s) => (
             <g key={s.name}>
@@ -185,10 +186,10 @@ function Evidence({ blocks }) {
     <section aria-label="Datos de apoyo" style={{ ...card, maxWidth: "720px", minWidth: 0 }}>
       {blocks.length > 1 ? (
         <div ref={evRef} role="tablist" aria-label="Ver los datos como" className="c-seg" style={{ display: "flex", gap: "4px", padding: "3px", background: "var(--c-chip)", borderRadius: "var(--r-md)", alignSelf: "flex-start" }}>
-          {evPill ? <span aria-hidden="true" className="c-seg-pill" style={{ ...evPill, background: "var(--c-card)", borderRadius: "var(--r-sm)", boxShadow: "0 1px 2px rgba(18,19,26,0.12)" }} /> : null}
+          {evPill ? <span aria-hidden="true" className="c-seg-pill" style={{ ...evPill, background: "var(--c-card)", borderRadius: "var(--r-sm)", boxShadow: "var(--c-shadow-lift)" }} /> : null}
           {blocks.map((b, i) => (
             <button key={i} type="button" role="tab" aria-selected={i === tab ? "true" : "false"} data-seg-active={i === tab ? "true" : undefined} onClick={() => setTab(i)}
-              style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", ...(i === tab ? { background: evPill ? "transparent" : "var(--c-card)", color: "var(--c-text)", boxShadow: evPill ? "none" : "0 1px 2px rgba(18,19,26,0.12)" } : { background: "transparent", color: "var(--c-text-2)" }) }}>
+              style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", ...(i === tab ? { background: evPill ? "transparent" : "var(--c-card)", color: "var(--c-text)", boxShadow: evPill ? "none" : "var(--c-shadow-lift)" } : { background: "transparent", color: "var(--c-text-2)" }) }}>
               {b.spec.titulo || b.spec.title ? `${evidenceLabel(b.spec)} · ${b.spec.titulo || b.spec.title}` : evidenceLabel(b.spec)}
             </button>
           ))}
@@ -202,10 +203,10 @@ function Evidence({ blocks }) {
 // ---------------------------------------------------------------- the ask
 // Same look as Colmena's question card (QuestionCard): ink border + honey shadow while it
 // waits for you; muted with «Respondiste: …» once answered (also after reopening the room).
-const askCard = { maxWidth: "600px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "12px" };
+const askCard = { maxWidth: "600px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px var(--c-honey-ring), var(--c-shadow-pop)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "12px" };
 const answeredCard = { ...askCard, border: "1px solid var(--c-line)", boxShadow: "none" };
 const doneChip = (text) => (
-  <span role="status" style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "4px 10px", background: "var(--c-ok-soft)", border: "1px solid #9ED4BC", borderRadius: "var(--r-lg)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
+  <span role="status" style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "4px 10px", background: "var(--c-ok-soft)", border: "1px solid color-mix(in oklab, var(--c-ok) 45%, var(--c-card))", borderRadius: "var(--r-lg)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
     <Check size={14} strokeWidth={2.6} aria-hidden="true" />
     {text}
   </span>
@@ -241,7 +242,7 @@ function AskChoices({ spec, next }) {
                   {o.label}
                   {o.recommended ? <span style={{ font: "600 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.04em", textTransform: "uppercase", padding: "3px 6px", borderRadius: "var(--r-xs)", background: "var(--c-honey)", color: "var(--c-honey-ink)" }}>Recomendada</span> : null}
                 </span>
-                {o.detail ? <span style={{ fontSize: "var(--t-caption)", fontWeight: "400", color: o.recommended ? "#C9CCD6" : "var(--c-text-2)" }}>{o.detail}</span> : null}
+                {o.detail ? <span style={{ fontSize: "var(--t-caption)", fontWeight: "400", color: o.recommended ? "color-mix(in oklab, var(--c-btn-text) 75%, var(--c-btn))" : "var(--c-text-2)" }}>{o.detail}</span> : null}
               </button>
             ))}
           </div>

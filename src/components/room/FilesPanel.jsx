@@ -237,7 +237,7 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
         <a href={rawUrl(missionId, path, true)} download className="rm-focus" aria-label="Descargar" title="Descargar" style={{ ...btn, width: "32px", padding: 0, justifyContent: "center" }}><Download {...I} size={14} /></a>
       </div>
       {notice ? (
-        <div role={notice.kind === "saved" ? "status" : "alert"} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", margin: "10px 14px 0", padding: "10px 12px", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", background: notice.kind === "saved" ? "var(--c-ok-soft)" : notice.kind === "conflict" ? "var(--c-honey-soft)" : "#FBE7DF", border: "1px solid " + (notice.kind === "saved" ? "#9ED4BC" : notice.kind === "conflict" ? "#F2D27A" : "#B4372A") }}>
+        <div role={notice.kind === "saved" ? "status" : "alert"} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", margin: "10px 14px 0", padding: "10px 12px", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", background: notice.kind === "saved" ? "var(--c-ok-soft)" : notice.kind === "conflict" ? "var(--c-honey-soft)" : "var(--c-error-soft)", border: "1px solid " + (notice.kind === "saved" ? "color-mix(in oklab, var(--c-ok) 45%, var(--c-card))" : notice.kind === "conflict" ? "var(--c-honey-ring)" : "var(--c-error)") }}>
           <span style={{ flex: "1 1 200px" }}>{notice.text}</span>
           {notice.kind === "conflict" ? (
             <>

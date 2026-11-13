@@ -49,7 +49,7 @@ export default function SecretPrompt({ approval, bots = [], compact = false }) {
   };
   if (done) {
     return (
-      <p role="status" className="c-band" style={{ margin: compact ? 0 : "0 0 10px", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: done === "saved" ? "var(--c-ok-soft)" : "var(--c-sunken)", border: "1px solid " + (done === "saved" ? "#9ED4BC" : "#DCE0E8"), borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", color: done === "saved" ? "var(--c-ok-ink)" : "var(--c-text-2)" }}>
+      <p role="status" className="c-band" style={{ margin: compact ? 0 : "0 0 10px", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: done === "saved" ? "var(--c-ok-soft)" : "var(--c-sunken)", border: "1px solid " + (done === "saved" ? "color-mix(in oklab, var(--c-ok) 45%, var(--c-card))" : "var(--c-line)"), borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", color: done === "saved" ? "var(--c-ok-ink)" : "var(--c-text-2)" }}>
         {done === "saved" ? <ShieldCheck {...I} /> : <KeyRound {...I} />}
         {done === "saved" ? `Clave ${s.name} guardada. ${bot.name} ya puede usarla, sin verla.` : `Le has dicho a ${bot.name} que no.`}
       </p>
@@ -57,7 +57,7 @@ export default function SecretPrompt({ approval, bots = [], compact = false }) {
   }
   return (
     <form id={"clave-" + approval.id} onSubmit={save} aria-label={`${bot.name} te pide la clave ${s.name}`} className="c-band"
-      style={{ margin: compact ? 0 : "0 0 10px", padding: "14px 16px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", display: "flex", flexDirection: "column", gap: "10px" }}>
+      style={{ margin: compact ? 0 : "0 0 10px", padding: "14px 16px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px var(--c-honey-ring), var(--c-shadow-pop)", display: "flex", flexDirection: "column", gap: "10px" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
         <BotAvatar bot={bot} size={30} mood="duda" />
         <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>

@@ -178,14 +178,14 @@ export default function ChatsHome() {
           {tabsDef.map(([id, label]) => {
             const on = tab === id;
             return (
-              <button key={id} type="button" role="tab" aria-selected={on ? "true" : "false"} onClick={() => setTab(id)} style={{ height: "34px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: "var(--c-text)", cursor: "pointer" }}>
+              <button key={id} type="button" role="tab" aria-selected={on ? "true" : "false"} onClick={() => setTab(id)} style={{ height: "34px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: "var(--c-text)", cursor: "pointer" }}>
                 {label}<span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{counts[id]}</span>
               </button>
             );
           })}
         </div>
         <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "42px", padding: "0 14px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
-          <Search size={16} color="#5C606C" />
+          <Search size={16} color="var(--c-text-3)" />
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar en los chats"}</span>
           <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en nombres y mensajes" style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-body)" }} />
         </label>
@@ -235,10 +235,10 @@ export default function ChatsHome() {
                         <Ellipsis size={18} />
                       </button>
                       {open ? (
-                        <div role="menu" aria-label="Opciones" style={{ position: "absolute", zIndex: 5, right: "14px", top: "58px", width: "230px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" }}>
+                        <div role="menu" aria-label="Opciones" style={{ position: "absolute", zIndex: 5, right: "14px", top: "58px", width: "230px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", animation: "rise .15s ease-out" }}>
                           {itemsFor(r).map((it) => (
                             <button key={it.label} type="button" role="menuitem" onClick={() => { setMenu(null); it.run(); }} style={{ height: "38px", padding: "0 12px", display: "flex", alignItems: "center", justifyContent: "space-between", border: 0, borderRadius: "var(--r-sm)", background: "transparent", fontSize: "var(--t-ui)", color: it.danger ? "var(--c-error)" : "var(--c-text)", textAlign: "left", cursor: "pointer" }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = "#F6F6F3"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+                              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--c-hover)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
                               {it.label}<span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{it.key || ""}</span>
                             </button>
                           ))}

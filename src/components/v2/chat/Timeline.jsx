@@ -255,8 +255,8 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
         {loadingOlder || olderError ? (
           <div style={{ position: "absolute", top: lift + 8 + "px", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 1 }}>
             {olderError
-              ? <button type="button" onClick={() => onReachTop?.(true)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" }}>{"No se cargaron los mensajes anteriores · Reintentar"}</button>
-              : <span role="status" style={{ height: "32px", display: "flex", alignItems: "center", gap: "8px", padding: "0 14px", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.9)", fontSize: "var(--t-meta)", color: "#5C606C", animation: "fade .2s ease-out" }}>
+              ? <button type="button" onClick={() => onReachTop?.(true)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-raised)", boxShadow: "0 0 0 1px var(--c-line)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" }}>{"No se cargaron los mensajes anteriores · Reintentar"}</button>
+              : <span role="status" style={{ height: "32px", display: "flex", alignItems: "center", gap: "8px", padding: "0 14px", borderRadius: "var(--r-pill)", background: "color-mix(in oklab, var(--c-raised) 90%, transparent)", fontSize: "var(--t-meta)", color: "var(--c-text-3)", animation: "fade .2s ease-out" }}>
                   <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "var(--r-circle)", border: "2px solid rgb(var(--c-ink-rgb) / .15)", borderTopColor: "var(--c-text)", animation: "spin .8s linear infinite" }} />
                   {"Cargando mensajes anteriores…"}
                 </span>}
@@ -264,7 +264,7 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
         ) : null}
         {items.map((item) => (
           <div key={item.key} data-index={item.index} data-kind={rows[item.index]?.kind || undefined} ref={virtualizer.measureElement} style={{ position: "absolute", left: 0, width: "100%", top: item.start + lift + "px" }}>
-            <div style={{ width: "100%", maxWidth: "820px", margin: "0 auto", padding: "0 clamp(20px, 4vw, 44px) 26px", display: "flex", flexDirection: "column", gap: "26px" }}>
+            <div style={{ width: "100%", maxWidth: "868px", margin: "0 auto", padding: "0 24px 18px", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: "18px" }}>
               {item.index === markAt ? <NewMark /> : null}
               <RowBoundary resetKey={rows[item.index]}><Row row={rows[item.index]} render={renderRow} /></RowBoundary>
             </div>
@@ -279,7 +279,7 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
 
 /** «Nuevos»: a thin line before the first message that arrived while you were not looking. */
 function NewMark() {
-  const line = { flex: "1", height: "1px", background: "rgba(31,79,209,.28)" };
+  const line = { flex: "1", height: "1px", background: "color-mix(in oklab, var(--c-accent) 35%, transparent)" };
   return (
     <div role="separator" aria-label="Mensajes nuevos" data-unseen-mark="" style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-accent-ink)", animation: "fade .2s ease-out" }}>
       <span style={line} />
@@ -294,7 +294,7 @@ function ToEnd({ count, onClick }) {
   const fresh = count > 0;
   return (
     <button type="button" className="rm-focus" onClick={onClick} aria-label={fresh ? `Ir a los mensajes nuevos: ${unseenLabel(count)}` : "Ir al final de la conversación"}
-      style={{ position: "absolute", left: "50%", bottom: "14px", transform: "translateX(-50%)", zIndex: 5, display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: fresh ? "0 14px 0 12px" : "0", width: fresh ? "auto" : "36px", justifyContent: "center", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 10px 24px -12px rgba(18,19,26,.45)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", animation: "rise .2s ease-out" }}>
+      style={{ position: "absolute", left: "50%", bottom: "14px", transform: "translateX(-50%)", zIndex: 5, display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: fresh ? "0 14px 0 12px" : "0", width: fresh ? "auto" : "36px", justifyContent: "center", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-raised)", color: "var(--c-text)", boxShadow: "0 0 0 1px var(--c-line), var(--c-shadow-pop)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", animation: "rise .2s ease-out" }}>
       <ArrowDown size={16} strokeWidth={2.4} aria-hidden="true" />
       {fresh ? unseenLabel(count) : null}
     </button>

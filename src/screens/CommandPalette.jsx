@@ -38,7 +38,7 @@ const ext = (name) => (String(name || "").split(".").pop() || "").slice(0, 3).to
 
 /** The square at the start of each row: a glyph, an icon or a bot's shape. */
 function Tile({ children, dark = false, small = false }) {
-  return <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: dark ? "#12131A" : "var(--c-chip)", font: `600 ${small ? "var(--t-micro)" : "var(--t-caption)"}/1 'Geist', sans-serif`, color: "#3D404A" }}>{children}</span>;
+  return <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: dark ? "var(--c-btn)" : "var(--c-chip)", font: `600 ${small ? "var(--t-micro)" : "var(--t-caption)"}/1 'Geist', sans-serif`, color: "var(--c-text-2)" }}>{children}</span>;
 }
 const glyph = (g, small) => <Tile small={small}>{g}</Tile>;
 // A person is a circle with initials (circles are people; bots keep their shapes).
@@ -491,7 +491,7 @@ export default function CommandPalette() {
         title: null,
         items: [{
           key: "ask", ask: true, name: `Pedir «${short(plain)}» a ${who ? who.name : "tu equipo"}`,
-          icon: who ? botTile(who) : <Tile dark><Shape bot={{ ...atlas, color: "#FFFFFF" }} size={14} /></Tile>,
+          icon: who ? botTile(who) : <Tile dark><Shape bot={{ ...atlas, color: "var(--c-btn-text)" }} size={14} /></Tile>,
           title: <>{"Pedir "}<span>{`«${short(plain)}»`}</span>{` a ${who ? who.name : "tu equipo"}`}</>,
           meta: who ? `Solo ${who.name}, en un chat · Tab cambia de bot` : `${atlas.name} decide quién lo hace${likely ? " · probablemente " + likely.name : ""}`,
           kbd: "Ctrl Intro", run: () => createMission(who ? "solo" : "equipo", who),
@@ -589,15 +589,15 @@ export default function CommandPalette() {
   const hint = { ...KBD, color: "var(--c-text)" };
   let index = -1;
   return (
-    <div onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }} style={{ position: "fixed", inset: "0", zIndex: 1000, background: "rgba(18,19,26,.38)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "72px 24px 24px", overflowY: "auto", animation: "fade .2s ease-out" }}>
-      <div ref={sheet} role="dialog" aria-modal="true" aria-label="Buscar o pedir" style={{ width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.6)", overflow: "hidden", animation: "sheet .25s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "var(--c-text)" }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }} style={{ position: "fixed", inset: "0", zIndex: 1000, background: "rgb(from var(--c-text) 0 0 0 / .38)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "72px 24px 24px", overflowY: "auto", animation: "fade .2s ease-out" }}>
+      <div ref={sheet} role="dialog" aria-modal="true" aria-label="Buscar o pedir" style={{ width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", overflow: "hidden", animation: "sheet .25s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "var(--c-text)" }}>
         <div className="c-ring-in" style={{ display: "flex", alignItems: "center", gap: "14px", padding: "0 22px", height: "70px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
           {menu ? (
             <button type="button" onClick={back} aria-label="Volver" style={{ display: "flex", alignItems: "center", gap: "6px", flex: "none", height: "32px", padding: "0 12px 0 8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-chip)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" }}>
               <ArrowLeft size={14} strokeWidth={2.4} aria-hidden="true" />{menu.title}
             </button>
           ) : parsed.actionsOnly ? <span style={{ flex: "none", display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Comandos"}</span>
-            : <Search size={22} color="#4A4D57" style={{ flex: "none" }} />}
+            : <Search size={22} color="var(--c-text-3)" style={{ flex: "none" }} />}
           <input className="c-bare"
             ref={input}
             data-autofocus=""
@@ -658,7 +658,7 @@ export default function CommandPalette() {
                         <span style={{ fontSize: "var(--t-body)", fontWeight: it.ask ? "600" : "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</span>
                         {it.meta ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.meta}</span> : null}
                       </span>
-                      {it.submenu ? <ChevronRight size={15} strokeWidth={2.2} color="#8A8D96" aria-hidden="true" style={{ flex: "none" }} /> : null}
+                      {it.submenu ? <ChevronRight size={15} strokeWidth={2.2} color="var(--c-text-4)" aria-hidden="true" style={{ flex: "none" }} /> : null}
                       {it.kbd ? <kbd style={KBD}>{it.kbd}</kbd> : null}
                     </div>
                   );

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Three dots for someone typing, exactly as V2Sala draws them: 5 px, #5C606C, the v2 «dots»
+ * Three dots for someone typing, exactly as V2Sala draws them: 5 px, var(--c-text-3), the v2 «dots»
  * keyframes at 1.2 s, 0.15 s apart. (A bot at work is its own breathing shape instead.)
  * The phase comes from the clock, not from when the element appeared, so a line that
  * re-renders or remounts with every bit of activity keeps moving smoothly.

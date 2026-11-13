@@ -13,7 +13,7 @@ export default function Receipt({ receipt, bots = [] }) {
   if (receipt === "wait") {
     return (
       <span role="status" data-receipt="wait" title="Lo leerá en cuanto haga una pausa en lo que está haciendo" style={LINE}>
-        <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "var(--r-circle)", border: "1.5px solid rgb(var(--c-ink-rgb) / .16)", borderTopColor: "#5C606C", animation: "spin 1.1s linear infinite" }} />
+        <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "var(--r-circle)", border: "1.5px solid rgb(var(--c-ink-rgb) / .16)", borderTopColor: "var(--c-text-3)", animation: "spin 1.1s linear infinite" }} />
         {"Espera una pausa"}
       </span>
     );

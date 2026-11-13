@@ -63,7 +63,7 @@ export default function LinkPreviewLayer() {
   const p = card.preview;
   return createPortal(
     <div role="tooltip" className="c-pop"
-      style={{ position: "fixed", zIndex: 60, left: left + "px", ...(below ? { top: card.rect.bottom + 8 + "px" } : { bottom: window.innerHeight - card.rect.top + 8 + "px" }), width: width + "px", padding: "12px 14px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", boxShadow: "0 16px 36px -18px rgba(18,19,26,.45)", pointerEvents: "none", display: "flex", flexDirection: "column", gap: "4px" }}>
+      style={{ position: "fixed", zIndex: 60, left: left + "px", ...(below ? { top: card.rect.bottom + 8 + "px" } : { bottom: window.innerHeight - card.rect.top + 8 + "px" }), width: width + "px", padding: "12px 14px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)", pointerEvents: "none", display: "flex", flexDirection: "column", gap: "4px" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "var(--c-text-3)", minWidth: 0 }}>
         <Globe size={13} strokeWidth={2} aria-hidden="true" style={{ flex: "none" }} />
         <span style={{ fontWeight: 600, color: "var(--c-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p?.site || new URL(card.url).hostname.replace(/^www\./, "")}</span>

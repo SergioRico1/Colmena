@@ -4,6 +4,7 @@ import { post } from "../../lib/api.js";
 import { useAction } from "../../lib/store.jsx";
 import { closedState } from "../../lib/approvalState.js";
 import { time } from "../../lib/format.js";
+import "../../styles/conversation.css";
 
 // What a bot's question offers besides its options (after assistant-ui approval cards: a
 // question takes a free answer and can be dismissed), and how it reads once closed.
@@ -22,14 +23,14 @@ export function QuestionReply({ approval, onDone }) {
   const dismiss = () => act(async () => { await post(`/approvals/${approval.id}/dismiss`, { revision: approval.revision }); onDone?.(); });
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <form className="c-ring" onSubmit={send} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 16px", borderRadius: "var(--r-pill)", background: "var(--c-hover)" }}>
+      <form onSubmit={send} className="v4-cbox" style={{ minHeight: "44px", padding: "4px 4px 4px 12px", alignItems: "center" }}>
         <label style={{ flex: "1", minWidth: 0, display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder con tus palabras"}</span>
           <input className="c-bare" value={text} onChange={(e) => setText(e.target.value)} placeholder="O responde con tus palabras…" maxLength={4000}
             style={{ flex: "1", minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "var(--t-body)", fontFamily: "inherit", color: "var(--c-text)" }} />
         </label>
         <button type="submit" disabled={busy || !text.trim()} aria-label="Enviar la respuesta" className="rm-focus"
-          style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: text.trim() ? "var(--c-btn)" : "#C9CBD1", color: "var(--c-btn-text)", cursor: text.trim() ? "pointer" : "default", transition: "background .2s ease" }}>
+          style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-md)", background: text.trim() ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .12)", color: text.trim() ? "var(--c-btn-text)" : "var(--c-text-4)", cursor: text.trim() ? "pointer" : "default", transition: "background .2s ease" }}>
           <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
         </button>
       </form>
@@ -43,12 +44,13 @@ export function QuestionReply({ approval, onDone }) {
 }
 
 const TONES = {
-  answered: { bg: "#E1F4EC", fg: "#0B5A3E", icon: Check },
-  approved: { bg: "#E1F4EC", fg: "#0B5A3E", icon: Check },
-  denied: { bg: "rgba(18,19,26,.06)", fg: "#3D404A", icon: X },
-  dismissed: { bg: "rgba(18,19,26,.06)", fg: "#3D404A", icon: X },
-  cancelled: { bg: "rgba(18,19,26,.06)", fg: "#3D404A", icon: Ban },
-  expired: { bg: "#FFF4D1", fg: "#8A5A00", icon: Clock },
+  answered: { bg: "var(--c-ok-soft)", fg: "var(--c-ok-ink)", icon: Check },
+  approved: { bg: "var(--c-ok-soft)", fg: "var(--c-ok-ink)", icon: Check },
+  denied: { bg: "rgb(var(--c-ink-rgb) / .06)", fg: "var(--c-text-2)", icon: X },
+  dismissed: { bg: "rgb(var(--c-ink-rgb) / .06)", fg: "var(--c-text-2)", icon: X },
+  cancelled: { bg: "rgb(var(--c-ink-rgb) / .06)", fg: "var(--c-text-2)", icon: Ban },
+  // Expired is over: neutral (honey only means it still waits for you).
+  expired: { bg: "rgb(var(--c-ink-rgb) / .06)", fg: "var(--c-text-2)", icon: Clock },
 };
 
 /** The final state of a closed request, as a quiet chip (null while it waits). */

@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Copy, Minus, Square, X } from "./Icon.js";
 import { LogoMark, LOGO_FONT } from "./Logo.jsx";
+import "../styles/conversation.css";
+
+/** The app's ground from the theme (what shows when nothing else has a colour). */
+const appGround = () => getComputedStyle(document.documentElement).getPropertyValue("--c-app").trim() || "transparent";
 
 // Colmena's own title bar for the frameless desktop window: a draggable strip that
 // takes, column by column, the colour of whatever sits right below it (dark sidebar,
@@ -18,14 +22,8 @@ function colorAt(x, y) {
     }
     el = el.parentElement;
   }
-  return getComputedStyle(document.body).backgroundColor || "rgb(238, 240, 244)";
+  return getComputedStyle(document.body).backgroundColor || appGround();
 }
-const isDark = (rgb) => {
-  const m = /(\d+),\s*(\d+),\s*(\d+)/.exec(rgb || "");
-  if (!m) return false;
-  const [r, g, b] = m.slice(1).map(Number);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 140;
-};
 
 /** Background of an element, looking up through transparent ancestors. */
 function backgroundOf(el) {
@@ -34,7 +32,7 @@ function backgroundOf(el) {
     if (!transparent(bg)) return bg;
     el = el.parentElement;
   }
-  return getComputedStyle(document.body).backgroundColor || "rgb(238, 240, 244)";
+  return getComputedStyle(document.body).backgroundColor || appGround();
 }
 const scrollable = (el) => el && el.scrollHeight > el.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(el).overflowY);
 
@@ -141,21 +139,17 @@ export default function WindowChrome() {
     };
   }, [api]);
 
-  // Colmena 2.0 screens draw the window buttons in their rail (components/v2/Rail.jsx).
+  // Screens with the sidebar draw the window buttons there, as Colmena's three dots
+  // (components/v2/Rail.jsx › WindowDots, in the sidebar's title strip, which never scrolls).
   if (!api || state.fullscreen || paint.v2) return null;
   const visible = paint.cells.filter((c) => !c.hidden);
-  const first = visible[0]?.color || "rgb(238, 240, 244)";
-  const lastRun = visible.at(-1)?.color || first;
-  // Colmena's style sheet: transparent icon buttons (radius 10, 2.2 round strokes);
-  // hover like a Colmena card (white + #DCE0E8 border, or the sidebar's #1D1F27);
-  // close lights up red, as the system's does (honey only ever means «te necesita»).
-  const darkRight = isDark(lastRun);
-  const ink = darkRight ? "#C9CCD6" : "#4A4F5C";
-  const rest = { background: "transparent", borderColor: "transparent", color: ink };
-  const over = darkRight ? { background: "#262832", borderColor: "#3B3E49", color: "#FFFFFF" } : { background: "var(--c-card)", borderColor: "var(--c-line)", color: "var(--c-text)" };
-  const overClose = { background: "#C42B1C", borderColor: "#C42B1C", color: "#FFFFFF" };
+  const first = visible[0]?.color || appGround();
+  // Colmena's style sheet, from the theme's tokens: transparent icon buttons; hover like a
+  // raised card; close lights up red, as the system's does (honey only ever means «te necesita»).
+  const rest = { background: "transparent", borderColor: "transparent", color: "var(--c-text-2)" };
+  const over = { background: "var(--c-raised)", borderColor: "var(--c-line)", color: "var(--c-text)" };
+  const overClose = { background: "var(--c-close)", borderColor: "var(--c-close)", color: "var(--c-badge-text)" };
   const button = { width: "36px", height: "28px", display: "grid", placeItems: "center", margin: "0", padding: "0", border: "1px solid transparent", borderRadius: "var(--r-md)", cursor: "pointer", WebkitAppRegion: "no-drag", opacity: state.focused ? 1 : 0.6, transition: "background .12s ease, border-color .12s ease, color .12s ease", ...rest };
-  const icon = { width: "14px", height: "14px", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" };
   const paintTo = (el, look) => Object.assign(el.style, look);
   const enter = (close) => (e) => paintTo(e.currentTarget, close ? overClose : over);
   const leave = (e) => paintTo(e.currentTarget, rest);
@@ -166,7 +160,7 @@ export default function WindowChrome() {
         {paint.cells.map((c, i) => (
           <span key={i} style={{ position: "relative", display: "block", height: "100%", flex: c.flex, minWidth: c.minWidth, maxWidth: c.maxWidth, boxSizing: c.boxSizing, ...(c.fixedWidth != null ? { width: c.fixedWidth + "px" } : {}), visibility: c.hidden ? "hidden" : "visible", background: c.color }}>
             {/* Shadow drawn as its own strip (no clip-path: a clipped edge antialiases off the pixel grid). */}
-            <span style={{ position: "absolute", left: "0", right: "0", top: "100%", height: "7px", pointerEvents: "none", opacity: c.scrolled ? 1 : 0, transition: "opacity .15s ease", background: isDark(c.color) ? "linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0))" : "linear-gradient(rgba(18,19,26,0.12), rgba(18,19,26,0))" }} />
+            <span style={{ position: "absolute", left: "0", right: "0", top: "100%", height: "1px", pointerEvents: "none", opacity: c.scrolled ? 1 : 0, transition: "opacity .15s ease", boxShadow: "var(--c-shadow-lift)" }} />
           </span>
         ))}
       </div>
@@ -174,7 +168,7 @@ export default function WindowChrome() {
         {paint.brand ? (
           <span style={{ display: "flex", alignItems: "center", gap: "8px", pointerEvents: "none" }}>
             <LogoMark size={20} />
-            <span style={{ font: `800 var(--t-ui)/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: isDark(first) ? "#FFFFFF" : "var(--c-text)" }}>Colmena</span>
+            <span style={{ font: `800 var(--t-ui)/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: "var(--c-text)" }}>Colmena</span>
           </span>
         ) : <span />}
         <div role="group" aria-label="Ventana" style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" }}>

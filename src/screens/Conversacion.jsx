@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWarmOnType } from "../lib/warm.js";
-import { FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal, ChevronDown, Ellipsis } from "../components/Icon.js";
+import { FileText, FolderOpen, Globe, MessageCircleQuestion, PanelRight, SquareTerminal, ChevronDown, Ellipsis } from "../components/Icon.js";
 import VoiceCall from "../components/v2/chat/VoiceCall.jsx";
 import Shell from "../components/v2/Shell.jsx";
 import Announcer from "../components/Announcer.jsx";
@@ -12,7 +12,9 @@ import ChatsHome from "../components/v2/chat/ChatsHome.jsx";
 import Composer from "../components/v2/chat/Composer.jsx";
 import PlusMenu, { chosenChips, turnBody } from "../components/v2/chat/PlusMenu.jsx";
 import { AnswerActions, AnswerHead, AttachmentChip, BotAnswer, DeliverableV2, TimeMark, UsageLine, UserBubble, WorkNow, WorkTrail, kTokens } from "../components/v2/chat/Parts.jsx";
-import { BotMark } from "../components/v2/chat/Mark.jsx";
+import BotFace from "../components/BotFace.jsx";
+import { OpenBot } from "../components/room/Author.jsx";
+import { BotProfile } from "../components/room/MemberPanel.jsx";
 import Inspector from "../components/v2/chat/Inspector.jsx";
 import { useExpert } from "../lib/expert.js";
 import { DeckCard, isDeck } from "../components/v2/SlideDeck.jsx";
@@ -126,7 +128,7 @@ function WhileWorking({ value, onChange, botName = "el bot", typing }) {
       <span role="radiogroup" aria-label="Lo que escribas mientras trabaja" style={{ display: "inline-flex", padding: "3px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)" }}>
         {options.map(([id, label, hint]) => (
           <button key={id} type="button" role="radio" aria-checked={value === id ? "true" : "false"} title={hint} onClick={() => onChange(id)}
-            style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: value === id ? "var(--c-card)" : "transparent", boxShadow: value === id ? "0 1px 2px rgba(18,19,26,.12)" : "none", color: value === id ? "var(--c-text)" : "var(--c-text-3)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>{label}</button>
+            style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: value === id ? "var(--c-raised)" : "transparent", boxShadow: value === id ? "var(--c-shadow-lift)" : "none", color: value === id ? "var(--c-text)" : "var(--c-text-3)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>{label}</button>
         ))}
       </span>
       <span>{typing ? `Intro: ${value === "steer" ? "se lo pasas ya" : "a la cola"} · Ctrl+Intro: ${value === "steer" ? "a la cola" : "se lo pasas ya"} · Esc lo para` : "Esc lo para"}</span>
@@ -184,6 +186,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const toggleChosen = (key) => setChosen((list) => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]));
   const [moreOpen, setMoreOpen] = useState(false);
   const [roomSheet, setRoomSheet] = useState(false);
+  // The bot's profile on the right (design/v4 › .panel): from its face or name, or the header's panel button.
+  const [profileOpen, setProfileOpen] = useState(false);
   const [talking, setTalking] = useState(false); // «Hablar»: the voice panel over this chat
   useEffect(() => setTalking(false), [c]);
   // Expert mode (design/V3ChatExperto.dc.html): model and context in the header, the Inspector
@@ -495,7 +499,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "head": return (<>
         {row.newChat ? (
           <div style={{ padding: "40px 0 8px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "16px" }}>
-            <BotMark bot={bot} size={48} />
+            <BotFace bot={bot} size={48} decorative />
             <h2 style={{ margin: "0", font: "600 var(--t-display-s)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{`Habla con ${bot?.name || ""}`}</h2>
             <p style={{ margin: "0", maxWidth: "560px", fontSize: "var(--t-read)", lineHeight: "1.55", color: "var(--c-text-2)" }}>{bot?.instructions ? bot.instructions.split(/(?<=\.)\s/)[0] : bot?.role}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -503,7 +507,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
             </div>
             <button type="button" role="switch" aria-checked={row.incognito ? "true" : "false"} onClick={() => setIncognito((v) => { if (!v) saveDraft("chat:" + botId, ""); return !v; })}
               style={{ display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px 0 8px", border: 0, borderRadius: "var(--r-pill)", background: row.incognito ? "var(--c-btn)" : "var(--c-chip)", color: row.incognito ? "var(--c-btn-text)" : "var(--c-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500 }}>
-              <span aria-hidden="true" style={{ width: "34px", height: "22px", borderRadius: "var(--r-pill)", background: row.incognito ? "var(--c-card)" : "#C9CBD1", position: "relative", transition: "background .15s ease" }}><span style={{ position: "absolute", top: "3px", left: row.incognito ? "15px" : "3px", width: "16px", height: "16px", borderRadius: "var(--r-circle)", background: row.incognito ? "#12131A" : "#FFFFFF", transition: "left .15s ease" }} /></span>
+              <span aria-hidden="true" style={{ width: "34px", height: "22px", borderRadius: "var(--r-pill)", background: row.incognito ? "var(--c-btn-text)" : "var(--c-line-strong)", position: "relative", transition: "background .15s ease" }}><span style={{ position: "absolute", top: "3px", left: row.incognito ? "15px" : "3px", width: "16px", height: "16px", borderRadius: "var(--r-circle)", background: row.incognito ? "var(--c-btn)" : "var(--c-raised)", transition: "left .15s ease" }} /></span>
               {"De incógnito: no guarda nada y se borra en 24 horas"}
             </button>
           </div>
@@ -538,7 +542,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         const attachments = m.attachments || [];
         return (
           row.editing ? <EditMessage text={m.text} canRestore={row.canRestore} onCancel={() => acts.current.edit(null)} onSend={(text, restore) => acts.current.sendEdit(m.id, text, restore)} /> : (
-          <UserBubble message={m}>
+          <UserBubble message={m} seen={seenIds.has(m.id)}>
             {attachments.length ? <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px" }}>{attachments.map((f, i) => <AttachmentChip key={i} name={f.name || String(f)} missionId={c} />)}</span> : null}
             {m.failed ? <FailedLine error={m.failed} onRetry={() => acts.current.resend(m)} onDiscard={() => unshowSent(`/missions/${c}`, m.id)} /> : null}
             {row.receipt ? <Receipt receipt={row.receipt} bots={bots} /> : null}
@@ -554,9 +558,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "secret": return <SecretLine message={m} approval={row.approval} bots={bots} />;
       case "note": return <p style={{ margin: "0", textAlign: "center", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{plain(m.text)}<NoteLink link={m.link} /></p>;
       case "block": return <ChatBlock message={m} />;
-      case "question": return row.a?.status === "pending"
-        ? <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />
-        : <QuestionCard approval={row.a} text={m.text} bots={bots} variant="chat" />;
+      // A question is the same step-by-step card everywhere (room/QuestionCard.jsx), pending or answered.
+      case "question": return <div style={{ paddingLeft: "44px" }}><QuestionCard approval={row.a} text={m.text} bots={bots} variant="chat" /></div>;
       case "answer": return (
         // V3Chat: head, work, text; then the deliverable, the sources, the actions (and the
         // versions); expert mode adds the usage line. «Archivos cambiados» and «Deshacer cambios» last.
@@ -565,14 +568,17 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           <CitationContext.Provider value={row.citations}>
             <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} />
           </CitationContext.Provider>
-          {row.artifact ? <FileCard artifact={row.artifact} onOpen={() => acts.current.toggleDoc(row.artifact.id)} /> : null}
-          {(row.more || []).map((a) => <FileCard key={a.id} artifact={a} onOpen={() => acts.current.toggleDoc(a.id)} />)}
-          <SourceChips sources={row.sources} />
-          <AnswerActions message={m} bot={row.author} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null} onEditAsk={row.regenerate && row.askId ? () => acts.current.edit(row.askId) : null}
-            branch={row.branch} versionDisabled={turn} onVersion={(id) => acts.current.version(id)} />
-          <UsageLine message={m} step={row.step} />
-          {row.undo ? <ChangedFiles cp={row.undo} missionId={c} /> : null}
-          {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
+          {/* What comes with the answer stays in its text column, beside the face (design/v4 › .msg). */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingLeft: "44px" }}>
+            {row.artifact ? <FileCard artifact={row.artifact} onOpen={() => acts.current.toggleDoc(row.artifact.id)} /> : null}
+            {(row.more || []).map((a) => <FileCard key={a.id} artifact={a} onOpen={() => acts.current.toggleDoc(a.id)} />)}
+            <SourceChips sources={row.sources} />
+            <AnswerActions message={m} bot={row.author} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null} onEditAsk={row.regenerate && row.askId ? () => acts.current.edit(row.askId) : null}
+              branch={row.branch} versionDisabled={turn} onVersion={(id) => acts.current.version(id)} />
+            <UsageLine message={m} step={row.step} />
+            {row.undo ? <ChangedFiles cp={row.undo} missionId={c} /> : null}
+            {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
+          </div>
         </article>
         </TurnFileLinks>
       );
@@ -583,7 +589,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "done": return <CompletionNote missionId={row.missionId} />;
       case "follow": return <FollowUps list={row.list} onPick={(t) => { setText(t); requestAnimationFrame(() => focusBox(inputRef.current)); }} />;
       case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={(why) => acts.current.control(row.status === "blocked" ? "retry" : "resume", why)} onDiscard={(why) => acts.current.control("discard", why)} onReason={(why) => acts.current.stopWhy(why)} />;
-      case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "16px 18px", background: "#FBE7DF", borderRadius: "var(--r-xl)", fontSize: "var(--t-body)", lineHeight: "1.5" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;
+      case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "14px 16px", background: "var(--c-error-soft)", border: "1px solid color-mix(in oklab, var(--c-error) 35%, transparent)", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text)" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;
       case "browser": return <BrowserLive missionId={row.missionId} bot={row.bot} verb={row.verb} missionActive={row.active} />;
       default: return null;
     }
@@ -631,12 +637,20 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   }
 
   const state = pending.length ? "wait" : turn ? "work" : "rest";
+  // Your messages the bot has answered after: two ticks and «Visto» under the bubble.
+  const seenIds = new Set();
+  for (let i = messages.length - 1, answered = false; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role === "assistant" && !m.optimistic) answered = true;
+    else if (m.role === "user" && answered) seenIds.add(m.id);
+  }
   // «Tus novedades» (server/watch.mjs) is never «terminado»: it keeps watching.
   const asks = pending.length || (!turn && mission?.watchAsks > 0);
   // A bot's single chat never «ends»: at rest it shows the bot's role.
   const done = mission?.status === "completed" && !mission?.watch && !mission?.thread;
   const status = asks ? (pending.length ? "te necesita" : "espera tu respuesta") : turn ? (runningStep?.narration?.text || (now?.verb ? verbLabel(headPhase) + (now.detail ? " · " + now.detail : "") : "pensando")) : mission?.watch ? "atento a lo nuevo en tus apps" : done ? "terminado" : "";
-  const statusColor = asks ? "#8A5A00" : done ? "#0B6B4A" : "#5C606C";
+  // Waiting for you is said in words (the sidebar's honey chip is the colour); done is green.
+  const statusColor = asks ? "var(--c-text)" : done ? "var(--c-ok-ink)" : "var(--c-text-3)";
   // Expert: the engine and how hard it thinks, what is in its context, the session.
   const model = settings?.model || null;
   const thinking = chosen.includes("deep") ? "a fondo" : bot?.thinking || "equilibrado";
@@ -644,7 +658,6 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const lastUsage = [...messages].reverse().find((m) => m.summary?.tokens)?.summary || null;
   const toolCount = Object.values(bot?.tools || {}).filter((v) => v && v !== "none").length;
   const chip = { height: "30px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "var(--r-pill)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text)", whiteSpace: "nowrap" };
-  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
   const tool = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgb(var(--c-ink-rgb) / .1)", borderRadius: "var(--r-pill)", background: "var(--c-hover)", cursor: "pointer", whiteSpace: "nowrap", ...(expert ? { height: "30px", padding: "0 9px", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text)" } : { fontSize: "var(--t-meta)", color: "var(--c-text-2)" }) };
   const ghostKey = (on) => ({ width: "36px", height: "36px", padding: 0, border: 0, borderRadius: "var(--r-md)", background: on ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", fontSize: "var(--t-read)", fontWeight: 600, cursor: "pointer" });
   const caret = <ChevronDown size={11} weight="bold" />;
@@ -654,11 +667,10 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const slashShown = (slashOpen || /^\/[a-záéíóú]*$/i.test(text)) && !plusOpen;
   const slashList = SLASH.filter((s) => !text.startsWith("/") || s.cmd.startsWith(text.trim().toLowerCase()) || text === "/");
   const slashMenu = slashShown && slashList.length ? (
-    <div role="menu" aria-label="Comandos" style={{ position: "absolute", left: 0, bottom: "calc(100% + 8px)", zIndex: 20, width: "min(360px, 100%)", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" }}>
+    <div role="menu" aria-label="Comandos" style={{ position: "absolute", left: 0, bottom: "calc(100% + 8px)", zIndex: 20, width: "min(360px, 100%)", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-raised)", border: "1px solid var(--c-line)", boxShadow: "var(--c-shadow-pop)", animation: "rise .15s ease-out" }}>
       <span style={{ padding: "6px 10px", fontSize: "var(--t-caption)", fontWeight: 600, color: "var(--c-text-3)" }}>{"Comandos"}</span>
       {slashList.map((s) => (
-        <button key={s.cmd} type="button" role="menuitem" onClick={() => runSlash(s.cmd)} style={{ minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", cursor: "pointer" }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "#F6F6F3"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+        <button key={s.cmd} type="button" role="menuitem" className="v4-menu-item" onClick={() => runSlash(s.cmd)} style={{ minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text)", textAlign: "left", cursor: "pointer" }}>
           <span style={{ width: "74px", font: "500 var(--t-meta)/1 'Geist Mono', monospace" }}>{s.cmd}</span>
           <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>{s.desc.replace("{bot}", bot?.name || "el bot")}</span>
         </button>
@@ -688,42 +700,48 @@ function Chat({ botId, query, bots, missions, ready, run }) {
 
   return (
     <InteractiveContext.Provider value={{ send: c ? (t) => post(`/missions/${c}/messages`, { text: t }) : null }}>
-      <Shell active="chats" scroll={false}>
+      <OpenBot.Provider value={() => { if (dock.open && dock.setOpen) dock.setOpen(false); setProfileOpen(true); }}>
+      <Shell active="chats" scroll={false} background="var(--c-app)">
         <div style={{ display: "flex", height: "100%", alignItems: "stretch" }}>
           <section ref={chatRoot} aria-label={`Conversación con ${bot?.name || ""}`} style={{ position: "relative", flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
             <Announcer text={said} />
             {talking && c ? <VoiceCall bot={bot} missionId={c} onClose={() => setTalking(false)} /> : null}
-            <header style={{ position: "relative", zIndex: 3, flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: expert ? "10px" : "12px", padding: expert ? "14px 24px" : "16px 28px", background: "color-mix(in oklab, var(--c-page) 92%, transparent)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
-              <BotMark bot={bot} size={expert ? 28 : 30} state={state} />
+            <header style={{ position: "relative", zIndex: 3, flex: "none", minHeight: "56px", display: "flex", alignItems: "center", gap: "12px", padding: "8px 12px 8px 24px", boxSizing: "border-box", background: "var(--c-app)", borderBottom: "1px solid var(--c-line)", WebkitAppRegion: "drag", "--c-cut": "var(--c-app)" }}>
+              <button type="button" className="v4-face-btn" onClick={() => setProfileOpen((v) => !v)} aria-label={`Ver el perfil de ${bot?.name || "este bot"}`} title={`Ver el perfil de ${bot?.name || "este bot"}`} style={{ WebkitAppRegion: "no-drag" }}><BotFace bot={bot} size={32} state={state} decorative /></button>
               <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", marginRight: "auto" }}>
-                <h1 style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600, lineHeight: 1.2 }}><a href={`/equipo/${botId}`} style={{ color: "var(--c-text)" }}>{bot?.name}</a></h1>
+                <h1 style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-lead)/1.2 'Geist', sans-serif", letterSpacing: "-0.01em", minWidth: 0 }}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bot?.name}</span>
+                  {bot?.role && !expert ? <span className="v4-tag" style={{ flex: "none" }}>{bot.role}</span> : null}
+                </h1>
                 {expert ? (
                   <span style={{ font: "400 var(--t-caption)/1.2 'Geist Mono', monospace", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c ? [`chat ${c.slice(-4)}`, `sesión ${botId}:${c.slice(-4)}`, lastUsage?.cachedPercent != null ? `caché ${lastUsage.cachedPercent} %` : null, status || null].filter(Boolean).join(" · ") : "chat nuevo · sin sesión"}</span>
-                ) : (
-                  <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bot?.role}{status ? <span style={{ color: statusColor, transition: "color .3s ease" }}>{(bot?.role ? " · " : "") + status}</span> : null}</span>
-                )}
-              </div>
-              {expert ? <>
-                {model ? <span title="Modelo y esfuerzo" style={chip}>{`${model} · ${thinking}`}</span> : null}
-                <span title="Contexto estimado de esta conversación" style={chip}>
-                  <span aria-hidden="true" style={{ position: "relative", width: "44px", height: "6px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}><span style={{ position: "absolute", inset: "0 auto 0 0", width: Math.min(100, Math.round((contextTokens / 128000) * 100)) + "%", minWidth: contextTokens ? "3px" : 0, background: "#12131A" }} /></span>
-                  {"≈ " + kTokens(contextTokens)}
-                </span>
-                <button type="button" aria-pressed={inspector ? "true" : "false"} onClick={toggleInspector} style={{ height: "30px", padding: "0 12px", border: inspector ? 0 : "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: inspector ? "var(--c-btn)" : "var(--c-card)", color: inspector ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" }}>{"Inspector · Ctrl I"}</button>
-              </> : null}
-              <button type="button" onClick={() => setRoomSheet(true)} style={outline}>{"Llevar a una sala"}</button>
-              <span style={{ position: "relative" }}>
-                <button type="button" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: moreOpen ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>
-                  <Ellipsis size={18} />
-                </button>
-                {moreOpen ? (
-                  <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "240px", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out", display: "flex", flexDirection: "column" }}>
-                    {moreItems.map(([label, fn]) => (
-                      <button key={label} type="button" role="menuitem" onClick={() => { setMoreOpen(false); Promise.resolve(fn()).catch(() => {}); }} style={{ height: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "var(--c-text)" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#F6F6F3"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>{label}</button>
-                    ))}
-                  </div>
+                ) : status ? (
+                  <span style={{ fontSize: "var(--t-meta)", color: statusColor, fontWeight: asks ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", transition: "color .3s ease" }}>{status}</span>
                 ) : null}
+              </div>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px", WebkitAppRegion: "no-drag" }}>
+                {expert ? <>
+                  {model ? <span title="Modelo y esfuerzo" style={chip}>{`${model} · ${thinking}`}</span> : null}
+                  <span title="Contexto estimado de esta conversación" style={chip}>
+                    <span aria-hidden="true" style={{ position: "relative", width: "44px", height: "6px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}><span style={{ position: "absolute", inset: "0 auto 0 0", width: Math.min(100, Math.round((contextTokens / 128000) * 100)) + "%", minWidth: contextTokens ? "3px" : 0, background: "var(--c-text)" }} /></span>
+                    {"≈ " + kTokens(contextTokens)}
+                  </span>
+                  <button type="button" aria-pressed={inspector ? "true" : "false"} onClick={toggleInspector} className={inspector ? "v4-btn primary" : "v4-btn"}>{"Inspector · Ctrl I"}</button>
+                </> : null}
+                <button type="button" onClick={() => setRoomSheet(true)} className="v4-btn">{"Llevar a una sala"}</button>
+                <button type="button" className="v4-ib" aria-label={profileOpen ? "Ocultar el perfil" : "Ver el perfil de " + (bot?.name || "este bot")} title={profileOpen ? "Ocultar el perfil" : "Ver el perfil"} aria-pressed={profileOpen} aria-controls="chat-perfil" onClick={() => setProfileOpen((v) => !v)}><PanelRight size={18} active={profileOpen} /></button>
+                <span style={{ position: "relative" }}>
+                  <button type="button" className="v4-ib" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)}>
+                    <Ellipsis size={18} />
+                  </button>
+                  {moreOpen ? (
+                    <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "240px", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-raised)", border: "1px solid var(--c-line)", boxShadow: "var(--c-shadow-pop)", animation: "rise .15s ease-out", display: "flex", flexDirection: "column" }}>
+                      {moreItems.map(([label, fn]) => (
+                        <button key={label} type="button" role="menuitem" className="v4-menu-item" onClick={() => { setMoreOpen(false); Promise.resolve(fn()).catch(() => {}); }} style={{ height: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "var(--c-text)" }}>{label}</button>
+                      ))}
+                    </div>
+                  ) : null}
+                </span>
               </span>
             </header>
             {mission?.incognito ? <p role="note" style={{ flex: "none", margin: 0, padding: "10px 28px", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-meta)" }}>{`De incógnito: ${bot?.name || "el bot"} no guarda nada de esta conversación y se borra en 24 horas.`}</p> : null}
@@ -731,7 +749,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               {c ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(c, t)} onAsk={(t) => { askAsideAbout(c, t); dock.open(ASIDE_TAB); }} /> : null}
               <Timeline key={c || "nuevo:" + botId} listKey={c || "nuevo:" + botId} handle={timeline} rows={rows} renderRow={renderRow} estimate={estimateRow}
                 hasOlder={room.olderCount > 0} loadingOlder={room.loadingOlder} olderError={room.olderError} onReachTop={room.showOlder} landKey={land?.key || null} landTurn={land?.turn || null} unseenOf={unseenOf}
-                scrollerRef={scroller} contentRef={scope} style={{ WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)" }} />
+                scrollerRef={scroller} contentRef={scope} />
             </div>
             {c ? <ConversationMap missionId={c} version={messages.length + ":" + (messages[messages.length - 1]?.id || "")} scroller={scroller} ownerOf={ownerOf} onJump={mapJump} /> : null}
             {/* An older chat is read-only: you keep talking in the bot's single chat. */}
@@ -739,7 +757,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
             <Composer v3 value={text} onChange={(v) => { setText(v); if (slashOpen) setSlashOpen(false); }} onKeyDown={onKeyDown} onSubmit={submit} inputRef={inputRef} inputProps={mentions.inputProps} dictationScope={c || "nuevo:" + botId}
               menu={plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={botId} /> : mentions.menu || slashMenu}
               attachOpen={plusOpen} mentionBots={bots} chips={[...mentions.chips, ...chosenChips(chosen).filter((ch) => ch.key !== "deep")]} onRemoveChip={(k) => (mentions.isRef(k) ? mentions.removeRef(k) : setChosen((list) => list.filter((x) => x !== k)))}
-              label={`Responder a ${bot?.name || ""}`} placeholder={turn ? (whileWorking === "steer" ? `Sigue escribiendo: ${bot?.name || "el bot"} lo lee en su siguiente paso` : `Sigue escribiendo: se lo pasas cuando ${bot?.name || "termine"} acabe`) : `${c ? "Responder a" : "Escribe a"} ${bot?.name || ""}…  ${expert ? "@ menciona · / comandos · Mayús Intro nueva línea" : "@ para mencionar · / para comandos"}`}
+              label={`Responder a ${bot?.name || ""}`} placeholder={turn ? (whileWorking === "steer" ? `Sigue escribiendo: ${bot?.name || "el bot"} lo lee en su siguiente paso` : `Sigue escribiendo: se lo pasas cuando ${bot?.name || "termine"} acabe`) : `${c ? "Responder a" : "Escribe a"} ${bot?.name || ""} · ${expert ? "@ menciona · / comandos" : "@ para mencionar"}`}
               working={turn} onStop={stopTurn} files={files} onRemoveFile={(i) => setFiles(files.filter((_, j) => j !== i))} onInlinePasted={(i) => { const f = files[i]; setFiles(files.filter((_, j) => j !== i)); setText((t) => (t.trim() ? t.replace(/\s*$/, "\n\n") : "") + f.content); }}
               onAttach={() => { setSlashOpen(false); setPlusOpen((v) => !v); }} drop={drop} busy={send.busy} tools={composerTools}
               above={<>
@@ -763,9 +781,15 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           </section>
           {c ? <SideDock dock={dock} tabs={dockTabs} addable={dockAddable} widthKey="chat" label="Panel de la conversación" tone="v3" /> : null}
           {expert && inspector ? <Inspector bot={bot} mission={mission} messages={messages} steps={steps} approvals={approvals} onClose={toggleInspector} /> : null}
+          {profileOpen && bot ? (
+            <aside id="chat-perfil" aria-label={`Perfil de ${bot.name}`} style={{ flex: "none", width: "312px", height: "100%", overflowY: "auto", padding: "12px 20px 20px", boxSizing: "border-box", background: "var(--c-app)", borderLeft: "1px solid var(--c-line)", "--c-cut": "var(--c-app)" }}>
+              <BotProfile bot={bot} state={pending.length ? "waiting" : turn ? "working" : "free"} stateWord={pending.length ? "te espera" : turn ? "trabajando" : "libre"} doing={turn ? status : null} />
+            </aside>
+          ) : null}
         </div>
         {roomSheet ? <NewRoomSheet preset={[botId]} onClose={() => setRoomSheet(false)} /> : null}
       </Shell>
+      </OpenBot.Provider>
     </InteractiveContext.Provider>
   );
 }

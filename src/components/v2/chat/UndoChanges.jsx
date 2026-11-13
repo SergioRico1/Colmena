@@ -22,7 +22,7 @@ export default function UndoChanges({ cp, missionId, bot, working = false, later
     const at = new Date(restoredAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
     return (
       <span role="status" style={{ ...chip, cursor: "default", background: "transparent", color: "var(--c-text-3)", animation: "fade .3s ease-out" }}>
-        <Check size={14} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none", color: "#0B8A5F" }} />
+        <Check size={14} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none", color: "var(--c-ok)" }} />
         {`Cambios deshechos a las ${at}`}
       </span>
     );
@@ -73,7 +73,7 @@ function UndoSheet({ cp, missionId, name, working, later, onClose, undoKey }) {
   const action = mode === "point" ? "Volver a este punto" : "Deshacer cambios";
   return (
     <section role="dialog" aria-labelledby={titleId} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); close(); } }}
-      style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "22px", background: "var(--c-card)", borderRadius: "var(--r-2xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 44px -26px rgba(18,19,26,.32)", animation: "rise .3s ease-out" }}>
+      style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "22px", background: "var(--c-card)", borderRadius: "var(--r-2xl)", boxShadow: "var(--c-shadow-pop)", animation: "rise .3s ease-out" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
         <h3 id={titleId} style={{ flex: 1, margin: 0, font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{`Deshacer lo que hizo ${name}`}</h3>
         <button type="button" className="rm-focus" onClick={close} disabled={waiting} aria-label="Cerrar" style={{ ...iconButton, opacity: waiting ? 0.4 : 1 }}>
@@ -84,7 +84,7 @@ function UndoSheet({ cp, missionId, name, working, later, onClose, undoKey }) {
         <div role="radiogroup" aria-label="Qué deshacer" style={{ alignSelf: "flex-start", display: "flex", gap: "4px", padding: "4px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)" }}>
           {[["turn", "Solo esta respuesta"], ["point", "Volver a este punto"]].map(([value, label], i) => (
             <button key={value} ref={i === 0 ? first : null} type="button" role="radio" aria-checked={mode === value ? "true" : "false"} disabled={waiting} onClick={() => setMode(value)}
-              style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: mode === value ? "var(--c-card)" : "transparent", boxShadow: mode === value ? "0 1px 2px rgba(18,19,26,.1)" : "none", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, color: mode === value ? "var(--c-text)" : "var(--c-text-2)", transition: "background .15s ease" }}>
+              style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: mode === value ? "var(--c-card)" : "transparent", boxShadow: mode === value ? "var(--c-shadow-lift)" : "none", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, color: mode === value ? "var(--c-text)" : "var(--c-text-2)", transition: "background .15s ease" }}>
               {label}
             </button>
           ))}
@@ -152,7 +152,7 @@ function Countdown({ id, text, onUndo }) {
         <button type="button" onClick={onUndo} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{"No, déjalo"}</button>
       </div>
       <span style={{ height: "4px", borderRadius: "var(--r-xs)", background: "rgb(var(--c-ink-rgb) / .08)", overflow: "hidden" }}>
-        <span style={{ display: "block", height: "100%", background: "#12131A", transition: "width .25s linear", width: Math.round(fraction * 100) + "%" }} />
+        <span style={{ display: "block", height: "100%", background: "var(--c-text)", transition: "width .25s linear", width: Math.round(fraction * 100) + "%" }} />
       </span>
     </div>
   );
@@ -160,4 +160,4 @@ function Countdown({ id, text, onUndo }) {
 
 const chip = { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "5px 12px 5px 10px", border: 0, borderRadius: "var(--r-lg)", background: "rgb(var(--c-ink-rgb) / .05)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-2)", textAlign: "left" };
 const iconButton = { width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", color: "var(--c-text-2)" };
-const shimmerText = { alignSelf: "flex-start", fontSize: "var(--t-body)", fontWeight: 500, background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
+const shimmerText = { alignSelf: "flex-start", fontSize: "var(--t-body)", fontWeight: 500, background: "linear-gradient(90deg, var(--c-text-3) 0%, var(--c-text-3) 35%, var(--c-text) 50%, var(--c-text-3) 65%, var(--c-text-3) 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };

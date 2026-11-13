@@ -45,7 +45,7 @@ function Attached({ item, onRemove }) {
       </span>
       {busy ? null : (
         <button type="button" className="rm-focus" onClick={onRemove} aria-label={"Quitar " + item.label} title="Quitar"
-          style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", color: "#FFFFFF" }}>
+          style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", color: "var(--c-btn-text)" }}>
           <X {...ICON} size={13} />
         </button>
       )}
@@ -71,10 +71,10 @@ function Menu({ label, items, onClose }) {
   };
   return (
     <div ref={ref} role="menu" aria-label={label} onKeyDown={onKeyDown} className="c-pop"
-      style={{ margin: "0", padding: "6px", background: "var(--c-card)", borderRadius: "var(--r-xl)", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06)", display: "flex", flexDirection: "column", gap: "2px" }}>
+      style={{ margin: "0", padding: "6px", background: "var(--c-card)", borderRadius: "var(--r-xl)", boxShadow: "var(--c-shadow-pop), 0 0 0 1px rgb(var(--c-ink-rgb) / .06)", display: "flex", flexDirection: "column", gap: "2px" }}>
       {items.map((it, i) => (it.separator ? <div key={"s" + i} role="separator" style={{ height: "1px", margin: "4px 6px", background: "var(--c-line)" }} /> : (
         <button key={it.id} type="button" role="menuitem" className="rm-item" disabled={it.disabled} onClick={() => { onClose(); it.run(); }} aria-checked={it.checked ? "true" : undefined}
-          style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "38px", padding: "6px 10px", background: it.checked ? "var(--c-sunken)" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: it.disabled ? "default" : "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: it.disabled ? "#8C91A0" : "var(--c-text)" }}>
+          style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "38px", padding: "6px 10px", background: it.checked ? "var(--c-sunken)" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: it.disabled ? "default" : "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: it.disabled ? "var(--c-text-4)" : "var(--c-text)" }}>
           <span style={{ width: "18px", flex: "none", display: "grid", placeItems: "center", color: "var(--c-text-2)" }}>{it.icon}</span>
           <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: it.checked ? "600" : "500" }}>{it.label}</span>
@@ -287,7 +287,7 @@ export default function QuickAsk() {
   return (
     <div style={{ padding: `${PAD_TOP}px 18px ${PAD_BOTTOM}px 18px`, boxSizing: "border-box" }}>
       <style>{NO_SCROLL}</style>
-      <section ref={card} key={shown} className="c-quick c-ring" role="dialog" aria-label="Pregunta rápida" style={{ boxSizing: "border-box", maxHeight: `calc(100vh - ${PAD_TOP + PAD_BOTTOM}px)`, overflowY: "auto", scrollbarWidth: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.55)", color: "var(--c-text)", animation: "sheet .25s ease-out" }}>
+      <section ref={card} key={shown} className="c-quick c-ring" role="dialog" aria-label="Pregunta rápida" style={{ boxSizing: "border-box", maxHeight: `calc(100vh - ${PAD_TOP + PAD_BOTTOM}px)`, overflowY: "auto", scrollbarWidth: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", color: "var(--c-text)", animation: "sheet .25s ease-out" }}>
         <form onSubmit={send} style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 10px 10px 18px" }}>
             <img src="/colmena-icon-128.png" alt="" width="28" height="28" style={{ display: "block", width: "28px", height: "28px", flex: "none", WebkitAppRegion: "drag" }} />
@@ -348,7 +348,7 @@ export default function QuickAsk() {
               <span><strong style={{ fontWeight: "600" }}>{bot?.name || "Tu equipo"}</strong>{pasted ? ` · pegado en ${pasted}.` : done ? " ha terminado." : sent.conversation ? " está en ello" : " está repartiendo el trabajo"}</span>
               {done ? null : (
                 <span aria-hidden="true" style={{ display: "inline-flex", gap: "3px" }}>
-                  {[0, 0.2, 0.4].map((d) => <span key={d} style={{ width: "4px", height: "4px", borderRadius: "var(--r-circle)", background: "#12131A", animation: `dots 1.2s ${d}s infinite` }} />)}
+                  {[0, 0.2, 0.4].map((d) => <span key={d} style={{ width: "4px", height: "4px", borderRadius: "var(--r-circle)", background: "var(--c-text)", animation: `dots 1.2s ${d}s infinite` }} />)}
                 </span>
               )}
             </div>

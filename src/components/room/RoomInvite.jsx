@@ -69,7 +69,7 @@ export default function RoomInvite({ view, onClose, onChanged = null }) {
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {all.length > 5 || query ? (
           <label style={{ ...fieldBox, padding: "0 14px" }}>
-            <Search size={16} strokeWidth={2.2} aria-hidden="true" color="#5C606C" />
+            <Search size={16} strokeWidth={2.2} aria-hidden="true" color="var(--c-text-3)" />
             <span style={hidden}>{"Buscar a una persona"}</span>
             <input className="c-bare" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por nombre" style={{ ...fieldInput, height: "42px", fontSize: "var(--t-body)" }} />
           </label>
@@ -80,7 +80,7 @@ export default function RoomInvite({ view, onClose, onChanged = null }) {
               const state = done[p.address];
               return (
                 <li key={p.address} style={row}>
-                  <PersonAvatar person={p} size={30} ring="#FFFFFF" presence={p.source === "equipo" || p.presence === "online" ? p.presence : null} />
+                  <PersonAvatar person={p} size={30} ring="var(--c-card)" presence={p.source === "equipo" || p.presence === "online" ? p.presence : null} />
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
                     <span style={{ fontSize: "var(--t-body)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
                     <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{p.source === "equipo" ? "del equipo" : "ya habláis"}</span>

@@ -4,6 +4,9 @@ import { Lock, LogOut, Search } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import { PeerAvatar, PeoplePile } from "../components/v2/people/PeerAvatar.jsx";
 import PeopleMessage, { names } from "../components/v2/people/PeopleMessage.jsx";
+import PeerMine, { isPlainMine } from "../components/room/PeerMine.jsx";
+import { PersonAvatar } from "../components/room/Author.jsx";
+import { DaySeparator } from "../components/room/RoomParts.jsx";
 import PeopleComposer from "../components/v2/people/PeopleComposer.jsx";
 import ThreadPanel from "../components/v2/people/ThreadPanel.jsx";
 import ShareSearch from "../components/v2/people/ShareSearch.jsx";
@@ -127,24 +130,23 @@ export default function PeopleChat({ params = {}, query = {} }) {
   const guest = share?.members?.find((m) => m.me)?.role === "guest";
   const composer = { others, mentionable: guest ? [] : mentionable, mineEnabled: guest ? [] : mineEnabled, me, disabled: gone || !share, onTyping: chat.typingNow };
   let lastDay = null;
-  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
   return (
-    <Shell active="chats" scroll={false}>
+    <Shell active="chats" scroll={false} background="var(--c-app)">
       <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
         <section aria-label={share ? "Conversación con " + share.title : "Conversación"} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
-          <header style={{ position: "relative", zIndex: 5, flex: "none", background: "color-mix(in oklab, var(--c-page) 92%, transparent)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 26px" }}>
-              {dm && other ? <PeerAvatar person={other} size={34} dot={other.status === "active"} dashed={other.status === "pending"} /> : share ? <PeoplePile people={share.members} /> : null}
+          <header style={{ position: "relative", zIndex: 5, flex: "none", background: "var(--c-app)", borderBottom: "1px solid var(--c-line)", "--c-cut": "var(--c-app)" }}>
+            <div style={{ minHeight: "56px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "8px 12px 8px 24px", boxSizing: "border-box" }}>
+              {dm && other ? <PersonAvatar person={other} size={32} ring="var(--c-app)" presence={other.status === "active" ? (other.online ? "online" : "offline") : null} /> : share ? <PeoplePile people={share.members} /> : null}
               <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px", marginRight: "auto" }}>
-                <h1 style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share ? (dm ? share.title : "# " + share.title) : " "}</h1>
+                <h1 style={{ margin: 0, font: "600 var(--t-lead)/1.2 'Geist', sans-serif", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share ? (dm ? share.title : "# " + share.title) : " "}</h1>
                 <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
                   {status}
                   {share ? <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Lock size={12} strokeWidth={2.2} aria-hidden="true" />{dm ? "solo lo leéis vosotros dos, cifrado" : "solo lo leéis quienes estáis aquí, cifrado"}</span> : null}
                 </span>
               </div>
-              {share ? <button type="button" aria-label="Buscar en esta conversación" title="Buscar en esta conversación" aria-expanded={searching ? "true" : "false"} onClick={() => setSearching((s) => !s)} style={{ ...outline, width: "36px", padding: 0, justifyContent: "center", background: searching ? "var(--c-btn)" : "transparent", color: searching ? "var(--c-btn-text)" : "var(--c-text)" }}><Search size={16} strokeWidth={2.2} aria-hidden="true" /></button> : null}
-              {!dm && share ? <button type="button" onClick={() => setRoom(true)} aria-label={"Personas de " + share.title} title={names(others.map((o) => o.name))} style={outline}>{share.mine ? "Personas" : "de " + (share.members.find((m) => m.id === share.owner)?.name.split(" ")[0] || "")}</button> : null}
-              {!dm && share && !gone ? <button type="button" onClick={leave} title={share.mine ? "La cierras para todos" : "Dejas de recibir sus mensajes"} style={outline}><LogOut size={15} strokeWidth={2.2} aria-hidden="true" />{share.mine ? "Cerrar para todos" : "Salir"}</button> : null}
+              {share ? <button type="button" className="v4-ib" aria-label="Buscar en esta conversación" title="Buscar en esta conversación" aria-expanded={searching ? "true" : "false"} onClick={() => setSearching((s) => !s)}><Search size={18} /></button> : null}
+              {!dm && share ? <button type="button" onClick={() => setRoom(true)} aria-label={"Personas de " + share.title} title={names(others.map((o) => o.name))} className="v4-btn">{share.mine ? "Personas" : "de " + (share.members.find((m) => m.id === share.owner)?.name.split(" ")[0] || "")}</button> : null}
+              {!dm && share && !gone ? <button type="button" onClick={leave} title={share.mine ? "La cierras para todos" : "Dejas de recibir sus mensajes"} className="v4-btn"><LogOut size={15} />{share.mine ? "Cerrar para todos" : "Salir"}</button> : null}
             </div>
             {searching && share ? <ShareSearch shareId={id} onClose={() => setSearching(false)} /> : null}
           </header>
@@ -155,8 +157,8 @@ export default function PeopleChat({ params = {}, query = {} }) {
           ) : null}
           <Announcer text={said} />
           <div {...messageListProps("Mensajes de la conversación")} style={{ flex: "1", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
-            <div style={{ width: "100%", maxWidth: "840px", margin: "0 auto", padding: "22px 26px", display: "flex", flexDirection: "column", gap: "8px", boxSizing: "border-box" }}>
-              {chat.more ? <button type="button" onClick={chat.older} style={{ alignSelf: "center", height: "32px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .1)", borderRadius: "var(--r-pill)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500 }}>{"Ver mensajes anteriores"}</button> : null}
+            <div style={{ width: "100%", maxWidth: "1040px", padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: "2px", boxSizing: "border-box" }}>
+              {chat.more ? <button type="button" onClick={chat.older} style={{ alignSelf: "center", height: "32px", padding: "0 14px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: "var(--c-text)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>{"Ver mensajes anteriores"}</button> : null}
               {!chat.loading && !chat.messages.length ? (
                 <div style={{ alignSelf: "center", maxWidth: "520px", margin: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", textAlign: "center", animation: "fade .4s ease-out" }}>
                   {share ? <PeoplePile people={share.members} size={56} /> : null}
@@ -170,29 +172,30 @@ export default function PeopleChat({ params = {}, query = {} }) {
                 lastDay = day;
                 return (
                   <div key={m.id}>
-                    {showDay ? <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 10px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}><span style={{ flex: 1, height: "1px", background: "rgb(var(--c-ink-rgb) / .08)" }} />{day}<span style={{ flex: 1, height: "1px", background: "rgb(var(--c-ink-rgb) / .08)" }} /></div> : null}
-                    <PeopleMessage m={m} dm={dm} botOf={botOf} shared={shared} lastSeen={m.id === lastSeenMine} onMeeting={chat.updateMeeting} continued={!showDay && continues(shown[i - 1], m, { hasReplies: !!shown[i - 1]?.replies })}
-                      onReact={chat.react} onRetry={chat.retry} onEdit={chat.edit} onDelete={remove} onThread={m.local ? null : openThread} onOpenFile={setViewing} onError={setError} />
+                    {showDay ? <DaySeparator label={day} /> : null}
+                    {isPlainMine(m) ? <PeerMine m={m} dm={dm} botOf={botOf} shared={shared} lastSeen={m.id === lastSeenMine} continued={!showDay && continues(shown[i - 1], m, { hasReplies: !!shown[i - 1]?.replies })} onReact={chat.react} onRetry={chat.retry} onEdit={chat.edit} onDelete={remove} onThread={m.local ? null : openThread} onError={setError} />
+                      : <PeopleMessage m={m} dm={dm} botOf={botOf} shared={shared} lastSeen={m.id === lastSeenMine} onMeeting={chat.updateMeeting} continued={!showDay && continues(shown[i - 1], m, { hasReplies: !!shown[i - 1]?.replies })}
+                        onReact={chat.react} onRetry={chat.retry} onEdit={chat.edit} onDelete={remove} onThread={m.local ? null : openThread} onOpenFile={setViewing} onError={setError} />}
                   </div>
                 );
               })}
             </div>
           </div>
-          <div style={{ flex: "none", width: "100%", maxWidth: "840px", margin: "0 auto", padding: "0 26px 18px", boxSizing: "border-box" }}>
+          <div style={{ flex: "none", width: "100%", maxWidth: "1040px", padding: "0 24px 18px", boxSizing: "border-box" }}>
             <p style={{ margin: "0 0 8px 18px", minHeight: "18px", display: "flex", gap: "16px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
               {chat.typing.length ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span aria-hidden="true" style={{ display: "flex", gap: "3px" }}>{[0, 0.15, 0.3].map((d) => <span key={d} style={{ width: "5px", height: "5px", borderRadius: "var(--r-circle)", background: "#5C606C", animation: `dots 1.2s ${d}s infinite` }} />)}</span>
+                  <span aria-hidden="true" style={{ display: "flex", gap: "3px" }}>{[0, 0.15, 0.3].map((d) => <span key={d} style={{ width: "5px", height: "5px", borderRadius: "var(--r-circle)", background: "var(--c-text-3)", animation: `dots 1.2s ${d}s infinite` }} />)}</span>
                   {names(chat.typing.map((n) => n.split(" ")[0])) + (chat.typing.length > 1 ? " están escribiendo" : " está escribiendo")}
                 </span>
               ) : null}
               {chat.thinking.length ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "#8C8F99", animation: "breathe 1.4s ease-in-out infinite" }} />
+                  <span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "var(--c-text-4)", animation: "breathe 1.4s ease-in-out infinite" }} />
                   {names(chat.thinking) + (chat.thinking.length > 1 ? " están pensando" : " está pensando")}
                 </span>
               ) : null}
-              {sending.length ? <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "#1F4FD1", animation: "breathe 1.4s ease-in-out infinite" }} />{"Cifrando y enviando " + names(sending) + "…"}</span> : null}
+              {sending.length ? <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "var(--c-accent)", animation: "breathe 1.4s ease-in-out infinite" }} />{"Cifrando y enviando " + names(sending) + "…"}</span> : null}
               {error ? <span role="alert" style={{ color: "var(--c-error)" }}>{error}</span> : null}
             </p>
             <PeopleComposer {...composer} resetKey={id} onError={setError} onAttach={gone ? null : attach} artifacts={artifacts} onArtifact={shareArtifact}
@@ -233,7 +236,7 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
     <aside aria-label={dm && other ? "Sobre " + other.name : "Personas de la conversación"} style={{ flex: "1 1 300px", maxWidth: "360px", minWidth: "280px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px", padding: "22px 20px", background: "var(--c-card)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
       {dm && other ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
-          <PeerAvatar person={other} size={64} ring="#FFFFFF" />
+          <PeerAvatar person={other} size={64} ring="var(--c-app)" />
           <span style={{ font: "600 var(--t-title)/1 'Bricolage Grotesque', sans-serif" }}>{other.name}</span>
           <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{[other.online ? "En línea" : "No está conectada ahora", contact?.addedAt ? "conectada desde el " + since(contact.addedAt) : null].filter(Boolean).join(" · ")}</span>
         </div>
@@ -242,7 +245,7 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
           <span style={head}>{`Personas · ${(share.members || []).length}`}</span>
           {(share.members || []).map((p) => (
             <div key={p.id} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px" }}>
-              <PeerAvatar person={p} size={26} ring="#FFFFFF" dot={!p.me} />
+              <PeerAvatar person={p} size={26} ring="var(--c-app)" dot={!p.me} />
               <span style={{ flex: "1", fontSize: "var(--t-ui)" }}>{p.me ? "Tú" : p.name}</span>
               <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{p.id === share.owner ? "creó la conversación" : p.role === "guest" ? "invitado" : p.online ? "aquí ahora" : ""}</span>
             </div>
@@ -266,8 +269,8 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
           </label>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "40px", fontSize: "var(--t-ui)" }}>
             <span>{"Ver si estoy libre u ocupado"}</span>
-            <button type="button" role="switch" aria-checked={freeOn ? "true" : "false"} aria-label="Ver si estoy libre u ocupado" disabled={busy} onClick={() => setAsk("libre", freeOn ? "nunca" : "pregunta")} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: freeOn ? "#12131A" : "#C9CBD1", cursor: "pointer", transition: "background .15s ease" }}>
-              <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: freeOn ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .15s ease" }} />
+            <button type="button" role="switch" aria-checked={freeOn ? "true" : "false"} aria-label="Ver si estoy libre u ocupado" disabled={busy} onClick={() => setAsk("libre", freeOn ? "nunca" : "pregunta")} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: freeOn ? "var(--c-text)" : "var(--c-line-strong)", cursor: "pointer", transition: "background .15s ease" }}>
+              <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: freeOn ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: freeOn ? "var(--c-app)" : "var(--c-raised)", boxShadow: "var(--c-shadow-lift)", transition: "left .15s ease" }} />
             </button>
           </div>
         </div>
