@@ -41,15 +41,22 @@ export function waitingItems(store, now = Date.now(), { approvals = null } = {})
   const pending = (approvals || store.list("approvals")).filter((a) => a.status === "pending" && !isExpired(a, now));
   // A room with a request of its own, put off or not, is not counted a second time.
   const covered = new Set(pending.map((a) => a.missionId));
-  for (const a of pending) {
-    if (isSnoozed(a, now)) continue;
-    items.push({ kind: "approval", id: a.id, missionId: a.missionId ?? null, roomId: a.missionId ?? a.roomId ?? null, botId: a.botId ?? null, what: a.kind || "permission", at: a.createdAt ?? null });
-  }
-  for (const m of store.columns("missions", ["id", "status", "archived", "botIds", "conversation", "updatedAt", "createdAt"])) {
-    if (!DECIDE.has(m.status) || m.archived || covered.has(m.id)) continue;
+  const missions = store.columns("missions", ["id", "status", "archived", "botIds", "conversation", "updatedAt", "createdAt"]);
+  // A bot's own chat: what waits there is that bot's. Anywhere else a plan is the room's.
+  const chatBot = new Map();
+  for (const m of missions) {
     let botIds = m.botIds;
     if (typeof botIds === "string") { try { botIds = JSON.parse(botIds); } catch { botIds = []; } }
-    items.push({ kind: "mission", id: m.id, missionId: m.id, roomId: m.id, botId: m.conversation && Array.isArray(botIds) && botIds.length === 1 ? botIds[0] : null, what: m.status, at: m.updatedAt ?? m.createdAt ?? null });
+    chatBot.set(m.id, m.conversation && Array.isArray(botIds) && botIds.length === 1 ? botIds[0] : null);
+  }
+  for (const a of pending) {
+    if (isSnoozed(a, now)) continue;
+    const roomLevel = a.kind === "plan" && !chatBot.get(a.missionId);
+    items.push({ kind: "approval", id: a.id, missionId: a.missionId ?? null, roomId: a.missionId ?? a.roomId ?? null, botId: roomLevel ? null : a.botId ?? null, what: a.kind || "permission", at: a.createdAt ?? null });
+  }
+  for (const m of missions) {
+    if (!DECIDE.has(m.status) || m.archived || covered.has(m.id)) continue;
+    items.push({ kind: "mission", id: m.id, missionId: m.id, roomId: m.id, botId: chatBot.get(m.id) ?? null, what: m.status, at: m.updatedAt ?? m.createdAt ?? null });
   }
   for (const n of store.list("watchNotes")) {
     if (n.status !== "open") continue;

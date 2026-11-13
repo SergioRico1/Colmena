@@ -292,7 +292,7 @@ export default function Sidebar({ active = "inicio" }) {
     const bot = { ...(botOf(b.id) || b), shape: b.shape };
     return (
       <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={rowStyle(on, 44)}>
-        <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center" }}><BotPresence bot={bot} size={20} state={calm ? "rest" : b.state === "working" ? "work" : "rest"} /></span>
+        <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center" }}><BotPresence bot={bot} size={20} state={calm ? "rest" : b.state === "working" || b.busy ? "work" : "rest"} /></span>
         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ ...ellipsis, fontWeight: b.unread ? "700" : "500", color: INK }}>{b.name}</span>
@@ -340,7 +340,7 @@ export default function Sidebar({ active = "inicio" }) {
       <button type="button" onClick={() => setFolded(false)} aria-label={["Salas", `${model.rooms.length}`, roomsNew.unread ? `${roomsNew.unread} sin leer` : null, roomsNew.waiting ? "te esperan" : null, "desplegar la barra"].filter(Boolean).join(", ")} title="Salas" className="v3-hover" style={{ ...railTile, font: "600 var(--t-read)/1 'Geist', sans-serif" }}>{"#"}{roomsNew.waiting ? railDot(true) : roomsNew.unread ? railDot(false) : null}</button>
       {model.bots.map((b) => {
         const on = b.href === here;
-        return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={calm ? "rest" : b.state === "working" ? "work" : "rest"} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
+        return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={calm ? "rest" : b.state === "working" || b.busy ? "work" : "rest"} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
       })}
       {model.people.map((p) => {
         const on = p.href === here;

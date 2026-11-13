@@ -148,11 +148,13 @@ test("a room you put off leaves the list until its time, unless it waits for you
 
 test("bots: your enabled bots with their state in words; honey only when one of their requests waits", () => {
   const { bots } = sidebarModel(snapshot(), { now: NOW });
-  assert.deepEqual(bots.map((b) => [b.name, b.state, b.waiting]), [["Atlas", "waiting", 1], ["Nora", "free", 0], ["Bruno", "working", 1], ["Vera", "waiting", 2], ["Leo", "free", 0]]);
+  // Atlas's plan waits as the room's, not his; Bruno works and waits: «te espera» comes first.
+  assert.deepEqual(bots.map((b) => [b.name, b.state, b.waiting]), [["Atlas", "free", 0], ["Nora", "free", 0], ["Bruno", "waiting", 1], ["Vera", "waiting", 2], ["Leo", "free", 0]]);
+  assert.equal(bots.find((b) => b.id === "bruno").busy, true);
   assert.equal(bots.find((b) => b.id === "nora").unread, 1, "its chat has a message not opened");
   assert.equal(bots[0].href, "/chat/atlas");
   assert.equal(rowLabel("bot", bots[1]), "Nora, bot, libre, 1 sin leer");
-  assert.equal(rowLabel("bot", bots[2]), "Bruno, bot, trabajando, te espera");
+  assert.equal(rowLabel("bot", bots[2]), "Bruno, bot, te espera, trabajando");
   assert.equal(rowLabel("bot", bots[3]), "Vera, bot, te espera");
 });
 
@@ -205,7 +207,7 @@ test("one number: the sidebar's count is the count of Inicio, and the foot says 
 
 test("the foot never contradicts the Bots group", () => {
   const model = sidebarModel(snapshot(), { now: NOW });
-  assert.equal(model.summary.working, model.bots.filter((b) => b.state === "working").length);
+  assert.equal(model.summary.working, model.bots.filter((b) => b.state === "working" || b.busy).length);
   assert.equal(summaryOf([{ state: "free" }], 0).text, "Nadie trabajando");
   assert.equal(summaryOf([{ state: "working" }, { state: "working" }], 1).text, "2 trabajando · 1 te espera");
   assert.equal(summaryOf([], 0).text, "Sin bots");

@@ -19,7 +19,7 @@ const one = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
  * `entries`: needEntries(needsOf(store)); `card(entry)`: the full card of one of them;
  * `botOf(id)`: the bot record.
  */
-export default function NeedRows({ entries = [], card, botOf }) {
+export default function NeedRows({ entries = [], card, botOf, roomOf = () => "" }) {
   const [open, setOpen] = useState([]); // keys of the rows whose card is open
   const [all, setAll] = useState(false);
   const toggle = useRef(null);
@@ -31,7 +31,7 @@ export default function NeedRows({ entries = [], card, botOf }) {
       <ul aria-label="Lo que te espera" style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "8px" }}>
         {shown.map((entry) => {
           const bot = botOf(entry.botId);
-          const row = needRow(entry, { botName: bot?.name });
+          const row = needRow(entry, { botName: bot?.name, roomName: roomOf(entry.missionId) });
           const isOpen = open.includes(entry.key);
           const id = "need-" + entry.key;
           if (isOpen) {
@@ -52,7 +52,7 @@ export default function NeedRows({ entries = [], card, botOf }) {
             <li key={entry.key} style={rowBox}>
               <button type="button" aria-expanded="false" aria-controls={id} onClick={() => flip(entry.key)} aria-label={`${row.who}: ${row.what}. Abrir`}
                 style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 6px 0 12px", border: "0", borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", cursor: "pointer", color: "#12131A" }}>
-                <Shape bot={bot} size={18} />
+                {entry.room && !bot ? <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: 700, color: "#12131A" }}>{"#"}</span> : <Shape bot={bot} size={18} />}
                 <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
                   <span style={{ ...one, fontSize: "var(--t-body)", lineHeight: "1.3" }}><strong style={{ fontWeight: "600" }}>{row.who}</strong><span style={{ color: "#5C606C" }}>{" · "}</span>{row.what}</span>
                   {row.sub ? <span style={{ ...one, fontSize: "var(--t-ui)", lineHeight: "1.3", color: "#5C606C" }}>{row.sub}</span> : null}

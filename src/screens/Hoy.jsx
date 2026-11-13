@@ -220,7 +220,7 @@ export default function Hoy({ query = {} }) {
               </span>
             </div>
           ) : null}
-          {entries.length ? <NeedRows entries={entries} card={cardOf} botOf={botOf} /> : null}
+          {entries.length ? <NeedRows entries={entries} card={cardOf} botOf={botOf} roomOf={(id) => { const m = (missions || []).find((x) => x.id === id); return m ? m.room || m.title || "" : ""; }} /> : null}
           {settled.length ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(380px, 100%), 1fr))", gap: "14px", alignItems: "start" }}>
               {settled.map((d) => <ApprovalNeed key={"done" + d.approval.id} a={d.approval} bot={botOf(d.approval.botId)} mission={missions.find((m) => m.id === d.approval.missionId)} settled={d.text} />)}

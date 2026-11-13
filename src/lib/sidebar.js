@@ -92,8 +92,10 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
 
   const team_ = bots.filter((b) => b.enabled !== false).map((b) => {
     const waiting = waitingOf_.get(b.id) || 0;
-    const state = paused || b.status === "pausado" ? "paused" : b.status === "trabaja" ? "working" : waiting ? "waiting" : b.status === "limitado" ? "limited" : b.status === "bloqueado" ? "stuck" : "free";
-    return { id: b.id, href: `/chat/${b.id}`, name: b.name || "Bot", role: b.role || "", shape: sidebarShape(b.shape), color: b.color || "#C9CBD1", portrait: b.portrait ?? null, state, waiting, unread: unreadOf.get(b.id) || 0 };
+    // «Te espera» first: a bot with something waiting for you says so, even while it works.
+    const busy = !paused && (b.status === "trabaja" || !!b.busy);
+    const state = paused || b.status === "pausado" ? "paused" : waiting ? "waiting" : busy ? "working" : b.status === "limitado" ? "limited" : b.status === "bloqueado" ? "stuck" : "free";
+    return { id: b.id, href: `/chat/${b.id}`, name: b.name || "Bot", role: b.role || "", shape: sidebarShape(b.shape), color: b.color || "#C9CBD1", portrait: b.portrait ?? null, state, waiting, unread: unreadOf.get(b.id) || 0, ...(busy && state !== "working" ? { busy: true } : {}) };
   });
 
   const waitingCount = waitingNow.length;
@@ -107,7 +109,7 @@ function personRow({ id, href, name, person, unread, waiting = 0 }) {
 
 /** The foot's line. It counts the same rows the Bots group shows and the same number as Inicio. */
 export function summaryOf(bots = [], waitingCount = 0, paused = false) {
-  const working = bots.filter((b) => b.state === "working").length;
+  const working = bots.filter((b) => b.state === "working" || b.busy).length;
   const parts = [paused ? "Equipo en pausa" : working ? `${working} trabajando` : bots.length ? "Nadie trabajando" : "Sin bots"];
   if (waitingCount) parts.push(waitingCount === 1 ? "1 te espera" : `${waitingCount} te esperan`);
   return { working, waiting: waitingCount, text: parts.join(" · ") };
@@ -152,7 +154,7 @@ export function teamHeader(teams = [], { bots = 0, chosen = null } = {}) {
 /** A row's name for a screen reader: «informe-q3, sala, 3 sin leer, te espera». */
 export function rowLabel(kind, row) {
   const parts = [kind === "room" ? row.title : row.name, kind === "room" ? "sala" : kind === "bot" ? "bot" : "persona"];
-  if (kind === "bot") parts.push(STATE_WORD[row.state] || STATE_WORD.free);
+  if (kind === "bot") { parts.push(STATE_WORD[row.state] || STATE_WORD.free); if (row.busy) parts.push(STATE_WORD.working); }
   if (kind === "person") { parts.push(row.presence === "online" ? "en línea" : "sin conexión"); if (row.status) parts.push(STATUS_WORD[row.status]); }
   if (kind === "room" && row.working > 0) parts.push(row.working === 1 ? "un bot trabajando" : `${row.working} bots trabajando`);
   if (row.unread > 0) parts.push(`${row.unread} sin leer`);

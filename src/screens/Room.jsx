@@ -37,6 +37,7 @@ import { LimitBanner } from "../components/v2/LimitNotice.jsx";
 import { RELAY_LABEL, editMessage, fileBase64, unsendMessage } from "../lib/peers.js";
 import { isHidden, later, reversible, useToasts } from "../lib/undoToast.js";
 import { isTask, roomLinks } from "../lib/rooms.js";
+import { waitingBy, waitingOf } from "../components/v2/needs.js";
 import { botNameLabels, firstName, initialsOf, listNames } from "../lib/identity.js";
 import { askWaiting, authorOf, authorView, headerBots, itemType, liveLines, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
 import { useAnnouncer } from "../lib/useAnnouncer.js";
@@ -209,9 +210,13 @@ function Room({ id, query }) {
     bots: [{ owner: { address: peers?.me?.address || "me", name: "Tú", you: true }, bots: memberIds.map((b) => findBot(bots, b)).filter(Boolean) }],
   } : null), [mission, roomId, missionId, memberIds, bots, peers, store.settings?.userName]);
   const shown = view || soloView;
+  // «Te espera» from the one list of what waits for you (server/waiting.mjs), like the sidebar and
+  // Equipo: a bot with something waiting anywhere says so here too; a room-level plan or choice
+  // names no bot.
+  const waitingBots = useMemo(() => [...waitingBy(waitingOf(store)).bots.keys()], [store.waiting, store.approvals, store.missions]); // eslint-disable-line react-hooks/exhaustive-deps
   const panel = useMemo(() => memberPanel(shown, {
-    working: bots.filter(working).map((b) => b.id), waiting: [...pending.map((a) => a.botId), ...asks.filter((a) => a.state === "asked").map((a) => a.bot?.id)], activity: shown?.activity || EMPTY,
-  }), [shown, bots, activity, live, pending]); // eslint-disable-line react-hooks/exhaustive-deps
+    working: bots.filter(working).map((b) => b.id), waiting: [...waitingBots, ...asks.filter((a) => a.state === "asked").map((a) => a.bot?.id)], activity: shown?.activity || EMPTY,
+  }), [shown, bots, activity, live, waitingBots, asks]); // eslint-disable-line react-hooks/exhaustive-deps
   // A name two visible bots share reads «Vera · de Lucía» in every author line (identity.js).
   const botNames = useMemo(() => botNameLabels(shown?.bots || EMPTY), [shown]);
   const title = shown?.title || mission?.room || mission?.title || "sala";

@@ -361,11 +361,14 @@ export function botView(b, ctx) {
   const working = act || open.some((m) => WORKING.has(m.status) && (ctx.stepsByMission.get(m.id) || []).some((s) => s.botId === b.id && s.status === "running"));
   // «Limitado»: its work waits for an AI's plan to renew (limits.mjs, Runtime#resumeLimited).
   const limited = open.find((m) => m.status === "paused" && m.limited && (!m.limited.botIds?.length || m.limited.botIds.includes(b.id)))?.limited || null;
-  const status = ctx.paused || b.paused ? "pausado" : working ? "trabaja" : limited ? "limitado" : waitingIn ? "espera" : open.some((m) => m.status === "blocked") ? "bloqueado" : "libre";
+  // «Te espera» wins over «trabaja»: what waits for the person is the one thing to see (one count).
+  const status = ctx.paused || b.paused ? "pausado" : waitingIn ? "espera" : working ? "trabaja" : limited ? "limitado" : open.some((m) => m.status === "blocked") ? "bloqueado" : "libre";
   return {
     ...pick(b, BOT_FIELDS),
     helpers: b.helpers || [],
     status, statusLabel: BOT_LABELS[status],
+    // At work right now, whatever its status says first («te espera» wins): the foot counts it.
+    ...(working ? { busy: true } : {}),
     activity: act ? { verb: act.verb || "pensando", missionId: act.missionId ?? null, detail: act.detail ?? null } : null,
     waitingIn, missionCount: open.length, usesTotal: mine.length,
     limited: limited ? { engine: limited.engine, label: limited.label, resetsAt: limited.resetsAt ?? null, resumeAt: limited.resumeAt ?? null, ...(limited.plan ? { plan: true, percent: limited.percent ?? null } : {}) } : null,
