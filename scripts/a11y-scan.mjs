@@ -1,6 +1,6 @@
 // Accessibility scan of the running app (dev only): contrast, targets under 24 px, controls
 // without a name, landmarks and the heading outline, plus a census of font sizes and radii.
-// Usage: node scripts/a11y-scan.mjs [baseUrl] [--json=out.json] [--only=Inicio,Sala] [--verbose]
+// Usage: node scripts/a11y-scan.mjs [baseUrl] [--json=out.json] [--only=Inicio,Sala] [--theme=dark|light] [--verbose]
 //   Needs a server on isolated QA data (scripts/seed-qa.mjs) and a playwright-core install
 //   (PLAYWRIGHT_CORE, PW_EXE as in scripts/v3-shot.cjs). Exits 1 when it finds something.
 import { writeFileSync } from "node:fs";
@@ -151,7 +151,10 @@ const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].repla
 if (isMain) {
   const { chromium } = require(PW);
   const browser = await chromium.launch({ executablePath: EXE });
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  // --theme=dark|light: the app's theme for the whole scan (src/lib/theme.js reads it at boot).
+  const theme = flag("theme", null);
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, ...(theme ? { colorScheme: theme } : {}) });
+  if (theme) await page.addInitScript((t) => { try { localStorage.setItem("colmena.theme", t); } catch { /* blocked storage */ } }, theme);
   const report = {}, totals = Object.fromEntries(KINDS.map((k) => [k, 0])), sizes = {}, radii = {};
   for (const [name, route] of ROUTES.filter(([n]) => !only.length || only.includes(n))) {
     await page.goto(base + route, { waitUntil: "networkidle" });

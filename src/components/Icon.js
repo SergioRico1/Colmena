@@ -208,6 +208,14 @@ export const PenLine = /* @__PURE__ */ icon(G.PencilLine, "PenLine");
 export const Pencil = /* @__PURE__ */ icon(G.PencilSimple, "Pencil");
 export const PencilLine = /* @__PURE__ */ icon(G.PencilLine, "PencilLine");
 export const PhoneOff = /* @__PURE__ */ icon(G.PhoneSlash, "PhoneOff");
+// Colmena 4's room (design/v4/colmena-v4.html): sending, the honey pill, read ticks, a document, a private room.
+export const PaperPlaneRight = /* @__PURE__ */ icon(G.PaperPlaneRight, "PaperPlaneRight");
+export const HandPointing = /* @__PURE__ */ icon(G.HandPointing, "HandPointing");
+export const Checks = /* @__PURE__ */ icon(G.Checks, "Checks");
+export const FileDoc = /* @__PURE__ */ icon(G.FileDoc, "FileDoc");
+export const LockSimple = /* @__PURE__ */ icon(G.LockSimple, "LockSimple");
+export const Desktop = /* @__PURE__ */ icon(G.Desktop, "Desktop");
+export const Smiley = /* @__PURE__ */ icon(G.Smiley, "Smiley");
 export const Pin = /* @__PURE__ */ icon(G.PushPin, "Pin");
 export const PinOff = /* @__PURE__ */ icon(G.PushPinSlash, "PinOff");
 export const Planet = /* @__PURE__ */ icon(G.Planet, "Planet");
