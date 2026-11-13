@@ -189,7 +189,11 @@ choice open:
   message it answers — followed back through a teammate that passed the word or a late answer; for
   a step with no `ackOn`, the last user message before it began — has `peerId`) that left a
   message without `stall`, except a plan step, once (`peerId`, and `peerParts` when it went in several). While the step runs the
-  others see the bot thinking. A relay that fails (no mailbox) is logged and not retried.
+  others see the bot thinking. A posted answer waits in `peerOutbox` like any message. One that
+  could not be posted, and a request's deliverable that could not be uploaded, are kept in
+  `roomUnsent {id: answer:step | file:artifact, kind, shareId, stepId|artifactId, askId?, botId,
+  replyTo?, t}` and tried again by `RoomWork#unsent` every tick and after a restart, for
+  `ROOM_WORK.unsentMs` (7 days).
 - **Parts.** `part: {of, n, total, glue}` on bot messages; `of` is the id of the first part and
   `glue` what stood between two parts, so the text joins back as it was. Later parts neither
   count as unread nor notify.

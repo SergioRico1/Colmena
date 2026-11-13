@@ -69,6 +69,7 @@ export const ROOM_WORK = Object.freeze({
   endedMs: 120000, // how long an ended status stays as the bot's status
   heldMs: 7 * 864e5, // «waiting» / «limited» with no news at all
   awayMs: 12 * 3600000, // «Sergio no está; Vera seguirá cuando vuelva»
+  unsentMs: 7 * 864e5, // how long an answer or a file that could not leave is tried again (what the mailbox itself keeps)
   settleMs: 30000, // after Colmena starts, how long a request that was at work may take to go on before it is closed
   handoffMs: 60000, // the same two bots are said to hand over once in this long
   lines: 400, // lines kept per room
@@ -572,12 +573,54 @@ export class RoomWork {
         add(ask.id, (a) => ({ shared: [...new Set([...(a.shared || []), artifactId])], sharedBytes: (a.sharedBytes || 0) + size }));
       } catch (error) {
         this.log("Un entregable de " + bot.name + " no pudo compartirse en la sala: " + error.message);
+        // It could not leave now (the mailbox is not reachable): kept, and tried again.
+        if (!error.status || error.status >= 500) this.keepUnsent({ id: "file:" + artifactId, kind: "file", shareId: share.id, askId: ask.id, artifactId, botId: bot.id, replyTo: answerId, size: await this.sizeOf(artifactId).catch(() => 0) });
+        done.add(artifactId);
       } finally {
         this.sharing.delete(artifactId);
       }
     }
     if (kept.length) this.askShare(add(ask.id, (a) => ({ kept: [...new Set([...(a.kept || []), ...kept])] })), share, bot, kept, answerId);
     return out;
+  }
+  /**
+   * Something of a bot's turn that could not leave for the room when the turn ended (its
+   * answer, a file it made for a request): kept in `roomUnsent` and tried again every tick and
+   * after a restart, for as long as the mailbox would have kept it.
+   */
+  keepUnsent(record) {
+    if (!this.store.get("roomUnsent", record.id)) this.store.put("roomUnsent", { ...record, at: now(), t: Date.now() });
+  }
+  sentNow(id) {
+    if (this.store.get("roomUnsent", id)) this.store.remove("roomUnsent", id);
+  }
+  async unsent() {
+    const p = this.peers;
+    if (!p || this.retrying) return;
+    this.retrying = true;
+    try {
+      for (const u of this.store.list("roomUnsent")) {
+        const share = this.store.get("peerShares", u.shareId), bot = this.store.get("bots", u.botId);
+        const room = share && this.rooms.ofShare(share.id);
+        if (!share || share.leftAt || share.removedAt || !bot || !room || Date.now() - (u.t || 0) > ROOM_WORK.unsentMs) { this.store.remove("roomUnsent", u.id); continue; }
+        if (u.kind === "answer") {
+          const step = this.store.get("steps", u.stepId);
+          if (!step || this.rooms.relay(room, share, step, cleanBot(bot)) || !this.store.get("roomUnsent", u.id)) this.sentNow(u.id);
+        } else if (u.kind === "file" && p.client?.status === "online") {
+          try {
+            await p.files.sendArtifact(share.id, u.artifactId, "", { bot: cleanBot(bot), replyTo: u.replyTo || null });
+            const ask = this.store.get("roomAsks", u.askId);
+            if (ask) this.store.patch("roomAsks", ask.id, { shared: [...new Set([...(ask.shared || []), u.artifactId])], sharedBytes: (ask.sharedBytes || 0) + (u.size || 0) });
+            this.sentNow(u.id);
+          } catch (error) {
+            // Not a matter of waiting (the file is gone, its kind cannot travel): dropped.
+            if (error.status && error.status < 500) this.sentNow(u.id);
+          }
+        }
+      }
+    } finally {
+      this.retrying = false;
+    }
   }
   /** What a deliverable weighs as it would travel (its file and the PDF that shows it). */
   async sizeOf(artifactId) {
@@ -783,6 +826,7 @@ export class RoomWork {
     const p = this.peers;
     if (!p) return;
     try { this.sweepOwn(); } catch (error) { this.log(error.message); }
+    void this.unsent().catch((error) => this.log(error.message));
     const t = this.clock();
     const rooms = new Set();
     for (const s of this.store.list("roomStatus")) {

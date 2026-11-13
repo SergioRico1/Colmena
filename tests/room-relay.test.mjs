@@ -305,3 +305,55 @@ test("an approval that expires undecided ends the wait for the others, and close
   assert.equal(sergio.store.get("roomAsks", left.id).state, "failed");
   await until(() => lines(marta, other).includes("Vera no ha podido terminarlo"), "Marta lee que no pudo");
 });
+
+test("a bot's answer that ends while the mailbox is unreachable still reaches the room, with what it made, also after a restart", async (t) => {
+  const people = await world(t);
+  let [sergio] = people;
+  const marta = people[1];
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  const files = (p) => p.store.list("peerFiles").filter((f) => f.status === "ready").map((f) => f.name).sort();
+  // Marta asks; while Vera works the mailbox goes down, and the turn ends with it down.
+  let round = 0, release = null;
+  sergio.reply = () => {
+    round += 1;
+    if (round === 1) return new Promise((r) => { release = () => r({ text: "", output: [{ type: "function_call", name: "create_deliverable", arguments: JSON.stringify({ title: "Informe", kind: "document", format: "md", content: "# Informe. Todo bien." }), call_id: "d1" }] }); setTimeout(release, 20000).unref(); });
+    return answer("Aquí tienes el informe.");
+  };
+  await ask(marta, room, sergio, "@Vera hazme el informe");
+  await until(() => release, "el turno está en marcha");
+  await people.relay.stop();
+  await until(() => sergio.peers.relayStatus.status !== "online", "Sergio se queda sin buzón");
+  release();
+  await until(() => sergio.store.where("messages", "missionId", sergio.rooms.must(room.id).missionId).some((m) => m.text === "Aquí tienes el informe."), "el turno termina");
+  await settle(sergio.runtime);
+  await pause(500);
+  assert.equal(peerRows(marta, room.id).some((m) => m.bot), false, "nothing could travel yet");
+  // Colmena is closed and opened again before the mailbox is back.
+  sergio = await people.reopenOffline(sergio);
+  await people.relay.start();
+  await botAnswer(marta, room, "Aquí tienes el informe.");
+  await until(() => files(marta).length === 1, "y el archivo");
+  assert.deepEqual(files(marta), ["Informe.md"]);
+  assert.equal(peerRows(marta, room.id).filter((m) => m.bot && m.text === "Aquí tienes el informe.").length, 1, "once");
+  await pause(1500);
+  assert.equal(files(marta).length, 1);
+  // An answer that could not even be posted when its turn ended (no mailbox to post to) is kept and goes later.
+  const post = sergio.peers.post.bind(sergio.peers);
+  let down = true;
+  sergio.peers.post = (shareId, text, options = {}) => { if (down && options.bot) throw Object.assign(Error("Falta conectar Colmena al buzón (Ajustes › Personas)."), { status: 409 }); return post(shareId, text, options); };
+  sergio.reply = () => answer("Esta salió más tarde.");
+  await ask(marta, room, sergio, "@Vera otra cosa");
+  await until(() => sergio.store.where("messages", "missionId", sergio.rooms.must(room.id).missionId).some((m) => m.text === "Esta salió más tarde."), "el turno termina");
+  await settle(sergio.runtime);
+  assert.deepEqual(sergio.store.list("roomUnsent").map((x) => x.kind), ["answer"]);
+  sergio.rooms.work.tick();
+  assert.equal(sergio.store.list("roomUnsent").length, 1, "still kept while it cannot go");
+  sergio = await people.reopen(sergio);
+  down = false;
+  sergio.rooms.work.tick();
+  await botAnswer(marta, room, "Esta salió más tarde.");
+  await pause(300);
+  assert.deepEqual([sergio.store.list("roomUnsent").length, peerRows(marta, room.id).filter((m) => m.text === "Esta salió más tarde.").length], [0, 1]);
+});

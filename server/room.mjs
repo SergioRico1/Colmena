@@ -870,8 +870,14 @@ export class Rooms {
       });
     } catch (error) {
       this.log("La respuesta de " + bot.name + " no pudo salir a la sala: " + error.message);
+      // Nothing went: it is kept and tried again (RoomWork#unsent), also after a restart. Once
+      // posted, a message waits in the outbox like any other until the mailbox takes it.
+      if (!ids.length) this.work.keepUnsent({ id: "answer:" + step.id, kind: "answer", shareId: s.id, stepId: step.id, botId: bot.id });
     }
-    if (ids.length) this.store.patch("messages", last.id, { peerId: ids[0], ...(ids.length > 1 ? { peerParts: ids } : {}) });
+    if (ids.length) {
+      this.store.patch("messages", last.id, { peerId: ids[0], ...(ids.length > 1 ? { peerParts: ids } : {}) });
+      this.work.sentNow("answer:" + step.id);
+    }
     return ids[0] || null;
   }
 }

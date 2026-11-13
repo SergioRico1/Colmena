@@ -63,15 +63,16 @@ export function hub(effects, inbox = { messages: [] }) {
  */
 export async function world(t, people = ["Sergio Rico", "Marta Ruiz"], { app = [], inbox = undefined, web = async (url) => ({ url, finalUrl: url, title: "Página", text: "Contenido de la página.", truncated: false, untrusted: true }) } = {}) {
   const base = await mkdtemp(path.join(os.tmpdir(), "colmena-people-"));
-  const relay = await startRelay({ port: 0, directory: path.join(base, "relay") });
+  let relay = await startRelay({ port: 0, directory: path.join(base, "relay") });
+  const url = relay.url, port = Number(new URL(url).port);
   const made = [];
-  const open = async (name) => {
+  const open = async (name, { offline = false } = {}) => {
     const store = new Store(path.join(base, name.split(" ")[0]));
     store.patch("settings", "main", { model: "fixture", learning: false, userName: name });
     const p = { name, store, notices: [], calls: [], out: [], live: [], effects: [], skew: 0, reply: () => answer("Hecho.") };
     p.connections = new Connections(store, hub(p.effects, inbox));
     p.runtime = new Runtime(store, { respond: async (params) => { p.calls.push(params); return p.reply(params); } }, p.connections, { web });
-    p.peers = new Peers({ store, vault: null, relayUrl: relay.url, nameOf: () => name, notifier: { notify: (n) => p.notices.push(n) }, log: () => {}, clock: () => Date.now() + p.skew });
+    p.peers = new Peers({ store, vault: null, relayUrl: url, nameOf: () => name, notifier: { notify: (n) => p.notices.push(n) }, log: () => {}, clock: () => Date.now() + p.skew });
     const enqueue = p.peers.enqueue.bind(p.peers), ephemeral = p.peers.ephemeral.bind(p.peers);
     p.peers.enqueue = (to, body, options) => { p.out.push({ to, body, kept: true }); return enqueue(to, body, options); };
     p.peers.ephemeral = (to, body, options) => { p.out.push({ to, body, kept: false }); return ephemeral(to, body, options); };
@@ -96,7 +97,7 @@ export async function world(t, people = ["Sergio Rico", "Marta Ruiz"], { app = [
     p.peers.files = new PeerFiles({ peers: p.peers, store, artifactFile: artifactSource({ store, rootOf: (id) => p.runtime.root(id) }) }).start();
     p.peers.errands = new Errands({ peers: p.peers, store, runtime: p.runtime }).start();
     await p.peers.start();
-    await until(() => p.peers.relayStatus.status === "online", name + " conectado al buzón");
+    if (!offline) await until(() => p.peers.relayStatus.status === "online", name + " conectado al buzón");
     p.close = async () => {
       p.rooms.stop(); p.bots.stop(); p.peers.files.stop(); p.peers.errands.stop(); p.teams.stop(); p.peers.stop();
       for (const timer of p.connections.timers?.values?.() || []) clearTimeout(timer);
@@ -111,16 +112,23 @@ export async function world(t, people = ["Sergio Rico", "Marta Ruiz"], { app = [
   for (const name of people) made.push(await open(name));
   t.after(async () => {
     for (const p of made) if (!p.closed) await p.close();
-    await relay.close();
+    if (relay) await relay.close();
     await rm(base, { recursive: true, force: true });
   });
+  /** The mailbox goes down (nobody reaches it) and comes back on the same address, with what it kept. */
+  made.relay = {
+    stop: async () => { await relay.close(); relay = null; },
+    start: async () => { relay = await startRelay({ port, directory: path.join(base, "relay") }); },
+  };
   /** The same person's Colmena opened again on the same data (a restart). */
-  made.reopen = async (p) => {
+  made.reopen = async (p, options = {}) => {
     if (!p.closed) await p.close();
-    const again = await open(p.name);
+    const again = await open(p.name, options);
     made.push(again);
     return again;
   };
+  /** The same, while the mailbox is down: it does not wait to be connected. */
+  made.reopenOffline = (p) => made.reopen(p, { offline: true });
   return made;
 }
 export async function friends(a, b) {
