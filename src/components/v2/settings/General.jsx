@@ -1,10 +1,13 @@
 import { useExpert } from "../../../lib/expert.js";
 import { reversible } from "../../../lib/undoToast.js";
-import { Alert, Card, Go, Panel, Row, SwitchRow, TextInput, UNDO_MS, btn, useSettings } from "./v3.jsx";
+import { applyTheme } from "../../../lib/theme.js";
+import { Alert, Card, Go, Panel, Pills, Row, SwitchRow, TextInput, UNDO_MS, btn, useSettings } from "./v3.jsx";
 
-// Ajustes › General (design/V3Ajustes.dc.html): your name, your space, how much detail you
-// see (Modo experto) and the keyboard shortcuts. The board's language, appearance and start
-// page are not settings Colmena has yet, so they are left out rather than drawn dead.
+// Ajustes › General (design/V3Ajustes.dc.html): your name, your space, the theme (Colmena 4),
+// how much detail you see (Modo experto) and the keyboard shortcuts. The board's language and
+// start page are not settings Colmena has yet, so they are left out rather than drawn dead.
+
+const THEME_ITEMS = [["system", "Sistema"], ["light", "Claro"], ["dark", "Oscuro"]];
 
 const ROLES = ["Administrador", "Dirección", "Responsable de equipo", "Ventas", "Marketing", "Finanzas", "Operaciones", "Atención al cliente", "Recursos humanos"];
 // Only the shortcuts that exist (Sidebar.jsx, CommandPalette.jsx, the desktop app, Layout.jsx).
@@ -19,6 +22,13 @@ export default function GeneralSection() {
   const { settings, save, error } = useSettings();
   const [expert, setExpert] = useExpert();
   const flip = (key, label) => (v) => save({ [key]: v }, `${label}: ${v ? "sí" : "no"}`, { [key]: !v });
+  // Applied at once (no wait for the server); main.jsx follows the setting from then on.
+  const theme = settings.theme || "system";
+  const pickTheme = (v) => {
+    if (v === theme) return;
+    applyTheme(v);
+    save({ theme: v }, `Tema: ${THEME_ITEMS.find(([k]) => k === v)[1].toLowerCase()}`, { theme }).then((ok) => { if (!ok) applyTheme(theme); });
+  };
   const toggleExpert = (v) => {
     setExpert(v);
     reversible({ id: "setting:expert", text: v ? "Modo experto encendido" : "Modo experto apagado", ms: UNDO_MS, undo: () => setExpert(!v) });
@@ -36,6 +46,9 @@ export default function GeneralSection() {
         </Row>
         <Row as="label" anchor="nombre-espacio" title="Nombre del espacio" sub="El equipo, la empresa o el departamento que trabaja aquí.">
           <TextInput label="Nombre del espacio" value={settings.spaceName} onSave={(v) => save({ spaceName: v }, "Nombre del espacio cambiado")} />
+        </Row>
+        <Row anchor="tema" title="Tema" sub="Claro, oscuro o el mismo que tu ordenador.">
+          <Pills label="Tema" items={THEME_ITEMS} value={theme} onPick={pickTheme} />
         </Row>
         <SwitchRow anchor="modo-experto" strong min="76px" tint="#FAFAF8" title="Modo experto"
           sub="Muestra herramientas, tokens, modelo, registros y atajos. Añade la sección Avanzado. No quita nada."
@@ -55,7 +68,7 @@ export default function GeneralSection() {
           {KEYS.map(([a, k]) => (
             <div key={a} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "34px", fontSize: "var(--t-ui)" }}>
               <span>{a}</span>
-              <kbd style={{ padding: "4px 8px", borderRadius: "var(--r-sm)", background: "#F1F1EC", font: "500 var(--t-caption)/1 'Geist Mono', monospace", whiteSpace: "nowrap" }}>{k}</kbd>
+              <kbd style={{ padding: "4px 8px", borderRadius: "var(--r-sm)", background: "var(--c-chip)", font: "500 var(--t-caption)/1 'Geist Mono', monospace", whiteSpace: "nowrap" }}>{k}</kbd>
             </div>
           ))}
         </div>

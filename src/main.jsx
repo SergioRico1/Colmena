@@ -26,6 +26,7 @@ import { post } from "./lib/api.js";
 import { listenForNoticeSounds } from "./lib/noticeSounds.js";
 import { installDragOut } from "./lib/dragOut.js";
 import { watchFocusModality } from "./lib/focusModality.js";
+import { watchTheme } from "./lib/theme.js";
 
 const live = import.meta.glob("./screens/*.jsx");
 // Mockups are only reachable while developing (/_design); the desktop build never ships them as screens.
@@ -63,6 +64,10 @@ function App() {
     if (ready && settings.onboarded === false && !OPEN_BEFORE_ONBOARDING.has(route?.screen)) navigate("/bienvenida", { replace: true });
   }, [ready, settings.onboarded, route, pathname]);
   useEffect(preloadScreens, []);
+  // Light or dark (Ajustes › General › Tema): before the settings arrive, theme-boot.js already
+  // applied the last choice; from then on the setting and, for «Sistema», the system decide.
+  const themeMode = ready ? settings.theme || "system" : null;
+  useEffect(() => (themeMode ? watchTheme(themeMode) : undefined), [themeMode]);
   // After an update your bots got colours of their own (server/bot-looks.mjs): said once, quietly,
   // with «Deshacer» (the factory colours back).
   const looksNotice = ready && settings.onboarded !== false && !!settings.botLooks?.notice;

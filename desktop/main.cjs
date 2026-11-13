@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Notification, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, shell, Notification, ipcMain, dialog, nativeTheme } = require("electron");
 const { spawn } = require("node:child_process");
 const path = require("node:path");
 const os = require("node:os");
@@ -93,11 +93,33 @@ ipcMain.on("colmena-startup", (event, action) => {
   }
 });
 
+// Colmena 4 theme (Ajustes › General › Tema): "system" | "light" | "dark", sent by the page
+// (preload-window.cjs setTheme) and kept in userData/theme.json so the next start opens with the
+// right window background before the page paints. nativeTheme makes prefers-color-scheme follow.
+const WINDOW_BG = { light: "#FFFFFF", dark: "#1A1B21" };
+const themeFile = () => path.join(app.getPath("userData"), "theme.json");
+function storedTheme() {
+  try { const mode = JSON.parse(readFileSync(themeFile(), "utf8")).mode; return ["system", "light", "dark"].includes(mode) ? mode : "system"; } catch { return "system"; }
+}
+function windowBackground(mode = nativeTheme.themeSource) {
+  const dark = mode === "dark" || (mode !== "light" && nativeTheme.shouldUseDarkColors);
+  return dark ? WINDOW_BG.dark : WINDOW_BG.light;
+}
+ipcMain.on("colmena-theme", (event, mode) => {
+  if (!["system", "light", "dark"].includes(mode)) return;
+  if (nativeTheme.themeSource !== mode) nativeTheme.themeSource = mode;
+  for (const w of BrowserWindow.getAllWindows()) if (!w.isDestroyed() && w !== splash) try { w.setBackgroundColor(windowBackground(mode)); } catch {}
+  if (storedTheme() !== mode) try { writeFileSync(themeFile(), JSON.stringify({ mode })); } catch {}
+});
+
 if (!app.requestSingleInstanceLock()) app.quit();
 else
   app.whenReady().then(async () => {
     ensureShortcut();
     startLog();
+    nativeTheme.themeSource = storedTheme();
+    // «Sistema»: the system switched between light and dark.
+    nativeTheme.on("updated", () => { if (mainWin && !mainWin.isDestroyed()) mainWin.setBackgroundColor(windowBackground()); });
     updater = setupUpdater({ isBusy: () => (presence.working || 0) > 0 });
     // Only when the start takes a moment (an instance already running opens at once).
     const hidden = process.argv.includes("--hidden");
@@ -115,7 +137,8 @@ else
         // Started with Windows («Abrir Colmena al iniciar Windows»): next to the clock, not in your face.
         // Shown once it has painted, so the start-up window hands over without a blank frame.
         show: false,
-        backgroundColor: "#EEF0F4",
+        // The theme's app surface (src/lib/theme.js WINDOW_BG), so no frame flashes white in dark.
+        backgroundColor: windowBackground(),
         autoHideMenuBar: true,
         // Colmena draws its own title bar (minimise / maximise / close), as NEXO does.
         // Frameless windows keep Windows 11's rounded corners and native resizing.

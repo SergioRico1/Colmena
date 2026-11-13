@@ -38,6 +38,7 @@ export const SECTIONS = [
       ["tu-nombre", "Tu nombre", "usuario perfil firma"],
       ["tu-rol", "Tu rol", "cargo puesto administrador"],
       ["nombre-espacio", "Nombre del espacio", "equipo empresa departamento"],
+      ["tema", "Tema", "tema oscuro claro modo noche apariencia colores sistema"],
       ["modo-experto", "Modo experto", "experto avanzado herramientas tokens registros detalle técnico"],
       ["narracion", "Te cuentan en qué están", "narración qué está haciendo progreso"],
       ["sugerencias", "Respuestas sugeridas", "sugerencias botones respuesta rápida"],

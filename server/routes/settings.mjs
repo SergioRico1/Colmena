@@ -35,6 +35,8 @@ export function registerSettingsRoutes(app, { listModels, store, runtime }) {
       expert: z.boolean(),
       sidebarFolded: z.boolean(),
       pinned: z.array(z.string().trim().regex(/^\/[^\s]*$/).max(300)).max(30),
+      // Colmena 4: light or dark, or follow the system (src/lib/theme.js; unset = "system").
+      theme: z.enum(["system", "light", "dark"]),
     })
     .partial()
     .strict();

@@ -17,13 +17,64 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* ── Tokens ────────────────────────────────────────────────────────────────
-   Greys for text that must stay readable on every light surface of the app
-   (#FFFFFF, #F6F6F3, #F5F5F2, #F4F4F0, #F1F1EC, #EEF0F4):
-     --c-placeholder   placeholders and the faintest small text: 4.7:1 or better on all of them
-     --c-display-soft  the grey half of a two-tone headline (large text only): 3.7:1 or better
+/* ── Colour tokens (Colmena 4, design/v4/colmena-v4.html) ──────────────────
+   Semantic colours for both themes. <html data-theme="light|dark"> is set before the first paint
+   (public/theme-boot.js, then lib/theme.js from settings.theme: system | light | dark). Inline
+   styles use them through lib/theme.js (`C.text` → "var(--c-text)"); docs/SCREENS.md › v4.
+     surfaces  app · sidebar · sidebar-hover · selected · panel · card · raised · sunken · hover · chip · mine
+     text      text (ink) · text-2 (body) · text-3 (muted, 4.5:1+) · text-4 (faint, 4.5:1+ on app/card) · on-accent
+     lines     line · line-strong
+     accent    accent · accent-ink (links, text) · accent-soft (ground) · focus (keyboard ring)
+     honey     only «te necesita»: honey (chip, count) · honey-ring · honey-soft (card ground) ·
+               honey-ink (text on honey) · honey-text (text on honey-soft)
+     unread    unread-bg · unread-fg (neutral count)
+     status    ok · ok-ink · ok-soft · error · error-soft
+     buttons   btn · btn-text · btn-hover (the ink primary button: light on dark)
+     shadows   shadow-pop (menus, dialogs) · shadow-lift (selected rows, segmented pills)
+     misc      ink-rgb (for rgb(var(--c-ink-rgb) / .08) hairlines and hovers) · scroll · cut (the
+               ring that cuts an avatar badge out of the surface it sits on)
+     page      the paper ground (#F5F5F2) of the Colmena 3 screens, whose white cards have no
+               border; screens rebuilt on v4 use --c-app instead */
+:root,[data-theme="light"]{
+  color-scheme:light;
+  --c-app:#FFFFFF;--c-sidebar:#F5F5F1;--c-sidebar-hover:#EBEBE5;--c-selected:#FFFFFF;
+  --c-panel:#FFFFFF;--c-card:#FFFFFF;--c-raised:#FFFFFF;--c-sunken:#F4F4F0;--c-hover:#F6F6F3;--c-chip:#F1F1EC;--c-mine:#EEF1F6;
+  --c-text:#12131A;--c-text-2:#33363F;--c-text-3:#5C606C;--c-text-4:#666A75;--c-on-accent:#FFFFFF;
+  --c-line:#E6E6E0;--c-line-strong:#D2D2CA;
+  --c-accent:#2F6BFF;--c-accent-ink:#1F4FD1;--c-accent-soft:#E9EFFF;--c-focus:#2F6BFF;
+  --c-honey:#FFC93C;--c-honey-ring:#EDBE45;--c-honey-soft:#FFF7E0;--c-honey-ink:#3B2A00;--c-honey-text:#6B4E00;
+  --c-unread-bg:#12131A;--c-unread-fg:#FFFFFF;
+  --c-ok:#16895A;--c-ok-ink:#0B6B4A;--c-ok-soft:#E3F4EC;--c-error:#B4332B;--c-error-soft:#FBE9EA;
+  --c-btn:#12131A;--c-btn-text:#FFFFFF;--c-btn-hover:#2A2C36;
+  --c-shadow-pop:0 1px 2px rgba(18,19,26,.06),0 18px 40px -18px rgba(18,19,26,.32);
+  --c-shadow-lift:0 1px 2px rgba(18,19,26,.07),0 4px 12px -6px rgba(18,19,26,.18);
+  --c-ink-rgb:18 19 26;--c-scroll:#CFCFC7;--c-cut:#FFFFFF;
+  --c-page:#F5F5F2;
+}
+/* Dark: charcoal with a faint blue-black cast, sidebar darkest, raised surfaces lighter; honey
+   cards sit on a dim amber ground, never a glow. */
+[data-theme="dark"]{
+  color-scheme:dark;
+  --c-app:#1A1B21;--c-sidebar:#121318;--c-sidebar-hover:#1E1F26;--c-selected:#262832;
+  --c-panel:#1A1B21;--c-card:#22232B;--c-raised:#22232B;--c-sunken:#16171C;--c-hover:#1F2027;--c-chip:#2A2C36;--c-mine:#2A2D3A;
+  --c-text:#F1F1F4;--c-text-2:#D6D7DD;--c-text-3:#A3A6B1;--c-text-4:#8F929D;--c-on-accent:#121318;
+  --c-line:#2B2D36;--c-line-strong:#3B3E49;
+  --c-accent:#7EA2FF;--c-accent-ink:#A9C0FF;--c-accent-soft:rgba(126,162,255,.15);--c-focus:#9DB7FF;
+  --c-honey:#FFC93C;--c-honey-ring:rgba(255,201,60,.5);--c-honey-soft:#29230F;--c-honey-ink:#1E1600;--c-honey-text:#FFD970;
+  --c-unread-bg:#E9EAEE;--c-unread-fg:#121318;
+  --c-ok:#3CC48A;--c-ok-ink:#5FD3A1;--c-ok-soft:rgba(60,196,138,.14);--c-error:#FF8A80;--c-error-soft:rgba(255,138,128,.14);
+  --c-btn:#F1F1F4;--c-btn-text:#121318;--c-btn-hover:#FFFFFF;
+  --c-shadow-pop:0 1px 2px rgba(0,0,0,.4),0 18px 40px -16px rgba(0,0,0,.7);
+  --c-shadow-lift:0 1px 2px rgba(0,0,0,.35),0 4px 12px -6px rgba(0,0,0,.6);
+  --c-ink-rgb:241 241 244;--c-scroll:#3B3E49;--c-cut:#1A1B21;
+  --c-page:#1A1B21;
+}
+/* Older names, kept: they now follow the theme.
+     --c-placeholder   placeholders and the faintest small text (4.5:1 or better)
+     --c-display-soft  the grey half of a two-tone headline (large text only)
      --c-placeholder-dark  placeholders of fields on the dark panels (terminal) */
-:root{--c-placeholder:#666A75;--c-display-soft:#787B85;--c-placeholder-dark:#A9ACB5}
+:root{--c-placeholder:var(--c-text-4);--c-display-soft:#787B85;--c-placeholder-dark:#A9ACB5}
+[data-theme="dark"]{--c-display-soft:#8F929D}
 /* One type scale (lib/type.js names the same steps for code that needs numbers). A size and
    its line-height per step, named for its use; nothing under 11 px, no half pixels:
      micro 11 · caption 12 · meta 13 · ui 14 · body 15 · read 16 · lead 18 · title 20 ·
@@ -60,9 +111,13 @@
 :where(a[href],button,[role="button"],summary):where(:not(:has(*)),.c-hit):not(:where(p,.rm-md) a)::after{content:"";position:absolute;top:min(0px,calc(50% - 12px));bottom:min(0px,calc(50% - 12px));left:min(0px,calc(50% - 12px));right:min(0px,calc(50% - 12px))}
 /* A native checkbox or radio keeps its drawn size; its label (or this area) takes the click. */
 :where(input[type="checkbox"],input[type="radio"]).c-hit{position:relative}
-body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--c-app);font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--c-text);-webkit-font-smoothing:antialiased}
+/* The boards' own style sheets (src/design/*.jsx `css`, injected after this file) set the body to
+   paper and ink and the focus ring to #1F4FD1: with the theme on <html>, the tokens win. */
+html[data-theme] body{background:var(--c-page);color:var(--c-text)}
+html[data-theme] :is(button,a,input,textarea,select,summary,[tabindex]):focus-visible{outline-color:var(--c-focus)}
 button,input,textarea,select{font:inherit;color:inherit}
-a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}
+a{color:var(--c-text);text-decoration:none}a:hover{color:var(--c-accent-ink)}
 button:disabled{cursor:not-allowed}
 @keyframes colmena-spin{to{transform:rotate(360deg)}}
 @keyframes colmena-blink{50%{opacity:0}}
@@ -90,15 +145,15 @@ html.colmena-desktop[data-v2] #root{padding-top:0}
 .colmena-sidebar-scroll::-webkit-scrollbar-thumb:hover{background:#3A3E4B}
 .colmena-sidebar-scroll::-webkit-scrollbar-track{background:transparent}
 /* Keyboard focus everywhere (mouse clicks show nothing): blue on light, white on the dark sidebar. */
-:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid #2F6BFF;outline-offset:2px}
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
 .colmena-sidebar :where(a,button):focus-visible{outline-color:#FFFFFF}
 /* Things that only take focus from code (a dialog, a menu, the chat scroller, a heading):
    no ring around the whole block. */
 :where(div,section,form,aside,main,nav,span,p,ul,h1,h2,h3,h4)[tabindex="-1"]:focus-visible{outline:none}
 /* The messages of a conversation (lib/messageKeys.js): the list is one Tab stop and the
    arrows move between messages. Both show the ring, drawn inside so nothing clips it. */
-[data-message-list]:focus-visible{outline:2px solid #2F6BFF;outline-offset:-2px}
-[data-message-list] [data-message-id][tabindex="-1"]:focus-visible{outline:2px solid #2F6BFF;outline-offset:-2px;border-radius:var(--r-md)}
+[data-message-list]:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px}
+[data-message-list] [data-message-id][tabindex="-1"]:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px;border-radius:var(--r-md)}
 /* Text fields that live in a box of their own. A click leaves them as they are; moving with
    the keyboard (<html data-kbd>, lib/focusModality.js) draws the same ring as everywhere:
      .c-quiet    a field with its own border or fill: the ring goes on the field
@@ -106,13 +161,13 @@ html.colmena-desktop[data-v2] #root{padding-top:0}
                  its parent, or the ancestor marked .c-ring (.c-ring-in when the box is
                  clipped by its container: the ring is drawn inside). */
 :is(input,textarea,select):is(.c-quiet,.c-bare):focus-visible{outline:none}
-html[data-kbd] :is(input,textarea,select).c-quiet:focus-visible{outline:2px solid #2F6BFF;outline-offset:2px}
+html[data-kbd] :is(input,textarea,select).c-quiet:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
 html[data-kbd] :is(label,div,span,form,section,p,li):has(> .c-bare:focus-visible),
-html[data-kbd] .c-ring:has(.c-bare:focus-visible){outline:2px solid #2F6BFF;outline-offset:2px}
-html[data-kbd] .c-ring-in:has(.c-bare:focus-visible){outline:2px solid #2F6BFF;outline-offset:-2px}
+html[data-kbd] .c-ring:has(.c-bare:focus-visible){outline:2px solid var(--c-focus);outline-offset:2px}
+html[data-kbd] .c-ring-in:has(.c-bare:focus-visible){outline:2px solid var(--c-focus);outline-offset:-2px}
 html[data-kbd] :is(.c-ring,.c-ring-in) :has(> .c-bare:focus-visible):not(.c-ring,.c-ring-in){outline:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
-.colmena-skeleton{background:linear-gradient(90deg,#E6E8EE 0%,#F2F4F7 40%,#E6E8EE 80%);background-size:300% 100%;animation:colmena-shimmer 1.6s ease-in-out infinite}
+.colmena-skeleton{background:linear-gradient(90deg,var(--c-chip) 0%,var(--c-hover) 40%,var(--c-chip) 80%);background-size:300% 100%;animation:colmena-shimmer 1.6s ease-in-out infinite}
 @keyframes colmena-shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
 .colmena-skeleton--dark{background:linear-gradient(90deg,#262833 0%,#353845 40%,#262833 80%);background-size:300% 100%}
 /* Jump targets (profile sections…) land below sticky tab bars. */
@@ -123,15 +178,15 @@ html.colmena-quick,html.colmena-quick body{background:transparent!important}
 html.colmena-quick #root{padding-top:0!important}
 /* Conversation rows (Slack-style): soft hover, floating actions, time in the gutter of a continued message. */
 .msg-row{position:relative;border-radius:var(--r-md)}
-.msg-row:hover{background:#F7F8FA}
-.msg-actions{position:absolute;top:-14px;right:12px;display:flex;gap:2px;padding:2px;background:#FFFFFF;border:1px solid #DCE0E8;border-radius:var(--r-md);box-shadow:0 6px 16px -8px rgba(18,19,26,.35);opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:2}
+.msg-row:hover{background:var(--c-hover)}
+.msg-actions{position:absolute;top:-14px;right:12px;display:flex;gap:2px;padding:2px;background:var(--c-raised);border:1px solid var(--c-line);border-radius:var(--r-md);box-shadow:var(--c-shadow-lift);opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:2}
 .msg-row:hover .msg-actions,.msg-row:focus-within .msg-actions,.msg-actions:has([aria-pressed="true"]){opacity:1;pointer-events:auto}
-.msg-gutter-time{align-self:start;padding-top:3px;font-size:var(--t-micro);color:#555A68;text-align:right;opacity:0;font-variant-numeric:tabular-nums}
+.msg-gutter-time{align-self:start;padding-top:3px;font-size:var(--t-micro);color:var(--c-text-3);text-align:right;opacity:0;font-variant-numeric:tabular-nums}
 .msg-row:hover .msg-gutter-time{opacity:1}
 /* Reactions (Slack): chips under the message, one-click picks in the hover toolbar */
-.msg-actions button:hover,.react-pick:hover{background:#EEF0F4 !important}
-.react-chip:hover{border-color:#B8BECB !important}
-.react-chip[aria-pressed="true"]:hover{border-color:#1F4FD1 !important}
+.msg-actions button:hover,.react-pick:hover{background:var(--c-chip) !important}
+.react-chip:hover{border-color:var(--c-line-strong) !important}
+.react-chip[aria-pressed="true"]:hover{border-color:var(--c-accent-ink) !important}
 .react-count{animation:react-pop .18s ease-out}
 @keyframes react-pop{from{transform:translateY(3px);opacity:.4}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.react-count{animation:none}}
@@ -140,8 +195,8 @@ html.colmena-quick #root{padding-top:0!important}
 a,img,svg{-webkit-user-drag:none}
 [draggable="true"]{-webkit-user-drag:element}
 /* Your messages in a room: same layout as everyone's (Slack), on a very soft gray so you find them at a glance */
-.msg-row--mine{background:#F4F5F8}
-.msg-row--mine:hover{background:#EDEFF3}
+.msg-row--mine{background:var(--c-mine)}
+.msg-row--mine:hover{background:color-mix(in oklab,var(--c-mine) 92%,var(--c-text))}
 .msg-row--mine + .msg-row--mine{border-top-left-radius:0;border-top-right-radius:0}
 .msg-row--mine:has(+ .msg-row--mine){border-bottom-left-radius:0;border-bottom-right-radius:0}
 /* ── Micro-animations (lib/motion.js): short, transform/opacity only ───────── */
@@ -203,9 +258,9 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 /* Draggable left edge of the side panels (usePanelWidth). */
 .c-panel-resize{position:absolute;top:0;bottom:0;left:-5px;width:10px;cursor:col-resize;z-index:5;touch-action:none;outline:none}
 .c-panel-resize::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;background:transparent;transition:background .12s ease}
-.c-panel-resize:hover::after,.c-resizing .c-panel-resize::after{background:#FFC93C}
+.c-panel-resize:hover::after,.c-resizing .c-panel-resize::after{background:var(--c-line-strong)}
 /* Keyboard focus on the handle: the app's focus blue, not honey (honey means «te necesita»). */
-.c-panel-resize:focus-visible::after{background:#2F6BFF}
+.c-panel-resize:focus-visible::after{background:var(--c-focus)}
 .c-resizing,.c-resizing *{cursor:col-resize !important;user-select:none !important}
 .c-resizing iframe{pointer-events:none}
 /* Working dots (OpenClaw): three dots that breathe while a bot works. */
@@ -215,7 +270,7 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 @keyframes c-dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
 @media (prefers-reduced-motion: reduce){.c-dots>i{animation:none;opacity:.6}}
 /* Hive phrase after 30 s of work: it fades in each time it changes. */
-.c-phrase{color:#6B7080;animation:c-fade 400ms ease both}
+.c-phrase{color:var(--c-text-3);animation:c-fade 400ms ease both}
 @keyframes c-new-below{from{opacity:0;transform:translate(-50%,6px)}to{opacity:1;transform:translate(-50%,0)}}
 .c-new-below{animation:c-new-below 180ms var(--c-ease) both}
 .c-spin{animation:colmena-spin .9s linear infinite}
@@ -223,20 +278,20 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 /* Side panel tabs (SideDock): close buttons show on hover, focus and for the active tab. */
 .c-dock-tab .c-dock-x{opacity:0;transition:opacity .12s ease}
 .c-dock-tab:hover .c-dock-x,.c-dock-tab:focus-within .c-dock-x,.c-dock-tab[aria-selected="true"] .c-dock-x{opacity:1}
-.c-dock-tab:hover{background:#EEF0F4}
-.c-dock-tab[aria-selected="true"]{background:#FFFFFF}
-.c-sel-btn:hover{background:#2B2D36!important}
+.c-dock-tab:hover{background:var(--c-chip)}
+.c-dock-tab[aria-selected="true"]{background:var(--c-card)}
+.c-sel-btn:hover{background:var(--c-btn-hover)!important}
 /* Copy buttons of tables and code blocks in answers: shown on hover and keyboard focus. */
 /* Links in a bot answer read as links (as the room links of NeedCard). */
-.rm-md a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(18,19,26,.28);transition:text-decoration-color .2s ease}
+.rm-md a{text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgb(var(--c-ink-rgb) / .28);transition:text-decoration-color .2s ease}
 .rm-md a:hover{text-decoration-color:currentColor}
 .c-md-copy{opacity:0;transition:opacity .12s ease}
 .c-md-table:hover .c-md-copy,.c-md-code:hover .c-md-copy,.c-md-copy:focus-visible{opacity:1}
 @media (hover:none){.c-md-copy{opacity:1}}
 /* A message you jumped to (search, a link): highlighted for a moment (OpenClaw reply target). */
-@keyframes c-reveal{0%,20%{box-shadow:0 0 0 3px #FFC93C;background-color:#FFF4D1}100%{box-shadow:0 0 0 0 rgba(255,201,60,0);background-color:rgba(255,244,209,0)}}
+@keyframes c-reveal{0%,20%{box-shadow:0 0 0 3px var(--c-focus);background-color:var(--c-accent-soft)}100%{box-shadow:0 0 0 0 transparent;background-color:transparent}}
 .c-reveal{animation:c-reveal 1.3s ease-out both;border-radius:var(--r-md)}
-@media (prefers-reduced-motion:reduce){.c-reveal{animation:none;box-shadow:0 0 0 3px #FFC93C}}
+@media (prefers-reduced-motion:reduce){.c-reveal{animation:none;box-shadow:0 0 0 3px var(--c-focus)}}
 
 /* Colmena 2.0 motion (design/V2*.dc.html): breathe, glow, appear; available before any screen. */
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
@@ -259,7 +314,7 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 .msg:hover .msg-gutter-time{opacity:1}
 /* A short explanation on hover and on keyboard focus (role="tooltip", tied with aria-describedby). */
 .c-tip-wrap{position:relative;display:inline-flex}
-.c-tip{position:absolute;bottom:calc(100% + 8px);left:0;width:max-content;max-width:280px;padding:8px 11px;border-radius:var(--r-md);background:#12131A;color:#FFFFFF;font-size:var(--t-meta);font-weight:400;line-height:1.45;text-align:left;white-space:normal;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease;z-index:40}
+.c-tip{position:absolute;bottom:calc(100% + 8px);left:0;width:max-content;max-width:280px;padding:8px 11px;border-radius:var(--r-md);background:var(--c-btn);color:var(--c-btn-text);font-size:var(--t-meta);font-weight:400;line-height:1.45;text-align:left;white-space:normal;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease;z-index:40}
 .c-tip-wrap:hover .c-tip,.c-tip-wrap:focus-within .c-tip{opacity:1;visibility:visible}
 @media (prefers-reduced-motion: reduce){.c-tip{transition:none}}
 /* A field on a dark card: its placeholder at 4.5:1 or better (the browser grey reads 2.8:1 there). */
