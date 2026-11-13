@@ -91,6 +91,18 @@ test("an invitation connects two Colmenas once, with the same safety words on bo
   assert.ok(inv.text.includes("https://github.com/SergioRico1/Colmena/releases/latest"));
   assert.ok(inv.text.split("\n").includes(inv.code));
   assert.match(inviteText("Ana Pérez", "Yo", "C"), /^Hola Ana, soy Yo\./);
+  // Written for someone who has never heard of Colmena: what it is, what to do, the link; no jargon around it.
+  const words = inv.text.replace("https://github.com/SergioRico1/Colmena/releases/latest", "");
+  assert.match(words, /Colmena es una app para el ordenador/);
+  assert.match(words, /instálala\. Es gratis, para Windows y Mac/);
+  assert.match(words, /«Unirme con un código»/);
+  assert.doesNotMatch(words, /github|releases|descárgala/i);
+  assert.match(inviteText("Ana", "Yo", "C", null, "Acme"), /Te invito al equipo «Acme»[\s\S]*«Unirme a un equipo»/);
+  // Without a name of your own there is no invitation: it would read «soy Sin nombre».
+  const nameOf = sergio.peers.nameOf;
+  sergio.peers.nameOf = () => "  ";
+  await assert.rejects(sergio.peers.createInvite("Luis"), (e) => e.status === 409 && /escribe tu nombre/.test(e.message));
+  sergio.peers.nameOf = nameOf;
   const preview = await marta.peers.previewInvite(inv.code);
   assert.equal(preview.name, "Sergio Rico");
   await marta.peers.acceptInvite(inv.code);

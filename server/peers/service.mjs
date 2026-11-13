@@ -400,6 +400,8 @@ export class Peers extends EventEmitter {
     this.requireRelay();
     const label = clip(name, PEER_LIMITS.name);
     if (!label) throw new PeerError("Escribe cómo se llama.");
+    // An invitation says who it is from: without your name it would read «soy Sin nombre».
+    if (!clip(this.nameOf() || "", PEER_LIMITS.name)) throw new PeerError("Antes de invitar, escribe tu nombre: así sabrá quién le invita.", 409);
     // An invitation can also put them straight into a group of yours, with a role, or into a
     // team you administer (`team`: what teams.mjs puts on the card).
     const group = room ? this.ownGroup(room) : null;
@@ -1119,9 +1121,10 @@ export function inviteText(to, from, code, room = null, team = null) {
   const first = String(to).split(/\s+/)[0] || "";
   return [
     team ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito al equipo «${team}» en Colmena.` : room ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito a la conversación «${room}» en Colmena.` : `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena.`,
-    `1. Si aún no la tienes, descárgala gratis: ${DOWNLOAD_URL}`,
-    "2. En Colmena, abre Chats › Nueva › «Tengo una invitación» y pega este código:",
+    "Colmena es una app para el ordenador donde las personas de un equipo y sus bots de IA trabajan en el mismo sitio.",
+    `1. Si aún no la tienes, instálala. Es gratis, para Windows y Mac: ${DOWNLOAD_URL}`,
+    team ? "2. Ábrela, elige «Unirme a un equipo» y pega este código:" : "2. Ábrela, elige «Unirme con un código» y pega este:",
     code,
-    "Sirve una vez y caduca en 24 horas. Al pegarlo te saldrán cuatro palabras: las comprobamos juntos para saber que nadie se ha colado.",
+    "Vale una sola vez y caduca en 24 horas. Al pegarlo verás cuatro palabras: dime cuáles te salen y compruebo que son las mismas que veo yo.",
   ].join("\n");
 }
