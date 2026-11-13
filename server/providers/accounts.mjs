@@ -126,7 +126,7 @@ export class ApiAccounts {
   }
 
   /** The base URL, key and model of a connect or a test: what was typed, else what is saved. */
-  async target(engine, { key: rawKey, baseUrl, model } = {}) {
+  async target(engine, { key: rawKey, baseUrl, model } = {}, { keyless = false } = {}) {
     if (!KEY_ENGINES.includes(engine)) throw Error("Proveedor desconocido.");
     const saved = this.account(engine);
     let key;
@@ -135,7 +135,7 @@ export class ApiAccounts {
       if (checked.error) throw Error(checked.error);
       key = checked.key;
     } else key = (await this.secret(engine)) || (COMPATIBLE[engine].keyOptional ? "" : null);
-    if (key === null) throw Error(`Pega tu clave de ${ENGINE_LABEL[engine]}.`);
+    if (key === null && !keyless) throw Error(`Pega tu clave de ${ENGINE_LABEL[engine]}.`);
     const base = engine === "custom" ? validateBaseUrl(baseUrl ?? saved?.baseUrl ?? "") : COMPATIBLE[engine].base;
     const chosen = String(model ?? (engine === "custom" || engine === "openrouter" ? saved?.model || "" : "") ?? "").trim();
     if (chosen && !/^[\w.:/@+\-~]{1,200}$/.test(chosen)) throw Error("Ese nombre de modelo no es válido.");
@@ -145,7 +145,8 @@ export class ApiAccounts {
   /** The models an account offers: Gemini, DeepSeek and Kimi from the catalogue; the rest from /models. */
   async listModels(engine, params = {}) {
     if (CATALOG[engine]) return CATALOG[engine].map((m) => ({ id: m.id, ref: m.ref, label: m.label, vision: m.input.includes("image"), pdf: !!m.pdf, context: m.context, cost: m.cost || null, families: m.families, utility: !!m.utility }));
-    const { key, base } = await this.target(engine, params);
+    // OpenRouter's list is public: the picker can show it before a key is pasted.
+    const { key, base } = await this.target(engine, params, { keyless: engine === "openrouter" });
     const cacheKey = engine + "|" + base + "|" + (key ? key.slice(-4) : "");
     const cached = this.lists.get(cacheKey);
     if (cached && Date.now() - cached.at < 10 * 60_000) return cached.list;
@@ -181,7 +182,8 @@ export class ApiAccounts {
   async test(engine, params = {}) {
     const { key, base, model } = await this.target(engine, params);
     const d = COMPATIBLE[engine];
-    const id = model || d.checkModel;
+    // Gemini, DeepSeek and Kimi models arrive as refs («gemini/gemini-4-carbon»).
+    const id = (CATALOG[engine] && model ? model.replace(engine + "/", "") : model) || d.checkModel;
     if (!id) throw Error("Elige un modelo para probar.");
     const started = Date.now();
     let response;
@@ -222,13 +224,18 @@ export class ApiAccounts {
         : { label: target.model, vision: engine === "custom" ? looksVisual(target.model) : false, pdf: false, reasoning: false };
       if (engine === "custom" && typeof params.vision === "boolean") meta.vision = params.vision;
     }
-    await this.test(engine, { ...params, model: target.model || undefined });
+    // Gemini, DeepSeek and Kimi: a model picked while connecting is pinned to every family;
+    // the key itself is checked with the cheap model.
+    const pin = CATALOG[engine] && target.model ? target.model : null;
+    if (pin && !CATALOG[engine].some((m) => m.ref === pin)) throw Error("Ese modelo no está en la lista.");
+    await this.test(engine, { ...params, model: CATALOG[engine] ? undefined : target.model || undefined });
     if (target.key) await this.hub.vault.save(binding(engine), { key: target.key });
     else if (this.hub.vault && engine === "custom") await this.hub.vault.remove(binding(engine).profile);
     this.secrets.set(engine, target.key || null);
     const accounts = { ...(this.hub.config().accounts || {}) };
     accounts[engine] = { hint: target.key ? target.key.slice(-4) : null, savedAt: new Date().toISOString(), ...(engine === "custom" ? { baseUrl: target.base } : {}), ...(meta ? { model: target.model, meta } : {}) };
     this.hub.saveConfig({ accounts, primary: this.hub.config().primary || engine });
+    if (pin) this.hub.setEngines({ pins: { [engine]: { luna: pin, sol: pin, astra: pin } } });
     this.syncModels(engine);
     this.hub.cooldown.delete(engine);
     return this.hub.engines();

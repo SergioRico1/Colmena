@@ -155,6 +155,11 @@ Campos opcionales de Memory (solo se envían si no son el valor por defecto): `t
   `POST /api/missions/:id/members { botId }` (Añadir a la conversación).
 - Bots: `POST /api/bots`, `PATCH /api/bots/:id`, `POST /api/bots/:id/duplicate`, `POST /api/bots/prepare { description, audience, materials }`, `POST /api/bots/preview { draft, prompt }`, `PATCH /api/bots/:id/soul { soul }`.
 - Ajustes: `PATCH /api/settings`, `POST /api/auth/start|cancel|logout`, `POST /api/auth/apikey { key }`, `POST /api/auth/local { baseUrl, model }`.
+- Cuentas de IA con clave (Gemini, OpenRouter, DeepSeek, Kimi, Servidor propio; `:engine` es `gemini|openrouter|deepseek|moonshot|custom`, docs/PROVIDERS.md):
+  `GET /api/ai/accounts` (dónde se consigue cada clave), `POST /api/ai/accounts/:engine/test { key?, baseUrl?, model? }` → `{ ok, ms, model, label }` («Probar»: una respuesta de pocas palabras),
+  `POST /api/ai/accounts/:engine/models { key?, baseUrl? }` → `{ models: [{ id, label, vision, pdf, context, cost }] }`,
+  `POST /api/ai/accounts/:engine { key?, baseUrl?, model?, vision? }` (prueba y guarda; la clave va al almacén cifrado), `PATCH /api/ai/accounts/:engine { model | null }` (null = Automático),
+  `DELETE /api/auth/provider?kind=:engine`. Ninguna respuesta lleva la clave; `state.ai.engines[]` da `detail` («Clave ····1234»), `model`, `modelLabel` y `baseUrl`.
 
 ## 2. Tiempo real — `GET /api/events` (SSE)
 - `{ type: 'changed', kinds: ['missions','approvals',…] }` → el cliente vuelve a pedir `/api/state` (debounce 150 ms) y el detalle abierto.
