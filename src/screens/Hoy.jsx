@@ -1,4 +1,4 @@
-import { useClickAway } from "../lib/useClickAway.js";
+import { MenuButton } from "../components/Menu.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Circle, LayoutGrid, Play, Pause, ArrowUp, ChevronDown, Paperclip, X } from "../components/Icon.js";
 import BotFace from "../components/BotFace.jsx";
@@ -67,7 +67,6 @@ export default function Hoy({ query = {} }) {
   const [ask, setAsk] = useState("");
   const [files, setFiles] = useState([]);
   const [picked, setPicked] = useState(null); // a bot chosen by hand in «… decide quién lo hace»
-  const [menu, setMenu] = useState(false);
   const [sent, setSent] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -90,7 +89,6 @@ export default function Hoy({ query = {} }) {
       if (draft) { setAsk(draftText(draft)); sessionStorage.removeItem("colmena:draft"); }
     } catch {}
   }, []);
-  useClickAway(!!menu, (target) => target.closest?.("[data-route-menu]"), () => setMenu(false));
 
   // Without an AI account the box does not invite a request nobody can do (lib/aiAccount.js).
   const box = askBox(store);
@@ -268,28 +266,20 @@ export default function Hoy({ query = {} }) {
                 </p>
               ) : (
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", padding: "6px 6px 8px 0", borderTop: line(), fontSize: "var(--t-meta)", color: C.text3 }}>
-                  <span data-route-menu="" style={{ position: "relative" }}>
-                    <button type="button" aria-haspopup="menu" aria-expanded={menu ? "true" : "false"} onClick={() => setMenu(!menu)} className="u4-sec" style={{ ...B.secondary, gap: "8px", fontWeight: 500, background: C.sunken, borderColor: C.line }}>
-                      <Shape bot={route.bot} size={20} />
-                      <span role="status">{route.text}</span>
-                      <ChevronDown size={12} weight="bold" />
-                    </button>
-                    {menu ? (
-                      <div role="menu" aria-label="Quién lo hace" style={{ position: "absolute", zIndex: 20, top: "38px", left: "0", minWidth: "260px", display: "flex", flexDirection: "column", gap: "1px", padding: "6px", borderRadius: "var(--r-md)", border: line(), background: C.raised, boxShadow: C.shadowPop, animation: "fade .15s ease-out" }}>
-                        {[team.find((b) => b.id === "atlas"), ...team.filter((b) => b.id !== "atlas")].filter(Boolean).map((b) => {
-                          const on = b.id === "atlas" ? !picked : picked?.id === b.id;
-                          return (
-                            <button key={b.id} type="button" role="menuitemradio" aria-checked={on ? "true" : "false"} onClick={() => { setPicked(b.id === "atlas" ? null : b); setMenu(false); input.current?.focus(); }}
-                              className="u4-row" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 8px", border: "0", borderRadius: "var(--r-sm)", background: on ? C.selected : "transparent", boxShadow: on ? C.shadowLift : "none", textAlign: "left", cursor: "pointer", fontSize: "var(--t-ui)", color: C.text, fontWeight: on ? 600 : 400 }}>
-                              <Shape bot={b} size={20} />
-                              <span style={{ flex: "1" }}>{b.id === "atlas" ? `${b.name} decide quién lo hace` : b.name}</span>
-                              <span style={{ fontSize: "var(--t-caption)", color: C.text3 }}>{b.id === "atlas" ? "" : b.role}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </span>
+                  {/* Who does it: a choice of one, radio items of the app's one menu (components/Menu.js). */}
+                  <MenuButton menuLabel="Quién lo hace" placement="bottom-start" className="u4-sec" showTitle={false} openStyle={{ borderColor: C.lineStrong }} style={{ ...B.secondary, gap: "8px", fontWeight: 500, background: C.sunken, borderColor: C.line }}
+                    items={() => {
+                      const pickBot = (b) => () => { setPicked(b.id === "atlas" ? null : b); requestAnimationFrame(() => input.current?.focus()); };
+                      const atlas = team.find((b) => b.id === "atlas");
+                      return [
+                        atlas ? { label: `${atlas.name} decide quién lo hace`, icon: <Shape bot={atlas} size={20} />, radio: "who", checked: !picked, onSelect: pickBot(atlas) } : null,
+                        { group: "O uno en concreto", items: team.filter((b) => b.id !== "atlas").map((b) => ({ label: b.name, icon: <Shape bot={b} size={20} />, meta: b.role || null, radio: "who", checked: picked?.id === b.id, onSelect: pickBot(b) })) },
+                      ];
+                    }}>
+                    <Shape bot={route.bot} size={20} />
+                    <span role="status">{route.text}</span>
+                    <ChevronDown size={12} weight="bold" />
+                  </MenuButton>
                   <button type="button" onClick={attach} className="u4-ghost" style={{ ...B.ghost, fontWeight: 500 }}>
                     <Paperclip size={16} />{"Adjuntar"}
                   </button>

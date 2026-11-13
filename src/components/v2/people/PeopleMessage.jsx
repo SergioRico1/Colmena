@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { MessageSquare, Pencil, RotateCw, SmilePlus, Trash2 } from "../../Icon.js";
+import { Copy, Ellipsis, MessageSquare, Pencil, RotateCw, SmilePlus, Trash2 } from "../../Icon.js";
+import { MenuButton, useContextMenu } from "../../Menu.js";
+import { menuGroups } from "../../../lib/menu.js";
 import { PeerAvatar, PeoplePile } from "./PeerAvatar.jsx";
 import { BotPresence } from "../Presence.jsx";
 import MeetingCard from "./MeetingCard.jsx";
@@ -44,6 +46,29 @@ export function PersonPill({ person, text }) {
   );
 }
 
+/**
+ * What can be done with one message, for its «…» and its right-click (components/Menu.js): the
+ * frequent ones first (reply in a thread, copy the text), then yours (edit), and «Borrar para
+ * todos» last, in red. Deleting has its five-second «Deshacer», so it does not ask first.
+ * `full` (the right-click) also lists what the toolbar already shows: reply and react.
+ */
+export function messageMenu({ m, mine, onThread, onReactMore, onEdit, onDelete, full = false }) {
+  if (!m || m.deleted) return [];
+  const text = m.text && !(m.file && m.text === m.file.name) ? m.text : "";
+  return [
+    { group: null, items: [
+      full && onThread ? { label: "Responder en un hilo", icon: MessageSquare, onSelect: () => onThread(m) } : null,
+      full && onReactMore ? { label: "Reaccionar", icon: SmilePlus, onSelect: onReactMore } : null,
+      text ? { label: "Copiar el texto", icon: Copy, onSelect: () => navigator.clipboard?.writeText?.(text) } : null,
+    ] },
+    mine && onEdit && !m.bot && !m.card && !m.local ? { label: "Editar", icon: Pencil, hint: "Lo verán todos como «editado»", onSelect: onEdit } : null,
+    mine && onDelete && m.card?.kind !== "meeting" ? { label: "Borrar para todos", icon: Trash2, danger: true, onSelect: () => onDelete(m) } : null,
+  ];
+}
+
+/** A right-click on a message opens its menu, unless text is selected (then the app's «Copiar»). */
+export const selectionInside = (e) => { const s = window.getSelection?.(); return !!s && !s.isCollapsed && e.currentTarget.contains(s.anchorNode); };
+
 /** «@Vera» and «@Marta» of a message, each with whose it is (bots) or who it is (people). */
 export function messageParts(m, botOf) {
   const named = (m.mentions || []).map((x) => botOf(x.owner, x.bot)).filter(Boolean).map((b) => ({ kind: "bot", ...b }));
@@ -70,18 +95,24 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
     setSaving(true);
     try { await onEdit(m.id, value); setEditing(null); } catch (x) { onError(x.message); } finally { setSaving(false); }
   };
+  // The toolbar on hover keeps the one-click things (reactions, reply); the rest is in «…» and
+  // on a right-click, the same menu (Slack's model).
+  const actions = (full) => messageMenu({ m, mine, onThread, onReactMore: () => setPicker(true), onEdit: () => setEditing(m.text), onDelete, full });
+  const ctx = useContextMenu((e) => (selectionInside(e) || editing !== null ? null : { label: "Mensaje", items: actions(true) }));
+  const [toolsOpen, setToolsOpen] = useState(false);
   // An errand for one of your bots: only its card (it is for you, not a message to anyone).
   if (m.errand) return <div data-message-id={m.id} style={{ display: "flex", padding: "10px 0 10px 54px" }}><ErrandCard errand={m.errand} /></div>;
+  const more = actions(false);
   return (
-    <div className="msg" data-message-id={m.id} style={{ position: "relative", display: "grid", gridTemplateColumns: inThread ? "32px 1fr" : "40px 1fr", gap: inThread ? "12px" : "14px", padding: named ? (continued ? "2px 12px" : "8px 12px 2px") : continued ? "2px 0" : "8px 0 2px", margin: named ? "0 -12px" : 0, borderRadius: "var(--r-xl)", background: named ? "color-mix(in srgb, var(--c-honey) 13%, transparent)" : "transparent" }}>
+    <div className="msg" data-message-id={m.id} onContextMenu={ctx.onContextMenu} style={{ position: "relative", display: "grid", gridTemplateColumns: inThread ? "32px 1fr" : "40px 1fr", gap: inThread ? "12px" : "14px", padding: named ? (continued ? "2px 12px" : "8px 12px 2px") : continued ? "2px 0" : "8px 0 2px", margin: named ? "0 -12px" : 0, borderRadius: "var(--r-xl)", background: named ? "color-mix(in srgb, var(--c-honey) 13%, transparent)" : "transparent" }}>
+      {ctx.menu}
       {m.deleted || editing !== null ? null : (
-        <div className="msg-tools" role="toolbar" aria-label="Acciones del mensaje" style={{ position: "absolute", top: "-16px", right: "12px", zIndex: 6, display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "var(--c-card)", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)" }}>
+        <div className={"msg-tools" + (toolsOpen ? " is-open" : "")} role="toolbar" aria-label="Acciones del mensaje" style={{ position: "absolute", top: "-16px", right: "12px", zIndex: 6, display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "var(--c-card)", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)" }}>
           {QUICK.map((e) => <button key={e} type="button" aria-label={"Reaccionar " + e} onClick={() => react(e)} style={{ ...tool, fontSize: "var(--t-lead)", lineHeight: 1 }}>{e}</button>)}
           <button type="button" aria-label="Otra reacción" title="Otra reacción" onClick={() => setPicker((p) => !p)} style={tool}><SmilePlus size={18} strokeWidth={1.9} aria-hidden="true" /></button>
-          {onThread || (mine && m.card?.kind !== "meeting") ? <span aria-hidden="true" style={{ width: "1px", height: "20px", margin: "0 3px", background: "rgb(var(--c-ink-rgb) / .1)" }} /> : null}
+          <span aria-hidden="true" style={{ width: "1px", height: "20px", margin: "0 3px", background: "rgb(var(--c-ink-rgb) / .1)" }} />
           {onThread ? <button type="button" aria-label="Responder en un hilo" title="Responder en un hilo" onClick={() => onThread(m)} style={tool}><MessageSquare size={17} strokeWidth={1.9} aria-hidden="true" /></button> : null}
-          {mine && !m.bot && !m.card && !m.local ? <button type="button" aria-label="Editar" title="Editar" onClick={() => setEditing(m.text)} style={tool}><Pencil size={16} strokeWidth={1.9} aria-hidden="true" /></button> : null}
-          {mine && m.card?.kind !== "meeting" ? <button type="button" aria-label="Borrar para todos" title="Borrar para todos" onClick={() => onDelete(m)} style={{ ...tool, color: "var(--c-error)" }}><Trash2 size={16} strokeWidth={1.9} aria-hidden="true" /></button> : null}
+          {menuGroups(more).length ? <MenuButton label="Más acciones" menuLabel="Acciones del mensaje" items={more} style={tool} onOpenChange={setToolsOpen}><Ellipsis size={18} aria-hidden="true" /></MenuButton> : null}
         </div>
       )}
       {continued ? <span className="msg-gutter-time" aria-hidden="true">{hhmm(m.at)}</span> : <AuthorAvatar author={author} size={face} />}

@@ -208,6 +208,37 @@ a,img,svg{-webkit-user-drag:none}
 @keyframes c-flash{0%{background-color:#FFF1C2}100%{background-color:rgba(255,241,194,0)}}
 @keyframes c-bump{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
 @keyframes c-launch{0%{transform:none;opacity:1}45%{transform:translateY(-12px);opacity:0}46%{transform:translateY(10px);opacity:0}100%{transform:none;opacity:1}}
+/* ── Menus (components/Menu.js; design/v4 › .menu, the profile menu) ──────── */
+.c-menu{position:fixed;z-index:2147482500;box-sizing:border-box;min-width:224px;max-width:min(340px,calc(100vw - 16px));padding:6px;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;border-radius:var(--r-md);background:var(--c-raised);color:var(--c-text);border:1px solid var(--c-line);box-shadow:var(--c-shadow-pop);font:400 var(--t-ui)/1.3 'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;text-align:left;user-select:none;-webkit-app-region:no-drag;animation:c-pop-in 120ms var(--c-ease) both;outline:none;scrollbar-width:thin;scrollbar-color:var(--c-scroll,var(--c-line-strong)) transparent}
+.c-mi{flex:none;display:flex;align-items:center;gap:10px;width:100%;min-height:32px;padding:0 8px 0 10px;box-sizing:border-box;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-text);font:inherit;text-align:left;text-decoration:none;white-space:nowrap;cursor:pointer}
+.c-mi.has-hint{align-items:flex-start;padding-top:6px;padding-bottom:6px}
+.c-mi.has-hint .c-mi-icon{margin-top:1px}
+.c-mi[data-active]{background:rgb(var(--c-ink-rgb) / .06)}
+.c-mi:focus{outline:none}
+.c-mi:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px}
+.c-mi-icon{flex:none;min-width:16px;min-height:16px;display:grid;place-items:center;color:var(--c-text-3)}
+.c-mi-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.c-mi-label{overflow:hidden;text-overflow:ellipsis}
+.c-mi-hint{margin-top:1px;font-size:var(--t-caption);line-height:1.35;color:var(--c-text-3);white-space:normal}
+.c-mi-end{flex:none;margin-left:12px;display:flex;align-items:center;gap:3px;min-height:20px;color:var(--c-text-3)}
+.c-mi-meta{font:500 var(--t-caption)/1 'Geist',sans-serif;font-variant-numeric:tabular-nums;color:var(--c-text-3)}
+.c-menu kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:var(--r-xs);background:var(--c-sunken);border:1px solid var(--c-line);font:500 var(--t-micro)/1 'Geist Mono',ui-monospace,monospace;color:var(--c-text-3)}
+.c-mi[aria-disabled="true"]{color:var(--c-text-4);cursor:default}
+.c-mi[aria-disabled="true"] .c-mi-icon,.c-mi[aria-disabled="true"] .c-mi-hint{color:var(--c-text-4)}
+.c-mi.danger,.c-mi.danger .c-mi-icon{color:var(--c-error)}
+.c-mi.danger[data-active]{background:var(--c-error-soft)}
+.c-menu-sep{flex:none;height:1px;margin:6px 0;background:var(--c-line)}
+.c-menu-header{flex:none;display:flex;align-items:center;gap:12px;padding:8px 8px 12px;margin-bottom:6px;border-bottom:1px solid var(--c-line);white-space:nowrap}
+.c-menu-head{flex:none;padding:8px 10px 4px;font:600 var(--t-caption)/1.2 'Geist',sans-serif;color:var(--c-text-3)}
+.c-menu-confirm{display:flex;flex-direction:column;gap:6px;max-width:300px;padding:8px 8px 6px;white-space:normal}
+.c-menu-confirm strong{font-weight:600;font-size:var(--t-ui);line-height:1.35}
+.c-menu-confirm p{margin:0;font-size:var(--t-meta);line-height:1.45;color:var(--c-text-2)}
+.c-menu-confirm-row{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+.c-menu-btn{height:32px;padding:0 12px;border:1px solid var(--c-line-strong);border-radius:var(--r-sm);background:var(--c-raised);color:var(--c-text);font:500 var(--t-meta)/1 'Geist',sans-serif;cursor:pointer}
+.c-menu-btn:hover{background:rgb(var(--c-ink-rgb) / .05)}
+.c-menu-btn.danger{border-color:transparent;background:var(--c-error);color:var(--c-on-accent);font-weight:600}
+.c-menu-btn.danger:hover{background:color-mix(in oklab,var(--c-error) 88%,var(--c-text))}
+.c-menu-btn:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
 .c-enter{animation:c-rise 240ms var(--c-ease) both}
 .c-pop{animation:c-pop 240ms var(--c-ease) both}
 .c-band{animation:c-slide-down 180ms var(--c-ease) both}
@@ -218,6 +249,8 @@ a,img,svg{-webkit-user-drag:none}
 .c-press:active:not(:disabled){transform:scale(.96)}
 .msg-actions{transform:translateY(2px);transition:opacity .12s ease,transform .12s var(--c-ease)}
 .msg-row:hover .msg-actions,.msg-row:focus-within .msg-actions{transform:none}
+/* A message's toolbar stays while its «…» menu is open (the menu floats outside the row). */
+.msg-actions.is-open,.msg-tools.is-open{opacity:1!important;pointer-events:auto!important;transform:none!important}
 /* ── Animations, second pass ─────────────────────────────────────────────── */
 @keyframes c-fade{from{opacity:0}to{opacity:1}}
 @keyframes c-panel{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}

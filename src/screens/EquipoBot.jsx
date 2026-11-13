@@ -2,7 +2,7 @@ import Select from "../components/Select.jsx";
 import BotFace from "../components/BotFace.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Banknote, Brain, Calendar, Check, ChevronDown, Folder, ImagePlus, Mail, MessageSquare, Pin, Sliders, Table, Lock as LockGlyph } from "../components/Icon.js";
+import { Banknote, Brain, Calendar, Check, ChevronDown, CopyPlus, Folder, ImagePlus, Mail, MessageSquare, Pin, Sliders, Table, UserMinus, Lock as LockGlyph } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import { portraitOf } from "../lib/bots.js";
 import PortraitPicker from "../components/team/PortraitPicker.jsx";
@@ -199,10 +199,10 @@ export default function EquipoBot({ params = {}, query = {} }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {live.length ? <button type="button" disabled={busy} onClick={pause} className="u4-sec" style={{ ...B.secondary, ...B.lg }}>{"Pausar"}</button> : null}
             <More round light label={`Más opciones de ${bot.name}`} items={[
-              { label: portraitOf(bot) ? "Cambiar el retrato" : "Darle un retrato", run: () => setPortrait(true) },
-              { label: "Duplicar", run: duplicate, disabled: busy },
-              { label: "Qué cuenta de IA usa", run: () => navigate("/ajustes/ia") },
-              bot.id !== "atlas" ? { label: "Retirar del equipo", run: retire, danger: true } : null,
+              { label: portraitOf(bot) ? "Cambiar el retrato" : "Darle un retrato", icon: ImagePlus, run: () => setPortrait(true) },
+              { label: "Duplicar", icon: CopyPlus, run: duplicate, disabled: busy ? "Espera a que termine lo anterior" : false },
+              { label: "Qué cuenta de IA usa", icon: Brain, run: () => navigate("/ajustes/ia") },
+              bot.id !== "atlas" ? { label: "Retirar del equipo", icon: UserMinus, run: retire, danger: true } : null,
             ]} />
             <a href={`/chat/${encodeURIComponent(bot.id)}`} className="u4-pri" style={{ ...B.primary, ...B.lg }}>{"Hablar con " + bot.name}</a>
           </div>

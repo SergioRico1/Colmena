@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, FolderOpen, Globe, Hash, ListChecks, Lock, LockSimple, MessageSquareReply, MessagesSquare, PanelRight, Search, SquareTerminal, UserPlus, Users, Ellipsis } from "../components/Icon.js";
+import { AlarmClock, Archive, CheckSquare, DoorOpen, FileText, FolderOpen, Globe, Hash, ListChecks, Lock, LockSimple, MessageSquareReply, MessagesSquare, PanelRight, Pencil, Search, SquareTerminal, UserPlus, Users, UsersThree, Ellipsis } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
 import BotFace from "../components/BotFace.jsx";
@@ -10,7 +10,9 @@ import { comboLabel, useDock, usePanelShortcuts } from "../lib/useDock.js";
 import { useRevealMessage } from "../lib/reveal.js";
 import { useResource, useStore } from "../lib/store.jsx";
 import { navigate } from "../lib/router.jsx";
-import { findBot, useDismiss } from "../components/room/common.jsx";
+import { findBot } from "../components/room/common.jsx";
+import { MenuButton } from "../components/Menu.js";
+import { roomSnoozeChoices } from "../lib/snooze.js";
 import { useRoom } from "../components/room/useRoom.js";
 import ArtifactPanel from "../components/room/ArtifactPanel.jsx";
 import SideDock from "../components/room/SideDock.jsx";
@@ -60,8 +62,6 @@ const I = { size: 15, strokeWidth: 2.2, "aria-hidden": "true" };
 const BROWSING = ["navegando", "rellenando un formulario", "usando el ordenador", "ejecutando una tarea"];
 const SHORTCUTS = { aparte: "mod+shift+s", archivos: "mod+shift+b", progreso: "mod+alt+shift+e", hilo: "mod+alt+shift+j", navegador: "mod+alt+shift+u", terminal: "mod+alt+shift+t", reglas: "mod+alt+shift+r" };
 const TABS = Object.fromEntries(["hilo", "progreso", "archivos", "navegador", "terminal", "aparte", "reglas"].map((k) => [k, { id: k, kind: k }]));
-const popover = { position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "260px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-raised)", border: "1px solid var(--c-line)", boxShadow: "var(--c-shadow-pop)", animation: "rise .15s ease-out" };
-const menuItem = { minHeight: "38px", display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "var(--c-text)", width: "100%" };
 const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
 const MEMBERS_KEY = "colmena:room-members";
 const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
@@ -77,31 +77,6 @@ function useMembersOpen() {
   const [open, setOpen] = useState(() => { try { return localStorage.getItem(MEMBERS_KEY) !== "0"; } catch { return true; } });
   const set = useCallback((v) => { setOpen(v); try { localStorage.setItem(MEMBERS_KEY, v ? "1" : "0"); } catch {} }, []);
   return [open, set];
-}
-
-/** A small menu under a header button: Escape or a click outside closes it; arrows move. */
-function HeaderMenu({ label, button, items, style = null, children = null }) {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const ref = useDismiss(open, close);
-  useEffect(() => { if (open) ref.current?.querySelector("[role=menuitem]")?.focus(); }, [open, ref]);
-  const keys = (e) => {
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    e.preventDefault();
-    const list = [...e.currentTarget.querySelectorAll("[role=menuitem]")];
-    list[(list.indexOf(document.activeElement) + (e.key === "ArrowDown" ? 1 : -1) + list.length) % list.length]?.focus();
-  };
-  return (
-    <span ref={ref} style={{ position: "relative" }}>
-      <button type="button" aria-label={label} title={label} aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} style={{ ...style, background: open ? "var(--c-chip)" : style?.background }}>{button}</button>
-      {open ? (
-        <div role="menu" aria-label={label} onKeyDown={keys} style={popover}>
-          {children}
-          {items.map(([text, run, tone]) => <button key={text} type="button" role="menuitem" onClick={() => { setOpen(false); run(); }} style={{ ...menuItem, color: tone === "danger" ? "var(--c-error)" : "var(--c-text)" }}>{text}</button>)}
-        </div>
-      ) : null}
-    </span>
-  );
 }
 
 function Room({ id, query }) {
@@ -141,7 +116,6 @@ function Room({ id, query }) {
   const [membersOpen, setMembersOpen] = useMembersOpen();
   const [sheet, setSheet] = useState(null); // "invitar"
   const [renaming, setRenaming] = useState(null); // the title being typed
-  const [leaving, setLeaving] = useState(false);
   const [searching, setSearching] = useState(false);
   const [viewing, setViewing] = useState(null); // a shared file open in the viewer
   const [sending, setSending] = useState(EMPTY); // names of files being sealed and sent
@@ -151,7 +125,7 @@ function Room({ id, query }) {
   // The right panel's two tabs: the bot you opened from a face or a name, and «Miembros».
   const [profile, setProfile] = useState(null); // {id, owner: address | null, name}
   const [panelTab, setPanelTab] = useState("miembros");
-  useEffect(() => { setError(null); setSearching(false); setLeaving(false); setRenaming(null); setSheet(null); setProfile(null); setPanelTab("miembros"); }, [roomId]);
+  useEffect(() => { setError(null); setSearching(false); setRenaming(null); setSheet(null); setProfile(null); setPanelTab("miembros"); }, [roomId]);
 
   const { mission, steps: missionSteps, thread, artifacts, approvals, live, activity, memberIds } = room;
   // What someone asked one of your bots here is decided on its own card (RoomAsks), once.
@@ -380,23 +354,55 @@ function Room({ id, query }) {
     try { await run(() => patch(`/missions/${encodeURIComponent(missionId)}`, { kind: "tarea" })); navigate(`/encargo/${encodeURIComponent(missionId)}`); } catch (err) { setError(err.message); }
   };
   const leave = async () => {
-    try { await run(() => post(path + "/leave")); navigate("/chats"); } catch (err) { setError(err.message); setLeaving(false); }
+    try { await run(() => post(path + "/leave")); navigate("/chats"); } catch (err) { setError(err.message); }
   };
-  const menu = [
-    ...(shown?.mine && !shown?.general ? [["Cambiar el nombre", () => setRenaming(title)]] : []),
-    ...(mission ? [
-      ["Reglas de la sala", () => dock.toggle(TABS.reglas)],
-      ["Archivos de la sala", () => dock.toggle(TABS.archivos)],
-      [ONLY_ME, () => dock.toggle(TABS.aparte)],
-      ["Progreso", () => dock.toggle(TABS.progreso)],
-      ["Entre bots", () => dock.toggle(TABS.hilo)],
-      ["Navegador", () => dock.toggle(TABS.navegador)],
-      ["Terminal", () => dock.toggle(TABS.terminal)],
-      ["Línea de tiempo", () => navigate(`/encargo/${missionId}`)],
-    ] : []),
-    ...(mission && !shared && !mission.conversation && !isTask(missions.find((x) => x.id === missionId) || mission) ? [["Mover a Trabajo", toWork]] : []),
-    ...(view ? [["Archivar la sala", archive]] : []),
-    ...(shared && !view?.general && !gone ? [[view?.mine ? "Cerrar la sala para todos" : "Salir de la sala", () => setLeaving(true), "danger"]] : []),
+  // «Posponer»: the room leaves the sidebar until then (unless something waits for you there).
+  const snoozePath = view ? path : missionId ? `/missions/${encodeURIComponent(missionId)}` : null;
+  const snoozedUntil = view?.snoozedUntil || mission?.snoozedUntil || null;
+  const snoozed = !!snoozedUntil && Date.parse(snoozedUntil) > Date.now();
+  const snooze = async (choice) => {
+    try {
+      await run(() => patch(snoozePath, { snooze: choice.id }));
+      reversible({ text: `Sala pospuesta · ${choice.label.toLowerCase()}`, undo: () => run(() => patch(snoozePath, { snoozedUntil: null })) });
+      refreshView();
+    } catch (err) { setError(err.message); }
+  };
+  const wake = async () => { try { await run(() => patch(snoozePath, { snoozedUntil: null })); refreshView(); } catch (err) { setError(err.message); } };
+
+  // The room's «…» (distilled from eleven flat words, 2026-11-13): what the room is (its name,
+  // rules, files), what the side panel shows (checkable, with each one's shortcut: the panels
+  // are the dock's tabs, so they live together in one submenu instead of five loose rows),
+  // where it goes (posponer, Trabajo), and leaving it last. «Solo para mí» is the composer's
+  // chip and «Línea de tiempo» the header's «ver la tarea»: not repeated here.
+  const panelItem = (key, label, icon, meta = null) => ({ label, icon, checked: dock.isVisible(key), shortcut: SHORTCUTS[key], meta, onSelect: () => dock.toggle(TABS[key]) });
+  const canMove = mission && !shared && !mission.conversation && !isTask(missions.find((x) => x.id === missionId) || mission);
+  const menu = () => [
+    { group: null, items: [
+      shown?.mine && !shown?.general ? { label: "Cambiar el nombre", icon: Pencil, onSelect: () => setRenaming(title) } : null,
+      mission ? { label: "Reglas de la sala", icon: Users, hint: "Qué bots están y cómo trabajan aquí", onSelect: () => dock.open(TABS.reglas) } : null,
+      mission ? { label: "Archivos de la sala", icon: FolderOpen, meta: fileCount ? String(fileCount) : null, onSelect: () => dock.open(TABS.archivos) } : null,
+    ] },
+    { group: null, items: [
+      { label: "Panel lateral", icon: PanelRight, subLabel: "Qué muestra el panel lateral", items: [
+        { label: "Miembros", icon: UsersThree, checked: panelOpen, onSelect: () => (panelOpen ? setMembersOpen(false) : showMembers()) },
+        ...(mission ? [
+          panelItem("progreso", "Progreso", ListChecks),
+          panelItem("hilo", "Entre bots", MessagesSquare),
+          panelItem("navegador", "Navegador", Globe),
+          panelItem("terminal", "Terminal", SquareTerminal),
+        ] : []),
+      ] },
+    ] },
+    { group: null, items: [
+      snoozePath && !gone ? (snoozed
+        ? { label: "Mostrar ya en la barra", icon: AlarmClock, hint: "Pospuesta hasta " + new Date(snoozedUntil).toLocaleString("es-ES", { weekday: "short", hour: "2-digit", minute: "2-digit" }), onSelect: wake }
+        : { label: "Posponer", icon: AlarmClock, subLabel: "Posponer la sala", items: roomSnoozeChoices().map((c) => ({ label: c.label, meta: c.hint, onSelect: () => snooze(c) })) }) : null,
+      canMove ? { label: "Mover a Trabajo", icon: CheckSquare, hint: "Pasa a ser una tarea con plan y entrega", onSelect: toWork } : null,
+      view ? { label: "Archivar la sala", icon: Archive, onSelect: archive } : null,
+    ] },
+    shared && !view?.general && !gone ? (view?.mine
+      ? { label: "Cerrar la sala para todos", icon: DoorOpen, danger: true, onSelect: leave, confirm: { title: "¿Cerrar la sala para todos?", text: "Tú la creaste: si sales, se cierra para todos. Cada persona conserva lo que ya tiene.", action: "Cerrar para todos" } }
+      : { label: "Salir de la sala", icon: DoorOpen, danger: true, onSelect: leave, confirm: { title: `¿Salir de #${title}?`, text: "Dejarás de recibir lo que se escriba aquí. Lo que ya escribiste sigue en la sala de los demás.", action: "Salir" } }) : null,
   ];
 
   // One control in every room: «Solo para mí» (lib/roomView.js › onlyMe). It opens the aside
@@ -493,18 +499,10 @@ function Room({ id, query }) {
                       {shared ? <button type="button" className="v4-ib" aria-label="Buscar en la sala" title="Buscar en la sala" aria-pressed={searching} onClick={() => setSearching((v) => !v)}><Search size={18} /></button> : null}
                       <button type="button" className="v4-ib" aria-label={panelOpen ? "Ocultar el panel lateral" : "Ver el panel lateral"} title={panelOpen ? "Ocultar el panel lateral" : "Ver el panel lateral"} aria-pressed={panelOpen} aria-controls="sala-miembros"
                         onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}><PanelRight size={18} active={panelOpen} /></button>
-                      {menu.length ? <HeaderMenu label="Más opciones" items={menu} style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}
-                        button={<Ellipsis size={18} />} /> : null}
+                      <MenuButton label={"Más opciones de #" + title} menuLabel="Más opciones de la sala" items={menu} className="v4-ib"><Ellipsis size={18} /></MenuButton>
                     </span>
                   </div>
                   {searching && shared ? <ShareSearch shareId={shareId} onClose={() => setSearching(false)} /> : null}
-                  {leaving ? (
-                    <div role="alertdialog" aria-label="Salir de la sala" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "12px 26px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-ui)" }}>
-                      <span style={{ flex: "1 1 320px", lineHeight: 1.45 }}>{view?.mine ? "Tú creaste esta sala: si sales, se cierra para todos. Cada persona conserva lo que ya tiene." : "Dejarás de recibir lo que se escriba aquí. Lo que ya escribiste sigue en la sala de los demás."}</span>
-                      <button type="button" autoFocus onClick={leave} style={{ ...outline, background: "var(--c-btn)", borderColor: "var(--c-text)", color: "var(--c-btn-text)" }}>{view?.mine ? "Cerrar para todos" : "Salir"}</button>
-                      <button type="button" onClick={() => setLeaving(false)} style={outline}>{"Cancelar"}</button>
-                    </div>
-                  ) : null}
                 </header>
                 {/* One honey card per thing that waits: the band only says what is not already drawn below (a row of the conversation or the card over the composer). */}
                 {mission ? <BlockerBand mission={mission} pending={pending.filter((a) => a.kind === "question" && !rows.some((m) => m.approvalId === a.id))} bots={bots} /> : null}

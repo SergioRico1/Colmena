@@ -1,5 +1,5 @@
-import { useClickAway } from "../../lib/useClickAway.js";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { MenuButton } from "../Menu.js";
 import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight, CircleCheck, CircleX, Ellipsis, ExternalLink, Globe, MessageCircle, Minus, Pin, PinOff, RefreshCw, Trash2, TriangleAlert } from "../Icon.js";
 import { Shape } from "../v3/dia/parts.jsx";
 import { del, post } from "../../lib/api.js";
@@ -160,25 +160,8 @@ const srOnly = { position: "absolute", width: "1px", height: "1px", overflow: "h
 /** The «…» menu of a block: pin or unpin, move on the panel, open its conversation, remove. Arrow keys, Home, End, Escape. */
 function BlockMenu({ block, where, move, onMove, onError }) {
   const { run, missions } = useStore();
-  const [open, setOpen] = useState(false);
-  const box = useRef(null), button = useRef(null), menu = useRef(null);
-  useEffect(() => {
-    if (open) menu.current?.querySelector("[role='menuitem']:not([aria-disabled='true'])")?.focus({ preventScroll: true });
-  }, [open]);
-  useClickAway(open, box, () => setOpen(false), { escape: false });
-  const close = (refocus = true) => { setOpen(false); if (refocus) button.current?.focus({ preventScroll: true }); };
-  const onKeyDown = (e) => {
-    if (!open) return;
-    const rows = [...(menu.current?.querySelectorAll("[role='menuitem']:not([aria-disabled='true'])") || [])];
-    const at = rows.indexOf(document.activeElement);
-    const to = e.key === "ArrowDown" ? rows[(at + 1) % rows.length] : e.key === "ArrowUp" ? rows[(at - 1 + rows.length) % rows.length] : e.key === "Home" ? rows[0] : e.key === "End" ? rows.at(-1) : null;
-    if (to) { e.preventDefault(); to.focus({ preventScroll: true }); }
-    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); }
-    else if (e.key === "Tab") setOpen(false);
-  };
   const act = async (work) => {
     onError(null);
-    close();
     try { await work(); } catch (e) { onError(e?.message || "No se pudo hacer. Vuelve a intentarlo."); }
   };
   const path = "/blocks/" + encodeURIComponent(block.id);
@@ -189,36 +172,23 @@ function BlockMenu({ block, where, move, onMove, onError }) {
   });
   const remove = () => act(async () => { later({ id: "block-del:" + block.id, text: "Dato quitado", keys: ["block:" + block.id], run: () => run(() => del(path)), error: "No se pudo quitar" }); });
   const mission = block.source?.missionId ? missions.find((m) => m.id === block.source.missionId) : null;
-  const item = { display: "flex", alignItems: "center", gap: "10px", minHeight: "38px", padding: "0 10px", border: "0", borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", cursor: "pointer", fontSize: "var(--t-ui)", color: "var(--c-text)", textDecoration: "none" };
-  const off = { ...item, color: "#A3A6AE", cursor: "default" };
-  const I = { size: 16, strokeWidth: 2, "aria-hidden": "true", style: { flex: "none" } };
+  // The app's one menu (components/Menu.js): keep it, move it, go to where it came from, and
+  // «Quitar» last (it undoes from its notice). What the block is made of is said as hints.
+  const items = [
+    { group: null, items: [
+      block.pinned ? { label: "Quitar del panel", icon: PinOff, onSelect: () => pin(false) } : { label: "Fijar en el panel", icon: Pin, onSelect: () => pin(true) },
+      where === "panel" && move ? { label: "Subir", icon: ArrowUp, disabled: move.up ? false : "Ya está arriba del todo", onSelect: () => onMove("up") } : null,
+      where === "panel" && move ? { label: "Bajar", icon: ArrowDown, disabled: move.down ? false : "Ya está abajo del todo", onSelect: () => onMove("down") } : null,
+    ] },
+    where === "panel" && mission ? { label: "Abrir la conversación", icon: MessageCircle, href: roomUrl(mission) } : null,
+    where === "panel" && block.source?.gone ? { label: "Abrir la conversación", icon: MessageCircle, disabled: "La conversación donde se dejó ya no existe" } : null,
+    { label: "Quitar", icon: Trash2, danger: true, onSelect: remove },
+  ];
   return (
-    <span ref={box} onKeyDown={onKeyDown} style={{ position: "relative", flex: "none", display: "inline-flex" }}>
-      <button ref={button} type="button" aria-haspopup="menu" aria-expanded={open ? "true" : "false"} aria-label={`Opciones de «${block.title}»`} title="Opciones" data-block-menu="" onClick={() => setOpen((v) => !v)}
-        style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: open ? "rgb(var(--c-ink-rgb) / .06)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>
-        <Ellipsis size={18} strokeWidth={2.2} aria-hidden="true" />
-      </button>
-      {open ? (
-        <div ref={menu} role="menu" aria-label={`Opciones de «${block.title}»`} style={{ position: "absolute", zIndex: 20, top: "calc(100% + 6px)", right: "0", minWidth: "232px", display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 24px 48px -20px rgba(18,19,26,.4)", animation: "fade .15s ease-out" }}>
-          <style>{".blk-item:hover,.blk-item:focus-visible{background:rgba(18,19,26,.05)!important}"}</style>
-          {block.pinned
-            ? <button type="button" role="menuitem" className="blk-item" onClick={() => pin(false)} style={item}><PinOff {...I} />{"Quitar del panel"}</button>
-            : <button type="button" role="menuitem" className="blk-item" onClick={() => pin(true)} style={item}><Pin {...I} />{"Fijar en el panel"}</button>}
-          {where === "panel" && move ? (<>
-            <button type="button" role="menuitem" className={move.up ? "blk-item" : undefined} aria-disabled={move.up ? undefined : "true"} onClick={() => { if (move.up) { close(); onMove("up"); } }} style={move.up ? item : off}><ArrowUp {...I} />{"Subir"}</button>
-            <button type="button" role="menuitem" className={move.down ? "blk-item" : undefined} aria-disabled={move.down ? undefined : "true"} onClick={() => { if (move.down) { close(); onMove("down"); } }} style={move.down ? item : off}><ArrowDown {...I} />{"Bajar"}</button>
-          </>) : null}
-          {where === "panel" && mission ? <a role="menuitem" className="blk-item" href={roomUrl(mission)} onClick={() => setOpen(false)} style={item}><MessageCircle {...I} />{"Abrir la conversación"}</a> : null}
-          <button type="button" role="menuitem" className="blk-item" onClick={remove} style={{ ...item, color: "var(--c-error)" }}><Trash2 {...I} />{"Quitar"}</button>
-          {block.outside || (where === "panel" && block.source?.gone) ? (
-            <div style={{ margin: "4px 4px 2px", paddingTop: "8px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .08)", display: "flex", flexDirection: "column", gap: "6px" }}>
-              {block.outside ? <span role="note" data-block-outside="" style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "0 6px", fontSize: "var(--t-meta)", lineHeight: "1.4", color: "var(--c-text-3)" }}><Globe size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />{"Incluye datos de fuera (una web, un correo o una app). Tómalo como un dato sin confirmar."}</span> : null}
-              {where === "panel" && block.source?.gone ? <span role="note" style={{ padding: "0 6px", fontSize: "var(--t-meta)", lineHeight: "1.4", color: "var(--c-text-3)" }}>{"La conversación donde se dejó ya no existe."}</span> : null}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </span>
+    <MenuButton label={`Opciones de «${block.title}»`} title="Opciones" items={items} buttonProps={{ "data-block-menu": "" }} openStyle={{ background: "rgb(var(--c-ink-rgb) / .06)" }}
+      style={{ flex: "none", width: "32px", height: "32px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>
+      <Ellipsis size={18} strokeWidth={2.2} aria-hidden="true" />
+    </MenuButton>
   );
 }
 
@@ -269,6 +239,8 @@ export default function BlockCard({ block, where = "chat", move = null, onMove =
       <footer style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 10px", fontSize: "var(--t-meta)", color: stale ? "var(--c-text-2)" : "var(--c-text-3)" }}>
         <span data-block-updated="" style={{ fontWeight: stale ? "600" : "400" }}>{updatedLabel(block, now)}</span>
         {asOf ? <span>{"· " + asOf}</span> : null}
+        {/* Not an action, so not in its menu: said on the card, where it is read. */}
+        {block.outside ? <span data-block-outside="" title="Incluye datos de fuera (una web, un correo o una app). Tómalo como un dato sin confirmar." style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Globe size={13} strokeWidth={2} aria-hidden="true" />{"datos de fuera, sin confirmar"}</span> : null}
         {/* Only a block a routine keeps can be refreshed: it runs that routine now. */}
         {block.canRefresh ? (
           <button type="button" onClick={refresh} aria-disabled={refreshing ? "true" : undefined} data-block-refresh="" title="Pone en marcha su rutina ahora" style={{ ...quiet, flex: "none", marginLeft: "auto", marginRight: "-10px", cursor: refreshing ? "progress" : "pointer" }}>

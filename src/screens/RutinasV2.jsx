@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X } from "../components/Icon.js";
+import { Ellipsis, History, Lightning, PencilLine, Play, Repeat, Settings2, Trash2, X } from "../components/Icon.js";
+import { MenuButton } from "../components/Menu.js";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import TrabajoHeader, { BotDot, trabajoMain } from "../components/v3/TrabajoHeader.jsx";
@@ -274,6 +275,11 @@ function intentRow(r, atlas, missions, act) {
   };
 }
 
+// A row's «···» (components/Menu.js): each action with its icon, «Borrar» last in red (it
+// undoes from its five-second notice, so it does not ask first).
+const ROW_ICONS = { "Reanudar": Play, "Cambiar la rutina": PencilLine, "Editar": PencilLine, "Ver y cambiar los detalles": Settings2, "Probar ahora": Lightning, "Ver la última vez": History, "Ver la rutina que creó": Repeat, "Crear la rutina": Repeat, "Borrar": Trash2 };
+const rowEntries = (menu) => menu.map(([label, fn]) => ({ label, icon: ROW_ICONS[label], danger: label === "Borrar", onSelect: fn }));
+
 function RoutineRow({ r, first, busy }) {
   const [menu, setMenu] = useState(false);
   const on = r.on;
@@ -288,19 +294,9 @@ function RoutineRow({ r, first, busy }) {
       <button type="button" role="switch" aria-checked={on} aria-label={r.label} disabled={busy} onClick={r.toggle} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: on ? INK : C.text4, cursor: busy ? "wait" : "pointer", transition: "background .2s ease" }}>
         <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: on ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: C.card, boxShadow: "var(--c-shadow-lift)", transition: "left .2s ease" }} />
       </button>
-      <span style={{ position: "relative", flex: "none" }}>
-        <button type="button" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((v) => !v)} style={{ width: "34px", height: "34px", padding: 0, border: 0, borderRadius: "var(--r-md)", background: menu ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>···</button>
-        {menu ? (
-          <>
-            <button type="button" aria-label="Cerrar el menú" onClick={() => setMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 15, border: 0, background: "transparent", cursor: "default" }} />
-            <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 22, minWidth: "220px", padding: "6px", display: "flex", flexDirection: "column", gap: "2px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", animation: "rise .2s ease-out" }}>
-              {r.menu.map(([label, fn]) => (
-                <button key={label} type="button" role="menuitem" onClick={() => { setMenu(false); fn(); }} style={{ minHeight: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", textAlign: "left", fontSize: "var(--t-ui)", cursor: "pointer", color: label === "Borrar" ? "var(--c-error)" : "var(--c-text)" }}>{label}</button>
-              ))}
-            </div>
-          </>
-        ) : null}
-      </span>
+      <MenuButton label={"Más opciones de «" + r.text + "»"} title="Más opciones" items={() => rowEntries(r.menu)} onOpenChange={(v) => setMenu(!!v)} style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: menu ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>
+        <Ellipsis size={18} weight="bold" />
+      </MenuButton>
     </div>
   );
 }

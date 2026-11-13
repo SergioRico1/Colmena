@@ -1,6 +1,6 @@
 import { useState } from "react";
 import BotFace from "../../BotFace.jsx";
-import { UsersThree } from "../../Icon.js";
+import { Archive, ListOrdered, Pause, Pin, PinOff, Play, UsersThree } from "../../Icon.js";
 import { useAction, useResource } from "../../../lib/store.jsx";
 import { patch } from "../../../lib/api.js";
 import { later } from "../../../lib/undoToast.js";
@@ -104,12 +104,12 @@ function SkillTile({ s, bot, expert, onCurate }) {
   const meta = [bot?.name || "Todo el equipo", usedText(s.uses), stateText, s.pinned ? "fijada" : null, s.automation ? "la usa una rutina" : null, expert ? `v${s.version} · ${ORIGIN[s.origin] || s.origin}${s.lastUsedAt ? " · última vez " + new Date(s.lastUsedAt).toLocaleDateString("es-ES") : ""}` : null].filter(Boolean).join(" · ");
   const curate = (body) => act.act(async () => onCurate(await patch(`/skills/${encodeURIComponent(s.id)}/curation`, body)));
   const items = [
-    { label: open ? "Ocultar los pasos" : "Ver los pasos", run: () => setOpen((x) => !x) },
-    s.curated ? { label: s.pinned ? "Dejar de fijar" : "Fijar: no se archiva nunca", run: () => curate({ pinned: !s.pinned }) } : null,
+    { label: open ? "Ocultar los pasos" : "Ver los pasos", icon: ListOrdered, run: () => setOpen((x) => !x) },
+    s.curated ? { label: s.pinned ? "Dejar de fijar" : "Fijar", hint: s.pinned ? null : "No se archiva nunca", icon: s.pinned ? PinOff : Pin, run: () => curate({ pinned: !s.pinned }) } : null,
     off
-      ? { label: "Activar", run: () => (s.curated ? curate({ status: "active" }) : act.act(() => patch(`/skills/${encodeURIComponent(s.id)}`, { status: "active" }))) }
-      : { label: "Desactivar", run: () => later({ id: "skill-off:" + s.id, keys: ["skill:" + s.id], ms: UNDO_MS, text: `«${s.name}» desactivada`, error: "No se pudo desactivar", run: () => act.act(() => patch(`/skills/${encodeURIComponent(s.id)}`, { status: "disabled" })) }) },
-    !off || s.status === "disabled" || s.status === "stale" ? (s.curated ? { label: "Archivar", run: () => later({ id: "skill-arch:" + s.id, keys: ["skill:" + s.id], ms: UNDO_MS, text: `«${s.name}» archivada`, error: "No se pudo archivar", run: () => curate({ status: "archived" }) }) } : null) : null,
+      ? { label: "Activar", icon: Play, run: () => (s.curated ? curate({ status: "active" }) : act.act(() => patch(`/skills/${encodeURIComponent(s.id)}`, { status: "active" }))) }
+      : { label: "Desactivar", icon: Pause, run: () => later({ id: "skill-off:" + s.id, keys: ["skill:" + s.id], ms: UNDO_MS, text: `«${s.name}» desactivada`, error: "No se pudo desactivar", run: () => act.act(() => patch(`/skills/${encodeURIComponent(s.id)}`, { status: "disabled" })) }) },
+    !off || s.status === "disabled" || s.status === "stale" ? (s.curated ? { label: "Archivar", icon: Archive, run: () => later({ id: "skill-arch:" + s.id, keys: ["skill:" + s.id], ms: UNDO_MS, text: `«${s.name}» archivada`, error: "No se pudo archivar", run: () => curate({ status: "archived" }) }) } : null) : null,
   ];
   return (
     <div style={{ gridColumn: open ? "1 / -1" : undefined, display: "flex", flexDirection: "column", gap: "12px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-card)", opacity: off && !open ? 0.75 : 1 }}>

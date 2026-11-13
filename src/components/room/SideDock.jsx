@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeftToLine, ArrowRightToLine, Maximize2, Minimize2, PanelRightClose, Plus, X } from "../Icon.js";
 import { usePanelWidth } from "../../lib/usePanelWidth.jsx";
 import { comboLabel } from "../../lib/useDock.js";
-import { popoverItem, popoverStyle, useDismiss } from "./common.jsx";
+import { MenuButton } from "../Menu.js";
 
 // The side panel of a room or chat (OpenClaw panel-tab-strip + chat-sidebar-region): a strip
 // of tabs (roving keys, ←/→, close on hover or middle click, drag to reorder), «+» to add one,
@@ -10,33 +10,8 @@ import { popoverItem, popoverStyle, useDismiss } from "./common.jsx";
 // which stay mounted once shown so a live view or a draft is never reloaded.
 const TAB_TYPE = "application/x-colmena-dock-tab";
 
-function MenuButton({ label, icon, children, align = "right" }) {
-  const [open, setOpen] = useState(false);
-  const ref = useDismiss(open, () => setOpen(false));
-  return (
-    <span ref={ref} style={{ position: "relative", display: "flex" }}>
-      <button type="button" className="rm-focus" aria-haspopup="menu" aria-expanded={open ? "true" : "false"} aria-label={label} title={label} onClick={() => setOpen(!open)}
-        style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", background: open ? "var(--c-chip)" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text)" }}>
-        {icon}
-      </button>
-      {open ? (
-        <div role="menu" aria-label={label} onClick={() => setOpen(false)} style={{ ...popoverStyle, top: "calc(100% + 6px)", [align]: "0", minWidth: "260px", zIndex: 20 }}>
-          {children}
-        </div>
-      ) : null}
-    </span>
-  );
-}
-
-function MenuItem({ icon, label, hint, onClick, disabled }) {
-  return (
-    <button type="button" role="menuitem" className="rm-item" disabled={disabled} onClick={onClick} style={{ ...popoverItem, justifyContent: "flex-start", opacity: disabled ? 0.5 : 1 }}>
-      <span style={{ width: "18px", display: "grid", placeItems: "center", color: "var(--c-text-2)", flex: "none" }}>{icon}</span>
-      <span style={{ flex: "1", fontSize: "var(--t-ui)" }}>{label}</span>
-      {hint ? <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{hint}</span> : null}
-    </button>
-  );
-}
+// Its two small menus are the app's one menu (components/Menu.js).
+const iconButton = { width: "34px", height: "34px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text)" };
 
 /**
  * dock: useDock(...) state. tabs: [{id, label, icon, render()}] in dock order (resolved by
@@ -118,16 +93,16 @@ export default function SideDock({ dock, tabs, addable = [], widthKey = "room", 
           })}
         </div>
         {addable.length ? (
-          <MenuButton label="Abrir otra pestaña" icon={<Plus size={17} strokeWidth={2.2} aria-hidden="true" />}>
-            {addable.map((a) => <MenuItem key={a.key} icon={a.icon} label={a.label} hint={a.combo ? comboLabel(a.combo) : null} disabled={a.disabled} onClick={() => dock.open(a.tab)} />)}
+          <MenuButton label="Abrir otra pestaña" className="rm-focus" style={iconButton} items={addable.map((a) => ({ label: a.label, icon: a.icon, shortcut: a.combo ? comboLabel(a.combo) : null, disabled: a.disabled, onSelect: () => dock.open(a.tab) }))}>
+            <Plus size={17} strokeWidth={2.2} aria-hidden="true" />
           </MenuButton>
         ) : null}
-        <MenuButton label="Diseño del panel" icon={<PanelRightClose size={17} strokeWidth={2.2} aria-hidden="true" style={left ? { transform: "scaleX(-1)" } : undefined} />}>
-          <MenuItem icon={dock.expanded ? <Minimize2 size={15} strokeWidth={2.2} aria-hidden="true" /> : <Maximize2 size={15} strokeWidth={2.2} aria-hidden="true" />} label={dock.expanded ? "Volver a verlo al lado" : "Ampliar sobre la conversación"} onClick={() => dock.setExpanded(!dock.expanded)} />
-          {left
-            ? <MenuItem icon={<ArrowRightToLine size={15} strokeWidth={2.2} aria-hidden="true" />} label="Llevarlo a la derecha" onClick={() => dock.setDock("right")} />
-            : <MenuItem icon={<ArrowLeftToLine size={15} strokeWidth={2.2} aria-hidden="true" />} label="Llevarlo a la izquierda" onClick={() => dock.setDock("left")} />}
-          <MenuItem icon={<PanelRightClose size={15} strokeWidth={2.2} aria-hidden="true" />} label="Ocultar el panel" hint="Las pestañas se guardan" onClick={() => dock.setOpen(false)} />
+        <MenuButton label="Diseño del panel" className="rm-focus" style={iconButton} items={[
+          { label: dock.expanded ? "Volver a verlo al lado" : "Ampliar sobre la conversación", icon: dock.expanded ? Minimize2 : Maximize2, onSelect: () => dock.setExpanded(!dock.expanded) },
+          left ? { label: "Llevarlo a la derecha", icon: ArrowRightToLine, onSelect: () => dock.setDock("right") } : { label: "Llevarlo a la izquierda", icon: ArrowLeftToLine, onSelect: () => dock.setDock("left") },
+          { group: null, items: [{ label: "Ocultar el panel", icon: PanelRightClose, hint: "Las pestañas se guardan", onSelect: () => dock.setOpen(false) }] },
+        ]}>
+          <PanelRightClose size={17} strokeWidth={2.2} aria-hidden="true" style={left ? { transform: "scaleX(-1)" } : undefined} />
         </MenuButton>
       </div>
       <div style={{ flex: "1", minHeight: 0, position: "relative" }}>
