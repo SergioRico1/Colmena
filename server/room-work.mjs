@@ -437,6 +437,9 @@ export class RoomWork {
       extra = { tools, ms: Math.max(0, Math.round((step.seconds || 0) * 1000)) };
     }
     if (!state || state === was) return;
+    // A step still written as running while its sala is stopped (it is unwinding) is not at
+    // work: what was said when the sala stopped stands, once.
+    if (LIVE.has(state) && ["paused", "cancelled"].includes(this.store.get("missions", step.missionId)?.status)) return;
     // «thinking» never follows «working» in the same step (a round without tools after one with).
     if (state === "thinking" && was === "working") return;
     if (!was && (step.passedBy || step.kind === "work")) this.handoff(share, step.passedBy || "atlas", bot.id);

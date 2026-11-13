@@ -206,3 +206,36 @@ test("counts are said in the right number: «con 1 persona», «con 2 personas»
   await until(() => luis.rooms.resolveRoom(two.id), "Luis ve la sala");
   assert.deepEqual(added(luis), ["Una conversación con 2 personas."]);
 });
+
+test("stopping a bot is said once to the room", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  const stops = () => sergio.out.filter((o) => o.body.type === "room.status" && o.body.state === "stopped");
+  // A turn of his own, stopped while it thinks.
+  let hold = null;
+  sergio.reply = () => new Promise((r) => { hold = r; setTimeout(() => r(answer("tarde")), 15000).unref(); });
+  await sergio.rooms.send(room.id, { text: "@Vera una larga" });
+  await until(() => hold && marta.rooms.detail(room.id).activity.some((a) => a.state === "thinking"), "Marta la ve pensando");
+  sergio.runtime.stop(room.missionId);
+  hold(answer("tarde"));
+  await until(() => lines(marta, room).includes("Sergio ha parado a Vera"), "Marta lee que la paró");
+  await settle(sergio.runtime);
+  await pause(400);
+  assert.deepEqual(stops().map((o) => o.to), [addr(marta)], "one status, once");
+  assert.deepEqual([lines(marta, room).filter((x) => /ha parado/.test(x)), lines(sergio, room).filter((x) => /Has parado/.test(x))], [["Sergio ha parado a Vera"], ["Has parado a Vera"]]);
+  // A turn for her request, stopped while it uses a tool.
+  rule(sergio, marta, "siempre");
+  const other = await sharedRoom(sergio, marta, "Otra sala");
+  let round = 0, hold2 = null;
+  sergio.reply = () => (++round === 1 ? { text: "", output: [{ type: "function_call", name: "web_fetch", arguments: JSON.stringify({ url: "https://ejemplo.example/a" }), call_id: "w1" }] } : new Promise((r) => { hold2 = r; setTimeout(() => r(answer("tarde")), 15000).unref(); }));
+  await ask(marta, other, sergio, "@Vera mira esa página");
+  await until(() => hold2 && marta.rooms.detail(other.id).activity.some((a) => a.state === "working"), "Marta la ve trabajando");
+  sergio.runtime.stop(sergio.rooms.must(other.id).missionId);
+  hold2(answer("tarde"));
+  await until(() => stops().length >= 2, "se dice que la paró");
+  await settle(sergio.runtime);
+  await pause(400);
+  assert.equal(stops().length, 2, "once more, once");
+  assert.equal(sergio.store.list("roomAsks").at(-1).state, "stopped");
+});
