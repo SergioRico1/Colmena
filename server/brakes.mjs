@@ -123,7 +123,7 @@ export function costOf(store, rule, time = Date.now()) {
   const tokens = typicalTokens(store, rule);
   const monthly = runs * tokens;
   const reasons = [];
-  if (team) reasons.push({ id: "team", text: "Es trabajo en equipo: Atlas lo reparte y trabajan varios bots." });
+  if (team) reasons.push({ id: "team", text: "Es trabajo en equipo: el coordinador lo reparte y trabajan varios bots." });
   const limit = selfStartLimit(settings);
   if (limit && monthly > limit)
     reasons.push({ id: "monthly", text: `Al ritmo de hoy serían unas ${round(runs)} veces al mes, ${tokensText(monthly)}: más de lo que tienes puesto para lo que empieza solo (${round(limit)}).` });

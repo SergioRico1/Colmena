@@ -16,12 +16,15 @@ const stamp = (iso) => Date.parse(iso || 0) || 0;
  */
 export function needEntries(needs = {}) {
   const { asks = [], choices = [], notes = [], errands = [], items = [] } = needs;
+  // A room that waits for a choice or a plan waits as a room (server/waiting.mjs): no bot is
+  // its face, unless it is that bot's own chat. The list says which.
+  const botOfItem = new Map(items.map((i) => [i.id, i.botId ?? null]));
   const out = [
     ...groupApprovals([...asks].sort((a, b) => stamp(a.createdAt) - stamp(b.createdAt))).map((e) => (e.type === "group"
       ? { type: "group", key: e.id, at: e.items[0].createdAt, count: e.items.length, botId: e.botId, missionId: e.missionId, group: e }
-      : { type: "approval", key: e.a.id, at: e.a.createdAt, count: 1, botId: e.a.botId, missionId: e.a.missionId, a: e.a })),
+      : { type: "approval", key: e.a.id, at: e.a.createdAt, count: 1, botId: botOfItem.has(e.a.id) ? botOfItem.get(e.a.id) : e.a.botId, missionId: e.a.missionId, a: e.a, room: botOfItem.get(e.a.id) === null && e.a.kind === "plan" })),
     ...notes.map((n) => ({ type: "note", key: n.id, at: n.createdAt, count: 1, botId: n.botId, missionId: n.missionId, note: n })),
-    ...choices.map((m) => ({ type: "choice", key: m.id, at: m.updatedAt || m.createdAt, count: 1, botId: m.botIds?.[0] || "atlas", missionId: m.id, mission: m })),
+    ...choices.map((m) => ({ type: "choice", key: m.id, at: m.updatedAt || m.createdAt, count: 1, botId: botOfItem.has(m.id) ? botOfItem.get(m.id) : m.conversation && m.botIds?.length === 1 ? m.botIds[0] : null, missionId: m.id, mission: m, room: !(m.conversation && m.botIds?.length === 1) })),
     ...errands.map((x) => ({ type: "errand", key: x.id, at: x.at, count: 1, botId: x.botId, missionId: null, item: x })),
   ];
   const known = new Set(out.flatMap((e) => (e.type === "group" ? e.group.items.map((a) => a.id) : [e.key])));
@@ -35,8 +38,9 @@ export function needEntries(needs = {}) {
  * "expand" (the full card opens in place: what is held to approve, a question, several
  * requests) · "link" (it is decided where it is read: a plan, a choice, another person's ask).
  */
-export function needRow(entry, { botName = "" } = {}) {
-  const who = botName || "Un bot";
+export function needRow(entry, { botName = "", roomName = "" } = {}) {
+  // A room-level decision is the room's: «#campaña · Las propuestas… están listas».
+  const who = entry.room && !entry.botId ? "#" + (roomName || entry.mission?.room || entry.mission?.title || "sala") : botName || "Un bot";
   switch (entry.type) {
     case "approval": {
       const model = approvalCard(entry.a, { botName });

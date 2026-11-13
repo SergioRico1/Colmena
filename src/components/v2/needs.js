@@ -19,8 +19,9 @@ function localWaiting({ approvals = [], missions = [], watchNotes = [] } = {}, n
   const pending = approvals.filter((a) => a.status === "pending");
   const covered = new Set(pending.map((a) => a.missionId));
   const { waiting } = splitSnoozed(pending, now);
+  const chat = (id) => missions.find((m) => m.id === id && m.conversation && m.botIds?.length === 1);
   return [
-    ...waiting.map((a) => ({ kind: "approval", id: a.id, missionId: a.missionId ?? null, roomId: a.missionId ?? null, botId: a.botId ?? null, what: a.kind || "permission", at: a.createdAt ?? null })),
+    ...waiting.map((a) => ({ kind: "approval", id: a.id, missionId: a.missionId ?? null, roomId: a.missionId ?? null, botId: a.kind === "plan" && !chat(a.missionId) ? null : a.botId ?? null, what: a.kind || "permission", at: a.createdAt ?? null })),
     ...missions.filter((m) => DECIDE.has(m.status) && !covered.has(m.id) && !m.archived).map((m) => ({ kind: "mission", id: m.id, missionId: m.id, roomId: m.id, botId: m.conversation && m.botIds?.length === 1 ? m.botIds[0] : null, what: m.status, at: m.updatedAt ?? m.createdAt ?? null })),
     ...(watchNotes || []).map((n) => ({ kind: "note", id: n.id, missionId: n.missionId ?? null, roomId: n.missionId ?? null, botId: n.botId ?? null, what: "note", at: n.createdAt ?? null })),
   ].sort((x, y) => stamp(x.at) - stamp(y.at));
@@ -66,12 +67,19 @@ export function needsOf(store = {}, now = Date.now()) {
 }
 
 /**
- * A surface that lists only some rooms (Trabajo lists tasks): how many of the things that wait
- * for you are in them. `text` is «3 de 5» when the rest wait elsewhere (then `more`), else «5».
+ * A surface that lists only some rooms (Trabajo lists tasks): its number is the cards it shows,
+ * exactly, and when the whole list holds more it links to it: «2 en Trabajo · ver las 5».
+ * {here: cards, total, more, text, link, label}.
  */
 export function countIn(missions = [], total = 0) {
-  const here = missions.reduce((n, m) => n + (m.waiting || 0), 0);
-  return { here, total, more: here < total, text: here < total ? `${here} de ${total}` : String(here) };
+  const here = missions.length;
+  const items = missions.reduce((n, m) => n + (m.waiting || 0), 0);
+  const more = total > here;
+  return {
+    here, total, more, text: String(here),
+    link: more ? `ver las ${total}` : null,
+    label: (here === 1 ? "1 tarea te espera" : `${here} tareas te esperan`) + (more ? `; en total te esperan ${total} cosas` : items > here ? ` (${items} cosas)` : ""),
+  };
 }
 
 /** How many of those things wait in each room and for each bot: {rooms: Map, bots: Map}. */

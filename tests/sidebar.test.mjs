@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { needsCount, needsOf } from "../src/components/v2/needs.js";
-import { ROOMS_SHOWN, chatsTarget, conversationPath, foldRooms, rowLabel, sidebarModel, sidebarShape, summaryOf, teamHeader } from "../src/lib/sidebar.js";
+import { readFileSync } from "node:fs";
+import { BOTS_SHOWN, ROOMS_SHOWN, chatsTarget, conversationPath, foldBots, foldRooms, rowLabel, scrollFade, sidebarModel, sidebarShape, summaryOf, teamHeader } from "../src/lib/sidebar.js";
 
 const NOW = Date.parse("2026-11-12T10:00:00Z");
 const ago = (min) => new Date(NOW - min * 60000).toISOString();
@@ -148,11 +149,13 @@ test("a room you put off leaves the list until its time, unless it waits for you
 
 test("bots: your enabled bots with their state in words; honey only when one of their requests waits", () => {
   const { bots } = sidebarModel(snapshot(), { now: NOW });
-  assert.deepEqual(bots.map((b) => [b.name, b.state, b.waiting]), [["Atlas", "waiting", 1], ["Nora", "free", 0], ["Bruno", "working", 1], ["Vera", "waiting", 2], ["Leo", "free", 0]]);
+  // Atlas's plan waits as the room's, not his; Bruno works and waits: «te espera» comes first.
+  assert.deepEqual(bots.map((b) => [b.name, b.state, b.waiting]), [["Atlas", "free", 0], ["Nora", "free", 0], ["Bruno", "waiting", 1], ["Vera", "waiting", 2], ["Leo", "free", 0]]);
+  assert.equal(bots.find((b) => b.id === "bruno").busy, true);
   assert.equal(bots.find((b) => b.id === "nora").unread, 1, "its chat has a message not opened");
   assert.equal(bots[0].href, "/chat/atlas");
   assert.equal(rowLabel("bot", bots[1]), "Nora, bot, libre, 1 sin leer");
-  assert.equal(rowLabel("bot", bots[2]), "Bruno, bot, trabajando, te espera");
+  assert.equal(rowLabel("bot", bots[2]), "Bruno, bot, te espera, trabajando");
   assert.equal(rowLabel("bot", bots[3]), "Vera, bot, te espera");
 });
 
@@ -165,11 +168,11 @@ test("bots: a request put off does not make its bot wait, and a paused team says
   assert.equal(paused.summary.text, "Equipo en pausa · 5 te esperan");
 });
 
-test("a circle is a person: a bot with a circle (or no shape) is drawn as a rounded square", () => {
-  assert.equal(sidebarShape("circle"), "square");
+test("a circle is a person: a bot with a circle (or no shape) is drawn as the capsule (or, unknown, a rounded square)", () => {
+  assert.equal(sidebarShape("circle"), "capsule");
   assert.equal(sidebarShape(undefined), "square");
   assert.equal(sidebarShape("hex"), "hex");
-  assert.equal(sidebarModel(snapshot(), { now: NOW }).bots.find((b) => b.id === "leo").shape, "square");
+  assert.equal(sidebarModel(snapshot(), { now: NOW }).bots.find((b) => b.id === "leo").shape, "capsule");
 });
 
 test("people: direct conversations and connected contacts, with presence, status and unread", () => {
@@ -205,7 +208,7 @@ test("one number: the sidebar's count is the count of Inicio, and the foot says 
 
 test("the foot never contradicts the Bots group", () => {
   const model = sidebarModel(snapshot(), { now: NOW });
-  assert.equal(model.summary.working, model.bots.filter((b) => b.state === "working").length);
+  assert.equal(model.summary.working, model.bots.filter((b) => b.state === "working" || b.busy).length);
   assert.equal(summaryOf([{ state: "free" }], 0).text, "Nadie trabajando");
   assert.equal(summaryOf([{ state: "working" }, { state: "working" }], 1).text, "2 trabajando · 1 te espera");
   assert.equal(summaryOf([], 0).text, "Sin bots");
@@ -273,4 +276,28 @@ test("which addresses are a conversation", () => {
   assert.equal(conversationPath("/sala/nueva"), null);
   assert.equal(conversationPath("/chats"), null);
   assert.equal(conversationPath("/"), null);
+});
+
+test("order and folding: Salas, Personas, Bots; at most four bots, the lively ones always", () => {
+  const src = readFileSync(new URL("../src/components/v3/Sidebar.jsx", import.meta.url), "utf8");
+  const at = (id) => src.indexOf(`groupHead("${id}"`);
+  assert.ok(at("salas") > 0 && at("salas") < at("personas") && at("personas") < at("bots"), "Salas, Personas, Bots");
+  assert.ok(src.indexOf('className="v3-skip"') < src.indexOf('<div ref={teamRef}'), "the skip link stays first");
+  const bots = ["a", "b", "c", "d", "e", "f"].map((id, i) => ({ id, href: "/chat/" + id, state: "free", waiting: 0, unread: 0, at: i }));
+  assert.equal(BOTS_SHOWN, 4);
+  assert.deepEqual(foldBots(bots).shown.map((b) => b.id), ["a", "b", "c", "d"]);
+  assert.equal(foldBots(bots).hidden, 2);
+  const lively = bots.map((b) => (b.id === "f" ? { ...b, state: "waiting", waiting: 1 } : b.id === "e" ? { ...b, state: "working" } : b));
+  assert.deepEqual(foldBots(lively).shown.map((b) => b.id), ["f", "e", "a", "b"], "waiting first, then working");
+  const busy = lively.map((b) => ({ ...b, state: "working" }));
+  assert.equal(foldBots(busy).shown.length, 6, "every bot at work shows, even beyond four");
+  assert.equal(foldBots(bots, { all: true }).hidden, 0);
+  assert.deepEqual(foldBots(bots, { current: "/chat/f" }).shown.map((b) => b.id), ["f", "a", "b", "c"], "the open chat's bot stays in view");
+});
+
+test("the scroll fade: none at rest, at the top once scrolled, at the bottom while more lies below", () => {
+  assert.equal(scrollFade({ top: 0, height: 400, client: 400 }), null);
+  assert.equal(scrollFade({ top: 0, height: 900, client: 400 }), "linear-gradient(to bottom, #000 0, #000 calc(100% - 16px), transparent 100%)");
+  assert.equal(scrollFade({ top: 500, height: 900, client: 400 }), "linear-gradient(to bottom, transparent 0, #000 16px, #000 100%)");
+  assert.equal(scrollFade({ top: 200, height: 900, client: 400 }), "linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%)");
 });

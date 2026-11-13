@@ -9,11 +9,13 @@ export const SHAPES = {
   hex: { clip: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", radius: "0" },
   diamond: { clip: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)", radius: "0" },
   circle: { clip: "none", radius: "50%" },
+  // Investigación's silhouette: an upright capsule (circles are people). Old «circle» bots draw so.
+  capsule: { clip: "inset(0 17% round 999px)", radius: "0" },
   square: { clip: "none", radius: "24%" },
   leaf: { clip: "none", radius: "50% 12% 50% 12%" },
   arch: { clip: "none", radius: "50% 50% 14% 14%" },
 };
-// Circles are people: a bot whose shape is a circle (or unknown) is a rounded square (lib/identity.js).
+// Circles are people: a bot whose shape is a circle is the capsule, an unknown one a rounded square (lib/identity.js).
 export const shapeOf = (bot) => SHAPES[botShape(bot?.shape)];
 export const gloss = (color) => `radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), ${color || "#C9CBD1"}`;
 

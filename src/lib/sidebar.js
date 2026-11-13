@@ -92,8 +92,10 @@ export function sidebarModel(store = {}, { now = Date.now(), team = null } = {})
 
   const team_ = bots.filter((b) => b.enabled !== false).map((b) => {
     const waiting = waitingOf_.get(b.id) || 0;
-    const state = paused || b.status === "pausado" ? "paused" : b.status === "trabaja" ? "working" : waiting ? "waiting" : b.status === "limitado" ? "limited" : b.status === "bloqueado" ? "stuck" : "free";
-    return { id: b.id, href: `/chat/${b.id}`, name: b.name || "Bot", role: b.role || "", shape: sidebarShape(b.shape), color: b.color || "#C9CBD1", portrait: b.portrait ?? null, state, waiting, unread: unreadOf.get(b.id) || 0 };
+    // «Te espera» first: a bot with something waiting for you says so, even while it works.
+    const busy = !paused && (b.status === "trabaja" || !!b.busy);
+    const state = paused || b.status === "pausado" ? "paused" : waiting ? "waiting" : busy ? "working" : b.status === "limitado" ? "limited" : b.status === "bloqueado" ? "stuck" : "free";
+    return { id: b.id, href: `/chat/${b.id}`, name: b.name || "Bot", role: b.role || "", shape: sidebarShape(b.shape), color: b.color || "#C9CBD1", portrait: b.portrait ?? null, state, waiting, unread: unreadOf.get(b.id) || 0, ...(busy && state !== "working" ? { busy: true } : {}) };
   });
 
   const waitingCount = waitingNow.length;
@@ -107,7 +109,7 @@ function personRow({ id, href, name, person, unread, waiting = 0 }) {
 
 /** The foot's line. It counts the same rows the Bots group shows and the same number as Inicio. */
 export function summaryOf(bots = [], waitingCount = 0, paused = false) {
-  const working = bots.filter((b) => b.state === "working").length;
+  const working = bots.filter((b) => b.state === "working" || b.busy).length;
   const parts = [paused ? "Equipo en pausa" : working ? `${working} trabajando` : bots.length ? "Nadie trabajando" : "Sin bots"];
   if (waitingCount) parts.push(waitingCount === 1 ? "1 te espera" : `${waitingCount} te esperan`);
   return { working, waiting: waitingCount, text: parts.join(" · ") };
@@ -133,6 +135,32 @@ export function foldRooms(rooms = [], { limit = ROOMS_SHOWN, current = null, all
   return { shown, hidden: rooms.length - shown.length };
 }
 
+/** Bots the Bots group shows before «Ver todos (N)». */
+export const BOTS_SHOWN = 4;
+/**
+ * Which bots show: the ones waiting for you, at work, with something unread or open now first
+ * (always, even beyond the limit), then the rest in their order up to BOTS_SHOWN. The rest fold
+ * behind «Ver todos (N)». {shown, hidden}.
+ */
+export function foldBots(bots = [], { limit = BOTS_SHOWN, current = null, all = false } = {}) {
+  if (all || bots.length <= limit) return { shown: bots, hidden: 0 };
+  const rank = (b) => (b.waiting > 0 || b.state === "waiting" ? 0 : b.state === "working" || b.busy ? 1 : b.unread > 0 || b.href === current ? 2 : 3);
+  const lively = bots.filter((b) => rank(b) < 3).sort((a, b) => rank(a) - rank(b));
+  const quiet = bots.filter((b) => rank(b) === 3);
+  const shown = [...lively, ...quiet.slice(0, Math.max(0, limit - lively.length))];
+  return { shown, hidden: bots.length - shown.length };
+}
+
+/**
+ * Where the scrolling list fades: at the top once it is scrolled (places slide under «Nuevo» and
+ * «Buscar»), at the bottom while more lies below (over the pinned foot). A CSS mask, or none.
+ */
+export function scrollFade({ top = 0, height = 0, client = 0 } = {}, size = 16) {
+  const up = top > 1, down = top + client < height - 1;
+  if (!up && !down) return null;
+  return `linear-gradient(to bottom, ${up ? "transparent 0, #000 " + size + "px" : "#000 0"}, ${down ? "#000 calc(100% - " + size + "px), transparent 100%" : "#000 100%"})`;
+}
+
 /**
  * The team header, from `GET /api/teams` → [{id, name, people, bots, admin, current}]. No teams
  * yet is «Solo tú»: your own Colmena and how many bots you have.
@@ -152,7 +180,7 @@ export function teamHeader(teams = [], { bots = 0, chosen = null } = {}) {
 /** A row's name for a screen reader: «informe-q3, sala, 3 sin leer, te espera». */
 export function rowLabel(kind, row) {
   const parts = [kind === "room" ? row.title : row.name, kind === "room" ? "sala" : kind === "bot" ? "bot" : "persona"];
-  if (kind === "bot") parts.push(STATE_WORD[row.state] || STATE_WORD.free);
+  if (kind === "bot") { parts.push(STATE_WORD[row.state] || STATE_WORD.free); if (row.busy) parts.push(STATE_WORD.working); }
   if (kind === "person") { parts.push(row.presence === "online" ? "en línea" : "sin conexión"); if (row.status) parts.push(STATUS_WORD[row.status]); }
   if (kind === "room" && row.working > 0) parts.push(row.working === 1 ? "un bot trabajando" : `${row.working} bots trabajando`);
   if (row.unread > 0) parts.push(`${row.unread} sin leer`);

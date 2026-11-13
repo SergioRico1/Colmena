@@ -2,23 +2,30 @@ import { fitInitials, stepOf } from "../../lib/type.js";
 import { srOnly } from "../../lib/alt.js";
 import { ArrowLeftRight } from "lucide-react";
 import { BotPresence } from "../v2/Presence.jsx";
-import { BotMark } from "../v2/chat/Mark.jsx";
-import { initialsOf } from "../../lib/identity.js";
+import { createContext, useContext } from "react";
+import { BotMark, OwnerBadge, badgeSize } from "../v2/chat/Mark.jsx";
+import { initialsOf, personTint } from "../../lib/identity.js";
 import { authorView, handoffLine, statusLine } from "../../lib/roomView.js";
 import { time } from "../../lib/format.js";
 
 // Who wrote a row, the same in every conversation (docs/PLAN-equipo-y-salas.md, scope 4):
 // a PERSON is a circle with initials («TÚ» in ink for you) and a name; a BOT is its shape, its
 // name, its role in small text and «bot de Lucía» when it is not yours. Circles are people only.
-const TINTS = ["#EFE2D3", "#DCE6F2", "#E3EEDF", "#EEE0EC", "#E9E6DA"];
-const tintOf = (name) => TINTS[[...String(name || "")].reduce((n, c) => n + c.charCodeAt(0), 0) % TINTS.length];
+const tintOf = personTint;
+
+/**
+ * The names bots go by in this place (identity.js › botNameLabels): a room provides it so that a
+ * name two visible bots share reads «Vera · de Lucía» in every author line.
+ */
+export const BotNames = createContext(null);
+export const useBotNames = () => useContext(BotNames);
 
 /** A person's round avatar. `presence`: "online" | "offline" draws the dot (filled: here; ring: not). */
 export function PersonAvatar({ person, size = 40, ring = "#F5F5F2", presence = null }) {
   const you = !!(person?.you || person?.me);
   const dot = Math.max(8, Math.round(size / 3.6));
   return (
-    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: you ? "#12131A" : person?.color || tintOf(person?.name), color: you ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em" }}>
+    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: you ? person?.color || "#12131A" : person?.color || tintOf(person?.name), color: you && !person?.color ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em" }}>
       {fitInitials(you ? "TÚ" : person?.initials || initialsOf(person?.name), size)}
       {presence ? <span style={{ position: "absolute", right: "-1px", bottom: "-1px", width: dot + "px", height: dot + "px", boxSizing: "border-box", borderRadius: "var(--r-circle)", background: presence === "online" ? "#1E9E6A" : ring, border: presence === "online" ? "0" : "2px solid #8A8D96", boxShadow: `0 0 0 2px ${ring}` }} /> : null}
     </span>
@@ -27,13 +34,15 @@ export function PersonAvatar({ person, size = 40, ring = "#F5F5F2", presence = n
 
 /** The avatar of a row's author: round for a person, the bot's shape for a bot. */
 export function AuthorAvatar({ author, size = 40, state = "rest" }) {
-  if (author?.kind === "bot") return <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center" }}><BotPresence bot={author} size={size} state={state} /></span>;
+  // Someone else's bot carries its owner's initials in a round chip in the corner.
+  if (author?.kind === "bot") return <span aria-hidden="true" style={{ position: badgeSize(author.owner, size) ? "relative" : undefined, width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center" }}><BotPresence bot={author} size={size} state={state} /><OwnerBadge owner={author.owner} size={size} ring="#F5F5F2" /></span>;
   return <PersonAvatar person={author} size={size} />;
 }
 
 /** «Vera · Investigación · bot de Lucía · para Marta · 09:06». */
 export function AuthorHead({ author, at = null, to = null, note = null, children = null }) {
-  const v = authorView(author);
+  const names = useBotNames();
+  const v = authorView(author, names);
   const tail = [to ? "para " + to : null, note, at ? time(at) : null].filter(Boolean);
   return (
     <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.3", marginBottom: "-2px" }}>

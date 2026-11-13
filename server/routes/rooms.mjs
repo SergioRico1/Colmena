@@ -72,6 +72,14 @@ export function registerRoomRoutes(app, { store, rooms, messageView, stepView, s
     const data = check(z.object({ artifactId: z.string().trim().min(1).max(200), caption: z.string().max(2000).optional() }).strict(), req.body);
     return rooms.work.shareArtifact(req.params.id, data.artifactId, data.caption || "");
   }));
+  // «Solo para mí» (the one composer toggle): a question to your own bots that nobody else in the
+  // room reads. It lives in the room's sala on this computer, made now if your bots never worked
+  // here (invariant 3); the aside is never relayed.
+  app.post("/api/rooms/:id/aside", run((req) => {
+    check(z.object({}).strict(), req.body || {});
+    const room = rooms.must(req.params.id);
+    return { missionId: rooms.missionFor(room, []).id };
+  }));
   app.post("/api/rooms/:id/leave", run((req) => rooms.leave(req.params.id)));
   app.post("/api/rooms/:id/seen", run((req) => rooms.seen(req.params.id)));
 }

@@ -6,6 +6,7 @@ import { navigate } from "../../../lib/router.jsx";
 import { BotMark, PersonMark } from "../../v2/chat/Mark.jsx";
 import { ROOM_MAX_BOTS, currentTeam, realTeams, roomHint, roomPayload, roomPeople } from "../../../lib/teams.js";
 import { INK, MUTED, Sheet, darkBtn, errorLine, hidden, note, quietBtn } from "./TeamSheets.jsx";
+import { coordinatorOf } from "../../../lib/bots.js";
 
 // «Nuevo → Sala» (docs/CONTRACT.md §18): a name, where it lives (one of your teams or
 // «Privada»), people and bots → POST /api/rooms {title, team?, botIds?, people?} → the room,
@@ -22,13 +23,18 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
   const [title, setTitle] = useState("");
   const [team, setTeam] = useState(() => currentTeam(teams)?.id || null); // null: «Privada»
   const [people, setPeople] = useState([]);
-  const [botIds, setBotIds] = useState(preset);
+  // Not empty by default: the coordinator is in, as it is in every room with bots.
+  const [botIds, setBotIds] = useState(() => (preset.length ? preset : bots.some((b) => b.id === "atlas" && b.enabled !== false) ? ["atlas"] : []));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const detail = useResource(team ? `/teams/${encodeURIComponent(team)}` : null);
   const view = team && detail.data?.id === team ? detail.data : null;
   const candidates = roomPeople({ team: team ? view : null, contacts: team ? [] : peers?.contacts || [] });
   const myBots = bots.filter((b) => b.enabled !== false);
+  const coord = coordinatorOf(bots);
+  // The room's limit is six bots besides the one that coordinates (server/room.mjs ROOM_LIMITS.bots).
+  const others = botIds.filter((id) => id !== "atlas").length;
+  const missing = !title.trim() ? "Falta el nombre de la sala." : null;
   const teamName = mine.find((t) => t.id === team)?.name || null;
   const pickTeam = (id) => { setTeam(id); setPeople([]); setError(null); };
   const toggle = (list, set, id) => set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
@@ -84,12 +90,12 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
         </fieldset>
 
         <fieldset style={group}>
-          <legend style={{ ...label, padding: 0, marginBottom: "8px" }}>{"Tus bots"}<span style={{ fontWeight: 400, color: MUTED }}>{` · hasta ${ROOM_MAX_BOTS}`}</span></legend>
+          <legend style={{ ...label, padding: 0, marginBottom: "8px" }}>{"Tus bots"}<span style={{ fontWeight: 400, color: MUTED }}>{` · ${coord} coordina; hasta ${ROOM_MAX_BOTS} más`}</span></legend>
           {myBots.length ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", maxHeight: "168px", overflowY: "auto" }}>
               {myBots.map((b) => {
                 const on = botIds.includes(b.id);
-                const full = !on && botIds.length >= ROOM_MAX_BOTS;
+                const full = !on && b.id !== "atlas" && others >= ROOM_MAX_BOTS;
                 return (
                   <button key={b.id} type="button" aria-pressed={on ? "true" : "false"} disabled={full} onClick={() => toggle(botIds, setBotIds, b.id)} style={chip(on, full)}>
                     <span aria-hidden="true" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center" }}><BotMark bot={b} size={18} /></span>
@@ -108,8 +114,9 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
         <p style={note}>{roomHint({ teamName, people: people.length, bots: botIds.length })}</p>
         {error ? <p role="alert" style={errorLine}>{error}</p> : null}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-          <button type="submit" disabled={busy} aria-disabled={!ok} style={darkBtn(ok)}>{busy ? "Creando…" : "Crear sala"}</button>
+          <button type="submit" disabled={busy} aria-disabled={!ok} aria-describedby={missing ? "room-new-missing" : undefined} style={darkBtn(ok)}>{busy ? "Creando…" : "Crear sala"}</button>
           <button type="button" onClick={onClose} style={quietBtn}>{"Cancelar"}</button>
+          {missing && !error ? <span id="room-new-missing" style={note}>{missing}</span> : null}
           <span role="status" style={hidden}>{busy ? "Creando la sala" : ""}</span>
         </div>
       </form>

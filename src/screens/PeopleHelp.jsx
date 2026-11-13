@@ -19,6 +19,7 @@ export const HELP_SECTIONS = [
   ["salas", Hash, "Salas", [
     "Una sala es una conversación con personas y bots a la vez. Las personas llevan un círculo con sus iniciales; los bots, su forma, su papel y de quién son.",
     "Una sala privada es solo tuya y de tus bots. Cuando invitas a alguien pasa a ser una sala con personas. Solo añade gente quien la creó; los demás se lo piden desde «Invitar» y a esa persona le llega la petición.",
+    "«Solo para mí», junto al cuadro de escribir, está en todas las salas y es igual para todos: lo que preguntes ahí no se envía a nadie, te contestan solo tus bots y se queda en tu ordenador. No entra en la conversación de la sala.",
   ]],
   ["de-quien", Bot, "De quién es cada bot", [
     "Cada bot es de una persona y trabaja en el ordenador de esa persona, con su cuenta de IA y sus datos. En la sala lo lees junto a su nombre: «Vera · bot de Lucía».",
@@ -27,7 +28,7 @@ export const HELP_SECTIONS = [
   ]],
   ["que-ven", Eye, "Qué ven los demás del trabajo de tu bot", [
     "Tres cosas: lo que contesta, una línea de estado («Vera está trabajando», «Vera usó 4 herramientas · 12 min», «Vera espera el OK de Sergio») y lo que entrega para quien se lo pidió.",
-    "Nunca ven tus archivos, tu correo, lo que leen sus herramientas, los pasos intermedios ni las tarjetas en las que tú decides. Lo que preguntas en «Aparte, solo para ti» tampoco sale de tu ordenador.",
+    "Nunca ven tus archivos, tu correo, lo que leen sus herramientas, los pasos intermedios ni las tarjetas en las que tú decides. Lo que preguntas con «Solo para mí» tampoco sale de tu ordenador.",
     "Lo que tu bot hace para una petición que permitiste se comparte solo en la sala, como archivo. Cualquier otro entregable tuyo sale únicamente si pulsas «Compartir en la sala».",
   ]],
   ["quien-aprueba", ShieldCheck, "Quién aprueba qué", [

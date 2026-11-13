@@ -13,10 +13,10 @@ const read = (file) => readFileSync(fileURLToPath(new URL("../" + file, import.m
 const NOW = Date.parse("2026-11-12T10:00:00");
 const inMin = (n) => new Date(NOW + n * 60000).toISOString();
 
-test("Ajustes: «Personas» is the people you talk to; who signs here is «Quién usa este ordenador»", () => {
+test("Ajustes: «Contactos y equipos» is the people you talk to; who signs here is «Quién usa este ordenador»", () => {
   const label = (key) => SETTINGS_INDEX.find((i) => i.key === key)?.label;
   assert.equal(label("general#quien-usa"), "Quién usa este ordenador");
-  assert.equal(label("general#personas"), "Personas con las que hablas");
+  assert.equal(label("general#personas"), "Contactos y equipos");
   assert.equal(SETTINGS_INDEX.some((i) => i.label === "Personas del espacio"), false);
   // The page keeps working at its old address.
   assert.equal(PARENT["quien-usa"], "general");

@@ -35,7 +35,7 @@ function Steps({ skill, compare = false }) {
       {steps.map((t, i) => {
         const added = compare && before.size > 0 && !before.has(t);
         return (
-          <li key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start", padding: "10px 12px", borderRadius: "var(--r-md)", background: added ? "#FFF6DC" : "#F6F6F3" }}>
+          <li key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start", padding: "10px 12px", borderRadius: "var(--r-md)", background: added ? "#E8F3EC" : "#F6F6F3" }}>
             <span style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: "600" }}>{String(i + 1)}</span>
             <span style={{ flex: "1", fontSize: "var(--t-body)", lineHeight: "1.5" }}>
               {t}
@@ -63,7 +63,7 @@ function PendingCard({ s, bot, open: startOpen, onApproved }) {
   const discard = () => later({ id: "skill:" + s.id, keys: ["skill:" + s.id], ms: UNDO_MS, text: `«${s.name}» descartada`, error: "No se pudo descartar", run: () => act.act(() => patch(`/skills/${encodeURIComponent(s.id)}`, { status: "disabled" })) });
   if (!open) {
     return (
-      <article style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 22px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 0 0 2px #FFC93C" }}>
+      <article style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 22px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.14)" }}>
         <Mark bot={bot} size={22} />
         <div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <h3 style={{ margin: "0", fontSize: "var(--t-read)", fontWeight: "600" }}>{improved ? `${s.name} · versión mejorada` : s.name}</h3>
@@ -74,7 +74,7 @@ function PendingCard({ s, bot, open: startOpen, onApproved }) {
     );
   }
   return (
-    <article style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 0 0 2px #FFC93C", animation: "fade .25s ease-out" }}>
+    <article style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.14)", animation: "fade .25s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <Mark bot={bot} size={22} />
         <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -155,7 +155,7 @@ export default function Skills({ skills, bots, expert, note = null }) {
         <section aria-labelledby="rev-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <h2 id="rev-t" style={{ margin: "0", display: "flex", alignItems: "center", gap: "10px", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
             {"Por revisar"}
-            {pending.length ? <span style={{ minWidth: "24px", height: "24px", padding: "0 8px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "#FFC93C", font: "600 var(--t-meta)/1 'Geist', sans-serif" }}>{String(pending.length)}</span> : null}
+            {pending.length ? <span style={{ minWidth: "24px", height: "24px", padding: "0 8px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.1)", font: "600 var(--t-meta)/1 'Geist', sans-serif" }}>{String(pending.length)}</span> : null}
           </h2>
           {pending.map((s, i) => <PendingCard key={s.id} s={s} bot={botOf(s.botId)} open={i === 0} onApproved={(x) => setApproved((list) => [...list, x])} />)}
           {done.map((s) => (

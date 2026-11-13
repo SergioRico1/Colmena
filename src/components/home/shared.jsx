@@ -26,7 +26,8 @@ export function mentionedBots(text, bots) {
   const out = [];
   for (const m of (text || "").matchAll(/@([\p{L}\p{N}_-]+)/gu)) {
     const key = norm(m[1]);
-    const bot = bots.find((b) => norm(b.name) === key || norm(b.id) === key);
+    // Its current name first, then a name it had before («@Vera» after a rename), then its id.
+    const bot = bots.find((b) => norm(b.name) === key) || bots.find((b) => (b.previousNames || []).some((n) => norm(n) === key)) || bots.find((b) => norm(b.id) === key);
     if (bot && !out.includes(bot)) out.push(bot);
   }
   return out;

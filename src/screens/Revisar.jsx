@@ -214,7 +214,7 @@ export default function Revisar({ params = {} }) {
           )}
 
           <aside style={{ flex: "1 1 300px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px" }}>
-            <div style={{ ...card, background: "#FFF6DC" }}>
+            <div style={card}>
               <h2 style={h2}>{"Por qué te pregunta"}</h2>
               <p style={{ ...p, color: "#3D404A" }}>{why}</p>
             </div>

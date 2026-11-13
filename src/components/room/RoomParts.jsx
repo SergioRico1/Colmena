@@ -97,7 +97,10 @@ export function BlockerBand({ mission, pending, bots }) {
   const rank = (a) => ({ question: 0, plan: 1 })[a.kind] ?? 2;
   const first = [...pending].sort((a, b) => rank(a) - rank(b))[0];
   if (!first && !debate) return null;
-  const bot = findBot(bots, first?.botId || "atlas");
+  // A decision of the room (the debate's choice, the room's plan) is the room's, not a bot's
+  // (server/waiting.mjs): «La sala te espera», with «#» instead of a bot's face.
+  const roomLevel = !first || first.kind === "plan";
+  const bot = roomLevel ? null : findBot(bots, first.botId || "atlas");
   let text;
   let href;
   let scrollTo = null;
@@ -123,12 +126,13 @@ export function BlockerBand({ mission, pending, bots }) {
     : undefined;
   return (
     <a href={href} onClick={onClick} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "#FFF4D1", borderBottom: "1px solid #F2D27A", fontSize: "var(--t-ui)" }}>
-      <BotAvatar bot={bot} size={22} mood="duda" />
+      {bot ? <BotAvatar bot={bot} size={22} mood="duda" /> : <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 700, color: "#12131A" }}>{"#"}</span>}
       <span style={{ flex: "1 1 280px" }}>
-        <strong>{`${bot.name} te espera:`}</strong>
+        <strong>{bot ? `${bot.name} te espera:` : "La sala te espera:"}</strong>
         {" " + (text || "") + more}
       </span>
-      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-pill)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{"Responder"}</span>
+      {/* The one action of this decision in the room (the header no longer repeats it). */}
+      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-pill)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{!first ? "Elegir propuesta" : first.kind === "plan" ? "Revisar el plan" : first.kind === "question" ? "Responder" : "Revisar"}</span>
     </a>
   );
 }
@@ -915,7 +919,7 @@ export function typingInfo({ mission, activity, live, bots, steps = [] }) {
 /** What a message sent now does while they work (the send button says it). */
 const SEND_LABEL = { steer: "Reconducir", followup: "En cola", collect: "En cola", interrupt: "Interrumpir" };
 
-// `tools` (Colmena 3 Sala: «Toda la sala | Solo yo y un bot») goes first in the toolbar; `placeholder` replaces «Mensaje a #sala».
+// `tools` (the room's one «Solo para mí» toggle) goes first in the toolbar; `placeholder` replaces «Mensaje a #sala».
 // `shared` ({roomId, view, onTyping, onSent(result), onFiles(FileList), disabled, typingLine}): the room has
 // people. The message goes to `POST /api/rooms/:id/messages` with who «@» named (`to`, `mentions`,
 // `people`); files travel sealed, each on its own (`onFiles`); `mission` may still be null.

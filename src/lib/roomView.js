@@ -2,7 +2,7 @@
 // how it is named, which rows group under one header, the quiet lines about other owners' bots,
 // the member panel, who can be invited and who «@» lists. Pure: no React, no network. It reads
 // the shapes of docs/CONTRACT.md §18 (`GET /api/rooms/:id`, `…/timeline`).
-import { firstName, listNames } from "./identity.js";
+import { botA11yName, botNameLabels, familyTint, firstName, listNames, ownerShort } from "./identity.js";
 
 const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const byName = (a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base", numeric: true });
@@ -48,7 +48,7 @@ export function authorKey(author) {
  * small text and «bot de Lucía» when it is not yours (your own bots do not repeat it on every row).
  * `label` is the text alternative: it always says whether it is a person or a bot, and whose.
  */
-export function authorView(author) {
+export function authorView(author, names = null) {
   if (!author || author.kind === "system") return { kind: "system", name: "", sub: "", label: "" };
   if (author.kind === "person") {
     const name = author.you ? "Tú" : author.name || "Alguien";
@@ -57,7 +57,11 @@ export function authorView(author) {
   const mine = !!author.owner?.you;
   const whose = mine ? "" : "bot de " + firstName(author.owner?.name);
   const name = author.name || "Bot";
-  return { kind: "bot", you: false, mine, name, role: author.role || "", whose, sub: [author.role, whose].filter(Boolean).join(" · "), label: name + ", " + (mine ? "bot tuyo" : whose) };
+  // Two bots called the same in sight (`names`: identity.js › botNameLabels): «Vera · de Lucía»,
+  // and the owner is not said twice.
+  const shown = names && !mine && names.clashes(name) ? names.label(author.owner, author) : name;
+  const sub = [author.role, shown === name ? whose : null].filter(Boolean).join(" · ");
+  return { kind: "bot", you: false, mine, name: shown, role: author.role || "", whose, sub, label: name + ", " + (mine ? "bot tuyo" : whose) };
 }
 
 /* ───────────── grouping ───────────── */
@@ -218,22 +222,52 @@ export function presenceWord(person) {
  * `working` / `waiting`: ids of your bots at work or waiting for you here; `activity`: the
  * room's live states of other owners' bots [{owner: {address}, bot: {id}, state}].
  */
-export function memberPanel(view, { working = [], waiting = [], activity = [] } = {}) {
+export function memberPanel(view, { working = [], waiting = [], activity = [], selfColor = null } = {}) {
   const rank = (p) => (p.you ? 0 : p.role === "owner" ? 1 : p.role === "guest" ? 3 : 2);
+  // A person's circle wears a light tint of their bots' colour family (yours: `selfColor`).
+  const tints = new Map((view?.bots || []).filter((g) => g?.owner && !g.owner.you && g.bots?.length).map((g) => [g.owner.address, familyTint(g.bots)]));
   const people = [...(view?.people || [])].sort((a, b) => rank(a) - rank(b) || byName(a, b))
-    .map((p) => ({ ...p, name: p.name || "Alguien", roleWord: roomRole(p), presenceWord: presenceWord(p) }));
+    .map((p) => ({ ...p, name: p.name || "Alguien", roleWord: roomRole(p), presenceWord: presenceWord(p), ...((p.you ? selfColor : tints.get(p.address)) ? { color: p.you ? selfColor : tints.get(p.address) } : {}) }));
   const live = (owner, bot) => activity.find((a) => a?.owner?.address === owner.address && (a.bot?.id === bot.id || a.bot?.name === bot.name))?.state || null;
-  const groups = (view?.bots || []).filter((g) => g?.bots?.length).map((g) => {
+  const visible = (view?.bots || []).filter((g) => g?.bots?.length);
+  const names = botNameLabels(visible);
+  const owners = visible.map((g) => g.owner).filter((o) => o && !o.you);
+  const groups = visible.map((g) => {
     const mine = !!g.owner?.you;
+    // The owner's chip on their bots wears the same tint as their circle.
+    const owner = mine ? g.owner : { ...g.owner, color: g.owner?.color || tints.get(g.owner?.address) || undefined };
     const bots = g.bots.map((b) => {
       const state = mine
         ? (working.includes(b.id) ? "working" : waiting.includes(b.id) ? "waiting" : b.id === "atlas" && view?.private ? "coordinates" : "free")
         : live(g.owner, b) || (b.state === "working" ? "working" : "free");
-      return { ...b, state, stateWord: stateWord(state, { mine, owner: g.owner }) };
+      // `shown`: «Vera · de Lucía» when another visible bot is also «Vera»; `a11y`: «Vera, bot de Lucía».
+      return { ...b, state, stateWord: stateWord(state, { mine, owner: g.owner }), shown: names.label(g.owner, b), a11y: botA11yName(b, g.owner), owner: mine ? null : owner };
     });
-    return { owner: g.owner, mine, label: mine ? "Tus bots" : "Bots de " + firstName(g.owner?.name), bots };
+    return { owner, mine, label: mine ? "Tus bots" : "Bots de " + ownerShort(g.owner, owners), bots };
   }).sort((a, b) => Number(b.mine) - Number(a.mine) || byName(a.owner || {}, b.owner || {}));
   return { people, groups, botCount: groups.reduce((n, g) => n + g.bots.length, 0) };
+}
+
+/**
+ * The bots the header draws beside the people: all of them when they are few (five at most),
+ * none when they are more («12 bots» in words, never a misleading handful of shapes).
+ */
+export const HEADER_BOTS = 5;
+export function headerBots(panel) {
+  const all = (panel?.groups || []).flatMap((g) => g.bots.map((b) => ({ ...b, mine: g.mine })));
+  return all.length <= HEADER_BOTS ? all : [];
+}
+
+/**
+ * Someone else's bots in the member panel: a compact row, not a list per person (32 people must
+ * stay readable). The first `max` show; the rest wait behind «Ver los N». {shown, hidden}.
+ */
+export const COMPACT_BOTS = 6;
+export function compactBots(bots = [], open = false, max = COMPACT_BOTS) {
+  if (open || bots.length <= max) return { shown: bots, hidden: 0 };
+  const busy = (b) => (b.state && b.state !== "free" ? 0 : 1);
+  const ordered = [...bots].sort((a, b) => busy(a) - busy(b));
+  return { shown: ordered.slice(0, max - 1), hidden: bots.length - (max - 1) };
 }
 
 /**
@@ -274,11 +308,28 @@ export function roomPlace(view, teams = []) {
 /** The text alternative of the header's avatar stack: names, and who is a person and who a bot. */
 export function stackLabel(panel) {
   const people = panel.people.map((p) => (p.you ? "tú" : p.name));
-  const bots = panel.groups.flatMap((g) => g.bots.map((b) => b.name + (g.mine ? "" : " (de " + firstName(g.owner?.name) + ")")));
+  const bots = panel.groups.flatMap((g) => g.bots.map((b) => b.name + (g.mine ? "" : " (de " + (g.label.replace(/^Bots de /, "") || firstName(g.owner?.name)) + ")")));
   const parts = [];
   if (people.length) parts.push((people.length === 1 ? "Persona: " : "Personas: ") + listNames(people));
-  if (bots.length) parts.push((bots.length === 1 ? "Bot: " : "Bots: ") + listNames(bots));
+  // Many bots: how many, and whose («12 bots: 6 tuyos y 6 de Luis»), not forty names.
+  if (bots.length > HEADER_BOTS) parts.push(`${bots.length} bots: ` + listNames(panel.groups.map((g) => (g.mine ? `${g.bots.length} ${g.bots.length === 1 ? "tuyo" : "tuyos"}` : `${g.bots.length} de ${g.label.replace(/^Bots de /, "")}`))));
+  else if (bots.length) parts.push((bots.length === 1 ? "Bot: " : "Bots: ") + listNames(bots));
   return parts.join(". ");
+}
+
+/* ───────────── «Solo para mí» ───────────── */
+
+/**
+ * The one composer control of every room (critique 2026-11-13, P2): «Solo para mí» means not sent
+ * to anyone, answered by your own bots only, kept on this computer (the aside, which is never
+ * relayed). The same label and meaning in a private room, a shared one you made and one you
+ * were invited to; where your bots have not worked yet (`mission` null) turning it on first makes
+ * the room's sala on this computer (`POST /api/rooms/:id/aside`). {label, hint, available, needsSala}.
+ */
+export const ONLY_ME = "Solo para mí";
+export const ONLY_ME_HINT = "No se envía a nadie: te contestan solo tus bots y se queda en tu ordenador.";
+export function onlyMe({ mission = null, shared = false, gone = false } = {}) {
+  return { label: ONLY_ME, hint: ONLY_ME_HINT, available: !gone && (!!mission || shared), needsSala: !mission && shared };
 }
 
 /* ───────────── inviting ───────────── */
@@ -329,10 +380,19 @@ export function mentionGroups({ view, query = "", limit = 8 } = {}) {
   const group = (label, items) => { if (items.length) out.push({ label, items: items.slice(0, limit) }); };
   const groups = [...(view?.bots || [])].sort((a, b) => Number(!!b.owner?.you) - Number(!!a.owner?.you) || byName(a.owner || {}, b.owner || {}));
   const mine = groups.filter((g) => g.owner?.you).flatMap((g) => g.bots);
-  group("Tus bots", mine.filter((b) => starts(b.name)).map((bot) => ({ type: "bot", key: "bot:" + bot.id, bot })));
+  const owners = groups.map((g) => g.owner).filter((o) => o && !o.you);
+  // «@Vera» typed in full means your Vera (as the server reads it); a teammate's Vera is offered
+  // right after it as the second option: «¿Vera, de Lucía?».
+  const exact = q ? mine.filter((b) => fold(b.name) === q.trim()) : [];
+  const twins = exact.length ? groups.filter((g) => !g.owner?.you).flatMap((g) => g.bots.filter((b) => exact.some((x) => fold(x.name) === fold(b.name))).map((bot) => ({ bot, owner: g.owner }))) : [];
+  const twinKey = (owner, bot) => "peerbot:" + owner.address + ":" + bot.id;
+  group("Tus bots", [
+    ...mine.filter((b) => starts(b.name)).map((bot) => ({ type: "bot", key: "bot:" + bot.id, bot })),
+    ...twins.map(({ bot, owner }) => ({ type: "peerbot", key: twinKey(owner, bot), bot, owner, ask: `¿${bot.name}, de ${ownerShort(owner, owners)}?` })),
+  ]);
   group("Personas", (view?.people || []).filter((p) => !p.you && starts(p.name)).sort(byName).map((person) => ({ type: "person", key: "person:" + person.address, person })));
   for (const g of groups.filter((x) => !x.owner?.you))
-    group("Bots de " + firstName(g.owner?.name), g.bots.filter((b) => starts(b.name)).map((bot) => ({ type: "peerbot", key: "peerbot:" + g.owner.address + ":" + bot.id, bot, owner: g.owner })));
+    group("Bots de " + ownerShort(g.owner, owners), g.bots.filter((b) => starts(b.name) && !twins.some((t) => t.bot === b)).map((bot) => ({ type: "peerbot", key: twinKey(g.owner, bot), bot, owner: g.owner })));
   return out;
 }
 

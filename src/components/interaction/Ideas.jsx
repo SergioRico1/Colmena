@@ -36,7 +36,7 @@ export function SuggestionCard({ s, bots, fallbackCta = "Sí, hazlo" }) {
   const [open, setOpen] = useState(false);
   const { act, busy, error } = useAction();
   const b = botById(bots, s.botId) || botById(bots, "atlas") || { name: "Atlas", color: "#12131A", shape: "hex" };
-  const text = (s.text || "").replace(/^Atlas ha notado\s*(que\s*)?/i, (m, que) => (que ? "que " : ""));
+  const text = (s.text || "").replace(/^\S+ ha notado\s*(que\s*)?/i, (m, que) => (que ? "que " : ""));
   const evidence = Array.isArray(s.evidence) ? s.evidence : [];
   const decide = (decision) =>
     act(async () => {
@@ -48,7 +48,7 @@ export function SuggestionCard({ s, bots, fallbackCta = "Sí, hazlo" }) {
     <div style={{ display: "flex", gap: "12px", padding: "14px 16px", background: "#E7EEFF", border: "1px solid #B4C8FF", borderRadius: "var(--r-lg)" }}>
       <BotPresence bot={b} size={30} />
       <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "10px", fontSize: "var(--t-ui)", lineHeight: "1.45" }}>
-        <span><strong>{"Atlas ha notado"}</strong>{" " + text}</span>
+        <span><strong>{(botById(bots, "atlas")?.name || "Atlas") + " ha notado"}</strong>{" " + text}</span>
         {open && evidence.length ? <Evidence items={evidence} /> : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           <button type="button" disabled={busy} onClick={() => decide("accept")} style={{ height: "38px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" }}>{s.cta || fallbackCta}</button>

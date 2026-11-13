@@ -69,7 +69,7 @@ export default function ArchivoV2({ params = {}, query = {} }) {
             return (
               <a key={t.id} href={`/biblioteca/${t.id}`} aria-current={on ? "page" : undefined} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderBottom: on ? "2px solid #12131A" : undefined, marginBottom: on ? "-1px" : undefined, color: on ? "#12131A" : "#4A4D57", fontSize: "var(--t-body)", fontWeight: on ? "600" : "500" }}>
                 {t.label}
-                {t.id === "habilidades" && pending ? <span aria-label={`${pending} por revisar`} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "#FFC93C", color: "#12131A", fontSize: "var(--t-caption)", fontWeight: "600" }}>{String(pending)}</span> : null}
+                {t.id === "habilidades" && pending ? <span aria-label={`${pending} por revisar`} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.1)", color: "#12131A", fontSize: "var(--t-caption)", fontWeight: "600" }}>{String(pending)}</span> : null}
                 {t.sub ? <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{t.sub}</span> : null}
               </a>
             );

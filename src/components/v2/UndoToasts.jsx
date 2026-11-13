@@ -54,7 +54,7 @@ function Toast({ toast, depth, spread, paused }) {
         color: error ? "#B4372A" : INK, touchAction: "pan-y", cursor: "grab",
       }}>
       <Lead kind={toast.kind} />
-      <span aria-hidden={!front && !spread ? "true" : undefined} style={{ flex: 1, minWidth: 0, fontSize: "var(--t-body)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={toast.text}>{toast.text}</span>
+      <span aria-hidden={!front && !spread ? "true" : undefined} style={{ flex: 1, minWidth: 0, fontSize: "var(--t-body)", fontWeight: 500, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.35 }} title={toast.text}>{toast.text}</span>
       {toast.undo ? (
         <button type="button" onClick={toast.undo} style={{ flex: "none", display: "flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>
           <Undo2 size={15} strokeWidth={2.2} aria-hidden="true" />Deshacer

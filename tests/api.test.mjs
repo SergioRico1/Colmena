@@ -312,7 +312,7 @@ test("onboarding legal creates Leo, adjusts the team and marks onboarded", async
   assert.equal(leo.name, "Leo");
   assert.equal(leo.role, "Asistente legal");
   assert.equal(leo.color, "#0E7C86");
-  assert.equal(leo.shape, "circle");
+  assert.equal(leo.shape, "capsule", "circles are people: Leo is a capsule");
   assert.equal(leo.enabled, true);
   assert.equal(leo.builtin, true);
   for (const b of ["atlas", "leo", "nora", "vera"]) assert.equal(store.get("bots", b).enabled, true, b);

@@ -191,7 +191,7 @@ function InviteCard({ disabled, onAccept }) {
         <>
           <label style={{ display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre de la persona"}</span>
-            <input className="c-quiet" type="text" value={name} maxLength={80} disabled={disabled} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: "1", minWidth: "0", height: "40px", padding: "0 12px", border: "0", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.08)", color: "#FFFFFF", fontSize: "var(--t-ui)" }} />
+            <input className="c-quiet c-on-dark" type="text" value={name} maxLength={80} disabled={disabled} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: "1", minWidth: "0", height: "40px", padding: "0 12px", border: "0", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.08)", color: "#FFFFFF", fontSize: "var(--t-ui)" }} />
           </label>
           <button type="button" disabled={disabled || !name.trim() || busy} onClick={make} style={{ ...white, opacity: disabled || !name.trim() ? 0.6 : 1 }}>{busy ? "Creando…" : "Crear la invitación"}</button>
         </>

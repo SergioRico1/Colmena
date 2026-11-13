@@ -21,6 +21,8 @@ import LinkPreviewLayer from "./components/room/LinkPreview.jsx";
 import ConnectionStatus from "./components/ConnectionStatus.jsx";
 import UpdateNotice from "./components/UpdateNotice.jsx";
 import UndoToasts from "./components/v2/UndoToasts.jsx";
+import { reversible } from "./lib/undoToast.js";
+import { post } from "./lib/api.js";
 import { listenForNoticeSounds } from "./lib/noticeSounds.js";
 import { installDragOut } from "./lib/dragOut.js";
 import { watchFocusModality } from "./lib/focusModality.js";
@@ -61,6 +63,14 @@ function App() {
     if (ready && settings.onboarded === false && !OPEN_BEFORE_ONBOARDING.has(route?.screen)) navigate("/bienvenida", { replace: true });
   }, [ready, settings.onboarded, route, pathname]);
   useEffect(preloadScreens, []);
+  // After an update your bots got colours of their own (server/bot-looks.mjs): said once, quietly,
+  // with «Deshacer» (the factory colours back).
+  const looksNotice = ready && settings.onboarded !== false && !!settings.botLooks?.notice;
+  useEffect(() => {
+    if (!looksNotice) return;
+    post("/bots/looks/seen").catch(() => {});
+    reversible({ id: "bot-looks", text: "Tus bots tienen colores propios para que tus compañeros los distingan de los suyos", ms: 15000, undo: () => post("/bots/looks/undo") });
+  }, [looksNotice]);
   // «Pregunta rápida» is its own small window: just the card, no chrome or app overlays.
   if (route?.screen === "QuickAsk") return <Suspense fallback={null}><Screen params={params} query={query} /></Suspense>;
   return (

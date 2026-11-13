@@ -165,8 +165,9 @@ test("every count is that list or a filter of it: Inicio, the sidebar, Trabajo, 
   // Trabajo lists tasks only: its column counts the part of the list that is in tasks and says so.
   const tasks = state.missions.filter((m) => !m.conversation && m.status !== "cancelled" && !m.archived && needsYou(m));
   assert.deepEqual(tasks.map((m) => m.id).sort(), ["m-plan", "m-task"]);
-  assert.deepEqual(countIn(tasks, total), { here: 3, total: 7, more: true, text: "3 de 7" });
-  assert.deepEqual(countIn(state.missions, 5), { here: 6, total: 5, more: false, text: "6" });
+  // Its number is the cards it shows, exactly; it links to the whole list («ver las 7»).
+  assert.deepEqual(countIn(tasks, total), { here: 2, total: 7, more: true, text: "2", link: "ver las 7", label: "2 tareas te esperan; en total te esperan 7 cosas" });
+  assert.deepEqual(countIn(tasks, 2), { here: 2, total: 2, more: false, text: "2", link: null, label: "2 tareas te esperan (3 cosas)" });
 
   // Equipo: a bot's «te espera» is the list filtered by bot; the server's own word agrees.
   const { bots } = waitingBy(waitingOf(state));

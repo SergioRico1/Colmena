@@ -9,6 +9,7 @@ import { findBot } from "../components/room/common.jsx";
 import { svgSrc } from "../components/room/ArtifactPanel.jsx";
 import { plain } from "../components/room/Markdown.jsx";
 import { cancel, schedule, useUndoable } from "../lib/undoable.js";
+import { coordinatorOf } from "../lib/bots.js";
 
 // Colmena 3 · «Elegir propuesta» (design/V3Propuestas.dc.html): each bot's idea as a card with
 // what the others think, Atlas's advice on top («Seguir su consejo»); «Elegir la A» takes one,
@@ -27,6 +28,7 @@ const shorten = (t, n) => (t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, "
 export default function DebateV2({ params = {} }) {
   const id = params.id;
   const { bots, ready } = useStore();
+  const coord = coordinatorOf(bots);
   const room = useRoom(id);
   const { mission, proposals, steps, messages } = room;
   const [marked, setMarked] = useState([]);
@@ -69,14 +71,14 @@ export default function DebateV2({ params = {} }) {
 
   let barText = deciding ? "Elige una, o marca dos con «Combinar»." : decidedBefore ? "Ya elegiste. El equipo sigue en la sala." : "Los bots aún están preparando sus propuestas.";
   if (marked.length === 1) barText = `Marca otra para combinarla con la ${marked[0]}.`;
-  if (marked.length === 2) barText = `Combinar la ${marked[0]} y la ${marked[1]}: Atlas te preguntará qué tomas de cada una.`;
+  if (marked.length === 2) barText = `Combinar la ${marked[0]} y la ${marked[1]}: ${coord} te preguntará qué tomas de cada una.`;
   if (chosen) {
     barText = chosen.length === 1
-      ? `Elegiste la ${chosen[0]}. Atlas avisa a ${nameOf(chosen[0])} para prepararla.`
+      ? `Elegiste la ${chosen[0]}. ${coord} avisa a ${nameOf(chosen[0])} para prepararla.`
       : `Combinas la ${chosen[0]} y la ${chosen[1]}. ${nameOf(chosen[0])} y ${nameOf(chosen[1])} se ponen juntos con ello.`;
     if (undo.waiting) barText += ` Se confirma en ${undo.secs} s.`;
   }
-  const atlasLead = advised.length ? `Atlas recomienda la ${advised.join(" y la ")}:` : "Atlas te resume:";
+  const atlasLead = advised.length ? `${coord} recomienda la ${advised.join(" y la ")}:` : `${coord} te resume:`;
 
   return (
     <Shell active="chats">
@@ -92,12 +94,12 @@ export default function DebateV2({ params = {} }) {
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <h1 style={{ margin: 0, font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{proposals.length ? `${COUNT[proposals.length] || proposals.length + " ideas"} para «${mission.title}»` : mission.title}</h1>
           <p style={{ margin: 0, maxWidth: "760px", fontSize: "var(--t-read)", lineHeight: "1.5", color: "#4A4D57" }}>
-            {first ? `Pediste «${shorten(String(first.text).replace(/\s+/g, " "), 140)}». ` : ""}{"Cada bot propuso una idea, los demás la criticaron y Atlas te resume. Elige una, o marca dos para combinarlas."}
+            {first ? `Pediste «${shorten(String(first.text).replace(/\s+/g, " "), 140)}». ` : ""}{`Cada bot propuso una idea, los demás la criticaron y ${coord} te resume. Elige una, o marca dos para combinarlas.`}
           </p>
         </header>
 
         {synthesis ? (
-          <section aria-label="Recomendación de Atlas" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 24px", padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "#12131A", color: "#FFFFFF" }}>
+          <section aria-label={"Recomendación de " + coord} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 24px", padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "#12131A", color: "#FFFFFF" }}>
             <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", background: "#FFFFFF", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
             <p style={{ flex: "1 1 420px", margin: 0, fontSize: "var(--t-read)", lineHeight: "1.55", color: "#E6E7EC" }}><strong style={{ color: "#FFFFFF", fontWeight: 600 }}>{atlasLead}</strong>{" " + shorten(plain(synthesis).replace(/\s+/g, " "), 420)}</p>
             {advised.length && deciding && !chosen ? <button type="button" onClick={() => (advised.length === 1 ? decide(advised) : setMarked(advised))} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Seguir su consejo"}</button> : null}

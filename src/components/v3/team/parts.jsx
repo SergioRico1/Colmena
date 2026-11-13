@@ -87,3 +87,7 @@ export const AUTONOMY = [
   ["solo", "Hace solo", "Solo te molesta para las líneas rojas."],
 ];
 export const autonomyLabel = (id) => (AUTONOMY.find((a) => a[0] === id) || AUTONOMY[1])[1];
+export const autonomyHint = (id) => (AUTONOMY.find((a) => a[0] === id) || AUTONOMY[1])[2];
+/** The usual level («Hace y te avisa») goes without saying on a bot's card; the others are said. */
+export const DEFAULT_AUTONOMY = "avisa";
+export const autonomyShown = (id) => (id || DEFAULT_AUTONOMY) !== DEFAULT_AUTONOMY;

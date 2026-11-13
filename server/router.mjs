@@ -78,8 +78,8 @@ export function coordinationAsk(text) {
   const t = fold(text);
   if (COORDINATE.some((re) => re.test(t))) return "Pides repartir o coordinar el trabajo";
   const points = String(text || "").split("\n").filter((l) => /^\s*(?:[-*•]|\d+[.)])\s+\S/.test(l)).length;
-  if (points >= 3) return "Son varias partes: Atlas las reparte";
-  if (new Set(t.match(DELIVERABLE) || []).size >= 3) return "Pides varias entregas: Atlas las reparte";
+  if (points >= 3) return "Son varias partes: el coordinador las reparte";
+  if (new Set(t.match(DELIVERABLE) || []).size >= 3) return "Pides varias entregas: el coordinador las reparte";
   return null;
 }
 

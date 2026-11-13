@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { id, now } from "./store.mjs";
+import { coordinatorName } from "./bot-looks.mjs";
 
 // «Objetivos con hitos» (inspirado en OpenMuse Goal/milestones y OpenClaw /goal).
 //
@@ -37,7 +38,7 @@ export const GOAL_STATUSES = ["active", "paused", "done"];
 const MISSION_DONE = ["completed"];
 const MISSION_CLOSED = ["completed", "cancelled"];
 const MISSION_LABEL = {
-  queued: "En cola", planning: "Atlas prepara el plan", awaiting_plan: "Espera que apruebes el plan", running: "En marcha",
+  queued: "En cola", planning: "Preparando el plan", awaiting_plan: "Espera que apruebes el plan", running: "En marcha",
   waiting: "Te espera", paused: "En pausa", blocked: "Bloqueada", awaiting_choice: "Elige una propuesta",
   completed: "Terminada", cancelled: "Cancelada",
 };
@@ -304,7 +305,7 @@ function modelOf(runtime, store) {
   } catch {}
   return settings.model || local || first || "";
 }
-const NO_ACCOUNT = "Conecta una cuenta de IA en Ajustes › Cuentas de IA para que Atlas pueda proponer los hitos.";
+const NO_ACCOUNT = "Conecta una cuenta de IA en Ajustes › Cuentas de IA para que el coordinador pueda proponer los hitos.";
 
 function parseJson(text) {
   const raw = String(text || "").trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
@@ -338,7 +339,7 @@ export async function proposeMilestones(store, runtime, goal) {
   const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const bots = store.list("bots").filter((b) => b.enabled !== false).map((b) => ({ nombre: b.name, rol: b.role }));
   const instructions =
-    "Eres Atlas, coordinador de Colmena. Una persona no técnica quiere conseguir un objetivo. Propón entre 3 y 6 hitos " +
+    "Eres " + coordinatorName(store) + ", coordinador de Colmena. Una persona no técnica quiere conseguir un objetivo. Propón entre 3 y 6 hitos " +
     "concretos y comprobables, en el orden en que se harán. Cada hito empieza por un verbo, tiene como máximo 90 caracteres " +
     "y se puede encargar al equipo como una misión o hacer la propia persona. Si el objetivo tiene fecha límite, reparte las fechas " +
     "antes de ella; si no, propón fechas realistas desde hoy o deja dueAt vacío. No repitas hitos que ya existan. " +
@@ -352,7 +353,7 @@ export async function proposeMilestones(store, runtime, goal) {
   });
   const result = await infer({ model, instructions, input: [{ role: "user", content: input }], tools: [], signal: AbortSignal.timeout(90000) });
   const parsed = draftShape.safeParse(parseJson(result?.text));
-  const invalid = "Atlas no pudo proponer hitos válidos. Vuelve a intentarlo o añádelos a mano.";
+  const invalid = coordinatorName(store) + " no pudo proponer hitos válidos. Vuelve a intentarlo o añádelos a mano.";
   if (!parsed.success) throw httpError(422, invalid);
   const existing = new Set((goal.milestones || []).map((m) => normalize(m.title)));
   const seen = new Set();
@@ -599,7 +600,7 @@ export function registerGoalRoutes(app, { store, runtime = null } = {}) {
     if (data.milestones) chosen = data.milestones; // the person edited the draft
     else if (data.indexes) chosen = [...new Set(data.indexes)].sort((a, b) => a - b).map((i) => draft[i]).filter(Boolean);
     else chosen = draft;
-    if (!draft.length && !data.milestones) throw httpError(409, "No hay ninguna propuesta de Atlas pendiente.");
+    if (!draft.length && !data.milestones) throw httpError(409, "No hay ninguna propuesta de hitos pendiente.");
     if (!chosen.length) throw httpError(400, "Elige al menos un hito.");
     if ((goal.milestones || []).length + chosen.length > 30) throw httpError(422, "Un objetivo admite como máximo 30 hitos.");
     const saved = store.patch("goals", goal.id, (old) => ({

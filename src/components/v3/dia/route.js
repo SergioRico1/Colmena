@@ -28,12 +28,12 @@ export function likelyBot(text, bots) {
 export function routeOf(text, bots, picked = null) {
   const on = bots.filter((b) => b.enabled !== false);
   const atlas = on.find((b) => b.id === "atlas") || ATLAS_FALLBACK;
-  if (picked) return { bot: picked, solo: picked.id !== "atlas", text: picked.id === "atlas" ? "Atlas decide quién lo hace" : `Se lo pides a ${picked.name}` };
+  if (picked) return { bot: picked, solo: picked.id !== "atlas", text: picked.id === "atlas" ? `${picked.name} decide quién lo hace` : `Se lo pides a ${picked.name}` };
   const t = String(text || "").trim();
   const named = mentionedBots(t, on).filter((b) => b.id !== "atlas");
   if (named.length === 1) return { bot: named[0], solo: true, text: `${named[0].name} se encargará` };
-  if (named.length > 1) return { bot: atlas, solo: false, ids: named.map((b) => b.id), text: "Atlas lo repartirá entre " + named.map((b) => b.name).join(" y ") };
+  if (named.length > 1) return { bot: atlas, solo: false, ids: named.map((b) => b.id), text: atlas.name + " lo repartirá entre " + named.map((b) => b.name).join(" y ") };
   const likely = likelyBot(t, on);
   if (likely) return { bot: likely, solo: true, text: `${likely.name} se encargará` };
-  return { bot: atlas, solo: false, text: "Atlas decide quién lo hace" };
+  return { bot: atlas, solo: false, text: atlas.name + " decide quién lo hace" };
 }

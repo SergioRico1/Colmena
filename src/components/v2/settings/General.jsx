@@ -10,7 +10,7 @@ const ROLES = ["Administrador", "Dirección", "Responsable de equipo", "Ventas",
 // Only the shortcuts that exist (Sidebar.jsx, CommandPalette.jsx, the desktop app, Layout.jsx).
 const KEYS = [
   ["Buscar o pedir", "Ctrl K"], ["Nuevo", "Ctrl N"],
-  ["Ir a Inicio … Biblioteca", "Ctrl 1 – 6"], ["Plegar la barra", "Ctrl B"],
+  ["Ir a Inicio … Biblioteca", "Ctrl 1 – 5"], ["Plegar la barra", "Ctrl B"],
   ["Deshacer lo último", "Ctrl Z"], ["Modo experto", "Ctrl ⇧ E"],
   ["Pregunta rápida", "Alt Espacio"], ["Buscar un ajuste", "/"],
 ];
@@ -42,11 +42,11 @@ export default function GeneralSection() {
           on={expert} onChange={toggleExpert} />
         <SwitchRow anchor="narracion" title="Te cuentan en qué están" sub="Una frase mientras trabajan: «Leyendo tus correos de hoy…»." on={settings.narration !== false} onChange={flip("narration", "Te cuentan en qué están")} />
         <SwitchRow anchor="sugerencias" title="Respuestas sugeridas" sub="Hasta tres respuestas listas para pulsar bajo la última pregunta." on={settings.suggestions !== false} onChange={flip("suggestions", "Respuestas sugeridas")} />
-        <SwitchRow anchor="quien-responde" title="Elegir solo quién responde en las salas" sub="Si no nombras a nadie, responde el bot al que le toca. Apagado, responde siempre Atlas." on={settings.routing !== false} onChange={flip("routing", "Elegir solo quién responde")} />
-        <Row anchor="quien-usa" title="Quién usa este ordenador" sub="Quién firma lo que se aprueba aquí y a quién se asignan tareas.">
+        <SwitchRow anchor="quien-responde" title="Elegir solo quién responde en las salas" sub="Si no nombras a nadie, responde el bot al que le toca. Apagado, responde siempre el bot que coordina." on={settings.routing !== false} onChange={flip("routing", "Elegir solo quién responde")} />
+        <Row anchor="quien-usa" title="Quién usa este ordenador" sub="Las personas que comparten este mismo ordenador: quién firma lo que se aprueba aquí y a quién se asignan tareas.">
           <Go to="/ajustes/quien-usa" style={btn("outline", 36)}>Ver la lista</Go>
         </Row>
-        <Row anchor="personas" title="Personas" sub="Con quién hablas desde Colmena: invitaciones, tu estado y lo que pueden pedir a tus bots.">
+        <Row anchor="personas" title="Contactos y equipos" sub="Las personas con las que hablas desde Colmena, en otros ordenadores: invitaciones, tu estado y lo que pueden pedir a tus bots.">
           <Go to="/ajustes/contactos" style={btn("outline", 36)}>Abrir</Go>
         </Row>
       </Card>

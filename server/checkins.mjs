@@ -96,7 +96,7 @@ export async function runCheckin({ store, infer, models, notifier, at = Date.now
   const model = cheapestModel(models);
   if (!model) { save({ lastResult: "error", lastError: "La cuenta aún no ofrece modelos." }); return { ran: false, notified: false, reason: "sin modelos" }; }
   // A failed call also counts as «checked», so the next try waits for the next interval.
-  const result = await Promise.resolve().then(() => infer({ model, instructions: CHECKIN_INSTRUCTIONS, input: [{ role: "user", content: JSON.stringify(snapshot) }], tools: [], reasoning: { effort: "low" }, timeoutMs: 60000 }, { botId: "atlas" }))
+  const result = await Promise.resolve().then(() => infer({ model, instructions: CHECKIN_INSTRUCTIONS.replace(/^Eres Atlas,/, "Eres " + (store.get("bots", "atlas")?.name || "Atlas") + ","), input: [{ role: "user", content: JSON.stringify(snapshot) }], tools: [], reasoning: { effort: "low" }, timeoutMs: 60000 }, { botId: "atlas" }))
     .catch((error) => { save({ signature: prev.signature || null, lastResult: "error", lastError: String(error.message || error).slice(0, 200), model }); throw error; });
   let decision = {};
   try { decision = JSON.parse(String(result?.text || "").trim().replace(/^```(?:json)?\s*|\s*```$/g, "")); } catch { decision = {}; }

@@ -16,11 +16,12 @@ import { statusText } from "../../lib/peers.js";
 import { failure } from "../../lib/undoToast.js";
 import { realTeams } from "../../lib/teams.js";
 import WorkingDots from "../room/Dots.jsx";
-import { STATE_WORD, STATUS_WORD, conversationPath, foldRooms, rememberConversation, rowLabel, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
+import { STATE_WORD, STATUS_WORD, conversationPath, foldBots, foldRooms, rememberConversation, rowLabel, scrollFade, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
+import { selfName } from "../../lib/ownName.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md): it names who you
 // talk to. Top to bottom: your team (or «Solo tú»), «Nuevo» (Ctrl N) and «Buscar o pedir»
-// (Ctrl K), five places (Ctrl 1–5), and three live groups — Salas, Bots, Personas — that fold
+// (Ctrl K), five places (Ctrl 1–5), and three live groups — Salas, Personas, Bots — that fold
 // and remember it; at the foot, you, one line of activity and the «Modo experto» switch
 // (Ctrl Shift E). Ctrl B folds it to a rail of icons and avatars. Honey only marks what waits
 // for you; unread is bold with a neutral count. The rows come from src/lib/sidebar.js.
@@ -45,6 +46,8 @@ const NEW_ITEMS = [
   { id: "bot", label: "Bot", hint: "Un compañero nuevo", href: "/equipo/nuevo", icon: "M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z" },
   { id: "codigo", label: "Tarea de código", hint: "En uno de tus proyectos", href: "/codigo", icon: "m18 16 4-4-4-4M6 8l-4 4 4 4" },
 ];
+// «Nuevo» shows four (the most used: a chat, a room, a task, a routine); «Más…» unfolds the rest.
+export const NEW_FIRST = ["chat", "sala", "tarea", "rutina"];
 
 const INK = "#12131A", TEXT = "#3D404A", MUTED = "#5C606C", HONEY = "#FFC93C";
 const kbd = { font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: MUTED };
@@ -60,7 +63,7 @@ const initials = (name) => String(name || "Tú").trim().split(/\s+/).slice(0, 2)
 const GROUPS_KEY = "colmena:sidebar-groups";
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const writeJson = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
-let allRooms = false, scrolled = 0;
+let allRooms = false, allBots = false, scrolled = 0;
 
 /** Turns an address you pinned that no group shows (a Código task, a bot's page) into a row. */
 function pinnedEntry(href, { bots }) {
@@ -94,11 +97,23 @@ export default function Sidebar({ active = "inicio" }) {
   const here = conversationPath(pathname);
   const [expert, setExpert] = useExpert();
   const [menu, setMenu] = useState(null); // "new" | "team"
+  const [moreNew, setMoreNew] = useState(false);
+  useEffect(() => { if (menu !== "new") setMoreNew(false); }, [menu]);
+  // Ctrl+K's «Nuevo…» opens this same menu (the palette shows its shortcut, Ctrl N).
+  useEffect(() => {
+    const open = () => setMenu("new");
+    window.addEventListener("colmena:new", open);
+    return () => window.removeEventListener("colmena:new", open);
+  }, []);
   const [sheet, setSheet] = useState(null); // "chat" | "sala" | "invitar" | "aceptar"
   const [teamSheet, setTeamSheet] = useState(null); // {kind: "create" | "join" | "invite", team?} (team/TeamSheets.jsx)
   const [folded, setFoldedState] = useState(!!settings.sidebarFolded);
   const [closed, setClosed] = useState(() => readJson(GROUPS_KEY, {}));
   const [showAll, setShowAll] = useState(allRooms);
+  const [showBots, setShowBots] = useState(allBots);
+  // A fade where the list goes under the pinned top (Nuevo, Buscar) and over the pinned foot.
+  const [fade, setFade] = useState(null);
+  const measure = () => { const box = scroller.current; if (box) setFade(scrollFade({ top: box.scrollTop, height: box.scrollHeight, client: box.clientHeight })); };
   const newRef = useRef(null), teamRef = useRef(null), scroller = useRef(null);
   useEffect(() => setFoldedState(!!settings.sidebarFolded), [settings.sidebarFolded]);
   const setFolded = (v) => { setFoldedState(v); run(() => patch("/settings", { sidebarFolded: v })).catch(() => {}); };
@@ -115,6 +130,7 @@ export default function Sidebar({ active = "inicio" }) {
     if (a.top < b.top || a.bottom > b.bottom) row.scrollIntoView({ block: "nearest" });
   }, [folded, here]);
 
+
   // The team comes from the state (`teams`, the same list as GET /api/teams; kept live by
   // /api/events like everything else). Alone, the server sends one «solo» entry: that is no team.
   const teams = useMemo(() => realTeams(store.teams), [store.teams]);
@@ -124,6 +140,8 @@ export default function Sidebar({ active = "inicio" }) {
   const model = useMemo(() => sidebarModel(store, { team: team.id }), [store, team.id]);
   const rooms = foldRooms(model.rooms, { current: here, all: showAll });
   const canFold = showAll ? foldRooms(model.rooms, { current: here }).hidden > 0 : rooms.hidden > 0;
+  const botsFold = foldBots(model.bots, { current: here, all: showBots });
+  const canFoldBots = showBots ? foldBots(model.bots, { current: here }).hidden > 0 : botsFold.hidden > 0;
   const botOf = (id) => bots.find((b) => b.id === id) || null;
   const calm = reducedMotion();
   const peopleOff = !peers || peers.relay?.status === "off"; // no mailbox: nobody to invite yet
@@ -132,11 +150,21 @@ export default function Sidebar({ active = "inicio" }) {
   const usage = useResource(expert ? "/usage/overview?days=1" : null);
   const today = usage?.data?.total;
   const tokensLine = expert && today ? `${new Intl.NumberFormat("es-ES", { notation: "compact" }).format(today.tokens || 0)} tokens hoy${today.cachePercent != null ? ` · caché ${today.cachePercent} %` : ""}` : null;
-  const userName = settings.userName || "Tú";
+  const userName = selfName(store);
   const myStatus = peers?.me ? statusText(peers.me.status?.mode && peers.me.status.mode !== "available" ? peers.me.status : null) || "Disponible" : "Ajustes y cuenta";
 
   const toggleGroup = (id) => setClosed((c) => { const next = { ...c, [id]: !c[id] }; writeJson(GROUPS_KEY, next); return next; });
   const toggleAll = () => { allRooms = !showAll; setShowAll(allRooms); };
+  const toggleBots = () => { allBots = !showBots; setShowBots(allBots); };
+  useEffect(() => {
+    const box = scroller.current;
+    if (!box || typeof ResizeObserver === "undefined") return undefined;
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    for (const child of box.children) ro.observe(child);
+    return () => ro.disconnect();
+  }, [folded, model.rooms.length, model.people.length, model.bots.length, showAll, showBots, closed]); // eslint-disable-line react-hooks/exhaustive-deps
   // The team the bar shows is kept by the server (PUT /api/teams/current), the same in every window.
   const pickTeam = (id) => {
     setMenu(null);
@@ -203,12 +231,18 @@ export default function Sidebar({ active = "inicio" }) {
   const noDrag = { WebkitAppRegion: "no-drag" };
   const newMenu = menu === "new" ? (
     <div role="menu" aria-label="Crear algo nuevo" onKeyDown={menuKeys} style={{ ...menuBox, top: "46px", right: folded ? "auto" : "-6px", width: folded ? "260px" : "auto" }}>
-      {NEW_ITEMS.map((n) => (
+      {NEW_ITEMS.filter((n) => moreNew || NEW_FIRST.includes(n.id)).map((n) => (
         <button key={n.id} type="button" role="menuitem" onClick={() => pick(n)} className="v3-menuitem" style={{ ...menuItem, minHeight: "44px", fontWeight: "400" }}>
           <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "#F1F1EC" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={n.icon} /></svg></span>
           <span style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{n.label}</span><span style={{ fontSize: "var(--t-caption)", color: MUTED }}>{n.hint}</span></span>
         </button>
       ))}
+      {moreNew ? null : (
+        <button type="button" role="menuitem" aria-expanded="false" onClick={(e) => { const box = e.currentTarget.parentElement; setMoreNew(true); requestAnimationFrame(() => box?.querySelectorAll("[role^=menuitem]")[NEW_FIRST.length]?.focus()); }} className="v3-menuitem" style={{ ...menuItem, minHeight: "36px", color: MUTED }}>
+          <span aria-hidden="true" style={{ flex: "none", width: "28px", textAlign: "center" }}>{"···"}</span>
+          {`Más: ${NEW_ITEMS.filter((n) => !NEW_FIRST.includes(n.id)).map((n) => n.label.toLowerCase()).join(", ")}`}
+        </button>
+      )}
     </div>
   ) : null;
 
@@ -292,7 +326,7 @@ export default function Sidebar({ active = "inicio" }) {
     const bot = { ...(botOf(b.id) || b), shape: b.shape };
     return (
       <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={rowStyle(on, 44)}>
-        <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center" }}><BotPresence bot={bot} size={20} state={calm ? "rest" : b.state === "working" ? "work" : "rest"} /></span>
+        <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center" }}><BotPresence bot={bot} size={20} state={calm ? "rest" : b.state === "working" || b.busy ? "work" : "rest"} /></span>
         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
           <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ ...ellipsis, fontWeight: b.unread ? "700" : "500", color: INK }}>{b.name}</span>
@@ -338,13 +372,13 @@ export default function Sidebar({ active = "inicio" }) {
     <>
       <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "1px", margin: "6px 0", background: "rgba(18,19,26,.1)" }} />
       <button type="button" onClick={() => setFolded(false)} aria-label={["Salas", `${model.rooms.length}`, roomsNew.unread ? `${roomsNew.unread} sin leer` : null, roomsNew.waiting ? "te esperan" : null, "desplegar la barra"].filter(Boolean).join(", ")} title="Salas" className="v3-hover" style={{ ...railTile, font: "600 var(--t-read)/1 'Geist', sans-serif" }}>{"#"}{roomsNew.waiting ? railDot(true) : roomsNew.unread ? railDot(false) : null}</button>
-      {model.bots.map((b) => {
-        const on = b.href === here;
-        return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={calm ? "rest" : b.state === "working" ? "work" : "rest"} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
-      })}
       {model.people.map((p) => {
         const on = p.href === here;
         return <a key={p.id} href={p.href} aria-label={rowLabel("person", p)} title={[p.name, p.status ? STATUS_WORD[p.status] : null].filter(Boolean).join(" · ")} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><PersonMark person={p} size={24} ring={on ? "#FFFFFF" : "#ECECE7"} />{p.waiting ? railDot(true) : p.unread ? railDot(false) : null}</a>;
+      })}
+      {model.bots.map((b) => {
+        const on = b.href === here;
+        return <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} title={`${b.name} · ${STATE_WORD[b.state]}`} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><BotPresence bot={{ ...(botOf(b.id) || b), shape: b.shape }} size={20} state={calm ? "rest" : b.state === "working" || b.busy ? "work" : "rest"} />{b.waiting ? railDot(true) : b.unread ? railDot(false) : null}</a>;
       })}
     </>
   );
@@ -373,14 +407,6 @@ export default function Sidebar({ active = "inicio" }) {
         </div>
       )}
 
-      {groupHead("bots", "Bots", model.bots.length, "Nuevo bot", () => navigate("/equipo/nuevo"), { unread: sum(model.bots, "unread"), waiting: sum(model.bots, "waiting") })}
-      {closed.bots ? null : (
-        <div id="v3-group-bots" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-          {model.bots.map(botRow)}
-          {model.bots.length ? null : empty("Aún no tienes bots. Crea el primero con el +.")}
-        </div>
-      )}
-
       {groupHead("personas", "Personas", model.people.length, "Invitar a una persona", () => (peopleOff ? navigate("/ajustes/contactos") : setSheet("invitar")), { unread: sum(model.people, "unread"), waiting: sum(model.people, "waiting") })}
       {closed.personas ? null : (
         <div id="v3-group-personas" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
@@ -388,6 +414,17 @@ export default function Sidebar({ active = "inicio" }) {
           {model.people.length ? null : empty(team.solo ? "Aquí verás a las personas con las que hablas a solas. Invita a alguien con el +." : "Aún no hay mensajes directos. Escribe a alguien desde Equipo.")}
         </div>
       )}
+      {groupHead("bots", "Bots", model.bots.length, "Nuevo bot", () => navigate("/equipo/nuevo"), { unread: sum(model.bots, "unread"), waiting: sum(model.bots, "waiting") })}
+      {closed.bots ? null : (
+        <div id="v3-group-bots" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+          {botsFold.shown.map(botRow)}
+          {model.bots.length ? null : empty("Aún no tienes bots. Crea el primero con el +.")}
+          {canFoldBots ? (
+            <button type="button" onClick={toggleBots} aria-expanded={showBots} className="v3-hover" style={{ flex: "none", height: "28px", display: "flex", alignItems: "center", padding: "0 10px 0 38px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", color: MUTED, fontSize: "var(--t-meta)", fontWeight: "500", textAlign: "left", cursor: "pointer" }}>{showBots ? "Ver menos" : `Ver todos (${model.bots.length})`}</button>
+          ) : null}
+        </div>
+      )}
+
     </>
   );
 
@@ -434,14 +471,14 @@ export default function Sidebar({ active = "inicio" }) {
       </div>
 
       {/* The only part that scrolls: the places and the groups. The window never does. */}
-      <div ref={scroller} onScroll={(e) => { scrolled = e.currentTarget.scrollTop; }} className="v3-scroll" style={{ flex: "1", minHeight: "0", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", gap: "2px", margin: "0 -6px", padding: "2px 6px 8px", overflowY: "auto", overflowX: "hidden", overscrollBehavior: "contain", ...noDrag }}>
+      <div ref={scroller} onScroll={(e) => { scrolled = e.currentTarget.scrollTop; measure(); }} className="v3-scroll" style={{ flex: "1", minHeight: "0", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", gap: "2px", margin: "0 -6px", padding: "2px 6px 8px", overflowY: "auto", overflowX: "hidden", overscrollBehavior: "contain", ...(fade ? { WebkitMaskImage: fade, maskImage: fade } : {}), ...noDrag }}>
         {places}
         {folded ? rail : groups}
       </div>
 
       <div style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", gap: "2px", paddingTop: "8px", borderTop: "1px solid rgba(18,19,26,.08)", ...noDrag }}>
         <a href="/ajustes" aria-current={current === "ajustes" ? "page" : undefined} aria-label={`${userName}, ${myStatus}. Ajustes`} title={folded ? "Ajustes y cuenta" : undefined} className={current === "ajustes" ? undefined : "v3-hover"} style={{ height: "44px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0 6px" : "0 8px", borderRadius: "var(--r-md)", background: current === "ajustes" ? "#FFFFFF" : "transparent", color: INK, textDecoration: "none" }}>
-          <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#E6E7EC", color: INK, fontSize: "var(--t-micro)", fontWeight: "600" }}>{initials(userName)}</span>
+          <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: settings.botLooks?.family?.tint || "#E6E7EC", color: INK, fontSize: "var(--t-micro)", fontWeight: "600" }}>{initials(userName)}</span>
           {folded ? null : <>
             <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600", ...ellipsis, flex: "none" }}>{userName}</span><span style={{ fontSize: "var(--t-caption)", color: MUTED, ...ellipsis, flex: "none" }}>{myStatus}</span></span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 4.5v5M10 14.5v5" /></svg>

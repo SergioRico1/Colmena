@@ -12,6 +12,7 @@ import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import PeopleIntro from "../people/PeopleIntro.jsx";
 import NewRoomSheet from "../../v3/team/NewRoomSheet.jsx";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
+import { coordinatorOf } from "../../../lib/bots.js";
 
 // «Chats» column of Colmena 2.0 (the boards call the place «Conversaciones»; the rail fits one line) (design/V2Conversacion.dc.html): rooms (#) and chats
 // with each bot in one list, newest first; the current one as a white piece; a honey dot when
@@ -164,9 +165,9 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
   const peopleItems = contacts.filter((c) => match(c.name));
   const hint = withPeople
     ? (chosenPeople.length === 1 ? `Conversación con ${chosenPeople[0].name}. Solo la leéis vosotros dos.` : `Una conversación con ${chosenPeople.length} personas y tú. Solo la leéis quienes estéis en ella.`)
-    : !chosen.length ? (salaMode ? "Elige los bots de la sala. Atlas coordina y todos lo veis aquí." : "Elige un bot o una persona. Si añades otro más, se convertirá en una sala.")
+    : !chosen.length ? (salaMode ? `Elige los bots de la sala. ${coordinatorOf(bots)} coordina y todos lo veis aquí.` : "Elige un bot o una persona. Si añades otro más, se convertirá en una sala.")
       : chosen.length === 1 && !salaMode ? `Conversación privada con ${chosen[0].name}. Solo la veréis tú y ${chosen[0].name}.`
-        : `Será una sala con ${chosen.length === 1 ? "1 bot" : chosen.length + " bots"}${chosen.some((b) => b.id === "atlas") ? "" : " (Atlas coordina)"}. Escribe tu primer mensaje y empiezan.`;
+        : `Será una sala con ${chosen.length === 1 ? "1 bot" : chosen.length + " bots"}${chosen.some((b) => b.id === "atlas") ? "" : ` (${coordinatorOf(bots)} coordina)`}. Escribe tu primer mensaje y empiezan.`;
   const go = async () => {
     if (withPeople) {
       if (busy) return;

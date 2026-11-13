@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, FolderOpen, Globe, ListChecks, Lock, MessageCircleQuestion, MessageSquareReply, MessagesSquare, SquareTerminal, Users } from "lucide-react";
+import { FileText, FolderOpen, Globe, ListChecks, Lock, MessageSquareReply, MessagesSquare, SquareTerminal, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
 import { BotMark } from "../components/v2/chat/Mark.jsx";
@@ -24,7 +24,7 @@ import AsidePanel, { askAsideAbout } from "../components/room/AsidePanel.jsx";
 import SelectionPopup, { quoteInto } from "../components/room/SelectionPopup.jsx";
 import { BlockerBand, StuckBand, RepliesPanel, ProgressPanel, RoomComposer, RoomMessages, ThreadPanel, typingInfo, withOrphanQuestions, OlderMessages } from "../components/room/RoomParts.jsx";
 import { CatchUp, NewRoom, RulesPanel, useSince } from "../components/room/RoomExtras.jsx";
-import { HandoffLine, PersonAvatar, StatusLine } from "../components/room/Author.jsx";
+import { BotNames, HandoffLine, PersonAvatar, StatusLine } from "../components/room/Author.jsx";
 import MemberPanel from "../components/room/MemberPanel.jsx";
 import RoomInvite from "../components/room/RoomInvite.jsx";
 import RoomAsks from "../components/room/RoomAsks.jsx";
@@ -37,8 +37,9 @@ import { LimitBanner } from "../components/v2/LimitNotice.jsx";
 import { RELAY_LABEL, editMessage, fileBase64, unsendMessage } from "../lib/peers.js";
 import { isHidden, later, reversible, useToasts } from "../lib/undoToast.js";
 import { isTask, roomLinks } from "../lib/rooms.js";
-import { firstName, initialsOf, listNames } from "../lib/identity.js";
-import { askWaiting, authorOf, authorView, itemType, liveLines, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
+import { waitingBy, waitingOf } from "../components/v2/needs.js";
+import { botNameLabels, firstName, initialsOf, listNames } from "../lib/identity.js";
+import { ONLY_ME, ONLY_ME_HINT, askWaiting, authorOf, authorView, headerBots, itemType, liveLines, onlyMe, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
 import { useAnnouncer } from "../lib/useAnnouncer.js";
 import { messageListProps } from "../lib/messageKeys.js";
 import Announcer from "../components/Announcer.jsx";
@@ -143,6 +144,7 @@ function Room({ id, query }) {
   const [viewing, setViewing] = useState(null); // a shared file open in the viewer
   const [sending, setSending] = useState(EMPTY); // names of files being sealed and sent
   const [error, setError] = useState(null);
+  const [wantAside, setWantAside] = useState(false); // «Solo para mí» asked before the room had its sala here
   const closeViewer = useCallback(() => setViewing(null), []);
   useEffect(() => { setError(null); setSearching(false); setLeaving(false); setRenaming(null); setSheet(null); }, [roomId]);
 
@@ -183,6 +185,7 @@ function Room({ id, query }) {
   useRevealMessage(query?.hilo ? null : query?.m || null, { ready: loaded && (shared || !!mission), olderCount: shared ? (tl.more ? 1 : 0) : room.olderCount, showOlder: shared ? tl.older : room.showOlder });
   const since = useSince(roomId, missionRows);
   const dock = useDock(roomId, { transient: (t) => t.kind === "navegador" });
+  useEffect(() => { if (wantAside && mission) { setWantAside(false); dock.open(TABS.aparte); } }, [wantAside, mission]); // eslint-disable-line react-hooks/exhaustive-deps
   const progress = mission?.progress || { done: steps.filter((s) => ["completed", "done"].includes(s.status)).length, total: steps.filter((s) => s.kind !== "plan").length };
   const typing = mission ? typingInfo({ mission, activity, live, bots, steps }) : null;
   useEffect(() => { if (query?.panel && TABS[query.panel]) dock.open(TABS[query.panel]); }, [query?.panel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -209,11 +212,22 @@ function Room({ id, query }) {
     bots: [{ owner: { address: peers?.me?.address || "me", name: "Tú", you: true }, bots: memberIds.map((b) => findBot(bots, b)).filter(Boolean) }],
   } : null), [mission, roomId, missionId, memberIds, bots, peers, store.settings?.userName]);
   const shown = view || soloView;
+  // «Te espera» from the one list of what waits for you (server/waiting.mjs), like the sidebar and
+  // Equipo: a bot with something waiting anywhere says so here too; a room-level plan or choice
+  // names no bot.
+  const waitingBots = useMemo(() => [...waitingBy(waitingOf(store)).bots.keys()], [store.waiting, store.approvals, store.missions]); // eslint-disable-line react-hooks/exhaustive-deps
   const panel = useMemo(() => memberPanel(shown, {
-    working: bots.filter(working).map((b) => b.id), waiting: [...pending.map((a) => a.botId), ...asks.filter((a) => a.state === "asked").map((a) => a.bot?.id)], activity: shown?.activity || EMPTY,
-  }), [shown, bots, activity, live, pending]); // eslint-disable-line react-hooks/exhaustive-deps
+    working: bots.filter(working).map((b) => b.id), waiting: [...waitingBots, ...asks.filter((a) => a.state === "asked").map((a) => a.bot?.id)], activity: shown?.activity || EMPTY,
+    selfColor: store.settings?.botLooks?.family?.tint || null,
+  }), [shown, bots, activity, live, waitingBots, asks, store.settings?.botLooks?.family?.tint]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A name two visible bots share reads «Vera · de Lucía» in every author line (identity.js).
+  const botNames = useMemo(() => botNameLabels(shown?.bots || EMPTY), [shown]);
   const title = shown?.title || mission?.room || mission?.title || "sala";
+  // A task's conversation («Hablar con el equipo» on its page: ?conversacion=1) is not a room:
+  // it says so, and leads back to the task (it is never listed in Salas).
+  const taskTalk = query?.conversacion && mission && isTask(missions.find((m) => m.id === missionId) || mission) ? { title: mission.title || title } : null;
   const place = roomPlace(shown, teams);
+  const subtitle = [place.text, place.private ? place.hint : shown?.general ? "todo el equipo" : null, mission?.statusLabel].filter(Boolean).join(" · ");
   const myBots = useMemo(() => (shown?.bots || EMPTY).filter((g) => g.owner?.you).flatMap((g) => g.bots), [shown]);
   const gone = !!(view?.left || view?.removed);
   const guest = !!view?.people?.find((p) => p.you && p.role === "guest");
@@ -263,13 +277,8 @@ function Room({ id, query }) {
       <RowBoundary key={m.id} resetKey={m.id + ":" + (m.edited || "") + ":" + (m.status || "") + ":" + (waits ? "w" : "")}>
         <PeopleMessage m={m} dm={false} botOf={botOf} shared={sameName} lastSeen={m.id === lastSeenMine} continued={continued} onMeeting={tl.reload}
           onReact={react} onRetry={retry} onEdit={edit} onDelete={remove} onThread={m.local || gone ? null : openThread} onOpenFile={setViewing} onError={setError} />
-        {/* It waits for you: a honey dot and where to decide (the card is over the composer). */}
-        {waits ? (
-          <a href={"#" + waits.anchor} onClick={(e) => { const card = document.getElementById(waits.anchor); if (!card) return; e.preventDefault(); card.scrollIntoView({ block: "nearest" }); card.querySelector("button")?.focus({ preventScroll: true }); }}
-            style={{ alignSelf: "flex-start", margin: "0 0 4px 52px", display: "inline-flex", alignItems: "center", gap: "7px", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>
-            <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: "#FFC93C", boxShadow: "0 0 0 1px rgba(18,19,26,.18)" }} />{waits.text + " · decidir"}
-          </a>
-        ) : null}
+        {/* What waits for you is decided on its one card, pinned over the composer (always in view):
+            no second honey line here. A screen reader is told by the announcer and the card. */}
       </RowBoundary>
     );
   };
@@ -320,7 +329,7 @@ function Room({ id, query }) {
   // ---- panels on the right
   const resolve = (t) => {
     if (t.kind === "reglas") return { label: "Bots y reglas", icon: <Users {...I} />, title: "Bots y reglas · " + comboLabel(SHORTCUTS.reglas), render: () => <RulesPanel mission={mission} bots={bots} memberIds={memberIds} /> };
-    if (t.kind === "aparte") return { label: "Preguntar aparte", icon: <MessageCircleQuestion {...I} />, title: "Preguntar aparte · " + comboLabel(SHORTCUTS.aparte), render: () => <>{shared ? <p role="note" style={{ margin: "14px 20px 0", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#3D404A" }}>{"Aparte, solo para ti: lo que preguntes aquí no se envía a nadie de la sala. Se queda en tu ordenador."}</p> : null}<AsidePanel mission={mission} /></> };
+    if (t.kind === "aparte") return { label: ONLY_ME, icon: <Lock {...I} />, title: ONLY_ME + " · " + comboLabel(SHORTCUTS.aparte), render: () => <><p role="note" style={{ margin: "14px 20px 0", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#3D404A" }}>{ONLY_ME + ": " + ONLY_ME_HINT.charAt(0).toLowerCase() + ONLY_ME_HINT.slice(1) + " No entra en la conversación de la sala."}</p><AsidePanel mission={mission} /></> };
     if (t.kind === "hilo") return { label: "Entre bots", icon: <MessagesSquare {...I} />, badge: thread.length || null, render: () => <ThreadPanel bare mission={mission} thread={thread} bots={bots} /> };
     if (t.kind === "progreso") return { label: "Progreso", icon: <ListChecks {...I} />, badge: `${progress.done || 0}/${progress.total || 0}`, render: () => <ProgressPanel bare mission={mission} steps={steps} pending={pending} activity={activity} bots={bots} /> };
     if (t.kind === "archivos") return { label: "Archivos de la sala", icon: <FolderOpen {...I} />, render: () => <FilesPanel missionId={missionId} onOpen={openFile} version={workVersion} /> };
@@ -332,7 +341,7 @@ function Room({ id, query }) {
     return null;
   };
   const tabs = mission ? dock.tabs.map((t) => { const r = resolve(t); return r ? { ...t, ...r } : null; }).filter(Boolean) : [];
-  const addableTabs = [["reglas", "Bots y reglas", <Users {...I} />], ["aparte", "Preguntar aparte", <MessageCircleQuestion {...I} />], ["archivos", "Archivos", <FolderOpen {...I} />], ["progreso", "Progreso", <ListChecks {...I} />], ["hilo", "Entre bots", <MessagesSquare {...I} />], ["navegador", "Navegador", <Globe {...I} />], ["terminal", "Terminal", <SquareTerminal {...I} />]]
+  const addableTabs = [["reglas", "Bots y reglas", <Users {...I} />], ["aparte", ONLY_ME, <Lock {...I} />], ["archivos", "Archivos", <FolderOpen {...I} />], ["progreso", "Progreso", <ListChecks {...I} />], ["hilo", "Entre bots", <MessagesSquare {...I} />], ["navegador", "Navegador", <Globe {...I} />], ["terminal", "Terminal", <SquareTerminal {...I} />]]
     .map(([key, label, icon]) => ({ key, label, icon, combo: SHORTCUTS[key], tab: TABS[key] })).filter((a) => !dock.tabs.some((t) => t.id === a.tab.id));
 
   if (ready && viewRes.error && !view && !listed && !missionId && !viewRes.loading) return <NotFound active="chats" title="Esta sala ya no está" text="Puede que alguien la cerrara o que se archivara. No se ha perdido nada de lo tuyo." />;
@@ -371,7 +380,7 @@ function Room({ id, query }) {
     ...(mission ? [
       ["Reglas de la sala", () => dock.toggle(TABS.reglas)],
       ["Archivos de la sala", () => dock.toggle(TABS.archivos)],
-      [shared ? "Preguntar aparte (solo para ti)" : "Preguntar aparte", () => dock.toggle(TABS.aparte)],
+      [ONLY_ME, () => dock.toggle(TABS.aparte)],
       ["Progreso", () => dock.toggle(TABS.progreso)],
       ["Entre bots", () => dock.toggle(TABS.hilo)],
       ["Navegador", () => dock.toggle(TABS.navegador)],
@@ -383,20 +392,23 @@ function Room({ id, query }) {
     ...(shared && !view?.general && !gone ? [[view?.mine ? "Cerrar la sala para todos" : "Salir de la sala", () => setLeaving(true), "danger"]] : []),
   ];
 
-  const audience = mission && !shared ? (
-    <div role="radiogroup" aria-label="Quién lo ve" style={{ display: "inline-flex", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "#F1F1EC" }}>
-      {[["sala", "Toda la sala", !aside], ["yo", "Solo yo y un bot", aside]].map(([key, label, on]) => (
-        <button key={key} type="button" role="radio" aria-checked={on ? "true" : "false"} title={key === "yo" ? "Pregunta a un bot sin que la sala lo vea (Preguntar aparte)" : "Lo leen todos los de la sala"}
-          onClick={() => { if (key === "yo" ? !aside : aside) dock.toggle(TABS.aparte); }}
-          style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-meta)", fontWeight: 500, color: "#12131A", cursor: "pointer" }}>{label}</button>
-      ))}
-    </div>
-  ) : mission && shared ? (
-    // With colleagues in the room «Solo yo y un bot» is a private aside: never relayed.
-    <button type="button" aria-pressed={aside ? "true" : "false"} onClick={() => dock.toggle(TABS.aparte)} title="Pregunta a uno de tus bots sin que la sala lo vea. No se envía a nadie."
-      style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: aside ? "#12131A" : "#F1F1EC", color: aside ? "#FFFFFF" : "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
-      <MessageCircleQuestion {...I} />{"Aparte, solo para ti"}
-    </button>
+  // One control in every room: «Solo para mí» (lib/roomView.js › onlyMe). It opens the aside
+  // (asked of your own bots, never sent to anyone); where your bots never worked, the room's
+  // sala is made on this computer first.
+  const only = onlyMe({ mission, shared, gone });
+  const toggleAside = async () => {
+    if (mission) return dock.toggle(TABS.aparte);
+    try { await post(`/rooms/${encodeURIComponent(roomId)}/aside`); setWantAside(true); refreshView(); } catch (err) { setError(err.message); }
+    return undefined;
+  };
+  const audience = only.available ? (
+    <span className="c-tip-wrap">
+      <button type="button" aria-pressed={aside ? "true" : "false"} aria-describedby="solo-para-mi" onClick={toggleAside}
+        style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: aside ? "#12131A" : "#F1F1EC", color: aside ? "#FFFFFF" : "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
+        <Lock {...I} />{only.label}
+      </button>
+      <span role="tooltip" id="solo-para-mi" className="c-tip">{only.hint}</span>
+    </span>
   ) : null;
 
   // People typing and other people's bots thinking; files on their way; what went wrong.
@@ -409,15 +421,16 @@ function Room({ id, query }) {
     </p>
   ) : null;
   const ready2 = !!shown;
-  const stackPeople = panel.people.slice(0, 4), stackBots = panel.groups.flatMap((g) => g.bots.map((b) => ({ ...b, mine: g.mine }))).slice(0, 4);
+  const stackPeople = panel.people.slice(0, 4), stackBots = headerBots(panel);
   const counts = [panel.people.length === 1 ? "1 persona" : `${panel.people.length} personas`, panel.botCount === 1 ? "1 bot" : `${panel.botCount} bots`].join(" · ");
   const send = (text) => (shared ? post(`${path}/messages`, { text }).then(() => tl.reload()) : post(`/missions/${missionId}/messages`, { text }));
 
   return (
     <InteractiveContext.Provider value={{ send: mission ? send : null }}>
+      <BotNames.Provider value={botNames}>
       <Shell active="chats" scroll={false}>
         <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
-          <main aria-label={"Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
+          <main aria-label={taskTalk ? "Conversación de la tarea " + taskTalk.title : "Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
             <Announcer text={news} />
             {ready2 ? (
               <>
@@ -434,21 +447,25 @@ function Room({ id, query }) {
                           <button type="submit" style={{ ...outline, height: "34px", background: "#12131A", borderColor: "#12131A", color: "#FFFFFF" }}>{"Guardar"}</button>
                           <button type="button" onClick={() => setRenaming(null)} style={{ ...outline, height: "34px" }}>{"Cancelar"}</button>
                         </form>
-                      ) : <h1 style={{ margin: 0, fontSize: "var(--t-lead)", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"# " + title}</h1>}
-                      <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C", minWidth: 0 }}>
-                        {place.private ? <Lock size={12} strokeWidth={2.3} aria-hidden="true" style={{ flex: "none" }} /> : null}
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {[place.text, place.private ? place.hint : shown.general ? "todo el equipo" : null, mission?.statusLabel].filter(Boolean).join(" · ")}
-                          {mission ? <>{" · "}<a href={`/encargo/${missionId}`}>{"ver la tarea"}</a></> : null}
+                      ) : <h1 style={{ margin: 0, fontSize: "var(--t-lead)", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{taskTalk ? `Conversación de la tarea «${taskTalk.title}»` : "# " + title}</h1>}
+                      <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C", minWidth: 0 }}>
+                        {place.private && !taskTalk ? <Lock size={12} strokeWidth={2.3} aria-hidden="true" style={{ flex: "none", marginTop: "3px" }} /> : null}
+                        {/* Up to two lines, the whole of it on hover and to a screen reader (it is all in the page). */}
+                        <span title={subtitle} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 }}>
+                          {taskTalk ? <>{"Lo que habláis tú y los bots sobre esta tarea · "}<a href={`/encargo/${encodeURIComponent(missionId)}`}>{"volver a la tarea"}</a></> : <>
+                            {subtitle}
+                            {mission ? <>{" · "}<a href={`/encargo/${missionId}`}>{"ver la tarea"}</a></> : null}
+                          </>}
                         </span>
                       </span>
                     </div>
                     <span role="img" aria-label={stackLabel(panel)} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span aria-hidden="true" style={{ display: "flex" }}>{stackPeople.map((p, i) => <span key={p.address || i} style={{ marginLeft: i ? "-7px" : 0, borderRadius: "var(--r-circle)", boxShadow: "0 0 0 2px #F5F5F2" }}><PersonAvatar person={p} size={26} /></span>)}</span>
-                      <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:") + b.id} bot={b} size={18} state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
+                      <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} bot={b} size={18} owner={b.owner} ring="#F5F5F2" state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
                       <span aria-hidden="true" style={{ fontSize: "var(--t-meta)", color: "#4A4D57", whiteSpace: "nowrap" }}>{counts}</span>
                     </span>
-                    {mission?.mode === "debate" ? <a href={`/debate/${missionId}`} style={{ ...outline, textDecoration: "none" }}>{"Elegir propuesta"}</a> : null}
+                    {/* A debate waiting for your choice is decided from the banner below: one action, one honey element. */}
+                    {mission?.mode === "debate" && mission.status !== "awaiting_choice" ? <a href={`/debate/${missionId}`} style={{ ...outline, textDecoration: "none" }}>{"Ver las propuestas"}</a> : null}
                     {!gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={outline}>{"Invitar"}</button> : null}
                     <button type="button" aria-label={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} title={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} aria-expanded={membersOpen && !dockShown ? "true" : "false"} aria-controls="sala-miembros"
                       onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}
@@ -476,8 +493,9 @@ function Room({ id, query }) {
                 {gone ? <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "#ECECE7", color: "#3D404A", fontSize: "var(--t-ui)" }}>{view.removed ? "Ya no estás en esta sala. Puedes leer lo que tenías." : "Saliste de esta sala. Puedes leer lo que tenías."}</p> : null}
                 <div style={{ flex: "1", minHeight: 0, display: "flex", flexDirection: "column" }}>
                   <div ref={(el) => { follow.ref(el); scroller.current = el; }} {...messageListProps("Mensajes de la sala")} style={{ flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", display: "flex", flexDirection: "column" }}>
-                    <div ref={scope} style={{ width: "100%", maxWidth: "860px", margin: "auto auto 0", padding: "20px 26px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      {mission ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
+                    {/* role="log" as in a chat (Timeline.jsx), private or with people; new rows are spoken by the Announcer. */}
+                    <div ref={scope} role="log" aria-live="off" style={{ width: "100%", maxWidth: "860px", margin: "auto auto 0", padding: "20px 26px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                      {mission ? <SelectionPopup scope={scope} askLabel={ONLY_ME} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
                       {mission ? <CatchUp count={since} mission={mission} pending={pending} id={missionId} /> : null}
                       {shared ? (tl.more ? <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}><button type="button" onClick={olderPage} style={{ ...outline, height: "34px", fontSize: "var(--t-meta)", fontWeight: 600 }}>{"Ver mensajes anteriores"}</button></div> : null) : <OlderMessages count={room.olderCount} onShow={room.showOlder} />}
                       {loaded && !rows.length ? (() => {
@@ -527,6 +545,7 @@ function Room({ id, query }) {
             composer={{ others, mentionable: guest ? EMPTY : mentionable, mineEnabled: guest ? EMPTY : bots.filter((b) => b.enabled !== false), me: peers?.me?.address || null, disabled: gone, onTyping: tl.typingNow }} /> : null}
         </div>
       </Shell>
+      </BotNames.Provider>
     </InteractiveContext.Provider>
   );
 }

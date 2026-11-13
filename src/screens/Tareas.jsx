@@ -8,7 +8,6 @@ import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { needsYou, roomUrl, time } from "../lib/format.js";
 import { countIn, needsCount } from "../components/v2/needs.js";
-import { waitingLabel } from "../lib/sidebar.js";
 import { isSnoozed, snoozeWhen } from "../lib/snooze.js";
 import { pauseLine } from "../lib/pauseReason.js";
 import { useExpert } from "../lib/expert.js";
@@ -82,7 +81,7 @@ function nowText(m, col, botName) {
   if (col === "done") return m.recap?.text || m.activityLine || "Terminada";
   if (col === "stuck") return m.error || m.activityLine || "Se ha atascado. Mira qué pasa.";
   if (col === "wait") {
-    if (m.status === "awaiting_plan") return "Atlas espera que apruebes el plan";
+    if (m.status === "awaiting_plan") return "Espera que apruebes el plan";
     if (m.status === "awaiting_choice") return "Hay propuestas listas: elige una";
     if (m.questionCount > 0 && m.questionCount >= m.waiting) return m.waiting === 1 ? "Tiene una pregunta para ti" : `Tiene ${m.waiting} preguntas para ti`;
     if (m.waiting > 0) return m.waiting === 1 ? "Una cosa espera tu OK" : `${m.waiting} cosas esperan tu OK`;
@@ -141,14 +140,13 @@ export default function Tareas({ query = {} }) {
   const doneAll = items.filter((t) => t.col === "done").sort((a, b) => Date.parse(b.m.completedAt || 0) - Date.parse(a.m.completedAt || 0));
   const doneWeek = doneAll.filter((t) => Date.parse(t.m.completedAt || 0) >= +monday);
   const doneOlder = doneAll.filter((t) => !doneWeek.includes(t));
-  // The column's number is how many of the things that wait for you are in these tasks; when
-  // other things wait elsewhere (a chat, a note, another person) it says «3 de 5» and links to all.
+  // The column's number is the cards it shows, exactly; when more waits for you (in these tasks
+  // or elsewhere: a chat, a note, another person) it links to all of it: «2 · ver las 5».
   const waitTasks = items.filter((t) => t.col === "wait");
   const waitAll = needsCount(store);
   const waitCount = countIn(waitTasks.map((t) => t.m), waitAll);
-  const waitHere = waitCount.here;
   const cols = [
-    { id: "wait", title: "Te necesitan", bg: "#FFF1C7", badgeBg: "#FFC93C", items: waitTasks, n: waitCount.text, more: waitCount.more, empty: waitAll ? "Nada te espera en las tareas." : "Nada te espera. Todo sigue su curso." },
+    { id: "wait", title: "Te necesitan", bg: "#FFF1C7", badgeBg: "#FFC93C", items: waitTasks, n: waitCount.text, more: waitCount.link, empty: waitAll ? "Nada te espera en las tareas." : "Nada te espera. Todo sigue su curso." },
     { id: "run", title: "En marcha", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: items.filter((t) => t.col === "run"), empty: "Ningún bot está con una tarea ahora mismo." },
     { id: "stuck", title: "Atascadas", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: items.filter((t) => t.col === "stuck"), empty: "Ninguna atascada." },
     { id: "done", title: "Hechas esta semana", bg: "#EBEBE6", badgeBg: "#FFFFFF", items: older ? [...doneWeek, ...doneOlder] : doneWeek, n: doneWeek.length, empty: "Esta semana aún no ha terminado ninguna." },
@@ -233,8 +231,8 @@ export default function Tareas({ query = {} }) {
               <section key={c.id} aria-labelledby={"col-" + c.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", borderRadius: "var(--r-2xl)", background: c.bg }}>
                 <h2 id={"col-" + c.id} style={{ margin: 0, padding: "4px 6px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600 }}>
                   {c.title}
-                  <span aria-label={c.id === "wait" ? (c.more ? `${waitHere} de las ${waitAll} cosas que te esperan están en tareas` : waitingLabel(waitAll)) : undefined} style={{ minWidth: "22px", height: "22px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: c.badgeBg, fontSize: "var(--t-caption)", fontWeight: 600, whiteSpace: "nowrap" }}>{c.n ?? c.items.length}</span>
-                  {c.more ? <a href="/" style={{ marginLeft: "auto", fontSize: "var(--t-meta)", fontWeight: 500, color: "#12131A", textDecoration: "underline", textUnderlineOffset: "3px" }}>ver todo</a> : null}
+                  <span aria-label={c.id === "wait" ? waitCount.label : undefined} style={{ minWidth: "22px", height: "22px", padding: "0 7px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: c.badgeBg, fontSize: "var(--t-caption)", fontWeight: 600, whiteSpace: "nowrap" }}>{c.n ?? c.items.length}</span>
+                  {c.more ? <a href="/" onClick={go("/")} style={{ marginLeft: "auto", fontSize: "var(--t-meta)", fontWeight: 500, color: "#12131A", textDecoration: "underline", textUnderlineOffset: "3px" }}>{c.more}</a> : null}
                 </h2>
                 {c.items.length ? c.items.map(card) : <p style={{ margin: 0, padding: "4px 6px 6px", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#5C606C" }}>{c.empty}</p>}
                 {c.id === "done" && doneOlder.length ? (

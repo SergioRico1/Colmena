@@ -22,9 +22,14 @@ export function resolveMentions(text, picks = [], myBots = [], me = null) {
   const out = [];
   for (const p of picks) if (mentions(text, p.name) && !out.some((x) => x.owner === p.owner && x.bot === p.bot)) out.push(p);
   const named = new Set(out.map((x) => fold(x.name)));
+  const current = myBots.map((b) => fold(b.name));
   for (const b of myBots) {
-    if (named.has(fold(b.name)) || !mentions(text, b.name)) continue;
-    out.push({ owner: me, bot: b.id, name: b.name, color: b.color, shape: b.shape, mine: true });
+    if (named.has(fold(b.name)) || out.some((x) => x.owner === me && x.bot === b.id)) continue;
+    // A name it had before («@Vera» after it became «Amaia») still means it, unless another of
+    // your bots is called that now.
+    const said = [b.name, ...(b.previousNames || []).filter((n) => !current.includes(fold(n)))].find((n) => mentions(text, n));
+    if (!said) continue;
+    out.push({ owner: me, bot: b.id, name: said, color: b.color, shape: b.shape, mine: true });
   }
   return out;
 }

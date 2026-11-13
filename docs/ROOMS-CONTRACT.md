@@ -478,3 +478,47 @@ room's mission (`missionId`; the room is `rooms.ofMission(missionId)`).
 (`/sala/:mission`) shows a request as a message of its author; statuses of a room without a
 share do not exist. Ajustes › Personas lists the rule for contacts; a teammate who is not a
 contact gets theirs from the card («Siempre/Nunca para…») or `PATCH /api/peers/contacts/:id`.
+
+## Bots unique per person (`server/bot-looks.mjs`, `tests/bot-looks.test.mjs`)
+
+Every Colmena used to start with the same six bots; a room of three people had three «Vera».
+Bot ids never change (they are keys everywhere); names and colours are each person's own.
+
+- **Seed.** The person's «Personas» identity: the public signing key (`peers.address`), loaded or
+  created by `Peers#start` on the first start, before the window opens onboarding
+  (`server/index.mjs` calls `ensureBotLooks(store, peers.address)` once it is known). If the
+  identity cannot be loaded, a random `settings.installId` stands in. The key used is written to
+  `settings.botLooks.key` and never read from the identity again, so the looks change only by the
+  person's hand. Same key, same bots on any machine.
+- **Colour: a family per person, a tone per bot** (decided by the owner, 2026-11-13). The seed picks
+  one of twelve families (`FAMILIES`: Coral, Teja, Musgo, Hoja, Esmeralda, Turquesa, Cielo,
+  Cobalto, Violeta, Orquídea, Frambuesa, Pizarra; none in hues 25°-70°, honey's). `tonesOf`
+  makes eight tones of it (hue shift ≤ 12°, lightness and saturation varied, luminance between
+  0.12 and 0.27, so every tone is ≥ 3:1 on the light surfaces and on #12131A); each bot wears its
+  own. The coordinator wears the deepest tone (it was ink). `botLooks.family` keeps
+  `{index, name, color, tint}`; the tint is the person's own round avatar, and others' circles and
+  owner chips use a tint of their coordinator's tone (`identity.js › familyTint`).
+- **New installation** (`botLooks.state: "fresh"`, set by `Store#migrate`): each built-in bot gets
+  a name from its role's pool (`NAME_POOLS`, 12 per role, disjoint, none of the factory names)
+  and a tone of the family, all distinct. The shape keeps marking the role. Leo (legal) gets the
+  look onboarding showed for it.
+- **Existing installation** (`"update"`): names are kept. Each built-in bot still at its factory
+  colour (the coordinator's ink included) gets a tone of the family; a colour you chose stays.
+  `botLooks.previous` keeps the factory colours for «Deshacer» of the one quiet notice
+  (`POST /api/bots/looks/undo`, `…/seen`).
+- **Shapes.** Investigación is a `capsule` (circles are people). `Store#migrate` turns every bot's
+  `circle` into `capsule`; `circle` is still accepted from older peers and drawn as the capsule.
+- **«Otro nombre» / «Otro color»** (`POST /api/bots/:id/look {what}`): the next one of the bot's
+  own seeded sequence (`bot.look` is its position) that none of your other bots has.
+- **Unique names.** Your bots never share a name, accents and case out (create, rename,
+  duplicate). A rename keeps the old name in `previousNames` (five at most): «@Vera» typed by
+  hand still finds the bot (`peers/bots.mjs › mentionedByName`, `roomturns.mjs › addressees`,
+  `passedTo`, the client's `resolveMentions` and Inicio's `mentionedBots`) unless another of your
+  bots is called that now.
+- **Teammates** learn new names and colours through the profile re-announce: a change to a `bots`
+  record runs `announceProfile`, whose signature includes every bot's colour (`profile`, then
+  `profile-out` → `team.profile` and `room.bots`).
+- **In sight.** Two visible bots with one name read «Vera · de Lucía» (`identity.js ›
+  botNameLabels`; «de Lucía M.» when two owners share a first name; your own never «de ti»).
+  Someone else's bot carries a round chip with its owner's initials in the corner
+  (`Mark.jsx › OwnerBadge`), and its accessible name says whose it is («Vera, bot de Lucía»).

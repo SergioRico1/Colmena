@@ -12,8 +12,8 @@ import { autonomyLabel, Seg } from "../../v3/team/parts.jsx";
 // shape, colour, instructions, skills, what it can use), 3 Prueba (a private test chat;
 // nothing is saved or sent) — with «Así se verá» beside them. Honey is not offered as a
 // colour (it means «te necesita») and ink belongs to Atlas.
-// No circle: circles are people (src/lib/identity.js). A bot that already has one is drawn as a rounded square.
-const SHAPE_LIST = [["hex", "hexágono"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"]];
+// No circle: circles are people (src/lib/identity.js). A bot that already has one is drawn as the capsule.
+const SHAPE_LIST = [["hex", "hexágono"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"], ["capsule", "cápsula"]];
 const COLORS = [["#0E7C86", "verde azulado"], ["#2F6BFF", "azul"], ["#7B4DFF", "violeta"], ["#FF5CA8", "rosa"], ["#FF7A1A", "naranja"], ["#0B8A5F", "verde"], ["#B4236E", "frambuesa"]];
 const EXAMPLES = [
   ["Contable", "Que lea las facturas de proveedores que llegan al correo, las apunte en la hoja de gastos y me avise si alguna pasa de 500 € o vence esta semana. Que nunca pague nada."],
@@ -160,7 +160,7 @@ export default function NewBot({ onClose, onHired }) {
                     style={{ width: "100%", padding: "14px 60px 14px 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-read)", lineHeight: "1.5", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
                   <span style={{ position: "absolute", right: "10px", bottom: "12px", display: "flex" }}><MicButton onText={appendDictation(setDesc)} size={38} style={{ background: "#F6F6F3" }} /></span>
                 </div>
-                <div role="list" aria-label="Atlas lo va revisando" style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
+                <div role="list" aria-label="Se va revisando" style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
                   {checksOf(desc, files).map(([l, ok]) => (
                     <span key={l} role="listitem" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: ok ? "#0B6B4A" : "#5C606C", transition: "color .25s ease" }}>
                       <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: ok ? "#0B8A5F" : "transparent", boxShadow: ok ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)", transition: "all .25s ease" }}>
@@ -233,7 +233,7 @@ export default function NewBot({ onClose, onHired }) {
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#3D404A" }}>{"Color "}<span style={{ fontWeight: "400", color: "#5C606C" }}>{"· la miel es para «te necesita» y la tinta, para Atlas"}</span></span>
+                <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#3D404A" }}>{"Color "}<span style={{ fontWeight: "400", color: "#5C606C" }}>{"· la miel es para «te necesita» y la tinta, para quien coordina"}</span></span>
                 <div role="radiogroup" aria-label="Color" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {COLORS.map(([hex, l]) => {
                     const on = d.color.toUpperCase() === hex;

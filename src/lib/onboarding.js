@@ -4,12 +4,12 @@
 
 export const B = {
   atlas: { id: "atlas", name: "Atlas", role: "Coordinador", color: "#12131A", shape: "hex" },
-  nora: { id: "nora", name: "Nora", role: "Investigación", color: "#2F6BFF", shape: "circle" },
+  nora: { id: "nora", name: "Nora", role: "Investigación", color: "#2F6BFF", shape: "capsule" },
   tomas: { id: "tomas", name: "Tomás", role: "Datos y finanzas", color: "#0B8A5F", shape: "square" },
   iris: { id: "iris", name: "Iris", role: "Diseño", color: "#FF5CA8", shape: "diamond" },
   bruno: { id: "bruno", name: "Bruno", role: "Código", color: "#FF7A1A", shape: "arch" },
   vera: { id: "vera", name: "Vera", role: "Redacción", color: "#7B4DFF", shape: "leaf" },
-  leo: { id: "leo", name: "Leo", role: "Asistente legal", color: "#0E7C86", shape: "circle" },
+  leo: { id: "leo", name: "Leo", role: "Asistente legal", color: "#0E7C86", shape: "capsule" },
 };
 export const ROLES = [
   { id: "diseno", label: "Diseño", team: [["atlas", "Reparte el trabajo y te trae un único resultado."], ["iris", "Maquetas, presentaciones y piezas visuales."], ["vera", "Titulares y textos que acompañan al diseño."], ["nora", "Referencias y lo que hace la competencia."]],

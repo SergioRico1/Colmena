@@ -38,6 +38,7 @@ import { CodeShare } from "./peers/codeshare.mjs";
 import { PeerFiles, artifactSource } from "./peers/files.mjs";
 import { Errands } from "./peers/errands.mjs";
 import { Teams } from "./peers/teams.mjs";
+import { ensureBotLooks } from "./bot-looks.mjs";
 import { Webhooks } from "./webhooks.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -190,7 +191,10 @@ app.locals.webhooks = webhooks;
 peers.teams = new Teams({ peers, store }).start();
 // Rooms listen to «Personas» from the start: a roster that arrives, a «please add», a roommate's bots.
 app.locals.rooms.attach(peers);
-peers.start().then(() => { webhooks.start(); return peers.announceProfile(); }).catch((error) => console.warn("«Personas» no pudo arrancar: " + error.message));
+// Bots unique per person (server/bot-looks.mjs): seeded by the identity loaded here, or by an
+// install id when it could not be loaded. Applied once; before the profile is announced.
+const looks = (key) => { try { ensureBotLooks(store, key); } catch (error) { console.warn("Colmena: no se pudieron preparar los colores de tus bots: " + error.message); } };
+peers.start().then(() => { looks(peers.address); webhooks.start(); return peers.announceProfile(); }).catch((error) => { looks(null); console.warn("«Personas» no pudo arrancar: " + error.message); });
 // Your bots answer when they are mentioned in a conversation with people (no tools, no memory),
 // and agree meetings with other people's Colmenas looking only at free/busy.
 peers.meetings = new Meetings({ peers, store, calendar: connectedCalendar(connections) }).start();

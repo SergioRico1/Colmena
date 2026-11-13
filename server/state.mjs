@@ -19,7 +19,7 @@ import { missionKind } from "./mission-kind.mjs";
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
 
 export const MISSION_LABELS = {
-  queued: "Pendiente", planning: "Atlas prepara el plan", awaiting_plan: "Revisa el plan", running: "En marcha",
+  queued: "Pendiente", planning: "Preparando el plan", awaiting_plan: "Revisa el plan", running: "En marcha",
   waiting: "Te espera", paused: "En pausa", blocked: "Bloqueada", awaiting_choice: "Elige una propuesta",
   completed: "Terminada", cancelled: "Cancelada", failed: "Bloqueada",
 };
@@ -286,8 +286,9 @@ function activityLine(m, ctx) {
     const parts = [q ? plural(q, "pregunta", "preguntas") : null, other ? plural(other, "permiso", "permisos") : null].filter(Boolean);
     return "Te espera" + (parts.length ? ": " + parts.join(" y ") : "");
   }
-  if (m.status === "planning") return "Atlas prepara el plan";
-  if (m.status === "awaiting_plan") return "Revisa el plan de Atlas";
+  const coord = ctx.bots?.get?.("atlas")?.name || "Atlas";
+  if (m.status === "planning") return coord + " prepara el plan";
+  if (m.status === "awaiting_plan") return "Revisa el plan de " + coord;
   if (m.status === "awaiting_choice") return "Elige una propuesta";
   if (m.status === "blocked" || m.status === "failed") return m.error || "Bloqueada";
   if (m.status === "paused") return "En pausa";
@@ -349,7 +350,7 @@ export function missionSummary(m, ctx) {
   });
 }
 
-const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "monthlyTokens", "createdAt", "updatedAt"];
+const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "monthlyTokens", "previousNames", "look", "createdAt", "updatedAt"];
 export function botView(b, ctx) {
   const mine = ctx.missionsByBot.get(b.id) || [];
   const open = mine.filter((m) => OPEN.has(m.status));
@@ -360,11 +361,14 @@ export function botView(b, ctx) {
   const working = act || open.some((m) => WORKING.has(m.status) && (ctx.stepsByMission.get(m.id) || []).some((s) => s.botId === b.id && s.status === "running"));
   // «Limitado»: its work waits for an AI's plan to renew (limits.mjs, Runtime#resumeLimited).
   const limited = open.find((m) => m.status === "paused" && m.limited && (!m.limited.botIds?.length || m.limited.botIds.includes(b.id)))?.limited || null;
-  const status = ctx.paused || b.paused ? "pausado" : working ? "trabaja" : limited ? "limitado" : waitingIn ? "espera" : open.some((m) => m.status === "blocked") ? "bloqueado" : "libre";
+  // «Te espera» wins over «trabaja»: what waits for the person is the one thing to see (one count).
+  const status = ctx.paused || b.paused ? "pausado" : waitingIn ? "espera" : working ? "trabaja" : limited ? "limitado" : open.some((m) => m.status === "blocked") ? "bloqueado" : "libre";
   return {
     ...pick(b, BOT_FIELDS),
     helpers: b.helpers || [],
     status, statusLabel: BOT_LABELS[status],
+    // At work right now, whatever its status says first («te espera» wins): the foot counts it.
+    ...(working ? { busy: true } : {}),
     activity: act ? { verb: act.verb || "pensando", missionId: act.missionId ?? null, detail: act.detail ?? null } : null,
     waitingIn, missionCount: open.length, usesTotal: mine.length,
     limited: limited ? { engine: limited.engine, label: limited.label, resetsAt: limited.resetsAt ?? null, resumeAt: limited.resumeAt ?? null, ...(limited.plan ? { plan: true, percent: limited.percent ?? null } : {}) } : null,
@@ -496,7 +500,7 @@ export function buildState(store, runtime, extras = {}) {
   // Your name: the one you set, else the name of your ChatGPT account (or its email),
   // never the placeholder «Tu cuenta» when we know better.
   const fromEmail = (e) => String(e || "").split("@")[0].split(/[._-]+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
-  const ownName = settings.userName && settings.userName !== "Tu cuenta" ? settings.userName : (account?.name || fromEmail(account?.email) || "Tu cuenta");
+  const ownName = settings.userName && settings.userName !== "Tu cuenta" ? settings.userName : (account?.name || fromEmail(account?.email) || "Tú");
   const user = { id: "me", name: ownName, email: account?.email || null, role: settings.userRole || "Administrador", self: true };
   return {
     account,

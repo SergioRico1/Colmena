@@ -18,7 +18,7 @@ const TEMPLATES = {
 
 export const AUTONOMY_LABELS = { sugiere: "Solo sugiere", avisa: "Actúa y te avisa", solo: "Actúa solo" };
 export const THINKING_LABELS = { rapido: "Rápida", equilibrado: "Equilibrada", profundo: "Profunda" };
-const SHAPES = { hex: "hexágono", circle: "círculo", square: "cuadrado", diamond: "rombo", arch: "arco", leaf: "hoja" };
+const SHAPES = { hex: "hexágono", circle: "cápsula", capsule: "cápsula", square: "cuadrado", diamond: "rombo", arch: "arco", leaf: "hoja" };
 export const SOUL_LIMITS = { min: 20, max: 20000 };
 const MEMORY_BUDGET = 4000;
 
@@ -150,7 +150,8 @@ export function ensureWorkspace(bot, { store = null, directory = dataDirectory }
   if (store) {
     const settings = store.get("settings", "main") || {};
     writeIfChanged(path.join(folder, "USER.md"), fill(TEMPLATES.user, {
-      userName: settings.userName || "Tu cuenta",
+      // No name yet: the bot asks before signing anything in the person's name (never «Tu nombre»).
+      userName: settings.userName && settings.userName !== "Tu cuenta" ? settings.userName : "(aún no ha dicho su nombre: pregúntaselo antes de firmar nada en su nombre)",
       userRole: settings.userRole || "Administrador",
       spaceName: settings.spaceName || "Colmena",
     }));
@@ -169,6 +170,20 @@ function writeIfChanged(file, text) {
     if (readFileSync(file, "utf8") === text) return;
   } catch {}
   atomicWrite(file, text);
+}
+
+/**
+ * A bot was renamed: a SOUL.md that is still exactly the template of its old name follows the new
+ * one (one written or changed by the person is never touched).
+ */
+export function soulRenamed(before, after, { directory = dataDirectory } = {}) {
+  if (!directory || !before?.id || before.name === after?.name) return false;
+  const file = path.join(botDirectory(before.id, directory), "SOUL.md");
+  try {
+    if (readFileSync(file, "utf8") !== renderSoulTemplate(before)) return false;
+  } catch { return false; }
+  atomicWrite(file, renderSoulTemplate(after));
+  return true;
 }
 
 /** Current SOUL.md of a bot; if it was never written, the Colmena template for that bot. */
