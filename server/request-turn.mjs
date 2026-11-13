@@ -23,7 +23,8 @@ export const REQUEST_ALWAYS = Object.freeze([
 /**
  * By the capabilities the owner allows for other people's requests (Ajustes › Personas ›
  * Encargos), exactly these and nothing else. Hosted web search follows `web` (Runtime#searchFor).
- * `apps` also lets in the direct tools of the connected apps (isAppToolName); every change in an
+ * `apps` also lets in the direct tools of the connected apps (isAppToolName: by the registry of
+ * real app tools, never by a name that only starts like one); every change in an
  * app asks the owner (server/connections.mjs). `ordenador` is the browser and the desktop apps,
  * with their own red lines: never commands, files of the computer, saved passwords or projects.
  */

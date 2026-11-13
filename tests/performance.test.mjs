@@ -95,6 +95,9 @@ test("direct tool names are valid function names and the catalogue stays small",
   assert.ok(LIMITS.tools <= 20 && LIMITS.schemaChars <= 45000);
   assert.equal(toFunction({ tool: "GMAIL_FETCH_EMAILS", toolkit: "gmail" }, [{ id: "a", alias: "x" }]).name, "gmail_fetch_emails");
   assert.ok(isAppToolName("gmail_fetch_emails") && isAppToolName("apps_execute") && !isAppToolName("web_fetch"));
+  // By the registry of real app tools, never by the start of a name.
+  for (const name of ["gmail_anything", "slack_export", "notion_", "outlook_x", "GMAIL_FETCH_EMAILS", null, 5, {}]) assert.equal(isAppToolName(name), false, String(name));
+  for (const slug of Object.values(CURATED).flat()) assert.ok(isAppToolName(directName(slug)), slug);
 });
 
 test("an app's long answer reaches the model slim: HTML as text, lists capped", () => {

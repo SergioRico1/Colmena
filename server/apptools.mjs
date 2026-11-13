@@ -488,5 +488,12 @@ export function slimAppResult(result) {
   const text = JSON.stringify(best);
   return { ...(result.ok !== undefined ? { ok: result.ok } : {}), truncated: true, preview: text.slice(0, SLIM.total) };
 }
-/** apps_execute and the direct app tools (gmail_…, googlecalendar_…). */
-export const isAppToolName = (name) => name === "apps_execute" || /^(gmail|googlecalendar|googlesheets|googledrive|googledocs|notion|slack|outlook)_/.test(String(name || ""));
+/**
+ * The registry of real app tools: apps_execute and the direct tool of every action Colmena may
+ * expose (CURATED, named as AppTools names them). A tool is an app tool because it is one of
+ * these, never because its name starts like one (gmail_…): another tool could be called that.
+ */
+const APP_TOOL_NAMES = new Set(["apps_execute", ...Object.values(CURATED).flat().map(directName)]);
+export const appToolNames = () => [...APP_TOOL_NAMES];
+/** apps_execute and the direct app tools (gmail_fetch_emails, googlecalendar_create_event…), by the registry. */
+export const isAppToolName = (name) => typeof name === "string" && APP_TOOL_NAMES.has(name);

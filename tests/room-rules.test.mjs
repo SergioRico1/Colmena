@@ -11,6 +11,7 @@ import { REQUEST_ALWAYS, REQUEST_BY_CAPABILITY, requestCapability, requestToolAl
 import { canCreateImages } from "../server/images.mjs";
 import { createPage } from "../server/wiki.mjs";
 import { categoryOf } from "../server/connections.mjs";
+import { appToolNames } from "../server/apptools.mjs";
 
 const sorted = (list) => [...list].sort();
 const signal = () => new AbortController().signal;
@@ -58,6 +59,10 @@ test("the allow-list itself: closed by default, each capability lets in exactly 
   assert.equal(requestToolAllowed("gmail_send_email", { ...NONE, apps: true }), true, "a direct tool of a connected app follows «apps»");
   assert.equal(requestToolAllowed("gmail_send_email", { ...NONE, web: true, carpetas: true, ordenador: true }), false);
   assert.equal(requestToolAllowed("browser_open", { ...NONE, apps: "yes" }), false, "only a real true counts");
+  // An app tool is one of the registry, not anything whose name starts like one.
+  for (const name of ["gmail_read_everything", "slack_export_workspace", "notion_", "outlook_x", "googledrive_delete_all", "apps_executes", "GMAIL_SEND_EMAIL"])
+    assert.equal(requestToolAllowed(name, { web: true, carpetas: true, apps: true, ordenador: true }), false, name + " is no real app tool");
+  for (const name of appToolNames()) assert.equal(requestToolAllowed(name, { ...NONE, apps: true }), true, name);
 });
 
 test("a request turn is offered exactly the allow-list for each capability, and anything else refuses, called directly or through use_tool", async (t) => {
@@ -109,7 +114,7 @@ test("a request turn is offered exactly the allow-list for each capability, and 
   assert.deepEqual(ran, [], "none of them ran");
   assert.deepEqual([sergio.store.list("memories").length, sergio.store.list("artifacts").length, sergio.store.list("suggestions").length], [memories, files, 0]);
   // With enough tools for «tools on demand» the search and use_tool read the same list.
-  family(sergio, ran, Array.from({ length: 40 }, (_, i) => ["gmail_extra_" + i, "apps"]));
+  family(sergio, ran, appToolNames().filter((n) => n !== "apps_execute" && n !== "gmail_fetch_emails").map((n) => [n, "apps"]));
   sergio.store.patch("settings", "main", { peerErrandTools: { ...NONE, apps: true } });
   sergio.reply = () => answer("Con muchas.");
   await ask(marta, room, sergio, "@Vera una más");
