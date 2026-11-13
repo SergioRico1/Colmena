@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "createdAt": "2026-11-13T12:16:14.219Z",
+        "reason": "Geist is the product's UI face, kept on purpose in the v4 prototype the owner approved on 2026-11-13 (design/v4); an Operate surface where a workhorse UI face is the right call"
+      }
+    ]
+  }
+}

@@ -72,3 +72,6 @@ desktop.ini
 
 # Behaviour eval reports (npm run eval): local output, never committed
 eval/report/
+
+# Impeccable's local hook cache
+.impeccable/hook.cache.json
