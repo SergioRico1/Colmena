@@ -600,7 +600,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
           <div role="tablist" aria-label="Tipo de rutina" style={{ display: "inline-flex", alignSelf: "flex-start", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "var(--c-chip)" }}>
             {[["hora", "A una hora", "semana"], ["algo", "Cuando pase algo", "correo"]].map(([id, label, first]) => {
               const on = kind === id;
-              return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => { if (!on) { setWhen({ type: first }); setMsg(null); } }} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgb(var(--c-ink-rgb) / .1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+              return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => { if (!on) { setWhen({ type: first }); setMsg(null); } }} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
             })}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))", gap: "8px" }}>

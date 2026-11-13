@@ -29,7 +29,7 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
       </ul>
     </div>
   );
-  const pill = { display: "inline-flex", alignItems: "center", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: "600" };
+  const pill = { display: "inline-flex", alignItems: "center", height: "36px", padding: "0 14px", borderRadius: "var(--r-sm)", fontSize: "var(--t-ui)", fontWeight: "600" };
   return (
     <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "24px 28px", borderRadius: "var(--r-2xl)", background: "var(--c-btn)", color: "var(--c-btn-text)", animation: "rise .5s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>

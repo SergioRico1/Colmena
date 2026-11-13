@@ -24,7 +24,7 @@ import { C } from "../lib/theme.js";
 // cut, how it resumed. Pause and talk from the header. Expert mode adds the tool calls.
 const STAGE = new Set(["work", "solo", "synthesis", "proposal", "followup"]);
 const DONE = new Set(["completed", "done"]);
-const card = { background: "var(--c-card)", borderRadius: "var(--r-2xl)" };
+const card = { background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)" };
 const hhmm = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "");
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 function dayTime(iso) {

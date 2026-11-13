@@ -121,7 +121,7 @@ export default function Revisar({ params = {} }) {
         : `${bot?.name || "El bot"} no puede hacer esto sin ti con los permisos que le diste.`;
   const people = isSend ? d.to.length + d.cc.length + d.cco.length : 0;
   const affects = a.impact?.headline || (isSend ? `${people === 1 ? "1 persona" : people + " personas"}${d.cc.length ? `, ${d.cc.length} en copia` : ""}.` : null);
-  const card = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px", borderRadius: "var(--r-xl)", background: "var(--c-card)" };
+  const card = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" };
   const h2 = { margin: "0", fontSize: "var(--t-body)", fontWeight: "600" };
   const p = { margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)" };
   const chip = (field, e, i) => (
@@ -139,7 +139,7 @@ export default function Revisar({ params = {} }) {
   );
   const row = { display: "flex", alignItems: "center", gap: "12px", padding: "14px 22px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" };
   const label = { flex: "none", width: "64px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" };
-  const pill = (dark) => ({ height: "46px", padding: dark ? "0 22px" : "0 18px", border: dark ? "0" : "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: dark ? "var(--c-btn)" : "var(--c-card)", color: dark ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-body)", fontWeight: dark ? "600" : "500", cursor: "pointer" });
+  const pill = (dark) => ({ height: "36px", padding: dark ? "0 22px" : "0 18px", border: dark ? "0" : "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: dark ? "var(--c-btn)" : "var(--c-card)", color: dark ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: dark ? "600" : "500", cursor: "pointer" });
   const crumb = isSend && data.subject ? `Enviar «${data.subject}»` : a.title;
 
   return (
