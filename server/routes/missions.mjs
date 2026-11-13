@@ -16,7 +16,7 @@ import { readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { id, now } from "../store.mjs";
-import { attachmentInput, writeMissionAttachments } from "../files.mjs";
+import { attachmentInput, attachmentRecord, writeMissionAttachments } from "../files.mjs";
 import { context, missionSummary, artifactSummary, toolCalls } from "../state.mjs";
 import { btwQuestion } from "../btw.mjs";
 import { botThread } from "../threads.mjs";
@@ -52,7 +52,8 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
         return res.status(200).json({ ...store.get("missions", thread.id), continued: true });
       }
     }
-    const files = attachments.map((f) => ({ name: f.name, size: f.size ?? (f.encoding === "base64" ? Math.floor(f.content.length * 3 / 4) : Buffer.byteLength(f.content)) }));
+    // What the first message keeps of each file (kind and size of images: media.mjs), before it is written.
+    const files = attachments.map((f) => attachmentRecord(f));
     const picked = await referenceContext(store, { refs: refs?.filter((r) => r.kind === "chat") });
     const mission = need("create")({ ...data, botIds, conversation: !!data.conversation, attachments: files, ...(data.conversation && data.mode === "solo" && !data.incognito ? { thread: true } : {}), ...(picked.note ? { context: picked.note } : {}) });
     try {
@@ -89,7 +90,7 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
       id: m.id, role: m.role, botId: m.botId ?? null, text: (m.author?.address && typeof m.said === "string" ? m.said : m.text) || "", at: m.at ?? null,
       ...(m.author?.address ? { author: { address: m.author.address, name: m.author.name || "Alguien" } } : {}),
       kind: m.kind || (m.phase === "plan" ? "plan" : "message"),
-      attachments: (m.attachments || []).map((a) => ({ name: a.name, size: a.size ?? null })),
+      attachments: (m.attachments || []).map((a) => ({ name: a.name, size: a.size ?? null, ...(a.path && a.path !== a.name ? { path: a.path } : {}), ...(a.kind ? { kind: a.kind } : {}), ...(a.width && a.height ? { width: a.width, height: a.height } : {}) })),
       artifactId: m.artifactId ?? null, approvalId: m.approvalId ?? null, plan: m.plan ?? null, summary: m.summary ?? null,
       stepId: m.stepId ?? null, options: m.options ?? null, replyTo: m.replyTo ?? null, part: m.part ?? null, to: m.to ?? null,
       ...(m.kind === "progress" ? { callIds: m.callIds || [] } : {}),

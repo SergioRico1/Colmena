@@ -474,16 +474,19 @@ export function forReceipt(result) {
 
 /** Keeps only the most recent screenshot in a step history (older ones become a short note). */
 export function compactImages(history = []) {
-  let seen = false;
+  // The latest screenshot, and the latest few images opened from files (read_file: two photos
+  // to compare stay side by side); older ones become a note.
+  let shots = 0, files = 0;
   const out = [];
   for (let i = history.length - 1; i >= 0; i--) {
     const item = history[i];
     if (item?.type === "function_call_output" && Array.isArray(item.output) && item.output.some((p) => p.type === "input_image")) {
+      const file = item.output.some((p) => p.type === "input_text" && /"format":"image"/.test(String(p.text || "")));
+      const seen = file ? ++files > 4 : ++shots > 1;
       if (seen) {
-        out.unshift({ ...item, output: item.output.filter((p) => p.type !== "input_image").map((p) => (p.type === "input_text" ? { ...p, text: p.text + " (captura anterior omitida)" } : p)) });
+        out.unshift({ ...item, output: item.output.filter((p) => p.type !== "input_image").map((p) => (p.type === "input_text" ? { ...p, text: p.text + " (imagen anterior omitida: vuelve a abrirla si la necesitas)" } : p)) });
         continue;
       }
-      seen = true;
     }
     out.unshift(item);
   }

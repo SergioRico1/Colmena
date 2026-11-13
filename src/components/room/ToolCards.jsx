@@ -230,7 +230,7 @@ export function Detail({ tool, bots, onOpenArtifact, liveOutput = null }) {
     if (c.artifactId && tool.status === "done") {
       parts.push(
         <button key="img" type="button" className="rm-focus" onClick={() => onOpenArtifact?.(c.artifactId)} aria-label={`Abrir la imagen «${c.title || "Imagen"}»`} style={{ alignSelf: "flex-start", padding: "0", background: "transparent", border: "0", cursor: onOpenArtifact ? "pointer" : "default" }}>
-          <img src={fileUrl(c.artifactId)} alt={c.title || "Imagen creada"} loading="lazy" style={{ display: "block", width: "160px", maxWidth: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "var(--c-sunken)" }} />
+          <img src={fileUrl(c.artifactId)} alt={c.title || "Imagen creada"} loading="lazy" style={{ display: "block", width: "160px", maxWidth: "100%", height: "auto", ...(c.width > 0 && c.height > 0 ? { aspectRatio: `${c.width} / ${c.height}` } : {}), borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "var(--c-sunken)" }} />
         </button>,
       );
     } else if (c.prompt) parts.push(<p key="p" style={{ ...MUTED, margin: "0" }}>{`«${c.prompt}»`}</p>);

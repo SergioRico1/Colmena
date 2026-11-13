@@ -8,6 +8,8 @@
 // Sent back to the same model the native blocks travel untouched, so signed thinking stays
 // valid; any other provider ignores `native_turn` and reads the derived items.
 
+import { NO_VISION_NOTE, pdfNote } from "../media.mjs";
+
 export const NATIVE = "native_turn";
 const DERIVED = new Set(["message", "function_call", "web_search_call", "reasoning"]);
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
@@ -37,10 +39,20 @@ export function imageBlock(url) {
   return /^https?:\/\//i.test(text) ? { type: "image", source: { type: "url", url: text } } : null;
 }
 
-const NO_VISION = "[Imagen omitida: este modelo no puede ver imágenes. Pide a la persona que la describa si hace falta.]";
+const NO_VISION = "[Imagen omitida] " + NO_VISION_NOTE;
 
-/** User/tool content parts (string or input_text/input_image/output_text) → Anthropic blocks. */
-function partsOf(content, vision) {
+/** A PDF data URL (OpenAI `input_file`) → Anthropic document block; anything else → null. */
+export function documentBlock(part) {
+  const data = /^data:application\/pdf;base64,(.+)$/s.exec(String(part?.file_data || ""));
+  if (!data) return null;
+  return { type: "document", source: { type: "base64", media_type: "application/pdf", data: data[1].replace(/\s+/g, "") }, ...(part.filename ? { title: String(part.filename).slice(0, 200) } : {}) };
+}
+
+/**
+ * User/tool content parts (string or input_text/input_image/input_file/output_text) → Anthropic
+ * blocks. `documents` false: a PDF becomes a note (media.mjs pdfNote) — the route cannot take it.
+ */
+function partsOf(content, vision, documents = true) {
   if (typeof content === "string") return content.trim() ? [{ type: "text", text: content }] : [];
   const out = [];
   for (const part of Array.isArray(content) ? content : []) {
@@ -49,7 +61,7 @@ function partsOf(content, vision) {
     else if (part.type === "input_image" || part.type === "image_url") {
       const block = vision ? imageBlock(part.image_url?.url || part.image_url) : null;
       out.push(block || { type: "text", text: vision ? "[Imagen no compatible omitida]" : NO_VISION });
-    }
+    } else if (part.type === "input_file") out.push((documents && documentBlock(part)) || { type: "text", text: pdfNote(part) });
   }
   return out;
 }
@@ -76,7 +88,7 @@ export function replayBlocks(content, sameModel) {
  * keep their thinking; `engine` must match for a native turn to be replayed at all); `vision` false replaces images with a note; `stripThinking` drops all
  * thinking blocks (after the API refused a stale signature).
  */
-export function toMessages(input, { model = "", vision = true, stripThinking = false, nameFor = (n) => n, engine = "anthropic" } = {}) {
+export function toMessages(input, { model = "", vision = true, documents = true, stripThinking = false, nameFor = (n) => n, engine = "anthropic" } = {}) {
   const items = typeof input === "string" ? [{ role: "user", content: input }] : Array.isArray(input) ? input : [];
   const messages = [];
   const push = (role, blocks) => {
@@ -106,7 +118,7 @@ export function toMessages(input, { model = "", vision = true, stripThinking = f
       continue;
     }
     if (item.type === "function_call_output") {
-      const parts = typeof item.output === "string" ? (item.output ? [{ type: "text", text: item.output }] : []) : partsOf(item.output, vision);
+      const parts = typeof item.output === "string" ? (item.output ? [{ type: "text", text: item.output }] : []) : partsOf(item.output, vision, documents);
       push("user", [{ type: "tool_result", tool_use_id: toolId(item.call_id), content: parts.length ? parts : [{ type: "text", text: "(sin resultado)" }] }]);
       continue;
     }
@@ -118,7 +130,7 @@ export function toMessages(input, { model = "", vision = true, stripThinking = f
     if (item.type && item.type !== "message") continue; // reasoning, web_search_call, image_generation_call…
     const role = item.role === "assistant" ? "assistant" : item.role === "user" || item.role === "developer" || item.role === "system" ? "user" : null;
     if (!role) continue;
-    const blocks = role === "assistant" && typeof item.content !== "string" ? [{ type: "text", text: textOfMessage(item) }].filter((b) => b.text.trim()) : partsOf(item.content, vision);
+    const blocks = role === "assistant" && typeof item.content !== "string" ? [{ type: "text", text: textOfMessage(item) }].filter((b) => b.text.trim()) : partsOf(item.content, vision, documents);
     push(role, blocks);
   }
   return { messages: repair(messages) };

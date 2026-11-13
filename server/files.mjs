@@ -9,6 +9,7 @@ import {
 } from "node:fs/promises";
 import { z } from "zod";
 import { readDocument, isDocumentFormat, DOC_LIMITS, DOCUMENT_NOTICE } from "./documents.mjs";
+import { attachmentMeta, imageResult, isImageName } from "./media.mjs";
 
 export async function safePath(root, relative, { parent = false } = {}) {
   if (
@@ -75,6 +76,11 @@ export async function readMissionBytes(root, relative, { max = DOC_LIMITS.maxByt
  * through documents.mjs, by pages ({name, format, page, pages, content, pdf?, table?…}).
  */
 export async function readMissionDocument(root, relative, page = 1) {
+  // An image is looked at, not read: the model gets the picture (media.mjs imageResult).
+  if (isImageName(relative)) {
+    const { bytes } = await readMissionBytes(root, relative, { max: 25 * 1024 * 1024 });
+    return imageResult(bytes, relative);
+  }
   if (!isDocumentFormat(relative)) {
     const target = await safePath(root, relative);
     let info;
@@ -194,13 +200,18 @@ export function attachmentBody(file) {
   return bytes;
 }
 
-/** Writes attachments into the mission folder; returns [{name, size, encoding}] for the message. */
+/** What a message keeps of one attachment: {name, size, encoding, path, kind?, width?, height?} (media.mjs attachmentMeta). */
+export function attachmentRecord(file, body = attachmentBody(file)) {
+  return { name: file.name, size: Buffer.isBuffer(body) ? body.length : file.size ?? Buffer.byteLength(body), encoding: file.encoding || "utf8", path: file.name, ...attachmentMeta(file.name, body) };
+}
+
+/** Writes attachments into the mission folder; returns their records for the message. */
 export async function writeMissionAttachments(root, files = []) {
   const out = [];
   for (const file of files) {
     const body = attachmentBody(file);
-    await createMissionFile(root, file.name, body);
-    out.push({ name: file.name, size: Buffer.isBuffer(body) ? body.length : file.size ?? Buffer.byteLength(body), encoding: file.encoding || "utf8" });
+    const written = await createMissionFile(root, file.name, body);
+    out.push({ ...attachmentRecord(file, body), path: written.path });
   }
   return out;
 }

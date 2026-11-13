@@ -62,11 +62,26 @@ export function extStyle(name) {
 }
 
 /** Attachment card from the Chat mockup (user bubble). */
+const THUMB_MIME = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp" };
+/** A picture about to be sent, from its own bytes (a pasted screenshot, a dropped photo). */
+const thumbs = new WeakMap(); // file → data URL, built once (the composer repaints on every key)
+const thumbOf = (file) => {
+  if (!file || typeof file !== "object") return null;
+  if (thumbs.has(file)) return thumbs.get(file);
+  const mime = file.encoding === "base64" && typeof file.content === "string" ? THUMB_MIME[String(file.name || "").split(".").pop().toLowerCase()] : null;
+  const url = mime ? "data:" + mime + ";base64," + file.content : null;
+  thumbs.set(file, url);
+  return url;
+};
+
 export function FileCard({ file, onRemove }) {
   const s = extStyle(file.name);
+  const thumb = thumbOf(file);
   return (
     <span style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px 10px 10px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
-      <span aria-hidden="true" style={{ width: "32px", height: "38px", borderRadius: "var(--r-xs)", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 var(--t-micro)/1 'Geist Mono', monospace" }}>{s.label}</span>
+      {thumb
+        ? <img src={thumb} alt="" aria-hidden="true" style={{ width: "38px", height: "38px", flex: "none", objectFit: "cover", borderRadius: "var(--r-xs)", border: "1px solid var(--c-line)", background: "var(--c-sunken)" }} />
+        : <span aria-hidden="true" style={{ width: "32px", height: "38px", borderRadius: "var(--r-xs)", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 var(--t-micro)/1 'Geist Mono', monospace" }}>{s.label}</span>}
       <span style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: "0" }}>
         <strong style={{ overflowWrap: "anywhere" }}>{file.name}</strong>
         <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{fileSize(file.size)}</span>

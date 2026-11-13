@@ -106,7 +106,8 @@ export class AnthropicProvider {
   body({ id, entry, oauth, instructions, input, tools, effort, search, caching, binding, stripThinking }) {
     const nameFor = oauth ? (n) => CASING.get(String(n).toLowerCase()) || n : (n) => n;
     const vision = !entry || entry.input.includes("image");
-    const { messages } = toMessages(input, { model: id, vision, stripThinking, nameFor, engine: this.engine });
+    // PDFs as document blocks on api.anthropic.com only (OpenCode Go's Anthropic route gets their note).
+    const { messages } = toMessages(input, { model: id, vision, documents: this.direct, stripThinking, nameFor, engine: this.engine });
     const system = [];
     if (oauth) {
       system.push({ type: "text", text: `x-anthropic-billing-header: cc_version=${CLAUDE_CODE_VERSION}; cc_entrypoint=sdk-cli;` });

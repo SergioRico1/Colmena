@@ -21,6 +21,7 @@ import { turnSummary, workSummary } from "../../../lib/worklog.js";
 import { useExpert } from "../../../lib/expert.js";
 import { useStore } from "../../../lib/store.jsx";
 import { dragOutProps, workFileUrl } from "../../../lib/dragOut.js";
+import { useActivity } from "../../../lib/liveStore.js";
 
 // Colmena 3 conversation pieces (design/V3Chat.dc.html, V3ChatExperto.dc.html): your message
 // as a soft bubble on the right; the bot's answer under its shape, name and time, in 15.5 px;
@@ -86,6 +87,30 @@ export function AttachmentChip({ name, missionId = null }) {
       <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 }}>{ext}</span>
       <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
     </span>
+  );
+}
+
+const IMAGE_FILE = /\.(png|jpe?g|gif|webp)$/i;
+/** Whether an attachment of your message is a picture the chat can show (HEIC and the like stay chips). */
+export const isImageAttachment = (f) => !!f && typeof f === "object" && IMAGE_FILE.test(String(f.path || f.name || "")) && !f.unsupported && (!f.kind || f.kind === "image");
+
+/**
+ * A picture you attached, in your bubble: 120 px tall at its own proportions (its size comes
+ * from the file's header; a square until it is known), opened in the viewer with a click, Enter
+ * or Space. While the message is being sent it shows from its own bytes.
+ */
+export function AttachmentImage({ file, missionId = null }) {
+  const path = file.path || file.name;
+  const src = file.preview || (missionId ? workFileUrl(missionId, path) : null);
+  if (!src) return null;
+  const ratio = file.width > 0 && file.height > 0 ? file.width / file.height : 1;
+  const width = Math.round(Math.min(240, Math.max(72, 120 * ratio)));
+  // Enter/Space on the button opens the viewer through the picture (Lightbox listens for clicks on img[data-lightbox]).
+  const open = (e) => { if (e.target === e.currentTarget) e.currentTarget.querySelector("img")?.click(); };
+  return (
+    <button type="button" className="v4-thumb" onClick={open} aria-label={`Ver ${file.name}`} {...(missionId && !file.preview ? dragOutProps(workFileUrl(missionId, path)) : {})}>
+      <img src={src} alt={file.name} data-lightbox="" data-name={file.name} loading="lazy" decoding="async" width={width} height={120} style={{ width: width + "px", height: "120px" }} />
+    </button>
   );
 }
 
@@ -251,12 +276,36 @@ export function DeliverableV2({ artifact, onOpen, extra = null }) {
         <a className="v4-btn" href={`/api/artifacts/${encodeURIComponent(artifact?.id)}/download`} download aria-label={"Descargar " + (artifact?.title || "el entregable")} title="Descargar"><Download size={15} />{"Descargar"}</a>
       </div>
       {artifact?.summary ? <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{artifact.summary}</span> : null}
-      {isImage && artifact?.id ? <img src={`/api/artifacts/${encodeURIComponent(artifact.id)}/file`} alt="" data-lightbox="" data-name={(artifact.title || "imagen") + ".png"} style={{ width: "100%", maxHeight: "320px", borderRadius: "var(--r-lg)", objectFit: "cover", cursor: "zoom-in", animation: "develop 1.2s ease-out both" }} /> : null}
+      {/* At its real proportions (width and height from the PNG header), never cropped: up to 420 px tall. */}
+      {isImage && artifact?.id ? <img src={`/api/artifacts/${encodeURIComponent(artifact.id)}/file`} alt="" data-lightbox="" data-name={(artifact.title || "imagen") + ".png"} {...(artifact.width && artifact.height ? { width: artifact.width, height: artifact.height } : {})} style={{ display: "block", width: artifact.width && artifact.height ? `min(100%, ${Math.round((420 * artifact.width) / artifact.height)}px)` : "100%", height: "auto", ...(artifact.width && artifact.height ? { aspectRatio: `${artifact.width} / ${artifact.height}` } : { maxHeight: "420px", objectFit: "contain" }), borderRadius: "var(--r-lg)", background: "var(--c-sunken)", cursor: "zoom-in", animation: "develop 1.2s ease-out both" }} /> : null}
     </article>
   );
 }
 
 const shimmerText = { alignSelf: "flex-start", fontSize: "var(--t-body)", fontWeight: "500", background: "linear-gradient(90deg, var(--c-text-3) 0%, var(--c-text-3) 35%, var(--c-text) 50%, var(--c-text-3) 65%, var(--c-text-3) 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
+
+const IMAGE_PHASES = { Preparando: "Preparando la imagen…", Dibujando: "Dibujando la imagen…", Guardando: "Guardando la imagen…" };
+/**
+ * While a bot makes an image: a frame of the size it asked for (1:1, 3:2 or 2:3), a calm light
+ * passing over it (still with reduced motion: base.css) and the phase it is in, as the provider
+ * reports it (server/images.mjs: «Preparando», «Dibujando», «Guardando»). The real picture
+ * takes its place in the conversation when it arrives (DeliverableV2).
+ */
+function ImageMaking({ tool, botId }) {
+  const now = useActivity(botId);
+  const [w, h] = String(tool.card?.size || "1024x1024").split("x").map(Number);
+  const ratio = w > 0 && h > 0 ? w / h : 1;
+  const said = now?.verb === "creando imagen" ? String(now.detail || "").split(" · ")[0] : "";
+  const phase = IMAGE_PHASES[said] || IMAGE_PHASES.Preparando;
+  return (
+    <div className="v4-imaging" style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .4s ease-out" }}>
+      <div className="v4-imaging-frame" style={{ width: `min(100%, ${Math.round(360 * ratio)}px)`, aspectRatio: `${w || 1} / ${h || 1}` }}>
+        <span role="status" className="v4-imaging-phase">{phase}<span className="v4-imaging-size">{(w && h ? `${w} × ${h}` : "")}</span></span>
+      </div>
+      {tool.card?.prompt ? <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)", maxWidth: "72ch" }}>{tool.card.prompt}</span> : null}
+    </div>
+  );
+}
 
 /**
  * The work while it happens (idea 04: «nada de procesando»): what it reads (each file with a
@@ -279,17 +328,7 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null, head 
       </div>
     );
   }
-  if (image) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .4s ease-out" }}>
-        <div style={{ position: "relative", height: "300px", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--c-sunken)" }}>
-          <div aria-hidden="true" style={{ position: "absolute", inset: "0", animation: "develop 4s ease-out both", background: `radial-gradient(circle at 72% 30%, var(--c-accent-soft) 0 13%, transparent 13.5%), radial-gradient(120% 70% at 20% 110%, ${color} 0 48%, transparent 48.5%), radial-gradient(120% 80% at 90% 120%, var(--c-accent) 0 45%, transparent 45.5%), linear-gradient(180deg, var(--c-sunken), var(--c-accent-soft))` }} />
-          <span role="status" style={{ position: "absolute", left: "20px", bottom: "18px", padding: "8px 14px", borderRadius: "var(--r-pill)", background: "color-mix(in oklab, var(--c-raised) 85%, transparent)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", fontSize: "var(--t-meta)", fontWeight: "500" }}>{"Revelando la imagen…"}</span>
-        </div>
-        {image.card?.prompt ? <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{image.card.prompt}</span> : null}
-      </div>
-    );
-  }
+  if (image) return <ImageMaking tool={image} botId={bot?.id || step?.botId || null} />;
   if (command && command.status === "running") return <RunningCommand command={command} stepId={step?.id} narration={narration} bots={bots} />;
   if (reads.length && running.some((t) => ["file", "web", "pdf_fields", "folder"].includes(t.card?.type))) {
     return (

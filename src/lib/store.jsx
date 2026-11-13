@@ -403,6 +403,12 @@ export function useAction() {
   return { act, busy, error, status, conflict: status === 409, setError };
 }
 
+const IMAGE_MIME = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp" };
+/** An attachment of a message being sent: a picture shows from its own bytes until the server has it. */
+const sentAttachment = (f) => {
+  const mime = f.encoding === "base64" ? IMAGE_MIME[String(f.name || "").split(".").pop().toLowerCase()] : null;
+  return { name: f.name, size: f.size ?? null, ...(mime ? { kind: "image", preview: "data:" + mime + ";base64," + f.content } : {}) };
+};
 /** Your message, shown in the room the moment you send it (OpenClaw optimistic send). */
 const sentText = new Map(); // optimistic id → text (what failSent keeps in «No enviados»)
 export function showSent(path, text, attachments = []) {
@@ -411,7 +417,7 @@ export function showSent(path, text, attachments = []) {
   if (sentText.size > 50) sentText.delete(sentText.keys().next().value);
   const add = (prev) => ({
     ...prev,
-    messages: [...(prev.messages || []), { id, missionId: path.split("/")[2] || null, role: "user", text, kind: "message", at: new Date().toISOString(), optimistic: true, attachments: (attachments || []).map((f) => ({ name: f.name, size: f.size ?? null })), reactions: [] }],
+    messages: [...(prev.messages || []), { id, missionId: path.split("/")[2] || null, role: "user", text, kind: "message", at: new Date().toISOString(), optimistic: true, attachments: (attachments || []).map(sentAttachment), reactions: [] }],
   });
   patchResource(path, add);
   patchResource(path + "?mensajes=todos", add);
