@@ -8,7 +8,7 @@ import ApiKeysCard from "../../settings/ApiKeys.jsx";
 import { runDiagnostics, useDiagnostics } from "./Diagnostics.jsx";
 import { Alert, Card, LINE, Panel, Row, UNDO_MS, btn, field, mono, select } from "./v3.jsx";
 
-// Ajustes › Avanzado (design/V3Ajustes.dc.html, only in expert mode): the MCP servers you add by
+// Ajustes › Servidores y claves (group «Avanzado», only in expert mode): the MCP servers you add by
 // address, the model on this computer (OpenAI compatible: Ollama, LM Studio…), the OpenAI API
 // key, the keys your bots asked you for, a fixed model per family on Claude and OpenCode Go,
 // and where Colmena keeps its data and listens.
@@ -41,7 +41,7 @@ function McpServers() {
   };
   const shown = (list || []).filter((s) => !isHidden("mcp:" + s.id));
   return (
-    <Panel anchor="mcp" title="Servidores MCP" sub="Herramientas propias para tus bots: cualquier servidor MCP por su dirección. Las apps conocidas están en Apps y carpetas."
+    <Panel anchor="mcp" title="Servidores MCP" sub="Herramientas propias para tus bots: cualquier servidor MCP por su dirección. Las apps conocidas se conectan en Apps y carpetas."
       aside={<button type="button" aria-expanded={adding} onClick={() => setAdding(!adding)} style={{ ...btn("outline", 36), fontSize: "var(--t-ui)", borderColor: "rgb(var(--c-ink-rgb) / .16)" }}>{adding ? "Cancelar" : "Añadir servidor"}</button>}>
       {adding ? (
         <form onSubmit={add} style={{ display: "flex", flexWrap: "wrap", gap: "8px", animation: "fade .25s ease-out" }}>
@@ -139,7 +139,7 @@ export default function AdvancedSection() {
   if (!expert) {
     return (
       <Card label="Avanzado">
-        <Row first title="Avanzado está en el modo experto" sub="Servidores MCP, claves de API, modelos locales y la carpeta de datos. Enciéndelo y aparece la sección; no quita nada.">
+        <Row first title="Esta sección es del modo experto" sub="Servidores MCP, claves de API, modelos locales y la carpeta de datos. Enciéndelo y aparece en la lista; no quita nada.">
           <button type="button" onClick={() => setExpert(true)} style={btn("dark", 40)}>Encender el modo experto</button>
         </Row>
       </Card>

@@ -1,20 +1,12 @@
 import { useState } from "react";
-import { Banknote, Download, Lock, PackagePlus, Send, ShieldCheck, Trash2 } from "../Icon.js";
-import { BotAvatar, Card, Notice, PageHeader, Toggle, btn } from "./SettingsShell.jsx";
+import { Download } from "../Icon.js";
+import { BotAvatar, Card, Notice, PageHeader, btn } from "./SettingsShell.jsx";
 import { csvCell } from "./format.jsx";
-import VaultCard from "./Vault.jsx";
-import ApiKeysCard from "./ApiKeys.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
-import { del, download, patch } from "../../lib/api.js";
+import { download } from "../../lib/api.js";
+import { navigate } from "../../lib/router.jsx";
 import { dateTime } from "../../lib/format.js";
-import { later } from "../../lib/undoToast.js";
 
-const RED_LINES = [
-  { title: "Enviar algo fuera", text: "Correos, mensajes y publicaciones a cualquiera fuera de Colmena.", Icon: Send },
-  { title: "Mover dinero", text: "Pagos, transferencias, facturas emitidas o cambios en cuentas.", Icon: Banknote },
-  { title: "Borrar", text: "Archivos, correos, registros o eventos, aunque se puedan recuperar.", Icon: Trash2 },
-  { title: "Instalar", text: "Programas, extensiones o cambios en este ordenador.", Icon: PackagePlus },
-];
 const DECISION = {
   approved: { label: "Aprobado", style: { background: "var(--c-ok-soft)", color: "var(--c-ok-ink)" } },
   executed: { label: "Hecho", style: { background: "var(--c-ok-soft)", color: "var(--c-ok-ink)" } },
@@ -24,11 +16,14 @@ const DECISION = {
 };
 const PAGE = 25;
 
-/** Ajustes › Seguridad y registro: red lines, «Permitir siempre» rules and the decision log. */
+/**
+ * Ajustes › Memoria y privacidad › Registro de acciones (/ajustes/seguridad): the decision log, with
+ * its CSV. The red lines, the reviewer and the «Permitir siempre» rules used to be repeated here;
+ * they live once, in Autonomía y permisos, and this page links there.
+ */
 export default function Seguridad() {
-  const { approvals, bots, settings, state } = useStore();
-  const grants = (state.grants || []).filter((g) => g.active !== false);
-  const { act, busy, error } = useAction();
+  const { approvals, bots, settings } = useStore();
+  const { error } = useAction();
   const [shown, setShown] = useState(PAGE);
   const bot = (id) => bots.find((b) => b.id === id) || null;
   const who = (a) => (a.decidedBy === "regla" ? "Regla «Permitir siempre»" : a.decidedBy === "revisor" ? "Revisor de Colmena" : settings.userName || "Tú");
@@ -56,58 +51,10 @@ export default function Seguridad() {
 
   return (
     <>
-      <PageHeader title="Seguridad y registro">Lo que tus bots nunca hacen sin preguntar, lo que has permitido para siempre y quién decidió cada cosa.</PageHeader>
+      <PageHeader title="Registro de acciones">Todo lo que tus bots han pedido y quién lo decidió: tú, el revisor automático o una regla «Permitir siempre».</PageHeader>
       <Notice>{error}</Notice>
 
-      <Card id="lineas" title="Líneas rojas" aside={<span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", fontWeight: "600" }}><Lock size={14} strokeWidth={2.2} aria-hidden="true" />Siempre activas</span>}>
-        <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>Estas acciones piden tu permiso en Hoy sea cual sea la autonomía del bot. No se pueden desactivar ni convertir en «Permitir siempre».</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: "10px" }}>
-          {RED_LINES.map((r) => (
-            <div key={r.title} style={{ padding: "14px", background: "var(--c-hover)", borderRadius: "var(--r-md)", display: "flex", flexDirection: "column", gap: "8px" }}>
-              <span aria-hidden="true" style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", background: "var(--c-card)", border: "1.5px solid var(--c-error)", color: "var(--c-error)", borderRadius: "var(--r-sm)" }}>
-                <r.Icon size={17} strokeWidth={2} />
-              </span>
-              <strong style={{ fontSize: "var(--t-body)" }}>{r.title}</strong>
-              <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)" }}>{r.text}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card id="revisor" title="Revisor automático">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
-          <span style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
-            <ShieldCheck size={18} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
-            <span style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <strong style={{ fontSize: "var(--t-body)" }}>{settings.autoReview !== false ? "Aprueba por ti lo rutinario" : "Todo pasa por ti"}</strong>
-              <span style={{ color: "var(--c-text-3)" }}>Cuando un bot pide permiso para algo que no sale de Colmena (guardar un archivo o una entrega, rellenar una copia de un PDF, recordar algo), el modelo más barato lo revisa y, si es claramente parte de lo que pediste, lo aprueba. Si duda, te lo deja a ti. Las líneas rojas y las imágenes siempre te las pregunta.</span>
-            </span>
-          </span>
-          <Toggle large on={settings.autoReview !== false} disabled={busy} label="Revisor automático" onChange={(v) => act(() => patch("/settings", { autoReview: v }))} />
-        </div>
-      </Card>
-
-      <VaultCard />
-      <ApiKeysCard />
-
-      <Card id="siempre" title="Permitido siempre" aside={<span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{grants.length} {grants.length === 1 ? "regla" : "reglas"}</span>}>
-        {grants.length === 0 ? (
-          <p style={{ margin: "0", padding: "14px", background: "var(--c-hover)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>No has permitido nada para siempre. Cuando marques «Permitir siempre» al aprobar algo en Hoy, la regla aparecerá aquí y podrás revocarla.</p>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {grants.map((g, i) => (
-              <div key={g.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 0", borderTop: i ? "1px solid rgb(var(--c-ink-rgb) / .06)" : "0" }}>
-                {bot(g.botId) ? <BotAvatar bot={bot(g.botId)} size={28} font={12} /> : <span aria-hidden="true" style={{ width: "28px", height: "28px", borderRadius: "var(--r-circle)", background: "var(--c-sunken)" }} />}
-                <span style={{ flex: "1 1 240px", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
-                  <strong style={{ fontSize: "var(--t-ui)" }}>{g.label || g.title || g.text || "Regla sin nombre"}</strong>
-                  <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{[bot(g.botId)?.name || (g.botId ? g.botId : "Todos los bots"), g.createdAt ? `desde ${dateTime(g.createdAt)}` : null].filter(Boolean).join(" · ")}</span>
-                </span>
-                <button type="button" disabled={busy} onClick={() => later({ id: "grant:" + g.id, keys: ["grant:" + g.id], text: "Permiso retirado", error: "No se pudo retirar", run: () => act(() => del(`/grants/${encodeURIComponent(g.id)}`)) })} style={btn.quiet}>Revocar</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      <p style={{ margin: 0, maxWidth: "720px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Lo que nunca hacen sin preguntarte (las líneas rojas), el revisor automático y lo que permitiste para siempre se cambian en <a href="/ajustes/permisos" onClick={(e) => { e.preventDefault(); navigate("/ajustes/permisos"); }} style={{ color: "var(--c-accent-ink)", fontWeight: 600 }}>Autonomía y permisos</a>.</p>
 
       <Card id="registro" title="Registro de acciones" aside={<button type="button" onClick={exportCsv} disabled={!log.length} style={{ ...btn.outline, height: "36px", fontSize: "var(--t-meta)" }}>
         <Download size={14} strokeWidth={2.2} aria-hidden="true" />

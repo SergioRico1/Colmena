@@ -15,19 +15,20 @@ const inMin = (n) => new Date(NOW + n * 60000).toISOString();
 
 test("Ajustes: «Contactos y equipos» is the people you talk to; who signs here is «Quién usa este ordenador»", () => {
   const label = (key) => SETTINGS_INDEX.find((i) => i.key === key)?.label;
-  assert.equal(label("general#quien-usa"), "Quién usa este ordenador");
-  assert.equal(label("general#personas"), "Contactos y equipos");
+  // Since Colmena 4 both live in «Tu equipo y tus contactos»: the page is a row of Contactos y equipos.
+  assert.equal(label("contactos#quien-usa"), "Quién usa este ordenador");
+  assert.equal(label("contactos"), "Contactos y equipos");
   assert.equal(SETTINGS_INDEX.some((i) => i.label === "Personas del espacio"), false);
   // The page keeps working at its old address.
-  assert.equal(PARENT["quien-usa"], "general");
+  assert.equal(PARENT["quien-usa"], "contactos");
   assert.equal(DETAIL_ALIAS.personas, "quien-usa");
   // Searching the old words still finds it.
-  assert.ok(searchSettings("firmar").some((i) => i.key === "general#quien-usa"));
+  assert.ok(searchSettings("firmar").some((i) => i.key === "contactos#quien-usa"));
   const page = read("src/components/settings/Personas.jsx");
   assert.ok(page.includes('<PageHeader title="Quién usa este ordenador">'));
   assert.equal(/no hay invitaciones ni cuentas en red/.test(page), false, "that sentence is gone: there are invitations now");
-  const general = read("src/components/v2/settings/General.jsx");
-  assert.ok(general.includes('title="Quién usa este ordenador"') && general.includes('to="/ajustes/quien-usa"'));
+  const contacts = read("src/components/v2/settings/People.jsx");
+  assert.ok(contacts.includes('title="Quién usa este ordenador"') && contacts.includes('to="/ajustes/quien-usa"'));
 });
 
 test("«Encargos»: a bot's standing duties are «Tareas fijas», on its profile and in Rutinas alike", () => {

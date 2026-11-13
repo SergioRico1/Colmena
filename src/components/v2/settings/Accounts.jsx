@@ -6,7 +6,8 @@ import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, patch, post } from "../../../lib/api.js";
 import { later, reversible } from "../../../lib/undoToast.js";
 import { useExpert } from "../../../lib/expert.js";
-import { Alert, BotMark, Card, Choices, Chip, Go, LINE, Meter, Panel, Row, Term, UNDO_MS, anchorOf, btn, mono, select, useSettings } from "./v3.jsx";
+import { Advanced, Alert, BotMark, Card, Choices, Chip, Go, LINE, Meter, Panel, Row, Term, UNDO_MS, anchorOf, btn, danger, mono, select, useSettings } from "./v3.jsx";
+import { disconnectAiText } from "./effects.js";
 
 // Ajustes › Cuentas de IA (design/V3AjustesIA.dc.html): the three accounts Colmena thinks with
 // (ChatGPT; Claude through Claude Code, a setup-token or an API key; OpenCode Go), which one
@@ -27,7 +28,7 @@ const hm = (iso) => { const t = Date.parse(iso || ""); return Number.isFinite(t)
 const small = { ...select, width: "100%", height: "32px", padding: "0 6px", fontSize: "var(--t-ui)" };
 
 /** One account card: mark, name and its role, what it is, how much of the plan is gone, its button. */
-function Provider({ id, info, primary, fallback, planLimits, login }) {
+function Provider({ id, info, primary, fallback, planLimits, login, engines, bots }) {
   const act = useAction();
   const [open, setOpen] = useState(false);
   const connected = !!info?.connected;
@@ -75,11 +76,11 @@ function Provider({ id, info, primary, fallback, planLimits, login }) {
       {open && !connected && id === "opencode-go" ? <OpenCodePanel onDone={() => setOpen(false)} style={{ padding: "16px 20px 20px 80px", borderBottom: 0, borderTop: LINE }} /> : null}
       {open && connected ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "14px 20px 16px 80px", borderTop: LINE, animation: "fade .25s ease-out" }}>
-          <span style={{ flex: "1 1 240px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-3)" }}>
-            {id === "anthropic" && info.method ? { cli: "Con la sesión de Claude Code de este ordenador.", token: "Con un token de suscripción (claude setup-token).", api_key: "Con una clave de API, pago por uso." }[info.method] || null : null}
-            {" "}Si la desconectas, los bots que la usan siguen con la principal o el respaldo.
+          <span style={{ flex: "1 1 240px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
+            {id === "anthropic" && info.method ? <span style={{ color: "var(--c-text-2)" }}>{{ cli: "Conectada con la sesión de Claude Code de este ordenador.", token: "Conectada con un token de suscripción (claude setup-token).", api_key: "Conectada con una clave de API: pagas por uso." }[info.method] || null}</span> : null}
+            <span style={{ color: "var(--c-text-3)" }}>{"Si la desconectas: " + disconnectAiText({ id, engines, primary, fallback, bots })}</span>
           </span>
-          <button type="button" disabled={act.busy} onClick={disconnect} style={{ ...btn("outline", 34), color: "var(--c-error)", borderColor: "color-mix(in srgb, var(--c-error) 35%, transparent)" }}>Desconectar</button>
+          <button type="button" disabled={act.busy} onClick={disconnect} style={danger(34)}>Desconectar</button>
         </div>
       ) : null}
       {act.error ? <p role="alert" style={{ margin: 0, padding: "0 20px 14px 80px", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{act.error}</p> : null}
@@ -168,22 +169,18 @@ export default function AccountsSection() {
     <>
       <Alert>{error || act.error}</Alert>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {ENGINES.map((id) => <Provider key={id} id={id} info={engine(id)} primary={primary} fallback={ai?.fallback} planLimits={planLimits} login={login} />)}
+        {ENGINES.map((id) => <Provider key={id} id={id} info={engine(id)} primary={primary} fallback={ai?.fallback} planLimits={planLimits} login={login} engines={engines} bots={list} />)}
       </div>
 
       <Card label="Qué usan">
-        <Row as="label" first anchor="piensan-con" title="Piensan con" sub={live.length ? "La cuenta que usan por defecto." : "Conecta una cuenta para que tus bots puedan pensar."}>
+        <Row as="label" first anchor="piensan-con" title="Piensan con" sub={live.length > 1 ? "La cuenta que usan por defecto." : live.length ? "Es la única conectada. Conecta otra arriba para poder elegir." : "Conecta una cuenta arriba para que tus bots puedan pensar."}>
           <Select aria-label="Piensan con" disabled={live.length < 2 || act.busy} value={primary || ""} onChange={(e) => setEngines({ primary: e.target.value }, "Tu equipo piensa con " + engine(e.target.value)?.label, { primary })} style={{ ...select, width: "220px" }} options={live.length ? live.map((e) => [e.id, e.label]) : [["", "Ninguna todavía"]]} />
         </Row>
         <Row as="label" anchor="respaldo" title="Si falla o llega al límite, usar"
-          sub={fallback === "none" ? "Si la principal llega a su límite, paran y te avisan; lo hecho se conserva." : "Siguen trabajando sin que tengas que hacer nada, con todo lo que llevaban."}>
+          sub={!live.length ? "Primero conecta una cuenta." : fallback === "none" ? (live.length < 2 && !ai?.local ? "Con una sola cuenta no hay respaldo: si llega a su límite, paran y te avisan; lo hecho se conserva." : "Si la principal llega a su límite, paran y te avisan; lo hecho se conserva.") : "Siguen trabajando sin que tengas que hacer nada, con todo lo que llevaban."}>
           <Select aria-label="Si falla o llega al límite, usar" disabled={!live.length || act.busy} value={fallback} onChange={(e) => setEngines({ fallback: e.target.value }, "Respaldo cambiado", { fallback })} style={{ ...select, width: "220px" }} options={fallbacks} />
         </Row>
-        {gptOn && gptModels.length ? (
-          <Row as="label" anchor="modelo" title="Modelo de ChatGPT" sub="El que usan cuando piensan con ChatGPT.">
-            <Select aria-label="Modelo de ChatGPT" value={settings.model || ""} onChange={(e) => save({ model: e.target.value }, "Modelo cambiado", { model: settings.model })} style={{ ...select, width: "220px" }} options={gptModels.map((m) => [m.slug, m.label || m.slug])} />
-          </Row>
-        ) : null}
+
         <div {...anchorOf("cuanto-piensan")} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px 22px", borderTop: LINE, scrollMarginTop: "24px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
             <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>Cuánto piensan</span>
@@ -193,11 +190,20 @@ export default function AccountsSection() {
         </div>
       </Card>
 
-      {list.length ? <PerBot bots={list} engines={engines} team={team} busy={act.busy} setBot={setBot} /> : null}
+      <Advanced summary="El modelo de ChatGPT y qué cuenta, qué modelo y cuánto piensa cada bot." anchors={["modelo", "por-bot"]}>
+        {gptOn && gptModels.length ? (
+          <Card label="Modelo">
+            <Row as="label" first anchor="modelo" title="Modelo de ChatGPT" sub="El que usan cuando piensan con ChatGPT. Colmena elige uno bueno; cámbialo solo si lo necesitas.">
+              <Select aria-label="Modelo de ChatGPT" value={settings.model || ""} onChange={(e) => save({ model: e.target.value }, "Modelo cambiado", { model: settings.model })} style={{ ...select, width: "220px" }} options={gptModels.map((m) => [m.slug, m.label || m.slug])} />
+            </Row>
+          </Card>
+        ) : null}
+        {list.length ? <PerBot bots={list} engines={engines} team={team} busy={act.busy} setBot={setBot} /> : null}
+      </Advanced>
 
       <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>
         ¿<Term tip="Una clave que da acceso a OpenAI pagando por uso, en lugar de tu plan de ChatGPT.">Clave de API</Term> de OpenAI o un modelo en este ordenador (Ollama, LM Studio)? Está en{" "}
-        {expert ? <Go to="/ajustes/avanzado">Ajustes › Avanzado</Go> : <><Go to="/ajustes/general#modo-experto">Ajustes › Avanzado</Go>, con el modo experto</>}.
+        {expert ? <Go to="/ajustes/avanzado#clave-openai">Servidores y claves</Go> : <><Go to="/ajustes/general#modo-experto">Servidores y claves</Go>, con el modo experto</>}.
       </p>
     </>
   );

@@ -4,7 +4,7 @@ import { DictationHelp, refreshVoiceStatus, setDictationEngine, useVoiceStatus }
 import { reversible } from "../../../lib/undoToast.js";
 import { Alert, LINE, Row, UNDO_MS, btn, select } from "./v3.jsx";
 
-// Ajustes › Privacidad › «Dictado por voz» (design/V3Privacidad.dc.html): who turns your voice
+// Ajustes › Navegador y dictado › «Dictado por voz»: who turns your voice
 // into text. Automático uses this computer's recognizer (your voice stays here) and the OpenAI
 // key only when that is missing; the person can pin either one. Says what dictates now and,
 // when the computer's recognizer is missing, how to install it.
@@ -16,7 +16,7 @@ function nowLine(v) {
   if (!v) return { text: "Comprobando…", color: "var(--c-text-3)" };
   if (v.mode === "sistema") return { text: "Se transcribe en este ordenador; tu voz no sale" + (v.system?.onDevice === false ? " salvo al servicio de Apple." : "."), color: "var(--c-text-3)" };
   if (v.mode === "openai") return { text: "Con tu clave de OpenAI: el audio va a OpenAI para pasarlo a texto.", color: "var(--c-text-3)" };
-  if (v.preference === "openai") return { text: "Falta la clave de OpenAI (Ajustes › Avanzado).", color: "var(--c-error)" };
+  if (v.preference === "openai") return { text: "Falta la clave de OpenAI (Ajustes › Servidores y claves, con el modo experto).", color: "var(--c-error)" };
   return { text: "Ahora mismo no se puede dictar.", color: "var(--c-error)" };
 }
 

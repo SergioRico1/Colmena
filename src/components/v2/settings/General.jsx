@@ -1,10 +1,11 @@
 import { useExpert } from "../../../lib/expert.js";
 import { reversible } from "../../../lib/undoToast.js";
 import { applyTheme } from "../../../lib/theme.js";
-import { Alert, Card, Go, Panel, Pills, Row, SwitchRow, TextInput, UNDO_MS, btn, useSettings } from "./v3.jsx";
+import { Alert, Card, Panel, Pills, Row, SwitchRow, TextInput, UNDO_MS, useSettings } from "./v3.jsx";
 
-// Ajustes › General (design/V3Ajustes.dc.html): your name, your space, the theme (Colmena 4),
-// how much detail you see (Modo experto) and the keyboard shortcuts. The board's language and
+// Ajustes › Perfil y apariencia (group «Tú»): your name, your space, the theme (Colmena 4), how
+// much detail you see (Modo experto), how the bots talk to you, and the keyboard shortcuts. Who
+// uses this computer and your contacts moved to Contactos y equipos. The board's language and
 // start page are not settings Colmena has yet, so they are left out rather than drawn dead.
 
 const THEME_ITEMS = [["system", "Sistema"], ["light", "Claro"], ["dark", "Oscuro"]];
@@ -36,8 +37,8 @@ export default function GeneralSection() {
   return (
     <>
       <Alert>{error}</Alert>
-      <Card label="General">
-        <Row as="label" first anchor="tu-nombre" title="Tu nombre" sub="Así te llaman los bots y las personas.">
+      <Card label="Tú">
+        <Row as="label" first anchor="tu-nombre" title="Tu nombre" sub="Así te llaman los bots y las personas con las que hablas.">
           <TextInput label="Tu nombre" value={settings.userName} onSave={(v) => save({ userName: v }, "Nombre cambiado")} />
         </Row>
         <Row as="label" anchor="tu-rol" title="Tu rol" sub="Les ayuda a saber qué te importa.">
@@ -47,23 +48,20 @@ export default function GeneralSection() {
         <Row as="label" anchor="nombre-espacio" title="Nombre del espacio" sub="El equipo, la empresa o el departamento que trabaja aquí.">
           <TextInput label="Nombre del espacio" value={settings.spaceName} onSave={(v) => save({ spaceName: v }, "Nombre del espacio cambiado")} />
         </Row>
-        <Row anchor="tema" title="Tema" sub="Claro, oscuro o el mismo que tu ordenador.">
+      </Card>
+      <Card label="Apariencia">
+        <Row first anchor="tema" title="Tema" sub="Claro, oscuro o el mismo que tu ordenador.">
           <Pills label="Tema" items={THEME_ITEMS} value={theme} onPick={pickTheme} />
         </Row>
-        <SwitchRow anchor="modo-experto" strong min="76px" tint="var(--c-hover)" title="Modo experto"
-          sub="Muestra herramientas, tokens, modelo, registros y atajos. Añade la sección Avanzado. No quita nada."
+        <SwitchRow anchor="modo-experto" strong min="76px" title="Modo experto"
+          sub="Muestra herramientas, tokens, modelos y registros, abre las opciones avanzadas de cada sección y añade «Servidores y claves». No quita nada."
           on={expert} onChange={toggleExpert} />
-        <SwitchRow anchor="narracion" title="Te cuentan en qué están" sub="Una frase mientras trabajan: «Leyendo tus correos de hoy…»." on={settings.narration !== false} onChange={flip("narration", "Te cuentan en qué están")} />
-        <SwitchRow anchor="sugerencias" title="Respuestas sugeridas" sub="Hasta tres respuestas listas para pulsar bajo la última pregunta." on={settings.suggestions !== false} onChange={flip("suggestions", "Respuestas sugeridas")} />
-        <SwitchRow anchor="quien-responde" title="Elegir solo quién responde en las salas" sub="Si no nombras a nadie, responde el bot al que le toca. Apagado, responde siempre el bot que coordina." on={settings.routing !== false} onChange={flip("routing", "Elegir solo quién responde")} />
-        <Row anchor="quien-usa" title="Quién usa este ordenador" sub="Las personas que comparten este mismo ordenador: quién firma lo que se aprueba aquí y a quién se asignan tareas.">
-          <Go to="/ajustes/quien-usa" style={btn("outline", 36)}>Ver la lista</Go>
-        </Row>
-        <Row anchor="personas" title="Contactos y equipos" sub="Las personas con las que hablas desde Colmena, en otros ordenadores: invitaciones, tu estado y lo que pueden pedir a tus bots.">
-          <Go to="/ajustes/contactos" style={btn("outline", 36)}>Abrir</Go>
-        </Row>
       </Card>
-      <Panel anchor="atajos" title="Atajos de teclado">
+      <Card label="En las conversaciones">
+        <SwitchRow first anchor="narracion" title="Te cuentan en qué están" sub="Una frase mientras trabajan: «Leyendo tus correos de hoy…»." on={settings.narration !== false} onChange={flip("narration", "Te cuentan en qué están")} />
+        <SwitchRow anchor="sugerencias" title="Respuestas sugeridas" sub="Hasta tres respuestas listas para pulsar bajo la última pregunta." on={settings.suggestions !== false} onChange={flip("suggestions", "Respuestas sugeridas")} />
+        <SwitchRow anchor="quien-responde" title="Elegir solo quién responde en las salas" sub="Encendido, si no nombras a nadie responde el bot al que le toca. Apagado, responde siempre el que coordina." on={settings.routing !== false} onChange={flip("routing", "Elegir solo quién responde")} />
+      </Card>      <Panel anchor="atajos" title="Atajos de teclado">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: "6px 24px" }}>
           {KEYS.map(([a, k]) => (
             <div key={a} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "34px", fontSize: "var(--t-ui)" }}>

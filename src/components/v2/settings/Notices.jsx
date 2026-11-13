@@ -125,8 +125,8 @@ function CheckinRows() {
               <Select aria-label="Desde" disabled={busy} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={hour} options={Array.from({ length: 24 }, (_, h) => [h, h + ":00"])} />
               a
               <Select aria-label="Hasta" disabled={busy} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={hour} options={Array.from({ length: 24 }, (_, h) => [h + 1, (h + 1) + ":00"])} />
-              <label style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <input type="checkbox" disabled={busy} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} style={{ accentColor: "var(--c-text)" }} />
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "32px", cursor: "pointer" }}>
+                <input type="checkbox" disabled={busy} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} style={{ width: "16px", height: "16px", margin: 0, accentColor: "var(--c-text)" }} />
                 y fines de semana
               </label>
               <button type="button" onClick={runNow} disabled={busy} style={btn("outline", 34)}>{busy ? "Revisando…" : "Revisar ahora"}</button>

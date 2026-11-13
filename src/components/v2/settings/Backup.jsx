@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import { Download } from "../../Icon.js";
 import { del, get, post, postFile, put } from "../../../lib/api.js";
 import { reversible } from "../../../lib/undoToast.js";
-import { Alert, LINE, Pills, UNDO_MS, anchorOf, btn, field, h3 } from "./v3.jsx";
+import { Alert, Confirm, LINE, Pills, UNDO_MS, anchorOf, btn, field, h3 } from "./v3.jsx";
+import { forgetBackupPasswordText } from "./effects.js";
 
 // Ajustes › Privacidad y datos › «Copias de seguridad» (design/V3Privacidad.dc.html,
 // server/backup-service.mjs): a copy of everything that is yours in Colmena, sealed with a
@@ -103,6 +104,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
   const [otherFolder, setOtherFolder] = useState(null);
   const [restoring, setRestoring] = useState(null);
   const [done, setDone] = useState(false);
+  const [forgetting, setForgetting] = useState(false);
   const fileInput = useRef(null);
   const load = () => get("/backup").then(setV).catch((e) => setError(e.message));
   const act = async (what, fn) => {
@@ -200,7 +202,13 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
         {open === "password" ? (
           <>
             <PasswordForm busy={busy === "password"} onCancel={() => setOpen(null)} onSave={async (p) => { const r = await act("password", () => post("/backup/password", { password: p })); if (r) setOpen(null); }} />
-            {v.hasPassword ? <p style={{ margin: "-6px 22px 14px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>¿Ya no quieres copias? <button type="button" onClick={() => act("password", () => del("/backup/password")).then(() => setOpen(null))} style={{ padding: 0, border: 0, background: "none", font: "inherit", fontWeight: 600, color: "var(--c-text)", textDecoration: "underline", cursor: "pointer" }}>Olvidar la contraseña</button>.</p> : null}
+            {v.hasPassword && !forgetting ? <p style={{ margin: "-6px 22px 14px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>¿Ya no quieres copias? <button type="button" onClick={() => setForgetting(true)} style={{ padding: 0, border: 0, background: "none", font: "inherit", fontWeight: 600, color: "var(--c-error)", textDecoration: "underline", cursor: "pointer" }}>Olvidar la contraseña…</button></p> : null}
+            {v.hasPassword && forgetting ? (
+              <Confirm title={forgetBackupPasswordText(v).title} action={forgetBackupPasswordText(v).action} busy={busy === "password"} style={{ margin: "0 22px 16px" }}
+                onCancel={() => setForgetting(false)} onConfirm={() => act("password", () => del("/backup/password")).then(() => { setForgetting(false); setOpen(null); })}>
+                {forgetBackupPasswordText(v).body}
+              </Confirm>
+            ) : null}
           </>
         ) : null}
 

@@ -3,13 +3,13 @@ import { ChevronLeft, CornerDownLeft, X, Search } from "../../Icon.js";
 import Shell from "../Shell.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { useExpert } from "../../../lib/expert.js";
-import { SECTIONS, SECTION_OF, searchSettings, settingsIndex } from "./sections.js";
+import { SECTION_OF, groupedSections, searchSettings, settingsIndex } from "./sections.js";
 import { srOnly } from "./v3.jsx";
 import { C } from "../../../lib/theme.js";
 
-// Ajustes (Colmena 3, design/V3Ajustes.dc.html): on the left «Ajustes», a search box and the
-// eight sections (Avanzado too, in expert mode); on the right the chosen one, with what it is
-// for under its title. In a narrow window it is one column, like the Settings of a phone:
+// Ajustes (Colmena 4): on the left «Ajustes», a search box and the sections in six groups by what
+// people think about («Tú», «Tu equipo y tus contactos»…), each with its status at a glance
+// (sections.js, status.js); on the right the chosen one, with what it is for under its title. In a narrow window it is one column, like the Settings of a phone:
 // /ajustes is the list and a section opens on its own, with «‹ Ajustes» to go back. Detail
 // pages (/ajustes/ordenador, /ajustes/seguridad…) live inside their section: the section stays
 // marked and «‹ <sección>» goes back to it.
@@ -70,6 +70,21 @@ function useAnchor(ready) {
 
 const itemStyle = (on) => ({ minHeight: "40px", display: "flex", alignItems: "center", gap: "10px", padding: "0 10px", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", fontWeight: on ? 600 : 500, color: "var(--c-text)", textDecoration: "none" });
 
+const TONE = { ok: C.okInk, error: C.error, quiet: C.text3, news: C.accentInk };
+
+/** A section's status beside its name: a word or two and, when it matters, a dot. */
+function Tag({ tag }) {
+  if (!tag) return null;
+  const color = TONE[tag.tone] || C.text3;
+  return (
+    <span title={tag.label} style={{ flex: "none", display: "inline-flex", alignItems: "center", gap: "5px", maxWidth: "96px", fontSize: "var(--t-caption)", fontWeight: tag.tone === "error" ? 600 : 500, color, fontVariantNumeric: "tabular-nums" }}>
+      {tag.tone === "error" || tag.tone === "ok" || tag.tone === "news" ? <span aria-hidden="true" style={{ flex: "none", width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: tag.tone === "ok" ? C.ok : color }} /> : null}
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tag.text}</span>
+      {tag.label && tag.label !== tag.text ? <span style={srOnly}>{": " + tag.label}</span> : null}
+    </span>
+  );
+}
+
 function Nav({ active, tags }) {
   const [expert] = useExpert();
   const [q, setQ] = useState("");
@@ -99,9 +114,9 @@ function Nav({ active, tags }) {
     else if (e.key === "ArrowUp") { e.preventDefault(); setAt((i) => (i - 1 + results.length) % results.length); }
     else if (e.key === "Enter") { e.preventDefault(); open(results[at] || results[0]); }
   };
-  const shown = SECTIONS.filter((s) => !s.hidden && (!s.expert || expert));
+  const groups = groupedSections(expert);
   return (
-    <nav className="st-nav" aria-label="Secciones de Ajustes" style={{ flex: "0 0 264px", position: "sticky", top: 0, display: "flex", flexDirection: "column", gap: "4px", minHeight: "100vh", padding: "40px 14px 24px 22px", boxSizing: "border-box" }}>
+    <nav className="st-nav" aria-label="Secciones de Ajustes" style={{ flex: "0 0 300px", minWidth: 0, position: "sticky", top: 0, display: "flex", flexDirection: "column", gap: "4px", minHeight: "100vh", padding: "40px 14px 24px 22px", boxSizing: "border-box" }}>
       <h1 style={{ margin: "0 0 14px 8px", font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>Ajustes</h1>
       <label style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", height: "40px", marginBottom: "10px", padding: "0 12px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
         <Search size={15} color={C.text3} />
@@ -131,19 +146,25 @@ function Nav({ active, tags }) {
               </a>
             );
           })}
-          {!results.length ? <p role="status" style={{ margin: "8px 10px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Ningún ajuste se llama así. Prueba con otra palabra: «sonido», «modelo», «contraseña»…</p> : null}
+          {!results.length ? <p role="status" style={{ margin: "8px 10px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{`Nada se llama «${q.trim()}». Prueba con otra palabra: «sonido», «modelo», «copia», «contraseña»…`}</p> : null}
+          {results.length ? <p aria-hidden="true" style={{ margin: "8px 10px 0", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>↑ ↓ elegir · Intro abrir · Esc borrar</p> : null}
         </div>
-      ) : shown.map((s) => {
-        const on = s.id === active;
-        const tag = tags?.[s.id] || (s.tag ? { text: s.tag } : null);
-        return (
-          <a key={s.id} className="st-nav-item" href={"/ajustes/" + s.id} aria-current={on ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate("/ajustes/" + s.id); }} style={itemStyle(on)}>
-            <s.icon size={17} style={{ flex: "none", color: "var(--c-text-2)" }} />
-            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</span>
-            {tag ? <span title={tag.label} aria-label={tag.label} style={{ fontSize: "var(--t-micro)", fontWeight: 600, color: tag.color || "var(--c-text-3)" }}>{tag.text}</span> : null}
-          </a>
-        );
-      })}
+      ) : groups.map((g) => (
+        <div key={g.id} role="group" aria-labelledby={"st-g-" + g.id} style={{ display: "flex", flexDirection: "column", gap: "2px", marginTop: "10px" }}>
+          <h2 id={"st-g-" + g.id} style={{ margin: "0 0 2px 10px", fontSize: "var(--t-caption)", fontWeight: 600, color: "var(--c-text-3)" }}>{g.label}</h2>
+          {g.sections.map((s) => {
+            const on = s.id === active;
+            const tag = tags?.[s.id] || (s.tag ? { text: s.tag, tone: "quiet" } : null);
+            return (
+              <a key={s.id} className="st-nav-item" href={"/ajustes/" + s.id} aria-current={on ? "page" : undefined} onClick={(e) => { e.preventDefault(); navigate("/ajustes/" + s.id); }} style={itemStyle(on)}>
+                <s.icon size={17} active={on} style={{ flex: "none", color: on ? "var(--c-text)" : "var(--c-text-2)" }} />
+                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</span>
+                <Tag tag={tag} />
+              </a>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
 }
@@ -155,6 +176,7 @@ function Nav({ active, tags }) {
  * choice of unit); `width` is the column's widest (820–860 px on the boards).
  */
 export default function SettingsLayout({ active, open = true, back = null, tags = null, title = null, lead = null, aside = null, width = 820, extraCss = "", children }) {
+  const status = !back && !title ? tags?.[active] || null : null;
   useAnchor(open);
   const section = SECTION_OF[active];
   const parent = back ? SECTION_OF[back] : null;
@@ -176,9 +198,15 @@ export default function SettingsLayout({ active, open = true, back = null, tags 
           )}
           {head || sub ? (
             <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "12px", marginBottom: "6px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {head ? <h2 style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{head}</h2> : null}
-                {sub ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{sub}</p> : null}
+              <div style={{ flex: "1 1 360px", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
+                {head ? <h2 style={{ margin: 0, font: "600 var(--t-title)/1.25 'Geist', sans-serif", letterSpacing: "-0.01em" }}>{head}</h2> : null}
+                {sub ? <p style={{ margin: 0, maxWidth: "62ch", fontSize: "var(--t-body)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{sub}</p> : null}
+                {status ? (
+                  <p role="status" style={{ margin: "4px 0 0", display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", fontWeight: 500, color: TONE[status.tone] || C.text2 }}>
+                    <span aria-hidden="true" style={{ flex: "none", width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: status.tone === "ok" ? C.ok : status.tone === "error" ? C.error : status.tone === "news" ? C.accentInk : C.text4 }} />
+                    {status.label || status.text}
+                  </p>
+                ) : null}
               </div>
               {aside}
             </header>

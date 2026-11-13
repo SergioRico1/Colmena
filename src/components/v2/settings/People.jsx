@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, Ticket, UserPlus } from "../../Icon.js";
 import { useAction, useStore } from "../../../lib/store.jsx";
+import { navigate } from "../../../lib/router.jsx";
 import { del, get, patch, put } from "../../../lib/api.js";
 import { later, isHidden, useHidden } from "../../../lib/undoToast.js";
 import { WORDS, expiresText } from "../../../lib/invite.js";
@@ -13,8 +14,8 @@ import PeopleIntro, { HELP_URL } from "../people/PeopleIntro.jsx";
 import { Chevron, FieldRow, Group, LINE, LinkRow, Segmented, SwitchRow, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
 import { C } from "../../../lib/theme.js";
 
-// Ajustes › Personas (design/V2Personas.dc.html, paso personas): who you talk to from
-// Colmena, what each one's bot may ask you, your safety words with each, invitations not yet
+// Ajustes › Contactos y equipos (design/V2Personas.dc.html, paso personas): who you talk to from
+// Colmena, who uses this computer (a link to its page), what each one's bot may ask you, your safety words with each, invitations not yet
 // accepted and the mailbox the messages travel through.
 const ASKS = [
   ["libre", "Cuándo estás libre", "Solo libre u ocupado: nunca títulos, lugares ni personas.", [["pregunta", "Pregúntame"], ["siempre", "Siempre"], ["nunca", "Nunca"]]],
@@ -26,7 +27,7 @@ const when = (iso) => new Date(iso).toLocaleString("es-ES", { weekday: "short", 
 const seenText = (c) => (c.away ? statusText(c.away) : c.online ? "Conectada" : c.status === "pending" ? "Aún no ha abierto Colmena desde que aceptaste" : c.lastSeenAt ? "Vista por última vez el " + when(c.lastSeenAt) : "En su Colmena");
 
 export default function PeopleSettings() {
-  const { peers = null } = useStore();
+  const { peers = null, people = [] } = useStore();
   const act = useAction();
   const [sheet, setSheet] = useState(null);
   const [open, setOpen] = useState(null);
@@ -50,12 +51,12 @@ export default function PeopleSettings() {
   });
   return (
     <>
-      <Group id="pp-me" title="Tú" anchor="tu-identidad" note="Tu nombre es el de Ajustes › Tu cuenta. Las personas con las que hablas lo ven tal cual.">
+      <Group id="pp-me" title="Tú" anchor="tu-identidad" note={<>Tu nombre es el de <a href="/ajustes/general#tu-nombre" onClick={(e) => { e.preventDefault(); navigate("/ajustes/general#tu-nombre"); }} style={{ color: "var(--c-accent-ink)" }}>Perfil y apariencia</a>. Las personas con las que hablas lo ven tal cual.</>}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 18px", padding: "20px" }}>
           <PeerAvatar person={{ me: true }} size={56} />
           <Text title={peers.me.name} sub="Hablas desde Colmena con otras personas, cada una en su ordenador." />
           <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" id="invitar" onClick={() => setSheet("invitar")} style={pill(true)}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{WORDS.newcomer}</button>
+            <button type="button" id="invitar" data-setting="invitar" onClick={() => setSheet("invitar")} style={pill(true)}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{WORDS.newcomer}</button>
             <button type="button" onClick={() => setSheet("aceptar")} style={pill(false)}><Ticket size={15} strokeWidth={2.2} aria-hidden="true" />{WORDS.join}</button>
           </span>
         </div>
@@ -115,6 +116,10 @@ export default function PeopleSettings() {
         </Group>
       ) : null}
 
+      <Group id="pp-here" title="En este ordenador" anchor="quien-usa">
+        <LinkRow title="Quién usa este ordenador" sub="Las personas que comparten este mismo ordenador: quién firma lo que se aprueba aquí y a quién se asignan tareas." value={`${Math.max(1, people.length)} ${Math.max(1, people.length) === 1 ? "persona" : "personas"}`} to="/ajustes/quien-usa" last />
+      </Group>
+
       <Group id="pp-help" title="Ayuda" anchor="como-funciona">
         <LinkRow title="Cómo funcionan los equipos y las salas" sub="De quién es cada bot, qué ven los demás de su trabajo, quién aprueba qué, invitar, el buzón y cómo quitar a alguien." to={HELP_URL} last />
       </Group>
@@ -142,7 +147,7 @@ function StatusRow({ status, act }) {
   const set = (m, until = null) => { setPicking(null); act.act(() => patch("/peers/status", { mode: m, until })); };
   const choose = (m) => (m === "available" ? set("available") : setPicking(m));
   return (
-    <div id="tu-estado" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px 20px 18px", borderTop: LINE }}>
+    <div id="tu-estado" data-setting="tu-estado" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px 20px 18px", borderTop: LINE }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px" }}>
         <span style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "3px" }}>
           <strong style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{"Tu estado"}</strong>

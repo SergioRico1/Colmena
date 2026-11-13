@@ -42,7 +42,7 @@ export default function Personas() {
         <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-caption)", color: "var(--c-text-3)", overflowWrap: "anywhere" }}>{p.email || (you ? "en este ordenador" : "sin correo")}</span>
       </span>
       <span style={{ padding: "4px 9px", background: p.role === "Administrador" ? "var(--c-btn)" : "var(--c-sunken)", color: p.role === "Administrador" ? "var(--c-btn-text)" : "var(--c-text-2)", borderRadius: "var(--r-sm)", fontSize: "var(--t-caption)", fontWeight: "600" }}>{p.role || "Colaborador"}</span>
-      {you ? <a href="/ajustes/espacio" style={{ ...btn.quiet, textDecoration: "none" }}>Editar</a>
+      {you ? <a href="/ajustes/general#tu-nombre" style={{ ...btn.quiet, textDecoration: "none" }}>Cambiar tu nombre</a>
         : <button type="button" onClick={() => later({ id: "person:" + p.id, keys: ["person:" + p.id], text: `${p.name || "Persona"} ya no está en la lista`, error: "No se pudo quitar", run: () => act(() => del(`/people/${encodeURIComponent(p.id)}`)) })} aria-label={`Quitar a ${p.name}`} style={btn.quiet}>Quitar</button>}
     </div>
   );
@@ -52,7 +52,7 @@ export default function Personas() {
       <PageHeader title="Quién usa este ordenador">Quién firma lo que se aprueba y a quién se asignan tareas en este ordenador.</PageHeader>
       <div role="note" style={{ maxWidth: "720px", display: "flex", gap: "12px", padding: "14px 16px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
         <Monitor size={18} style={{ flex: "none", marginTop: "2px" }} />
-        <span>Esta lista es solo de este ordenador: sirve para <strong>firmar</strong> las aprobaciones del registro y para <strong>asignar</strong> tareas. Para hablar con otras personas desde Colmena, ve a <a href="/equipo" style={{ color: "var(--c-accent-ink)", fontWeight: "600" }}>Equipo</a>.</span>
+        <span>Esta lista es solo de este ordenador: sirve para <strong>firmar</strong> las aprobaciones del registro y para <strong>asignar</strong> tareas. Para hablar con otras personas desde Colmena, ve a <a href="/ajustes/contactos" style={{ color: "var(--c-accent-ink)", fontWeight: "600" }}>Contactos y equipos</a>.</span>
       </div>
       <Notice>{error}</Notice>
 

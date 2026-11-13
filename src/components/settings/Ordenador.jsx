@@ -6,7 +6,7 @@ import { del, patch, post } from "../../lib/api.js";
 import { later } from "../../lib/undoToast.js";
 import { C } from "../../lib/theme.js";
 
-/** Ajustes › Este ordenador: folders the bots may open (POST/PATCH/DELETE /api/folders). */
+/** Ajustes › Apps y carpetas › Carpetas de este ordenador: folders the bots may open (POST/PATCH/DELETE /api/folders). */
 export default function Ordenador() {
   const { folders, bots, error: offline } = useStore();
   const team = bots.filter((b) => b.enabled !== false);
@@ -27,7 +27,7 @@ export default function Ordenador() {
   return (
     <>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "14px" }}>
-        <PageHeader title="Este ordenador">Las carpetas que tus bots pueden abrir mientras la app esté abierta. Cada bot solo ve las carpetas que marques aquí.</PageHeader>
+        <PageHeader title="Carpetas de este ordenador">Las carpetas que tus bots pueden abrir mientras la app esté abierta. Cada bot solo ve las carpetas que marques aquí.</PageHeader>
         {offline
           ? <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "var(--r-xs)", background: "var(--c-error)" }} />Sin conexión</span>
           : <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-ok-ink)", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: C.ok }} />En línea</span>}

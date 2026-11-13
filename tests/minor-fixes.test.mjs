@@ -42,10 +42,11 @@ test("Ctrl N, the palette and the «Nuevo» menu agree; places go Ctrl 1 to 5", 
 });
 
 test("Ajustes tells «Quién usa este ordenador» from «Contactos y equipos», old links still work", () => {
-  const general = src("src/components/v2/settings/General.jsx");
-  assert.match(general, /anchor="personas" title="Contactos y equipos"/);
-  assert.match(general, /to="\/ajustes\/contactos"/);
-  assert.match(src("src/components/v2/settings/sections.js"), /id: "contactos", label: "Contactos y equipos"/);
+  // Colmena 4: both are in «Tu equipo y tus contactos»; the old General row is an anchor alias.
+  const contacts = src("src/components/v2/settings/People.jsx");
+  assert.match(contacts, /title="Quién usa este ordenador"[^\n]*to="\/ajustes\/quien-usa"/);
+  assert.match(src("src/components/v2/settings/sections.js"), /ANCHOR_ALIAS = \{ personas: "contactos#contactos" \}/);
+  assert.match(src("src/components/v2/settings/sections.js"), /id: "contactos", group: "equipo", label: "Contactos y equipos"/);
 });
 
 test("small things a person notices: autonomy only when unusual, Modo experto says «sin cuenta», targets and contrast", () => {

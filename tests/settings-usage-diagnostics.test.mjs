@@ -151,14 +151,14 @@ test("Ajustes: every setting has a unique address and the search finds it by its
   assert.deepEqual(searchSettings("zzzz"), []);
 });
 
-test("Ajustes (Colmena 3): eight sections, Avanzado only in expert mode, old addresses still land", () => {
+test("Ajustes (Colmena 4): twelve sections, Servidores y claves only in expert mode, old addresses still land", () => {
   const listed = SECTIONS.filter((s) => !s.hidden && !s.expert).map((s) => s.id);
-  assert.deepEqual(listed, ["general", "ia", "permisos", "apps", "avisos", "privacidad", "uso", "ayuda"]);
+  assert.deepEqual(listed, ["general", "avisos", "contactos", "permisos", "ia", "apps", "uso", "privacidad", "copias", "sistema", "actualizaciones", "ayuda"]);
   assert.ok(SECTIONS.find((s) => s.id === "avanzado").expert);
   assert.equal(searchSettings("servidores mcp", settingsIndex(false)).length, 0, "simple mode does not find Avanzado");
   assert.equal(searchSettings("servidores mcp", settingsIndex(true))[0].href, "/ajustes/avanzado#mcp");
-  for (const [old, now] of [["cuenta", "general"], ["inteligencia", "ia"], ["autonomia", "permisos"], ["conexiones", "apps"], ["diagnostico", "ayuda"], ["acerca", "ayuda"], ["limites", "uso"], [null, "general"]]) assert.equal(sectionId(old), now);
+  for (const [old, now] of [["cuenta", "general"], ["inteligencia", "ia"], ["autonomia", "permisos"], ["conexiones", "apps"], ["diagnostico", "ayuda"], ["acerca", "actualizaciones"], ["limites", "uso"], [null, "general"]]) assert.equal(sectionId(old), now);
   // Anchors other screens and the server link to (#respaldo from diagnostics, #horario from Hoy…).
   const anchors = new Set(SECTIONS.flatMap((s) => s.items.map((i) => s.id + "#" + i[0])));
-  for (const a of ["ia#respaldo", "avisos#horario", "uso#limites-plan", "uso#limite-mensual", "apps#apps-conectadas", "ayuda#actualizaciones", "permisos#codigo-archivar", "contactos#encargos"]) assert.ok(anchors.has(a), a);
+  for (const a of ["ia#respaldo", "avisos#horario", "uso#limites-plan", "uso#limite-mensual", "apps#apps-conectadas", "actualizaciones#actualizaciones", "permisos#codigo-archivar", "contactos#encargos"]) assert.ok(anchors.has(a), a);
 });

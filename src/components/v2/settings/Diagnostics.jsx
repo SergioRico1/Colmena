@@ -54,8 +54,8 @@ export function diagnosticsDot(result) {
 function updateCheck(u) {
   const base = { id: "updates", group: "actualizaciones", title: "Colmena" };
   if (!u) return { ...base, status: "off", text: "Las actualizaciones las lleva la app de escritorio." };
-  if (u.status === "error") return { ...base, status: "warn", text: u.error || "No se pudo buscar la versión nueva.", fix: u.manual ? "Descárgala a mano." : "Vuelve a buscar.", to: "/ajustes/ayuda#actualizaciones" };
-  if (u.status === "ready") return { ...base, status: "warn", text: `Hay una versión nueva: la ${u.version}${u.waiting ? ", que se instalará cuando el equipo termine" : ""}.`, fix: u.waiting ? null : "Reinicia Colmena para usarla.", to: "/ajustes/ayuda#actualizaciones" };
+  if (u.status === "error") return { ...base, status: "warn", text: u.error || "No se pudo buscar la versión nueva.", fix: u.manual ? "Descárgala a mano." : "Vuelve a buscar.", to: "/ajustes/actualizaciones#actualizaciones" };
+  if (u.status === "ready") return { ...base, status: "warn", text: `Hay una versión nueva: la ${u.version}${u.waiting ? ", que se instalará cuando el equipo termine" : ""}.`, fix: u.waiting ? null : "Reinicia Colmena para usarla.", to: "/ajustes/actualizaciones#actualizaciones" };
   if (u.status === "downloading") return { ...base, status: "ok", text: `Descargando la ${u.version}… ${u.percent || 0} %` };
   return { ...base, status: "ok", text: `Estás al día · Colmena ${u.current}${u.channel === "beta" ? " (beta)" : ""}.` };
 }
@@ -133,26 +133,16 @@ function reportText(checks, at) {
 }
 
 const hm = (iso) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-function updateLine(u) {
-  if (u.status === "checking") return "Buscando…";
-  if (u.status === "downloading") return `Descargando la ${u.version}… ${u.percent || 0} %`;
-  if (u.status === "ready") return u.waiting ? "Se actualizará cuando el equipo termine." : `La ${u.version} está lista. Se instala al reiniciar.`;
-  if (u.status === "error") return u.error;
-  return u.checkedAt ? "Al día · comprobado a las " + hm(u.checkedAt) : "Al día";
-}
 
 export default function HelpSection() {
   const { result, running } = useDiagnostics();
   const [expert] = useExpert();
   const u = useUpdates();
   const [copied, setCopied] = useState(false);
-  const [notes, setNotes] = useState(false);
   // The first visit checks at once; afterwards it is your click.
   useEffect(() => { if (!last && !running) runDiagnostics(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const checks = result?.checks ? [...result.checks, updateCheck(u)] : null;
-  const version = u?.current || /Colmena (\S+)/.exec(result?.checks?.find((c) => c.id === "server:version")?.text || "")?.[1] || "—";
   const copy = () => checks && navigator.clipboard?.writeText(reportText(checks, result.at)).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); }).catch(() => {});
-  const busy = u && (u.status === "checking" || u.status === "downloading");
   const label = running ? "Comprobando…" : result?.at ? `Comprobado a las ${hm(result.at)}` : "Comprobar ahora";
   return (
     <>
@@ -173,35 +163,13 @@ export default function HelpSection() {
         }) : running ? <span style={{ height: "48px", borderRadius: "var(--r-md)", background: "linear-gradient(90deg, var(--c-hover), var(--c-chip), var(--c-hover))", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} /> : null}
       </section>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: "10px" }}>
-        <div {...anchorOf("version")} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px 20px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
-          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Versión</span>
-          <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif" }}>{version}</span>
-          {u ? (
-            <>
-              <span {...anchorOf("canal")} style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
-                {u.channel === "beta" ? "Canal beta · " : "Canal estable · "}
-                <button type="button" onClick={() => updates.setChannel(u.channel === "beta" ? "stable" : "beta")} style={{ padding: 0, border: 0, background: "none", font: "inherit", color: "var(--c-accent-ink)", cursor: "pointer" }}>{u.channel === "beta" ? "volver a estable" : "cambiar a beta"}</button>
-              </span>
-              <span {...anchorOf("actualizaciones")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-meta)", color: u.status === "error" ? "var(--c-error)" : u.status === "ready" ? "var(--c-ok-ink)" : "var(--c-text-3)" }}>
-                {updateLine(u)}
-                {u.status === "ready" && !u.waiting ? <button type="button" onClick={() => updates.restart()} style={btn("dark", 30)}>Reiniciar</button>
-                  : u.status === "error" && u.manual ? <button type="button" onClick={() => updates.download()} style={btn("dark", 30)}>Descargar</button>
-                  : u.status === "ready" ? null
-                  : <button type="button" disabled={busy || !u.supported} onClick={() => updates.check()} style={btn("outline", 30)}>{busy ? "Buscando…" : "Buscar"}</button>}
-              </span>
-              {u.notes && u.version ? (
-                <>
-                  <button type="button" aria-expanded={notes} onClick={() => setNotes(!notes)} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "none", font: "inherit", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)", cursor: "pointer" }}>{(notes ? "Ocultar" : "Ver") + " las novedades de la " + u.version}</button>
-                  {notes ? <p style={{ margin: 0, fontSize: "var(--t-meta)", lineHeight: 1.55, color: "var(--c-text-3)", whiteSpace: "pre-wrap", animation: "fade .25s ease-out" }}>{u.notes}</p> : null}
-                </>
-              ) : null}
-            </>
-          ) : <span {...anchorOf("actualizaciones")} style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Las actualizaciones las lleva la app de escritorio.</span>}
-        </div>
-        <button type="button" {...anchorOf("comentarios")} onClick={copy} disabled={!checks} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", padding: "18px 20px", border: 0, borderRadius: "var(--r-md)", background: "var(--c-card)", textAlign: "left", color: "var(--c-text)", cursor: checks ? "pointer" : "default", scrollMarginTop: "24px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600 }}>{copied ? <Check size={15} strokeWidth={2.4} color={C.okInk} aria-hidden="true" /> : null}{copied ? "Informe copiado" : "Enviar comentarios"}</span>
-          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Copia el informe de la comprobación para pegarlo en un correo a quien te ayude.</span>
+      <div {...anchorOf("comentarios")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 20px", padding: "16px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
+        <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "2px" }}>
+          <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>¿Necesitas ayuda?</span>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-3)" }}>Copia el resultado de la comprobación y pégalo en un correo a quien te ayude. No lleva tus chats ni tus datos.</span>
+        </span>
+        <button type="button" onClick={copy} disabled={!checks} title={checks ? undefined : "Primero comprueba que todo funciona"} style={btn("outline", 40)}>
+          {copied ? <Check size={15} strokeWidth={2.4} color={C.okInk} aria-hidden="true" /> : <ClipboardCopy size={15} aria-hidden="true" />}{copied ? "Informe copiado" : "Copiar el informe"}
         </button>
       </div>
     </>

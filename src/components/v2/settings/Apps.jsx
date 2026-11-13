@@ -8,13 +8,14 @@ import { isHidden, later, useHiddenVersion } from "../../../lib/undoToast.js";
 import { useExpert } from "../../../lib/expert.js";
 import AppLogo from "../../settings/AppLogo.jsx";
 import { appName, linkUrl, loadAccounts, loadCatalogue, loadStatus, pendingLink, rememberApps, setPendingLink } from "../../settings/connections.jsx";
-import { Alert, BotMark, Chip, Go, LINE, Term, UNDO_MS, anchorOf, btn, h3, mono, select, srOnly } from "./v3.jsx";
+import { Alert, BotMark, Confirm, Go, LINE, Term, UNDO_MS, anchorOf, btn, danger, h3, mono, select, srOnly } from "./v3.jsx";
+import { KIND_OF, disconnectAppText } from "./effects.js";
 import { C } from "../../../lib/theme.js";
 
 // Ajustes › Apps y carpetas (design/V3Conexiones.dc.html): the apps your bots work with —
 // direct MCP connections first, the rest (Google, Microsoft, Slack…) through Composio —, the
-// catalogue to connect another one, this computer's folders and the bots' own browser. What
-// each bot may touch is decided in Permisos. Own tools and MCP servers by address go in
+// catalogue to connect another one and this computer's folders (the bots' own browser is in
+// Navegador y dictado). What each bot may touch is decided in Autonomía y permisos. Own tools and MCP servers by address go in
 // Avanzado. After a Composio sign-in, /permisos/:id asks what the new account may do.
 
 const FILTERS = [["todas", "Todas"], ["mail", "Correo y agenda"], ["documents", "Archivos"], ["team", "Mensajería"], ["business", "Ventas y facturas"], ["development", "Desarrollo"]];
@@ -24,8 +25,6 @@ const NEEDS_ACCOUNT = "Las apps se conectan con tu cuenta de IA. Conéctala prim
 const ACCESS = [["lee", "Solo leer"], ["escribe", "Leer y escribir"]];
 const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const PAGE = 8;
-// Which kind of app (bot.tools, Permisos › Qué app usa cada bot) a Composio toolkit is.
-const KIND_OF = { gmail: "correo", outlook: "correo", googlecalendar: "calendario", outlookcalendar: "calendario", googledrive: "carpeta", dropbox: "carpeta", onedrive: "carpeta", box: "carpeta", googlesheets: "hojas", excel: "hojas", slack: "chat", microsoftteams: "chat", teams: "chat", holded: "erp", quickbooks: "erp", xero: "erp" };
 const names = (list) => (list.length === 1 ? list[0] : list.slice(0, -1).join(", ") + " y " + list.at(-1));
 
 function useConnections(initialQuery) {
@@ -160,6 +159,7 @@ function useConnections(initialQuery) {
 function Connected({ row, c, first, team }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(null);
+  const [asking, setAsking] = useState(false);
   const s = row.s, a = row.a;
   const ok = s ? s.status === "connected" : a.status === "ACTIVE";
   const waiting = s ? s.status === "needs_auth" || s.status === "connecting" : !ok;
@@ -208,9 +208,14 @@ function Connected({ row, c, first, team }) {
               {a ? <button type="button" onClick={() => setName(a.alias || "")} style={btn("outline", 32)}>Cambiar el nombre</button> : null}
               {a ? <button type="button" disabled={c.busy} onClick={() => c.connectComposio(a.toolkit)} style={btn("outline", 32)}>Añadir otra cuenta</button> : null}
               {s && !ok ? <button type="button" disabled={c.busy} onClick={reconnect} style={btn("outline", 32)}>Volver a entrar</button> : null}
-              <button type="button" disabled={c.busy} onClick={remove} style={{ ...btn("ghost", 32), color: "var(--c-error)" }}>Desconectar</button>
+              {!asking ? <button type="button" disabled={c.busy} onClick={() => setAsking(true)} style={{ ...danger(32), marginLeft: "auto" }}>Desconectar…</button> : null}
             </span>
           )}
+          {asking ? (
+            <Confirm title={`¿Desconectar ${label}?`} action={`Desconectar ${label}`} onCancel={() => setAsking(false)} onConfirm={() => { setAsking(false); remove(); }}>
+              {disconnectAppText(label, users)}
+            </Confirm>
+          ) : null}
         </div>
       ) : null}
     </li>
@@ -289,7 +294,7 @@ function Catalogue({ c, initialQuery }) {
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "6px 16px", fontSize: "var(--t-meta)" }}>
         {canMore ? <a href="#conectar-app" onClick={showMore} style={{ fontWeight: 600, color: "var(--c-accent-ink)" }}>{shown < all.length ? `Ver las ${all.length} apps` : "Ver más apps"}</a> : <span />}
-        <span style={{ color: "var(--c-text-3)" }}>¿Una herramienta propia o un servidor <Term tip="Model Context Protocol: una forma estándar de darle herramientas nuevas a un bot.">MCP</Term>? Va en {expert ? <Go to="/ajustes/avanzado#mcp">Avanzado</Go> : <Go to="/ajustes/general#modo-experto">Avanzado (modo experto)</Go>}.</span>
+        <span style={{ color: "var(--c-text-3)" }}>¿Una herramienta propia o un servidor <Term tip="Model Context Protocol: una forma estándar de darle herramientas nuevas a un bot.">MCP</Term>? Va en {expert ? <Go to="/ajustes/avanzado#mcp">Servidores y claves</Go> : <Go to="/ajustes/general#modo-experto">Servidores y claves (modo experto)</Go>}.</span>
       </div>
     </section>
   );
@@ -339,7 +344,7 @@ function Folders() {
 }
 
 export default function AppsSection({ query = {} }) {
-  const { computer, bots = [] } = useStore();
+  const { bots = [] } = useStore();
   const team = bots.filter((b) => b.enabled !== false && b.audience !== "yo");
   const c = useConnections(query.q || "");
   useHiddenVersion(); // repaint when a disconnect waits or is undone
@@ -360,15 +365,6 @@ export default function AppsSection({ query = {} }) {
       </section>
       <Catalogue c={c} initialQuery={query.q || ""} />
       <Folders />
-      <section {...anchorOf("navegador")} aria-labelledby="nav-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "10px 16px" }}>
-          <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-            <h3 id="nav-t" style={h3}>Navegador propio para cada bot</h3>
-            <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Navegan en una ventana de Colmena, no en tu Chrome. Nunca escriben contraseñas: las de la bóveda las pone Colmena y el resto te las piden a ti.</span>
-          </span>
-          {computer?.available ? <Chip tone="green" style={{ height: "28px", padding: "0 12px", fontSize: "var(--t-meta)" }}>Activo</Chip> : <Chip tone="quiet" style={{ height: "28px", padding: "0 12px", fontSize: "var(--t-meta)" }}>En la app de escritorio</Chip>}
-        </div>
-      </section>
     </>
   );
 }

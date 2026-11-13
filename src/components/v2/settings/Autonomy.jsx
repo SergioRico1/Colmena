@@ -3,15 +3,15 @@ import { Lock } from "../../Icon.js";
 import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, get, patch, post, put } from "../../../lib/api.js";
 import { later, reversible, useHiddenVersion, visible } from "../../../lib/undoToast.js";
-import { Alert, BotMark, Card, Go, Panel, Pills, Row, Switch, SwitchRow, UNDO_MS, anchorOf, btn, useSettings } from "./v3.jsx";
+import { Advanced, Alert, BotMark, Card, Go, Panel, Pills, Row, Switch, SwitchRow, UNDO_MS, anchorOf, btn, useSettings } from "./v3.jsx";
+import { RED_LINES, RED_LINE_RULE } from "./redLines.js";
 import { C } from "../../../lib/theme.js";
 
-// Ajustes › Permisos y autonomía (design/V3Permisos.dc.html): the red lines, which no setting,
+// Ajustes › Autonomía y permisos (design/V3Permisos.dc.html): the red lines, which no setting,
 // routine or bot can skip (send outside, pay, publish, delete for real, type passwords,
 // install); how much each bot does on its own; which app each one may read or change; the
 // permissions you gave «for ever»; and the automatic reviewer. Browsing never asks.
 
-const RED = ["Enviar algo fuera", "Mover dinero o pagar", "Publicar en público", "Borrar de verdad", "Escribir contraseñas", "Instalar programas"];
 const AUTONOMY = [["sugiere", "Solo sugiere"], ["avisa", "Hace y avisa"], ["solo", "Hace solo"]];
 const AUTONOMY_WORD = { sugiere: "solo sugiere", avisa: "hace y avisa", solo: "hace solo" };
 // Kinds of app a bot can be given (bot.tools): none → lee → escribe. «pide» (reads and asks
@@ -100,12 +100,12 @@ export default function AutonomySection() {
       <section {...anchorOf("lineas-rojas")} aria-labelledby="red-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-btn)", color: "var(--c-btn-text)", scrollMarginTop: "24px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h3 id="red-t" style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600 }}>Siempre te preguntan antes de…</h3>
-          <span style={{ fontSize: "var(--t-ui)", color: C.text4 }}>Las líneas rojas. Ningún ajuste, rutina ni bot puede saltárselas. Navegar por la web nunca pregunta.</span>
+          <span style={{ fontSize: "var(--t-ui)", color: "color-mix(in srgb, var(--c-btn-text) 78%, transparent)" }}>{"Las líneas rojas. " + RED_LINE_RULE}</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "8px" }}>
-          {RED.map((r) => <div key={r} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", padding: "0 14px", borderRadius: "var(--r-md)", background: "color-mix(in srgb, var(--c-btn-text) 8%, transparent)", fontSize: "var(--t-ui)" }}>{lock}{r}</div>)}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", gap: "8px" }}>
+          {RED_LINES.map(([r, why]) => <div key={r} title={why} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "56px", padding: "8px 14px", borderRadius: "var(--r-md)", background: "color-mix(in srgb, var(--c-btn-text) 8%, transparent)", fontSize: "var(--t-ui)" }}>{lock}<span style={{ display: "flex", flexDirection: "column" }}>{r}<span style={{ fontSize: "var(--t-caption)", lineHeight: 1.4, color: "color-mix(in srgb, var(--c-btn-text) 72%, transparent)" }}>{why}</span></span></div>)}
         </div>
-        <span style={{ fontSize: "var(--t-ui)", color: C.line }}>Si pides tú «envíalo», sale tras 10 segundos para que puedas deshacer.</span>
+        <span style={{ fontSize: "var(--t-ui)", color: "color-mix(in srgb, var(--c-btn-text) 78%, transparent)" }}>Si pides tú «envíalo», sale tras 10 segundos para que puedas deshacer.</span>
       </section>
 
       <Panel big anchor="autonomia-bot" title="Cuánto hace solo cada bot" sub="Fuera de las líneas rojas." style={{ gap: "6px" }}>
@@ -125,7 +125,7 @@ export default function AutonomySection() {
         </>
       </Panel>
 
-      <Panel big anchor="que-app" title="Qué app usa cada bot" sub={<>Toca una casilla para cambiarla: No → Lee → Escribe. Las apps se conectan en <Go to="/ajustes/apps">Apps y carpetas</Go>.</>}>
+      <Panel big anchor="que-app" title="Qué app usa cada bot" sub={<>Toca una casilla para cambiarla: No → Lee → Escribe. Las apps se conectan en <Go to="/ajustes/apps">Apps y carpetas</Go>; enviar, pagar o publicar te pregunta igual.</>}>
         <div role="table" aria-label="Qué app usa cada bot" style={{ display: "flex", flexDirection: "column", overflowX: "auto" }}>
           <div role="row" style={{ display: "grid", gridTemplateColumns: `minmax(120px, 1.3fr) repeat(${apps.length}, minmax(84px, 1fr))`, gap: "6px", alignItems: "center", minWidth: "560px", padding: "4px 0 8px", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-3)" }}>
             <span role="columnheader">Bot</span>
@@ -181,7 +181,9 @@ export default function AutonomySection() {
         </Row>
       </Card>
 
-      <CodeArchive />
+      <Advanced summary="Cuándo se archivan solas las tareas de Código terminadas." anchors={["codigo-archivar"]}>
+        <CodeArchive />
+      </Advanced>
     </>
   );
 }
