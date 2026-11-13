@@ -134,8 +134,9 @@ export class ContextMethods {
    */
   relatedNote(mission, step, request) {
     if (["plan", "critique", "delegate"].includes(step.kind)) return "";
-    // Another person's request never brings the owner's memories with it (soul.mjs).
-    if (mission?.peerErrand) return "";
+    // Another person's request never brings the owner's memories with it (soul.mjs), nor does
+    // the owner's own turn in a room with other people: its answer goes to all of them.
+    if (mission?.peerErrand || this.sharedTurn(mission, step)) return "";
     const bot = this.bot(step.botId);
     if (!bot) return "";
     try {
@@ -150,6 +151,14 @@ export class ContextMethods {
    */
   forOther(step) {
     return !!step?.capabilities && typeof step.capabilities === "object";
+  }
+  /**
+   * Whether `step` is the owner's own turn in a room with other people (Runtime#sharedRoom, set by
+   * server/room.mjs): its final answer is read by all of them.
+   */
+  sharedTurn(mission, step) {
+    if (!mission?.id || this.forOther(step) || mission.peerErrand) return false;
+    try { return typeof this.sharedRoom === "function" && !!this.sharedRoom(mission.id); } catch { return false; }
   }
   /**
    * The first message of a turn for another person's request in a room: the request itself (as
@@ -290,6 +299,12 @@ export class ContextMethods {
     if (!Array.isArray(step.seenBrief)) return this.patchStep(step, { seenBrief: brief.keys });
     const delta = briefDelta(brief, step.seenBrief, { forBotId: step.botId, stepId: step.id });
     if (!delta) return step;
+    // Another person's words join this turn (a request that came while it works): outside
+    // content from here on, and flagged when they carry injection phrases.
+    const known = new Set(step.seenBrief);
+    const outside = (brief.entries || []).filter((e) => e.outside && !known.has(e.key));
+    const found = [...new Set(outside.flatMap((e) => e.suspicious || []))];
+    if (found.length) this.flagSuspicious(mission.id, step.id, { name: "sala", call_id: null }, found);
     // The person wrote while this bot works and it now reads it: 👍 «recibido, lo tengo en
     // cuenta» on that message, instead of silence (or a «Vale, lo tendré en cuenta»).
     const seen = new Set(step.seenBrief);
@@ -298,6 +313,7 @@ export class ContextMethods {
     return this.patchStep(step, {
       history: [...step.history, { role: "user", content: delta }],
       seenBrief: [...new Set([...step.seenBrief, ...brief.keys])].slice(-400),
+      ...(outside.length ? { outsideOrigin: true } : {}),
     });
   }
   /** The person wrote in the room after the model chose `step.pending` (steer mode only). */

@@ -38,7 +38,9 @@ const SUSPICIOUS = [
   ["pedir claves", /\b(envia|enviame|manda|mandame|comparte|reenvia|dime|revela|pega|send|share|reveal|give me|forward|tell me)\b[^.\n]{0,30}\b(claves?|contrasenas?|password|passwords|credenciales|credentials|api ?keys?|tokens?|codigos? de (verificacion|acceso|seguridad)|2fa|numero de (la )?tarjeta)\b/],
   ["reenviar el correo a otro", /\b(reenvia|reenviar|forward)\b[^.\n]{0,25}\b(todos?|todas?|all|cada)\b[^.\n]{0,20}\b(correos?|emails?|mensajes?|messages?)\b[^.\n]{0,20}\b(a|to)\b/],
   ["mover dinero", /\b(haz|realiza|ordena|envia|make|send|wire)\b[^.\n]{0,20}\b(una )?(transferencia|transfer|pago|payment|bizum)\b[^.\n]{0,40}\b(a la cuenta|al iban|to (the )?account|iban)\b/],
-  ["ocultarlo a la persona", /\b(no se lo (digas|cuentes|menciones)|sin decirselo|sin avisar a|don'?t tell (the )?(user|human|person)|do not (tell|mention|inform)|without telling)\b/],
+  // Someone else's text that claims to be the owner speaking («Sergio (tu dueño) escribió: …»).
+  ["hacerse pasar por tu dueño", /(\btu (dueno|duena|jefe|jefa)\b|\byour (owner|boss|user)\b)\s*[)\]]?\s*[,:-]?\s*\b(escribe|escribio|dice|dijo|pide|pidio|ordena|ordeno|manda|mando|says|said|wrote|writes|asks|asked)\b/],
+  ["ocultarlo a la persona",/\b(no se lo (digas|cuentes|menciones)|sin decirselo|sin avisar a|don'?t tell (the )?(user|human|person)|do not (tell|mention|inform)|without telling)\b/],
   ["ejecutar comandos", /(\brm\s+-rf\b|\bformat\s+c:|\bdel\s+\/[sfq]|\bexec\b[^\n]{0,20}command\s*=|elevated\s*=\s*true|\bcurl\b[^\n]{0,60}\|\s*(ba)?sh\b|powershell[^\n]{0,30}-enc)/],
 ];
 
@@ -105,6 +107,15 @@ export function cleanHeader(value, max = 200) {
   return line.length > max ? line.slice(0, max - 1) + "…" : line;
 }
 
+/**
+ * A name or a title someone else chose (a person's display name, a room's title, a file's
+ * name), to be said by the server OUTSIDE a wrapped block: a header line without the
+ * characters that could close a quote or fake a speaker («», quotes, brackets, colons).
+ */
+export function cleanLabel(value, max = 80) {
+  return cleanHeader(String(value ?? "").replace(/[«»"“”‘’'`()[\]{}<>:|]+/g, " "), max).replace(/\s+/g, " ").trim() || "—";
+}
+
 // Fields of app results that are header lines (cleaned as such wherever they appear).
 const HEADER_KEYS = /^(subject|from|sender|to|cc|bcc|reply_?to|display_?name|asunto|de|para|remitente|titulo|title|summary|organizer|organizador)$/i;
 
@@ -146,6 +157,24 @@ export function wrapReport(content, { source = "external", sender = null, subjec
     `<<<${END} id="${markId}">>>`,
   ].join("\n");
   return { text, suspicious: found };
+}
+/**
+ * A conversation with other people as a bot reads it: every message that is not its owner's own
+ * words goes between marks of its own (a fresh id each), and who wrote it is said BEFORE the
+ * marks by the server (`who`: from the verified roster, cleaned with cleanLabel), never by the
+ * message, so a message cannot close a quote and speak as somebody else. The owner's own lines
+ * (`own`) are said as such. Returns {text, suspicious} (the injection phrases of every block).
+ * items: [{at: "hh:mm", who, own?, text}]
+ */
+export function conversationReport(items, { label = "Mensaje de la sala" } = {}) {
+  const out = [], found = new Set();
+  for (const m of Array.isArray(items) ? items : []) {
+    if (m.own) { out.push(`[${m.at}] ${m.who}: «${sanitizeExternal(m.text)}»`); continue; }
+    const r = wrapReport(String(m.text ?? ""), { source: "room", sender: m.who, label, notice: false });
+    for (const x of r.suspicious) found.add(x);
+    out.push(`[${m.at}] ${m.who}:\n${r.text}`);
+  }
+  return { text: out.join("\n"), suspicious: [...found] };
 }
 /** wrapReport's text only. */
 export const wrapExternal = (content, options) => wrapReport(content, options).text;

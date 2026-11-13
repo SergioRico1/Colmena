@@ -187,7 +187,7 @@ choice open:
   people. One decision (`Rooms#ownTurn`, called from `PeerBots#handle`) for every route. Asking a
   bot to find a meeting slot still goes to meetings. Personal bots («solo para mí») never work in
   a room. The turn is told the room is shared and gets the last 30 messages of the people as
-  outside content.
+  outside content (see «Your own turn in a shared room» below).
 - **What is relayed.** The final answer of every completed step of the shared conversation
   (`Rooms#throughShare`: it has `roomAsk`, or it started at or after `share.createdAt` and the
   message it answers — followed back through a teammate that passed the word or a late answer; for
@@ -339,6 +339,45 @@ Never: «# Tus instrucciones» (`bot.instructions`), the memory digest, USER.md,
 the skill index, related memories. Its input is one message, as above (`requestHistory`). The
 tool-less answer to another person's mention (`peers/bots.mjs › sharedInstructions` with
 `forOther`) follows the same rule for the SOUL and «Tus instrucciones».
+
+**Your own turn in a shared room** (any step of a sala in `Rooms#shared` that is not for another
+person: `Runtime#sharedTurn`, hook `runtime.sharedRoom` set by `Rooms#start`).
+
+- *Other people's text.* `Rooms#sharedNoteReport` puts every message of another person, and of
+  any bot, between outside-content marks of its own (`external-content.mjs › conversationReport`,
+  `wrapReport` with `notice: false` after one `EXTERNAL_NOTICE`), with who wrote it said before
+  the marks by the server from the roster («Marta Ruiz, otra persona de la sala (no es tu
+  dueño):»); the owner's own lines go as «Tu dueño, …: «…»». Names, the room's title, file
+  names in code-share prompts, errand askers and bots are header lines cleaned with
+  `cleanLabel` (no quotes, brackets or colons). The same applies to the tool-less answer
+  (`PeerBots#turnText`), a request in the brief delta («Actualización de la misión»: the entry
+  is `outside`, its words wrapped, `tools.mjs › buildMissionBrief`), a reply in the thread of
+  another person's message (`Runtime#threadAbout`), the aside's context and errands.
+- *Flag.* Injection phrases in any of it (`detectInjection`, which now also knows «… (tu dueño)
+  escribió: …») travel as `outsideFound` on the mission message (`addMessage`); the turn that
+  answers it gets `suspicious` (`tool: "sala"`) and `outsideOrigin: true` (`Runtime#outsideFlags`),
+  as does a step whose brief delta brings a flagged request (`injectBrief`) and every teammate it
+  hands the word to (`Runtime#outsideCarried`). So the existing rules apply: no standing rule or
+  reviewer approves what it proposes, and memory, notes and blocks it writes carry the outside mark.
+- *Prompt.* `composeInstructions(…, {shared: true})`: no memory digest, USER.md, standing orders
+  or skill index; `relatedNote` is empty; a fixed «# Memoria» note says why. Tools, instructions
+  and SOUL are the owner's as always. A helper it consults (`ask_bot`) gets the same prompt.
+- *What is relayed.* Before posting, `Rooms#relay` asks `Rooms#privateUses(step)`: the kinds of
+  the owner's things the step read with tools that worked (memory, other conversations — incl.
+  `read_thread` and `mission_brief`, which carry the sala's past —, notes, skills, files, mail
+  and apps, browser or screen, other bots, Código), plus those of a step whose answer it read (the
+  one that handed it the word, earlier bots of the same chain). With any, the answer is held
+  (`step.answerHeld {uses, at}`) and the owner gets a question card `{id: "roomanswer:"+step,
+  tool: "room_answer", kind: "question", stepId: null, summary: «Esta respuesta usa cosas tuyas
+  (…). ¿La comparto en la sala?», options: share|no, roomAnswer: {shareId, stepId, bot, uses}}`,
+  not a red line. `Runtime#answer` closes it without a message (like `roomShare`);
+  `Rooms#answerDecided` (through `RoomWork#changed`) marks `step.answerShared` and relays it as
+  it would have gone. «No» keeps it local. The aside never relays.
+
+  Why this rule and not a simpler one: without memory in the prompt, what the answer can know of
+  the owner came through a tool call, and every such call is in the step's history; so holding
+  exactly those answers closes the planted-instruction scenario whatever the model obeys, and an
+  ordinary question (no lookups of the owner's things) is answered in the room as before.
 
 **Questions.** `ask_user` is unchanged (a local approval of the owner). `ask_room {question}`
 exists only in a step with `roomAsk` (`Runtime#stepTools`): it posts the question as a plain

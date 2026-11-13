@@ -268,7 +268,14 @@ export function nowNote(at = new Date()) {
   return `[Ahora: ${hour} del ${day} (${zone}).]`;
 }
 
-export function composeInstructions(store, bot, { mission = null, autonomy = null, extra = "", directory = dataDirectory } = {}) {
+/**
+ * The system prompt of a bot's turn. `shared`: the owner's own turn in a room with other people
+ * (server/room.mjs): its answer goes to all of them, so — like a turn for another person, but
+ * with the owner's tools — nothing private of the owner is in the prompt (memory, USER.md,
+ * standing orders, the skill index); the bot can still look things up with its tools, and then
+ * its answer waits for the owner before it is shared (Rooms#relay).
+ */
+export function composeInstructions(store, bot, { mission = null, autonomy = null, extra = "", directory = dataDirectory, shared = false } = {}) {
   const settings = store.get("settings", "main") || {};
   // A turn for another person's request (an errand, or a request in a shared room): what the
   // owner's bots remember and the owner's standing orders stay out of the prompt. Telling the
@@ -288,9 +295,11 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   const level = autonomy || autonomyOf(bot);
   const agents = fill(TEMPLATES.agents, { autonomy: AUTONOMY_LABELS[level] });
   const { personal, team, own, meters, profile } = memoryDigest(store, bot, MEMORY_BUDGET, { directory, missionId: mission?.id || null });
-  const tagged = !forOther && [...personal, ...team, ...own].some((l) => /\[(?:compruébalo|cómo)\]/.test(l));
+  // What the owner's bots know of the owner stays out of a turn whose answer others read.
+  const quiet = forOther || shared;
+  const tagged = !quiet && [...personal, ...team, ...own].some((l) => /\[(?:compruébalo|cómo)\]/.test(l));
   // Skills are the owner's procedures: their names and summaries stay out too.
-  const skills = forOther ? [] : skillIndex(store, bot);
+  const skills = quiet ? [] : skillIndex(store, bot);
   const identity = "# Identidad\nEres " + bot.name + ", " + bot.role + ". Forma: " + (SHAPES[bot.shape] || bot.shape || "—") +
     ". Trabajas para " + (settings.userName || "la persona");
   const parts = forOther
@@ -310,11 +319,11 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   parts.push(REACTIONS_NOTE);
   parts.push(
     "# Habilidades activas\n" +
-      (skills.length ? skills.join("\n") + "\nCarga el contenido con read_skill antes de seguir un procedimiento." : forOther ? "Ninguna en este turno." : "Ninguna todavía."),
+      (skills.length ? skills.join("\n") + "\nCarga el contenido con read_skill antes de seguir un procedimiento." : forOther ? "Ninguna en este turno." : shared ? "Las tuyas no se listan en una sala con otras personas; si hace falta, búscalas con list_skills." : "Ninguna todavía."),
   );
   // Standing orders («Encargos» in the bot profile); red lines still apply.
   try {
-    const orders = forOther ? "" : standingOrdersText(store, bot?.id);
+    const orders = quiet ? "" : standingOrdersText(store, bot?.id);
     if (orders) parts.push(orders);
   } catch {}
   // Speed (Codex, Claude): independent lookups go out together, in one turn.
@@ -333,6 +342,7 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   // What changes goes last: memory (when the bot remembers) and today's context.
   const person = [...(profile.length ? ["Perfil (USER.md):", ...profile] : []), ...personal];
   if (forOther) parts.push("# Memoria\nEste trabajo te lo pide otra persona. Aquí no tienes delante lo que recuerdas de tu dueño ni del equipo, y no lo necesitas: responde solo con lo que te den en esta petición y lo que encuentres con tus herramientas.");
+  else if (shared) parts.push("# Memoria\nEstás en una sala con otras personas y tu respuesta la leerán todas: aquí no tienes delante lo que recuerdas de tu dueño. Si su mensaje lo necesita de verdad, búscalo con recall o en sus conversaciones; entonces tu respuesta se la enseña Colmena primero a tu dueño, y él decide si se comparte en la sala.");
   else parts.push(
     `# Lo que sabes de la persona [${meters.user.label}]\n` + (person.length ? person.join("\n") : "Todavía nada.") +
       `\n\n# Lo que sabe el equipo [${meters.memory.label}]\n` + (team.length ? team.join("\n") : "Todavía nada.") +

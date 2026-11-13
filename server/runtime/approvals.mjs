@@ -106,7 +106,8 @@ export class ApprovalMethods {
     // «Lucía pide a Vera: …» (server/room-work.mjs): your decision on another person's request.
     // It closes here and the room hears it; never a message of yours in the room («Adelante»
     // must not read as your word for anything else) and nothing to relaunch.
-    if (a.roomRequest || a.roomShare) {
+    // «¿La comparto en la sala?» (server/room.mjs holdAnswer) closes the same way.
+    if (a.roomRequest || a.roomShare || a.roomAnswer) {
       const option = a.options.find((o) => o.id === optionId);
       if (!option) throw Error("Elige una de las opciones.");
       this.store.patch("approvals", a.id, { status: "answered", answer: { optionId: option.id, label: option.label, text: null }, decidedAt: now(), decidedBy: "tú", resolution: option.label });
@@ -150,7 +151,7 @@ export class ApprovalMethods {
     if (!a || a.kind !== "question") throw Error("Pregunta no encontrada.");
     if (a.status !== "pending") throw Error("Esta pregunta ya no espera respuesta.");
     this.store.patch("approvals", a.id, { status: "dismissed", decidedAt: now(), decidedBy: "tú", resolution: "Sin responder" });
-    if (a.roomRequest || a.roomShare) return; // another person's request (or what it made), put aside: «ahora no», «no compartir» (server/room-work.mjs)
+    if (a.roomRequest || a.roomShare || a.roomAnswer) return; // another person's request (or what it made), put aside: «ahora no», «no compartir» (server/room-work.mjs)
     this.store.event(a.missionId, "approval_decided", { text: "Pregunta descartada" });
     // Timed out: the bot already went on; nothing waits for this card any more.
     if (!a.timedOut) this.relaunch(a.missionId);

@@ -34,8 +34,10 @@ export function asideContext(store, mission) {
   const steps = store.where("steps", "missionId", mission.id).slice(-12).map((s) => ({
     bot: who(s.botId), fase: s.kind, titulo: s.title || null, estado: s.status, resultado: clip(s.text, 1500) || null,
   }));
+  // Another person's message (a request in a shared room) is theirs, never «persona»; its text
+  // is kept wrapped as outside content.
   const messages = store.where("messages", "missionId", mission.id).filter((m) => m.text).slice(-24).map((m) => ({
-    de: m.role === "user" ? "persona" : m.role === "system" ? "aviso" : who(m.botId), tipo: m.kind || "message", texto: clip(m.text, 1200),
+    de: m.author?.address ? "otra persona de la sala (no es tu dueño)" : m.role === "user" ? "persona" : m.role === "system" ? "aviso" : who(m.botId), tipo: m.kind || "message", texto: clip(m.text, 1200),
   }));
   const deliverables = store.where("artifacts", "missionId", mission.id).slice(-5).map((a) => ({
     titulo: a.title, estado: a.status || "final", extracto: clip(a.content, 1500),

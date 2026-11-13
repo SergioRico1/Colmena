@@ -142,6 +142,8 @@ export class DelegationMethods {
     const instructions = composeInstructions(this.store, target, {
       mission,
       autonomy: this.autonomy(mission, target),
+      // A helper in the owner's turn in a room with other people: none of the owner's memory either.
+      shared: this.sharedTurn(mission, dstep),
       extra: consult
         ? "# Consulta de un compañero\n" + bot.name + " te consulta dentro de la misión. Responde solo desde tu especialidad, breve y concreto. " +
           "Si lo necesitas, puedes leer la misión con herramientas de solo lectura (mission_brief, read_deliverable, read_file, list_files, search_history). " +

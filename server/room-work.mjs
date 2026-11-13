@@ -334,6 +334,7 @@ export class RoomWork {
       const mission = this.rooms.missionFor(room, [bot.id]);
       if (attended) this.runtime.personSpoke?.(mission.id);
       const name = this.nameOf(ask.from);
+      const note = this.rooms.sharedNoteReport(room, share, message, { reader: ask.from });
       const about = reply
         ? "\n\n[Colmena] " + first(name) + " contesta a lo que le preguntaste en la sala («" + clip(reply.question, 600) + "»). Sigue con lo que te pidió, con esa respuesta como dato."
         : "";
@@ -341,7 +342,7 @@ export class RoomWork {
         to: [bot.id], author: { address: ask.from, name }, peerId: message.id, capabilities: this.capabilities(), roomAsk: ask.id, attended,
         // All the turn reads besides the request: the room's name and what its people already
         // said there that whoever asks can have read. Nothing of the sala (Runtime#requestHistory).
-        context: about + this.rooms.sharedNote(room, share, message, { reader: ask.from }),
+        context: about + note.text, outsideFound: note.suspicious,
       });
       if (message.thread || ask.peerThread) this.store.patch("messages", row.id, { peerThread: message.thread || ask.peerThread });
       this.store.patch("roomAsks", ask.id, { state: "working", missionId: mission.id, ...(reply ? {} : { messageId: row.id, startedAt: now(), attended: !!attended }), question: null });
@@ -880,7 +881,7 @@ export class RoomWork {
       const share = this.store.get("peerShares", s.shareId), room = this.rooms.ofShare(s.shareId);
       if (!share || share.leftAt || share.removedAt || !room?.missionId) continue;
       if (this.store.where("roomAsks", "shareId", share.id).some((a) => a.botId === s.bot && a.state === "asked")) continue;
-      const pending = this.store.where("approvals", "missionId", room.missionId).filter((a) => a.botId === s.bot && a.status === "pending" && !a.roomRequest && !a.roomShare);
+      const pending = this.store.where("approvals", "missionId", room.missionId).filter((a) => a.botId === s.bot && a.status === "pending" && !a.roomRequest && !a.roomShare && !a.roomAnswer);
       const dead = pending.filter((a) => { const end = approvalExpiresAt(a); return !!end && Date.parse(end) <= Date.now(); });
       if (!dead.length || dead.length < pending.length) continue;
       for (const a of dead) this.expired(a);
@@ -917,6 +918,7 @@ export class RoomWork {
     if (op === "remove" || !data) return;
     if (kind === "approvals" && data.roomRequest && data.status !== "pending" && !data.roomHandled) return this.decided(data);
     if (kind === "approvals" && data.roomShare && data.status !== "pending" && !data.roomHandled) return void this.sharedDecided(data).catch((error) => this.log(error.message));
+    if (kind === "approvals" && data.roomAnswer && data.status !== "pending" && !data.roomHandled) return this.rooms.answerDecided(data);
     if (kind === "thread" && op === "insert") return this.threadChanged(data);
     if (kind === "missions" && this.rooms.shared.has(data.id)) return this.missionChanged(data);
   }

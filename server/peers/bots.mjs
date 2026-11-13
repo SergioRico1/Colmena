@@ -15,7 +15,7 @@
 // Colmena that does not know requests, it keeps the rules above (no tools).
 import { now } from "../store.mjs";
 import { readSoul, renderSoulTemplate, personalityHints } from "../soul.mjs";
-import { wrapReport } from "../external-content.mjs";
+import { EXTERNAL_NOTICE, cleanLabel, conversationReport, wrapReport } from "../external-content.mjs";
 import { isMeetingRequest } from "./meetings.mjs";
 
 export const PEER_BOT_LIMITS = Object.freeze({ history: 30, perHour: 20, perMessage: 3, timeoutMs: 120000, answer: 6000 });
@@ -137,13 +137,16 @@ export class PeerBots {
       .filter((m) => !m.local && m.id !== message.id)
       .sort((a, b) => String(a.at).localeCompare(String(b.at)))
       .slice(-PEER_BOT_LIMITS.history);
-    const who = (m) => (m.bot ? m.bot.name + " (bot de " + this.peers.person(m.from).name + ")" : this.peers.person(m.from).name);
-    const lines = history.map((m) => `[${hhmm(m.at)}] ${who(m)}: ${m.text}`);
-    const asker = this.peers.person(message.from).name;
-    const context = lines.length ? wrapReport(lines.join("\n"), { source: "chat", label: "Lo que se ha dicho antes en «" + this.title(share) + "»" }).text : "Es el primer mensaje de la conversación.";
+    // Each message of someone else between marks of its own, who wrote it said before them (from
+    // the roster); the owner's own lines as such (external-content.mjs conversationReport).
+    const me = this.peers.address, name = (address) => cleanLabel(this.peers.person(address).name, 60);
+    const who = (m) => (m.bot ? cleanLabel(m.bot.name, 40) + ", bot de " + name(m.from) + (m.from === me ? " (tu dueño)" : " (no es tu dueño)") : m.from === me ? "Tu dueño, " + name(m.from) : name(m.from) + " (no es tu dueño)");
+    const said = conversationReport(history.map((m) => ({ at: hhmm(m.at), who: who(m), own: !m.bot && m.from === me, text: m.text })), { label: "Mensaje de «" + cleanLabel(this.title(share), 120) + "»" });
+    const asker = name(message.from);
+    const context = history.length ? EXTERNAL_NOTICE + "\nLo que se ha dicho antes en «" + cleanLabel(this.title(share), 120) + "»:\n" + said.text : "Es el primer mensaje de la conversación.";
     const request = mine
       ? "Tu dueño, " + asker + ", te escribe en la conversación: «" + message.text + "»"
-      : wrapReport(message.text, { source: "chat", sender: asker, label: "Mensaje de " + asker + " (no es tu dueño)" }).text;
+      : asker + ", que no es tu dueño, te escribe:\n" + wrapReport(message.text, { source: "chat", sender: asker, label: "Mensaje de " + asker + " (no es tu dueño)" }).text;
     return context + "\n\n" + request + "\n\nContesta en la conversación (lo leerán todos).";
   }
   title(share) { return share.kind === "dm" ? "conversación con " + this.peers.shareView(share).title : share.title; }
