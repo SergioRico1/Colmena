@@ -795,6 +795,29 @@ export class Rooms {
     if (step.status === "completed" && bot && step.roomAsk) void this.work.deliver(s, step, bot, answerId).catch((error) => this.log(error.message));
   }
   /**
+   * Whether a turn belongs to the conversation the people share: it started after the room had
+   * people, and what it answers came through that conversation (a message you posted there, or
+   * another person's request). A turn of the sala from before, or one for something written to
+   * the sala alone, says nothing to them, whenever its step is written again.
+   */
+  throughShare(s, step) {
+    if (step.roomAsk) return true;
+    const began = step.startedAt || step.createdAt || "";
+    if (!began || String(began) < String(s.createdAt || "")) return false;
+    // What it answers; a teammate that was passed the word answers a bot: followed back.
+    let asked = step.ackOn ? this.store.get("messages", step.ackOn) : null;
+    // Your late answer to a question of a bot goes on from the turn that asked it.
+    const source = (m) => (m?.role === "assistant" && m.stepId ? m.stepId : m?.role === "user" && m.lateAnswer && m.approvalId ? this.store.get("approvals", m.approvalId)?.stepId : null);
+    for (let i = 0; i < 6 && source(asked); i++) {
+      const before = this.store.get("steps", source(asked));
+      if (before?.roomAsk) return true;
+      asked = before?.ackOn && before.ackOn !== asked.id ? this.store.get("messages", before.ackOn) : null;
+    }
+    // A part of a plan answers no message of its own: the last thing written before it began.
+    if (!step.ackOn) asked = this.store.where("messages", "missionId", step.missionId).filter((m) => m.role === "user" && (m.kind || "message") === "message" && String(m.at) <= String(began)).at(-1) || null;
+    return !!asked?.peerId;
+  }
+  /**
    * A turn of your bot ended in a room with people: its FINAL answer is posted to them, signed
    * as your bot, and the mission message keeps the id it travelled with (`peerId`; `peerParts`
    * when it went in several). Only that: no progress lines, plans, questions, approvals or
@@ -803,7 +826,9 @@ export class Rooms {
    */
   relay(room, s, step, bot) {
     if (step.skipped || step.quietReply || step.kind === "plan" || step.askedRoom) return null;
-    const rows = this.store.where("messages", "missionId", step.missionId).filter((m) => m.stepId === step.id && m.role === "assistant" && (m.kind || "message") === "message");
+    if (!this.throughShare(s, step)) return null;
+    // (A line that says the bot got stuck is for its owner: never the answer.)
+    const rows = this.store.where("messages", "missionId", step.missionId).filter((m) => m.stepId === step.id && m.role === "assistant" && (m.kind || "message") === "message" && !m.stall);
     const last = rows.at(-1);
     if (!last) return null;
     if (rows.some((m) => m.peerId)) return rows.find((m) => m.peerId).peerId;

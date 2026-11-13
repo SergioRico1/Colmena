@@ -91,7 +91,7 @@ and `peerErrand` (`server/peers/errands.mjs:203-205`); narrowing is mission-wide
 | `GET /api/rooms?team=` | Rooms of a team, or the private and team-less ones |
 | `GET /api/rooms/:id` | Room with `people[{address,name,role,presence}]` and `bots[{owner,bots}]` |
 | `GET /api/rooms/:id/timeline?cursor=` | Merged page |
-| `POST /api/rooms/:id/messages` | Send, routed as above |
+| `POST /api/rooms/:id/messages` | Send, routed as above. `POST /api/missions/:id/messages` and `/queue` answer 409 for the sala of a room with a share |
 | `POST /api/rooms/:id/people` | Invite; creates the share on first use |
 | `POST /api/rooms/:id/leave`, `PATCH /api/rooms/:id`, `POST /api/rooms/:id/seen` | Leave, rename or archive, mark read |
 
@@ -182,8 +182,11 @@ choice open:
   bot to find a meeting slot still goes to meetings. Personal bots («solo para mí») never work in
   a room. The turn is told the room is shared and gets the last 30 messages of the people as
   outside content.
-- **What is relayed.** The final answer of every completed step that left a message, except a
-  plan step, once (`peerId`, and `peerParts` when it went in several). While the step runs the
+- **What is relayed.** The final answer of every completed step of the shared conversation
+  (`Rooms#throughShare`: it has `roomAsk`, or it started at or after `share.createdAt` and the
+  message it answers — followed back through a teammate that passed the word or a late answer; for
+  a step with no `ackOn`, the last user message before it began — has `peerId`) that left a
+  message without `stall`, except a plan step, once (`peerId`, and `peerParts` when it went in several). While the step runs the
   others see the bot thinking. A relay that fails (no mailbox) is logged and not retried.
 - **Parts.** `part: {of, n, total, glue}` on bot messages; `of` is the id of the first part and
   `glue` what stood between two parts, so the text joins back as it was. Later parts neither
