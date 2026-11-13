@@ -179,7 +179,10 @@ const ownName = () => {
 };
 // COLMENA_RELAY_URL=off: no mailbox at all (tests and smoke runs never touch the real one).
 const relayEnv = process.env.COLMENA_RELAY_URL;
-const peers = new Peers({ store, directory, relayUrl: relayEnv === "off" ? null : relayEnv || DEFAULT_RELAY, nameOf: ownName, notifier: scheduler.notifier });
+// A data folder given by COLMENA_DATA_DIR is QA or test data (the app itself never sets it):
+// it never talks to the real mailbox unless COLMENA_RELAY_URL names one on purpose.
+const defaultRelay = process.env.COLMENA_DATA_DIR ? null : DEFAULT_RELAY;
+const peers = new Peers({ store, directory, relayUrl: relayEnv === "off" ? null : relayEnv || defaultRelay, nameOf: ownName, notifier: scheduler.notifier });
 app.locals.peers = peers;
 // «Cuando avisa otra app»: webhook triggers. A service posts to a secret address at the same
 // mailbox; what arrives is sealed to this Colmena, delivered when it is on, and goes through
