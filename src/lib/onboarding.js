@@ -38,3 +38,41 @@ export const APP_TASK = {
   hojas: "Revisa mi hoja de gastos y dime qué ha subido este mes",
   carpetas: "Ordena y resume los documentos de una de mis carpetas",
 };
+
+// ---------------------------------------------------------------- the flow
+/** The welcome's steps: [label, hint]. Name and AI account first, then who you work with. */
+export const STEPS = [["Hola", "Qué es Colmena"], ["Cuenta de IA", "Con qué piensan tus bots"], ["Tu equipo", "Compañeros, o tú solo"], ["Cómo trabajas", "Detalle y oficio"], ["Tus bots", "Los que te ayudan"], ["Tus apps", "Opcional"], ["Primera petición", "Para empezar"]];
+/** «Tu equipo»: with whom you work. Nothing is required: alone is a choice like the others. */
+export const TEAM_CHOICES = [
+  { id: "create", title: "Crear un equipo", text: "Ponle nombre e invita a tus compañeros con un código." },
+  { id: "join", title: "Unirme a un equipo", text: "Tengo un código que me ha mandado alguien." },
+  { id: "solo", title: "Empezar solo", text: "Solo yo y mis bots. Puedo crear un equipo o unirme a uno más adelante." },
+];
+/** The roles the server knows (server/onboarding.mjs): the first five show; the rest wait behind «Otro». */
+export const ROLE_CHIPS = [["otra", "Trabajo de oficina"], ["programacion", "Programación"], ["marketing", "Marketing"], ["finanzas", "Economía y finanzas"], ["diseno", "Diseño"], ["clientes", "Atención al cliente"], ["operaciones", "Operaciones"], ["legal", "Legal"], ["personas", "Personas y RR. HH."]];
+export const ROLES_SHOWN = 5;
+/**
+ * «¿A qué te dedicas?» in at most five chips and «Otro»: {shown: [[id, label]], more: bool}.
+ * `open`: «Otro» was pressed. A role picked from the rest keeps them open.
+ */
+export function roleChips(role, open = false) {
+  const hiddenPick = ROLE_CHIPS.findIndex(([id]) => id === role) >= ROLES_SHOWN;
+  const all = open || hiddenPick;
+  return { shown: all ? ROLE_CHIPS : ROLE_CHIPS.slice(0, ROLES_SHOWN), more: !all };
+}
+/**
+ * The request handed to Inicio (sessionStorage «colmena:draft»): written as {text, mode} by the
+ * welcome and the templates; a plain string is taken as it is. Returns the text to put in the box.
+ */
+export function draftText(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  if (s.startsWith("{")) { try { const d = JSON.parse(s); return typeof d?.text === "string" ? d.text.trim() : ""; } catch { return s; } }
+  return s;
+}
+/** The name to start the «¿Cómo te llamas?» field with: yours if Colmena knows it, never a placeholder. */
+export function nameDraft(settings = {}, account = null) {
+  const own = String(settings?.userName || "").trim();
+  if (own && own !== "Tu cuenta" && own !== "Sin nombre") return own;
+  return String(account?.name || "").trim();
+}

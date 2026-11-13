@@ -15,6 +15,8 @@ import { greeting, needsYou, time } from "../lib/format.js";
 import { reversible } from "../lib/undoToast.js";
 import { navigate } from "../lib/router.jsx";
 import { NoAccountNotice } from "../components/v3/States.jsx";
+import { askBox } from "../lib/aiAccount.js";
+import { draftText } from "../lib/onboarding.js";
 import { PlanLimitNotice } from "../components/v2/LimitNotice.jsx";
 import { scrollBehavior } from "../lib/motion.js";
 import { pauseLine } from "../lib/pauseReason.js";
@@ -77,7 +79,7 @@ export default function Hoy({ query = {} }) {
   useEffect(() => {
     try {
       const draft = sessionStorage.getItem("colmena:draft");
-      if (draft) { setAsk(draft); sessionStorage.removeItem("colmena:draft"); }
+      if (draft) { setAsk(draftText(draft)); sessionStorage.removeItem("colmena:draft"); }
     } catch {}
   }, []);
   useEffect(() => {
@@ -88,9 +90,11 @@ export default function Hoy({ query = {} }) {
     return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", close); };
   }, [menu]);
 
+  // Without an AI account the box does not invite a request nobody can do (lib/aiAccount.js).
+  const box = askBox(store);
   const send = async () => {
     const prompt = ask.trim();
-    if (!prompt || busy) return;
+    if (!prompt || busy || box.blocked) return;
     setBusy(true);
     setError(null);
     try {
@@ -238,13 +242,20 @@ export default function Hoy({ query = {} }) {
             <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <label style={{ flex: "1", display: "flex" }}>
                 <span style={srOnly}>{"Pide algo a tu equipo"}</span>
-                <input className="c-bare" ref={input} type="text" value={ask} onChange={(e) => { setAsk(e.target.value); setSent(null); setError(null); }} placeholder="Pide algo a tu equipo…" maxLength={4000}
+                <input className="c-bare" ref={input} type="text" value={ask} onChange={(e) => { setAsk(e.target.value); setSent(null); setError(null); }} placeholder={box.placeholder} disabled={box.blocked} aria-describedby={box.blocked ? "pedir-sin-cuenta" : undefined} maxLength={4000}
                   style={{ flex: "1", minWidth: "0", height: "60px", border: "0", background: "transparent", fontSize: "19px", letterSpacing: "-0.01em" }} />
               </label>
-              <button type="submit" aria-label="Enviar" disabled={busy || !ask.trim()} style={{ width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", cursor: ask.trim() ? "pointer" : "default", opacity: ask.trim() || busy ? 1 : 0.9 }}>
+              <button type="submit" aria-label="Enviar" disabled={busy || !ask.trim() || box.blocked} style={{ width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: box.blocked ? "#C9CBD1" : "#12131A", color: "#FFFFFF", cursor: ask.trim() && !box.blocked ? "pointer" : "default", opacity: ask.trim() || busy ? 1 : 0.9 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
               </button>
             </form>
+            {box.blocked ? (
+              <p id="pedir-sin-cuenta" style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", padding: "12px 8px 14px 0", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "14px", lineHeight: 1.5, color: "#3D404A" }}>
+                <span style={{ flex: "1 1 320px" }}>{box.note}</span>
+                {/* The notice above carries the main button: here it is the quiet way to the same place. */}
+                <a href={box.action.href} style={{ flex: "none", height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", borderRadius: "999px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.18)", color: "#12131A", fontSize: "13.5px", fontWeight: 600, textDecoration: "none" }}>{box.action.label}</a>
+              </p>
+            ) : (
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", padding: "10px 8px 12px 0", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "13px", color: "#5C606C" }}>
               <span data-route-menu="" style={{ position: "relative" }}>
                 <button type="button" aria-haspopup="menu" aria-expanded={menu ? "true" : "false"} onClick={() => setMenu(!menu)} style={{ height: "32px", padding: "0 12px 0 10px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "999px", background: "#F3F3EF", fontSize: "13.5px", color: "#3D404A", cursor: "pointer" }}>
@@ -281,10 +292,11 @@ export default function Hoy({ query = {} }) {
               ))}
               <span style={{ marginLeft: "auto" }}>{"Intro para enviar"}</span>
             </div>
+            )}
           </div>
           {sent ? <p role="status" style={{ margin: "0", padding: "0 22px", fontSize: "14.5px", color: "#0B6B4A", animation: "rise .35s ease-out" }}>{sent}</p> : null}
           {error ? <p role="alert" style={{ margin: "0", padding: "0 22px", fontSize: "14.5px", color: "#B4232A" }}>{error}</p> : null}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "0 6px" }}>
+          <div style={{ display: box.blocked ? "none" : "flex", flexWrap: "wrap", gap: "8px", padding: "0 6px" }}>
             {IDEAS.map((label) => (
               <button key={label} type="button" onClick={() => { setAsk(label); setSent(null); input.current?.focus(); }} style={{ height: "34px", padding: "0 14px", background: "transparent", border: "0", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", borderRadius: "999px", cursor: "pointer", fontSize: "13.5px", color: "#3D404A" }}>{label}</button>
             ))}

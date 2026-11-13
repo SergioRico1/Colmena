@@ -16,6 +16,8 @@ import { adminNames, codeKind, findCode, listNames } from "../../../lib/teams.js
 //   invite  «Invitar al equipo»      POST /api/teams/:id/invite {name?} → {code, text, expiresAt}
 // Colmena never sends an invitation: you copy it and send it yourself.
 export const INK = "#12131A", MUTED = "#5C606C";
+/** «Cómo funciona», at what the others see of your bots' work. */
+const HELP = "/personas/como-funciona#que-ven";
 const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", animation: "fade .2s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitAppRegion: "no-drag" };
 const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "32px", background: "#FFFFFF", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
 export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: on ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: on ? INK : "#C9CBD1", color: on ? "#FFFFFF" : "#3D404A" });
@@ -46,7 +48,7 @@ export function Sheet({ id, title, sub = null, width = 540, onClose, children })
 }
 
 /** The code and the message that goes with it, with «Copiar». */
-function CodeCard({ made, onError }) {
+export function CodeCard({ made, onError }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try { await navigator.clipboard.writeText(made.text || made.code); setCopied(true); } catch { onError("No se pudo copiar. Selecciona el texto y cópialo tú."); }
@@ -153,7 +155,7 @@ export function TeamInviteSheet({ team, onClose, fresh = false }) {
             </label>
             <button type="submit" disabled={busy} style={darkBtn(!busy)}>{busy ? "Creando…" : "Crear invitación"}</button>
           </form>
-          <p style={note}>{"El código sirve 24 h y una sola vez. El nombre solo es para que reconozcas la invitación en la lista."}</p>
+          <p style={note}>{"El código sirve 24 h y una sola vez. El nombre solo es para que reconozcas la invitación en la lista. "}<a href={HELP} onClick={() => onClose()} style={{ color: "#1F4FD1", fontWeight: 600 }}>{"Qué verá quien entre"}</a></p>
         </>
       )}
       {error ? <p role="alert" style={errorLine}>{error}</p> : null}

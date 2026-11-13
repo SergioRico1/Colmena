@@ -2,6 +2,7 @@ import { shapeOf } from "../v2/Presence.jsx";
 import { useStore } from "../../lib/store.jsx";
 import { useExpert } from "../../lib/expert.js";
 import { navigate } from "../../lib/router.jsx";
+import { aiConnected } from "../../lib/aiAccount.js";
 
 // Colmena 3 app states (design/V3Estados.dc.html) that live inside a screen:
 //  - NoAccountNotice: the bots cannot think (no AI account, or its sign-in failed). A system
@@ -16,10 +17,7 @@ const INK = "#12131A";
 const HEX = "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)";
 const pill = { height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "14px", fontWeight: "600", cursor: "pointer", textDecoration: "none" };
 
-/** Is any AI account connected? (the old ChatGPT-only provider counts too). */
-export function aiConnected(state) {
-  return !!(state?.ai?.engines || []).some((e) => e.connected) || !!state?.provider?.connected;
-}
+export { aiConnected };
 
 /**
  * «Tus bots no pueden pensar ahora». Renders nothing while an account is connected and works.

@@ -4,31 +4,31 @@ import { css } from "../design/V3Bienvenida.jsx";
 import { shapeOf } from "../components/v2/Presence.jsx";
 import { WindowDots } from "../components/v2/Rail.jsx";
 import ProviderMark from "../components/v2/ProviderMark.jsx";
-import { B, ROLES, APP_TASK } from "../lib/onboarding.js";
+import { B, ROLES, APP_TASK, ROLE_CHIPS, STEPS, nameDraft, roleChips } from "../lib/onboarding.js";
+import TeamStep from "../components/v3/onboarding/TeamStep.jsx";
 import { useAction, useStore } from "../lib/store.jsx";
 import { useExpert } from "../lib/expert.js";
 import { patch, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 
-// Colmena 3 · Bienvenida (design/V3Bienvenida.dc.html): a dark column with the six steps and
-// the page beside it. Hola → the AI account they think with (ChatGPT sign-in, Claude or
-// OpenCode Go) → how much you want to see (simple or expert) and what you do → your team →
-// the apps you use → a first request. Every step can be skipped. ?paso=0–5 opens one (QA).
+// Colmena 3 · Bienvenida (design/V3Bienvenida.dc.html; docs/PLAN-equipo-y-salas.md, scope 5):
+// a dark column with the steps and the page beside it. Hola (what Colmena is, your name) →
+// the AI account your bots think with → your team: create one, join one with a code, or
+// start alone → how much you want to see and what you do → your bots → the apps you use →
+// a first request. Every step can be skipped. ?paso=0–6 opens one (QA).
 
 const INK = "#12131A";
 const MUTED = "#5C606C";
 const TEXT2 = "#4A4D57";
 const GREEN = "#0B6B4A";
 const RED = "#B4232A";
-const STEPS = [["Hola", "Qué es Colmena"], ["Cuenta de IA", "Con qué piensan"], ["Cómo trabajas", "Detalle y oficio"], ["Tu equipo", "Los bots que te ayudan"], ["Tus apps", "Opcional"], ["Primera petición", "Para empezar"]];
 const LAST = STEPS.length - 1;
+const STEP = { hola: 0, cuenta: 1, equipo: 2, trabajo: 3, bots: 4, apps: 5, peticion: 6 };
 const BRAINS = [
   { id: "openai", name: "ChatGPT", note: "Usa tu plan Plus o Pro: no pagas nada más.", rec: true },
   { id: "anthropic", name: "Claude", note: "Con tu suscripción, Claude Code o una clave de API." },
   { id: "opencode-go", name: "OpenCode Go", note: "Modelos abiertos a precio fijo." },
 ];
-// The roles the server knows (server/onboarding.mjs), with the board's names first.
-const ROLE_CHIPS = [["otra", "Trabajo de oficina"], ["diseno", "Diseño"], ["programacion", "Programación"], ["finanzas", "Economía y finanzas"], ["marketing", "Marketing"], ["clientes", "Atención al cliente"], ["operaciones", "Operaciones"], ["legal", "Legal"], ["personas", "Personas y RR. HH."]];
 // What they can see of your day (server DAILY_APPS ids).
 const DAY_APPS = [
   { id: "correo", mark: "@", name: "Correo", note: "Gmail u Outlook. Leen y preparan borradores." },
@@ -61,7 +61,7 @@ const h1 = { margin: "0", font: "600 48px/1 'Bricolage Grotesque', sans-serif", 
 const lead = { margin: "0", fontSize: "17px", lineHeight: "1.5", color: TEXT2 };
 
 export default function BienvenidaV2({ query = {} }) {
-  const { bots = [], settings = {}, provider, authError, ai } = useStore();
+  const { bots = [], settings = {}, provider, authError, ai, account = null, peers = null, teams = [] } = useStore();
   const [expert, setExpert] = useExpert();
   const engines = ai?.engines || [];
   const info = (id) => engines.find((e) => e.id === id) || (id === "openai" && provider?.connected ? { id, connected: true, detail: provider.label } : null);
@@ -71,6 +71,10 @@ export default function BienvenidaV2({ query = {} }) {
   const [panel, setPanel] = useState(false);
   const [waiting, setWaiting] = useState(null);
   const [role, setRole] = useState(() => (ROLES.some((r) => r.id === settings.role) ? settings.role : "otra"));
+  const [moreRoles, setMoreRoles] = useState(false);
+  const [name, setName] = useState(() => nameDraft(settings, account));
+  // With whom you work: a team you already have counts as created.
+  const [who, setWho] = useState(() => { const t = (teams || []).find((x) => x?.id && x.id !== "solo"); return t ? { choice: "create", team: { id: t.id, name: t.name } } : { choice: "create" }; });
   const [dropped, setDropped] = useState([]);
   const [apps, setApps] = useState(() => (Array.isArray(settings.dailyApps) ? settings.dailyApps.filter((a) => DAY_APPS.some((d) => d.id === a)) : []));
   const [text, setText] = useState(null);
@@ -118,7 +122,7 @@ export default function BienvenidaV2({ query = {} }) {
   const connectClaude = (body) => run("connect", () => post("/auth/anthropic", body));
   const connectOpenCode = (key) => run("connect", () => post("/auth/opencode", { key }));
   const save = (list = apps) => run("team", async () => {
-    await post("/onboarding", { role, team: kept.map((b) => b.id), apps: list });
+    await post("/onboarding", { role, team: kept.map((b) => b.id), apps: list, ...(name.trim() ? { userName: name.trim() } : {}) });
     setSaved(true);
     return true;
   });
@@ -137,22 +141,27 @@ export default function BienvenidaV2({ query = {} }) {
 
   // The main button of each step.
   const next = () => {
-    if (step === 1 && !chosen?.connected) {
+    // Your name is what your colleagues will read: kept as soon as you move on.
+    if (step === STEP.hola && name.trim() && name.trim() !== nameDraft(settings, null)) return run("name", async () => { await patch("/settings", { userName: name.trim() }); setStep(1); });
+    if (step === STEP.cuenta && !chosen?.connected) {
       if (brain === "openai") return waiting ? undefined : login();
       return setPanel(true);
     }
-    if (step === 4) return save().then((ok) => ok && setStep(5));
+    if (step === STEP.apps) return save().then((ok) => ok && setStep(STEP.peticion));
     setStep(Math.min(LAST, step + 1));
   };
-  const skip = () => (step === 4 ? save([]).then((ok) => ok && setStep(5)) : setStep(Math.min(LAST, step + 1)));
+  const skip = () => (step === STEP.apps ? save([]).then((ok) => ok && setStep(STEP.peticion)) : setStep(Math.min(LAST, step + 1)));
   const brainName = BRAINS.find((b) => b.id === brain)?.name || "ChatGPT";
-  const nextLabel = step === 0 ? "Empezar"
-    : step === 1 ? (waiting && !chosen?.connected ? "Esperando a " + brainName + "…" : "Continuar con " + brainName)
-    : step === 3 ? "Me gusta este equipo"
-    : step === 4 && busy === "team" ? "Preparando tu equipo…" : "Seguir";
+  const nextLabel = step === STEP.hola ? "Empezar"
+    : step === STEP.cuenta ? (waiting && !chosen?.connected ? "Esperando a " + brainName + "…" : "Continuar con " + brainName)
+    : step === STEP.equipo ? (who.choice === "solo" ? "Empezar solo" : "Seguir")
+    : step === STEP.bots ? "Me quedo con estos"
+    : step === STEP.apps && busy === "team" ? "Preparando tus bots…" : "Seguir";
   // While a sign-in or a connect panel is open, its own button is the one to press.
-  const connecting = step === 1 && !chosen?.connected && (!!waiting || panel);
-  const showSkip = step === 4 || (step === 1 && !anyConnected);
+  const connecting = step === STEP.cuenta && !chosen?.connected && (!!waiting || panel);
+  const showSkip = step === STEP.apps || (step === STEP.cuenta && !anyConnected);
+  const peopleOff = !peers || peers.relay?.status === "off";
+  const chips = roleChips(role, moreRoles);
   const desktop = typeof window !== "undefined" && !!window.colmenaWindow;
 
   return (
@@ -202,14 +211,14 @@ export default function BienvenidaV2({ query = {} }) {
               <button type="button" disabled={!!busy} onClick={later} style={{ position: "absolute", top: "18px", right: "24px", height: "36px", padding: "0 12px", border: "0", borderRadius: "999px", background: "transparent", color: MUTED, fontSize: "14px", cursor: "pointer", WebkitAppRegion: "no-drag", zIndex: 6 }}>{"Saltar la bienvenida"}</button>
             ) : null}
             <div key={step} style={{ flex: "1", width: "100%", maxWidth: "720px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "32px", animation: "rise .45s ease-out" }}>
-              {step === 0 ? (
+              {step === STEP.hola ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
                   <h1 style={{ margin: "0", font: "600 clamp(48px, 6vw, 80px)/0.96 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em" }}>
                     {"Hola."}
                     <br />
-                    <span style={{ color: "#8A8D96" }}>{"Esto es tu equipo."}</span>
+                    <span style={{ color: "#6B6F7A" }}>{"Aquí trabaja tu equipo."}</span>
                   </h1>
-                  <ul aria-label="Tu equipo" style={{ margin: "6px 0 4px", padding: "0", listStyle: "none", display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "14px 26px" }}>
+                  <ul aria-label="Tus bots" style={{ margin: "6px 0 4px", padding: "0", listStyle: "none", display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "14px 26px" }}>
                     {crew.map((c, i) => (
                       <li key={c.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                         <span aria-hidden="true" style={{ width: SIZES[i % 6] + "px", height: SIZES[i % 6] + "px", ...face(c), animation: `breathe ${PACES[i % 6]}s ease-in-out infinite`, animationDelay: i * -0.4 + "s" }} />
@@ -217,12 +226,16 @@ export default function BienvenidaV2({ query = {} }) {
                       </li>
                     ))}
                   </ul>
-                  <p style={{ margin: "0", fontSize: "20px", lineHeight: "1.5", color: TEXT2, maxWidth: "560px" }}>{"Colmena es un grupo de bots que trabaja contigo como compañeros: escriben, investigan, calculan y programan. Tú decides qué hacen solos y qué te preguntan antes."}</p>
-                  <p style={{ margin: "0", fontSize: "15px", color: MUTED }}>{"Te llevará unos dos minutos. Puedes saltar cualquier paso."}</p>
+                  <p style={{ margin: "0", fontSize: "20px", lineHeight: "1.5", color: TEXT2, maxWidth: "600px" }}>{"Colmena es el sitio donde las personas de tu equipo y los bots de cada una trabajan juntos. Estos son los tuyos: viven en tu ordenador, con tu cuenta de IA y tus datos, y tú decides qué hacen solos y qué te preguntan antes."}</p>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "8px", maxWidth: "420px" }}>
+                    <span style={{ fontSize: "15px", fontWeight: "600" }}>{"¿Cómo te llamas? "}<span style={{ fontWeight: "400", color: MUTED }}>{"Así te verán tus compañeros."}</span></span>
+                    <input className="c-quiet" type="text" value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }} placeholder="Tu nombre" style={{ height: "48px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "14px", background: "#FFFFFF", fontSize: "16px", color: INK }} />
+                  </label>
+                  <p style={{ margin: "0", fontSize: "15px", color: MUTED }}>{"Te llevará unos tres minutos. Puedes saltar cualquier paso."}</p>
                 </div>
               ) : null}
 
-              {step === 1 ? (
+              {step === STEP.cuenta ? (
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <h1 style={h1}>{"¿Con qué piensan?"}</h1>
@@ -263,7 +276,17 @@ export default function BienvenidaV2({ query = {} }) {
                 </>
               ) : null}
 
-              {step === 2 ? (
+              {step === STEP.equipo ? (
+                <>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <h1 style={h1}>{"¿Con quién trabajas?"}</h1>
+                    <p style={lead}>{"En un equipo habláis entre vosotros y con los bots de todos en las mismas salas. Cada bot trabaja en el ordenador de su dueño, y lo que sale de un ordenador lo aprueba su dueño."}</p>
+                  </div>
+                  <TeamStep value={who} onChange={setWho} off={peopleOff} />
+                </>
+              ) : null}
+
+              {step === STEP.trabajo ? (
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <h1 style={h1}>{"¿Cuánto quieres ver?"}</h1>
@@ -287,22 +310,23 @@ export default function BienvenidaV2({ query = {} }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     <span style={{ fontSize: "15px", fontWeight: "600" }}>
                       {"¿A qué te dedicas? "}
-                      <span style={{ fontWeight: "400", color: MUTED }}>{"Así te proponemos un equipo."}</span>
+                      <span style={{ fontWeight: "400", color: MUTED }}>{"Así te proponemos unos bots."}</span>
                     </span>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                      {ROLE_CHIPS.map(([id, label]) => {
+                      {chips.shown.map(([id, label]) => {
                         const on = role === id;
                         return <button key={id} type="button" aria-pressed={on} onClick={() => { setRole(id); setDropped([]); }} style={{ height: "40px", padding: "0 16px", border: `1px solid ${on ? INK : "rgba(18,19,26,.12)"}`, borderRadius: "999px", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "14px", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
                       })}
+                      {chips.more ? <button type="button" aria-expanded="false" onClick={() => setMoreRoles(true)} style={{ height: "40px", padding: "0 16px", border: "1px dashed rgba(18,19,26,.28)", borderRadius: "999px", background: "transparent", color: "#3D404A", fontSize: "14px", fontWeight: "500", cursor: "pointer" }}>{"Otro"}</button> : null}
                     </div>
                   </div>
                 </>
               ) : null}
 
-              {step === 3 ? (
+              {step === STEP.bots ? (
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <h1 style={h1}>{"Tu equipo ya está aquí."}</h1>
+                    <h1 style={h1}>{"Tus bots ya están aquí."}</h1>
                     <p style={lead}>{"Pensado para "}{roleName}{". Atlas coordina y reparte; los demás hacen. Quita los que no quieras: puedes crear más luego."}</p>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "10px" }}>
@@ -324,7 +348,7 @@ export default function BienvenidaV2({ query = {} }) {
                 </>
               ) : null}
 
-              {step === 4 ? (
+              {step === STEP.apps ? (
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <h1 style={h1}>{"¿Les dejas ver tu día?"}</h1>
@@ -352,7 +376,7 @@ export default function BienvenidaV2({ query = {} }) {
                 </>
               ) : null}
 
-              {step === 5 ? (
+              {step === STEP.peticion ? (
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     <h1 style={h1}>{"Pídeles algo."}</h1>
