@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Globe, Lock, LockOpen } from "../Icon.js";
 import { BotPresence } from "../v2/Presence.jsx";
 import { post } from "../../lib/api.js";
 import { avatarStyle, initial } from "../../lib/bots.js";
@@ -29,20 +30,12 @@ const BUTTON_LIGHT = { ...buttonBase, background: "var(--c-card)", color: "var(-
 
 function GlobeIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
-    </svg>
+    <Globe size={14} />
   );
 }
 
 function LockIcon({ secure }) {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={secure ? "#0B6B4A" : "#9DA2B0"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="5" y="11" width="14" height="10" rx="2" />
-      <path d={secure ? "M8 11V8a4 4 0 0 1 8 0v3" : "M8 11V8a4 4 0 0 1 7.5-2"} />
-    </svg>
-  );
+  return secure ? <Lock size={13} weight="bold" color="var(--c-ok-ink)" /> : <LockOpen size={13} weight="bold" color="#9DA2B0" />;
 }
 
 function Avatar({ bot }) {

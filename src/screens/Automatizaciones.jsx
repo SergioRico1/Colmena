@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, ChevronLeft, CircleAlert, Plus, Search } from "../components/Icon.js";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { css } from "../design/css/Automatizaciones.js";
 import Shell from "../components/v2/Shell.jsx";
 import { SuggestionCard } from "../components/interaction/Ideas.jsx";
-import Disparador, { TRIGGER_META } from "../components/Disparador.jsx";
+import Disparador, { TRIGGER_META, TriggerIcon } from "../components/Disparador.jsx";
 import { useStore, useAction, useResource } from "../lib/store.jsx";
 import { post, patch, del } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
@@ -106,7 +107,7 @@ function fromDescribed(d, base = blankDraft()) {
 const errStyle = { fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-error)" };
 const overlayBtn = { position: "fixed", inset: "0", zIndex: "15", background: "rgb(var(--c-ink-rgb) / 0.06)", border: "0", cursor: "default" };
 const menuBox = { position: "absolute", left: "0", top: "calc(100% + 8px)", zIndex: "22", background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px rgba(18,19,26,.22)", padding: "8px", display: "flex", flexDirection: "column", gap: "2px" };
-const check = (color = "#12131A", w = 3, size = 16) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>;
+const check = (color = "#12131A", w = 3, size = 16) => <Check size={size} color={color} />;
 
 export default function Automatizaciones({ query = {} }) {
   const { automations, suggestions, bots, folders, missions, connectors, ready, run } = useStore();
@@ -366,7 +367,7 @@ export default function Automatizaciones({ query = {} }) {
     <Shell active="rutinas" extraCss={css}>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
         <a href="C:/Program Files/Git/rutinas" onClick={(e) => { e.preventDefault(); navigate("C:/Program Files/Git/rutinas"); }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", margin: "32px clamp(20px, 4vw, 48px) 0", padding: "0 14px 0 10px", alignSelf: "flex-start", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+          <ChevronLeft size={14} weight="bold" />
           Rutinas
         </a>
         <main style={{ flex: "999 1 560px", minWidth: "0", display: "flex", flexWrap: "wrap", alignItems: "stretch" }}>
@@ -377,7 +378,7 @@ export default function Automatizaciones({ query = {} }) {
                 <p style={{ margin: "0", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{"Trabajo que pasa solo, a una hora o cuando ocurre algo."}</p>
               </div>
               <button type="button" onClick={() => { startNew(); navigate("/automatizaciones", { replace: true }); handled.current = JSON.stringify({}); }} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                <Plus size={16} weight="bold" />
                 {"Nueva"}
               </button>
             </div>
@@ -425,15 +426,15 @@ export default function Automatizaciones({ query = {} }) {
                     <div style={{ position: "relative", minWidth: "0" }}>
                       <button type="button" aria-haspopup="listbox" aria-expanded={cuandoOpen ? "true" : "false"} onClick={() => setOpen(cuandoOpen ? null : "cuando")} style={{ position: "relative", zIndex: "21", width: "100%", minHeight: "52px", padding: "10px 12px", textAlign: "left", background: cuandoOpen ? "var(--c-card)" : "var(--c-hover)", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-body)", lineHeight: "1.4", display: "flex", alignItems: "center", gap: "10px" }}>
                         <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-card)", border: "0", borderRadius: "var(--r-sm)" }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={TRIGGER_META[type][1]} /></svg>
+                          <TriggerIcon type={type} size={16} />
                         </span>
                         <span style={{ flex: "1" }}>{draft.trigger.sentence || TRIGGER_META[type][0]}</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d={cuandoOpen ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} /></svg>
+                        <ChevronDown size={16} weight="bold" style={{ flex: "none", transform: cuandoOpen ? "rotate(180deg)" : "none" }} />
                       </button>
                       {cuandoOpen ? (
                         <div role="listbox" aria-label="Cuándo se pone en marcha" style={{ ...menuBox, right: "0" }}>
                           <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", margin: "2px 2px 6px", padding: "0 12px", background: "var(--c-hover)", border: "0", borderRadius: "var(--r-pill)" }}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
+                            <Search size={15} />
                             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar disparador"}</span>
                             <input className="c-bare" type="text" autoFocus value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setOpen(null); }} placeholder="Busca: «factura», «lunes», «carpeta»…" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
                           </label>
@@ -442,7 +443,7 @@ export default function Automatizaciones({ query = {} }) {
                           ) : (
                             <button key={o.id} type="button" role="option" aria-selected={o.id === type ? "true" : "false"} onClick={() => pickTrigger(o.id)} style={{ width: "100%", display: "grid", gridTemplateColumns: "32px 1fr 20px", gap: "10px", alignItems: "center", minHeight: "52px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", background: o.id === type ? "var(--c-honey-soft)" : "var(--c-card)" }}>
                               <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", background: "var(--c-sunken)", borderRadius: "var(--r-sm)" }}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={TRIGGER_META[o.id][1]} /></svg>
+                                <TriggerIcon type={o.id} size={16} />
                               </span>
                               <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                                 <strong style={{ fontSize: "var(--t-ui)" }}>{o.label}</strong>
@@ -482,7 +483,7 @@ export default function Automatizaciones({ query = {} }) {
                         <div role="note" style={sel.state === "paused" || sel.state === "blocked"
                           ? { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#12131A" }
                           : { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "var(--c-honey-soft)", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ flex: "none", marginTop: "2px" }}><circle cx="12" cy="12" r="9" /><path d="M12 7v6M12 16.5v.5" /></svg>
+                          <CircleAlert size={16} weight="bold" style={{ flex: "none", marginTop: "2px" }} />
                           <span>{sel.error}</span>
                         </div>
                       ) : null}
@@ -497,7 +498,7 @@ export default function Automatizaciones({ query = {} }) {
                       <button type="button" aria-haspopup="listbox" aria-expanded={quienOpen ? "true" : "false"} onClick={() => setOpen(quienOpen ? null : "quien")} style={{ position: "relative", zIndex: "21", minHeight: "52px", padding: "8px 12px 8px 8px", background: quienOpen ? "var(--c-card)" : "var(--c-ok-soft)", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-body)", display: "flex", alignItems: "center", gap: "10px" }}>
                         <BotPresence bot={whoBot} size={32} />
                         <strong>{who?.short || whoBot?.name || "Elige un bot"}</strong>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d={quienOpen ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} /></svg>
+                        <ChevronDown size={16} weight="bold" style={{ transform: quienOpen ? "rotate(180deg)" : "none" }} />
                       </button>
                       {quienOpen ? (
                         <div role="listbox" aria-label="Qué bot lo hace" style={{ ...menuBox, width: "min(460px, 82vw)" }}>
@@ -537,7 +538,7 @@ export default function Automatizaciones({ query = {} }) {
                     <div style={{ position: "relative", minWidth: "0" }}>
                       <button type="button" aria-haspopup="listbox" aria-expanded={avisaOpen ? "true" : "false"} onClick={() => setOpen(avisaOpen ? null : "avisa")} style={{ position: "relative", zIndex: "21", width: "100%", minHeight: "52px", padding: "12px 14px", textAlign: "left", background: "var(--c-honey-soft)", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-body)", lineHeight: "1.5", display: "flex", alignItems: "center", gap: "10px" }}>
                         <span style={{ flex: "1" }}>{notifyLabel}</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d={avisaOpen ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} /></svg>
+                        <ChevronDown size={16} weight="bold" style={{ flex: "none", transform: avisaOpen ? "rotate(180deg)" : "none" }} />
                       </button>
                       {avisaOpen ? (
                         <div role="listbox" aria-label="Cuándo te avisa" style={{ ...menuBox, right: "0" }}>

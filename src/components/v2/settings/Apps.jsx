@@ -1,4 +1,5 @@
 import Select from "../../Select.jsx";
+import { Check, Folder, Plus, Search } from "../../Icon.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { del, get, patch, post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
@@ -247,7 +248,7 @@ function Catalogue({ c, initialQuery }) {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <h3 id="add-t" style={{ ...h3, flex: "1 1 180px" }}>Conectar otra app</h3>
         <label style={{ flex: "0 1 260px", display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 12px", borderRadius: "var(--r-md)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .12)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
+          <Search size={14} color="#5C606C" />
           <span style={srOnly}>Buscar una app</span>
           <input className="c-bare" type="text" value={text} onChange={(e) => type(e.target.value)} placeholder={`Buscar entre ${c.curated.length > 30 ? "cientos de" : "todas las"} apps`} style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text)" }} />
         </label>
@@ -279,8 +280,8 @@ function Catalogue({ c, initialQuery }) {
               style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "56px", padding: "8px 12px 8px 10px", border: 0, borderRadius: "var(--r-lg)", background: "var(--c-hover)", textAlign: "left", color: "var(--c-text)", cursor: blocked ? "default" : "pointer", opacity: blocked ? 0.55 : 1, boxShadow: wait ? "inset 0 0 0 1.5px #FFC93C" : "none", animation: "fade .3s ease-out" }}>
               <span style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-card)", overflow: "hidden" }}><AppLogo id={d.id} name={d.name} logo={d.logo} size={30} /></span>
               <span style={{ flex: 1, minWidth: 0, fontSize: "var(--t-ui)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
-              {isOn ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6B4A" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}><path d="m5 12 5 5 9-10" /></svg>
-                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d="M12 5.5v13M5.5 12h13" /></svg>}
+              {isOn ? <Check size={16} weight="bold" color="#0B6B4A" style={{ flex: "none" }} />
+                : <Plus size={16} color="#5C606C" style={{ flex: "none" }} />}
             </button>
           );
         })}
@@ -320,7 +321,7 @@ function Folders() {
       {list.map((f) => (
         <div key={f.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", minHeight: "62px", padding: "8px 0", borderTop: LINE }}>
           <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-chip)" }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="1.8" strokeLinejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" /></svg>
+            <Folder size={17} color="#4A4D57" />
           </span>
           <span style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
             <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{f.label}<span style={{ fontWeight: 400, color: "var(--c-text-3)" }}>{f.botIds?.length ? " · " + f.botIds.map((id) => botOf(id)?.name).filter(Boolean).join(", ") : ""}</span></span>

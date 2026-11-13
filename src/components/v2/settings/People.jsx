@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ShieldCheck, Ticket, UserPlus } from "lucide-react";
+import { ShieldCheck, Ticket, UserPlus } from "../../Icon.js";
 import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, get, patch, put } from "../../../lib/api.js";
 import { later, isHidden } from "../../../lib/undoToast.js";

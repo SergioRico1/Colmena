@@ -1,6 +1,6 @@
 import { useClickAway } from "../lib/useClickAway.js";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Circle, LayoutGrid } from "lucide-react";
+import { Check, Circle, LayoutGrid, Play, Pause, ArrowUp, ChevronDown, Paperclip, X } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { botAlt } from "../lib/alt.js";
@@ -191,8 +191,8 @@ export default function Hoy({ query = {} }) {
             </a>
             <button type="button" onClick={togglePause} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .14)", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text-2)", cursor: "pointer" }}>
               {paused
-                ? <><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z" /></svg>{"Reanudar al equipo"}</>
-                : <><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>{"Pausar a todo el equipo"}</>}
+                ? <><Play size={13} />{"Reanudar al equipo"}</>
+                : <><Pause size={13} />{"Pausar a todo el equipo"}</>}
             </button>
             </span>
           </div>
@@ -242,7 +242,7 @@ export default function Hoy({ query = {} }) {
                   style={{ flex: "1", minWidth: "0", height: "60px", border: "0", background: "transparent", fontSize: "var(--t-title)", letterSpacing: "-0.01em" }} />
               </label>
               <button type="submit" aria-label="Enviar" disabled={busy || !ask.trim() || box.blocked} style={{ width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: box.blocked ? "#C9CBD1" : "var(--c-btn)", color: "var(--c-btn-text)", cursor: ask.trim() && !box.blocked ? "pointer" : "default", opacity: ask.trim() || busy ? 1 : 0.9 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+                <ArrowUp size={18} weight="bold" />
               </button>
             </form>
             {box.blocked ? (
@@ -257,7 +257,7 @@ export default function Hoy({ query = {} }) {
                 <button type="button" aria-haspopup="menu" aria-expanded={menu ? "true" : "false"} onClick={() => setMenu(!menu)} style={{ height: "32px", padding: "0 12px 0 10px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-sunken)", fontSize: "var(--t-ui)", color: "var(--c-text-2)", cursor: "pointer" }}>
                   <Shape bot={route.bot} size={14} />
                   <span role="status">{route.text}</span>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                  <ChevronDown size={11} weight="bold" />
                 </button>
                 {menu ? (
                   <div role="menu" aria-label="Quién lo hace" style={{ position: "absolute", zIndex: 20, top: "38px", left: "0", minWidth: "260px", display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 24px 48px -20px rgba(18,19,26,.4)", animation: "fade .15s ease-out" }}>
@@ -276,13 +276,13 @@ export default function Hoy({ query = {} }) {
                 ) : null}
               </span>
               <button type="button" onClick={attach} style={{ height: "32px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text-2)", cursor: "pointer" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7-7l8.5-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.4 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8" /></svg>{"Adjuntar"}
+                <Paperclip size={15} />{"Adjuntar"}
               </button>
               {files.map((f, i) => (
                 <span key={f.name + i} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 4px 0 10px", borderRadius: "var(--r-pill)", background: "var(--c-sunken)", fontSize: "var(--t-meta)", color: "var(--c-text)" }}>
                   {f.name}
                   <button type="button" aria-label={`Quitar ${f.name}`} onClick={() => setFiles(files.filter((_, j) => j !== i))} style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                    <X size={9} weight="bold" />
                   </button>
                 </span>
               ))}

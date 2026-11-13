@@ -1,7 +1,7 @@
 import { useClickAway } from "../../../lib/useClickAway.js";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Ellipsis, Pin, PinOff, AlarmClock, Archive, ArchiveRestore, Trash2, ChevronRight, Sun, CalendarClock, Search, X, Files, MessageSquareText } from "lucide-react";
+import { Ellipsis, Pin, PinOff, AlarmClock, Archive, ArchiveRestore, Trash2, ChevronRight, Sun, CalendarClock, Search, X, Files, MessageSquareText } from "../../Icon.js";
 import { navigate } from "../../../lib/router.jsx";
 import { del, get, patch, post } from "../../../lib/api.js";
 import { withMessage } from "../../../lib/reveal.js";

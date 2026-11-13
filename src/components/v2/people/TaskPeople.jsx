@@ -1,6 +1,6 @@
 import { useClickAway } from "../../../lib/useClickAway.js";
 import { useRef, useState } from "react";
-import { Check, Clock3, UserPlus } from "lucide-react";
+import { Check, Clock3, UserPlus } from "../../Icon.js";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { useStore } from "../../../lib/store.jsx";
 import { post } from "../../../lib/api.js";

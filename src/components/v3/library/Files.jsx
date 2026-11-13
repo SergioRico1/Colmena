@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Search, X } from "../../Icon.js";
 import { BotPresence, shapeOf } from "../../v2/Presence.jsx";
 import { ArtifactContent } from "./ArtifactContent.jsx";
 import { useResource } from "../../../lib/store.jsx";
@@ -127,7 +128,7 @@ export default function Files({ artifacts, bots, missions, ready, expert, initia
     <>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
         <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
+          <Search size={16} color="var(--c-text-3)" />
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar archivos"}</span>
           <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o contenido" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />
         </label>
@@ -273,7 +274,7 @@ function Look({ a, bot, place, mission, onClose }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
             <h2 id="look-t" style={{ margin: 0, font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{a.title}</h2>
             <button data-autofocus="" type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "var(--c-chip)", cursor: "pointer", color: "var(--c-text)" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              <X size={14} weight="bold" />
             </button>
           </div>
           <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px 14px", fontSize: "var(--t-ui)" }}>

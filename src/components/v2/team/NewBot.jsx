@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Check } from "../../Icon.js";
 import { post, pickTextFiles } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
 import { useExpert } from "../../../lib/expert.js";
@@ -164,7 +165,7 @@ export default function NewBot({ onClose, onHired }) {
                   {checksOf(desc, files).map(([l, ok]) => (
                     <span key={l} role="listitem" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: ok ? "var(--c-ok-ink)" : "var(--c-text-3)", transition: "color .25s ease" }}>
                       <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: ok ? "#0B8A5F" : "transparent", boxShadow: ok ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)", transition: "all .25s ease" }}>
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: ok ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
+                        <Check size={9} weight="bold" color="#FFFFFF" style={{ opacity: ok ? 1 : 0 }} />
                       </span>
                       {l}
                     </span>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileText, FolderOpen, Globe, ListChecks, Lock, MessageSquareReply, MessagesSquare, SquareTerminal, Users } from "lucide-react";
+import { FileText, FolderOpen, Globe, ListChecks, Lock, MessageSquareReply, MessagesSquare, SquareTerminal, Users, Ellipsis } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
 import { BotMark } from "../components/v2/chat/Mark.jsx";
@@ -471,7 +471,7 @@ function Room({ id, query }) {
                       onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}
                       style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: membersOpen && !dockShown ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}><Users size={17} strokeWidth={2.1} aria-hidden="true" /></button>
                     {menu.length ? <HeaderMenu label="Más opciones" items={menu} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}
-                      button={<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18.5" cy="12" r="1.6" /></svg>} /> : null}
+                      button={<Ellipsis size={18} />} /> : null}
                   </div>
                   {searching && shared ? <ShareSearch shareId={shareId} onClose={() => setSearching(false)} /> : null}
                   {leaving ? (

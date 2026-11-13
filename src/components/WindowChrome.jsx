@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Copy, Minus, Square, X } from "lucide-react";
+import { Copy, Minus, Square, X } from "./Icon.js";
 import { LogoMark, LOGO_FONT } from "./Logo.jsx";
 
 // Colmena's own title bar for the frameless desktop window: a draggable strip that

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Check, Lock, ShieldAlert } from "lucide-react";
+import { Calendar, Check, Lock, ShieldAlert } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 

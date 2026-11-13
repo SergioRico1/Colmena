@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Check } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NotFound from "./NotFound.jsx";
 import { Shape, srOnly } from "../components/v3/dia/parts.jsx";
@@ -251,7 +252,7 @@ export default function Revisar({ params = {} }) {
             <>
               <span role="status" style={{ flex: "1", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-ok-ink)" }}>
                 <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
+                  <Check size={11} weight="bold" color="#FFFFFF" />
                 </span>
                 {sent}
               </span>

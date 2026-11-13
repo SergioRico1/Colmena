@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import { useResource, useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";

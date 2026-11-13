@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Columns2, Undo2, SquareArrowOutUpRight } from "lucide-react";
+import { Search, Columns2, Undo2, SquareArrowOutUpRight } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { C, MONO, Seg, SR } from "./parts.jsx";
 import { parsePatch, diffContext, sideBySide } from "./model.js";

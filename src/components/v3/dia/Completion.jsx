@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { FileText, X } from "lucide-react";
+import { FileText, X, Check as CheckGlyph } from "../../Icon.js";
 import { btn } from "./parts.jsx";
 import { freshCompletions } from "../../../lib/completion.js";
 import { post } from "../../../lib/api.js";
@@ -47,7 +47,7 @@ export function useCompletions() {
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
 const Check = ({ size = 22 }) => (
   <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F" }}>
-    <svg width={size / 2} height={size / 2} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
+    <CheckGlyph size={size / 2} weight="bold" color="#FFFFFF" />
   </span>
 );
 const fileChip = { display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "34px", padding: "0 12px", borderRadius: "var(--r-md)", background: "var(--c-sunken)", fontSize: "var(--t-ui)", color: "var(--c-text)" };

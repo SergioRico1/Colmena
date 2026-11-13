@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { Bell, ChartColumn, CircleHelp, Lock, Plug, Settings2, ShieldCheck, Sparkles, SquareTerminal, AddressBook } from "../../Icon.js";
 
 // Ajustes by what you want to do (Colmena 3, design/V3Ajustes.dc.html): eight sections and a
 // search box, plus «Avanzado» only in expert mode. Each section has an address (/ajustes/<id>)
@@ -7,32 +7,12 @@ import { createElement } from "react";
 // use for it. Old section addresses (cuenta, inteligencia, autonomia, diagnostico, acerca…) are
 // aliases of the new ones, so every link written before still lands on its setting.
 
-/** A section icon drawn on the board (24 × 24 path), usable like a lucide icon. */
-const drawn = (d) => {
-  const Icon = ({ size = 17, strokeWidth = 1.8, style = null, ...rest }) => createElement(
-    "svg",
-    { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", style, ...rest },
-    createElement("path", { d }),
-  );
-  return Icon;
-};
-
-export const SECTION_PATHS = {
-  general: "M4 7h10M18 7h2M4 17h4M12 17h8M16 4.5v5M10 14.5v5",
-  ia: "M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z",
-  permisos: "M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z",
-  apps: "M9 3.5v4M15 3.5v4M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0zM12 16v4.5",
-  avisos: "M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0",
-  privacidad: "M6.5 10.5h11v9.5h-11zM8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5",
-  uso: "M5 19.5V11M10 19.5V5.5M15 19.5v-6M20 19.5V9",
-  ayuda: "M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.5M12 16.8v.2",
-  avanzado: "M4.5 5.5h15v13h-15zM8 10l2.5 2L8 14M12.5 14.5H16",
-  contactos: "M8 3.8h8l4 8.2-4 8.2H8l-4-8.2zM12 9.3l2.3 1.35v2.7L12 14.7l-2.3-1.35v-2.7z",
-};
+/** Each section's icon (Phosphor, src/components/Icon.js), drawn at 17 px by the section list. */
+export const SECTION_ICONS = { general: Settings2, ia: Sparkles, permisos: ShieldCheck, apps: Plug, avisos: Bell, privacidad: Lock, uso: ChartColumn, ayuda: CircleHelp, avanzado: SquareTerminal, contactos: AddressBook };
 
 export const SECTIONS = [
   {
-    id: "general", label: "General", icon: drawn(SECTION_PATHS.general),
+    id: "general", label: "General", icon: SECTION_ICONS.general,
     lead: "Tu nombre, tu espacio y cuánto detalle quieres ver.",
     items: [
       ["tu-nombre", "Tu nombre", "usuario perfil firma"],
@@ -49,7 +29,7 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "ia", label: "Cuentas de IA", icon: drawn(SECTION_PATHS.ia),
+    id: "ia", label: "Cuentas de IA", icon: SECTION_ICONS.ia,
     lead: "Con qué IA piensan tus bots, cuánto piensan y quién les cubre si una falla.",
     items: [
       ["chatgpt", "Tu cuenta de ChatGPT", "openai iniciar sesión gpt plan"],
@@ -63,7 +43,7 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "permisos", label: "Permisos y autonomía", icon: drawn(SECTION_PATHS.permisos),
+    id: "permisos", label: "Permisos y autonomía", icon: SECTION_ICONS.permisos,
     lead: "Qué hacen solos tus bots, qué te preguntan siempre y qué pueden tocar.",
     items: [
       ["lineas-rojas", "Siempre te preguntan antes de…", "líneas rojas enviar dinero pagar publicar borrar instalar permiso"],
@@ -79,7 +59,7 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "apps", label: "Apps y carpetas", icon: drawn(SECTION_PATHS.apps),
+    id: "apps", label: "Apps y carpetas", icon: SECTION_ICONS.apps,
     lead: "Las apps, carpetas y webs con las que trabajan tus bots.",
     items: [
       ["apps-conectadas", "Apps conectadas", "gmail correo calendario drive slack notion composio"],
@@ -89,7 +69,7 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "avisos", label: "Avisos", icon: drawn(SECTION_PATHS.avisos),
+    id: "avisos", label: "Avisos", icon: SECTION_ICONS.avisos,
     lead: "Cuándo te avisan, de qué y cómo suena.",
     items: [
       ["avisame-de", "Avísame de", "nivel todo importante notificaciones"],
@@ -102,7 +82,7 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "privacidad", label: "Privacidad y datos", icon: drawn(SECTION_PATHS.privacidad),
+    id: "privacidad", label: "Privacidad y datos", icon: SECTION_ICONS.privacidad,
     lead: "Lo que recuerdan de ti, tus copias de seguridad, el cifrado y tus contraseñas.",
     items: [
       ["privado", "Dónde viven tus datos", "privacidad privado incógnito"],
@@ -127,7 +107,7 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "uso", label: "Uso y límites", icon: drawn(SECTION_PATHS.uso),
+    id: "uso", label: "Uso y límites", icon: SECTION_ICONS.uso,
     lead: "Lo que gasta cada bot y cada chat, y hasta dónde dejas que lleguen.",
     items: [
       ["este-mes", "Este mes", "tokens gasto consumo páginas"],
@@ -143,7 +123,7 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "ayuda", label: "Ayuda y diagnóstico", icon: drawn(SECTION_PATHS.ayuda),
+    id: "ayuda", label: "Ayuda y diagnóstico", icon: SECTION_ICONS.ayuda,
     lead: "Comprueba con un clic que todo funciona y te dice cómo arreglar lo que no.",
     items: [
       ["comprobar", "Comprueba que todo funciona", "diagnóstico doctor salud problema error lento falla comprobar"],
@@ -160,7 +140,7 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "avanzado", label: "Avanzado", icon: drawn(SECTION_PATHS.avanzado), expert: true, tag: "EXPERTO",
+    id: "avanzado", label: "Avanzado", icon: SECTION_ICONS.avanzado, expert: true, tag: "EXPERTO",
     lead: "Para quien quiere tocar las tripas: servidores MCP, claves, modelos locales y datos.",
     items: [
       ["mcp", "Servidores MCP", "mcp servidor herramientas propia url"],
@@ -175,7 +155,7 @@ export const SECTIONS = [
   // People now live in Equipo › Personas; until that screen lists them, /ajustes/contactos keeps
   // the editor. It is not in the list of sections, but the search and old links still reach it.
   {
-    id: "contactos", label: "Contactos y equipos", icon: drawn(SECTION_PATHS.contactos), hidden: true,
+    id: "contactos", label: "Contactos y equipos", icon: SECTION_ICONS.contactos, hidden: true,
     lead: "Con quién hablas desde Colmena, qué puede pedirte cada uno y por dónde os llegan los mensajes.",
     items: [
       ["tu-identidad", "Tú en otras Colmenas", "nombre identidad"],

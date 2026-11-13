@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Download } from "lucide-react";
+import { Check, Download } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import ProviderMark from "../ProviderMark.jsx";
 import { C, MONO } from "./parts.jsx";

@@ -1,4 +1,5 @@
 import { useClickAway } from "../../../lib/useClickAway.js";
+import { Ellipsis, Plus, Search } from "../../Icon.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
@@ -168,7 +169,7 @@ export default function ChatsHome() {
           <p style={{ margin: 0, fontSize: "var(--t-read)", color: "var(--c-text-2)" }}>{"Tus conversaciones con un bot, con salas de equipo y con otras personas."}</p>
         </div>
         <button type="button" onClick={() => setSheet({ mode: "chat", preset: [] })} title="Nuevo chat (Ctrl N › Chat con un bot)" style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>{"Nuevo chat"}
+          <Plus size={16} weight="bold" />{"Nuevo chat"}
         </button>
       </header>
 
@@ -184,7 +185,7 @@ export default function ChatsHome() {
           })}
         </div>
         <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "42px", padding: "0 14px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
+          <Search size={16} color="#5C606C" />
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar en los chats"}</span>
           <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en nombres y mensajes" style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-body)" }} />
         </label>
@@ -231,7 +232,7 @@ export default function ChatsHome() {
                         {r.badge ? <span aria-label={r.attention ? "Te necesita" : "Mensajes sin leer"} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: r.attention ? "var(--c-honey)" : "var(--c-btn)", color: r.attention ? "var(--c-honey-ink)" : "var(--c-btn-text)", fontSize: "var(--t-caption)", fontWeight: 600 }}>{r.badge}</span> : null}
                       </span>
                       <button type="button" aria-label={"Más opciones de " + r.name} aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setMenu(open ? null : r.key)} style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18.5" cy="12" r="1.6" /></svg>
+                        <Ellipsis size={18} />
                       </button>
                       {open ? (
                         <div role="menu" aria-label="Opciones" style={{ position: "absolute", zIndex: 5, right: "14px", top: "58px", width: "230px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" }}>

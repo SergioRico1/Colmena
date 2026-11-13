@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowUp, Ellipsis, X } from "lucide-react";
+import { ArrowUp, Ellipsis, X } from "../../Icon.js";
 import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO, SR } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
 import EngineModelMenu, { ENGINE_NAME, EngineMark, modelNote } from "./EngineModels.jsx";

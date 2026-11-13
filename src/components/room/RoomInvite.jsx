@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, Copy, Search } from "lucide-react";
+import { Check, Copy, Search } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import { useResource, useStore } from "../../lib/store.jsx";
 import { firstName } from "../../lib/identity.js";

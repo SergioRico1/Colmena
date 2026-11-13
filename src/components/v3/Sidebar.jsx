@@ -18,6 +18,7 @@ import { realTeams } from "../../lib/teams.js";
 import WorkingDots from "../room/Dots.jsx";
 import { STATE_WORD, STATUS_WORD, conversationPath, foldBots, foldRooms, rememberConversation, rowLabel, scrollFade, sidebarModel, teamHeader, waitingLabel } from "../../lib/sidebar.js";
 import { selfName } from "../../lib/ownName.js";
+import { Activity, Books, Bot, Check, CheckSquare, ChevronDown, Code, Hash, House, ListChecks, MessageSquare, Plus, Repeat, Search, Settings2, Sidebar as SidebarIcon, Target, UsersThree } from "../Icon.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md): it names who you
 // talk to. Top to bottom: your team (or «Solo tú»), «Nuevo» (Ctrl N) and «Buscar o pedir»
@@ -26,11 +27,11 @@ import { selfName } from "../../lib/ownName.js";
 // (Ctrl Shift E). Ctrl B folds it to a rail of icons and avatars. Honey only marks what waits
 // for you; unread is bold with a neutral count. The rows come from src/lib/sidebar.js.
 export const PLACES = [
-  { id: "inicio", label: "Inicio", href: "/", icon: "M3.5 10.5 12 4l8.5 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-4.5v-6h-5v6H5A1.5 1.5 0 0 1 3.5 19z" },
-  { id: "trabajo", label: "Trabajo", href: "/trabajo", icon: "M10 6h10M10 12h10M10 18h10M4 6l1.3 1.3L7.8 4.8M4 12l1.3 1.3 2.5-2.5M4 18l1.3 1.3 2.5-2.5" },
-  { id: "codigo", label: "Código", href: "/codigo", icon: "m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16" },
-  { id: "equipo", label: "Equipo", href: "/equipo", icon: "M8 3.8h8l4 8.2-4 8.2H8l-4-8.2zM12 9.3l2.3 1.35v2.7L12 14.7l-2.3-1.35v-2.7z" },
-  { id: "biblioteca", label: "Biblioteca", href: "/biblioteca", icon: "M4 4.5h3.5v15H4zM9.5 4.5H13v15H9.5zM15 5.5l3.2-1 3.3 14-3.2 1z" },
+  { id: "inicio", label: "Inicio", href: "/", icon: House },
+  { id: "trabajo", label: "Trabajo", href: "/trabajo", icon: ListChecks },
+  { id: "codigo", label: "Código", href: "/codigo", icon: Code },
+  { id: "equipo", label: "Equipo", href: "/equipo", icon: UsersThree },
+  { id: "biblioteca", label: "Biblioteca", href: "/biblioteca", icon: Books },
 ];
 // Old place ids (Colmena 2) still passed by some screens. «Chats» is no longer a place: its
 // screens light their own row in a group instead.
@@ -38,13 +39,13 @@ const ALIAS = { hoy: "inicio", conversaciones: "chats", rutinas: "trabajo", obje
 export const placeId = (id) => ALIAS[id] || id;
 
 const NEW_ITEMS = [
-  { id: "chat", label: "Chat con un bot", hint: "Pregunta o encarga algo", icon: "M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16a2.5 2.5 0 0 1-1.5-2.3z" },
-  { id: "sala", label: "Sala", hint: "Con personas y varios bots", icon: "M5 9h14M5 15h14M10 4 8 20M16 4l-2 16" },
-  { id: "tarea", label: "Tarea", hint: "Un trabajo con plan y entrega", href: "/trabajo?nueva=1", icon: "M5 12.5l4 4 10-10" },
-  { id: "rutina", label: "Rutina", hint: "Algo que se repite solo", href: "/trabajo/rutinas?nueva=1", icon: "M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.8 4.5v3.6h-3.6" },
-  { id: "objetivo", label: "Objetivo", hint: "Una meta a largo plazo", href: "/trabajo/objetivos?nuevo=1", icon: "M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17zM12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" },
-  { id: "bot", label: "Bot", hint: "Un compañero nuevo", href: "/equipo/nuevo", icon: "M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z" },
-  { id: "codigo", label: "Tarea de código", hint: "En uno de tus proyectos", href: "/codigo", icon: "m18 16 4-4-4-4M6 8l-4 4 4 4" },
+  { id: "chat", label: "Chat con un bot", hint: "Pregunta o encarga algo", icon: MessageSquare },
+  { id: "sala", label: "Sala", hint: "Con personas y varios bots", icon: Hash },
+  { id: "tarea", label: "Tarea", hint: "Un trabajo con plan y entrega", href: "/trabajo?nueva=1", icon: CheckSquare },
+  { id: "rutina", label: "Rutina", hint: "Algo que se repite solo", href: "/trabajo/rutinas?nueva=1", icon: Repeat },
+  { id: "objetivo", label: "Objetivo", hint: "Una meta a largo plazo", href: "/trabajo/objetivos?nuevo=1", icon: Target },
+  { id: "bot", label: "Bot", hint: "Un compañero nuevo", href: "/equipo/nuevo", icon: Bot },
+  { id: "codigo", label: "Tarea de código", hint: "En uno de tus proyectos", href: "/codigo", icon: Code },
 ];
 // «Nuevo» shows four (the most used: a chat, a room, a task, a routine); «Más…» unfolds the rest.
 export const NEW_FIRST = ["chat", "sala", "tarea", "rutina"];
@@ -232,7 +233,7 @@ export default function Sidebar({ active = "inicio" }) {
     <div role="menu" aria-label="Crear algo nuevo" onKeyDown={menuKeys} style={{ ...menuBox, top: "46px", right: folded ? "auto" : "-6px", width: folded ? "260px" : "auto" }}>
       {NEW_ITEMS.filter((n) => moreNew || NEW_FIRST.includes(n.id)).map((n) => (
         <button key={n.id} type="button" role="menuitem" onClick={() => pick(n)} className="v3-menuitem" style={{ ...menuItem, minHeight: "44px", fontWeight: "400" }}>
-          <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "var(--c-chip)" }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={n.icon} /></svg></span>
+          <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "var(--c-chip)" }}><n.icon size={16} /></span>
           <span style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{n.label}</span><span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{n.hint}</span></span>
         </button>
       ))}
@@ -255,7 +256,7 @@ export default function Sidebar({ active = "inicio" }) {
     <div role="menu" aria-label={team.solo ? "Tu Colmena" : `Equipo ${team.name}`} onKeyDown={menuKeys} style={{ ...menuBox, top: "48px", right: folded ? "auto" : "-6px", width: folded ? "260px" : "auto" }}>
       {team.others.length ? <>
         <span style={{ padding: "6px 10px 4px", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>{"Cambiar de equipo"}</span>
-        <button type="button" role="menuitemradio" aria-checked="true" onClick={() => setMenu(null)} className="v3-menuitem" style={{ ...menuItem, fontWeight: "600" }}><span style={ellipsis}>{team.name}</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4 4 10-10" /></svg></button>
+        <button type="button" role="menuitemradio" aria-checked="true" onClick={() => setMenu(null)} className="v3-menuitem" style={{ ...menuItem, fontWeight: "600" }}><span style={ellipsis}>{team.name}</span><Check size={16} weight="bold" /></button>
         {team.others.map((t) => <button key={t.id} type="button" role="menuitemradio" aria-checked="false" onClick={() => pickTeam(t.id)} className="v3-menuitem" style={menuItem}><span style={ellipsis}>{t.name}</span></button>)}
         {menuLine}
       </> : null}
@@ -287,7 +288,7 @@ export default function Sidebar({ active = "inicio" }) {
   const groupHead = (id, label, count, addLabel, onAdd, marks) => (
     <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", marginTop: "10px" }}>
       <button type="button" onClick={() => toggleGroup(id)} aria-expanded={!closed[id]} aria-controls={`v3-group-${id}`} className="v3-hover" style={{ flex: "1", minWidth: "0", height: "28px", display: "flex", alignItems: "center", gap: "6px", padding: "0 6px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-caption)", fontWeight: "600", textAlign: "left", cursor: "pointer" }}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", transform: closed[id] ? "rotate(-90deg)" : "none", transition: "transform .15s ease" }}><path d="m6 9 6 6 6-6" /></svg>
+        <ChevronDown size={12} weight="bold" style={{ flex: "none", transform: closed[id] ? "rotate(-90deg)" : "none", transition: "transform .15s ease" }} />
         <span style={{ color: closed[id] && marks.unread ? "var(--c-text)" : "var(--c-text-3)" }}>{label}</span>
         <span style={{ fontWeight: "500", fontVariantNumeric: "tabular-nums" }}>{count}</span>
         <span style={{ flex: "1" }} />
@@ -295,7 +296,7 @@ export default function Sidebar({ active = "inicio" }) {
         {closed[id] && marks.unread ? <Count n={marks.unread} label={`${marks.unread} sin leer`} /> : null}
         {closed[id] && marks.waiting ? <Count n={marks.waiting} honey label={marks.waiting === 1 ? "1 te espera" : `${marks.waiting} te esperan`} /> : null}
       </button>
-      <button type="button" onClick={onAdd} aria-label={addLabel} title={addLabel} className="v3-hover" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
+      <button type="button" onClick={onAdd} aria-label={addLabel} title={addLabel} className="v3-hover" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}><Plus size={14} weight="bold" /></button>
     </div>
   );
   const sum = (rows, key) => rows.reduce((n, r) => n + (r[key] || 0), 0);
@@ -355,7 +356,7 @@ export default function Sidebar({ active = "inicio" }) {
     const n = p.id === "inicio" ? model.waitingCount : 0;
     return (
       <a key={p.id} href={p.href} aria-current={on ? "page" : undefined} aria-label={folded ? p.label + (n ? `, ${waitingLabel(n)}` : "") : undefined} title={folded ? `${p.label} (Ctrl ${i + 1})` : undefined} className={on ? undefined : "v3-hover"} style={{ position: "relative", flex: "none", width: folded ? "44px" : "auto", height: "36px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "11px", padding: folded ? "0" : "0 10px", borderRadius: "var(--r-md)", textDecoration: "none", color: on ? "var(--c-text)" : "var(--c-text-2)", background: on ? "var(--c-selected)" : "transparent", boxShadow: on ? onRow.boxShadow : "none", fontSize: "var(--t-body)", fontWeight: on ? "600" : "500" }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={p.icon} /></svg>
+        <p.icon size={20} active={on} />
         {folded ? null : <span style={{ flex: "1" }}>{p.label}</span>}
         {n ? <span aria-label={folded ? undefined : waitingLabel(n)} aria-hidden={folded ? "true" : undefined} style={{ ...(folded ? { position: "absolute", top: "-2px", right: "2px", boxShadow: "0 0 0 2px var(--c-sidebar)" } : {}), minWidth: "20px", height: "20px", padding: "0 6px", boxSizing: "border-box", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-honey)", color: "var(--c-honey-ink)", fontSize: "var(--t-caption)", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{n}</span> : null}
         {!folded && expert && !n ? <kbd style={kbd}>{`Ctrl ${i + 1}`}</kbd> : null}
@@ -440,7 +441,7 @@ export default function Sidebar({ active = "inicio" }) {
       <a href="#contenido" onClick={skip} className="v3-skip" style={noDrag}>{here ? "Ir a la conversación" : "Ir al contenido"}</a>
       <div style={{ flex: "none", display: "flex", flexDirection: folded ? "column" : "row", alignItems: "center", justifyContent: "space-between", gap: folded ? "10px" : "0", minHeight: "24px", padding: folded ? "0" : "0 4px" }}>
         <span style={{ display: "flex", alignItems: "center", height: "24px", ...noDrag }}><WindowDots inline compact={folded} /></span>
-        <button type="button" onClick={() => setFolded(!folded)} aria-label={folded ? "Desplegar la barra (Ctrl B)" : "Plegar la barra (Ctrl B)"} title={folded ? "Desplegar la barra (Ctrl B)" : "Plegar la barra (Ctrl B)"} className="v3-hover" style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer", ...noDrag }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="M9.5 4.5v15" /></svg></button>
+        <button type="button" onClick={() => setFolded(!folded)} aria-label={folded ? "Desplegar la barra (Ctrl B)" : "Plegar la barra (Ctrl B)"} title={folded ? "Desplegar la barra (Ctrl B)" : "Plegar la barra (Ctrl B)"} className="v3-hover" style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer", ...noDrag }}><SidebarIcon size={20} /></button>
       </div>
 
       <div ref={teamRef} style={{ flex: "none", position: "relative", zIndex: "6", ...noDrag }}>
@@ -451,7 +452,7 @@ export default function Sidebar({ active = "inicio" }) {
               <span style={{ font: `600 ${team.solo ? "var(--t-title)" : "var(--t-lead)"}/1.1 'Bricolage Grotesque', sans-serif`, letterSpacing: "-0.03em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.name}</span>
               <span style={{ fontSize: "var(--t-caption)", lineHeight: "1.2", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{team.line}</span>
             </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--c-text-3)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}><path d="m6 9 6 6 6-6" /></svg>
+            <ChevronDown size={16} style={{ flex: "none", color: "var(--c-text-3)" }} />
           </>}
         </button>
         {teamMenu}
@@ -459,11 +460,11 @@ export default function Sidebar({ active = "inicio" }) {
 
       <div ref={newRef} style={{ flex: "none", position: "relative", zIndex: "5", display: "flex", flexDirection: "column", gap: "8px", ...noDrag }}>
         <button type="button" onClick={() => setMenu(menu === "new" ? null : "new")} aria-expanded={menu === "new"} aria-haspopup="menu" aria-label={folded ? "Nuevo (Ctrl N)" : undefined} title={folded ? "Nuevo (Ctrl N)" : undefined} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0" : "0 12px 0 14px", border: "0", borderRadius: "var(--r-md)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: "600", cursor: "pointer" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <Plus size={16} weight="bold" />
           {folded ? null : <><span style={{ flex: "1", textAlign: "left" }}>{"Nuevo"}</span><kbd style={{ ...kbd, color: "color-mix(in oklab, var(--c-btn-text) 62%, var(--c-btn))" }}>{"Ctrl N"}</kbd></>}
         </button>
         <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:palette"))} aria-label={folded ? "Buscar o pedir (Ctrl K)" : undefined} title={folded ? "Buscar o pedir (Ctrl K)" : undefined} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0" : "0 12px", border: "0", borderRadius: "var(--r-md)", background: "var(--c-card)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .08)", color: "var(--c-text-3)", fontSize: "var(--t-ui)", cursor: "pointer", textAlign: "left" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
+          <Search size={16} />
           {folded ? null : <><span style={{ flex: "1" }}>{"Buscar o pedir"}</span><kbd style={kbd}>{"Ctrl K"}</kbd></>}
         </button>
         {newMenu}
@@ -480,11 +481,11 @@ export default function Sidebar({ active = "inicio" }) {
           <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: settings.botLooks?.family?.tint || "#E6E7EC", color: "#12131A", fontSize: "var(--t-micro)", fontWeight: "600" }}>{initials(userName)}</span>
           {folded ? null : <>
             <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "1px", minWidth: "0" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600", ...ellipsis, flex: "none" }}>{userName}</span><span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)", ...ellipsis, flex: "none" }}>{myStatus}</span></span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8M16 4.5v5M10 14.5v5" /></svg>
+            <Settings2 size={18} />
           </>}
         </a>
         <a href="/actividad" aria-current={current === "actividad" ? "page" : undefined} aria-label={`Actividad: ${model.summary.text}`} title={folded ? `Actividad · ${model.summary.text}` : undefined} className={current === "actividad" ? undefined : "v3-hover"} style={{ position: "relative", minHeight: "34px", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "0 6px" : "4px 8px 4px 14px", borderRadius: "var(--r-md)", background: current === "actividad" ? "var(--c-selected)" : "transparent", color: "var(--c-text-2)", textDecoration: "none" }}>
-          {folded ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none" }}><path d="M3 12h4l2.5-6 5 12 2.5-6H21" /></svg> : null}
+          {folded ? <Activity size={18} style={{ flex: "none" }} /> : null}
           {folded ? (model.waitingCount ? railDot(true) : null) : (
             <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
               <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{model.summary.text}</span>

@@ -1,6 +1,6 @@
 import Select from "../Select.jsx";
 import { useRef, useState } from "react";
-import { Brain, Check, FolderOpen, Globe, GraduationCap, MessagesSquare, PencilLine, Sparkles, Trash2, Type, Wrench, X } from "lucide-react";
+import { Brain, Check, FolderOpen, Globe, GraduationCap, MessagesSquare, PencilLine, Sparkles, Trash2, Type, Wrench, X } from "../Icon.js";
 import { del, patch, post } from "../../lib/api.js";
 import { roomUrl, shortDate } from "../../lib/format.js";
 import { navigate } from "../../lib/router.jsx";

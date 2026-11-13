@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, X } from "lucide-react";
+import { Copy, X } from "../../Icon.js";
 import { patch, post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";

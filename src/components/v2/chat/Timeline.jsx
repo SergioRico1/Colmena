@@ -1,7 +1,7 @@
 import { messageListProps } from "../../../lib/messageKeys.js";
 import { memo, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown } from "../../Icon.js";
 import { flash } from "../../../lib/reveal.js";
 import { createFollowScroll } from "../../../lib/followScroll.js";
 import { NO_UNSEEN, arrivals, inView, jumpTarget, unseenAfter, unseenLabel } from "../../../lib/unseen.js";

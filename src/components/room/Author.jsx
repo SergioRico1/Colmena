@@ -1,6 +1,6 @@
 import { fitInitials, stepOf } from "../../lib/type.js";
 import { srOnly } from "../../lib/alt.js";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight } from "../Icon.js";
 import { BotPresence } from "../v2/Presence.jsx";
 import { createContext, useContext } from "react";
 import { BotMark, OwnerBadge, badgeSize } from "../v2/chat/Mark.jsx";

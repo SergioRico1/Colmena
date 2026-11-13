@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Check, ClipboardCopy } from "lucide-react";
+import { Check, ClipboardCopy } from "../../Icon.js";
 import { api } from "../../../lib/api.js";
 import { updates, useUpdates } from "../../../lib/updates.js";
 import { useExpert } from "../../../lib/expert.js";

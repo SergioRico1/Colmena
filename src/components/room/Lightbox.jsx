@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RotateCcw, X, ZoomIn, ZoomOut } from "../Icon.js";
 import { canDragOut, isLocatable } from "../../lib/dragOut.js";
 
 // Image viewer (OpenClaw image gallery/lightbox). Any <img data-lightbox> opens here on click;

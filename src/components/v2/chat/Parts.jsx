@@ -1,6 +1,6 @@
 import { STATE_WORDS, srOnly } from "../../../lib/alt.js";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Copy, Pencil, RotateCw, ThumbsDown, ThumbsUp } from "../../Icon.js";
 import { ListenButton } from "../../interaction/Voice.jsx";
 import { trailGroups } from "../../../lib/trail.js";
 import Markdown, { plain } from "../../room/Markdown.jsx";
@@ -153,14 +153,8 @@ export function BotAnswer({ message, bot, step, bots, trail = true, head = true,
 }
 
 const ICON = { width: "34px", height: "34px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" };
-const Glyph = ({ d }) => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
-const ACTION_ICONS = {
-  copy: "M8 8h11v12H8zM5 16V4h11",
-  again: "M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.8 4.5v3.6h-3.6",
-  edit: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
-  up: "M7 11v9H4v-9zM7 11l4-7a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 17.3 20H7",
-  down: "M17 13V4h3v9zM17 13l-4 7a2 2 0 0 1-2-2v-4H5.5a2 2 0 0 1-2-2.3l1.2-6A2 2 0 0 1 6.7 4H17",
-};
+const Glyph = ({ icon: Glyph16, active = false }) => <Glyph16 size={16} active={active} />;
+const ACTION_ICONS = { copy: Copy, again: RotateCw, edit: Pencil, up: ThumbsUp, down: ThumbsDown };
 
 /**
  * Under an answer (V3Chat «Acciones del mensaje»): listen, copy, do it again, edit your
@@ -182,12 +176,12 @@ export function AnswerActions({ message, bot, onRetry = null, onEditAsk = null, 
   return (
     <div role="toolbar" aria-label="Acciones del mensaje" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "2px", color: "var(--c-text-2)", marginTop: "-4px" }}>
       <ListenButton text={message.text} bot={bot} compact style={{ ...ICON, width: "34px", height: "34px" }} />
-      <button type="button" className="rm-focus" aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"} onClick={async () => { await copyText(plain(message.text)); setCopied(true); setTimeout(() => setCopied(false), 1500); }} style={{ ...ICON, ...(copied ? { color: "var(--c-ok-ink)" } : {}) }}><Glyph d={copied ? "m5 12 5 5 9-10" : ACTION_ICONS.copy} /></button>
-      {onRetry ? <button type="button" className="rm-focus" aria-label="Volver a hacer" title="Volver a hacer" onClick={onRetry} style={ICON}><Glyph d={ACTION_ICONS.again} /></button> : null}
-      {onEditAsk ? <button type="button" className="rm-focus" aria-label="Editar mi petición" title="Editar mi petición" onClick={onEditAsk} style={ICON}><Glyph d={ACTION_ICONS.edit} /></button> : null}
-      <button type="button" className="rm-focus" aria-label="Útil" title="Útil" aria-pressed={mine("👍") ? "true" : "false"} onClick={() => toggle("👍")} style={{ ...ICON, ...pressed(mine("👍")) }}><Glyph d={ACTION_ICONS.up} /></button>
+      <button type="button" className="rm-focus" aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"} onClick={async () => { await copyText(plain(message.text)); setCopied(true); setTimeout(() => setCopied(false), 1500); }} style={{ ...ICON, ...(copied ? { color: "var(--c-ok-ink)" } : {}) }}><Glyph icon={copied ? "m5 12 5 5 9-10" : ACTION_ICONS.copy} /></button>
+      {onRetry ? <button type="button" className="rm-focus" aria-label="Volver a hacer" title="Volver a hacer" onClick={onRetry} style={ICON}><Glyph icon={ACTION_ICONS.again} /></button> : null}
+      {onEditAsk ? <button type="button" className="rm-focus" aria-label="Editar mi petición" title="Editar mi petición" onClick={onEditAsk} style={ICON}><Glyph icon={ACTION_ICONS.edit} /></button> : null}
+      <button type="button" className="rm-focus" aria-label="Útil" title="Útil" aria-pressed={mine("👍") ? "true" : "false"} onClick={() => toggle("👍")} style={{ ...ICON, ...pressed(mine("👍")) }}><Glyph icon={ACTION_ICONS.up} /></button>
       <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-        <button type="button" className="rm-focus" aria-label="No me sirve" title={down && downSummary(down) ? "No me sirve: " + downSummary(down) : "No me sirve"} aria-pressed={down ? "true" : "false"} aria-expanded={why ? "true" : "false"} aria-haspopup="dialog" onClick={onDown} style={{ ...ICON, ...pressed(!!down) }}><Glyph d={ACTION_ICONS.down} /></button>
+        <button type="button" className="rm-focus" aria-label="No me sirve" title={down && downSummary(down) ? "No me sirve: " + downSummary(down) : "No me sirve"} aria-pressed={down ? "true" : "false"} aria-expanded={why ? "true" : "false"} aria-haspopup="dialog" onClick={onDown} style={{ ...ICON, ...pressed(!!down) }}><Glyph icon={ACTION_ICONS.down} /></button>
         {down && downSummary(down) && !why ? <button type="button" className="rm-focus" onClick={() => setWhy(true)} title={down.note || undefined} style={{ height: "28px", padding: "0 8px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-meta)", cursor: "pointer" }}>{downSummary(down)}</button> : null}
         {why ? <DownReasons current={down} onSave={explain} onRemove={down ? () => toggle(DOWN) : null} onClose={() => setWhy(false)} /> : null}
       </span>

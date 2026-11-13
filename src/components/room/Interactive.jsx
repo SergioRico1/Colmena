@@ -1,7 +1,7 @@
 import Select from "../Select.jsx";
 import { useSlidingPill } from "../../lib/useSlidingPill.js";
 import { createContext, useContext, useMemo, useState } from "react";
-import { Check } from "lucide-react";
+import { Check } from "../Icon.js";
 
 // Interactive answers (OpenMuse / CopilotKit «generative UI»): a bot writes a fenced block
 //   ```colmena

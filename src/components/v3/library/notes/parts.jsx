@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Search } from "../../../Icon.js";
 import { shapeOf } from "../../../v2/Presence.jsx";
 import { useDialogFocus } from "../../../../lib/useDialogFocus.js";
 import { byName } from "../../../../lib/wikiLinks.js";
@@ -54,7 +54,7 @@ export function Dialog({ title, onClose = null, width = "520px", children, foote
 export function SearchBox({ value, onChange, label, placeholder }) {
   return (
     <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
+      <Search size={16} color="#5C606C" />
       <span style={SR}>{label}</span>
       <input className="c-bare" type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />
     </label>

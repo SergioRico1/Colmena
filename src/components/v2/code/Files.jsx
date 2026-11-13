@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, Folder, FolderOpen, FileText, Search, SquareArrowOutUpRight } from "lucide-react";
+import { ChevronRight, Folder, FolderOpen, FileText, Search, SquareArrowOutUpRight } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { C, MONO, SR } from "./parts.jsx";
 import { noteOf, sizeLabel, visibleRows } from "./panels.js";

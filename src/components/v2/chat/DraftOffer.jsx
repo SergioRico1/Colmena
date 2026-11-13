@@ -1,4 +1,4 @@
-import { Bookmark, PencilLine, X } from "lucide-react";
+import { Bookmark, PencilLine, X } from "../../Icon.js";
 import { whenLabel } from "./ConvList.jsx";
 
 // «Tenías un mensaje sin enviar» (after assistant-ui draft-restore): what you left written in

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Plus, Trash2 } from "../Icon.js";
 import { Card, Notice, btn, field } from "./SettingsShell.jsx";
 import { useAction, useResource } from "../../lib/store.jsx";
 import { del, patch, post } from "../../lib/api.js";

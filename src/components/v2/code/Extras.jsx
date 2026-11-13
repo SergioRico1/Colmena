@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FileCode2, Sparkles, SquareSlash, Paperclip, X, ImageIcon, SquareTerminal, MessageSquareText, Globe } from "lucide-react";
+import { FileCode2, Sparkles, SquareSlash, Paperclip, X, Image as ImageIcon, SquareTerminal, MessageSquareText, Globe } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { C, MONO, SHEET } from "./parts.jsx";
 import { triggerAt } from "./model.js";

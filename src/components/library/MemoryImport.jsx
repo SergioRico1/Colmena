@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, ClipboardPaste, FileJson, ShieldCheck, X } from "lucide-react";
+import { Check, ClipboardPaste, FileJson, ShieldCheck, X } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import { IMPORT_LIMITS, parseConversations, parseMemoryText } from "../../lib/chatgptImport.js";
 

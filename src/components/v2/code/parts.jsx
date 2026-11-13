@@ -1,7 +1,7 @@
 import { stepOf } from "../../../lib/type.js";
 import { useClickAway } from "../../../lib/useClickAway.js";
 import { useRef, useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "../../Icon.js";
 import { SHAPES } from "../Presence.jsx";
 
 // Small pieces shared by the «Código» screen (design/V2Codigo.dc.html).

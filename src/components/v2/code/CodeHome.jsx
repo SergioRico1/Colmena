@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderOpen, GitBranch, Sparkles, Ellipsis } from "lucide-react";
+import { FolderOpen, GitBranch, Sparkles, Ellipsis } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { useStore } from "../../../lib/store.jsx";

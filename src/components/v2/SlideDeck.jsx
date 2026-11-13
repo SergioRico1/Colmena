@@ -1,6 +1,6 @@
 import { radiusOf } from "../../lib/radius.js";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Expand, FileText, Presentation } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Expand, FileText, Presentation } from "../Icon.js";
 import { scrollBehavior } from "../../lib/motion.js";
 
 // A presentation the bots made (create_presentation): its slides as pictures (drawn by the

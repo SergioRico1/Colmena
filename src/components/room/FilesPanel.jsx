@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, ChevronRight, Copy, Download, File, FileImage, FileSpreadsheet, FileText, Pencil, RotateCcw, Save, Search, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Copy, Download, File, FileImage, FileSpreadsheet, FileText, Pencil, RotateCcw, Save, Search, X } from "../Icon.js";
 import { api } from "../../lib/api.js";
 import { ago } from "../../lib/format.js";
 import { copyText, ErrorLine } from "./common.jsx";

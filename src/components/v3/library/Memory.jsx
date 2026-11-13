@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Archive, CircleHelp, Download, Globe, Handshake, Pin, PinOff, UserRound } from "lucide-react";
+import { Archive, CircleHelp, Download, Globe, Handshake, Pin, PinOff, UserRound } from "../../Icon.js";
 import { shapeOf } from "../../v2/Presence.jsx";
 import { hrefOf } from "../dia/activityLog.js";
 import { useAction, useResource, useStore } from "../../../lib/store.jsx";

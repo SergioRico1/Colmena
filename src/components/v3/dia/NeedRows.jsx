@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "../../Icon.js";
 import { scheduleApproval } from "./Needs.jsx";
 import { foldRows, needRow } from "./needRows.js";
 import { Shape, btn } from "./parts.jsx";

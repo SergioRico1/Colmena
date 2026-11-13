@@ -1,6 +1,6 @@
 import Select from "../../Select.jsx";
 import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "../../Icon.js";
 import { useAction } from "../../../lib/store.jsx";
 import { del, patch, post } from "../../../lib/api.js";
 import { later, useHidden } from "../../../lib/undoToast.js";

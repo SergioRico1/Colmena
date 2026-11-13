@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, X, Plus, ArrowUp } from "../../Icon.js";
 import { DictationHelp, EngineTag, LiveWords, useDictation } from "../../interaction/Voice.jsx";
 import PastedCard from "../../room/PastedCard.jsx";
 import { FileCard } from "../../room/common.jsx";
@@ -42,7 +42,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
           {c.icon || null}
           {c.label}
           <button type="button" onClick={() => onRemoveChip?.(c.key)} aria-label={"Quitar " + c.label} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            <X size={12} weight="bold" />
           </button>
         </span>
       ))}
@@ -99,7 +99,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
                 {onAttach ? (
                   <button type="button" onClick={onAttach} data-plus-toggle="" aria-label={attachOpen === null ? "Adjuntar" : "Añadir"} title={attachOpen === null ? "Adjuntar archivo" : "Añadir archivos, herramientas o apps"}
                     {...(attachOpen === null ? {} : { "aria-haspopup": "menu", "aria-expanded": attachOpen ? "true" : "false" })} style={{ ...ghost, background: attachOpen ? "var(--c-chip)" : "transparent" }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    <Plus size={18} />
                   </button>
                 ) : null}
                 <div style={{ flex: "1", minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 6px" }}>{tools}</div>
@@ -110,7 +110,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
                   </button>
                 ) : null}
                 <button type="submit" aria-label="Enviar" disabled={busy} style={{ ...round, width: "40px", height: "40px", background: String(value || "").trim() || files.length ? "var(--c-btn)" : "#C9CBD1", color: "var(--c-btn-text)", transition: "background .2s ease" }}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+                  <ArrowUp size={17} weight="bold" />
                 </button>
               </div>
             </>}
@@ -166,7 +166,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
               <button type="button" onClick={onAttach} data-plus-toggle="" aria-label={attachOpen === null ? "Adjuntar archivo" : "Añadir"} title={attachOpen === null ? "Adjuntar archivo" : "Añadir archivos, herramientas o apps"}
                 {...(attachOpen === null ? {} : { "aria-haspopup": "menu", "aria-expanded": attachOpen ? "true" : "false" })}
                 style={{ ...round, background: attachOpen ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .05)", color: attachOpen ? "var(--c-btn-text)" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                <Plus size={17} />
               </button>
             ) : null}
             {working ? (
@@ -180,7 +180,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
               </button>
             ) : null}
             <button type="submit" aria-label="Enviar" disabled={busy} style={{ ...round, background: String(value || "").trim() || files.length ? "var(--c-btn)" : "#C9CBD1", color: "var(--c-btn-text)", transition: "background .2s ease" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+              <ArrowUp size={18} weight="bold" />
             </button>
           </div>
         )}

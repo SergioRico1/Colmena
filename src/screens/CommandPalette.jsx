@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, Keyboard, ListChecks, MessageCircle, MessageSquareText, NotebookText, Pause, Play, Plus, Settings2, Sparkles, Stethoscope, Target, Undo2, UsersRound } from "lucide-react";
+import { Activity, ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, Keyboard, ListChecks, MessageCircle, MessageSquareText, NotebookText, Pause, Play, Plus, Settings2, Sparkles, Stethoscope, Target, Undo2, UsersRound, Search } from "../components/Icon.js";
 import { plainLinks } from "../lib/wikiLinks.js";
 import { Highlight, matchBots, mentionAt, mentionedBots } from "../components/home/shared.jsx";
 import { Shape } from "../components/v3/dia/parts.jsx";
@@ -45,7 +45,6 @@ const glyph = (g, small) => <Tile small={small}>{g}</Tile>;
 const personTile = (initials) => <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-chip)", font: "600 var(--t-micro)/1 'Geist', sans-serif", color: "var(--c-text)" }}>{initials}</span>;
 const iconTile = (Icon) => <Tile><Icon size={16} strokeWidth={2} /></Tile>;
 const botTile = (bot) => <Tile><Shape bot={bot} size={16} /></Tile>;
-const pathTile = (d) => <Tile><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg></Tile>;
 
 /** Opens «Nuevo chat»: the sidebar has the sheet on every screen; without one, Chats opens it. */
 function openNewChat() {
@@ -309,7 +308,7 @@ export default function CommandPalette() {
       paused
         ? cmd({ key: "pause", icon: iconTile(Play), label: "Reanudar a todo el equipo", hint: "Todos siguen donde lo dejaron", terms: ["Reanudar a todo el equipo", "seguir continuar"], kbd: "Ctrl ⇧ P", run: togglePause })
         : cmd({ key: "pause", icon: iconTile(Pause), label: "Pausar a todo el equipo", hint: "Para a todos los bots y rutinas al momento; lo hecho se conserva", terms: ["Pausar a todo el equipo", "parar detener"], kbd: "Ctrl ⇧ P", run: togglePause }),
-      cmd({ key: "activity", icon: pathTile("M3 12h4l2.5-6 5 12 2.5-6H21"), label: "Ver la actividad", hint: "Qué hace cada bot ahora y qué ha hecho", terms: ["Ver la actividad", "registro qué hace historial log"], run: () => go("/actividad") }),
+      cmd({ key: "activity", icon: iconTile(Activity), label: "Ver la actividad", hint: "Qué hace cada bot ahora y qué ha hecho", terms: ["Ver la actividad", "registro qué hace historial log"], run: () => go("/actividad") }),
       cmd({ key: "help-rooms", icon: iconTile(UsersRound), label: "Cómo funcionan los equipos y las salas", hint: "De quién es cada bot, qué ven los demás y quién aprueba", terms: ["Cómo funciona", "ayuda guía equipos salas personas bots de quién qué ven aprobar solo para mí"], run: () => go("/personas/como-funciona") }),
       cmd({ key: "doctor", icon: iconTile(Stethoscope), label: "Comprobar que todo funciona", hint: "Ajustes › Ayuda y diagnóstico", terms: ["Comprobar que todo funciona", "diagnóstico problema error lento doctor"], run: () => go("/ajustes/ayuda") }),
       cmd({ key: "usage", icon: iconTile(ChartColumn), label: "Ver lo que gastan", hint: "Ajustes › Uso y límites", terms: ["Ver lo que gastan", "uso tokens límite plan caché"], run: () => go("/ajustes/uso") }),
@@ -322,8 +321,8 @@ export default function CommandPalette() {
   }, [paused, ai, models, toasts, text]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const placeItems = () => [
-    ...PLACES.map((p, i) => ({ key: "p:" + p.id, scope: "comandos", group: "Lugares", name: p.label, icon: pathTile(p.icon), title: p.label, meta: `Ctrl ${i + 1}`, terms: [p.label], run: () => go(p.href), preview: { kind: "Lugar", title: p.label, desc: "", facts: [["Atajo", `Ctrl ${i + 1}`]], cta: "Ir" } })),
-    { key: "p:actividad", scope: "comandos", group: "Lugares", name: "Actividad", icon: pathTile("M3 12h4l2.5-6 5 12 2.5-6H21"), title: "Actividad", meta: "Qué hace cada bot ahora", terms: ["Actividad"], run: () => go("/actividad"), preview: { kind: "Lugar", title: "Actividad", desc: "Qué hace cada bot ahora, qué ha hecho y lo que ha costado.", facts: [], cta: "Ir" } },
+    ...PLACES.map((p, i) => ({ key: "p:" + p.id, scope: "comandos", group: "Lugares", name: p.label, icon: iconTile(p.icon), title: p.label, meta: `Ctrl ${i + 1}`, terms: [p.label], run: () => go(p.href), preview: { kind: "Lugar", title: p.label, desc: "", facts: [["Atajo", `Ctrl ${i + 1}`]], cta: "Ir" } })),
+    { key: "p:actividad", scope: "comandos", group: "Lugares", name: "Actividad", icon: iconTile(Activity), title: "Actividad", meta: "Qué hace cada bot ahora", terms: ["Actividad"], run: () => go("/actividad"), preview: { kind: "Lugar", title: "Actividad", desc: "Qué hace cada bot ahora, qué ha hecho y lo que ha costado.", facts: [], cta: "Ir" } },
     { key: "p:notas", scope: "archivos", group: "Lugares", name: "Notas", icon: iconTile(NotebookText), title: "Notas", meta: "Biblioteca › Notas", terms: ["Notas", "wiki apuntes páginas"], run: () => go("/biblioteca/notas"), preview: { kind: "Lugar", title: "Notas", desc: "Lo que tú y tus bots tenéis escrito: clientes, proyectos, cómo se hace cada cosa.", facts: [["Dónde", "Biblioteca"]], cta: "Ir" } },
     { key: "p:ajustes", scope: "ajustes", group: "Lugares", name: "Ajustes", icon: iconTile(Settings2), title: "Ajustes", meta: "Cuenta, IA, permisos, avisos…", terms: ["Ajustes"], run: () => go("/ajustes"), preview: { kind: "Lugar", title: "Ajustes", desc: "Todas las secciones, con buscador.", facts: [], cta: "Ir" } },
   ];
@@ -598,7 +597,7 @@ export default function CommandPalette() {
               <ArrowLeft size={14} strokeWidth={2.4} aria-hidden="true" />{menu.title}
             </button>
           ) : parsed.actionsOnly ? <span style={{ flex: "none", display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Comandos"}</span>
-            : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>}
+            : <Search size={22} color="#4A4D57" style={{ flex: "none" }} />}
           <input className="c-bare"
             ref={input}
             data-autofocus=""

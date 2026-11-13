@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ChevronDown } from "../../Icon.js";
 import { turnSummary, workSteps, workSummary } from "../../../lib/worklog.js";
 import { Detail, Status, collapseRepeats, groupTools, headline } from "../../room/ToolCards.jsx";
 import { useExpert } from "../../../lib/expert.js";
@@ -168,7 +169,7 @@ export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenAr
           <strong style={{ fontWeight: 600 }}>{title}</strong>
           {rest.length ? <span style={{ color: "var(--c-text-3)" }}>{" · " + rest.join(" · ")}</span> : null}
         </span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="2.2" aria-hidden="true" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}><path d="m6 9 6 6 6-6" /></svg>
+        <ChevronDown size={14} color="#4A4D57" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
       </button>
       {open && turn && summary.text ? <p style={{ margin: 0, padding: "10px 16px 0", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "var(--c-text-3)" }}>{summary.text}</p> : null}
       {open && expert ? <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", animation: "rise .25s ease-out" }}>{rows()}</div> : null}

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { RotateCw } from "lucide-react";
+import { RotateCw } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { ChoiceCard, NeedCard } from "../components/v2/NeedCard.jsx";

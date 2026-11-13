@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, MonitorSmartphone, RefreshCw, MessageSquarePlus, Check, CircleAlert } from "lucide-react";
+import { ExternalLink, MonitorSmartphone, RefreshCw, MessageSquarePlus, Check, CircleAlert } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { C, MONO, MenuChip, MenuItem, SHEET, timeAgo } from "./parts.jsx";
 import { addContext } from "./Extras.jsx";

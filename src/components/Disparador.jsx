@@ -1,4 +1,5 @@
 import Select from "./Select.jsx";
+import { Calendar, CalendarClock, CircleAlert, Clock, Flag, Folder, Globe, Mail, MessageSquare, Repeat, Table, X } from "./Icon.js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { get } from "../lib/api.js";
 
@@ -9,17 +10,22 @@ import { get } from "../lib/api.js";
 // Config shapes per tipo are documented in TRIGGER_DEFAULTS below.
 
 export const TRIGGER_META = {
-  dia: ["Cada día a una hora", "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"],
-  semana: ["Cada semana", "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4"],
-  vez: ["Una sola vez", "M5 21V4h12l-2 4 2 4H5"],
-  cada: ["Cada cierto tiempo", "M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5M12 7v5l3 2"],
-  correo: ["Llegue un correo", "M3 5h18v14H3zM3 7l9 6 9-6"],
-  archivo: ["Se suba un archivo", "M3 6h7l2 2h9v11H3z"],
-  evento: ["Se acerque un evento", "M4 6h16v14H4zM4 10h16M8 14h4"],
-  sala: ["Alguien escriba en una sala", "M4 5h16v11H9l-5 4z"],
-  hoja: ["Cambie una hoja de cálculo", "M4 4h16v16H4zM4 10h16M10 4v16"],
-  web: ["Una página web cambia", "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3.5 9h17M3.5 15h17M12 3c-2.4 2.5-3.6 5.5-3.6 9s1.2 6.5 3.6 9c2.4-2.5 3.6-5.5 3.6-9S14.4 5.5 12 3z"],
+  dia: ["Cada día a una hora", Clock],
+  semana: ["Cada semana", Calendar],
+  vez: ["Una sola vez", Flag],
+  cada: ["Cada cierto tiempo", Repeat],
+  correo: ["Llegue un correo", Mail],
+  archivo: ["Se suba un archivo", Folder],
+  evento: ["Se acerque un evento", CalendarClock],
+  sala: ["Alguien escriba en una sala", MessageSquare],
+  hoja: ["Cambie una hoja de cálculo", Table],
+  web: ["Una página web cambia", Globe],
 };
+/** A trigger kind's icon (Phosphor, ../Icon.js). */
+export function TriggerIcon({ type, size = 16 }) {
+  const Glyph = TRIGGER_META[type]?.[1] || Clock;
+  return <Glyph size={size} />;
+}
 export const TIME_TRIGGERS = ["dia", "semana", "vez", "cada"];
 const everyText = (s) => (s.cadaUnidad === "minutos" ? Number(s.cadaN) + " minutos" : Number(s.cadaN) === 1 ? "una hora" : Number(s.cadaN) + " horas");
 
@@ -235,7 +241,7 @@ function Seg({ label, value, options, onPick, minHeight = "38px", padding = "0 1
 function Notice({ children }) {
   return (
     <div role="note" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", background: "var(--c-honey-soft)", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><circle cx="12" cy="12" r="9" /><path d="M12 7v6M12 16.5v.5" /></svg>
+      <CircleAlert size={16} weight="bold" style={{ flex: "none" }} />
       <span>{children}</span>
     </div>
   );
@@ -344,7 +350,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
     <div style={{ fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "var(--c-text)", background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px", background: "var(--c-hover)", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
         <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-btn)", color: "var(--c-btn-text)", borderRadius: "var(--r-sm)" }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={meta[1]} /></svg>
+          <TriggerIcon type={t} size={17} />
         </span>
         <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
           <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>{"Configurar disparador"}</span>
@@ -451,7 +457,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                     <span key={addr} style={{ display: "flex", alignItems: "center", gap: "2px", height: "34px", padding: "0 2px 0 12px", background: "var(--c-sunken)", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)" }}>
                       {addr}
                       <button type="button" aria-label={"Quitar " + addr} onClick={() => update({ remitentes: s.remitentes.filter((x) => x !== addr) })} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", color: "var(--c-text)" }}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                        <X size={11} weight="bold" />
                       </button>
                     </span>
                   ))}
@@ -484,7 +490,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <span style={fieldTitle}>{"En qué carpeta"}</span>
               {folders.length ? (
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "6px 6px 6px 12px", border: "0", borderRadius: "var(--r-md)" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h7l2 2h9v11H3z" /></svg>
+                  <Folder size={16} />
                   {carpetaParts.map((label, i) => (
                     <span key={i} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", fontWeight: i === carpetaParts.length - 1 ? "700" : "500" }}>
                       {label}
@@ -496,7 +502,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                 </div>
               ) : (
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "6px 6px 6px 12px", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "var(--c-text-3)" , background: "var(--c-card)"}}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h7l2 2h9v11H3z" /></svg>
+                  <Folder size={16} />
                   {"Aún no has compartido ninguna carpeta."}
                   <a href="/ajustes/ordenador" style={{ fontWeight: "600", color: "var(--c-accent-ink)" }}>{"Añadir carpeta en Ajustes › Este ordenador"}</a>
                 </div>

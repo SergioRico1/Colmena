@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check, Plus, Trash2 } from "../Icon.js";
 import { del, patch, post } from "../../lib/api.js";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { Notice, Spinner, Switch } from "../team/common.jsx";
@@ -126,7 +127,7 @@ export default function StandingOrdersCard({ bot }) {
           <h2 id="enc-t" style={h2}>Tareas fijas</h2>
           <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{`Lo que ${bot.name} se ocupa de hacer siempre, sin que se lo pidas cada vez.`}</p>
         </div>
-        {editing === null ? <button type="button" onClick={() => setEditing("new")} style={{ ...ghost, display: "flex", alignItems: "center", gap: "6px", flex: "none" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>Nuevo</button> : null}
+        {editing === null ? <button type="button" onClick={() => setEditing("new")} style={{ ...ghost, display: "flex", alignItems: "center", gap: "6px", flex: "none" }}><Plus size={14} />Nuevo</button> : null}
       </div>
       {editing === "new" ? <OrderForm bot={bot} onDone={() => setEditing(null)} /> : null}
       {orders.map((o) => (editing === o.id ? (
@@ -146,7 +147,7 @@ export default function StandingOrdersCard({ bot }) {
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", paddingTop: "4px" }}>
             {o.automationId ? (
               <a href={`/automatizaciones?id=${encodeURIComponent(o.automationId)}`} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 12px", background: "var(--c-ok-soft)", border: "0", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+                <Check size={13} weight="bold" />
                 Automatizado · ver
               </a>
             ) : o.schedule ? (
@@ -155,7 +156,7 @@ export default function StandingOrdersCard({ bot }) {
             {!o.automationId && o.schedule ? <span style={hint}>{`Cuando ${o.schedule.sentence}`}</span> : null}
             <span style={{ flex: "1" }} />
             <button type="button" onClick={() => setEditing(o.id)} style={{ ...ghost, height: "36px" }}>Editar</button>
-            <button type="button" aria-label={`Borrar la tarea fija «${o.title}»`} disabled={action.busy} onClick={() => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Tarea fija «${o.title}» borrada`, error: "No se pudo borrar la tarea fija", run: () => action.act(() => del(`/standing-orders/${o.id}`)) })} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", color: "var(--c-text-3)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
+            <button type="button" aria-label={`Borrar la tarea fija «${o.title}»`} disabled={action.busy} onClick={() => later({ id: "order:" + o.id, keys: ["order:" + o.id], text: `Tarea fija «${o.title}» borrada`, error: "No se pudo borrar la tarea fija", run: () => action.act(() => del(`/standing-orders/${o.id}`)) })} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", color: "var(--c-text-3)" }}><Trash2 size={16} /></button>
           </div>
         </div>
       )))}
@@ -183,7 +184,7 @@ export default function StandingOrdersCard({ bot }) {
                 <span style={hint}>{[`${i.hits} de ${i.maxHits} avisos`, i.expiresAt ? (expired ? "caducado" : `hasta el ${day(i.expiresAt)}`) : null, spent ? "agotado" : null].filter(Boolean).join(" · ")}</span>
               </span>
               <Switch on={i.active && !expired} label={`Recordatorio ${i.keywords.join(", ")}`} disabled={action.busy || expired} onClick={() => action.act(() => patch(`/intents/${i.id}`, { active: !i.active }))} />
-              <button type="button" aria-label="Borrar este recordatorio" disabled={action.busy} onClick={() => later({ id: "intent:" + i.id, keys: ["intent:" + i.id], text: "Recordatorio borrado", error: "No se pudo borrar el recordatorio", run: () => action.act(() => del(`/intents/${i.id}`)) })} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", color: "var(--c-text-3)" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg></button>
+              <button type="button" aria-label="Borrar este recordatorio" disabled={action.busy} onClick={() => later({ id: "intent:" + i.id, keys: ["intent:" + i.id], text: "Recordatorio borrado", error: "No se pudo borrar el recordatorio", run: () => action.act(() => del(`/intents/${i.id}`)) })} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", color: "var(--c-text-3)" }}><Trash2 size={16} /></button>
             </div>
           );
         })}

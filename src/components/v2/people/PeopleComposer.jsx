@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, FileText, Paperclip, Upload } from "lucide-react";
+import { ArrowUp, FileText, Paperclip, Upload } from "../../Icon.js";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { BotPresence } from "../Presence.jsx";
 import { MentionPill } from "./PeopleMessage.jsx";

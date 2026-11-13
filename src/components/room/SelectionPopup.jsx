@@ -2,7 +2,7 @@ import { stepOf } from "../../lib/type.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PillText } from "../v2/MentionPill.jsx";
 import { createPortal } from "react-dom";
-import { Check, Copy, MessageCircleQuestion, Quote } from "lucide-react";
+import { Check, Copy, MessageCircleQuestion, Quote } from "../Icon.js";
 import { copyText } from "./common.jsx";
 import { copyRealSecrets, realSelectionText, SecretText } from "./SecretText.jsx";
 import { NoteText } from "../wiki/NoteLink.jsx";

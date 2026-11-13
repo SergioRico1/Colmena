@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Stop, Volume2 } from "../Icon.js";
 import { get } from "../../lib/api.js";
 import { plain } from "../room/Markdown.jsx";
 
@@ -111,9 +112,9 @@ export function ListenButton({ text, bot, style, label = "Escuchar", compact = f
         ? { width: "40px", height: "40px", display: "grid", placeItems: "center", background: on ? "var(--c-honey-soft)" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "inherit", ...style }
         : { display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 10px", background: on ? "var(--c-honey-soft)" : "var(--c-card)", border: on ? "1.5px solid var(--c-text)" : "1px solid var(--c-line)", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", ...style }}>
       {on ? (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+        <Stop size={15} />
       ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></svg>
+        <Volume2 size={16} />
       )}
       {compact ? null : on ? "Parar" : label}
     </button>
@@ -152,8 +153,8 @@ export function ListenArtifactButton({ artifactId, bot, title }) {
   return (
     <button type="button" className="rm-focus" aria-pressed={on ? "true" : "false"} aria-busy={loading ? "true" : undefined} aria-label={on ? "Parar la lectura" : `Escuchar ${title || "el entregable"}`} title={on ? "Parar" : "Escuchar"} onClick={toggle}
       style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: on ? "var(--c-honey-soft)" : "var(--c-card)", border: on ? "1.5px solid var(--c-text)" : "1px solid var(--c-line)", borderRadius: "var(--r-md)", cursor: loading ? "progress" : "pointer" }}>
-      {on ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
-        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></svg>}
+      {on ? <Stop size={14} />
+        : <Volume2 size={16} />}
     </button>
   );
 }

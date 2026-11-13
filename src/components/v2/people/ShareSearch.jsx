@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X } from "../../Icon.js";
 import { Highlight } from "../../home/shared.jsx";
 import { get } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";

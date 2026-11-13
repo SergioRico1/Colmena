@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { History, RotateCcw } from "lucide-react";
+import { History, RotateCcw } from "../../Icon.js";
 import { useAction, useResource } from "../../../lib/store.jsx";
 import { post } from "../../../lib/api.js";
 import { dateTime } from "../../../lib/format.js";

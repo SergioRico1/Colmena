@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Lock } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { BotDot } from "../components/v3/TrabajoHeader.jsx";
@@ -114,7 +115,7 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
             <div style={{ display: "flex", alignItems: "center", gap: "10px", height: "46px", padding: "0 14px", background: "#EDEEF0" }}>
               <span aria-hidden="true" style={{ display: "flex", gap: "6px" }}>{[0, 1, 2].map((i) => <span key={i} style={{ width: "10px", height: "10px", borderRadius: "var(--r-circle)", background: "#C9CBD3" }} />)}</span>
               <span title={frame?.url || ""} style={{ flex: 1, minWidth: 0, height: "30px", display: "flex", alignItems: "center", gap: "8px", padding: "0 12px", borderRadius: "var(--r-sm)", background: "var(--c-card)", font: "400 var(--t-meta)/1 'Geist Mono', monospace", color: "var(--c-text-2)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={secure ? "#0B6B4A" : "#9A9DA6"} strokeWidth="2.4" aria-hidden="true" style={{ flex: "none" }}><rect x="5" y="10.5" width="14" height="10" rx="2" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
+                <Lock size={12} weight="bold" color={secure ? "#0B6B4A" : "#9A9DA6"} style={{ flex: "none" }} />
                 {frame ? String(frame.url || "").replace(/^https?:\/\//, "") : "sin página abierta"}
               </span>
               {frame ? (

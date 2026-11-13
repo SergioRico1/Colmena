@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUpRight, Globe, X } from "lucide-react";
+import { ArrowUpRight, Globe, X } from "../Icon.js";
 import { useDismiss } from "./common.jsx";
 
 // «Fuentes» under a researched answer (OpenClaw chat-source-previews): the pages the answer

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, ArrowUp, Lock } from "../components/Icon.js";
 import { css } from "../design/V3Bienvenida.jsx";
 import { shapeOf } from "../components/v2/Presence.jsx";
 import { WindowDots } from "../components/v2/Rail.jsx";
@@ -213,10 +213,7 @@ export default function BienvenidaV2({ query = {} }) {
             </ol>
             <span style={{ flex: "1" }} />
             <p style={{ margin: "0", display: "flex", gap: "10px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#C9CBD3" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", marginTop: "1px" }}>
-                <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
-                <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
-              </svg>
+              <Lock size={18} style={{ flex: "none", marginTop: "1px" }} />
               {"Tus bots, chats y archivos se quedan en este ordenador. Puedes cambiar todo esto luego en Ajustes."}
             </p>
           </aside>
@@ -414,9 +411,7 @@ export default function BienvenidaV2({ query = {} }) {
                     <label htmlFor="v3-first-request" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Tu primera petición"}</label>
                     <input className="c-bare" id="v3-first-request" type="text" autoFocus value={request} onChange={(e) => setText(e.target.value)} placeholder="Escribe lo que necesitas" style={{ flex: "1", minWidth: "0", height: "56px", border: "0", background: "transparent", fontSize: "var(--t-lead)" }} />
                     <button type="submit" aria-label="Enviar y entrar en Colmena" disabled={!!busy} style={{ width: "48px", height: "48px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: busy ? "wait" : "pointer" }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M12 19V5M6 11l6-6 6 6" />
-                      </svg>
+                      <ArrowUp size={18} weight="bold" />
                     </button>
                   </form>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>

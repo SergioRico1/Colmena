@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeftToLine, ArrowRightToLine, Maximize2, Minimize2, PanelRightClose, Plus, X } from "lucide-react";
+import { ArrowLeftToLine, ArrowRightToLine, Maximize2, Minimize2, PanelRightClose, Plus, X } from "../Icon.js";
 import { usePanelWidth } from "../../lib/usePanelWidth.jsx";
 import { comboLabel } from "../../lib/useDock.js";
 import { popoverItem, popoverStyle, useDismiss } from "./common.jsx";

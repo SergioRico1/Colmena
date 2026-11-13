@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ticket, UserPlus } from "lucide-react";
+import { Ticket, UserPlus, Plus, Search, X, Check } from "../../Icon.js";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { needsYou } from "../../../lib/format.js";
@@ -61,12 +61,12 @@ export default function ConvList({ current = null }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px" }}>
         <h2 style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Chats"}</h2>
         <button type="button" onClick={() => setSheet(true)} title="Nuevo chat o sala (Ctrl+N)" style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px 0 11px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <Plus size={13} weight="bold" />
           {"Nueva"}
         </button>
       </div>
       <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", margin: "0 4px", padding: "0 12px", background: "rgb(var(--c-ink-rgb) / .045)", borderRadius: "var(--r-md)", color: "var(--c-text-3)" }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4-4" /></svg>
+        <Search size={15} />
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar chats y salas"}</span>
         <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
       </label>
@@ -197,7 +197,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
         <div style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "24px 24px 6px 28px" }}>
           <h2 id="nc-t" style={{ margin: "0", font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{withPeople ? (isRoom ? "Nueva conversación" : "Nuevo chat") : isRoom || (salaMode && !chosen.length) ? "Nueva sala" : "Nuevo chat"}</h2>
           <button type="button" aria-label="Cerrar" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            <X size={14} weight="bold" />
           </button>
         </div>
         <div style={{ flex: "none", padding: "14px 28px 0", display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -208,7 +208,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                 <span aria-hidden="true" style={{ width: "18px", height: "18px", background: gloss(b.color), clipPath: shapeOf(b).clip, borderRadius: shapeOf(b).radius }} />
                 {b.name}
                 <button type="button" aria-label={"Quitar a " + b.name} onClick={() => pick(b.id)} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                  <X size={10} weight="bold" />
                 </button>
               </span>
             ))}
@@ -217,7 +217,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                 <PeerAvatar person={c} size={26} />
                 {c.name}
                 <button type="button" aria-label={"Quitar a " + c.name} onClick={() => pickPerson(c.id)} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                  <X size={10} weight="bold" />
                 </button>
               </span>
             ))}
@@ -249,7 +249,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                       <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{c.online ? "Conectada" : "En su Colmena"}</span>
                     </span>
                     <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
+                      <Check size={11} weight="bold" color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
                     </span>
                   </button>
                 );
@@ -278,7 +278,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                   <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{b.role}</span>
                 </span>
                 <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
+                  <Check size={11} weight="bold" color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
                 </span>
               </button>
             );

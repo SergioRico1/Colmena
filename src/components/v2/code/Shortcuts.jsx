@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "../../Icon.js";
 import { get, put } from "../../../lib/api.js";
 import { C, HEAD, MONO, SHEET } from "./parts.jsx";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { AlarmClock, Archive, ArchiveRestore, BellRing, ChevronLeft, ChevronRight, ClipboardPaste, Copy, CopyPlus, Eraser, ExternalLink, ListOrdered, MessageCircle, Pause, PencilLine, Play, Scissors, TextSelect, Trash2, UserRound, FileDown } from "lucide-react";
+import { AlarmClock, Archive, ArchiveRestore, BellRing, ChevronLeft, ChevronRight, ClipboardPaste, Copy, CopyPlus, Eraser, ExternalLink, ListOrdered, MessageCircle, Pause, PencilLine, Play, Scissors, TextSelect, Trash2, UserRound, FileDown } from "./Icon.js";
 import { ForgetDialog } from "./interaction/Forget.jsx";
 import { del, patch, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
@@ -17,7 +17,7 @@ import { useDialogFocus } from "../lib/useDialogFocus.js";
 // the app's error red; they take effect after a five-second «Deshacer» (src/lib/undoToast.js).
 
 const ACTIVE = ["queued", "running", "planning", "waiting", "awaiting_plan", "awaiting_choice"];
-// Lucide icons (the app's icon set), never hand-drawn.
+// Phosphor icons (the app's icon set, ./Icon.js), never hand-drawn.
 const ICONS = { export: FileDown, snooze: AlarmClock, wake: BellRing, archive: Archive, unarchive: ArchiveRestore, duplicate: CopyPlus, back: ChevronLeft, forget: Eraser, open: ExternalLink, timeline: ListOrdered, pause: Pause, play: Play, rename: PencilLine, trash: Trash2, chat: MessageCircle, profile: UserRound, cut: Scissors, copy: Copy, paste: ClipboardPaste, all: TextSelect };
 const Icon = ({ name }) => {
   const C = ICONS[name];

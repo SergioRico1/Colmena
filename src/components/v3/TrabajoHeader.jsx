@@ -1,4 +1,5 @@
 import { navigate } from "../../lib/router.jsx";
+import { Plus } from "../Icon.js";
 import { shapeOf } from "../v2/Presence.jsx";
 
 // Colmena 3 · the head of «Trabajo» (design/V3Tareas, V3Rutinas, V3Objetivos): the place's
@@ -32,7 +33,7 @@ export default function TrabajoHeader({ tab, action = null, counts = null }) {
         </div>
         {action ? (
           <button type="button" onClick={action.onClick} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            <Plus size={16} weight="bold" />
             {action.label}
           </button>
         ) : null}

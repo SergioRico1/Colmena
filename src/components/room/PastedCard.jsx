@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ClipboardType, TextCursorInput, X } from "lucide-react";
+import { ClipboardType, TextCursorInput, X } from "../Icon.js";
 import { useDismiss } from "./common.jsx";
 
 // A long paste waiting in the composer (OpenClaw pasted-text cards): what it starts with and

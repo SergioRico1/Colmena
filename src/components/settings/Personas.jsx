@@ -1,4 +1,5 @@
 import Select from "../Select.jsx";
+import { Monitor } from "../Icon.js";
 import { useState } from "react";
 import { Card, Notice, PageHeader, btn, field } from "./SettingsShell.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
@@ -49,7 +50,7 @@ export default function Personas() {
     <>
       <PageHeader title="Quién usa este ordenador">Quién firma lo que se aprueba y a quién se asignan tareas en este ordenador.</PageHeader>
       <div role="note" style={{ maxWidth: "720px", display: "flex", gap: "12px", padding: "14px 16px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", marginTop: "2px" }}><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>
+        <Monitor size={18} style={{ flex: "none", marginTop: "2px" }} />
         <span>Esta lista es solo de este ordenador: sirve para <strong>firmar</strong> las aprobaciones del registro y para <strong>asignar</strong> tareas. Para hablar con otras personas desde Colmena, ve a <a href="/equipo" style={{ color: "var(--c-accent-ink)", fontWeight: "600" }}>Equipo</a>.</span>
       </div>
       <Notice>{error}</Notice>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDown } from "../Icon.js";
 import { BotPresence } from "../v2/Presence.jsx";
 import { post } from "../../lib/api.js";
 import { avatarStyle, botById, initial } from "../../lib/bots.js";
@@ -56,7 +57,7 @@ export function SuggestionCard({ s, bots, fallbackCta = "Sí, hazlo" }) {
           {evidence.length ? (
             <button type="button" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} style={{ display: "flex", alignItems: "center", gap: "4px", height: "38px", padding: "0 6px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>
               {open ? "Ocultar de dónde sale" : "Ver de dónde sale"}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none" }}><path d="m6 9 6 6 6-6" /></svg>
+              <ChevronDown size={12} weight="bold" style={{ transform: open ? "rotate(180deg)" : "none" }} />
             </button>
           ) : null}
         </div>

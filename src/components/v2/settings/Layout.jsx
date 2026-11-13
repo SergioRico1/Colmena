@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, CornerDownLeft, X } from "lucide-react";
+import { ChevronLeft, CornerDownLeft, X, Search } from "../../Icon.js";
 import Shell from "../Shell.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { useExpert } from "../../../lib/expert.js";
@@ -103,7 +103,7 @@ function Nav({ active, tags }) {
     <nav className="st-nav" aria-label="Secciones de Ajustes" style={{ flex: "0 0 264px", position: "sticky", top: 0, display: "flex", flexDirection: "column", gap: "4px", minHeight: "100vh", padding: "40px 14px 24px 22px", boxSizing: "border-box" }}>
       <h1 style={{ margin: "0 0 14px 8px", font: "600 var(--t-display-s)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>Ajustes</h1>
       <label style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", height: "40px", marginBottom: "10px", padding: "0 12px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
+        <Search size={15} color="#5C606C" />
         <span style={srOnly}>Buscar un ajuste</span>
         <input className="c-bare" ref={box} type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKeyDown} placeholder="Buscar un ajuste" role="combobox" aria-expanded={!!q} aria-controls="st-results" aria-activedescendant={q && results[at] ? "st-r-" + at : undefined} autoComplete="off" spellCheck={false}
           style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text)" }} />

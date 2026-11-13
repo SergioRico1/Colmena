@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Pencil, UserPlus, X } from "lucide-react";
+import { Copy, Pencil, UserPlus, X } from "../../Icon.js";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { del, patch, post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";

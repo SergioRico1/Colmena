@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Folder } from "../Icon.js";
 import { AccessPills, BotChips, Card, Notice, PageHeader, btn, field } from "./SettingsShell.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { del, patch, post } from "../../lib/api.js";
@@ -40,7 +41,7 @@ export default function Ordenador() {
           <div key={f.id} style={{ display: "flex", flexDirection: "column", gap: "12px", paddingTop: i ? "14px" : "0", borderTop: i ? "1px solid rgb(var(--c-ink-rgb) / .06)" : "0" }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
               <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-sunken)", borderRadius: "var(--r-md)" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 6h7l2 2h9v11H3z" /></svg>
+                <Folder size={20} />
               </span>
               <span style={{ flex: "1 1 240px", minWidth: "0", display: "flex", flexDirection: "column", gap: "4px" }}>
                 <strong style={{ fontSize: "var(--t-body)" }}>{f.label || f.path}</strong>

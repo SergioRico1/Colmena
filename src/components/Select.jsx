@@ -1,6 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "./Icon.js";
 import { normalizeOptions, placeList, selectKey } from "../lib/select.js";
 import { useClickAway } from "../lib/useClickAway.js";
 

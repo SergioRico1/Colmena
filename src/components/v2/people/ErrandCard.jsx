@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUpRight, Check, Wrench } from "lucide-react";
+import { ArrowUpRight, Check, Wrench } from "../../Icon.js";
 import { BotPresence } from "../Presence.jsx";
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";

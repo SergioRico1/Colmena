@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import { useStore } from "../../lib/store.jsx";
 import { needsCount } from "./needs.js";
+import { Archive as ArchiveIcon, CodeXml, Hexagon, MessageSquare, Minus, Plus, Repeat, Sun, X } from "../Icon.js";
 
 // The narrow rail of Colmena 2.0 (design/V2Hoy.dc.html and every v2 board): five places with
 // their icon and name, the current one as a white piece; your avatar (Ajustes) at the bottom.
-// Asking lives in Hoy, and anywhere with Ctrl+K («Buscar o pedir»), so it has no place here. It never scrolls with the content. Icons are the ones drawn on the boards.
+// Asking lives in Hoy, and anywhere with Ctrl+K («Buscar o pedir»), so it has no place here. It never scrolls with the content. Icons are Phosphor's (../Icon.js).
 // In the desktop app the three dots at the top are the window buttons (close, minimise,
 // maximise); elsewhere they are only the drawn placeholder.
 export const PLACES = [
-  { id: "hoy", href: "/", label: ["Hoy"], icon: <><circle cx="12" cy="12" r="4.2" /><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" /></> },
-  { id: "conversaciones", href: "/conversaciones", label: ["Chats"], icon: <path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6.5L6 19.5V16h0a2.5 2.5 0 0 1-1.5-2.3z" /> },
-  // «Código» (design/V2Codigo.dc.html): Lucide code-xml.
-  { id: "codigo", href: "/codigo", label: ["Código"], icon: <><path d="m18 16 4-4-4-4" /><path d="m6 8-4 4 4 4" /><path d="m14.5 4-5 16" /></> },
-  { id: "colmena", href: "/colmena", label: ["Colmena"], icon: <path d="M8 3.8h8l4 8.2-4 8.2H8l-4-8.2z" /> },
-  { id: "rutinas", href: "/rutinas", label: ["Rutinas"], icon: <><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" /><path d="M19.8 4.5v3.6h-3.6" /><path d="M12 8.2V12l2.6 1.6" /></> },
-  { id: "archivo", href: "/archivo", label: ["Archivo"], icon: <><path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z" /><path d="M3 4h18v3.5H3z" /><path d="M9.5 11.5h5" /></> },
+  { id: "hoy", href: "/", label: ["Hoy"], icon: Sun },
+  { id: "conversaciones", href: "/conversaciones", label: ["Chats"], icon: MessageSquare },
+  { id: "codigo", href: "/codigo", label: ["Código"], icon: CodeXml },
+  { id: "colmena", href: "/colmena", label: ["Colmena"], icon: Hexagon },
+  { id: "rutinas", href: "/rutinas", label: ["Rutinas"], icon: Repeat },
+  { id: "archivo", href: "/archivo", label: ["Archivo"], icon: ArchiveIcon },
 ];
 
 const piece = { position: "relative", width: "72px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px", padding: "8px 0 7px", borderRadius: "var(--r-lg)" };
@@ -43,21 +43,21 @@ export function WindowDots({ dark = false, inline = false, compact = false }) {
   }
   // The glyphs show on hover and while one of the buttons has keyboard focus (a click does not keep them on).
   const shown = hover || keys;
-  const glyph = { width: "9px", height: "9px", fill: "none", stroke: "#12131A", strokeWidth: 2.6, strokeLinecap: "round", opacity: shown ? 0.7 : 0, transition: "opacity .12s ease" };
-  const button = (label, name, onClick, color, path) => (
+  const glyph = { color: "#12131A", opacity: shown ? 0.7 : 0, transition: "opacity .12s ease" };
+  const button = (label, name, onClick, color, Glyph) => (
     <button type="button" aria-label={name} title={label} onClick={onClick}
       style={{ width: box, height: box, padding: 0, border: 0, background: "transparent", display: "grid", placeItems: "center", cursor: "pointer", WebkitAppRegion: "no-drag" }}>
       <span style={{ ...dot, display: "grid", placeItems: "center", background: shown && state.focused ? color : dot.background, transition: "background .12s ease" }}>
-        <svg viewBox="0 0 10 10" style={glyph} aria-hidden="true">{path}</svg>
+        <Glyph size={10} weight="bold" style={glyph} />
       </span>
     </button>
   );
   return (
     <span role="group" aria-label="Ventana" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       onFocus={(e) => setKeys(!!e.target.matches?.(":focus-visible"))} onBlur={() => setKeys(false)} style={{ ...row, WebkitAppRegion: "no-drag" }}>
-      {button("Cerrar", "Cerrar Colmena", () => api.close(), "#FFC93C", <path d="M2.5 2.5l5 5M7.5 2.5l-5 5" />)}
-      {button("Minimizar", "Minimizar la ventana", () => api.minimize(), "rgba(18,19,26,.28)", <path d="M2 5h6" />)}
-      {button(state.maximized ? "Restaurar" : "Maximizar", state.maximized ? "Restaurar la ventana" : "Maximizar la ventana", () => api.toggleMaximize(), "rgba(18,19,26,.28)", <path d="M2.5 5h5M5 2.5v5" />)}
+      {button("Cerrar", "Cerrar Colmena", () => api.close(), "#E5484D", X)}
+      {button("Minimizar", "Minimizar la ventana", () => api.minimize(), "rgba(18,19,26,.28)", Minus)}
+      {button(state.maximized ? "Restaurar" : "Maximizar", state.maximized ? "Restaurar la ventana" : "Maximizar la ventana", () => api.toggleMaximize(), "rgba(18,19,26,.28)", Plus)}
     </span>
   );
 }
@@ -76,7 +76,7 @@ export default function Rail({ active = "hoy" }) {
         const current = p.id === active;
         return (
           <a key={p.id} href={p.href} aria-current={current ? "page" : undefined} style={{ ...piece, ...(current ? on : off), WebkitAppRegion: "no-drag" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{p.icon}</svg>
+            <p.icon size={22} active={current} />
             <span style={{ fontSize: "var(--t-micro)", lineHeight: "1.15", fontWeight: current ? "600" : "500", textAlign: "center", letterSpacing: "0.01em" }}>
               {p.label.map((l, i) => <span key={i}>{i ? <br /> : null}{l}</span>)}
             </span>

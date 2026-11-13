@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Cpu, SquareTerminal, Server, CornerDownRight } from "lucide-react";
+import { Cpu, SquareTerminal, Server, CornerDownRight } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { C, MONO } from "./parts.jsx";
 import { leftoverPids, uptime } from "./panels.js";

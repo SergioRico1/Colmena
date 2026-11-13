@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, ChevronUp, CircleAlert } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, CircleAlert } from "../Icon.js";
 import { plural } from "../../lib/format.js";
 import { seconds } from "./common.jsx";
 import ToolCards, { toolsLabel } from "./ToolCards.jsx";

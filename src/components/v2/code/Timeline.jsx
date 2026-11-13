@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useExpert } from "../../../lib/expert.js";
-import { Pencil, History, ListChecks, Undo2, Check, Target, ShieldCheck, GitPullRequest } from "lucide-react";
+import { Pencil, History, ListChecks, Undo2, Check, Target, ShieldCheck, GitPullRequest } from "../../Icon.js";
 import Markdown from "../../room/Markdown.jsx";
 import { C, MONO, HEAD, CARD, Stat, BTN } from "./parts.jsx";
 import { EngineMark } from "./EngineModels.jsx";

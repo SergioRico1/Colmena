@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bookmark, X } from "lucide-react";
+import { Bookmark, X } from "../../Icon.js";
 import { comboLabel } from "../../../lib/useDock.js";
 import { useDismiss } from "../../room/common.jsx";
 import { whenLabel } from "./ConvList.jsx";

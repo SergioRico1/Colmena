@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowUp } from "lucide-react";
+import { ArrowLeft, ArrowUp } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import { useAction } from "../../../lib/store.jsx";
 import { choiceIndex, letterOf, useChoiceKeys } from "../../../lib/choiceKeys.js";

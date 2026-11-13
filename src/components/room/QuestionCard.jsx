@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { Clock } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import QuestionFlow, { AnswerList } from "../v2/chat/QuestionFlow.jsx";
 import { useAction } from "../../lib/store.jsx";

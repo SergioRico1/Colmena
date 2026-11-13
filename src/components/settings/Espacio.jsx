@@ -1,4 +1,5 @@
 import Select from "../Select.jsx";
+import { Pause } from "../Icon.js";
 import { useEffect, useState } from "react";
 import { Card, Notice, PageHeader, Toggle, btn, field } from "./SettingsShell.jsx";
 import { useAction, useStore } from "../../lib/store.jsx";
@@ -162,7 +163,7 @@ export default function Espacio() {
         {paused
           ? <button type="button" disabled={busy} onClick={() => act(() => post("/control", { action: "resume-all" }))} style={{ ...btn.dark, height: "48px", padding: "0 20px", borderRadius: "var(--r-pill)", fontSize: "var(--t-body)" }}>Reanudar el equipo</button>
           : <button type="button" disabled={busy} onClick={() => act(() => post("/control", { action: "pause-all" }))} style={{ ...btn.honey, height: "48px", padding: "0 20px", fontSize: "var(--t-body)" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
+            <Pause size={16} />
             Pausar a todo el equipo
           </button>}
       </section>

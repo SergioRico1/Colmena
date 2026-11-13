@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyRound, Pencil, Trash2 } from "lucide-react";
+import { KeyRound, Pencil, Trash2 } from "../Icon.js";
 import { Card, Notice, btn, field } from "./SettingsShell.jsx";
 import { useAction, useResource } from "../../lib/store.jsx";
 import { del, patch } from "../../lib/api.js";

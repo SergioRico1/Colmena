@@ -1,6 +1,6 @@
 import Select from "../../../Select.jsx";
 import { useEffect, useState } from "react";
-import { Archive, Folder, Globe, Hash } from "lucide-react";
+import { Archive, Folder, Globe, Hash } from "../../../Icon.js";
 import RowBoundary from "../../../RowBoundary.jsx";
 import { plain } from "../../../room/Markdown.jsx";
 import { useAction, useResource } from "../../../../lib/store.jsx";

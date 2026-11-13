@@ -2,7 +2,7 @@ import { stepOf } from "../../lib/type.js";
 import { memo, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Check, ClipboardCopy, Copy } from "lucide-react";
+import { Check, ClipboardCopy, Copy } from "../Icon.js";
 import { tableToTSV } from "../../lib/exporting.js";
 import { AnswerLayout, splitInteractive } from "./Interactive.jsx";
 import Diagram from "./Diagram.jsx";

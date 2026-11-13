@@ -2,7 +2,7 @@
 // speaks, the words underneath as they are said, three controls at the bottom. Everything else
 // stays out of the way; what is said lands in the chat behind it as messages.
 import { useEffect, useRef, useState } from "react";
-import { AudioLines, Check, ChevronDown, Mic, MicOff, PhoneOff, RotateCw, X } from "lucide-react";
+import { AudioLines, Check, ChevronDown, Mic, MicOff, PhoneOff, RotateCw, X } from "../../Icon.js";
 import { BotPresence } from "../Presence.jsx";
 import { useVoiceCall } from "../../../lib/voiceCall.js";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, Shield } from "../components/Icon.js";
 import { css } from "../design/css/Permissions.js";
 import { get, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
@@ -160,7 +161,7 @@ export default function Permissions({ params, query = {} }) {
               <span style={{ position: "relative", display: "flex" }}>
                 <AppLogo id={account?.toolkit} name={app} size={56} />
                 <span style={{ position: "absolute", right: "-6px", bottom: "-6px", width: "24px", height: "24px", borderRadius: "var(--r-circle)", background: "#0B8A5F", border: "3px solid #FFFFFF", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
+                  <Check size={11} weight="bold" />
                 </span>
               </span>
               <span style={{ font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{account ? `${app} está conectado` : "Cuenta conectada"}</span>
@@ -207,7 +208,7 @@ export default function Permissions({ params, query = {} }) {
             {p ? (
               <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={{ alignSelf: "flex-start", height: "32px", border: "0", padding: "0", background: "transparent", fontSize: "var(--t-meta)", color: "var(--c-text-3)", display: "flex", alignItems: "center", gap: "6px" }}>
                 Detalles técnicos
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none" }}><path d="M6 9l6 6 6-6" /></svg>
+                <ChevronDown size={12} style={{ transform: open ? "rotate(180deg)" : "none" }} />
               </button>
             ) : null}
             {p && open ? (
@@ -218,7 +219,7 @@ export default function Permissions({ params, query = {} }) {
             {p ? (
               <button type="button" role="checkbox" aria-checked={remember} onClick={() => setRemember(!remember)} style={{ border: "0", background: "transparent", padding: "0", textAlign: "left", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-meta)", color: "var(--c-text)", minHeight: "32px" }}>
                 <span style={{ width: "20px", height: "20px", borderRadius: "var(--r-sm)", flexShrink: "0", background: remember ? "var(--c-btn)" : "var(--c-card)", boxShadow: remember ? "none" : "inset 0 0 0 1.5px #C7C7CC", color: "var(--c-btn-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
+                  <Check size={11} weight="bold" />
                 </span>
                 {`No volver a preguntar para estas lecturas en ${app}`}
               </button>
@@ -250,7 +251,7 @@ export default function Permissions({ params, query = {} }) {
               <div style={{ padding: "14px 16px", fontSize: "var(--t-ui)", lineHeight: "1.55", color: "var(--c-text-2)", maxHeight: "40vh", overflow: "auto" }}>{args.body || ""}</div>
             </div>
             <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-3)" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B4372A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: "0", marginTop: "1px" }}><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /></svg>
+              <Shield size={16} color="#B4372A" style={{ flexShrink: "0", marginTop: "1px" }} />
               Una vez enviado no se puede recuperar, aunque detengas a Colmena.
             </div>
             <div style={{ display: "flex", gap: "8px" }}>

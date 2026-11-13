@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, RotateCcw, Trash2, X } from "lucide-react";
+import { ImagePlus, RotateCcw, Trash2, X } from "../Icon.js";
 import { del, post, put } from "../../lib/api.js";
 import { avatarStyle } from "../../lib/bots.js";
 

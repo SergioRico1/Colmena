@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Download } from "lucide-react";
+import { Download } from "../../Icon.js";
 import { del, get, post, postFile, put } from "../../../lib/api.js";
 import { reversible } from "../../../lib/undoToast.js";
 import { Alert, LINE, Pills, UNDO_MS, anchorOf, btn, field, h3 } from "./v3.jsx";

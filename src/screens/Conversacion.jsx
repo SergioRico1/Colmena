@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWarmOnType } from "../lib/warm.js";
-import { FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal } from "lucide-react";
+import { FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal, ChevronDown, Ellipsis } from "../components/Icon.js";
 import VoiceCall from "../components/v2/chat/VoiceCall.jsx";
 import Shell from "../components/v2/Shell.jsx";
 import Announcer from "../components/Announcer.jsx";
@@ -647,7 +647,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
   const tool = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgb(var(--c-ink-rgb) / .1)", borderRadius: "var(--r-pill)", background: "var(--c-hover)", cursor: "pointer", whiteSpace: "nowrap", ...(expert ? { height: "30px", padding: "0 9px", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text)" } : { fontSize: "var(--t-meta)", color: "var(--c-text-2)" }) };
   const ghostKey = (on) => ({ width: "36px", height: "36px", padding: 0, border: 0, borderRadius: "var(--r-md)", background: on ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", fontSize: "var(--t-read)", fontWeight: 600, cursor: "pointer" });
-  const caret = <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>;
+  const caret = <ChevronDown size={11} weight="bold" />;
   const toggleDeep = () => toggleChosen("deep");
   const insertMention = () => { setText((t) => t + (t && !/\s$/.test(t) ? " @" : "@")); requestAnimationFrame(() => focusBox(inputRef.current)); };
   // «/»: what you can ask for in a word (only what this chat really does).
@@ -714,7 +714,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               <button type="button" onClick={() => setRoomSheet(true)} style={outline}>{"Llevar a una sala"}</button>
               <span style={{ position: "relative" }}>
                 <button type="button" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: moreOpen ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18.5" cy="12" r="1.6" /></svg>
+                  <Ellipsis size={18} />
                 </button>
                 {moreOpen ? (
                   <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "240px", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out", display: "flex", flexDirection: "column" }}>

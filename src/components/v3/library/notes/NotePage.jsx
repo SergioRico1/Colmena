@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Archive, Folder, Globe, Hash } from "lucide-react";
+import { Archive, Folder, Globe, Hash } from "../../../Icon.js";
 import Markdown from "../../../room/Markdown.jsx";
 import RowBoundary from "../../../RowBoundary.jsx";
 import { NoteLinkContext } from "../../../wiki/NoteLink.jsx";

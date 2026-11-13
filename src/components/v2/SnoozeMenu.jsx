@@ -1,6 +1,6 @@
 import { useClickAway } from "../../lib/useClickAway.js";
 import { useEffect, useRef, useState } from "react";
-import { AlarmClock } from "lucide-react";
+import { AlarmClock } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import { useStore } from "../../lib/store.jsx";
 import { reversible } from "../../lib/undoToast.js";

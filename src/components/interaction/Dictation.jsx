@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Cloud, Laptop, LoaderCircle, Mic, MicOff, Square } from "lucide-react";
+import { Cloud, Laptop, LoaderCircle, Mic, MicOff, Square } from "../Icon.js";
 import { get, patch, post } from "../../lib/api.js";
 import { appendText, engineNote, planInsert } from "../../lib/dictation.js";
 

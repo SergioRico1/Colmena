@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "../Icon.js";
 
 // «Una ventana»: the open windows of other apps with a thumbnail each (OpenClaw Quick Chat
 // «Capture Window…»). Used by the quick ask card and by the «+» menu of the composer.

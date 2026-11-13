@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil } from "../../Icon.js";
 
 // Versions of a conversation (server/branches.mjs, after assistant-ui's BranchPicker and
 // ActionBarEdit): «‹ Versión 2 de 3 ›» under a message that has other versions, and «Editar» on your

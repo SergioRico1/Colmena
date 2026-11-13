@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Check } from "../Icon.js";
 import { NoteAsk } from "../wiki/NoteDiff.jsx";
 import QuestionFlow from "./chat/QuestionFlow.jsx";
 import { QuestionReply } from "../room/QuestionReply.jsx";
@@ -79,7 +80,7 @@ function Sent({ text }) {
   return (
     <span role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-ok-ink)", animation: "fade .3s ease-out" }}>
       <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
+        <Check size={12} weight="bold" color="#FFFFFF" />
       </span>
       {text}
     </span>

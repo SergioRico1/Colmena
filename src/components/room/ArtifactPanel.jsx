@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, X } from "../Icon.js";
 import { useState } from "react";
 import { useResource } from "../../lib/store.jsx";
 import { usePanelWidth } from "../../lib/usePanelWidth.jsx";
@@ -204,7 +204,7 @@ export default function ArtifactPanel({ artifactId, live, bots = [], onClose, va
             <button type="button" className="rm-focus" onClick={save} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</button>
           ) : null}
           {bare ? null : <button type="button" className="rm-focus" aria-label="Cerrar panel" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-md)", cursor: "pointer" }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            <X size={16} />
           </button>}
         </div>
       </div>

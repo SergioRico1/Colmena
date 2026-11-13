@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Calendar, FileText, Folder, Mail, MessageSquare } from "lucide-react";
+import { Calendar, FileText, Folder, Mail, MessageSquare, Check, Lock as LockGlyph, ChevronDown } from "../../Icon.js";
 import QuestionFlow from "../../v2/chat/QuestionFlow.jsx";
 import { QuestionReply } from "../../room/QuestionReply.jsx";
 import { post } from "../../../lib/api.js";
@@ -79,14 +79,14 @@ function Settled({ text }) {
   return (
     <span role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-ok-ink)", animation: "fade .3s ease-out" }}>
       <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
+        <Check size={11} weight="bold" color="#FFFFFF" />
       </span>
       {text}
     </span>
   );
 }
 
-const Lock = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>;
+const Lock = () => <LockGlyph size={13} />;
 const where = (mission) => (mission && !mission.conversation ? <>{"en "}<a href={roomUrl(mission)}>{placeName(mission)}</a></> : mission?.conversation ? "en el chat" : null);
 const LABEL = { send: "Aprobar un envío", question: "Decidir", plan: "Revisar el plan", permission: "Dar permiso", secret: "Revisar", memory: "Revisar", skill: "Revisar", soul: "Revisar", write: "Aprobar" };
 
@@ -315,7 +315,7 @@ export function SnoozedNeeds({ items = [], bots = [] }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       <button ref={toggle} type="button" aria-expanded={open ? "true" : "false"} aria-controls="snoozed-needs" onClick={() => setOpen((v) => !v)} style={{ ...btn.text, alignSelf: "flex-start", height: "32px", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>
         {snoozedLabel(items.length)}
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}><path d="m6 9 6 6 6-6" /></svg>
+        <ChevronDown size={11} weight="bold" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
       </button>
       {open ? (
         <ul id="snoozed-needs" aria-label="Pospuestos" style={{ margin: "0", padding: "4px 18px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", animation: "fade .2s ease-out" }}>

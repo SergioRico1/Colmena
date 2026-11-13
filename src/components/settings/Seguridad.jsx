@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Banknote, Download, Lock, PackagePlus, Send, ShieldCheck, Trash2 } from "lucide-react";
+import { Banknote, Download, Lock, PackagePlus, Send, ShieldCheck, Trash2 } from "../Icon.js";
 import { BotAvatar, Card, Notice, PageHeader, Toggle, btn } from "./SettingsShell.jsx";
 import { csvCell } from "./format.jsx";
 import VaultCard from "./Vault.jsx";

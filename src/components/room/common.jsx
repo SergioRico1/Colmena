@@ -1,4 +1,5 @@
 import { useClickAway } from "../../lib/useClickAway.js";
+import { TriangleAlert, X } from "../Icon.js";
 import { BotPresence, PersonPresence } from "../v2/Presence.jsx";
 import WorkingDots from "./Dots.jsx";
 import { useRef } from "react";
@@ -70,7 +71,7 @@ export function FileCard({ file, onRemove }) {
       </span>
       {onRemove ? (
         <button type="button" className="rm-focus" aria-label={`Quitar ${file.name}`} onClick={onRemove} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text-3)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          <X size={14} />
         </button>
       ) : null}
     </span>
@@ -86,7 +87,7 @@ export function FileChip({ file, onRemove, dragUrl = null }) {
       {file.name}
       {onRemove ? (
         <button type="button" className="rm-focus" aria-label={`Quitar ${file.name}`} onClick={onRemove} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text-3)" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          <X size={12} weight="bold" />
         </button>
       ) : null}
     </span>
@@ -138,7 +139,7 @@ export function ErrorLine({ children, style }) {
   if (!children) return null;
   return (
     <p role="alert" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-error)", ...style }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17v.5" /></svg>
+      <TriangleAlert size={14} weight="bold" />
       {children}
     </p>
   );

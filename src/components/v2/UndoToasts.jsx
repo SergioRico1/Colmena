@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, CircleAlert, Undo2, X } from "lucide-react";
+import { Check, CircleAlert, Undo2, X } from "../Icon.js";
 import { dismiss, setPaused, undoLast, useToasts } from "../../lib/undoToast.js";
 
 // The quiet notices (src/lib/undoToast.js), the v2 «Todo se puede deshacer» pill

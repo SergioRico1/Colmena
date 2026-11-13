@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { Clock } from "../../Icon.js";
 import { BotMark } from "./Mark.jsx";
 import { findBot } from "../../room/common.jsx";
 

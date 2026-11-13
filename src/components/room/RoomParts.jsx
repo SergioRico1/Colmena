@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useWarmOnType } from "../../lib/warm.js";
 import { shapeOf } from "../v2/Presence.jsx";
-import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, FileText, GitBranch, LoaderCircle, Sparkles, Check, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, RotateCcw, Undo2, Wrench, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Ban, Brain, CircleAlert, CirclePause, FileText, GitBranch, LoaderCircle, Sparkles, Check, ChevronDown, Hourglass, MessageSquareReply, Pause, PenLine, Play, Plus, RotateCcw, Undo2, Wrench, X } from "../Icon.js";
 import { InteractiveContext } from "./Interactive.jsx";
 import { freshness, scrollBehavior } from "../../lib/motion.js";
 import { ReactTools, ReactionRow, useReactions } from "./Reactions.jsx";
@@ -376,7 +376,7 @@ function PlanPhases({ assignments, bots, pending }) {
                         <>
                           <button type="button" className="rm-focus c-hit" aria-expanded={isOpen ? "true" : "false"} onClick={() => setOpen({ ...open, [a.index]: !isOpen })} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "4px", padding: "2px 0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>
                             {isOpen ? "Ocultar detalle" : "Ver detalle"}
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ transform: isOpen ? "rotate(180deg)" : "none" }}><path d="m6 9 6 6 6-6" /></svg>
+                            <ChevronDown size={12} weight="bold" style={{ transform: isOpen ? "rotate(180deg)" : "none" }} />
                           </button>
                           {isOpen ? <Markdown text={detail} size={14} style={{ padding: "10px 12px", background: "var(--c-sunken)", borderRadius: "var(--r-md)", color: "var(--c-text)" }} /> : null}
                         </>
@@ -453,7 +453,7 @@ function PlanBlock({ mission, message, bots }) {
         </div>
       ) : plan.approved && plan.auto ? null : plan.approved ? (
         <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "var(--c-ok-soft)", border: "1px solid #9ED4BC", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+          <Check size={14} weight="bold" />
           {"Aprobado por ti"}
         </span>
       ) : pendingPlan ? (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, CornerDownRight, GripVertical, ListOrdered, Pencil, X } from "lucide-react";
+import { Check, CornerDownRight, GripVertical, ListOrdered, Pencil, X } from "../Icon.js";
 import { del, patch, post } from "../../lib/api.js";
 import { useStore } from "../../lib/store.jsx";
 import { later, useHidden } from "../../lib/undoToast.js";

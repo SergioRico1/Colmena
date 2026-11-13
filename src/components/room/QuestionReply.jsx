@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUp, Ban, Check, Clock, X } from "lucide-react";
+import { ArrowUp, Ban, Check, Clock, X } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import { useAction } from "../../lib/store.jsx";
 import { closedState } from "../../lib/approvalState.js";

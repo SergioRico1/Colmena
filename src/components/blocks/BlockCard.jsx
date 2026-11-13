@@ -1,6 +1,6 @@
 import { useClickAway } from "../../lib/useClickAway.js";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight, CircleCheck, CircleX, Ellipsis, ExternalLink, Globe, MessageCircle, Minus, Pin, PinOff, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight, CircleCheck, CircleX, Ellipsis, ExternalLink, Globe, MessageCircle, Minus, Pin, PinOff, RefreshCw, Trash2, TriangleAlert } from "../Icon.js";
 import { Shape } from "../v3/dia/parts.jsx";
 import { del, post } from "../../lib/api.js";
 import { useStore } from "../../lib/store.jsx";

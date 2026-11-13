@@ -1,4 +1,4 @@
-import { Brain, CircleHelp, Compass, FileText, Folder, FolderCode, Globe, Image as ImageIcon, MessagesSquare, Monitor, NotebookText, Plug, RotateCw, Save, Search, SquareTerminal, Wrench } from "lucide-react";
+import { Brain, CircleHelp, Compass, FileText, Folder, FolderCode, Globe, Image as ImageIcon, MessagesSquare, Monitor, NotebookText, Plug, RotateCw, Save, Search, SquareTerminal, Wrench } from "../Icon.js";
 import { plural } from "../../lib/format.js";
 import { noteUrl } from "../../lib/wikiLinks.js";
 import RowBoundary from "../RowBoundary.jsx";

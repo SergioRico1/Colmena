@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock3, MessageSquare, UserPlus } from "lucide-react";
+import { Clock3, MessageSquare, UserPlus } from "../../Icon.js";
 import { del, get, patch, post, put } from "../../../lib/api.js";
 import { useResource, useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";

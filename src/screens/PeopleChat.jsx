@@ -1,6 +1,6 @@
 import Select from "../components/Select.jsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Lock, LogOut, Search } from "lucide-react";
+import { Lock, LogOut, Search } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import { PeerAvatar, PeoplePile } from "../components/v2/people/PeerAvatar.jsx";
 import PeopleMessage, { names } from "../components/v2/people/PeopleMessage.jsx";

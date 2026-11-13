@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, FileSpreadsheet, FileText, Sigma } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Sigma } from "../Icon.js";
 import { get } from "../../lib/api.js";
 
 // Word documents (create_document) and Excel workbooks (create_spreadsheet) the bots made:

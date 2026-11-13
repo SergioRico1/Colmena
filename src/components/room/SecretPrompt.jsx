@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, KeyRound, LockKeyhole, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, KeyRound, LockKeyhole, ShieldCheck } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import { ago } from "../../lib/format.js";
 import { useCountdown } from "./Dots.jsx";

@@ -1,7 +1,7 @@
 import Select from "../components/Select.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Check, ChevronDown, ImagePlus, Pin } from "lucide-react";
+import { Check, ChevronDown, ImagePlus, Pin, Lock as LockGlyph } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import { shapeOf } from "../components/v2/Presence.jsx";
 import { portraitOf } from "../lib/bots.js";
@@ -231,7 +231,7 @@ function SectionHead({ id, title, note, children }) {
   );
 }
 
-const Lock = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.5 10.5h11v9.5h-11zM8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></svg>;
+const Lock = () => <LockGlyph size={11} weight="bold" color="#5C606C" />;
 
 function Fact({ label, value, open, onClick, href }) {
   const inner = <><span style={{ color: "var(--c-text-3)" }}>{label}</span>{" "}<strong style={{ fontWeight: "600" }}>{value}</strong></>;

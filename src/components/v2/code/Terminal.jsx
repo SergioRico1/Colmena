@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, Plus, X, CornerDownLeft } from "lucide-react";
+import { Play, Plus, X, CornerDownLeft } from "../../Icon.js";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";

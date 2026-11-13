@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "../../Icon.js";
 
 // What you might say next, under the latest answer (after assistant-ui follow-up-suggestions):
 // two or three short pills that rise in one after the other; one puts its words in the box.

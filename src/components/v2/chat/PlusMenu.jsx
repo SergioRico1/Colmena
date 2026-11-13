@@ -1,6 +1,6 @@
 import { useClickAway } from "../../../lib/useClickAway.js";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppWindow, Brain, Check, Crop, Globe, Monitor, Paperclip, Plus, Repeat, SquareTerminal, Target } from "lucide-react";
+import { AppWindow, Brain, Check, Crop, Globe, Monitor, Paperclip, Plus, Repeat, SquareTerminal, Target } from "../../Icon.js";
 import AppLogo from "../../settings/AppLogo.jsx";
 import WindowPicker, { captureFile } from "../../interaction/WindowPicker.jsx";
 import { APPS, appName, loadAccounts } from "../../settings/connections.jsx";

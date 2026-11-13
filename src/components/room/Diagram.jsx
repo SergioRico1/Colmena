@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { Copy, Network } from "lucide-react";
+import { Copy, Network } from "../Icon.js";
 
 // ```mermaid blocks drawn as diagrams (OpenClaw): flows, timelines, org charts… in Colmena's
 // colours. Mermaid loads only the first time a diagram appears; strict mode sanitizes its SVG.

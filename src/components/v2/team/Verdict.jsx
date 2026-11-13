@@ -1,4 +1,4 @@
-import { CircleHelp, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { CircleHelp, Minus, TrendingDown, TrendingUp } from "../../Icon.js";
 
 // «¿Le ayuda?» (verdicts.mjs): whether something a bot learned made its work better, measured
 // on the work that followed. Quiet by design: a small mark, the words only where there is room.

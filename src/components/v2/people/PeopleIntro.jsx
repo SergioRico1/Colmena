@@ -1,4 +1,4 @@
-import { KeyRound, Laptop, LockKeyhole, UserPlus } from "lucide-react";
+import { KeyRound, Laptop, LockKeyhole, UserPlus } from "../../Icon.js";
 import { navigate } from "../../../lib/router.jsx";
 
 // «Personas» the first time (design/V2Personas.dc.html, paso primera): three short lines —

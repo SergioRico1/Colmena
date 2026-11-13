@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, Check, Quote, RotateCcw, X } from "lucide-react";
+import { ArrowUp, Check, Quote, RotateCcw, X } from "../Icon.js";
 import { del, get, post } from "../../lib/api.js";
 import { useStore } from "../../lib/store.jsx";
 import { time } from "../../lib/format.js";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, File, FileImage, FileSpreadsheet, FileText, Lock, Presentation, RotateCw, X } from "lucide-react";
+import { Download, File, FileImage, FileSpreadsheet, FileText, Lock, Presentation, RotateCw, X } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 

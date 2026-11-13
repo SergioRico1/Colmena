@@ -1,4 +1,4 @@
-import { CircleAlert } from "lucide-react";
+import { CircleAlert } from "./Icon.js";
 import { Boundary } from "../lib/boundary.js";
 
 // One message or card that fails to draw must not take the conversation with it: the row

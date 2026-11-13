@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { FileLinksContext } from "./fileLinks.jsx";
-import { ChevronRight, Columns2, ExternalLink, FilePen, FilePlus2, FileX2, Rows3, X } from "lucide-react";
+import { ChevronRight, Columns2, ExternalLink, FilePen, FilePlus2, FileX2, Rows3, X } from "../../Icon.js";
 import { parsePatch, sideBySide } from "../code/model.js";
 import DocPages, { VisualNotes, useVisual } from "../../room/DocPages.jsx";
 import { CHANGE_WORD, deltaLabel, fileOfLink, fileTypeOf, sizeLabel, turnChanges } from "../../../lib/turnFiles.js";

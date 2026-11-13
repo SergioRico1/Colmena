@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AppWindow, ArrowUpRight, ClipboardPaste, Crop, FileText, History, LayoutGrid, LoaderCircle, Plus, X } from "lucide-react";
+import { AppWindow, ArrowUpRight, ClipboardPaste, Crop, FileText, History, LayoutGrid, LoaderCircle, Plus, X, ArrowUp } from "../components/Icon.js";
 import { pickFiles, post } from "../lib/api.js";
 import { useStore } from "../lib/store.jsx";
 import { useMissionLive } from "../lib/liveStore.js";
@@ -296,7 +296,7 @@ export default function QuickAsk() {
                 style={{ flex: "1", minWidth: "0", minHeight: "52px", maxHeight: "150px", padding: "14px 0", border: "0", resize: "none", fontSize: "var(--t-title)", lineHeight: "1.3", background: "transparent", fieldSizing: "content", color: "var(--c-text)" }} />
             </label>
             <button type="submit" aria-label="Enviar" title="Enviar (Intro) · Ctrl+Intro: enviar y abrir en Colmena" disabled={!canSend} style={{ width: "46px", height: "46px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", cursor: canSend ? "pointer" : "default", background: "var(--c-btn)", color: "var(--c-btn-text)", opacity: canSend || busy ? 1 : 0.35, transition: "opacity .2s ease" }}>
-              {busy ? <LoaderCircle {...ICON} size={18} className="c-spin" /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>}
+              {busy ? <LoaderCircle {...ICON} size={18} className="c-spin" /> : <ArrowUp size={18} weight="bold" />}
             </button>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "0 18px 14px" }}>

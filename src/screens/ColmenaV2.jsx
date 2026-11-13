@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Plus } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NewBot from "../components/v2/team/NewBot.jsx";
 import EquipoPeople from "../components/v3/team/People.jsx";
@@ -65,7 +66,7 @@ function Team() {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             <button type="button" disabled={!peers?.me || relayOff} onClick={() => setInvite(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Invitar a una persona"}</button>
             <a href="/equipo/nuevo" style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: "600" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+              <Plus size={16} weight="bold" />
               {"Nuevo bot"}
             </a>
           </div>

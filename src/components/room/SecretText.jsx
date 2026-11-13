@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import { Eye, EyeOff, KeyRound } from "lucide-react";
+import { Eye, EyeOff, KeyRound } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import { useResource } from "../../lib/store.jsx";
 import { maskSecret, secretSegments, suggestKey } from "../../lib/secretMask.js";

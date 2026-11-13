@@ -1,5 +1,5 @@
 import { fitInitials, stepOf } from "../../../lib/type.js";
-import { Clock3, Moon } from "lucide-react";
+import { Clock3, Moon } from "../../Icon.js";
 
 // People of «Personas» (design/V2Personas.dc.html): neutral circles with initials (bots are
 // shapes; people are never shapes), a green dot while connected, a dashed ring while invited,

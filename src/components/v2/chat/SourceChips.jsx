@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowUpRight, FileText, Globe, Mail } from "lucide-react";
+import { ArrowUpRight, FileText, Globe, Mail } from "../../Icon.js";
 import { normUrl } from "../../../lib/citations.js";
 
 // Sources of an answer as quiet chips, and the links inside it as inline citations (after

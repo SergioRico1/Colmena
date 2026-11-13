@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eraser } from "lucide-react";
+import { Eraser } from "../Icon.js";
 import { get, post } from "../../lib/api.js";
 import { useStore } from "../../lib/store.jsx";
 import { useDialogFocus } from "../../lib/useDialogFocus.js";

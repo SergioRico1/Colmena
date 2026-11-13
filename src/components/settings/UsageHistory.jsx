@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { Download } from "../Icon.js";
 import { Card } from "./SettingsShell.jsx";
 import { formatTokens } from "./format.jsx";
 import { get } from "../../lib/api.js";

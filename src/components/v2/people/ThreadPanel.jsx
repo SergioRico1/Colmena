@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "../../Icon.js";
 import PeopleMessage from "./PeopleMessage.jsx";
 import PeopleComposer from "./PeopleComposer.jsx";
 import { useThread } from "../../../lib/peers.js";

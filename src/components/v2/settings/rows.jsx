@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "../../Icon.js";
 import { navigate } from "../../../lib/router.jsx";
 
 // The v2 Ajustes rows (design/V2Ajustes.dc.html): white 26 px groups of 64–76 px rows, a

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy } from "../../Icon.js";
 import ProviderMark from "../ProviderMark.jsx";
 import { useAction } from "../../../lib/store.jsx";
 import { post } from "../../../lib/api.js";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageSquare, Pencil, RotateCw, SmilePlus, Trash2 } from "lucide-react";
+import { MessageSquare, Pencil, RotateCw, SmilePlus, Trash2 } from "../../Icon.js";
 import { PeerAvatar, PeoplePile } from "./PeerAvatar.jsx";
 import { BotPresence } from "../Presence.jsx";
 import MeetingCard from "./MeetingCard.jsx";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, RotateCw } from "lucide-react";
+import { Copy, RotateCw } from "./Icon.js";
 import { Boundary, errorText, isChunkError } from "../lib/boundary.js";
 import { WindowDots } from "./v2/Rail.jsx";
 

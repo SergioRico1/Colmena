@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Lock } from "../../Icon.js";
 import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, get, patch, post, put } from "../../../lib/api.js";
 import { later, reversible, useHiddenVersion, visible } from "../../../lib/undoToast.js";
@@ -17,7 +18,7 @@ const AUTONOMY_WORD = { sugiere: "solo sugiere", avisa: "hace y avisa", solo: "h
 const APPS = [["correo", "Correo"], ["calendario", "Calendario"], ["carpeta", "Carpeta"], ["hojas", "Hojas"], ["chat", "Chat"]];
 const NEXT = { none: "lee", lee: "escribe", pide: "escribe", escribe: "none" };
 const CELL = { none: ["No", "#F1F1EC", "#5C606C"], lee: ["Lee", "#EEF0F4", "#1F4FD1"], pide: ["Lee y pide", "#EEF0F4", "#1F4FD1"], escribe: ["Escribe", "#12131A", "#FFFFFF"] };
-const lock = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>;
+const lock = <Lock size={15} color="#FFFFFF" style={{ flex: "none" }} />;
 
 // «Tareas de Código» (T3 Code auto-settle rules, GET/PUT /api/code/archive-settings): finished
 // tasks leave the list on their own when saved into main, when their PR closes, or after idle days.

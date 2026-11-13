@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ArrowLeft, Bot, CalendarClock, CodeXml, DoorOpen, Eye, Hash, Inbox, KeyRound, MessageSquare, Moon, Paperclip, Power, Send, ShieldCheck, UserMinus, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarClock, CodeXml, DoorOpen, Eye, Hash, Inbox, KeyRound, MessageSquare, Moon, Paperclip, Power, Send, ShieldCheck, UserMinus, Users } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import { INTRO_STEPS } from "../components/v2/people/PeopleIntro.jsx";
 import { navigate } from "../lib/router.jsx";

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Check, ChevronLeft, Clock, Plus } from "../components/Icon.js";
 import { BotPresence } from "../components/v2/Presence.jsx";
 import { css } from "../design/css/Misiones.js";
 import Shell from "../components/v2/Shell.jsx";
@@ -266,7 +267,7 @@ export default function Misiones({ query = {} }) {
         <section aria-labelledby="col3" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "var(--c-chip)", borderRadius: "var(--r-xl)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px" }}>
             <h2 id="col3" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg>
+              <Clock size={14} weight="bold" />
               {"Programadas"}
             </h2>
             <span style={{ font: "600 var(--t-meta)/1 'Geist Mono', monospace" }}>{scheduled.length}</span>
@@ -276,7 +277,7 @@ export default function Misiones({ query = {} }) {
         <section aria-labelledby="col4" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "var(--c-chip)", borderRadius: "var(--r-xl)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px" }}>
             <h2 id="col4" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+              <Check size={14} weight="bold" />
               {"Terminadas"}
             </h2>
             <span style={{ font: "600 var(--t-meta)/1 'Geist Mono', monospace" }}>{done.length}</span>
@@ -294,7 +295,7 @@ export default function Misiones({ query = {} }) {
     const c = columnOf(m);
     if (c === "wait") return <span style={{ padding: "3px 8px", background: "var(--c-honey-soft)", borderRadius: "var(--r-sm)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{m.statusLabel || "Te espera"}</span>;
     if (c === "run") return <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)" }}><span style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: "#0B8A5F", boxShadow: "0 0 0 4px #D6F0E4" }} />{m.statusLabel || "En marcha"}</span>;
-    return <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: m.status === "cancelled" ? "var(--c-text-3)" : "var(--c-ok-ink)", fontWeight: "600" }}>{m.status === "cancelled" ? null : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>}{m.statusLabel || (m.status === "cancelled" ? "Cancelada" : "Terminada")}</span>;
+    return <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: m.status === "cancelled" ? "var(--c-text-3)" : "var(--c-ok-ink)", fontWeight: "600" }}>{m.status === "cancelled" ? null : <Check size={14} weight="bold" />}{m.statusLabel || (m.status === "cancelled" ? "Cancelada" : "Terminada")}</span>;
   };
   const listRows = [...wait, ...run, ...done];
   const list = (
@@ -358,7 +359,7 @@ export default function Misiones({ query = {} }) {
                   {dayItems.map((x) => (
                     <a key={x.key} href={x.href} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 6px", borderRadius: "var(--r-sm)", fontSize: "var(--t-caption)", lineHeight: "1.3", ...itemStyle[x.kind] }}>
                       {x.kind === "run" ? <span style={{ width: "6px", height: "6px", flex: "none", borderRadius: "var(--r-circle)", background: "#0B8A5F" }} /> : null}
-                      {x.kind === "auto" ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg> : null}
+                      {x.kind === "auto" ? <Clock size={11} weight="bold" style={{ flex: "none" }} /> : null}
                       <span style={{ minWidth: "0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{`${time(x.at)} ${x.title}`}</span>
                     </a>
                   ))}
@@ -375,7 +376,7 @@ export default function Misiones({ query = {} }) {
     <Shell active="hoy" extraCss={css}>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
         <a href="C:/Program Files/Git/" onClick={(e) => { e.preventDefault(); navigate("C:/Program Files/Git/"); }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", margin: "32px clamp(20px, 4vw, 48px) 0", padding: "0 14px 0 10px", alignSelf: "flex-start", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+          <ChevronLeft size={14} weight="bold" />
           Hoy
         </a>
         <main style={{ flex: "999 1 560px", minWidth: "0", padding: "28px clamp(16px, 3vw, 36px) 48px", display: "flex", flexDirection: "column", gap: "22px" }}>
@@ -393,7 +394,7 @@ export default function Misiones({ query = {} }) {
                 <button type="button" aria-pressed="false" onClick={() => navigate("/trabajo/objetivos")} style={viewBtn(false)}>{"Objetivos"}</button>
               </div>
               <button type="button" onClick={() => navigate("/?modo=equipo")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                <Plus size={16} weight="bold" />
                 {"Nueva misión"}
               </button>
             </div>
@@ -418,7 +419,7 @@ export default function Misiones({ query = {} }) {
                         <button key={b.id} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => { setBotId(b.id); setFilter("bot"); setBotMenu(false); }} style={{ width: "100%", display: "grid", gridTemplateColumns: "34px 1fr auto", gap: "10px", alignItems: "center", minHeight: "48px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "var(--r-md)", background: on ? "var(--c-honey-soft)" : "var(--c-card)", cursor: "pointer" }}>
                           <BotPresence bot={b} size={28} />
                           <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}><strong style={{ fontSize: "var(--t-ui)" }}>{b.name}</strong><span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{b.role}</span></span>
-                          {on ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#12131A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg> : <span />}
+                          {on ? <Check size={16} weight="bold" color="#12131A" /> : <span />}
                         </button>
                       );
                     })}

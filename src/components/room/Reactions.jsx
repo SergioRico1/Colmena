@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Ellipsis, SmilePlus } from "lucide-react";
+import { Ellipsis, SmilePlus } from "../Icon.js";
 import { post, put } from "../../lib/api.js";
 import { findBot, useDismiss } from "./common.jsx";
 import { freshness, popIn } from "../../lib/motion.js";

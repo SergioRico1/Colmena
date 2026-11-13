@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Globe } from "lucide-react";
+import { Globe } from "../Icon.js";
 import { get } from "../../lib/api.js";
 
 // Link hover previews (OpenClaw link-preview): resting on a link of an answer (<a data-preview>)

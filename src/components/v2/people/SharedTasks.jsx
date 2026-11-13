@@ -1,6 +1,6 @@
 import Select from "../../Select.jsx";
 import { useEffect, useState } from "react";
-import { ArrowRight, Copy, ExternalLink, Eye, FileDiff, GitBranch, GitPullRequest, Lock, MessageSquare } from "lucide-react";
+import { ArrowRight, Copy, ExternalLink, Eye, FileDiff, GitBranch, GitPullRequest, Lock, MessageSquare } from "../../Icon.js";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { names } from "./PeopleMessage.jsx";
 import { navigate } from "../../../lib/router.jsx";

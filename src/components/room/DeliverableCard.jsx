@@ -1,32 +1,21 @@
 import { KIND_LABEL, findBot } from "./common.jsx";
+import { CodeXml, Table, FileText, Image } from "../Icon.js";
 import { useStore } from "../../lib/store.jsx";
 import { ListenArtifactButton } from "../interaction/Voice.jsx";
 
 const SPOKEN = new Set(["md", "txt", "markdown", "html", "doc", "docx"]);
 
 const TABLE_ICON = (size) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#1F4FD1" strokeWidth="2" aria-hidden="true">
-    <rect x="3" y="5" width="18" height="14" rx="2" />
-    <path d="M3 10h18M9 10v9" />
-  </svg>
+  <Table size={size} color="#1F4FD1" />
 );
 const DOC_ICON = (size) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#1F4FD1" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
-    <path d="M6 3h8l4 4v14H6z" />
-    <path d="M9 12h6M9 16h6" />
-  </svg>
+  <FileText size={size} color="#1F4FD1" />
 );
 const CODE_ICON = (size) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#1F4FD1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="m8 7-5 5 5 5M16 7l5 5-5 5" />
-  </svg>
+  <CodeXml size={size} color="#1F4FD1" />
 );
 const IMAGE_ICON = (size) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#1F4FD1" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="4" width="18" height="16" rx="2" />
-    <circle cx="9" cy="10" r="2" />
-    <path d="m4 19 6-6 4 4 3-3 4 4" />
-  </svg>
+  <Image size={size} color="#1F4FD1" />
 );
 
 export function artifactIcon(artifact, size) {

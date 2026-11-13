@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, ShieldAlert } from "lucide-react";
+import { ArrowUpRight, ShieldAlert } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { leave } from "../../lib/motion.js";

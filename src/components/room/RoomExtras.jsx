@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Check } from "../Icon.js";
 import Shell from "../v2/Shell.jsx";
 import Composer from "../v2/chat/Composer.jsx";
 import { BotMark } from "../v2/chat/Mark.jsx";
@@ -99,7 +100,7 @@ export function RulesPanel({ mission, bots, memberIds }) {
                     return (
                       <button key={v} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => choose(r, v)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)" }}>
                         <span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
-                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
+                          <Check size={9} weight="bold" color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
                         </span>
                         {label.charAt(0).toUpperCase() + label.slice(1)}
                       </button>

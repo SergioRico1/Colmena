@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Folder, FolderCheck, Hash, MessagesSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Folder, FolderCheck, Hash, MessagesSquare } from "../Icon.js";
 import { api } from "../../lib/api.js";
 import { createComposition } from "../../lib/composition.js";
 import { chatsFrom, mentionItems, MENTION_LIMITS, refBody } from "../../lib/mentionMenu.js";

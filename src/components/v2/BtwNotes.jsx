@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X } from "../Icon.js";
 import { post } from "../../lib/api.js";
 import { btwQuestion } from "../../lib/btw.js";
 import Markdown from "../room/Markdown.jsx";

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Check, FilePen, FilePlus2, FileX2, Undo2, X } from "lucide-react";
+import { Check, FilePen, FilePlus2, FileX2, Undo2, X } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { cancel, schedule, useUndoable } from "../../../lib/undoable.js";
 import { changesSummary, libraryLine, plural } from "../../../lib/undo.js";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "../Icon.js";
 import { post } from "../../lib/api.js";
 
 // «Qué ha pasado en esta sala» (server/recaps.mjs): 1–3 sentences under a room on Inicio and

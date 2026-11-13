@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Globe, Server, Square, SquareTerminal } from "lucide-react";
+import { Globe, Server, Square, SquareTerminal } from "../Icon.js";
 import { BotPresence } from "../v2/Presence.jsx";
 import { findBot } from "../room/common.jsx";
 import { get, post } from "../../lib/api.js";

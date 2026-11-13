@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Hourglass } from "lucide-react";
+import { Hourglass } from "../Icon.js";
 import { patch, post } from "../../lib/api.js";
 import { useAction, useStore } from "../../lib/store.jsx";
 import { navigate } from "../../lib/router.jsx";
