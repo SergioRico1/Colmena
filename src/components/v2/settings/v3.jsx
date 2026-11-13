@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ChevronRight } from "../../Icon.js";
 import BotFace from "../../BotFace.jsx";
 import { useStore } from "../../../lib/store.jsx";
 import { patch } from "../../../lib/api.js";
@@ -210,4 +211,64 @@ export function useSettings() {
 
 export function Alert({ children }) {
   return children ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{children}</p> : null;
+}
+
+/** The button of an action that removes or stops something: outlined, in the error colour. */
+export const danger = (size = 34) => ({ ...btn("outline", size), color: "var(--c-error)", borderColor: "color-mix(in srgb, var(--c-error) 35%, transparent)" });
+
+/**
+ * Says what will happen before a destructive action, inline where it was asked (not a modal):
+ * what goes, what stays, and whether it can be undone. The action's button names the action
+ * («Olvidar 12 recuerdos»), never «Sí» or «Aceptar». Focus moves to it; Escape cancels and gives
+ * the focus back to whatever opened it.
+ */
+export function Confirm({ title, children, action, onConfirm, onCancel, busy = false, style = null }) {
+  const box = useRef(null);
+  const id = useId();
+  const opener = useRef(typeof document !== "undefined" ? document.activeElement : null);
+  useEffect(() => { box.current?.querySelector("[data-cancel]")?.focus({ preventScroll: true }); }, []);
+  const cancel = () => { onCancel(); requestAnimationFrame(() => opener.current?.focus?.({ preventScroll: true })); };
+  return (
+    <div ref={box} role="alertdialog" aria-labelledby={id + "t"} aria-describedby={id + "d"} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); cancel(); } }}
+      style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-md)", background: "var(--c-error-soft)", animation: "fade .2s ease-out", ...style }}>
+      <span id={id + "t"} style={{ fontSize: "var(--t-body)", fontWeight: 600, color: "var(--c-text)" }}>{title}</span>
+      <span id={id + "d"} style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{children}</span>
+      <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        <button type="button" disabled={busy} onClick={onConfirm} style={{ ...btn("outline", 36), background: "var(--c-card)", color: "var(--c-error)", borderColor: "color-mix(in srgb, var(--c-error) 45%, transparent)" }}>{action}</button>
+        <button type="button" data-cancel onClick={cancel} style={btn("ghost", 36)}>Cancelar</button>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Progressive disclosure for the settings an expert needs and most people never touch: in expert
+ * mode they show as they are; otherwise one «Opciones avanzadas» fold, closed, that says what is
+ * inside before you open it.
+ */
+export function Advanced({ summary, children, anchors = [] }) {
+  const [expert] = useExpert();
+  const [open, setOpen] = useState(false);
+  // A link straight to a setting inside (/ajustes/ia#modelo) opens the fold first.
+  useEffect(() => {
+    const look = () => { const a = decodeURIComponent(location.hash.slice(1)); if (a && anchors.includes(a)) setOpen(true); };
+    look();
+    window.addEventListener("colmena:navigate", look);
+    window.addEventListener("hashchange", look);
+    return () => { window.removeEventListener("colmena:navigate", look); window.removeEventListener("hashchange", look); };
+  }, [anchors.join(" ")]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (expert) return children;
+  return (
+    <section aria-label="Opciones avanzadas" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
+        style={{ alignSelf: "stretch", display: "flex", alignItems: "center", gap: "10px", minHeight: "52px", padding: "8px 16px", border: "1px dashed var(--c-line-strong)", borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", color: "var(--c-text)", cursor: "pointer" }}>
+        <ChevronRight size={15} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-3)", transition: "transform .2s ease", transform: open ? "rotate(90deg)" : "none" }} />
+        <span style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+          <span style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>Opciones avanzadas</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{summary}</span>
+        </span>
+      </button>
+      {open ? children : null}
+    </section>
+  );
 }
