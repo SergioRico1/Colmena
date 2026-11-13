@@ -24,7 +24,7 @@ El motor conserva propuestas privadas, caducidad, revalidacion de esquema/cuenta
 - Confirmacion para otras escrituras: eventos de Calendar, cambios de documentos, borrados, etc. No se habilitan extrapolando el dialogo de correo.
 - 09b/09c son lienzos de 1440px de ancho fijo. No existe variante movil. Las listas extensas de cuentas/catalogo necesitan estado de desbordamiento o paginacion definido; no se ha inventado otra composicion.
 - Navegacion de ajustes NEXO (General, Espacios, Privacidad, etc.) no tiene pantallas Colmena suministradas; enlaces desactivados. Los controles decorativos de ventana del original no gobiernan una ventana del navegador web.
-- MCP personalizado de NEXO no se ha portado: no hay pantalla de alta/configuracion MCP suministrada.
+- Servidores MCP propios: disponibles por HTTP/SSE con OAuth (registro dinamico, PKCE, tokens en DPAPI) en `server/mcp/hub.mjs`; los servidores locales por stdio no se admiten.
 
 ## Verificacion 2026-10-15
 
