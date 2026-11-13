@@ -103,9 +103,9 @@ function fromDescribed(d, base = blankDraft()) {
   };
 }
 
-const errStyle = { fontSize: "13px", fontWeight: "600", color: "#B4372A" };
+const errStyle = { fontSize: "var(--t-meta)", fontWeight: "600", color: "#B4372A" };
 const overlayBtn = { position: "fixed", inset: "0", zIndex: "15", background: "rgba(18,19,26,0.06)", border: "0", cursor: "default" };
-const menuBox = { position: "absolute", left: "0", top: "calc(100% + 8px)", zIndex: "22", background: "#FFFFFF", border: "0", borderRadius: "16px", boxShadow: "0 18px 40px rgba(18,19,26,.22)", padding: "8px", display: "flex", flexDirection: "column", gap: "2px" };
+const menuBox = { position: "absolute", left: "0", top: "calc(100% + 8px)", zIndex: "22", background: "#FFFFFF", border: "0", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px rgba(18,19,26,.22)", padding: "8px", display: "flex", flexDirection: "column", gap: "2px" };
 const check = (color = "#12131A", w = 3, size = 16) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>;
 
 export default function Automatizaciones({ query = {} }) {
@@ -337,16 +337,16 @@ export default function Automatizaciones({ query = {} }) {
     const waiting = a.state === "waiting";
     const avatar = <BotPresence bot={bot} size={30} />;
     return (
-      <div key={a.id} onClick={(e) => { if (!e.target.closest("button,a")) select(a.id); }} style={{ display: "grid", gridTemplateColumns: "30px 1fr auto", alignItems: "center", gap: "12px", padding: "14px", cursor: "pointer", ...(on ? { background: "#FFFFFF", border: "0", boxShadow: edited ? "0 0 0 2px #12131A" : "0 1px 2px rgba(18,19,26,.05)" } : { background: "rgba(255,255,255,.55)", border: "0", boxShadow: edited ? "0 0 0 2px #12131A" : "none" }), borderRadius: "22px" }}>
+      <div key={a.id} onClick={(e) => { if (!e.target.closest("button,a")) select(a.id); }} style={{ display: "grid", gridTemplateColumns: "30px 1fr auto", alignItems: "center", gap: "12px", padding: "14px", cursor: "pointer", ...(on ? { background: "#FFFFFF", border: "0", boxShadow: edited ? "0 0 0 2px #12131A" : "0 1px 2px rgba(18,19,26,.05)" } : { background: "rgba(255,255,255,.55)", border: "0", boxShadow: edited ? "0 0 0 2px #12131A" : "none" }), borderRadius: "var(--r-2xl)" }}>
         {avatar}
         <span style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>
-          <a href={`/automatizaciones?id=${encodeURIComponent(a.id)}`} aria-current={edited ? "true" : undefined} onClick={(e) => { e.preventDefault(); select(a.id); }} style={{ fontSize: "15px", fontWeight: "700", ...(on ? {} : { color: "#5C606C" }) }}>{a.name}</a>
-          <span style={{ fontSize: "13px", color: "#5C606C" }}>
-            {waiting ? <>{sub.replace(/\s*·?\s*Te espera\s*$/i, "") + " · "}<span style={{ padding: "2px 6px", background: "#FFF4D1", borderRadius: "4px", color: "#12131A", fontWeight: "600" }}>{"Te espera"}</span></> : sub}
+          <a href={`/automatizaciones?id=${encodeURIComponent(a.id)}`} aria-current={edited ? "true" : undefined} onClick={(e) => { e.preventDefault(); select(a.id); }} style={{ fontSize: "var(--t-body)", fontWeight: "700", ...(on ? {} : { color: "#5C606C" }) }}>{a.name}</a>
+          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>
+            {waiting ? <>{sub.replace(/\s*·?\s*Te espera\s*$/i, "") + " · "}<span style={{ padding: "2px 6px", background: "#FFF4D1", borderRadius: "var(--r-xs)", color: "#12131A", fontWeight: "600" }}>{"Te espera"}</span></> : sub}
           </span>
         </span>
-        <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={a.name} disabled={toggle.busy} onClick={() => toggle.act(() => patch(`/automations/${encodeURIComponent(a.id)}`, { enabled: !on }))} style={on ? { width: "52px", height: "32px", padding: "3px", background: "#0B8A5F", border: "0", borderRadius: "16px", cursor: "pointer", display: "flex", justifyContent: "flex-end" } : { width: "52px", height: "32px", padding: "3px", background: "rgba(18,19,26,.14)", border: "0", borderRadius: "16px", cursor: "pointer", display: "flex", justifyContent: "flex-start" }}>
-          <span style={on ? { width: "26px", height: "26px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)" } : { width: "26px", height: "26px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)" }} />
+        <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={a.name} disabled={toggle.busy} onClick={() => toggle.act(() => patch(`/automations/${encodeURIComponent(a.id)}`, { enabled: !on }))} style={on ? { width: "52px", height: "32px", padding: "3px", background: "#0B8A5F", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-end" } : { width: "52px", height: "32px", padding: "3px", background: "rgba(18,19,26,.14)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-start" }}>
+          <span style={on ? { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)" } : { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)" }} />
         </button>
       </div>
     );
@@ -355,8 +355,8 @@ export default function Automatizaciones({ query = {} }) {
   const runStatus = (r) => {
     const st = r.status;
     if (["completed", "done", "ok", "saved"].includes(st)) return <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "#0B6B4A", fontWeight: "600" }}>{check("currentColor", 2.6, 14)}{r.statusLabel || "Hecha"}</span>;
-    if (["waiting", "awaiting_choice", "awaiting_plan", "notified"].includes(st)) return <span style={{ padding: "3px 8px", background: "#FFF4D1", borderRadius: "6px", fontWeight: "600" }}>{r.statusLabel || "Te espera"}</span>;
-    if (["running", "queued", "planning"].includes(st)) return <span style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#0B8A5F", boxShadow: "0 0 0 4px #D6F0E4" }} />{r.statusLabel || "En marcha"}</span>;
+    if (["waiting", "awaiting_choice", "awaiting_plan", "notified"].includes(st)) return <span style={{ padding: "3px 8px", background: "#FFF4D1", borderRadius: "var(--r-sm)", fontWeight: "600" }}>{r.statusLabel || "Te espera"}</span>;
+    if (["running", "queued", "planning"].includes(st)) return <span style={{ display: "flex", alignItems: "center", gap: "8px" }}><span style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: "#0B8A5F", boxShadow: "0 0 0 4px #D6F0E4" }} />{r.statusLabel || "En marcha"}</span>;
     if (["failed", "error", "blocked"].includes(st)) return <span style={{ color: "#B4372A", fontWeight: "600" }}>{r.statusLabel || (st === "blocked" ? "Bloqueada" : "Falló")}</span>;
     return <span style={{ color: "#5C606C" }}>{r.statusLabel || (st === "cancelled" ? "Cancelada" : st === "paused" ? "En pausa" : "Ignorado")}</span>;
   };
@@ -365,7 +365,7 @@ export default function Automatizaciones({ query = {} }) {
   return (
     <Shell active="rutinas" extraCss={css}>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
-        <a href="C:/Program Files/Git/rutinas" onClick={(e) => { e.preventDefault(); navigate("C:/Program Files/Git/rutinas"); }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", margin: "32px clamp(20px, 4vw, 48px) 0", padding: "0 14px 0 10px", alignSelf: "flex-start", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "14px", fontWeight: "500", color: "#12131A" }}>
+        <a href="C:/Program Files/Git/rutinas" onClick={(e) => { e.preventDefault(); navigate("C:/Program Files/Git/rutinas"); }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", margin: "32px clamp(20px, 4vw, 48px) 0", padding: "0 14px 0 10px", alignSelf: "flex-start", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", fontSize: "var(--t-ui)", fontWeight: "500", color: "#12131A" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
           Rutinas
         </a>
@@ -373,10 +373,10 @@ export default function Automatizaciones({ query = {} }) {
           <section aria-labelledby="auto-t" style={{ flex: "1 1 440px", minWidth: "0", padding: "28px clamp(16px, 3vw, 32px) 48px", display: "flex", flexDirection: "column", gap: "18px" }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "12px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <h1 id="auto-t" style={{ margin: "0", font: "600 36px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Automatizaciones"}</h1>
-                <p style={{ margin: "0", fontSize: "15px", color: "#5C606C" }}>{"Trabajo que pasa solo, a una hora o cuando ocurre algo."}</p>
+                <h1 id="auto-t" style={{ margin: "0", font: "600 var(--t-display-s)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Automatizaciones"}</h1>
+                <p style={{ margin: "0", fontSize: "var(--t-body)", color: "#5C606C" }}>{"Trabajo que pasa solo, a una hora o cuando ocurre algo."}</p>
               </div>
-              <button type="button" onClick={() => { startNew(); navigate("/automatizaciones", { replace: true }); handled.current = JSON.stringify({}); }} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "15px" }}>
+              <button type="button" onClick={() => { startNew(); navigate("/automatizaciones", { replace: true }); handled.current = JSON.stringify({}); }} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                 {"Nueva"}
               </button>
@@ -386,11 +386,11 @@ export default function Automatizaciones({ query = {} }) {
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {automations.map(row)}
               {ready && automations.length === 0 ? (
-                <div style={{ display: "grid", gridTemplateColumns: "30px 1fr", alignItems: "center", gap: "12px", padding: "14px", background: "#F6F6F3", border: "0", borderRadius: "14px" }}>
-                  <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 13px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
+                <div style={{ display: "grid", gridTemplateColumns: "30px 1fr", alignItems: "center", gap: "12px", padding: "14px", background: "#F6F6F3", border: "0", borderRadius: "var(--r-lg)" }}>
+                  <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-meta)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
                   <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <strong style={{ fontSize: "15px", color: "#5C606C" }}>{"Aún no hay automatizaciones"}</strong>
-                    <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Prepara la primera a la derecha o pide a Atlas que la monte con tus palabras."}</span>
+                    <strong style={{ fontSize: "var(--t-body)", color: "#5C606C" }}>{"Aún no hay automatizaciones"}</strong>
+                    <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Prepara la primera a la derecha o pide a Atlas que la monte con tus palabras."}</span>
                   </span>
                 </div>
               ) : null}
@@ -401,17 +401,17 @@ export default function Automatizaciones({ query = {} }) {
           {anyOpen ? <button type="button" aria-label="Cerrar el menú" onClick={() => { setOpen(null); setDescribe(null); }} style={overlayBtn} /> : null}
 
           <section aria-labelledby="regla-t" style={{ position: "relative", zIndex: "16", flex: "1.3 1 520px", minWidth: "0", background: "#FFFFFF", borderLeft: "1px solid rgba(18,19,26,.1)", padding: "28px clamp(16px, 3vw, 32px) 48px", display: "flex", flexDirection: "column", gap: "22px" }}>
-            {!draft ? <p style={{ margin: "0", fontSize: "15px", color: "#5C606C" }}>{ready ? "Elige una automatización de la lista o crea una nueva." : "Cargando…"}</p> : (
+            {!draft ? <p style={{ margin: "0", fontSize: "var(--t-body)", color: "#5C606C" }}>{ready ? "Elige una automatización de la lista o crea una nueva." : "Cargando…"}</p> : (
               <>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{isNew ? "Nueva automatización" : "Editar automatización"}</span>
-                  <h2 id="regla-t" style={{ margin: "0", font: "600 26px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.015em" }}>
+                  <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{isNew ? "Nueva automatización" : "Editar automatización"}</span>
+                  <h2 id="regla-t" style={{ margin: "0", font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.015em" }}>
                     <input type="text" aria-label="Nombre de la automatización" value={draft.name} onChange={(e) => set({ name: e.target.value })} style={{ width: "100%", padding: "0", margin: "0", border: "0", background: "transparent", font: "inherit", letterSpacing: "inherit", color: "#12131A" }} />
                   </h2>
                 </div>
                 {preparing ? (
-                  <div role="status" style={{ display: "flex", gap: "12px", padding: "14px 16px", background: "#E7EEFF", border: "1px solid #B4C8FF", borderRadius: "14px", fontSize: "14px", lineHeight: "1.45" }}>
-                    <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 13px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
+                  <div role="status" style={{ display: "flex", gap: "12px", padding: "14px 16px", background: "#E7EEFF", border: "1px solid #B4C8FF", borderRadius: "var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: "1.45" }}>
+                    <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-meta)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
                     <span style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       {preparing.error ? <><span><strong>{"Atlas no ha podido prepararla"}</strong>{` a partir de «${preparing.text}».`}</span><span style={errStyle}>{preparing.error}</span><span>{"Puedes rellenarla tú mismo aquí abajo."}</span></>
                         : <span><strong>{"Atlas la está preparando"}</strong>{` a partir de «${preparing.text}»…`}</span>}
@@ -421,10 +421,10 @@ export default function Automatizaciones({ query = {} }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {/* Cuando */}
                   <div style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: "12px", alignItems: "center" }}>
-                    <span style={{ font: "600 18px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Cuando"}</span>
+                    <span style={{ font: "600 var(--t-lead)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Cuando"}</span>
                     <div style={{ position: "relative", minWidth: "0" }}>
-                      <button type="button" aria-haspopup="listbox" aria-expanded={cuandoOpen ? "true" : "false"} onClick={() => setOpen(cuandoOpen ? null : "cuando")} style={{ position: "relative", zIndex: "21", width: "100%", minHeight: "52px", padding: "10px 12px", textAlign: "left", background: cuandoOpen ? "#FFFFFF" : "#F6F6F3", border: "1.5px solid #12131A", borderRadius: "12px", cursor: "pointer", fontSize: "15px", lineHeight: "1.4", display: "flex", alignItems: "center", gap: "10px" }}>
-                        <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "#FFFFFF", border: "0", borderRadius: "8px" }}>
+                      <button type="button" aria-haspopup="listbox" aria-expanded={cuandoOpen ? "true" : "false"} onClick={() => setOpen(cuandoOpen ? null : "cuando")} style={{ position: "relative", zIndex: "21", width: "100%", minHeight: "52px", padding: "10px 12px", textAlign: "left", background: cuandoOpen ? "#FFFFFF" : "#F6F6F3", border: "1.5px solid #12131A", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-body)", lineHeight: "1.4", display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span aria-hidden="true" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", background: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)" }}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={TRIGGER_META[type][1]} /></svg>
                         </span>
                         <span style={{ flex: "1" }}>{draft.trigger.sentence || TRIGGER_META[type][0]}</span>
@@ -432,41 +432,41 @@ export default function Automatizaciones({ query = {} }) {
                       </button>
                       {cuandoOpen ? (
                         <div role="listbox" aria-label="Cuándo se pone en marcha" style={{ ...menuBox, right: "0" }}>
-                          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", margin: "2px 2px 6px", padding: "0 12px", background: "#F6F6F3", border: "0", borderRadius: "999px" }}>
+                          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", margin: "2px 2px 6px", padding: "0 12px", background: "#F6F6F3", border: "0", borderRadius: "var(--r-pill)" }}>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></svg>
                             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar disparador"}</span>
-                            <input className="c-bare" type="text" autoFocus value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setOpen(null); }} placeholder="Busca: «factura», «lunes», «carpeta»…" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "14px" }} />
+                            <input className="c-bare" type="text" autoFocus value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setOpen(null); }} placeholder="Busca: «factura», «lunes», «carpeta»…" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
                           </label>
                           {visible.map((o) => (o.header ? (
-                            <span key={o.label} style={{ display: "block", padding: "10px 10px 4px", font: "600 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{o.label}</span>
+                            <span key={o.label} style={{ display: "block", padding: "10px 10px 4px", font: "600 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{o.label}</span>
                           ) : (
-                            <button key={o.id} type="button" role="option" aria-selected={o.id === type ? "true" : "false"} onClick={() => pickTrigger(o.id)} style={{ width: "100%", display: "grid", gridTemplateColumns: "32px 1fr 20px", gap: "10px", alignItems: "center", minHeight: "52px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "10px", cursor: "pointer", background: o.id === type ? "#FFF4D1" : "#FFFFFF" }}>
-                              <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", background: "#F4F4F0", borderRadius: "8px" }}>
+                            <button key={o.id} type="button" role="option" aria-selected={o.id === type ? "true" : "false"} onClick={() => pickTrigger(o.id)} style={{ width: "100%", display: "grid", gridTemplateColumns: "32px 1fr 20px", gap: "10px", alignItems: "center", minHeight: "52px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", background: o.id === type ? "#FFF4D1" : "#FFFFFF" }}>
+                              <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", background: "#F4F4F0", borderRadius: "var(--r-sm)" }}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={TRIGGER_META[o.id][1]} /></svg>
                               </span>
                               <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                                <strong style={{ fontSize: "14px" }}>{o.label}</strong>
-                                <span style={{ fontSize: "12px", color: "#5C606C" }}>{o.desc}</span>
+                                <strong style={{ fontSize: "var(--t-ui)" }}>{o.label}</strong>
+                                <span style={{ fontSize: "var(--t-caption)", color: "#5C606C" }}>{o.desc}</span>
                               </span>
                               {o.id === type ? check() : <span />}
                             </button>
                           )))}
-                          {visible.length === 0 ? <span style={{ display: "block", padding: "10px", fontSize: "14px", color: "#5C606C" }}>{`Nada coincide con «${search.trim()}».`}</span> : null}
+                          {visible.length === 0 ? <span style={{ display: "block", padding: "10px", fontSize: "var(--t-ui)", color: "#5C606C" }}>{`Nada coincide con «${search.trim()}».`}</span> : null}
                           {describe ? (
-                            <form onSubmit={(e) => { e.preventDefault(); runDescribe(describe.text); }} style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px", padding: "10px 12px", background: "#FFF4D1", border: "0", borderRadius: "10px", fontSize: "14px" }}>
-                              <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontWeight: "600", fontSize: "13px" }}>
+                            <form onSubmit={(e) => { e.preventDefault(); runDescribe(describe.text); }} style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "6px", padding: "10px 12px", background: "#FFF4D1", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
+                              <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontWeight: "600", fontSize: "var(--t-meta)" }}>
                                 {"Cuéntale a Atlas cuándo debe ponerse en marcha"}
-                                <textarea autoFocus rows={2} value={describe.text} onChange={(e) => setDescribe({ ...describe, text: e.target.value })} placeholder="P. ej.: el último viernes de cada mes, si nadie ha enviado el informe" style={{ padding: "10px 12px", border: "0", borderRadius: "10px", fontFamily: "inherit", fontSize: "15px", fontWeight: "400", background: "#FFFFFF", resize: "vertical" }} />
+                                <textarea autoFocus rows={2} value={describe.text} onChange={(e) => setDescribe({ ...describe, text: e.target.value })} placeholder="P. ej.: el último viernes de cada mes, si nadie ha enviado el informe" style={{ padding: "10px 12px", border: "0", borderRadius: "var(--r-md)", fontFamily: "inherit", fontSize: "var(--t-body)", fontWeight: "400", background: "#FFFFFF", resize: "vertical" }} />
                               </label>
                               {describe.error ? <span role="alert" style={errStyle}>{describe.error}</span> : null}
                               <span style={{ display: "flex", gap: "8px" }}>
-                                <button type="submit" disabled={describe.busy || !describe.text.trim()} style={{ height: "38px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "13px" }}>{describe.busy ? "Atlas lo está preparando…" : "Que Atlas lo prepare"}</button>
-                                <button type="button" onClick={() => setDescribe(null)} style={{ height: "38px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "13px", color: "#3D404A" }}>{"Cancelar"}</button>
+                                <button type="submit" disabled={describe.busy || !describe.text.trim()} style={{ height: "38px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" }}>{describe.busy ? "Atlas lo está preparando…" : "Que Atlas lo prepare"}</button>
+                                <button type="button" onClick={() => setDescribe(null)} style={{ height: "38px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", color: "#3D404A" }}>{"Cancelar"}</button>
                               </span>
                             </form>
                           ) : (
-                            <button type="button" onClick={() => setDescribe({ text: search.trim(), busy: false, error: null })} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", marginTop: "6px", padding: "0 12px", background: "#FFF4D1", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "14px", textAlign: "left" }}>
-                              <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 10px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
+                            <button type="button" onClick={() => setDescribe({ text: search.trim(), busy: false, error: null })} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", marginTop: "6px", padding: "0 12px", background: "#FFF4D1", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left" }}>
+                              <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-micro)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
                               <span>{"¿No está? "}<strong>{"Descríbelo con tus palabras"}</strong>{" y Atlas lo prepara"}</span>
                             </button>
                           )}
@@ -476,12 +476,12 @@ export default function Automatizaciones({ query = {} }) {
                   </div>
                   {/* Detalles */}
                   <div style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: "12px", alignItems: "start" }}>
-                    <span style={{ paddingTop: "18px", font: "500 12px/1.3 'Geist Mono', monospace", letterSpacing: "0.04em", textTransform: "uppercase", color: "#6B6F7A" }}>{"Detalles"}</span>
+                    <span style={{ paddingTop: "18px", font: "500 var(--t-caption)/1.3 'Geist Mono', monospace", letterSpacing: "0.04em", textTransform: "uppercase", color: "#6B6F7A" }}>{"Detalles"}</span>
                     <div style={{ minWidth: "0", display: "flex", flexDirection: "column", gap: "10px" }}>
                       {sel?.error && sel.trigger?.type === type ? (
                         <div role="note" style={sel.state === "paused" || sel.state === "blocked"
-                          ? { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "12px", fontSize: "14px", lineHeight: "1.45", color: "#12131A" }
-                          : { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "#FFF4D1", borderRadius: "12px", fontSize: "13px", lineHeight: "1.45", color: "#3D404A" }}>
+                          ? { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#12131A" }
+                          : { display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 14px", background: "#FFF4D1", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#3D404A" }}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ flex: "none", marginTop: "2px" }}><circle cx="12" cy="12" r="9" /><path d="M12 7v6M12 16.5v.5" /></svg>
                           <span>{sel.error}</span>
                         </div>
@@ -492,50 +492,50 @@ export default function Automatizaciones({ query = {} }) {
                   </div>
                   {/* Quién */}
                   <div style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: "12px", alignItems: "center" }}>
-                    <span style={{ font: "600 18px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Quién"}</span>
+                    <span style={{ font: "600 var(--t-lead)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Quién"}</span>
                     <div style={{ position: "relative", minWidth: "0" }}>
-                      <button type="button" aria-haspopup="listbox" aria-expanded={quienOpen ? "true" : "false"} onClick={() => setOpen(quienOpen ? null : "quien")} style={{ position: "relative", zIndex: "21", minHeight: "52px", padding: "8px 12px 8px 8px", background: quienOpen ? "#FFFFFF" : "#E1F4EC", border: "1.5px solid #12131A", borderRadius: "12px", cursor: "pointer", fontSize: "15px", display: "flex", alignItems: "center", gap: "10px" }}>
+                      <button type="button" aria-haspopup="listbox" aria-expanded={quienOpen ? "true" : "false"} onClick={() => setOpen(quienOpen ? null : "quien")} style={{ position: "relative", zIndex: "21", minHeight: "52px", padding: "8px 12px 8px 8px", background: quienOpen ? "#FFFFFF" : "#E1F4EC", border: "1.5px solid #12131A", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-body)", display: "flex", alignItems: "center", gap: "10px" }}>
                         <BotPresence bot={whoBot} size={32} />
                         <strong>{who?.short || whoBot?.name || "Elige un bot"}</strong>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d={quienOpen ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} /></svg>
                       </button>
                       {quienOpen ? (
                         <div role="listbox" aria-label="Qué bot lo hace" style={{ ...menuBox, width: "min(460px, 82vw)" }}>
-                          <div style={{ margin: "2px 2px 6px", padding: "10px 12px", background: "#F6F6F3", borderRadius: "10px", fontSize: "13px", lineHeight: "1.45", color: "#3D404A" }}>
+                          <div style={{ margin: "2px 2px 6px", padding: "10px 12px", background: "#F6F6F3", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#3D404A" }}>
                             <strong>{"Para esto hace falta:"}</strong>
                             {needs.length ? ` ${listJoin(needs.map((n) => TOOL[n.tool]?.[n.access] || n.tool))}.` : " nada especial; cualquier bot puede hacerlo."}
                           </div>
                           {whoItems.map((x) => {
                             const on = x.b.id === draft.botId;
                             return (
-                              <button key={x.b.id} type="button" role="option" aria-selected={on ? "true" : "false"} aria-disabled={x.ok ? "false" : "true"} disabled={!x.ok} onClick={() => { if (x.ok) { set({ botId: x.b.id }); setOpen(null); } }} style={{ width: "100%", display: "grid", gridTemplateColumns: "34px 1fr auto", gap: "10px", alignItems: "center", minHeight: "58px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "10px", background: on ? "#FFF4D1" : "#FFFFFF", cursor: x.ok ? "pointer" : "not-allowed", opacity: x.ok ? "1" : "0.55" }}>
+                              <button key={x.b.id} type="button" role="option" aria-selected={on ? "true" : "false"} aria-disabled={x.ok ? "false" : "true"} disabled={!x.ok} onClick={() => { if (x.ok) { set({ botId: x.b.id }); setOpen(null); } }} style={{ width: "100%", display: "grid", gridTemplateColumns: "34px 1fr auto", gap: "10px", alignItems: "center", minHeight: "58px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "var(--r-md)", background: on ? "#FFF4D1" : "#FFFFFF", cursor: x.ok ? "pointer" : "not-allowed", opacity: x.ok ? "1" : "0.55" }}>
                                 <BotPresence bot={x.b} size={32} />
                                 <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                                  <strong style={{ fontSize: "14px" }}>{x.name}</strong>
-                                  <span style={{ fontSize: "12px", lineHeight: "1.35", color: x.ok ? "#5C606C" : "#B4372A" }}>{x.desc}</span>
+                                  <strong style={{ fontSize: "var(--t-ui)" }}>{x.name}</strong>
+                                  <span style={{ fontSize: "var(--t-caption)", lineHeight: "1.35", color: x.ok ? "#5C606C" : "#B4372A" }}>{x.desc}</span>
                                 </span>
                                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                  {x.b.id === recommended ? <span style={{ padding: "4px 8px", background: "#FFC93C", borderRadius: "6px", font: "600 11px/1 'Geist Mono', monospace" }}>{"Recomendado"}</span> : null}
+                                  {x.b.id === recommended ? <span style={{ padding: "4px 8px", background: "#FFC93C", borderRadius: "var(--r-sm)", font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{"Recomendado"}</span> : null}
                                   {on ? check() : null}
                                 </span>
                               </button>
                             );
                           })}
-                          {firstBlocked ? <a href="/ajustes/conexiones" style={{ display: "flex", alignItems: "center", minHeight: "44px", marginTop: "6px", padding: "0 12px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "14px", fontWeight: "600", color: "#1F4FD1" }}>{`Dar acceso ${TOOL[firstBlocked.tool]?.art || firstBlocked.tool} a otro bot`}</a> : null}
+                          {firstBlocked ? <a href="/ajustes/conexiones" style={{ display: "flex", alignItems: "center", minHeight: "44px", marginTop: "6px", padding: "0 12px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-ui)", fontWeight: "600", color: "#1F4FD1" }}>{`Dar acceso ${TOOL[firstBlocked.tool]?.art || firstBlocked.tool} a otro bot`}</a> : null}
                         </div>
                       ) : null}
                     </div>
                   </div>
                   {/* Hace */}
                   <div style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: "12px", alignItems: "start" }}>
-                    <span style={{ font: "600 18px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", paddingTop: "16px" }}>{"Hace"}</span>
-                    <textarea aria-label="Qué hace" value={draft.prompt} onChange={(e) => set({ prompt: e.target.value })} rows={draft.prompt ? Math.max(2, Math.ceil(draft.prompt.length / 55)) : 3} placeholder="Qué tiene que hacer, con tus palabras. P. ej.: guarda el PDF en la carpeta de facturas y apunta proveedor, fecha e importe en la hoja de gastos." style={{ minHeight: "52px", width: "100%", padding: "12px 14px", background: "#F6F6F3", border: "1.5px solid #12131A", borderRadius: "12px", fontSize: "15px", lineHeight: "1.5", fontFamily: "inherit", resize: "vertical" }} />
+                    <span style={{ font: "600 var(--t-lead)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", paddingTop: "16px" }}>{"Hace"}</span>
+                    <textarea aria-label="Qué hace" value={draft.prompt} onChange={(e) => set({ prompt: e.target.value })} rows={draft.prompt ? Math.max(2, Math.ceil(draft.prompt.length / 55)) : 3} placeholder="Qué tiene que hacer, con tus palabras. P. ej.: guarda el PDF en la carpeta de facturas y apunta proveedor, fecha e importe en la hoja de gastos." style={{ minHeight: "52px", width: "100%", padding: "12px 14px", background: "#F6F6F3", border: "1.5px solid #12131A", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", lineHeight: "1.5", fontFamily: "inherit", resize: "vertical" }} />
                   </div>
                   {/* Avísame */}
                   <div style={{ display: "grid", gridTemplateColumns: "96px 1fr", gap: "12px", alignItems: "start" }}>
-                    <span style={{ font: "600 18px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", paddingTop: "16px" }}>{"Avísame"}</span>
+                    <span style={{ font: "600 var(--t-lead)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", paddingTop: "16px" }}>{"Avísame"}</span>
                     <div style={{ position: "relative", minWidth: "0" }}>
-                      <button type="button" aria-haspopup="listbox" aria-expanded={avisaOpen ? "true" : "false"} onClick={() => setOpen(avisaOpen ? null : "avisa")} style={{ position: "relative", zIndex: "21", width: "100%", minHeight: "52px", padding: "12px 14px", textAlign: "left", background: "#FFF4D1", border: "1.5px solid #12131A", borderRadius: "12px", cursor: "pointer", fontSize: "15px", lineHeight: "1.5", display: "flex", alignItems: "center", gap: "10px" }}>
+                      <button type="button" aria-haspopup="listbox" aria-expanded={avisaOpen ? "true" : "false"} onClick={() => setOpen(avisaOpen ? null : "avisa")} style={{ position: "relative", zIndex: "21", width: "100%", minHeight: "52px", padding: "12px 14px", textAlign: "left", background: "#FFF4D1", border: "1.5px solid #12131A", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-body)", lineHeight: "1.5", display: "flex", alignItems: "center", gap: "10px" }}>
                         <span style={{ flex: "1" }}>{notifyLabel}</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d={avisaOpen ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} /></svg>
                       </button>
@@ -544,7 +544,7 @@ export default function Automatizaciones({ query = {} }) {
                           {NOTIFY.map(([id, label]) => {
                             const on = draft.notify === id;
                             return (
-                              <button key={id} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => { set({ notify: id }); setOpen(null); }} style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 20px", gap: "10px", alignItems: "center", minHeight: "52px", padding: "6px 12px", textAlign: "left", border: "0", borderRadius: "10px", cursor: "pointer", background: on ? "#FFF4D1" : "#FFFFFF", fontSize: "14px" }}>
+                              <button key={id} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => { set({ notify: id }); setOpen(null); }} style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 20px", gap: "10px", alignItems: "center", minHeight: "52px", padding: "6px 12px", textAlign: "left", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", background: on ? "#FFF4D1" : "#FFFFFF", fontSize: "var(--t-ui)" }}>
                                 <span>{label}</span>
                                 {on ? check() : <span />}
                               </button>
@@ -556,45 +556,45 @@ export default function Automatizaciones({ query = {} }) {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", background: "#F6F6F3", borderRadius: "12px" }}>
-                  <span style={{ fontSize: "14px", fontWeight: "600" }}>{who?.coord || !whoBot ? `El bot que elija ${whoBot?.name || "Atlas"} necesitará` : `${whoBot.name} necesitará`}</span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", fontSize: "13px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", background: "#F6F6F3", borderRadius: "var(--r-md)" }}>
+                  <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{who?.coord || !whoBot ? `El bot que elija ${whoBot?.name || "Atlas"} necesitará` : `${whoBot.name} necesitará`}</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", fontSize: "var(--t-meta)" }}>
                     {needs.length === 0 ? <span style={{ color: "#5C606C" }}>{"Nada especial: con lo que ya tiene le basta."}</span> : null}
                     {needs.map((n) => {
                       const st = whoCoverage?.res.find((r) => r.tool === n.tool)?.state || "neutral";
                       const label = `${TOOL[n.tool]?.chip || n.tool} · ${n.access === "escribe" ? "escribir" : "leer"}`;
-                      if (st === "permiso" || st === "none") return <span key={n.tool} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#FFF4D1", border: "0", borderRadius: "15px", fontWeight: "600" }}>{`${label} · ${st === "none" ? "sin acceso" : "falta tu permiso"}`}</span>;
-                      return <span key={n.tool} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#FFFFFF", border: "0", borderRadius: "15px" }}>{st === "ok" ? check("#0B6B4A", 3, 13) : null}{label}</span>;
+                      if (st === "permiso" || st === "none") return <span key={n.tool} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#FFF4D1", border: "0", borderRadius: "var(--r-pill)", fontWeight: "600" }}>{`${label} · ${st === "none" ? "sin acceso" : "falta tu permiso"}`}</span>;
+                      return <span key={n.tool} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)" }}>{st === "ok" ? check("#0B6B4A", 3, 13) : null}{label}</span>;
                     })}
                   </div>
-                  {whoCoverage && (whoCoverage.lacking.length || whoCoverage.blocked.length) && whoBot ? <a href={`/equipo/${encodeURIComponent(whoBot.id)}`} style={{ fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>{`Revisar los permisos de ${whoBot.name}`}</a> : null}
+                  {whoCoverage && (whoCoverage.lacking.length || whoCoverage.blocked.length) && whoBot ? <a href={`/equipo/${encodeURIComponent(whoBot.id)}`} style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>{`Revisar los permisos de ${whoBot.name}`}</a> : null}
                 </div>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  <button type="button" onClick={onTest} disabled={saving} style={{ height: "46px", padding: "0 16px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}>{PROBE_LABEL[type]}</button>
-                  <button type="button" onClick={onSave} disabled={saving} style={{ height: "46px", padding: "0 18px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}>{saving ? "Guardando…" : isNew ? "Crear automatización" : "Guardar cambios"}</button>
+                  <button type="button" onClick={onTest} disabled={saving} style={{ height: "46px", padding: "0 16px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{PROBE_LABEL[type]}</button>
+                  <button type="button" onClick={onSave} disabled={saving} style={{ height: "46px", padding: "0 18px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{saving ? "Guardando…" : isNew ? "Crear automatización" : "Guardar cambios"}</button>
                   <span style={{ flex: "1" }} />
                   {isNew ? (
-                    <button type="button" onClick={() => (automations.length ? select(automations[0].id) : startNew())} style={{ height: "46px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "14px", color: "#3D404A" }}>{"Descartar"}</button>
+                    <button type="button" onClick={() => (automations.length ? select(automations[0].id) : startNew())} style={{ height: "46px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-ui)", color: "#3D404A" }}>{"Descartar"}</button>
                   ) : (
-                    <button type="button" onClick={onDelete} style={{ height: "46px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontWeight: "600", fontSize: "14px", color: "#B4372A" }}>{"Eliminar"}</button>
+                    <button type="button" onClick={onDelete} style={{ height: "46px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)", color: "#B4372A" }}>{"Eliminar"}</button>
                   )}
                 </div>
                 {saveError ? <span role="alert" style={errStyle}>{saveError}</span> : null}
                 {msg ? (
-                  <span role="status" style={msg.error ? errStyle : { fontSize: "14px", color: "#3D404A" }}>
+                  <span role="status" style={msg.error ? errStyle : { fontSize: "var(--t-ui)", color: "#3D404A" }}>
                     {msg.text}{msg.missionId ? <>{" "}<a href={`/misiones/${encodeURIComponent(msg.missionId)}`} style={{ fontWeight: "600", textDecoration: "underline" }}>{"Ver la misión"}</a></> : null}
                   </span>
                 ) : null}
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <h3 style={{ margin: "0 0 8px", font: "600 18px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Últimas veces"}</h3>
-                  {isNew ? <div style={{ display: "flex", alignItems: "center", minHeight: "50px", borderTop: "1px solid rgba(18,19,26,.06)", borderBottom: "1px solid rgba(18,19,26,.06)", fontSize: "14px", color: "#5C606C" }}>{"Aún no se ha puesto en marcha: guárdala para empezar."}</div>
+                  <h3 style={{ margin: "0 0 8px", font: "600 var(--t-lead)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Últimas veces"}</h3>
+                  {isNew ? <div style={{ display: "flex", alignItems: "center", minHeight: "50px", borderTop: "1px solid rgba(18,19,26,.06)", borderBottom: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Aún no se ha puesto en marcha: guárdala para empezar."}</div>
                     : runs.error ? <div role="alert" style={{ display: "flex", alignItems: "center", minHeight: "50px", borderTop: "1px solid rgba(18,19,26,.06)", borderBottom: "1px solid rgba(18,19,26,.06)", ...errStyle }}>{`No se pudo cargar el historial: ${runs.error}`}</div>
-                    : runList.length === 0 ? <div style={{ display: "flex", alignItems: "center", minHeight: "50px", borderTop: "1px solid rgba(18,19,26,.06)", borderBottom: "1px solid rgba(18,19,26,.06)", fontSize: "14px", color: "#5C606C" }}>{runs.loading ? "" : "Aún no se ha puesto en marcha."}</div>
+                    : runList.length === 0 ? <div style={{ display: "flex", alignItems: "center", minHeight: "50px", borderTop: "1px solid rgba(18,19,26,.06)", borderBottom: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-ui)", color: "#5C606C" }}>{runs.loading ? "" : "Aún no se ha puesto en marcha."}</div>
                     : runList.slice(0, 10).map((r, i, all) => (
-                      <div key={r.missionId || r.at || i} style={{ display: "grid", gridTemplateColumns: "80px 1fr auto", alignItems: "center", gap: "12px", minHeight: "50px", borderTop: "1px solid rgba(18,19,26,.06)", ...(i === all.length - 1 ? { borderBottom: "1px solid rgba(18,19,26,.06)" } : {}), fontSize: "14px" }}>
-                        <span style={{ font: "500 13px/1 'Geist Mono', monospace", color: "#6B6F7A" }}>{when(r.at)}</span>
+                      <div key={r.missionId || r.at || i} style={{ display: "grid", gridTemplateColumns: "80px 1fr auto", alignItems: "center", gap: "12px", minHeight: "50px", borderTop: "1px solid rgba(18,19,26,.06)", ...(i === all.length - 1 ? { borderBottom: "1px solid rgba(18,19,26,.06)" } : {}), fontSize: "var(--t-ui)" }}>
+                        <span style={{ font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: "#6B6F7A" }}>{when(r.at)}</span>
                         {r.missionId ? <a href={`/misiones/${encodeURIComponent(r.missionId)}`}>{r.title || "Ejecución"}</a> : <span>{r.title || "Ejecución"}</span>}
                         {runStatus(r)}
                       </div>

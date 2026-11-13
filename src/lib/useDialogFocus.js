@@ -10,6 +10,9 @@ import { useEffect, useRef } from "react";
 // command palette over a sheet) closes alone. A key somebody already handled
 // (`preventDefault`: a menu inside the dialog, the palette's own Tab) is left alone.
 
+/** The backdrop of every modal dialog: a plain ink veil over the app, never a blur. */
+export const DIALOG_VEIL = "rgba(18, 19, 26, 0.55)";
+
 const FOCUSABLE = [
   "a[href]", "button", "input", "select", "textarea", "summary", "iframe",
   "audio[controls]", "video[controls]", "[contenteditable='']", "[contenteditable='true']", "[tabindex]",

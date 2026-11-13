@@ -15,18 +15,18 @@ export function StartingUp({ slow = false, onRetry = () => location.reload(), on
     <div role={slow ? "alert" : "status"} aria-live="polite" style={{ position: "fixed", inset: "0", zIndex: 2147482500, display: "grid", placeItems: "center", padding: "0 40px", background: INK, color: "#FFFFFF", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", animation: "fade .4s ease-out", WebkitAppRegion: "drag" }}>
       {slow ? (
         <div style={{ width: "100%", maxWidth: "520px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px" }}>
-          <span style={{ font: "600 24px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Colmena está tardando en arrancar"}</span>
-          <span style={{ fontSize: "14px", lineHeight: "1.5", color: "#C9CBD3" }}>{"Suele pasar justo después de encender el ordenador o si el antivirus revisa la app. Tus datos están a salvo."}</span>
+          <span style={{ font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Colmena está tardando en arrancar"}</span>
+          <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#C9CBD3" }}>{"Suele pasar justo después de encender el ordenador o si el antivirus revisa la app. Tus datos están a salvo."}</span>
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", WebkitAppRegion: "no-drag" }}>
-            <button type="button" onClick={onRetry} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#FFFFFF", color: INK, fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>{"Reintentar"}</button>
-            {onOpenLog ? <button type="button" onClick={onOpenLog} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(255,255,255,.25)", borderRadius: "999px", background: "transparent", color: "#FFFFFF", fontSize: "14px", fontWeight: "500", cursor: "pointer" }}>{"Abrir el registro"}</button> : null}
+            <button type="button" onClick={onRetry} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: INK, fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{"Reintentar"}</button>
+            {onOpenLog ? <button type="button" onClick={onOpenLog} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(255,255,255,.25)", borderRadius: "var(--r-pill)", background: "transparent", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Abrir el registro"}</button> : null}
           </div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", textAlign: "center" }}>
           <img src="/colmena-icon-128.png" alt="" width="56" height="56" style={{ display: "block", width: "56px", height: "56px", animation: "breathe 2.4s ease-in-out infinite" }} />
-          <span style={{ font: "600 24px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Arrancando Colmena…"}</span>
-          <span style={{ fontSize: "14px", color: "#C9CBD3" }}>{"Despertando a tu equipo en este ordenador."}</span>
+          <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Arrancando Colmena…"}</span>
+          <span style={{ fontSize: "var(--t-ui)", color: "#C9CBD3" }}>{"Despertando a tu equipo en este ordenador."}</span>
         </div>
       )}
     </div>
@@ -91,10 +91,10 @@ export default function ConnectionStatus() {
   }
   if (!lost && !back) return null;
   return (
-    <div role="status" aria-live="polite" title={lost ? "Nada se bloquea: lo que escribas se guarda y se envía al volver." : undefined} style={{ position: "fixed", left: centre != null ? centre + "px" : "50%", bottom: "24px", transform: "translateX(-50%)", zIndex: 2147482500, display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "14px", whiteSpace: "nowrap", boxShadow: "0 16px 34px -16px rgba(18,19,26,.45)", transition: "background .3s ease, color .3s ease", animation: "rise .35s ease-out", background: lost ? INK : "#E1F4EC", color: lost ? "#FFFFFF" : "#0B5A3E" }}>
+    <div role="status" aria-live="polite" title={lost ? "Nada se bloquea: lo que escribas se guarda y se envía al volver." : undefined} style={{ position: "fixed", left: centre != null ? centre + "px" : "50%", bottom: "24px", transform: "translateX(-50%)", zIndex: 2147482500, display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", whiteSpace: "nowrap", boxShadow: "0 16px 34px -16px rgba(18,19,26,.45)", transition: "background .3s ease, color .3s ease", animation: "rise .35s ease-out", background: lost ? INK : "#E1F4EC", color: lost ? "#FFFFFF" : "#0B5A3E" }}>
       {lost
-        ? <span aria-hidden="true" style={{ width: "14px", height: "14px", flex: "none", border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#FFFFFF", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-        : <span aria-hidden="true" style={{ width: "8px", height: "8px", flex: "none", borderRadius: "50%", background: "#0B8A5F", animation: "pop .4s ease-out" }} />}
+        ? <span aria-hidden="true" style={{ width: "14px", height: "14px", flex: "none", border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#FFFFFF", borderRadius: "var(--r-circle)", animation: "spin 1s linear infinite" }} />
+        : <span aria-hidden="true" style={{ width: "8px", height: "8px", flex: "none", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }} />}
       {lost ? "Sin conexión · reintentando…" : "Conectado de nuevo"}
     </div>
   );

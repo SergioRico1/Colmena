@@ -1,3 +1,5 @@
+import { radiusOf } from "../../lib/radius.js";
+import { stepOf } from "../../lib/type.js";
 import { useState } from "react";
 import {
   siAirtable, siAsana, siAtlassian, siClickup, siCloudflare, siDropbox, siFigma, siGithub, siGmail, siGooglecalendar,
@@ -19,7 +21,7 @@ const ON_WHITE = { miro: "#050038", square: "#3E4348" };
 
 export default function AppLogo({ id, name, logo = null, size = 36 }) {
   const [broken, setBroken] = useState(false);
-  const tile = { width: size + "px", height: size + "px", flexShrink: "0", borderRadius: Math.round(size * 0.3) + "px", display: "flex", alignItems: "center", justifyContent: "center" };
+  const tile = { width: size + "px", height: size + "px", flexShrink: "0", borderRadius: radiusOf(Math.round(size * 0.3)) + "px", display: "flex", alignItems: "center", justifyContent: "center" };
   const icon = ICONS[id];
   if (icon)
     return (
@@ -33,5 +35,5 @@ export default function AppLogo({ id, name, logo = null, size = 36 }) {
         <img src={logo} alt="" width={Math.round(size * 0.6)} height={Math.round(size * 0.6)} onError={() => setBroken(true)} style={{ objectFit: "contain" }} />
       </span>
     );
-  return <span aria-hidden="true" style={{ ...tile, background: "#EEEEE9", fontSize: Math.round(size * 0.4) + "px", fontWeight: "600", color: "#12131A" }}>{(name || "?").charAt(0).toUpperCase()}</span>;
+  return <span aria-hidden="true" style={{ ...tile, background: "#EEEEE9", fontSize: stepOf(Math.round(size * 0.4)) + "px", fontWeight: "600", color: "#12131A" }}>{(name || "?").charAt(0).toUpperCase()}</span>;
 }

@@ -10,9 +10,9 @@ import { noBotsText } from "../../lib/roomView.js";
 // panel is open: «Personas · N» with their role in the room and their presence in words, «Bots»
 // grouped by owner («Tus bots», «Bots de Lucía») with role and state in words, then the room's
 // rules and files. What waits for someone else is neutral here; only «te espera» wears honey.
-const head = { margin: "0 0 2px", fontSize: "13px", fontWeight: 600, color: "#5C606C" };
-const small = { fontSize: "12.5px", color: "#5C606C" };
-const pill = { minHeight: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13px", fontWeight: 500, cursor: "pointer" };
+const head = { margin: "0 0 2px", fontSize: "var(--t-meta)", fontWeight: 600, color: "#5C606C" };
+const small = { fontSize: "var(--t-meta)", color: "#5C606C" };
+const pill = { minHeight: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" };
 const ellipsis = { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 
 /** «Lucía pide añadir a Marta»: informative, for whoever made the room. Neutral colours. */
@@ -28,8 +28,8 @@ function Requests({ view, onChanged }) {
   return (
     <section aria-label="Peticiones para añadir personas" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       {view.requests.map((r) => (
-        <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", borderRadius: "14px", background: "#F6F6F3" }}>
-          <span style={{ fontSize: "14px", lineHeight: 1.45 }}><strong style={{ fontWeight: 600 }}>{r.from?.name || "Alguien"}</strong>{" pide añadir a "}<strong style={{ fontWeight: 600 }}>{r.person?.name || "una persona"}</strong>{" a la sala."}</span>
+        <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
+          <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45 }}><strong style={{ fontWeight: 600 }}>{r.from?.name || "Alguien"}</strong>{" pide añadir a "}<strong style={{ fontWeight: 600 }}>{r.person?.name || "una persona"}</strong>{" a la sala."}</span>
           <span style={small}>{"Verá lo que se escriba a partir de ahora, no lo anterior."}</span>
           <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             <button type="button" disabled={busy === r.id} onClick={() => decide(r, "approve")} style={{ ...pill, background: "#12131A", borderColor: "#12131A", color: "#FFFFFF", fontWeight: 600 }}>{"Añadir"}</button>
@@ -37,7 +37,7 @@ function Requests({ view, onChanged }) {
           </span>
         </div>
       ))}
-      {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4372A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4372A" }}>{error}</span> : null}
     </section>
   );
 }
@@ -60,7 +60,7 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
             <li key={p.address || p.name} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "44px" }}>
               <PersonAvatar person={p} size={28} ring="#FFFFFF" presence={p.you ? null : p.presence === "online" ? "online" : "offline"} />
               <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
-                <span style={{ ...ellipsis, fontSize: "14px", fontWeight: 500 }}>{p.you ? `${p.name} (tú)` : p.name}</span>
+                <span style={{ ...ellipsis, fontSize: "var(--t-ui)", fontWeight: 500 }}>{p.you ? `${p.name} (tú)` : p.name}</span>
                 <span style={{ ...ellipsis, ...small }}>{p.roleWord}</span>
               </span>
               <span style={{ flex: "none", ...small }}>{p.presenceWord}</span>
@@ -78,10 +78,10 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
                 <>
                   <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", display: "grid", placeItems: "center" }}><BotMark bot={b} size={20} state={b.state === "working" || b.state === "thinking" ? "work" : b.state === "waiting" && g.mine ? "wait" : "rest"} /></span>
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
-                    <span style={{ ...ellipsis, fontSize: "14px", fontWeight: 500 }}>{b.name}</span>
+                    <span style={{ ...ellipsis, fontSize: "var(--t-ui)", fontWeight: 500 }}>{b.name}</span>
                     <span style={{ ...ellipsis, ...small }}>{b.role || "bot"}</span>
                   </span>
-                  <span style={{ flex: "none", fontSize: "12.5px", color: b.state === "waiting" && g.mine ? "#12131A" : "#5C606C", fontWeight: b.state === "waiting" && g.mine ? 600 : 400 }}>{b.stateWord}</span>
+                  <span style={{ flex: "none", fontSize: "var(--t-meta)", color: b.state === "waiting" && g.mine ? "#12131A" : "#5C606C", fontWeight: b.state === "waiting" && g.mine ? 600 : 400 }}>{b.stateWord}</span>
                 </>
               );
               const rowStyle = { display: "flex", alignItems: "center", gap: "10px", minHeight: "44px", color: "#12131A" };
@@ -91,7 +91,7 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
           {g.mine && addable.length && mission ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingTop: "6px" }}>
               {addable.map((b) => (
-                <button key={b.id} type="button" disabled={busy} onClick={() => act(() => post(`/missions/${mission.id}/members`, { botId: b.id }))} aria-label={`Añadir a ${b.name} a la sala`} title={[b.name, b.role].filter(Boolean).join(" · ")} style={{ ...pill, display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 10px 0 8px", fontSize: "12.5px", color: "#3D404A" }}>
+                <button key={b.id} type="button" disabled={busy} onClick={() => act(() => post(`/missions/${mission.id}/members`, { botId: b.id }))} aria-label={`Añadir a ${b.name} a la sala`} title={[b.name, b.role].filter(Boolean).join(" · ")} style={{ ...pill, display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 10px 0 8px", fontSize: "var(--t-meta)", color: "#3D404A" }}>
                   <BotMark bot={b} size={12} />{"+ " + b.name}
                 </button>
               ))}
@@ -108,13 +108,13 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
         </section>
       )}
       {rules.length ? (
-        <section style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "16px", background: "#F6F6F3" }}>
-          <h2 style={{ margin: 0, fontSize: "14px", fontWeight: 600 }}>{"Reglas de esta sala"}</h2>
-          {rules.map(([k, v]) => <div key={k} style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "13.5px", lineHeight: "1.45" }}><span style={{ color: "#5C606C" }}>{k}</span><span style={{ fontWeight: 500 }}>{v}</span></div>)}
+        <section style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
+          <h2 style={{ margin: 0, fontSize: "var(--t-ui)", fontWeight: 600 }}>{"Reglas de esta sala"}</h2>
+          {rules.map(([k, v]) => <div key={k} style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-ui)", lineHeight: "1.45" }}><span style={{ color: "#5C606C" }}>{k}</span><span style={{ fontWeight: 500 }}>{v}</span></div>)}
           {onRules ? <button type="button" onClick={onRules} style={{ ...pill, alignSelf: "flex-start" }}>{"Cambiar reglas"}</button> : null}
         </section>
       ) : null}
-      {onFiles ? <button type="button" onClick={onFiles} style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: "44px", padding: "0 14px", borderRadius: "12px", border: "1px solid rgba(18,19,26,.1)", background: "transparent", color: "#12131A", fontSize: "14px", fontWeight: 500, cursor: "pointer" }}>{"Archivos de la sala"}<span style={{ color: "#5C606C" }}>{fileCount}</span></button> : null}
+      {onFiles ? <button type="button" onClick={onFiles} style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: "44px", padding: "0 14px", borderRadius: "var(--r-md)", border: "1px solid rgba(18,19,26,.1)", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{"Archivos de la sala"}<span style={{ color: "#5C606C" }}>{fileCount}</span></button> : null}
     </aside>
   );
 }

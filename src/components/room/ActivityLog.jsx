@@ -68,7 +68,7 @@ export default function ActivityLog({ bot = null, summary, activity: allActivity
   );
   // As in OpenClaw: no pill. While it only thinks or writes, just the breathing dots; when it
   // does something, a quiet line beside them; afterwards, the same quiet summary.
-  const line = { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "24px", padding: "0", background: "transparent", border: "0", fontSize: "13px", color: "#5C606C" };
+  const line = { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "24px", padding: "0", background: "transparent", border: "0", fontSize: "var(--t-meta)", color: "#5C606C" };
   const quiet = running && !steps && !narration && /^(pensando|escribiendo|programando)$/i.test(String(held || "").trim());
   if (quiet) return <span role="status" aria-label={held || "Trabajando"} style={line}>{icon}{phrase ? <span key={phrase} className="c-phrase">{phrase}</span> : null}</span>;
   if (!canOpen) {
@@ -86,7 +86,7 @@ export default function ActivityLog({ bot = null, summary, activity: allActivity
         className="rm-focus"
         aria-expanded={open ? "true" : "false"}
         onClick={() => setOpen(!open)}
-        style={{ ...line, cursor: "pointer", borderRadius: "6px" }}
+        style={{ ...line, cursor: "pointer", borderRadius: "var(--r-sm)" }}
       >
         {icon}
         {label}
@@ -96,17 +96,17 @@ export default function ActivityLog({ bot = null, summary, activity: allActivity
         tools.length ? (
           <ToolCards tools={tools} bots={bots} onOpenArtifact={onOpenArtifact} />
         ) : (
-          <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "14px", color: "#2B2D36" }}>
+          <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#2B2D36" }}>
             {activity.map((a, i) => (
               <li key={i} style={{ display: "flex", gap: "10px" }}>
-                <span style={{ font: "500 12px/20px 'Geist Mono', monospace", color: "#555A68", width: "20px", flex: "none" }}>{i + 1}</span>
+                <span style={{ font: "500 var(--t-caption)/20px 'Geist Mono', monospace", color: "#555A68", width: "20px", flex: "none" }}>{i + 1}</span>
                 {a.text || a.verb}
               </li>
             ))}
           </ol>
         )
       ) : null}
-      {open && cost ? <span style={{ fontSize: "12px", color: "#555A68" }}>{cost}</span> : null}
+      {open && cost ? <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{cost}</span> : null}
     </>
   );
 }

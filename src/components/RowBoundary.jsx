@@ -12,7 +12,7 @@ export const ROW_FAILED = "No se ha podido mostrar este mensaje";
 /** The muted pill: what could not be shown and, when there is one, a way on. */
 export function FailedPill({ label = ROW_FAILED, action = null }) {
   return (
-    <span role="note" data-row-failed="" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "100%", minHeight: "30px", padding: "4px 12px 4px 10px", borderRadius: "15px", background: "rgba(18,19,26,.06)", fontSize: "13px", lineHeight: "1.4", color: "#5C606C" }}>
+    <span role="note" data-row-failed="" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "100%", minHeight: "30px", padding: "4px 12px 4px 10px", borderRadius: "var(--r-lg)", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#5C606C" }}>
       <CircleAlert size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
       <span>{label}</span>
       {action?.href ? <a href={action.href} style={{ fontWeight: "600", color: "#1F4FD1" }}>{action.text}</a> : null}

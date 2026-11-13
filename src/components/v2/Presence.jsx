@@ -1,6 +1,7 @@
 // Colmena 2.0 presences (design/V2Principios.dc.html, idea 03): a bot is a shape and a colour
 // with a soft gloss — no letters, no labels. It breathes while it works, stays still while it
 // rests and glows honey when it waits for you. People are neutral circles with initials.
+import { fitInitials, stepOf } from "../../lib/type.js";
 import { portraitOf } from "../../lib/bots.js";
 import { botShape } from "../../lib/identity.js";
 
@@ -63,8 +64,8 @@ const tintOf = (name) => PEOPLE[[...String(name || "")].reduce((n, c) => n + c.c
 /** A person: a neutral circle with initials. `me` is you («TÚ» in ink). */
 export function PersonPresence({ name, size = 32, me = false, style = null }) {
   return (
-    <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: me ? "#12131A" : tintOf(name), color: me ? "#FFFFFF" : "#12131A", font: `600 ${Math.max(10, Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em", ...style }}>
-      {me ? "TÚ" : initials(name)}
+    <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: me ? "#12131A" : tintOf(name), color: me ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em", ...style }}>
+      {fitInitials(me ? "TÚ" : initials(name), size)}
     </span>
   );
 }

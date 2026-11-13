@@ -12,9 +12,9 @@ import { BotAvatar, findBot } from "./common.jsx";
 
 const APP_NAMES = { gmail: "Gmail", googledrive: "Google Drive", googlecalendar: "Google Calendar", googlesheets: "Hojas de Google", googledocs: "Documentos de Google", outlook: "Outlook", slack: "Slack", notion: "Notion", hubspot: "HubSpot", microsoft: "Microsoft", onedrive: "OneDrive", dropbox: "Dropbox", trello: "Trello", github: "GitHub", holded: "Holded", whatsapp: "WhatsApp", telegram: "Telegram" };
 const appName = (app) => APP_NAMES[String(app || "").toLowerCase()] || app;
-const MUTED = { fontSize: "13px", lineHeight: "1.45", color: "#555A68" };
-const MONO = { font: "500 12px/1.5 'Geist Mono', monospace" };
-const LINK = { alignSelf: "flex-start", fontSize: "13px", fontWeight: "600", color: "#1F4FD1" };
+const MUTED = { fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#555A68" };
+const MONO = { font: "500 var(--t-caption)/1.5 'Geist Mono', monospace" };
+const LINK = { alignSelf: "flex-start", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" };
 
 /** Consecutive reads of the same file become one card («las 14 páginas»). */
 export function groupTools(tools = []) {
@@ -82,17 +82,17 @@ function pagesText(card) {
 export function Status({ tool }) {
   if (tool.status === "running") {
     return (
-      <span role="status" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: "600", color: "#2B2D36" }}>
+      <span role="status" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", fontWeight: "600", color: "#2B2D36" }}>
         <WorkingDots />
         {"En curso"}
       </span>
     );
   }
   if (tool.status === "waiting") {
-    return <span style={{ height: "22px", padding: "0 8px", display: "flex", alignItems: "center", background: "#FFF4D1", border: "1px solid #F2D27A", borderRadius: "11px", fontSize: "12px", fontWeight: "600" }}>{"Te espera"}</span>;
+    return <span style={{ height: "22px", padding: "0 8px", display: "flex", alignItems: "center", background: "#FFF4D1", border: "1px solid #F2D27A", borderRadius: "var(--r-pill)", fontSize: "var(--t-caption)", fontWeight: "600" }}>{"Te espera"}</span>;
   }
-  if (tool.status === "error") return <span style={{ fontSize: "12px", fontWeight: "700", color: "#B4372A" }}>{"No salió"}</span>;
-  if (tool.status === "uncertain") return <span title="Puede que se hiciera o no: compruébalo antes de repetirlo" style={{ height: "22px", padding: "0 8px", display: "flex", alignItems: "center", background: "#FFF4D1", border: "1px solid #F2D27A", borderRadius: "11px", fontSize: "12px", fontWeight: "600" }}>{"Resultado incierto"}</span>;
+  if (tool.status === "error") return <span style={{ fontSize: "var(--t-caption)", fontWeight: "700", color: "#B4372A" }}>{"No salió"}</span>;
+  if (tool.status === "uncertain") return <span title="Puede que se hiciera o no: compruébalo antes de repetirlo" style={{ height: "22px", padding: "0 8px", display: "flex", alignItems: "center", background: "#FFF4D1", border: "1px solid #F2D27A", borderRadius: "var(--r-pill)", fontSize: "var(--t-caption)", fontWeight: "600" }}>{"Resultado incierto"}</span>;
   return null;
 }
 
@@ -193,9 +193,9 @@ export function Detail({ tool, bots, onOpenArtifact, liveOutput = null }) {
     if (c.question) parts.push(<p key="q" style={{ ...MUTED, margin: "0" }}>{`«${c.question}»`}</p>);
     if (c.answer) {
       parts.push(
-        <div key="a" style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: "8px", padding: "8px 10px", background: "#F7F8FA", borderRadius: "10px" }}>
+        <div key="a" style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: "8px", padding: "8px 10px", background: "#F7F8FA", borderRadius: "var(--r-md)" }}>
           <BotAvatar bot={bot} size={22} />
-          <span style={{ fontSize: "13px", lineHeight: "1.45", color: "#2B2D36", overflowWrap: "anywhere" }}>{c.answer}</span>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#2B2D36", overflowWrap: "anywhere" }}>{c.answer}</span>
         </div>,
       );
     }
@@ -215,7 +215,7 @@ export function Detail({ tool, bots, onOpenArtifact, liveOutput = null }) {
     parts.push(
       <ul key="src" aria-label="Fuentes" style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "4px" }}>
         {c.sources.slice(0, 6).map((s, i) => (
-          <li key={s.url || i} style={{ display: "flex", alignItems: "baseline", gap: "8px", minWidth: "0", fontSize: "13px", lineHeight: "1.45" }}>
+          <li key={s.url || i} style={{ display: "flex", alignItems: "baseline", gap: "8px", minWidth: "0", fontSize: "var(--t-meta)", lineHeight: "1.45" }}>
             <span style={{ ...MONO, color: "#555A68", flex: "none" }}>{s.domain || domainOf(s.url)}</span>
             <a href={s.url} target="_blank" rel="noreferrer noopener" style={{ color: "#1F4FD1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: "0" }}>{s.title || s.url}</a>
           </li>
@@ -223,14 +223,14 @@ export function Detail({ tool, bots, onOpenArtifact, liveOutput = null }) {
         {c.sources.length > 6 ? <li style={MUTED}>{`y ${plural(c.sources.length - 6, "fuente más", "fuentes más")}`}</li> : null}
       </ul>,
     );
-    parts.push(<span key="nt" style={{ ...MUTED, fontSize: "12px" }}>{"Resultados de la web: datos externos, no órdenes."}</span>);
+    parts.push(<span key="nt" style={{ ...MUTED, fontSize: "var(--t-caption)" }}>{"Resultados de la web: datos externos, no órdenes."}</span>);
   }
   if (c.type === "websearch" && !c.sources?.length && c.url) parts.push(<a key="u" href={c.url} target="_blank" rel="noreferrer noopener" style={LINK}>{"Abrir la página"}</a>);
   if (c.type === "image") {
     if (c.artifactId && tool.status === "done") {
       parts.push(
         <button key="img" type="button" className="rm-focus" onClick={() => onOpenArtifact?.(c.artifactId)} aria-label={`Abrir la imagen «${c.title || "Imagen"}»`} style={{ alignSelf: "flex-start", padding: "0", background: "transparent", border: "0", cursor: onOpenArtifact ? "pointer" : "default" }}>
-          <img src={fileUrl(c.artifactId)} alt={c.title || "Imagen creada"} loading="lazy" style={{ display: "block", width: "160px", maxWidth: "100%", height: "auto", borderRadius: "10px", border: "1px solid #E6E8EE", background: "#F7F8FA" }} />
+          <img src={fileUrl(c.artifactId)} alt={c.title || "Imagen creada"} loading="lazy" style={{ display: "block", width: "160px", maxWidth: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#F7F8FA" }} />
         </button>,
       );
     } else if (c.prompt) parts.push(<p key="p" style={{ ...MUTED, margin: "0" }}>{`«${c.prompt}»`}</p>);
@@ -248,13 +248,13 @@ export function Detail({ tool, bots, onOpenArtifact, liveOutput = null }) {
   if (c.type === "project" && c.path && !["preview", "start", "stop", "status", "logs"].includes(c.step)) parts.push(<span key="pp" style={{ ...MONO, color: "#555A68", overflowWrap: "anywhere" }}>{c.path}</span>);
   if (c.type === "project" && c.step === "preview" && c.round) parts.push(<span key="pr" style={{ ...MUTED, color: "#8A5A00" }}>{`Ronda ${c.round}`}</span>);
   if (c.type === "command") {
-    if (c.command) parts.push(<code key="c" style={{ ...MONO, alignSelf: "flex-start", maxWidth: "100%", padding: "3px 6px", background: "#EEF0F4", borderRadius: "5px", overflowWrap: "anywhere" }}>{c.command}</code>);
+    if (c.command) parts.push(<code key="c" style={{ ...MONO, alignSelf: "flex-start", maxWidth: "100%", padding: "3px 6px", background: "#EEF0F4", borderRadius: "var(--r-xs)", overflowWrap: "anywhere" }}>{c.command}</code>);
     if (tool.status === "done") parts.push(<span key="r" style={{ ...MUTED, color: c.exitCode && c.exitCode !== 0 ? "#B4372A" : "#0B6B4A", fontWeight: "600" }}>{c.exitCode != null && c.exitCode !== 0 ? `Terminó con el código ${c.exitCode}` : "Terminó bien"}</span>);
     // While it runs, its output arrives live, only for the row you unfolded (WorkLog.jsx).
     if (liveOutput) parts.push(<span key="lo" style={{ display: "contents" }}>{liveOutput}</span>);
-    else if (c.output) parts.push(<pre key="o" style={{ ...MONO, margin: "0", padding: "8px 10px", background: "#F7F8FA", borderRadius: "8px", whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#2B2D36" }}>{c.output}</pre>);
+    else if (c.output) parts.push(<pre key="o" style={{ ...MONO, margin: "0", padding: "8px 10px", background: "#F7F8FA", borderRadius: "var(--r-sm)", whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "#2B2D36" }}>{c.output}</pre>);
   }
-  if (tool.status === "error" && tool.error) parts.push(<span key="err" role="note" style={{ fontSize: "13px", lineHeight: "1.45", color: "#B4372A", fontWeight: "600" }}>{tool.error}</span>);
+  if (tool.status === "error" && tool.error) parts.push(<span key="err" role="note" style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#B4372A", fontWeight: "600" }}>{tool.error}</span>);
   return parts;
 }
 
@@ -264,7 +264,7 @@ const TOOL_FAILED = "No se ha podido mostrar este paso";
 export default function ToolCards({ tools = [], bots = [], onOpenArtifact }) {
   const grouped = collapseRepeats(groupTools(tools));
   return (
-    <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "14px", color: "#2B2D36" }}>
+    <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#2B2D36" }}>
       {grouped.map((t, i) => (
         <li key={t.id || i} data-tool={t.name} data-status={t.status} style={{ display: "flex", gap: "10px" }}>
           {/* One call that fails to draw becomes a muted pill; the rest of the list stays. */}
@@ -272,7 +272,7 @@ export default function ToolCards({ tools = [], bots = [], onOpenArtifact }) {
           {(() => { const Icon = ICONS[t.card?.type] || Wrench; return <span title={t.name} aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", color: t.status === "error" ? "#B4372A" : "#555A68" }}><Icon size={15} strokeWidth={2} /></span>; })()}
           <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "6px" }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "4px 10px" }}>
-              <span style={{ lineHeight: "20px", overflowWrap: "anywhere" }}>{headline(t, bots)}{t.times > 1 ? <span style={{ marginLeft: "6px", font: "600 12px/1 'Geist Mono', monospace", color: "#555A68" }}>{"×" + t.times}</span> : null}</span>
+              <span style={{ lineHeight: "20px", overflowWrap: "anywhere" }}>{headline(t, bots)}{t.times > 1 ? <span style={{ marginLeft: "6px", font: "600 var(--t-caption)/1 'Geist Mono', monospace", color: "#555A68" }}>{"×" + t.times}</span> : null}</span>
               <Status tool={t} />
             </div>
             <Detail tool={t} bots={bots} onOpenArtifact={onOpenArtifact} />

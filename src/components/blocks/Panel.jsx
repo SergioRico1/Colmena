@@ -49,8 +49,8 @@ export default function Panel({ page = false }) {
     <section aria-labelledby="panel-t" data-panel="" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
       {page ? (
         <header style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
-          <h1 id="panel-t" style={{ margin: "0", font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Panel"}</h1>
-          <p style={{ margin: "0", fontSize: "16px", color: "#4A4D57" }}>{"Los datos que tus bots mantienen al día para ti."}</p>
+          <h1 id="panel-t" style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Panel"}</h1>
+          <p style={{ margin: "0", fontSize: "var(--t-read)", color: "#4A4D57" }}>{"Los datos que tus bots mantienen al día para ti."}</p>
         </header>
       ) : <h2 id="panel-t" style={sectionTitle}>{"Panel"}</h2>}
       {order.length ? (
@@ -61,19 +61,19 @@ export default function Panel({ page = false }) {
               <RowBoundary key={id} label="No se ha podido mostrar este dato" resetKey={id + ":" + (block?.updatedAt || "")}>
                 {block
                   ? <BlockCard block={block} where="panel" move={moveOptions(order, id)} onMove={(direction) => move(id, direction)} />
-                  : <div aria-busy="true" style={{ minHeight: "132px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF", display: "flex", flexDirection: "column", gap: "12px" }}>
-                      <span style={{ fontSize: "15.5px", fontWeight: "600" }}>{titles.get(id) || ""}</span>
-                      <span className="colmena-skeleton" style={{ width: "55%", height: "30px", borderRadius: "8px" }} />
+                  : <div aria-busy="true" style={{ minHeight: "132px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{titles.get(id) || ""}</span>
+                      <span className="colmena-skeleton" style={{ width: "55%", height: "30px", borderRadius: "var(--r-sm)" }} />
                     </div>}
               </RowBoundary>
             );
           })}
         </div>
       ) : (
-        <p style={{ margin: 0, padding: "18px", background: "#FFFFFF", borderRadius: "20px", fontSize: "14.5px", lineHeight: "1.5", color: "#4A4D57" }}>{EMPTY}</p>
+        <p style={{ margin: 0, padding: "18px", background: "#FFFFFF", borderRadius: "var(--r-xl)", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#4A4D57" }}>{EMPTY}</p>
       )}
       <span role="status" aria-live="polite" style={srOnly}>{said}</span>
-      {error ? <span role="alert" style={{ fontSize: "13.5px", fontWeight: "600", color: "#B4372A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#B4372A" }}>{error}</span> : null}
     </section>
   );
 }

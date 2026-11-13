@@ -1,3 +1,4 @@
+import { stepOf } from "../../lib/type.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PillText } from "../v2/MentionPill.jsx";
 import { createPortal } from "react-dom";
@@ -62,11 +63,11 @@ export default function SelectionPopup({ scope, onQuote, onAsk }) {
   if (!state) return null;
   const run = (fn) => { const t = state.text; setState(null); window.getSelection?.().removeAllRanges(); fn(t); };
   const left = Math.min(Math.max(8 + 190, state.x), window.innerWidth - 8 - 190);
-  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", background: "transparent", color: "#FFFFFF", border: "0", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" };
+  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", background: "transparent", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" };
   // Rendered outside the conversation, so it never counts as new content to scroll to.
   return createPortal((
     <div ref={box} role="toolbar" aria-label="Con el texto seleccionado" className="c-pop" onPointerDown={(e) => e.preventDefault()}
-      style={{ position: "fixed", zIndex: 60, left: left + "px", top: state.y + "px", transform: state.below ? "translate(-50%, 0)" : "translate(-50%, -100%)", display: "flex", gap: "2px", padding: "4px", background: "#12131A", borderRadius: "11px", boxShadow: "0 10px 24px -10px rgba(18,19,26,.55)" }}>
+      style={{ position: "fixed", zIndex: 60, left: left + "px", top: state.y + "px", transform: state.below ? "translate(-50%, 0)" : "translate(-50%, -100%)", display: "flex", gap: "2px", padding: "4px", background: "#12131A", borderRadius: "var(--r-md)", boxShadow: "0 10px 24px -10px rgba(18,19,26,.55)" }}>
       {onQuote ? <button type="button" className="rm-focus c-sel-btn" onClick={() => run(onQuote)} title="Lo pone en tu mensaje como cita" style={btn}><Quote {...I} />Citar en el mensaje</button> : null}
       {onAsk ? <button type="button" className="rm-focus c-sel-btn" onClick={() => run(onAsk)} title="Pregunta sobre esto sin interrumpir" style={btn}><MessageCircleQuestion {...I} />Preguntar aparte</button> : null}
       <button type="button" className="rm-focus c-sel-btn" onClick={async () => { await copyText(state.text); setCopied(true); setTimeout(() => setState(null), 700); }} style={btn}>{copied ? <Check {...I} /> : <Copy {...I} />}{copied ? "Copiado" : "Copiar"}</button>
@@ -100,7 +101,7 @@ export function UserText({ text, size = 15, messageId = null }) {
         const body = b.lines.join("\n").replace(/^\n+|\n+$/g, "");
         if (!body) return null;
         return b.quoted
-          ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid #FFC93C", color: "#4A4F5C", fontSize: size - 1 + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} />} /></blockquote>
+          ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid #FFC93C", color: "#4A4F5C", fontSize: stepOf(size - 1) + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} />} /></blockquote>
           : <p key={i} style={{ margin: 0, fontSize: size + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} plain={(x) => <PillText text={x} />} />} /></p>;
       })}
     </div>

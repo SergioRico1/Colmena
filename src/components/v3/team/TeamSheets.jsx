@@ -4,7 +4,7 @@ import { get, post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { shareUrl } from "../../../lib/peers.js";
-import { useDialogFocus } from "../../../lib/useDialogFocus.js";
+import { DIALOG_VEIL, useDialogFocus } from "../../../lib/useDialogFocus.js";
 import { adminNames, codeKind, findCode, listNames } from "../../../lib/teams.js";
 
 // The team's sheets (docs/PLAN-equipo-y-salas.md › 4.1), opened from the sidebar's team menu
@@ -18,15 +18,15 @@ import { adminNames, codeKind, findCode, listNames } from "../../../lib/teams.js
 export const INK = "#12131A", MUTED = "#5C606C";
 /** «Cómo funciona», at what the others see of your bots' work. */
 const HELP = "/personas/como-funciona#que-ven";
-const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", animation: "fade .2s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitAppRegion: "no-drag" };
-const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "32px", background: "#FFFFFF", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
-export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: on ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: on ? INK : "#C9CBD1", color: on ? "#FFFFFF" : "#3D404A" });
-export const quietBtn = { minHeight: "44px", padding: "0 18px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: MUTED };
-export const fieldBox = { display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "999px", background: "#F2F2EE" };
-export const fieldInput = { flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", fontSize: "16px", color: INK };
+const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: DIALOG_VEIL, animation: "fade .2s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitAppRegion: "no-drag" };
+const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "var(--r-3xl)", background: "#FFFFFF", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
+export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", cursor: on ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: on ? INK : "#C9CBD1", color: on ? "#FFFFFF" : "#3D404A" });
+export const quietBtn = { minHeight: "44px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, color: MUTED };
+export const fieldBox = { display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "var(--r-pill)", background: "#F2F2EE" };
+export const fieldInput = { flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", fontSize: "var(--t-read)", color: INK };
 export const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
-export const note = { margin: 0, fontSize: "13px", lineHeight: 1.5, color: MUTED };
-export const errorLine = { margin: 0, fontSize: "14px", lineHeight: 1.45, color: "#B4231A" };
+export const note = { margin: 0, fontSize: "var(--t-meta)", lineHeight: 1.5, color: MUTED };
+export const errorLine = { margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#B4231A" };
 
 /** The sheet itself: a veil, a dialog that keeps the keyboard inside, a title and «Cerrar». */
 export function Sheet({ id, title, sub = null, width = 540, onClose, children }) {
@@ -36,10 +36,10 @@ export function Sheet({ id, title, sub = null, width = 540, onClose, children })
       <section ref={box} role="dialog" aria-modal="true" aria-labelledby={id} style={cardStyle(width)}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
-            <h2 id={id} style={{ margin: 0, font: "600 26px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{title}</h2>
-            {sub ? <span style={{ fontSize: "15px", lineHeight: 1.5, color: MUTED }}>{sub}</span> : null}
+            <h2 id={id} style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{title}</h2>
+            {sub ? <span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: MUTED }}>{sub}</span> : null}
           </span>
-          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", color: INK, cursor: "pointer" }}><X size={15} strokeWidth={2.6} aria-hidden="true" /></button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.06)", color: INK, cursor: "pointer" }}><X size={15} strokeWidth={2.6} aria-hidden="true" /></button>
         </div>
         {children}
       </section>
@@ -54,15 +54,15 @@ export function CodeCard({ made, onError }) {
     try { await navigator.clipboard.writeText(made.text || made.code); setCopied(true); } catch { onError("No se pudo copiar. Selecciona el texto y cópialo tú."); }
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "22px", background: "#F4F4F0" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "14px", lineHeight: 1.5, color: "#1E2029", userSelect: "text" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "var(--r-2xl)", background: "#F4F4F0" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#1E2029", userSelect: "text" }}>
         {String(made.text || made.code).split("\n").map((line, i) => line === made.code
-          ? <code key={i} style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{line}</code>
+          ? <code key={i} style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{line}</code>
           : <span key={i} style={{ overflowWrap: "anywhere" }}>{line}</span>)}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
         <button type="button" onClick={copy} data-autofocus="" style={darkBtn()}><Copy size={15} strokeWidth={2.2} aria-hidden="true" />{copied ? "Copiada" : "Copiar invitación"}</button>
-        <span style={{ fontSize: "13px", color: MUTED }}>{"24 h, un solo uso"}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{"24 h, un solo uso"}</span>
         <span role="status" style={hidden}>{copied ? "Invitación copiada" : ""}</span>
       </div>
     </div>
@@ -126,7 +126,7 @@ export function TeamInviteSheet({ team, onClose, fresh = false }) {
   if (!team.admin) {
     return (
       <Sheet id="team-inv-t" title={`Invitar a «${team.name}»`} onClose={onClose}>
-        <p style={{ margin: 0, fontSize: "15px", lineHeight: 1.55 }}>
+        <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.55 }}>
           {admins == null ? "Buscando quién administra el equipo…" : admins.length ? `Solo invita quien administra el equipo: ${listNames(admins)}. Pídele que mande la invitación.` : "Solo invita quien administra el equipo. Pídeselo a quien lo creó."}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -203,13 +203,13 @@ export function JoinSheet({ onClose }) {
   if (preview) {
     return (
       <Sheet id="team-join-t" title={what.title} sub={what.text} onClose={onClose}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px", borderRadius: "22px", background: "#F4F4F0" }}>
-          <span style={{ fontSize: "13px", color: MUTED }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
-          <strong style={{ font: "600 21px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{(preview.words || []).join(" · ")}</strong>
-          <span style={{ fontSize: "13px", lineHeight: 1.45, color: MUTED }}>{`Si coinciden, la invitación es de verdad de ${what.from}. Si no, no sigas.`}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px", borderRadius: "var(--r-2xl)", background: "#F4F4F0" }}>
+          <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
+          <strong style={{ font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{(preview.words || []).join(" · ")}</strong>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: MUTED }}>{`Si coinciden, la invitación es de verdad de ${what.from}. Si no, no sigas.`}</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <button type="button" data-autofocus="" onClick={accept} disabled={busy} style={{ ...darkBtn(!busy), minHeight: "50px", fontSize: "15px" }}>{busy ? "Un momento…" : what.confirm}</button>
+          <button type="button" data-autofocus="" onClick={accept} disabled={busy} style={{ ...darkBtn(!busy), minHeight: "50px", fontSize: "var(--t-body)" }}>{busy ? "Un momento…" : what.confirm}</button>
           <button type="button" onClick={() => { setPreview(null); setError(null); }} style={quietBtn}>{"No coinciden o no le conozco"}</button>
         </div>
         {error ? <p role="alert" style={errorLine}>{error}</p> : null}
@@ -221,7 +221,7 @@ export function JoinSheet({ onClose }) {
       <form onSubmit={(e) => { e.preventDefault(); look(); }} className="c-ring" style={fieldBox}>
         <label style={{ flex: 1, display: "flex", minWidth: 0 }}>
           <span style={hidden}>{"Código de invitación"}</span>
-          <input className="c-bare" autoFocus data-autofocus="" type="text" value={text} maxLength={600} onChange={(e) => { setText(findCode(e.target.value) || e.target.value); setError(null); }} placeholder="COLMENA-XXXX-XXXX-XXXX-XXXX" spellCheck={false} autoComplete="off" style={{ ...fieldInput, font: "500 15px/1 'Geist Mono', monospace", letterSpacing: "0.03em" }} />
+          <input className="c-bare" autoFocus data-autofocus="" type="text" value={text} maxLength={600} onChange={(e) => { setText(findCode(e.target.value) || e.target.value); setError(null); }} placeholder="COLMENA-XXXX-XXXX-XXXX-XXXX" spellCheck={false} autoComplete="off" style={{ ...fieldInput, font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.03em" }} />
         </label>
         <button type="submit" disabled={!text.trim() || busy} style={darkBtn(!!text.trim() && !busy)}>{busy ? "Buscando…" : "Continuar"}</button>
       </form>

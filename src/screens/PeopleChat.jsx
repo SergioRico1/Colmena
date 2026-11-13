@@ -1,3 +1,4 @@
+import Select from "../components/Select.jsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Lock, LogOut, Search } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
@@ -16,7 +17,10 @@ import { FileViewer } from "../components/v2/people/PeerFiles.jsx";
 import RoomSheet from "../components/v2/people/RoomSheet.jsx";
 import { navigate } from "../lib/router.jsx";
 import NotFound from "./NotFound.jsx";
-import { continues } from "../lib/roomView.js";
+import { authorOf, authorView, continues } from "../lib/roomView.js";
+import { useAnnouncer } from "../lib/useAnnouncer.js";
+import { messageListProps } from "../lib/messageKeys.js";
+import Announcer from "../components/Announcer.jsx";
 
 // A direct conversation with a person (design/V3Personas.dc.html; V2Personas for persona, hilo,
 // buscar). A group is a room: its address opens the one room screen (/sala/:id, screens/Room.jsx).
@@ -29,6 +33,8 @@ const dayLabel = (iso) => {
   if (new Date(Date.now() - 864e5).toDateString() === d.toDateString()) return "Ayer";
   return d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
 };
+
+const NOTHING = []; // nothing waits for an OK in a chat between people
 
 export default function PeopleChat({ params = {}, query = {} }) {
   const id = params.id;
@@ -73,6 +79,13 @@ export default function PeopleChat({ params = {}, query = {} }) {
   useRevealMessage(threadId ? null : query.m || null, { ready: !chat.loading && !!share, olderCount: chat.more ? chat.messages.length : 0, showOlder: chat.older });
   const openThread = useCallback((m) => navigate("/con/" + id + "?hilo=" + encodeURIComponent(m.id)), [id]);
   const closeThread = useCallback(() => navigate("/con/" + id, { replace: true }), [id]);
+  // What arrives while you are here, said once to a screen reader (lib/useAnnouncer.js): the
+  // other person's messages and what bots answer, never what you wrote.
+  const spokenRows = useMemo(() => chat.messages.map((m) => {
+    const a = authorOf(m);
+    return { id: m.id, name: authorView(a).name, text: m.deleted ? "" : m.text || (m.file ? "ha compartido " + (m.file.name || "un archivo") : ""), skip: !!m.local || !!m.deleted || a.kind === "system" || (a.kind === "person" && a.you) };
+  }), [chat.messages]);
+  const said = useAnnouncer({ scope: id, ready: !chat.loading && !!share, items: spokenRows, waiting: NOTHING });
   if (isRoom) return null;
   if (chat.error === "missing") return <NotFound active="chats" title="Esta conversación ya no está" text="Puede que la otra persona la cerrara. No se ha perdido nada de lo tuyo." />;
   const dm = share?.kind === "dm";
@@ -114,7 +127,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
   const guest = share?.members?.find((m) => m.me)?.role === "guest";
   const composer = { others, mentionable: guest ? [] : mentionable, mineEnabled: guest ? [] : mineEnabled, me, disabled: gone || !share, onTyping: chat.typingNow };
   let lastDay = null;
-  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "transparent", color: "#12131A", fontSize: "13.5px", fontWeight: 500, cursor: "pointer" };
+  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
   return (
     <Shell active="chats" scroll={false}>
       <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
@@ -123,8 +136,8 @@ export default function PeopleChat({ params = {}, query = {} }) {
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 26px" }}>
               {dm && other ? <PeerAvatar person={other} size={34} dot={other.status === "active"} dashed={other.status === "pending"} /> : share ? <PeoplePile people={share.members} /> : null}
               <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px", marginRight: "auto" }}>
-                <h1 style={{ margin: 0, fontSize: "16px", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share ? (dm ? share.title : "# " + share.title) : " "}</h1>
-                <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "13px", color: "#5C606C" }}>
+                <h1 style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share ? (dm ? share.title : "# " + share.title) : " "}</h1>
+                <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
                   {status}
                   {share ? <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Lock size={12} strokeWidth={2.2} aria-hidden="true" />{dm ? "solo lo leéis vosotros dos, cifrado" : "solo lo leéis quienes estáis aquí, cifrado"}</span> : null}
                 </span>
@@ -136,18 +149,19 @@ export default function PeopleChat({ params = {}, query = {} }) {
             {searching && share ? <ShareSearch shareId={id} onClose={() => setSearching(false)} /> : null}
           </header>
           {relay !== "online" && share ? (
-            <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "#FFF6DC", color: "#8A5A00", fontSize: "14px" }}>
+            <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "#FFF6DC", color: "#8A5A00", fontSize: "var(--t-ui)" }}>
               {relay === "off" ? "Falta conectar Colmena al buzón de mensajes: Ajustes › Personas." : RELAY_LABEL[relay] + ". Lo que escribas saldrá en cuanto vuelva."}
             </p>
           ) : null}
-          <div style={{ flex: "1", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
+          <Announcer text={said} />
+          <div {...messageListProps("Mensajes de la conversación")} style={{ flex: "1", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
             <div style={{ width: "100%", maxWidth: "840px", margin: "0 auto", padding: "22px 26px", display: "flex", flexDirection: "column", gap: "8px", boxSizing: "border-box" }}>
-              {chat.more ? <button type="button" onClick={chat.older} style={{ alignSelf: "center", height: "32px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "13px", fontWeight: 500 }}>{"Ver mensajes anteriores"}</button> : null}
+              {chat.more ? <button type="button" onClick={chat.older} style={{ alignSelf: "center", height: "32px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-pill)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500 }}>{"Ver mensajes anteriores"}</button> : null}
               {!chat.loading && !chat.messages.length ? (
                 <div style={{ alignSelf: "center", maxWidth: "520px", margin: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", textAlign: "center", animation: "fade .4s ease-out" }}>
                   {share ? <PeoplePile people={share.members} size={56} /> : null}
-                  <strong style={{ font: "600 22px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{dm && other?.status === "pending" ? "Invitación aceptada" : "Aún no os habéis escrito"}</strong>
-                  <span style={{ fontSize: "15px", lineHeight: 1.55, color: "#4A4D57" }}>{dm && other?.status === "pending" ? `En cuanto ${other.name.split(" ")[0]} abra Colmena quedaréis conectados. Lo que escribas ahora le llegará entonces.` : "Cada mensaje sale cerrado con llave desde este ordenador y solo lo abren los de quienes estáis aquí."}</span>
+                  <strong style={{ font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{dm && other?.status === "pending" ? "Invitación aceptada" : "Aún no os habéis escrito"}</strong>
+                  <span style={{ fontSize: "var(--t-body)", lineHeight: 1.55, color: "#4A4D57" }}>{dm && other?.status === "pending" ? `En cuanto ${other.name.split(" ")[0]} abra Colmena quedaréis conectados. Lo que escribas ahora le llegará entonces.` : "Cada mensaje sale cerrado con llave desde este ordenador y solo lo abren los de quienes estáis aquí."}</span>
                 </div>
               ) : null}
               {shown.map((m, i) => {
@@ -156,7 +170,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
                 lastDay = day;
                 return (
                   <div key={m.id}>
-                    {showDay ? <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 10px", fontSize: "12.5px", color: "#5C606C" }}><span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} />{day}<span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} /></div> : null}
+                    {showDay ? <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 10px", fontSize: "var(--t-meta)", color: "#5C606C" }}><span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} />{day}<span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} /></div> : null}
                     <PeopleMessage m={m} dm={dm} botOf={botOf} shared={shared} lastSeen={m.id === lastSeenMine} onMeeting={chat.updateMeeting} continued={!showDay && continues(shown[i - 1], m, { hasReplies: !!shown[i - 1]?.replies })}
                       onReact={chat.react} onRetry={chat.retry} onEdit={chat.edit} onDelete={remove} onThread={m.local ? null : openThread} onOpenFile={setViewing} onError={setError} />
                   </div>
@@ -165,33 +179,33 @@ export default function PeopleChat({ params = {}, query = {} }) {
             </div>
           </div>
           <div style={{ flex: "none", width: "100%", maxWidth: "840px", margin: "0 auto", padding: "0 26px 18px", boxSizing: "border-box" }}>
-            <p role="status" style={{ margin: "0 0 8px 18px", minHeight: "18px", display: "flex", gap: "16px", fontSize: "13px", color: "#5C606C" }}>
+            <p style={{ margin: "0 0 8px 18px", minHeight: "18px", display: "flex", gap: "16px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
               {chat.typing.length ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span aria-hidden="true" style={{ display: "flex", gap: "3px" }}>{[0, 0.15, 0.3].map((d) => <span key={d} style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#5C606C", animation: `dots 1.2s ${d}s infinite` }} />)}</span>
+                  <span aria-hidden="true" style={{ display: "flex", gap: "3px" }}>{[0, 0.15, 0.3].map((d) => <span key={d} style={{ width: "5px", height: "5px", borderRadius: "var(--r-circle)", background: "#5C606C", animation: `dots 1.2s ${d}s infinite` }} />)}</span>
                   {names(chat.typing.map((n) => n.split(" ")[0])) + (chat.typing.length > 1 ? " están escribiendo" : " está escribiendo")}
                 </span>
               ) : null}
               {chat.thinking.length ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#8C8F99", animation: "breathe 1.4s ease-in-out infinite" }} />
+                  <span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "#8C8F99", animation: "breathe 1.4s ease-in-out infinite" }} />
                   {names(chat.thinking) + (chat.thinking.length > 1 ? " están pensando" : " está pensando")}
                 </span>
               ) : null}
-              {sending.length ? <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#1F4FD1", animation: "breathe 1.4s ease-in-out infinite" }} />{"Cifrando y enviando " + names(sending) + "…"}</span> : null}
+              {sending.length ? <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "#1F4FD1", animation: "breathe 1.4s ease-in-out infinite" }} />{"Cifrando y enviando " + names(sending) + "…"}</span> : null}
               {error ? <span role="alert" style={{ color: "#B4232A" }}>{error}</span> : null}
             </p>
             <PeopleComposer {...composer} resetKey={id} onError={setError} onAttach={gone ? null : attach} artifacts={artifacts} onArtifact={shareArtifact}
               onSend={(text, bots, people) => { setError(null); return chat.send(text, bots, people); }}
               placeholder={gone ? "Ya no estás en esta conversación" : (dm ? `Mensaje para ${other?.name.split(" ")[0] || ""}` : "Mensaje para todos") + " · @ para que uno de tus bots ayude aquí"}
               above={dm && other?.away && !gone ? (
-                <p role="note" style={{ margin: "0 0 10px 18px", fontSize: "13px", color: "#5C606C" }}>
+                <p role="note" style={{ margin: "0 0 10px 18px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
                   {other.away.mode === "dnd"
                     ? `${other.name.split(" ")[0]} tiene «No molestar»${other.away.until ? " hasta " + whenText(other.away.until) : ""}: le llegará, sin sonarle.`
                     : `${other.name.split(" ")[0]} está fuera${other.away.until ? " hasta " + whenText(other.away.until) : ""}: lo verá a la vuelta.`}
                 </p>
               ) : null} />
-            {share && !gone && !guest ? <p style={{ margin: "8px 0 0", fontSize: "12.5px", color: "#5C606C" }}>{"Tus bots aquí no ven tu correo ni tu memoria: solo lo que escribís en este chat."}</p> : null}
+            {share && !gone && !guest ? <p style={{ margin: "8px 0 0", fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Tus bots aquí no ven tu correo ni tu memoria: solo lo que escribís en este chat."}</p> : null}
           </div>
         </section>
         {share && !threadId ? <PeopleAside share={share} other={other} dm={dm} files={sharedFiles} onPeople={() => setRoom(true)} onOpenFile={setViewing} /> : null}
@@ -213,15 +227,15 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
   const contact = dm && other ? (peers?.contacts || []).find((c) => c.id === other.id) || null : null;
   const asks = contact?.asks || {};
   const setAsk = (key, value) => act(() => patch(`/peers/contacts/${encodeURIComponent(contact.id)}`, { asks: { [key]: value } }));
-  const head = { fontSize: "13px", fontWeight: 600, color: "#5C606C" };
+  const head = { fontSize: "var(--t-meta)", fontWeight: 600, color: "#5C606C" };
   const freeOn = asks.libre && asks.libre !== "nunca";
   return (
     <aside aria-label={dm && other ? "Sobre " + other.name : "Personas de la conversación"} style={{ flex: "1 1 300px", maxWidth: "360px", minWidth: "280px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px", padding: "22px 20px", background: "#FFFFFF", borderLeft: "1px solid rgba(18,19,26,.07)" }}>
       {dm && other ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
           <PeerAvatar person={other} size={64} ring="#FFFFFF" />
-          <span style={{ font: "600 20px/1 'Bricolage Grotesque', sans-serif" }}>{other.name}</span>
-          <span style={{ fontSize: "13.5px", color: "#5C606C" }}>{[other.online ? "En línea" : "No está conectada ahora", contact?.addedAt ? "conectada desde el " + since(contact.addedAt) : null].filter(Boolean).join(" · ")}</span>
+          <span style={{ font: "600 var(--t-title)/1 'Bricolage Grotesque', sans-serif" }}>{other.name}</span>
+          <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{[other.online ? "En línea" : "No está conectada ahora", contact?.addedAt ? "conectada desde el " + since(contact.addedAt) : null].filter(Boolean).join(" · ")}</span>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -229,33 +243,31 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
           {(share.members || []).map((p) => (
             <div key={p.id} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px" }}>
               <PeerAvatar person={p} size={26} ring="#FFFFFF" dot={!p.me} />
-              <span style={{ flex: "1", fontSize: "14px" }}>{p.me ? "Tú" : p.name}</span>
-              <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{p.id === share.owner ? "creó la conversación" : p.role === "guest" ? "invitado" : p.online ? "aquí ahora" : ""}</span>
+              <span style={{ flex: "1", fontSize: "var(--t-ui)" }}>{p.me ? "Tú" : p.name}</span>
+              <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{p.id === share.owner ? "creó la conversación" : p.role === "guest" ? "invitado" : p.online ? "aquí ahora" : ""}</span>
             </div>
           ))}
-          {share.mine ? <button type="button" onClick={onPeople} style={{ alignSelf: "flex-start", marginTop: "4px", height: "34px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "13px", cursor: "pointer" }}>{"Invitar o cambiar"}</button> : null}
+          {share.mine ? <button type="button" onClick={onPeople} style={{ alignSelf: "flex-start", marginTop: "4px", height: "34px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Invitar o cambiar"}</button> : null}
         </div>
       )}
       {contact?.words?.length ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "14px", background: "#F6F6F3" }}>
-          <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Palabras de seguridad"}</span>
-          <span style={{ font: "500 14px/1.4 'Geist Mono', monospace" }}>{contact.words.join(" · ")}</span>
-          <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{contact.verifiedAt ? `Comprobadas: ${other.name.split(" ")[0]} ve las mismas.` : `Iguales en su Colmena: es ${other.name.split(" ")[0]}.`}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
+          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Palabras de seguridad"}</span>
+          <span style={{ font: "500 var(--t-ui)/1.4 'Geist Mono', monospace" }}>{contact.words.join(" · ")}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{contact.verifiedAt ? `Comprobadas: ${other.name.split(" ")[0]} ve las mismas.` : `Iguales en su Colmena: es ${other.name.split(" ")[0]}.`}</span>
         </div>
       ) : null}
       {contact ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <span style={head}>{"Qué pueden pedirte sus bots"}</span>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "14px" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)" }}>
             {"Encargos a tus bots"}
-            <select value={asks.encargos || "pregunta"} disabled={busy} onChange={(e) => setAsk("encargos", e.target.value)} style={{ width: "100%", height: "38px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "13.5px" }}>
-              {ENCARGOS.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
-            </select>
+            <Select label="Encargos a tus bots" value={asks.encargos || "pregunta"} disabled={busy} onChange={(e) => setAsk("encargos", e.target.value)} style={{ width: "100%", height: "38px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-ui)" }} options={ENCARGOS} />
           </label>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "40px", fontSize: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "40px", fontSize: "var(--t-ui)" }}>
             <span>{"Ver si estoy libre u ocupado"}</span>
-            <button type="button" role="switch" aria-checked={freeOn ? "true" : "false"} aria-label="Ver si estoy libre u ocupado" disabled={busy} onClick={() => setAsk("libre", freeOn ? "nunca" : "pregunta")} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "12px", background: freeOn ? "#12131A" : "#C9CBD1", cursor: "pointer", transition: "background .15s ease" }}>
-              <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: freeOn ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .15s ease" }} />
+            <button type="button" role="switch" aria-checked={freeOn ? "true" : "false"} aria-label="Ver si estoy libre u ocupado" disabled={busy} onClick={() => setAsk("libre", freeOn ? "nunca" : "pregunta")} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: freeOn ? "#12131A" : "#C9CBD1", cursor: "pointer", transition: "background .15s ease" }}>
+              <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: freeOn ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .15s ease" }} />
             </button>
           </div>
         </div>
@@ -267,8 +279,8 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
             const ext = extOf(f.name);
             const [bg, fg] = extTint(ext);
             return (
-              <button key={f.id || f.name} type="button" onClick={() => onOpenFile(f)} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "14px", color: "#12131A" }}>
-                <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "7px", background: bg, color: fg, fontSize: "8px", fontWeight: 700 }}>{ext}</span>
+              <button key={f.id || f.name} type="button" onClick={() => onOpenFile(f)} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "#12131A" }}>
+                <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 }}>{ext}</span>
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
               </button>
             );
@@ -276,7 +288,7 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
         </div>
       ) : null}
       <span style={{ flex: "1" }} />
-      <a href="/equipo" style={{ fontSize: "13.5px" }}>{"Todas tus personas en Equipo"}</a>
+      <a href="/equipo" style={{ fontSize: "var(--t-ui)" }}>{"Todas tus personas en Equipo"}</a>
     </aside>
   );
 }

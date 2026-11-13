@@ -22,7 +22,7 @@ const CSS = `
 .colmena-live-btn:focus-visible{outline:3px solid #2F6BFF;outline-offset:2px}
 `;
 
-const buttonBase = { height: "40px", padding: "0 14px", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "8px" };
+const buttonBase = { height: "40px", padding: "0 14px", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "8px" };
 const BUTTON_DARK = { ...buttonBase, background: "#12131A", color: "#FFFFFF", border: 0 };
 const BUTTON_HONEY = { ...buttonBase, background: "#FFC93C", color: "#12131A", border: "2px solid #12131A" };
 const BUTTON_LIGHT = { ...buttonBase, background: "#FFFFFF", color: "#12131A", border: "1px solid #DCE0E8", fontWeight: 500 };
@@ -83,14 +83,14 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   if (!frame) {
     const desktopOnly = available === false;
     return (
-      <article aria-label={"Vista en vivo del navegador de " + name} style={{ margin: "6px 0", border: "1px dashed #A9AEBB", borderRadius: "18px", background: "#FFFFFF", padding: "18px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+      <article aria-label={"Vista en vivo del navegador de " + name} style={{ margin: "6px 0", border: "1px dashed #A9AEBB", borderRadius: "var(--r-xl)", background: "#FFFFFF", padding: "18px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
         <style>{CSS}</style>
-        <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#EEF0F4", borderRadius: "12px", color: "#4A4F5C" }}>
+        <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#EEF0F4", borderRadius: "var(--r-md)", color: "#4A4F5C" }}>
           <GlobeIcon />
         </span>
         <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
-          <strong style={{ fontSize: "15px" }}>{desktopOnly ? "El navegador de los bots no está disponible aquí" : "El navegador de " + name + " está cerrado"}</strong>
-          <span style={{ fontSize: "13px", color: "#4A4F5C" }}>
+          <strong style={{ fontSize: "var(--t-body)" }}>{desktopOnly ? "El navegador de los bots no está disponible aquí" : "El navegador de " + name + " está cerrado"}</strong>
+          <span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
             {desktopOnly
               ? "Solo funciona en la aplicación de escritorio de Colmena."
               : "Cuando " + name + " abra una página, la verás aquí en directo."}
@@ -110,30 +110,30 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   return (
     <article
       aria-label={"Vista en vivo del navegador de " + name}
-      style={{ margin: "6px 0", border: "2px solid " + color, borderRadius: "18px", overflow: "hidden", background: "#FFFFFF", boxShadow: takeover ? "8px 8px 0 #FFC93C" : "none", transition: "box-shadow .2s ease" }}
+      style={{ margin: "6px 0", border: "2px solid " + color, borderRadius: "var(--r-xl)", overflow: "hidden", background: "#FFFFFF", boxShadow: takeover ? "8px 8px 0 #FFC93C" : "none", transition: "box-shadow .2s ease" }}
     >
       <style>{CSS}</style>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 16px", borderBottom: "1px solid #E6E8EE" }}>
         <Avatar bot={bot} />
-        <strong style={{ fontSize: "15px" }}>{name}</strong>
-        <span style={{ display: "flex", alignItems: "center", gap: "8px", height: "28px", padding: "0 10px", background: "#EEF0F4", borderRadius: "14px", fontSize: "13px", fontWeight: 600 }}>
+        <strong style={{ fontSize: "var(--t-body)" }}>{name}</strong>
+        <span style={{ display: "flex", alignItems: "center", gap: "8px", height: "28px", padding: "0 10px", background: "#EEF0F4", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
           <GlobeIcon />
           {takeover ? "Te ha dado el control" : label}
         </span>
         <span style={{ flex: 1 }} />
-        <span style={{ display: "flex", alignItems: "center", gap: "8px", font: "600 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>
-          <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#3DDC97", animation: "colmena-live 1.4s ease-out infinite" }} />
+        <span style={{ display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>
+          <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#3DDC97", animation: "colmena-live 1.4s ease-out infinite" }} />
           Vista en vivo
         </span>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px", background: "#F6F7F9", borderBottom: "1px solid #E6E8EE", minWidth: 0 }}>
         <LockIcon secure={secure} />
-        <span title={frame.url} style={{ font: "500 12px/1.4 'Geist Mono', monospace", color: "#12131A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: "0 1 auto" }}>
+        <span title={frame.url} style={{ font: "500 var(--t-caption)/1.4 'Geist Mono', monospace", color: "#12131A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: "0 1 auto" }}>
           {host || frame.url}
         </span>
         {frame.title ? (
-          <span style={{ fontSize: "12px", color: "#4A4F5C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>· {frame.title}</span>
+          <span style={{ fontSize: "var(--t-caption)", color: "#4A4F5C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flex: 1 }}>· {frame.title}</span>
         ) : null}
       </div>
 
@@ -146,7 +146,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
       </WatchedView>
 
       {takeover ? (
-        <p style={{ margin: 0, padding: "12px 16px", borderTop: "1px solid #E6E8EE", background: "#FFF8E1", fontSize: "14px", lineHeight: 1.5 }}>
+        <p style={{ margin: 0, padding: "12px 16px", borderTop: "1px solid #E6E8EE", background: "#FFF8E1", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
           <strong>Tienes el control.</strong> {name} espera sin tocar nada. Usa la ventana «Colmena · Navegador de {name}» y pulsa «Devolver» cuando termines.
         </p>
       ) : null}
@@ -167,7 +167,7 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
             {busy === "stop" ? "Deteniendo…" : "Detener"}
           </button>
         ) : null}
-        {error ? <span role="alert" style={{ fontSize: "13px", color: "#B4372A" }}>{error}</span> : null}
+        {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4372A" }}>{error}</span> : null}
       </div>
     </article>
   );

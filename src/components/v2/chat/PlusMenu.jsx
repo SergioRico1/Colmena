@@ -1,3 +1,4 @@
+import { useClickAway } from "../../../lib/useClickAway.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppWindow, Brain, Check, Crop, Globe, Monitor, Paperclip, Plus, Repeat, SquareTerminal, Target } from "lucide-react";
 import AppLogo from "../../settings/AppLogo.jsx";
@@ -100,12 +101,7 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
   }, [apps, computer?.available, onFiles, onCapture, onError, text, botId]); // eslint-disable-line react-hooks/exhaustive-deps
   const flat = sections.flatMap((s) => s.items);
   useEffect(() => { if (open) { setAt(0); requestAnimationFrame(() => box.current?.focus()); } }, [open]);
-  useEffect(() => {
-    if (!open) return undefined;
-    const away = (e) => { if (box.current && !box.current.contains(e.target) && !e.target.closest?.("[data-plus-toggle]")) onClose(); };
-    window.addEventListener("pointerdown", away);
-    return () => window.removeEventListener("pointerdown", away);
-  }, [open, onClose]);
+  useClickAway(open, (target) => !box.current || box.current.contains(target) || target.closest?.("[data-plus-toggle]"), () => onClose(), { escape: false, event: "pointerdown" });
   if (!open) return null;
   if (view === "windows") {
     return (
@@ -129,10 +125,10 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
   let n = -1;
   return (
     <div ref={box} role="menu" aria-label="Añadir" tabIndex={-1} onKeyDown={onKeyDown}
-      style={{ position: "absolute", left: "0", bottom: "calc(100% + 10px)", zIndex: 40, width: "min(420px, 100%)", maxHeight: "min(440px, 60vh)", overflowY: "auto", padding: "6px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 24px 50px -24px rgba(18,19,26,.4), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
+      style={{ position: "absolute", left: "0", bottom: "calc(100% + 10px)", zIndex: 40, width: "min(420px, 100%)", maxHeight: "min(440px, 60vh)", overflowY: "auto", padding: "6px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 24px 50px -24px rgba(18,19,26,.4), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
       {sections.map((s) => (
         <div key={s.title} role="group" aria-label={s.title} style={{ display: "flex", flexDirection: "column", paddingBottom: "4px" }}>
-          <span style={{ padding: "10px 12px 4px", fontSize: "12px", color: "#6B6F7A" }}>{s.title}</span>
+          <span style={{ padding: "10px 12px 4px", fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{s.title}</span>
           {s.items.map((item) => {
             n += 1;
             const i = n;
@@ -141,13 +137,13 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
             return (
               <button key={item.key} type="button" role={item.toggle ? "menuitemcheckbox" : "menuitem"} aria-checked={item.toggle ? (on ? "true" : "false") : undefined}
                 onMouseEnter={() => setAt(i)} onClick={() => choose(item)}
-                style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "0 12px", border: 0, borderRadius: "12px", cursor: "pointer", textAlign: "left", background: at === i ? "rgba(18,19,26,.05)" : "transparent", color: "#12131A", fontSize: "14px" }}>
+                style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left", background: at === i ? "rgba(18,19,26,.05)" : "transparent", color: "#12131A", fontSize: "var(--t-ui)" }}>
                 <span aria-hidden="true" style={{ width: "20px", flex: "none", display: "grid", placeItems: "center", color: "#3D404A" }}>
                   {item.logo ? <AppLogo id={item.logo.slug} name={item.logo.name} logo={item.logo.logo} size={18} /> : <Icon size={16} strokeWidth={2.2} />}
                 </span>
                 <span style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "baseline", gap: "8px", overflow: "hidden", whiteSpace: "nowrap" }}>
                   <span style={{ fontWeight: 500 }}>{item.label}</span>
-                  {item.hint ? <span style={{ fontSize: "13px", color: "#6B6F7A", overflow: "hidden", textOverflow: "ellipsis" }}>{item.hint}</span> : null}
+                  {item.hint ? <span style={{ fontSize: "var(--t-meta)", color: "#6B6F7A", overflow: "hidden", textOverflow: "ellipsis" }}>{item.hint}</span> : null}
                 </span>
                 {on ? <Check size={16} strokeWidth={2.6} aria-hidden="true" style={{ flex: "none", color: "#0B8A5F" }} /> : null}
               </button>

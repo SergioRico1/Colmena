@@ -102,7 +102,7 @@ export default function PositionRail({ scroller, items, version = 0, locate = nu
   return (
     <nav aria-label="Ir a un mensaje de la conversación" onMouseLeave={() => setHover(null)}
       style={{ position: "fixed", zIndex: 6, top: box.top + "px", left: box.left + "px", width: "16px", height: box.height + "px" }}>
-      <span aria-hidden="true" style={{ position: "absolute", left: "7px", top: 0, bottom: 0, width: "2px", background: "#EEF0F4", borderRadius: "1px" }} />
+      <span aria-hidden="true" style={{ position: "absolute", left: "7px", top: 0, bottom: 0, width: "2px", background: "#EEF0F4", borderRadius: "var(--r-xs)" }} />
       {marks.map((m, i) => {
         const it = byId.get(m.id);
         const on = m.id === active;
@@ -113,14 +113,14 @@ export default function PositionRail({ scroller, items, version = 0, locate = nu
             onMouseEnter={() => setHover(m.id)} onFocus={() => setHover(m.id)} onBlur={() => setHover(null)}
             onClick={() => jump(m.id)} onKeyDown={(e) => onKey(e, i)}
             style={{ position: "absolute", left: "1px", top: `calc(${(m.at * 100).toFixed(2)}% - 6px)`, width: "14px", height: "12px", padding: 0, background: "transparent", border: 0, cursor: "pointer", display: "grid", placeItems: "center" }}>
-            <span style={{ width: it?.mine ? "10px" : "6px", height: on ? "4px" : "3px", borderRadius: "2px", background: on ? "#12131A" : it?.mine ? "#8C91A0" : "#C9CCD6", transition: "width .12s ease, background .12s ease" }} />
+            <span style={{ width: it?.mine ? "10px" : "6px", height: on ? "4px" : "3px", borderRadius: "var(--r-xs)", background: on ? "#12131A" : it?.mine ? "#8C91A0" : "#C9CCD6", transition: "width .12s ease, background .12s ease" }} />
           </button>
         );
       })}
       {shown && shownMark ? (
-        <div role="tooltip" className="c-pop" style={{ position: "absolute", right: "22px", top: `calc(${(shownMark.at * 100).toFixed(2)}% - 18px)`, width: "260px", padding: "10px 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", boxShadow: "0 12px 28px -16px rgba(18,19,26,.45)", pointerEvents: "none" }}>
-          <strong style={{ display: "block", fontSize: "12px", marginBottom: "3px" }}>{shown.who}</strong>
-          <span style={{ fontSize: "13px", lineHeight: "1.4", color: "#2B2D36", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+        <div role="tooltip" className="c-pop" style={{ position: "absolute", right: "22px", top: `calc(${(shownMark.at * 100).toFixed(2)}% - 18px)`, width: "260px", padding: "10px 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", boxShadow: "0 12px 28px -16px rgba(18,19,26,.45)", pointerEvents: "none" }}>
+          <strong style={{ display: "block", fontSize: "var(--t-caption)", marginBottom: "3px" }}>{shown.who}</strong>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#2B2D36", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {String(shown.text || "").replace(/[#*_`>|[\]()]/g, "").replace(/\s+/g, " ").trim().slice(0, PREVIEW) || "…"}
           </span>
         </div>

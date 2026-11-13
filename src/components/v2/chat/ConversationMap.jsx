@@ -103,7 +103,7 @@ export default function ConversationMap({ missionId, version, scroller, ownerOf,
     <nav aria-label="Mapa de la conversación" onMouseLeave={() => setHover(null)} onMouseMove={pointAt} onClick={() => { if (hover) go(hover); }}
       style={{ position: "fixed", zIndex: 6, top: box.top - 6 + "px", left: box.left + "px", width: "22px", height: box.height + 12 + "px", padding: "6px 0", boxSizing: "border-box", cursor: "pointer" }}>
       <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        {dense ? <span aria-hidden="true" style={{ position: "absolute", right: "0", top: 0, bottom: 0, width: "2px", borderRadius: "1px", background: "rgba(18,19,26,.07)" }} /> : null}
+        {dense ? <span aria-hidden="true" style={{ position: "absolute", right: "0", top: 0, bottom: 0, width: "2px", borderRadius: "var(--r-xs)", background: "rgba(18,19,26,.07)" }} /> : null}
       {turns.map((t, i) => {
         const on = t.id === active;
         const seen = visible.includes(t.id);
@@ -114,14 +114,14 @@ export default function ConversationMap({ missionId, version, scroller, ownerOf,
             tabIndex={t.id === focusable ? 0 : -1} aria-current={on ? "true" : undefined} aria-label={`Tu mensaje ${i + 1} de ${turns.length}: ${t.title}`}
             onMouseEnter={() => setHover(t.id)} onFocus={() => setHover(t.id)} onBlur={() => setHover(null)} onClick={() => go(t.id)} onKeyDown={(e) => onKey(e, i)}
             style={{ position: "absolute", left: 0, top: `calc(${(at(i) * 100).toFixed(3)}% - 5px)`, width: "20px", height: "10px", padding: 0, border: 0, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-end", pointerEvents: "none" }}>
-            <span style={{ visibility: drawn ? "visible" : "hidden", width: on || hover === t.id ? "16px" : seen ? "12px" : "8px", height: on ? "3px" : "2px", borderRadius: "2px", background: on ? "#12131A" : seen ? "#8C91A0" : "#C9CCD6", transition: "width .15s ease, background .15s ease" }} />
+            <span style={{ visibility: drawn ? "visible" : "hidden", width: on || hover === t.id ? "16px" : seen ? "12px" : "8px", height: on ? "3px" : "2px", borderRadius: "var(--r-xs)", background: on ? "#12131A" : seen ? "#8C91A0" : "#C9CCD6", transition: "width .15s ease, background .15s ease" }} />
           </button>
         );
       })}
       {shown ? (
-        <div role="tooltip" style={{ position: "absolute", right: "28px", top: `calc(${(at(shownIndex) * 100).toFixed(3)}% - 22px)`, width: "280px", padding: "12px 14px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 18px 40px -18px rgba(18,19,26,.4)", pointerEvents: "none", display: "flex", flexDirection: "column", gap: "6px", animation: "fade .15s ease-out" }}>
-          <strong style={{ fontSize: "13px", lineHeight: "1.4", color: "#12131A" }}>{shown.title}</strong>
-          {shown.preview ? <span style={{ fontSize: "12.5px", lineHeight: "1.45", color: "#5C606C", display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{shown.preview}</span> : null}
+        <div role="tooltip" style={{ position: "absolute", right: "28px", top: `calc(${(at(shownIndex) * 100).toFixed(3)}% - 22px)`, width: "280px", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 18px 40px -18px rgba(18,19,26,.4)", pointerEvents: "none", display: "flex", flexDirection: "column", gap: "6px", animation: "fade .15s ease-out" }}>
+          <strong style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#12131A" }}>{shown.title}</strong>
+          {shown.preview ? <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C", display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{shown.preview}</span> : null}
         </div>
       ) : null}
       </div>

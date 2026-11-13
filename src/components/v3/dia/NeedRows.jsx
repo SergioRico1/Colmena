@@ -12,7 +12,7 @@ import { navigate } from "../../../lib/router.jsx";
 // ring is the row's own: each of them waits for you.
 
 const RING = "0 0 0 1.5px #FFC93C";
-const rowBox = { display: "flex", alignItems: "center", gap: "8px", minHeight: "60px", padding: "6px 10px 6px 6px", borderRadius: "18px", background: "#FFFFFF", boxShadow: RING };
+const rowBox = { display: "flex", alignItems: "center", gap: "8px", minHeight: "60px", padding: "6px 10px 6px 6px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: RING };
 const one = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 
 /**
@@ -37,7 +37,7 @@ export default function NeedRows({ entries = [], card, botOf }) {
           if (isOpen) {
             return (
               <li key={entry.key} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <button type="button" aria-expanded="true" aria-controls={id} onClick={() => flip(entry.key)} style={{ ...btn.text, alignSelf: "flex-end", height: "30px", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13.5px" }}>
+                <button type="button" aria-expanded="true" aria-controls={id} onClick={() => flip(entry.key)} style={{ ...btn.text, alignSelf: "flex-end", height: "30px", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)" }}>
                   {"Plegar"}<ChevronUp size={14} strokeWidth={2.2} aria-hidden="true" />
                 </button>
                 <div id={id}>{card(entry)}</div>
@@ -51,23 +51,23 @@ export default function NeedRows({ entries = [], card, botOf }) {
           return (
             <li key={entry.key} style={rowBox}>
               <button type="button" aria-expanded="false" aria-controls={id} onClick={() => flip(entry.key)} aria-label={`${row.who}: ${row.what}. Abrir`}
-                style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 6px 0 12px", border: "0", borderRadius: "12px", background: "transparent", textAlign: "left", cursor: "pointer", color: "#12131A" }}>
+                style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 6px 0 12px", border: "0", borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", cursor: "pointer", color: "#12131A" }}>
                 <Shape bot={bot} size={18} />
                 <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <span style={{ ...one, fontSize: "15px", lineHeight: "1.3" }}><strong style={{ fontWeight: "600" }}>{row.who}</strong><span style={{ color: "#5C606C" }}>{" · "}</span>{row.what}</span>
-                  {row.sub ? <span style={{ ...one, fontSize: "13.5px", lineHeight: "1.3", color: "#5C606C" }}>{row.sub}</span> : null}
+                  <span style={{ ...one, fontSize: "var(--t-body)", lineHeight: "1.3" }}><strong style={{ fontWeight: "600" }}>{row.who}</strong><span style={{ color: "#5C606C" }}>{" · "}</span>{row.what}</span>
+                  {row.sub ? <span style={{ ...one, fontSize: "var(--t-ui)", lineHeight: "1.3", color: "#5C606C" }}>{row.sub}</span> : null}
                 </span>
                 <ChevronDown size={16} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#5C606C" }} />
               </button>
               {row.action.kind === "link"
-                ? <a href={row.action.href} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(row.action.href); }} style={{ ...btn.dark, flex: "none", height: "38px", padding: "0 16px", fontSize: "14px" }}>{row.action.label}</a>
-                : <button type="button" onClick={act} style={{ ...btn.dark, flex: "none", height: "38px", padding: "0 16px", fontSize: "14px" }}>{row.action.label}</button>}
+                ? <a href={row.action.href} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(row.action.href); }} style={{ ...btn.dark, flex: "none", height: "38px", padding: "0 16px", fontSize: "var(--t-ui)" }}>{row.action.label}</a>
+                : <button type="button" onClick={act} style={{ ...btn.dark, flex: "none", height: "38px", padding: "0 16px", fontSize: "var(--t-ui)" }}>{row.action.label}</button>}
             </li>
           );
         })}
       </ul>
       {label ? (
-        <button ref={toggle} type="button" aria-expanded={all ? "true" : "false"} onClick={() => setAll((v) => !v)} style={{ ...btn.line, alignSelf: "flex-start", height: "36px", fontSize: "14px" }}>{label}</button>
+        <button ref={toggle} type="button" aria-expanded={all ? "true" : "false"} onClick={() => setAll((v) => !v)} style={{ ...btn.line, alignSelf: "flex-start", height: "36px", fontSize: "var(--t-ui)" }}>{label}</button>
       ) : null}
     </div>
   );

@@ -154,7 +154,7 @@ export default function WindowChrome() {
   const rest = { background: "transparent", borderColor: "transparent", color: ink };
   const over = darkRight ? { background: "#1D1F27", borderColor: "#2C2F3A", color: "#FFFFFF" } : { background: "#FFFFFF", borderColor: "#DCE0E8", color: "#12131A" };
   const overClose = { background: "#FFC93C", borderColor: "#12131A", color: "#12131A" };
-  const button = { width: "36px", height: "28px", display: "grid", placeItems: "center", margin: "0", padding: "0", border: "1px solid transparent", borderRadius: "10px", cursor: "pointer", WebkitAppRegion: "no-drag", opacity: state.focused ? 1 : 0.6, transition: "background .12s ease, border-color .12s ease, color .12s ease", ...rest };
+  const button = { width: "36px", height: "28px", display: "grid", placeItems: "center", margin: "0", padding: "0", border: "1px solid transparent", borderRadius: "var(--r-md)", cursor: "pointer", WebkitAppRegion: "no-drag", opacity: state.focused ? 1 : 0.6, transition: "background .12s ease, border-color .12s ease, color .12s ease", ...rest };
   const icon = { width: "14px", height: "14px", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" };
   const paintTo = (el, look) => Object.assign(el.style, look);
   const enter = (close) => (e) => paintTo(e.currentTarget, close ? overClose : over);
@@ -174,7 +174,7 @@ export default function WindowChrome() {
         {paint.brand ? (
           <span style={{ display: "flex", alignItems: "center", gap: "8px", pointerEvents: "none" }}>
             <LogoMark size={20} />
-            <span style={{ font: `800 14px/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: isDark(first) ? "#FFFFFF" : "#12131A" }}>Colmena</span>
+            <span style={{ font: `800 var(--t-ui)/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: isDark(first) ? "#FFFFFF" : "#12131A" }}>Colmena</span>
           </span>
         ) : <span />}
         <div role="group" aria-label="Ventana" style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" }}>

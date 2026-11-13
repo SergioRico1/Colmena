@@ -1,3 +1,4 @@
+import Select from "../../../Select.jsx";
 import { useEffect, useState } from "react";
 import { Archive, Folder, Globe, Hash } from "lucide-react";
 import RowBoundary from "../../../RowBoundary.jsx";
@@ -35,10 +36,10 @@ function Row({ p, bots, q }) {
   return (
     <a href={noteUrl(p.slug)} style={{ display: "flex", flexDirection: "column", gap: "5px", minHeight: "56px", padding: "12px 20px", borderTop: "1px solid rgba(18,19,26,.05)", color: "#12131A", textDecoration: "none" }}>
       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 12px" }}>
-        <span style={{ flex: "1 1 240px", minWidth: 0, fontSize: "15px", fontWeight: "600", lineHeight: "1.35", overflowWrap: "anywhere" }}>{p.title}</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: "#5C606C" }}><Who by={p.updatedBy} bots={bots} />{" · " + whenShort(p.updatedAt, true)}</span>
+        <span style={{ flex: "1 1 240px", minWidth: 0, fontSize: "var(--t-body)", fontWeight: "600", lineHeight: "1.35", overflowWrap: "anywhere" }}>{p.title}</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C" }}><Who by={p.updatedBy} bots={bots} />{" · " + whenShort(p.updatedAt, true)}</span>
       </span>
-      {(q ? p.snippet : p.excerpt) ? <span style={{ fontSize: "13.5px", lineHeight: "1.45", color: "#4A4D57", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{plain(plainLinks(q ? p.snippet : p.excerpt))}</span> : null}
+      {(q ? p.snippet : p.excerpt) ? <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#4A4D57", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{plain(plainLinks(q ? p.snippet : p.excerpt))}</span> : null}
       {p.folder || p.tags?.length || p.external || p.archived ? (
         <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px" }}>
           {p.folder ? <span style={CHIP}><Folder {...icon} />{p.folder}</span> : null}
@@ -85,12 +86,9 @@ export default function NoteList({ view = "notas", bots = [], onNew }) {
         <>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
             <SearchBox value={text} onChange={setText} label="Buscar en las notas" placeholder="Buscar por título o por lo que dicen" />
-            <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13.5px", color: "#5C606C" }}>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "#5C606C" }}>
               {"Orden"}
-              <select className="c-quiet" value={q ? "relevance" : sort} disabled={!!q} onChange={(e) => setSort(e.target.value)} style={{ height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.08)", borderRadius: "12px", background: "#FFFFFF", fontSize: "14px", color: "#12131A" }}>
-                {q ? <option value="relevance">{"Lo que más se parece"}</option> : null}
-                {SORTS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-              </select>
+              <Select label="Orden" className="c-quiet" value={q ? "relevance" : sort} disabled={!!q} onChange={(e) => setSort(e.target.value)} style={{ height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.08)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-ui)", color: "#12131A" }} options={[...(q ? [["relevance", "Lo que más se parece"]] : []), ...SORTS]} />
             </label>
           </div>
           {folders.length ? (
@@ -107,10 +105,10 @@ export default function NoteList({ view = "notas", bots = [], onNew }) {
             </div>
           ) : null}
           {error ? <p role="alert" style={ERROR}>{error}</p> : null}
-          {loading && !data ? <div style={{ height: "240px", borderRadius: "22px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+          {loading && !data ? <div style={{ height: "240px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
           {empty ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", padding: "60px 0", textAlign: "center" }}>
-              <p style={{ margin: 0, maxWidth: "520px", fontSize: "16px", lineHeight: "1.5", color: "#5C606C" }}>
+              <p style={{ margin: 0, maxWidth: "520px", fontSize: "var(--t-read)", lineHeight: "1.5", color: "#5C606C" }}>
                 {filtered ? "No hay ninguna nota que coincida. Prueba con otra palabra o quita los filtros."
                   : archived ? "No hay notas archivadas. Lo que archives deja de salir en las listas y en la búsqueda, y lo puedes recuperar aquí."
                     : "Aún no hay notas. Aquí guardáis lo que conviene tener escrito: clientes, proyectos, cómo se hace cada cosa y lo que se ha decidido. Tus bots las leen, y te preguntan antes de cambiarlas."}
@@ -120,7 +118,7 @@ export default function NoteList({ view = "notas", bots = [], onNew }) {
           ) : null}
           {pages.length ? (
             <div style={{ ...CARD, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              <h2 style={{ margin: "0", padding: "14px 20px 8px", fontSize: "13px", fontWeight: "600", color: "#5C606C" }} aria-live="polite">
+              <h2 style={{ margin: "0", padding: "14px 20px 8px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#5C606C" }} aria-live="polite">
                 {q ? (total === 1 ? "1 nota coincide" : `${total} notas coinciden`) : archived ? "Archivadas" : folder || tag ? [folder, tag ? "#" + tag : null].filter(Boolean).join(" · ") : "Todas las notas"}
               </h2>
               {pages.map((p) => <RowBoundary key={p.id} label="No se ha podido mostrar esta nota" action={{ href: noteUrl(p.slug), text: "Abrirla" }} resetKey={p.revision}><Row p={p} bots={bots} q={q} /></RowBoundary>)}
@@ -147,17 +145,17 @@ function Missing({ data, error, loading }) {
   const list = data?.missing || [];
   const create = (m) => act.act(() => createNote(m.title));
   if (error) return <p role="alert" style={ERROR}>{error}</p>;
-  if (loading && !data) return <div style={{ height: "160px", borderRadius: "22px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} />;
-  if (!list.length) return <p style={{ margin: 0, padding: "60px 0", textAlign: "center", fontSize: "16px", color: "#5C606C" }}>{"No hay nada por crear. Cuando una nota o un chat nombre con [[corchetes]] una nota que aún no existe, saldrá aquí."}</p>;
+  if (loading && !data) return <div style={{ height: "160px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} />;
+  if (!list.length) return <p style={{ margin: 0, padding: "60px 0", textAlign: "center", fontSize: "var(--t-read)", color: "#5C606C" }}>{"No hay nada por crear. Cuando una nota o un chat nombre con [[corchetes]] una nota que aún no existe, saldrá aquí."}</p>;
   return (
     <div style={{ ...CARD, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <h2 style={{ margin: "0", padding: "14px 20px 8px", fontSize: "13px", fontWeight: "600", color: "#5C606C" }}>{"Notas que se nombran y aún no existen"}</h2>
+      <h2 style={{ margin: "0", padding: "14px 20px 8px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#5C606C" }}>{"Notas que se nombran y aún no existen"}</h2>
       {act.error ? <p role="alert" style={{ ...ERROR, padding: "0 20px 8px" }}>{act.error}</p> : null}
       {list.map((m) => (
         <div key={m.slug} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 14px", minHeight: "56px", padding: "8px 20px", borderTop: "1px solid rgba(18,19,26,.05)" }}>
           <span style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-            <span style={{ fontSize: "15px", fontWeight: "600", overflowWrap: "anywhere" }}>{m.title}</span>
-            <span style={{ fontSize: "12.5px", color: "#5C606C" }}>
+            <span style={{ fontSize: "var(--t-body)", fontWeight: "600", overflowWrap: "anywhere" }}>{m.title}</span>
+            <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>
               {m.from?.length ? <>{"La nombra "}{m.from.slice(0, 3).map((f, i) => <span key={f.slug}>{i ? ", " : ""}<a href={noteUrl(f.slug)} style={{ color: "#1F4FD1" }}>{f.title}</a></span>)}{m.from.length > 3 ? ` y ${m.from.length - 3} más` : ""}</> : null}
               {m.mentions ? (m.from?.length ? " · " : "") + (m.mentions === 1 ? "Sale en 1 mensaje o archivo" : `Sale en ${m.mentions} mensajes o archivos`) : null}
             </span>

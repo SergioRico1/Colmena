@@ -16,8 +16,8 @@ export default function PagePreview({ html, title = "Vista previa" }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: "1", minHeight: 0 }}>
       <iframe title={title} sandbox="allow-scripts allow-modals" srcDoc={shown}
-        style={{ flex: "1", width: "100%", minHeight: "460px", border: "1px solid rgba(18,19,26,.08)", borderRadius: "16px", background: "#FFFFFF" }} />
-      <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{"Aislada: funciona sin internet y sin acceso a Colmena ni a tus datos."}</span>
+        style={{ flex: "1", width: "100%", minHeight: "460px", border: "1px solid rgba(18,19,26,.08)", borderRadius: "var(--r-lg)", background: "#FFFFFF" }} />
+      <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{"Aislada: funciona sin internet y sin acceso a Colmena ni a tus datos."}</span>
     </div>
   );
 }

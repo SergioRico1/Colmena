@@ -389,27 +389,7 @@ export function askChoices(ask) {
   return [["go", "Adelante"], ["later", "Ahora no"], ["always", "Siempre para " + who], ["never", "Nunca para " + who]];
 }
 
-/* ───────────── announcing ───────────── */
-
-/**
- * One sentence for the polite live region about rows that arrived since the last one: who wrote
- * (never you), and whether something now waits for you. Empty when there is nothing to say.
- */
-export function newsLine(items = [], { bots = [], waiting = 0 } = {}) {
-  const who = [];
-  let n = 0;
-  for (const m of items) {
-    const a = authorOf(m, bots);
-    if (a.kind === "system" || (a.kind === "person" && a.you)) continue;
-    n++;
-    const name = authorView(a).name;
-    if (!who.includes(name)) who.push(name);
-  }
-  const parts = [];
-  if (n) parts.push((n === 1 ? "Mensaje nuevo de " : `${n} mensajes nuevos de `) + listNames(who.slice(0, 3)) + (who.length > 3 ? " y más" : ""));
-  if (waiting > 0) parts.push(waiting === 1 ? "Algo te espera en esta sala" : `${waiting} cosas te esperan en esta sala`);
-  return parts.join(". ");
-}
+/* Announcing new rows to a screen reader lives in lib/announce.js (shared with the chats). */
 
 /**
  * The same ended state said twice in a row about one bot (a stop reaches the others once from

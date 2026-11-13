@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useEffect, useState } from "react";
 import ProviderMark from "../ProviderMark.jsx";
 import { ClaudePanel, OpenCodePanel } from "./Engines.jsx";
@@ -23,7 +24,7 @@ const THINK_LABEL = Object.fromEntries(THINK.map(([v, l]) => [v, l]));
 const COLS = "minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, .9fr)";
 const windowName = (m) => (!m ? "" : m === 10080 ? "esta semana" : m % 60 === 0 ? `de ${m / 60} h` : `de ${m} min`);
 const hm = (iso) => { const t = Date.parse(iso || ""); return Number.isFinite(t) ? new Date(t).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : null; };
-const small = { ...select, width: "100%", height: "32px", padding: "0 6px", fontSize: "13.5px" };
+const small = { ...select, width: "100%", height: "32px", padding: "0 6px", fontSize: "var(--t-ui)" };
 
 /** One account card: mark, name and its role, what it is, how much of the plan is gone, its button. */
 function Provider({ id, info, primary, fallback, planLimits, login }) {
@@ -49,15 +50,15 @@ function Provider({ id, info, primary, fallback, planLimits, login }) {
       : <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={btn(open ? "outline" : "dark", 38)}>{open ? "Cancelar" : "Conectar"}</button>)
     : <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={btn("outline", 38)}>Gestionar</button>;
   return (
-    <div {...anchorOf({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[id])} style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", scrollMarginTop: "24px", overflow: "hidden" }}>
+    <div {...anchorOf({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[id])} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px", overflow: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 20px" }}>
-        <ProviderMark engine={id} size={44} style={{ background: "#F1F1EC", borderRadius: "13px" }} />
+        <ProviderMark engine={id} size={44} style={{ background: "#F1F1EC", borderRadius: "var(--r-md)" }} />
         <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-          <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "16px", fontWeight: 600 }}>{name}<Chip tone={tag[1]}>{tag[0]}</Chip></span>
-          <span role="status" style={{ fontSize: "13.5px", color: info?.limit || info?.resting || login.waiting ? "#8A5A00" : id === "openai" && login.error && !connected ? "#B4232A" : SOFT }}>{note}</span>
+          <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-read)", fontWeight: 600 }}>{name}<Chip tone={tag[1]}>{tag[0]}</Chip></span>
+          <span role="status" style={{ fontSize: "var(--t-ui)", color: info?.limit || info?.resting || login.waiting ? "#8A5A00" : id === "openai" && login.error && !connected ? "#B4232A" : SOFT }}>{note}</span>
         </span>
         {w ? (
-          <span style={{ flex: "0 1 180px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "12.5px", color: MUTED }}>
+          <span style={{ flex: "0 1 180px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-meta)", color: MUTED }}>
             <span>{`Usado ${w.usedPercent} % ${windowName(w.windowMinutes)}${w.resetsAt ? " · renueva " + hm(w.resetsAt) : ""}`}</span>
             <Meter percent={w.usedPercent} />
           </span>
@@ -65,7 +66,7 @@ function Provider({ id, info, primary, fallback, planLimits, login }) {
         {main}
       </div>
       {id === "openai" && login.waiting ? (
-        <p style={{ margin: 0, padding: "0 20px 18px 80px", fontSize: "13.5px", lineHeight: 1.5, color: MUTED, animation: "fade .3s ease-out" }}>
+        <p style={{ margin: 0, padding: "0 20px 18px 80px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: MUTED, animation: "fade .3s ease-out" }}>
           Hemos abierto la página oficial de inicio de sesión. Colmena nunca ve tu contraseña: recibe un permiso.{" "}
           <button type="button" onClick={() => window.open(login.waiting.url, "_blank", "noopener")} style={{ border: 0, padding: 0, background: "none", font: "inherit", color: INK, fontWeight: 600, textDecoration: "underline", cursor: "pointer" }}>Abrirla otra vez</button>
         </p>
@@ -74,14 +75,14 @@ function Provider({ id, info, primary, fallback, planLimits, login }) {
       {open && !connected && id === "opencode-go" ? <OpenCodePanel onDone={() => setOpen(false)} style={{ padding: "16px 20px 20px 80px", borderBottom: 0, borderTop: LINE }} /> : null}
       {open && connected ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "14px 20px 16px 80px", borderTop: LINE, animation: "fade .25s ease-out" }}>
-          <span style={{ flex: "1 1 240px", fontSize: "13.5px", lineHeight: 1.5, color: MUTED }}>
+          <span style={{ flex: "1 1 240px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: MUTED }}>
             {id === "anthropic" && info.method ? { cli: "Con la sesión de Claude Code de este ordenador.", token: "Con un token de suscripción (claude setup-token).", api_key: "Con una clave de API, pago por uso." }[info.method] || null : null}
             {" "}Si la desconectas, los bots que la usan siguen con la principal o el respaldo.
           </span>
           <button type="button" disabled={act.busy} onClick={disconnect} style={{ ...btn("outline", 34), color: "#B4232A", borderColor: "rgba(180,35,42,.35)" }}>Desconectar</button>
         </div>
       ) : null}
-      {act.error ? <p role="alert" style={{ margin: 0, padding: "0 20px 14px 80px", fontSize: "13.5px", color: "#B4232A" }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, padding: "0 20px 14px 80px", fontSize: "var(--t-ui)", color: "#B4232A" }}>{act.error}</p> : null}
     </div>
   );
 }
@@ -92,31 +93,26 @@ function PerBot({ bots, engines, team, busy, setBot }) {
   return (
     <Panel anchor="por-bot" style={{ gap: "4px", padding: "18px 22px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "10px", marginBottom: "6px" }}>
-        <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 600 }}>Qué usa cada bot</h3>
-        <span style={{ fontSize: "13px", color: MUTED }}>Cambia uno solo si lo necesita.</span>
+        <h3 style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>Qué usa cada bot</h3>
+        <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Cambia uno solo si lo necesita.</span>
       </div>
       <div role="table" aria-label="Qué usa cada bot" style={{ display: "flex", flexDirection: "column", overflowX: "auto" }}>
-        <div role="row" style={{ display: "grid", gridTemplateColumns: COLS, gap: "12px", minWidth: "560px", padding: "8px 0", fontSize: "12.5px", fontWeight: 600, color: MUTED }}>
+        <div role="row" style={{ display: "grid", gridTemplateColumns: COLS, gap: "12px", minWidth: "560px", padding: "8px 0", fontSize: "var(--t-meta)", fontWeight: 600, color: MUTED }}>
           <span role="columnheader">Bot</span><span role="columnheader">Cuenta</span><span role="columnheader">Modelo</span><span role="columnheader">Piensa</span>
         </div>
         {bots.map((b) => {
           const own = live.find((e) => e.id === b.engine);
           return (
-            <div role="row" key={b.id} style={{ display: "grid", gridTemplateColumns: COLS, gap: "12px", alignItems: "center", minWidth: "560px", minHeight: "44px", borderTop: "1px solid rgba(18,19,26,.05)", fontSize: "14px" }}>
+            <div role="row" key={b.id} style={{ display: "grid", gridTemplateColumns: COLS, gap: "12px", alignItems: "center", minWidth: "560px", minHeight: "44px", borderTop: "1px solid rgba(18,19,26,.05)", fontSize: "var(--t-ui)" }}>
               <span role="rowheader" style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}><BotMark bot={b} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}</span></span>
               <span role="cell">
                 {live.length > 1 ? (
-                  <select aria-label={"Cuenta de " + b.name} disabled={busy} value={own?.id || ""} onChange={(e) => setBot(b, { engine: e.target.value || null }, "cuenta")} style={small}>
-                    <option value="">{team ? `Como el equipo (${team.label})` : "Como el equipo"}</option>
-                    {live.map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
-                  </select>
+                  <Select aria-label={"Cuenta de " + b.name} disabled={busy} value={own?.id || ""} onChange={(e) => setBot(b, { engine: e.target.value || null }, "cuenta")} style={small} options={[["", team ? `Como el equipo (${team.label})` : "Como el equipo"], ...live.map((e) => [e.id, e.label])]} />
                 ) : own?.label || team?.label || "—"}
               </span>
-              <span role="cell" title={b.model?.reason ? "Elegido porque " + b.model.reason : undefined} style={{ font: `400 12.5px/1.2 ${mono}`, color: "#3D404A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.model?.slug ? String(b.model.slug).replace(/^[a-z-]+\//, "") : "Sin modelo todavía"}</span>
+              <span role="cell" title={b.model?.reason ? "Elegido porque " + b.model.reason : undefined} style={{ font: `400 var(--t-meta)/1.2 ${mono}`, color: "#3D404A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.model?.slug ? String(b.model.slug).replace(/^[a-z-]+\//, "") : "Sin modelo todavía"}</span>
               <span role="cell">
-                <select aria-label={"Cuánto piensa " + b.name} disabled={busy} value={b.thinking || "equilibrado"} onChange={(e) => setBot(b, { thinking: e.target.value }, "piensa")} style={{ ...small, color: SOFT }}>
-                  {THINK.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
+                <Select aria-label={"Cuánto piensa " + b.name} disabled={busy} value={b.thinking || "equilibrado"} onChange={(e) => setBot(b, { thinking: e.target.value }, "piensa")} style={{ ...small, color: SOFT }} options={THINK} />
               </span>
             </div>
           );
@@ -177,27 +173,21 @@ export default function AccountsSection() {
 
       <Card label="Qué usan">
         <Row as="label" first anchor="piensan-con" title="Piensan con" sub={live.length ? "La cuenta que usan por defecto." : "Conecta una cuenta para que tus bots puedan pensar."}>
-          <select aria-label="Piensan con" disabled={live.length < 2 || act.busy} value={primary || ""} onChange={(e) => setEngines({ primary: e.target.value }, "Tu equipo piensa con " + engine(e.target.value)?.label, { primary })} style={{ ...select, width: "220px" }}>
-            {live.length ? live.map((e) => <option key={e.id} value={e.id}>{e.label}</option>) : <option value="">Ninguna todavía</option>}
-          </select>
+          <Select aria-label="Piensan con" disabled={live.length < 2 || act.busy} value={primary || ""} onChange={(e) => setEngines({ primary: e.target.value }, "Tu equipo piensa con " + engine(e.target.value)?.label, { primary })} style={{ ...select, width: "220px" }} options={live.length ? live.map((e) => [e.id, e.label]) : [["", "Ninguna todavía"]]} />
         </Row>
         <Row as="label" anchor="respaldo" title="Si falla o llega al límite, usar"
           sub={fallback === "none" ? "Si la principal llega a su límite, paran y te avisan; lo hecho se conserva." : "Siguen trabajando sin que tengas que hacer nada, con todo lo que llevaban."}>
-          <select aria-label="Si falla o llega al límite, usar" disabled={!live.length || act.busy} value={fallback} onChange={(e) => setEngines({ fallback: e.target.value }, "Respaldo cambiado", { fallback })} style={{ ...select, width: "220px" }}>
-            {fallbacks.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          <Select aria-label="Si falla o llega al límite, usar" disabled={!live.length || act.busy} value={fallback} onChange={(e) => setEngines({ fallback: e.target.value }, "Respaldo cambiado", { fallback })} style={{ ...select, width: "220px" }} options={fallbacks} />
         </Row>
         {gptOn && gptModels.length ? (
           <Row as="label" anchor="modelo" title="Modelo de ChatGPT" sub="El que usan cuando piensan con ChatGPT.">
-            <select aria-label="Modelo de ChatGPT" value={settings.model || ""} onChange={(e) => save({ model: e.target.value }, "Modelo cambiado", { model: settings.model })} style={{ ...select, width: "220px" }}>
-              {gptModels.map((m) => <option key={m.slug} value={m.slug}>{m.label || m.slug}</option>)}
-            </select>
+            <Select aria-label="Modelo de ChatGPT" value={settings.model || ""} onChange={(e) => save({ model: e.target.value }, "Modelo cambiado", { model: settings.model })} style={{ ...select, width: "220px" }} options={gptModels.map((m) => [m.slug, m.label || m.slug])} />
           </Row>
         ) : null}
         <div {...anchorOf("cuanto-piensan")} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px 22px", borderTop: LINE, scrollMarginTop: "24px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <span style={{ fontSize: "15px", fontWeight: 500 }}>Cuánto piensan</span>
-            <span style={{ fontSize: "13px", color: MUTED }}>{think ? "Más a fondo es más lento y gasta más de tu plan." : "Cada bot a su manera: elige una para todo el equipo o cámbialo abajo."}</span>
+            <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>Cuánto piensan</span>
+            <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{think ? "Más a fondo es más lento y gasta más de tu plan." : "Cada bot a su manera: elige una para todo el equipo o cámbialo abajo."}</span>
           </span>
           <Choices label="Cuánto piensan" min={170} value={think} busy={act.busy || !list.length} items={THINK} onPick={(v) => v !== think && setThink(v)} />
         </div>
@@ -205,7 +195,7 @@ export default function AccountsSection() {
 
       {list.length ? <PerBot bots={list} engines={engines} team={team} busy={act.busy} setBot={setBot} /> : null}
 
-      <p style={{ margin: 0, fontSize: "13.5px", color: MUTED }}>
+      <p style={{ margin: 0, fontSize: "var(--t-ui)", color: MUTED }}>
         ¿<Term tip="Una clave que da acceso a OpenAI pagando por uso, en lugar de tu plan de ChatGPT.">Clave de API</Term> de OpenAI o un modelo en este ordenador (Ollama, LM Studio)? Está en{" "}
         {expert ? <Go to="/ajustes/avanzado">Ajustes › Avanzado</Go> : <><Go to="/ajustes/general#modo-experto">Ajustes › Avanzado</Go>, con el modo experto</>}.
       </p>

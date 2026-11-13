@@ -47,7 +47,7 @@ function CodeView({ text, line, onLine }) {
   const to = Math.min(lines.length, Math.ceil((view.top + view.height) / LINE) + 30);
   const gutter = String(lines.length).length * 8 + 22;
   return (
-    <div ref={box} style={{ flex: 1, minHeight: 0, overflow: "auto", overscrollBehavior: "contain", font: `400 12.5px/${LINE}px ${MONO}`, color: C.text }}>
+    <div ref={box} style={{ flex: 1, minHeight: 0, overflow: "auto", overscrollBehavior: "contain", font: `400 var(--t-meta)/${LINE}px ${MONO}`, color: C.text }}>
       <div style={{ position: "relative", height: lines.length * LINE + 12 + "px", minWidth: "100%" }}>
         <div style={{ position: "absolute", top: from * LINE + 6 + "px", left: 0, minWidth: "100%" }}>
           {lines.slice(from, to).map((t, k) => {
@@ -79,33 +79,33 @@ function Viewer({ task, file, changed, onNote }) {
   }, [task.id, file]);
   const editor = () => post("/code/tasks/" + task.id + "/open-editor", { path: file, line: line || 1 }).then((r) => onNote(r.editor ? null : { info: "No encuentro VS Code, Cursor ni Windsurf: se abre con el programa de ese tipo de archivo." }), (e) => onNote(e.message));
   const reveal = () => revealInTask(task.id, file).then(() => onNote(null), (e) => onNote(e.message));
-  const tool = { height: "30px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: C.white, color: C.ink, cursor: "pointer", fontSize: "12.5px", fontWeight: 500, whiteSpace: "nowrap" };
+  const tool = { height: "30px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" };
   const status = changed.get(file);
   return (
     <>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", minHeight: "30px" }}>
-        <span title={file} style={{ flex: "1 1 160px", minWidth: 0, font: `500 13px/1.3 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span title={file} style={{ flex: "1 1 160px", minWidth: 0, font: `500 var(--t-meta)/1.3 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {file}{status ? <span style={{ color: status === "A" ? C.greenText : C.blue }}>{status === "A" ? " · nuevo en la tarea" : " · cambiado en la tarea"}</span> : null}
           {data ? <span style={{ color: C.quiet, fontWeight: 400 }}> · {sizeLabel(data.size)}</span> : null}
         </span>
         <button type="button" onClick={editor} title={line ? "Abre el archivo en la línea " + line : "Abre el archivo en VS Code, Cursor o Windsurf"} style={tool}><SquareArrowOutUpRight size={13} strokeWidth={2.2} aria-hidden="true" />Abrir en el editor</button>
         <button type="button" onClick={reveal} style={tool}><FolderOpen size={13} strokeWidth={2.2} aria-hidden="true" />{REVEAL_LABEL}</button>
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", borderRadius: "14px", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflow: "hidden" }}>
-        {error ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "13px", color: C.red }}>{error}</p>
-          : !data ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "13px", color: C.faint }}>Abriendo…</p>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflow: "hidden" }}>
+        {error ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.red }}>{error}</p>
+          : !data ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.faint }}>Abriendo…</p>
             : data.kind === "image" ? (
               <div style={{ flex: 1, minHeight: 0, overflow: "auto", display: "grid", placeItems: "center", padding: "16px", background: C.card }}>
-                <img src={data.dataUrl} alt={file} style={{ maxWidth: "100%", height: "auto", borderRadius: "6px", boxShadow: "0 1px 2px rgba(18,19,26,.08)" }} />
+                <img src={data.dataUrl} alt={file} style={{ maxWidth: "100%", height: "auto", borderRadius: "var(--r-sm)", boxShadow: "0 1px 2px rgba(18,19,26,.08)" }} />
               </div>
             ) : data.kind === "binary" ? (
-              <p style={{ margin: 0, padding: "14px 16px", fontSize: "13px", lineHeight: 1.5, color: C.faint }}>
+              <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: C.faint }}>
                 {data.reason === "big" ? "La imagen pasa de 4 MB: ábrela en el editor o en el Explorador." : "Es un archivo binario: no se puede mostrar aquí."}
               </p>
             ) : (
               <>
-                {data.truncated ? <p style={{ margin: 0, padding: "8px 16px", borderBottom: "1px solid " + C.rule, fontSize: "12px", color: C.faint }}>Es muy grande: solo se muestran los primeros 400 KB.</p> : null}
-                {data.text ? <CodeView text={data.text} line={line} onLine={setLine} /> : <p style={{ margin: 0, padding: "14px 16px", fontSize: "13px", color: C.faint }}>El archivo está vacío.</p>}
+                {data.truncated ? <p style={{ margin: 0, padding: "8px 16px", borderBottom: "1px solid " + C.rule, fontSize: "var(--t-caption)", color: C.faint }}>Es muy grande: solo se muestran los primeros 400 KB.</p> : null}
+                {data.text ? <CodeView text={data.text} line={line} onLine={setLine} /> : <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.faint }}>El archivo está vacío.</p>}
               </>
             )}
       </div>
@@ -153,56 +153,56 @@ export default function Files({ task }) {
   const rows = useMemo(() => visibleRows(dirs, open), [dirs, open]);
   const root = dirs[""];
   const folderName = String(task.cwd || "").split(/[\\/]/).filter(Boolean).pop() || "carpeta";
-  const rowStyle = (depth, on) => ({ width: "100%", minHeight: "30px", display: "flex", alignItems: "center", gap: "6px", padding: "0 8px 0 " + (8 + Math.min(depth, 12) * 14) + "px", border: 0, borderRadius: "8px", background: on ? C.track : "transparent", textAlign: "left", cursor: "pointer", color: C.text });
-  const name = { flex: 1, minWidth: 0, font: `400 12.5px/1.2 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-  const mark = (status) => status ? <span style={{ flex: "none", font: `600 11px/1 ${MONO}`, color: status === "A" ? C.greenText : C.blue }} title={status === "A" ? "Nuevo en la tarea" : "Cambiado en la tarea"}>{status}</span> : null;
+  const rowStyle = (depth, on) => ({ width: "100%", minHeight: "30px", display: "flex", alignItems: "center", gap: "6px", padding: "0 8px 0 " + (8 + Math.min(depth, 12) * 14) + "px", border: 0, borderRadius: "var(--r-sm)", background: on ? C.track : "transparent", textAlign: "left", cursor: "pointer", color: C.text });
+  const name = { flex: 1, minWidth: 0, font: `400 var(--t-meta)/1.2 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+  const mark = (status) => status ? <span style={{ flex: "none", font: `600 var(--t-micro)/1 ${MONO}`, color: status === "A" ? C.greenText : C.blue }} title={status === "A" ? "Nuevo en la tarea" : "Cambiado en la tarea"}>{status}</span> : null;
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", animation: "fade .25s ease-out" }}>
       <div style={{ flex: "0 1 270px", minWidth: "180px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(18,19,26,.06)" }}>
         <div style={{ flex: "none", display: "flex", flexDirection: "column", gap: "8px", padding: "14px 10px 8px" }}>
           <div className="code-turn" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 4px" }}>
-            <span title={task.cwd} style={{ flex: 1, minWidth: 0, fontSize: "13px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{folderName}</span>
+            <span title={task.cwd} style={{ flex: 1, minWidth: 0, fontSize: "var(--t-meta)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{folderName}</span>
             <button type="button" onClick={() => revealInTask(task.id, "").then(() => setNote(null), (e) => setNote(e.message))} aria-label={"Abrir la carpeta de la tarea"} title={"Abrir la carpeta de la tarea: " + task.cwd}
-              style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: C.muted }}>
+              style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: C.muted }}>
               <FolderOpen size={14} strokeWidth={2.2} aria-hidden="true" />
             </button>
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "999px", background: "rgba(18,19,26,.045)", color: C.muted }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.045)", color: C.muted }}>
             <Search size={13} strokeWidth={2.2} aria-hidden="true" />
             <span style={SR}>Filtrar archivos</span>
-            <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "13px" }} />
+            <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />
           </label>
         </div>
         <div role="tree" aria-label="Archivos de la tarea" style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: "0 10px 14px", display: "flex", flexDirection: "column", gap: "1px" }}>
           {query ? (
-            found === null ? <p style={{ margin: "6px 8px", fontSize: "12.5px", color: C.faint }}>Buscando…</p>
-              : !found.length ? <p style={{ margin: "6px 8px", fontSize: "12.5px", color: C.faint }}>Ningún archivo coincide.</p>
+            found === null ? <p style={{ margin: "6px 8px", fontSize: "var(--t-meta)", color: C.faint }}>Buscando…</p>
+              : !found.length ? <p style={{ margin: "6px 8px", fontSize: "var(--t-meta)", color: C.faint }}>Ningún archivo coincide.</p>
                 : found.map((p) => (
                   <button key={p} type="button" role="treeitem" aria-selected={file === p} onClick={() => setFile(p)} title={p} style={rowStyle(0, file === p)}>
                     <FileText size={13} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: C.quiet }} />
                     <span style={name}>{p}</span>{mark(changed.get(p))}
                   </button>
                 ))
-          ) : root?.error ? <p style={{ margin: "6px 8px", fontSize: "13px", lineHeight: 1.45, color: C.red }}>{root.error}</p>
-            : !root ? <p style={{ margin: "6px 8px", fontSize: "12.5px", color: C.faint }}>Cargando…</p>
-              : !root.entries.length ? <p style={{ margin: "6px 8px", fontSize: "12.5px", color: C.faint }}>La carpeta está vacía.</p>
+          ) : root?.error ? <p style={{ margin: "6px 8px", fontSize: "var(--t-meta)", lineHeight: 1.45, color: C.red }}>{root.error}</p>
+            : !root ? <p style={{ margin: "6px 8px", fontSize: "var(--t-meta)", color: C.faint }}>Cargando…</p>
+              : !root.entries.length ? <p style={{ margin: "6px 8px", fontSize: "var(--t-meta)", color: C.faint }}>La carpeta está vacía.</p>
                 : (
                   <>
                     {rows.map((r) => r.note ? (
-                      <span key={r.path} style={{ padding: "4px 8px 4px " + (30 + Math.min(r.depth, 12) * 14) + "px", fontSize: "12px", color: r.error ? C.red : C.quiet }}>{r.note}</span>
+                      <span key={r.path} style={{ padding: "4px 8px 4px " + (30 + Math.min(r.depth, 12) * 14) + "px", fontSize: "var(--t-caption)", color: r.error ? C.red : C.quiet }}>{r.note}</span>
                     ) : r.type === "dir" ? (
                       r.heavy ? (
                         <span key={r.path} role="treeitem" aria-expanded={false} title="Dependencias, Git o cachés: no se abre aquí (ábrela en el Explorador si la necesitas)" style={{ ...rowStyle(r.depth, false), cursor: "default", color: C.quiet }}>
                           <ChevronRight size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", opacity: 0.4 }} />
                           <Folder size={13} strokeWidth={2} aria-hidden="true" style={{ flex: "none" }} />
-                          <span style={name}>{r.name}</span><span style={{ flex: "none", fontSize: "11.5px" }}>sin abrir</span>
+                          <span style={name}>{r.name}</span><span style={{ flex: "none", fontSize: "var(--t-caption)" }}>sin abrir</span>
                         </span>
                       ) : (
                         <button key={r.path} type="button" role="treeitem" aria-expanded={open.has(r.path)} onClick={() => toggle(r.path)} title={r.path} style={rowStyle(r.depth, false)}>
                           <ChevronRight size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: C.quiet, transform: open.has(r.path) ? "rotate(90deg)" : "none", transition: "transform .15s ease" }} />
                           {open.has(r.path) ? <FolderOpen size={13} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: C.muted }} /> : <Folder size={13} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: C.muted }} />}
                           <span style={name}>{r.name}</span>
-                          {changedDirs.has(r.path) ? <span aria-label="Tiene cambios" title="Tiene archivos cambiados en la tarea" style={{ flex: "none", width: "6px", height: "6px", borderRadius: "50%", background: C.blue }} /> : null}
+                          {changedDirs.has(r.path) ? <span aria-label="Tiene cambios" title="Tiene archivos cambiados en la tarea" style={{ flex: "none", width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: C.blue }} /> : null}
                         </button>
                       )
                     ) : (
@@ -214,17 +214,17 @@ export default function Files({ task }) {
                         <span style={name}>{r.name}</span>{mark(changed.get(r.path))}
                       </button>
                     ))}
-                    {root.hidden || root.truncated ? <span style={{ padding: "6px 8px", fontSize: "12px", color: C.quiet }}>{noteOf(root)}</span> : null}
+                    {root.hidden || root.truncated ? <span style={{ padding: "6px 8px", fontSize: "var(--t-caption)", color: C.quiet }}>{noteOf(root)}</span> : null}
                   </>
                 )}
         </div>
       </div>
       <div style={{ flex: "999 1 380px", minWidth: 0, display: "flex", flexDirection: "column", gap: "10px", padding: "14px 18px" }}>
-        {note ? <p role="status" onClick={() => setNote(null)} style={{ margin: 0, fontSize: "13px", color: note.info ? C.faint : C.red }}>{note.info || note}</p> : null}
+        {note ? <p role="status" onClick={() => setNote(null)} style={{ margin: 0, fontSize: "var(--t-meta)", color: note.info ? C.faint : C.red }}>{note.info || note}</p> : null}
         {file ? <Viewer key={file} task={task} file={file} changed={changed} onNote={setNote} /> : (
           <div style={{ padding: "48px 28px", textAlign: "center", display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-            <strong style={{ fontSize: "15px" }}>Elige un archivo</strong>
-            <span style={{ fontSize: "13px", color: C.faint, maxWidth: "320px", lineHeight: 1.5 }}>Lo verás aquí tal como está en la copia de la tarea, sin poder cambiarlo. Los que ha tocado la tarea llevan una M (cambiado) o una A (nuevo).</span>
+            <strong style={{ fontSize: "var(--t-body)" }}>Elige un archivo</strong>
+            <span style={{ fontSize: "var(--t-meta)", color: C.faint, maxWidth: "320px", lineHeight: 1.5 }}>Lo verás aquí tal como está en la copia de la tarea, sin poder cambiarlo. Los que ha tocado la tarea llevan una M (cambiado) o una A (nuevo).</span>
           </div>
         )}
       </div>

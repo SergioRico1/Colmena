@@ -42,19 +42,19 @@ export default function ThreadPanel({ shareId, rootId, dm, botOf, shared, compos
   }, [onClose]);
   const common = { dm, botOf, shared, inThread: true, onReact: thread.react, onRetry: thread.retry, onEdit: thread.edit, onError };
   return (
-    <aside aria-label="Hilo" style={{ flex: "none", width: narrow ? "min(440px, 100%)" : "clamp(340px, 34vw, 440px)", height: "100%", display: "flex", flexDirection: "column", background: "#FBFBF9", borderLeft: "1px solid rgba(18,19,26,.07)", animation: narrow ? "sheet .35s cubic-bezier(.2,.8,.2,1)" : "fade .25s ease-out", ...(narrow ? { position: "absolute", top: 0, right: 0, bottom: 0, zIndex: 30, boxShadow: "-30px 0 60px -30px rgba(18,19,26,.35)", borderRadius: "28px 0 0 28px" } : {}) }}>
+    <aside aria-label="Hilo" style={{ flex: "none", width: narrow ? "min(440px, 100%)" : "clamp(340px, 34vw, 440px)", height: "100%", display: "flex", flexDirection: "column", background: "#FBFBF9", borderLeft: "1px solid rgba(18,19,26,.07)", animation: narrow ? "sheet .35s cubic-bezier(.2,.8,.2,1)" : "fade .25s ease-out", ...(narrow ? { position: "absolute", top: 0, right: 0, bottom: 0, zIndex: 30, boxShadow: "-30px 0 60px -30px rgba(18,19,26,.35)", borderRadius: "var(--r-3xl) 0 0 var(--r-3xl)" } : {}) }}>
       <header style={{ flex: "none", display: "flex", alignItems: "center", gap: "12px", padding: "22px 20px 16px 24px" }}>
         <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
-          <strong style={{ font: "600 20px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Hilo"}</strong>
-          <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{"Solo avisa a quien está en él"}</span>
+          <strong style={{ font: "600 var(--t-title)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Hilo"}</strong>
+          <span style={{ fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{"Solo avisa a quien está en él"}</span>
         </span>
-        <button type="button" aria-label="Cerrar el hilo" onClick={onClose} style={{ width: "38px", height: "38px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.05)", cursor: "pointer", color: "#3D404A" }}><X size={18} strokeWidth={2.2} aria-hidden="true" /></button>
+        <button type="button" aria-label="Cerrar el hilo" onClick={onClose} style={{ width: "38px", height: "38px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.05)", cursor: "pointer", color: "#3D404A" }}><X size={18} strokeWidth={2.2} aria-hidden="true" /></button>
       </header>
       <div ref={list} style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: "6px 24px 18px", display: "flex", flexDirection: "column", gap: "4px" }}>
-        {thread.error === "missing" ? <p style={{ margin: "20px 0", fontSize: "15px", color: "#5C606C" }}>{"Este hilo ya no está."}</p> : null}
+        {thread.error === "missing" ? <p style={{ margin: "20px 0", fontSize: "var(--t-body)", color: "#5C606C" }}>{"Este hilo ya no está."}</p> : null}
         {thread.root ? <PeopleMessage m={thread.root} {...common} onDelete={onDelete} /> : null}
         {thread.root ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 0 6px", fontSize: "13px", color: "#6B6F7A" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 0 6px", fontSize: "var(--t-meta)", color: "#6B6F7A" }}>
             {count === 0 ? "Aún sin respuestas" : count === 1 ? "1 respuesta" : count + " respuestas"}
             <span style={{ flex: 1, height: "1px", background: "rgba(18,19,26,.08)" }} />
           </div>

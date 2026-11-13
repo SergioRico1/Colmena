@@ -58,29 +58,29 @@ export function useBtw(path) {
 }
 
 const INK = "#12131A", MUTED = "#5C606C", FAINT = "#6B6F7A";
-const shimmer = { fontSize: "15px", fontWeight: "500", background: `linear-gradient(90deg, ${FAINT} 0%, ${FAINT} 35%, ${INK} 50%, ${FAINT} 65%, ${FAINT} 100%)`, backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
+const shimmer = { fontSize: "var(--t-body)", fontWeight: "500", background: `linear-gradient(90deg, ${FAINT} 0%, ${FAINT} 35%, ${INK} 50%, ${FAINT} 65%, ${FAINT} 100%)`, backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
 
 function BtwNote({ note, botName, onDismiss, onRetry }) {
   return (
     <section role="note" aria-label={"Pregunta al margen: " + note.question} aria-busy={note.busy || undefined}
-      style={{ position: "relative", display: "flex", flexDirection: "column", gap: "8px", padding: "14px 52px 16px 20px", background: "#FFFFFF", borderRadius: "20px", border: "1px solid rgba(18,19,26,.06)", boxShadow: "0 1px 2px rgba(18,19,26,.04), 0 12px 32px -12px rgba(18,19,26,.14)", animation: "rise .32s cubic-bezier(.2,.8,.2,1) both" }}>
-      <span style={{ display: "flex", alignItems: "baseline", gap: "8px", minWidth: 0, fontSize: "13px", color: MUTED }}>
-        <span style={{ flex: "none", font: "500 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: FAINT }}>{"Al margen"}</span>
+      style={{ position: "relative", display: "flex", flexDirection: "column", gap: "8px", padding: "14px 52px 16px 20px", background: "#FFFFFF", borderRadius: "var(--r-xl)", border: "1px solid rgba(18,19,26,.06)", boxShadow: "0 1px 2px rgba(18,19,26,.04), 0 12px 32px -12px rgba(18,19,26,.14)", animation: "rise .32s cubic-bezier(.2,.8,.2,1) both" }}>
+      <span style={{ display: "flex", alignItems: "baseline", gap: "8px", minWidth: 0, fontSize: "var(--t-meta)", color: MUTED }}>
+        <span style={{ flex: "none", font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: FAINT }}>{"Al margen"}</span>
         <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={note.question}>{note.question || "/btw"}</span>
       </span>
       {note.busy ? (
         <span role="status" style={shimmer}>{(botName || "Tu bot") + " lo mira sin dejar lo que hace…"}</span>
       ) : note.error ? (
-        <span role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", fontSize: "14px", lineHeight: "1.45", color: "#8E2A1F" }}>
+        <span role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#8E2A1F" }}>
           {note.error}
-          {note.retryable ? <button type="button" onClick={() => onRetry(note.id)} style={{ height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "12px", fontWeight: "600", color: INK }}>{"Reintentar"}</button> : null}
+          {note.retryable ? <button type="button" onClick={() => onRetry(note.id)} style={{ height: "30px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: INK }}>{"Reintentar"}</button> : null}
         </span>
       ) : (
         <div style={{ color: INK, maxHeight: "38vh", overflowY: "auto", overflowWrap: "anywhere" }}><Markdown text={note.answer} size={15} /></div>
       )}
-      {!note.busy && !note.error ? <span style={{ fontSize: "12px", color: FAINT }}>{(botName ? botName + " · " : "") + "No entra en la conversación"}</span> : null}
+      {!note.busy && !note.error ? <span style={{ fontSize: "var(--t-caption)", color: FAINT }}>{(botName ? botName + " · " : "") + "No entra en la conversación"}</span> : null}
       <button type="button" onClick={() => onDismiss(note.id)} aria-label="Cerrar la respuesta al margen" title="Cerrar (Esc)"
-        style={{ position: "absolute", top: "10px", right: "10px", width: "32px", height: "32px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", color: MUTED, cursor: "pointer", transition: "background .15s ease" }}
+        style={{ position: "absolute", top: "10px", right: "10px", width: "32px", height: "32px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", color: MUTED, cursor: "pointer", transition: "background .15s ease" }}
         onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(18,19,26,.06)"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
         <X size={16} strokeWidth={2} aria-hidden="true" />
       </button>

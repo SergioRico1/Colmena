@@ -22,16 +22,16 @@ export default function UpdateNotice() {
     setHidden(state.version);
   };
   return (
-    <div role="status" aria-live="polite" style={{ position: "fixed", right: "24px", bottom: "24px", zIndex: 2147482000, width: "min(560px, calc(100vw - 48px))", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 10px 10px 18px", borderRadius: "18px", background: INK, color: "#FFFFFF", fontSize: "14px", boxShadow: "0 18px 40px -20px rgba(18,19,26,.55)", animation: "rise .35s cubic-bezier(.2,.8,.2,1)" }}>
+    <div role="status" aria-live="polite" style={{ position: "fixed", right: "24px", bottom: "24px", zIndex: 2147482000, width: "min(560px, calc(100vw - 48px))", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 10px 10px 18px", borderRadius: "var(--r-xl)", background: INK, color: "#FFFFFF", fontSize: "var(--t-ui)", boxShadow: "0 18px 40px -20px rgba(18,19,26,.55)", animation: "rise .35s cubic-bezier(.2,.8,.2,1)" }}>
       <span style={{ flex: "1 1 180px" }}>
         {state.waiting ? "Se actualizará cuando cada bot termine su paso; luego siguen." : `Hay una versión nueva de Colmena (${state.version}).`}
       </span>
       {state.waiting ? null : (
-        <button type="button" onClick={() => (manual ? updates.download() : updates.restart())} style={{ height: "38px", padding: "0 16px", border: "0", borderRadius: "999px", background: "#FFFFFF", color: INK, fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
+        <button type="button" onClick={() => (manual ? updates.download() : updates.restart())} style={{ height: "38px", padding: "0 16px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: INK, fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>
           {manual ? "Descargar" : "Reiniciar y actualizar"}
         </button>
       )}
-      <button type="button" onClick={close} style={{ height: "38px", padding: "0 10px", border: "0", background: "transparent", color: "#C9CBD3", fontSize: "14px", cursor: "pointer" }}>
+      <button type="button" onClick={close} style={{ height: "38px", padding: "0 10px", border: "0", background: "transparent", color: "#C9CBD3", fontSize: "var(--t-ui)", cursor: "pointer" }}>
         {state.waiting ? "No esperar" : "Luego"}
       </button>
     </div>

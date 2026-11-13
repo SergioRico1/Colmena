@@ -23,7 +23,8 @@ const TABS = [
 ];
 const ALIAS = { done: "archivos", skills: "habilidades", mem: "memoria", "saben-de-ti": "memoria", wiki: "notas" };
 const tabOf = (v) => (TABS.some((t) => t.id === v) ? v : ALIAS[v] || "archivos");
-const WIDTH = { archivos: "1180px", notas: "1180px", habilidades: "1120px", memoria: "1080px" };
+// One column for the four tabs: the left edge of the text stays put when you switch.
+const WIDTH = "1180px";
 
 export default function ArchivoV2({ params = {}, query = {} }) {
   const { artifacts = [], bots = [], missions = [], skills = [], memories = [], ready } = useStore();
@@ -45,20 +46,20 @@ export default function ArchivoV2({ params = {}, query = {} }) {
     setNote(ok !== undefined ? { text: `«${files[0].name}» importada. Revisa sus pasos antes de activarla.` } : { error: true, text: act.error || "No se pudo importar" });
   };
   const action = tab === "habilidades"
-    ? <button type="button" onClick={importSkill} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "15px", fontWeight: "500", cursor: "pointer" }}>{"Importar una habilidad"}</button>
+    ? <button type="button" onClick={importSkill} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Importar una habilidad"}</button>
     : tab === "memoria"
-      ? <button type="button" onClick={() => setImporting(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "15px", fontWeight: "500", cursor: "pointer" }}>{"Importar de ChatGPT"}</button>
+      ? <button type="button" onClick={() => setImporting(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Importar de ChatGPT"}</button>
       : tab === "notas" && params.slug === undefined
         ? <NotesActions onNew={() => setNoteDialog("new")} onImport={() => setNoteDialog("import")} />
         : null;
 
   return (
     <Shell active="biblioteca">
-      <main style={{ maxWidth: WIDTH[tab], margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "22px" }}>
+      <main style={{ maxWidth: WIDTH, margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "22px" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <h1 style={{ margin: "0", font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Biblioteca"}</h1>
-            <p style={{ margin: "0", fontSize: "16px", color: "#4A4D57" }}>{"Lo que producen tus bots y lo que saben: archivos, notas, habilidades y memoria."}</p>
+            <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Biblioteca"}</h1>
+            <p style={{ margin: "0", fontSize: "var(--t-read)", color: "#4A4D57" }}>{"Lo que producen tus bots y lo que saben: archivos, notas, habilidades y memoria."}</p>
           </div>
           {action}
         </header>
@@ -66,10 +67,10 @@ export default function ArchivoV2({ params = {}, query = {} }) {
           {TABS.map((t) => {
             const on = t.id === tab;
             return (
-              <a key={t.id} href={`/biblioteca/${t.id}`} aria-current={on ? "page" : undefined} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderBottom: on ? "2px solid #12131A" : undefined, marginBottom: on ? "-1px" : undefined, color: on ? "#12131A" : "#4A4D57", fontSize: "15px", fontWeight: on ? "600" : "500" }}>
+              <a key={t.id} href={`/biblioteca/${t.id}`} aria-current={on ? "page" : undefined} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderBottom: on ? "2px solid #12131A" : undefined, marginBottom: on ? "-1px" : undefined, color: on ? "#12131A" : "#4A4D57", fontSize: "var(--t-body)", fontWeight: on ? "600" : "500" }}>
                 {t.label}
-                {t.id === "habilidades" && pending ? <span aria-label={`${pending} por revisar`} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "10px", background: "#FFC93C", color: "#12131A", fontSize: "11.5px", fontWeight: "600" }}>{String(pending)}</span> : null}
-                {t.sub ? <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{t.sub}</span> : null}
+                {t.id === "habilidades" && pending ? <span aria-label={`${pending} por revisar`} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "#FFC93C", color: "#12131A", fontSize: "var(--t-caption)", fontWeight: "600" }}>{String(pending)}</span> : null}
+                {t.sub ? <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{t.sub}</span> : null}
               </a>
             );
           })}

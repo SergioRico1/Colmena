@@ -46,9 +46,9 @@ export function WatchedView({ watching, name, busy = false, onTake, takeStyle, q
     >
       {children}
       {asking ? (
-        <div ref={prompt} data-take-prompt="" role="dialog" aria-labelledby={title} style={{ position: "absolute", left: "16px", right: "16px", bottom: "16px", margin: "0 auto", maxWidth: "440px", display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "16px", background: "#FFFFFF", color: "#12131A", boxShadow: "0 2px 6px rgba(18,19,26,.12), 0 24px 48px -20px rgba(18,19,26,.5)", textAlign: "left" }}>
-          <strong id={title} style={{ fontSize: "15px", fontWeight: 600 }}>{"¿Quieres tomar el control?"}</strong>
-          <span style={{ fontSize: "13.5px", lineHeight: 1.45, color: "#4A4F5C" }}>{`Ahora solo estás mirando. Si lo tomas, ${name} se para y espera sin tocar nada hasta que se lo devuelvas.`}</span>
+        <div ref={prompt} data-take-prompt="" role="dialog" aria-labelledby={title} style={{ position: "absolute", left: "16px", right: "16px", bottom: "16px", margin: "0 auto", maxWidth: "440px", display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-lg)", background: "#FFFFFF", color: "#12131A", boxShadow: "0 2px 6px rgba(18,19,26,.12), 0 24px 48px -20px rgba(18,19,26,.5)", textAlign: "left" }}>
+          <strong id={title} style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"¿Quieres tomar el control?"}</strong>
+          <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#4A4F5C" }}>{`Ahora solo estás mirando. Si lo tomas, ${name} se para y espera sin tocar nada hasta que se lo devuelvas.`}</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             <button type="button" data-autofocus="" className="colmena-live-btn" disabled={busy} onClick={() => { close(); onTake(); }} style={takeStyle}>{"Tomar el control"}</button>
             <button type="button" className="colmena-live-btn" onClick={close} style={quietStyle}>{"Seguir mirando"}</button>
@@ -72,13 +72,13 @@ export function ReturnNote({ name, value, onChange, onSubmit, disabled = false, 
   const id = useId();
   return (
     <label htmlFor={id} style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0, ...style }}>
-      <span style={{ fontSize: "13px", fontWeight: 600, color: "#12131A" }}>{`Deja un recado para ${name}`} <span style={{ fontWeight: 400, color: "#5C606C" }}>{"(opcional)"}</span></span>
+      <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A" }}>{`Deja un recado para ${name}`} <span style={{ fontWeight: 400, color: "#5C606C" }}>{"(opcional)"}</span></span>
       <input
         id={id} className="c-quiet" type="text" value={value} maxLength={NOTE_MAX} disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent?.isComposing) { e.preventDefault(); onSubmit(); } }}
         placeholder="Ej.: ya inicié sesión, sigue desde el carrito"
-        style={{ height: "40px", minWidth: 0, padding: "0 14px", border: "1px solid #DCE0E8", borderRadius: "10px", background: "#FFFFFF", fontSize: "14px", fontFamily: "inherit", color: "#12131A", ...inputStyle }}
+        style={{ height: "40px", minWidth: 0, padding: "0 14px", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontFamily: "inherit", color: "#12131A", ...inputStyle }}
       />
     </label>
   );

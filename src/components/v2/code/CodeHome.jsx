@@ -27,23 +27,23 @@ const ENGINE_KEY = "colmena:code-engine";
 const readChoice = () => { try { return JSON.parse(localStorage.getItem(ENGINE_KEY) || "null") || {}; } catch { return {}; } };
 const MODE_KEY = "colmena:code-start-mode";
 const readMode = () => { try { return localStorage.getItem(MODE_KEY) === "build" ? "build" : "plan"; } catch { return "plan"; } };
-const CARD = { display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "20px", background: C.white };
-const CARD_H = { margin: "0 0 6px", fontSize: "14px", fontWeight: 600 };
+const CARD = { display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: C.white };
+const CARD_H = { margin: "0 0 6px", fontSize: "var(--t-ui)", fontWeight: 600 };
 
 function ProjectRow({ p, n, on, onPick }) {
   const menu = useMenu(262);
   return (
     <div className="code-task" style={{ position: "relative", display: "flex", alignItems: "center", gap: "10px", minHeight: "48px" }}>
       <button type="button" onClick={onPick} aria-pressed={on} title={"Nuevas tareas y la lista, en " + p.name} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "10px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left" }}>
-        <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "9px", background: on ? C.ink : C.track, color: on ? C.white : C.ink, font: `600 11px/1 ${MONO}` }}>&lt;/&gt;</span>
+        <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: on ? C.ink : C.track, color: on ? C.white : C.ink, font: `600 var(--t-micro)/1 ${MONO}` }}>&lt;/&gt;</span>
         <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
-          <span style={{ font: `500 14px/1.2 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-          <span title={p.root} style={{ fontSize: "12.5px", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.root}</span>
+          <span style={{ font: `500 var(--t-ui)/1.2 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+          <span title={p.root} style={{ fontSize: "var(--t-meta)", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.root}</span>
         </span>
-        <span className="code-stat" style={{ fontSize: "12.5px", color: C.muted, whiteSpace: "nowrap" }}>{n === 1 ? "1 tarea" : n + " tareas"}</span>
+        <span className="code-stat" style={{ fontSize: "var(--t-meta)", color: C.muted, whiteSpace: "nowrap" }}>{n === 1 ? "1 tarea" : n + " tareas"}</span>
       </button>
       <button type="button" className={menu.at ? undefined : "code-x"} onClick={menu.open} aria-label={"Archivado de " + p.name} aria-haspopup="menu" title="Cuándo se archivan sus tareas"
-        style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.12)", borderRadius: "50%", background: C.white, color: C.text, cursor: "pointer" }}>
+        style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-circle)", background: C.white, color: C.text, cursor: "pointer" }}>
         <Ellipsis size={15} strokeWidth={2.4} aria-hidden="true" />
       </button>
       <ProjectMenu project={p} menu={menu} />
@@ -62,14 +62,14 @@ function Engines({ engines }) {
     <div style={CARD}>
       <h2 style={CARD_H}>Motores en este ordenador</h2>
       {engines.map((e) => (
-        <div key={e.id} title={e.available ? undefined : e.need || undefined} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "42px", fontSize: "14px" }}>
-          <span style={{ flex: 1, fontWeight: 500 }}>{e.label}{e.version ? <> <span style={{ font: `400 12px/1 ${MONO}`, color: C.muted }}>{e.version}</span></> : null}</span>
-          {e.available ? <span style={{ fontSize: "12.5px", fontWeight: 600, color: C.greenText }}>✓ listo</span>
-            : e.installable ? <button type="button" disabled={installing || e.installing} onClick={install} style={{ height: "30px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: C.white, fontSize: "12.5px", cursor: installing || e.installing ? "default" : "pointer" }}>{installing || e.installing ? "Instalando…" : "Instalar"}</button>
-              : <span style={{ fontSize: "12.5px", color: C.muted }}>Sin sesión</span>}
+        <div key={e.id} title={e.available ? undefined : e.need || undefined} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "42px", fontSize: "var(--t-ui)" }}>
+          <span style={{ flex: 1, fontWeight: 500 }}>{e.label}{e.version ? <> <span style={{ font: `400 var(--t-caption)/1 ${MONO}`, color: C.muted }}>{e.version}</span></> : null}</span>
+          {e.available ? <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: C.greenText }}>✓ listo</span>
+            : e.installable ? <button type="button" disabled={installing || e.installing} onClick={install} style={{ height: "30px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: C.white, fontSize: "var(--t-meta)", cursor: installing || e.installing ? "default" : "pointer" }}>{installing || e.installing ? "Instalando…" : "Instalar"}</button>
+              : <span style={{ fontSize: "var(--t-meta)", color: C.muted }}>Sin sesión</span>}
         </div>
       ))}
-      {error ? <span role="alert" style={{ fontSize: "12.5px", lineHeight: 1.45, color: C.red }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: C.red }}>{error}</span> : null}
     </div>
   );
 }
@@ -78,11 +78,11 @@ function Engines({ engines }) {
 function Handoff({ h }) {
   const first = h.ownerPerson?.name?.split(" ")[0] || "Alguien";
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "20px", background: C.white, boxShadow: "0 0 0 2px #FFC93C" }}>
-      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: C.muted }}><PeerAvatar person={h.ownerPerson} size={22} ring={C.white} />{first} te pasa una tarea</span>
-      <span style={{ fontSize: "15px", fontWeight: 600 }}>{h.title}</span>
-      <span style={{ fontSize: "13.5px", lineHeight: 1.45, color: C.text2 }}>{h.note ? "«" + h.note + "» " : ""}Su Bruno escribió qué está hecho y qué falta.</span>
-      <a href={"/codigo/traspaso/" + h.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/traspaso/" + h.id); }} style={{ alignSelf: "flex-start", height: "38px", padding: "0 16px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.ink, color: C.white, fontSize: "13.5px", fontWeight: 600 }}>Seguir en mi Colmena</a>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: "0 0 0 2px #FFC93C" }}>
+      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: C.muted }}><PeerAvatar person={h.ownerPerson} size={22} ring={C.white} />{first} te pasa una tarea</span>
+      <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{h.title}</span>
+      <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: C.text2 }}>{h.note ? "«" + h.note + "» " : ""}Su Bruno escribió qué está hecho y qué falta.</span>
+      <a href={"/codigo/traspaso/" + h.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/traspaso/" + h.id); }} style={{ alignSelf: "flex-start", height: "38px", padding: "0 16px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600 }}>Seguir en mi Colmena</a>
     </div>
   );
 }
@@ -97,8 +97,8 @@ function Shared({ items }) {
           <a key={m.id} href={"/codigo/compartida/" + m.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/compartida/" + m.id); }} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", color: C.ink }}>
             <PeerAvatar person={m.ownerPerson} size={26} ring={C.white} />
             <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-              <span style={{ fontSize: "14px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.snapshot.title}</span>
-              <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: C.muted }}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", background: st.dot }} />{st.text}</span>
+              <span style={{ fontSize: "var(--t-ui)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.snapshot.title}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: C.muted }}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: st.dot }} />{st.text}</span>
             </span>
           </a>
         );
@@ -174,10 +174,10 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
       <main style={{ maxWidth: "1160px", margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "28px", animation: "fade .35s ease-out" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <h1 style={{ margin: 0, font: `600 44px/1 ${HEAD}`, letterSpacing: "-0.04em" }}>Código</h1>
-            <p style={{ margin: 0, maxWidth: "680px", fontSize: "16px", lineHeight: 1.5, color: C.text2 }}>Tus bots programan en una copia aparte de tu proyecto. Ves cada cambio, lo pruebas en la vista previa y decides qué se queda.</p>
+            <h1 style={{ margin: 0, font: `600 var(--t-display-m)/1 ${HEAD}`, letterSpacing: "-0.04em" }}>Código</h1>
+            <p style={{ margin: 0, maxWidth: "680px", fontSize: "var(--t-read)", lineHeight: 1.5, color: C.text2 }}>Tus bots programan en una copia aparte de tu proyecto. Ves cada cambio, lo pruebas en la vista previa y decides qué se queda.</p>
           </div>
-          <button type="button" onClick={open.open} aria-haspopup="menu" aria-expanded={!!open.at} disabled={busy} style={{ ...BTN.outline, height: "44px", padding: "0 18px", fontSize: "15px", fontWeight: 500 }}>Abrir un proyecto</button>
+          <button type="button" onClick={open.open} aria-haspopup="menu" aria-expanded={!!open.at} disabled={busy} style={{ ...BTN.outline, height: "44px", padding: "0 18px", fontSize: "var(--t-body)", fontWeight: 500 }}>Abrir un proyecto</button>
           <MenuSheet menu={open} label="Abrir un proyecto" width={300}>
             <Item icon={FolderOpen} text="Abrir una carpeta del ordenador" onClick={() => { open.close(); openFolder(); }} />
             <Item icon={GitBranch} text="Clonar de GitHub" onClick={() => { open.close(); setMode("clone"); setValue(""); }} />
@@ -189,13 +189,13 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
             <label style={{ flex: "1 1 320px", display: "flex" }}>
               <span style={SR}>{mode === "clone" ? "Enlace del repositorio" : "Nombre del proyecto"}</span>
               <input className="c-quiet" autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder={mode === "clone" ? "https://github.com/usuario/proyecto" : "Nombre del proyecto nuevo"}
-                style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", background: C.white, fontSize: "15px", fontFamily: mode === "clone" ? MONO : undefined }} />
+                style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: C.white, fontSize: "var(--t-body)", fontFamily: mode === "clone" ? MONO : undefined }} />
             </label>
             <button type="submit" disabled={busy || !value.trim()} style={{ ...BTN.primary, height: "44px", opacity: busy || !value.trim() ? 0.5 : 1 }}>{busy ? (mode === "clone" ? "Clonando…" : "Creando…") : mode === "clone" ? "Clonar" : "Crear"}</button>
             <button type="button" onClick={() => setMode(null)} style={{ ...BTN.quiet, height: "44px" }}>Cancelar</button>
           </form>
         ) : null}
-        {error ? <p role="alert" style={{ margin: "-8px 0 0", fontSize: "14px", color: C.red }}>{error}</p> : null}
+        {error ? <p role="alert" style={{ margin: "-8px 0 0", fontSize: "var(--t-ui)", color: C.red }}>{error}</p> : null}
 
         <Composer variant="home" busy={busy} onSend={start} autoFocus mode={how} onMode={setHow} projectId={project?.id || null}
           onCommand={(name) => { if (name === "plan") setHow("plan"); else if (name === "construir") setHow("build"); else if (name === "atajos") window.dispatchEvent(new Event("colmena:code-shortcuts")); }}
@@ -203,7 +203,7 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
           footer={
             <>
               <MenuChip title="Proyecto y rama" up={false} width={320} look={CHIP} chevron
-                label={project ? <><span style={{ font: `500 12px/1 ${MONO}`, color: C.ink }}>{project.name}</span>{project.repo ? <span style={{ color: C.muted }}> {project.base || "main"}</span> : null}</> : "Proyecto nuevo"}>
+                label={project ? <><span style={{ font: `500 var(--t-caption)/1 ${MONO}`, color: C.ink }}>{project.name}</span>{project.repo ? <span style={{ color: C.muted }}> {project.base || "main"}</span> : null}</> : "Proyecto nuevo"}>
                 {(close) => (
                   <>
                     {projects.map((p) => <MenuItem key={p.id} title={p.name} text={p.root} on={project?.id === p.id} onClick={() => { onSelect(p.id); close(); }} />)}
@@ -220,14 +220,14 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
                   )}
                 </MenuChip>
               ) : null}
-              <div role="radiogroup" aria-label="Cómo empieza" style={{ display: "inline-flex", padding: "3px", gap: "2px", borderRadius: "999px", background: C.track }}>
+              <div role="radiogroup" aria-label="Cómo empieza" style={{ display: "inline-flex", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: C.track }}>
                 {[["plan", "Plan primero"], ["build", "Directo"]].map(([id, text]) => (
                   <button key={id} type="button" role="radio" aria-checked={how === id} onClick={() => setHow(id)} title={id === "plan" ? "Bruno te propone un plan y no toca nada hasta que digas «Implementar»" : "Bruno se pone a hacer los cambios"}
-                    style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "999px", background: how === id ? C.white : "transparent", boxShadow: how === id ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "13px", fontWeight: 500, cursor: "pointer" }}>{text}</button>
+                    style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: how === id ? C.white : "transparent", boxShadow: how === id ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{text}</button>
                 ))}
               </div>
               {everyEngine.length > 1 ? (
-                <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "34px", padding: "0 6px", fontSize: "13.5px", cursor: "pointer" }}>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "34px", padding: "0 6px", fontSize: "var(--t-ui)", cursor: "pointer" }}>
                   <input type="checkbox" checked={multi} onChange={(e) => { setMulti(e.target.checked); setPicks(e.target.checked ? everyEngine : []); }} style={{ width: "16px", height: "16px", accentColor: C.ink }} />
                   {multi && picks.length > 1 ? `Probar con ${picks.length} ${distinct === picks.length ? "motores" : "modelos"} y comparar` : `Probar con ${everyEngine.length} motores y comparar`}
                 </label>
@@ -241,7 +241,7 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
             <div style={CARD}>
               <h2 style={CARD_H}>Proyectos</h2>
               {projects.length ? [...projects].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).map((p) => <ProjectRow key={p.id} p={p} n={counts.get(p.id) || 0} on={filter === p.id} onPick={() => pickProject(p.id)} />) : (
-                <span style={{ fontSize: "13.5px", lineHeight: 1.5, color: C.text2 }}>Ninguno todavía. Abre una carpeta, clona un repositorio o escribe arriba qué quieres y Colmena le crea una carpeta.</span>
+                <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2 }}>Ninguno todavía. Abre una carpeta, clona un repositorio o escribe arriba qué quieres y Colmena le crea una carpeta.</span>
               )}
             </div>
             {engines.length ? <Engines engines={engines} /> : null}

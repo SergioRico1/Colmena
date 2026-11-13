@@ -20,9 +20,9 @@ const tokens = (n) => (n >= 1000 ? Math.round(n / 1000) + " k" : String(n));
 
 function Stat({ label, value, bg = C.card, ink = C.ink, mono = false }) {
   return (
-    <div style={{ padding: "10px 12px", borderRadius: "12px", background: bg }}>
-      <span style={{ display: "block", fontSize: "12px", color: C.text2 }}>{label}</span>
-      <span style={mono ? { font: `600 14px/1.4 ${MONO}` } : { fontSize: "14px", fontWeight: 600, color: ink }}>{value}</span>
+    <div style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: bg }}>
+      <span style={{ display: "block", fontSize: "var(--t-caption)", color: C.text2 }}>{label}</span>
+      <span style={mono ? { font: `600 var(--t-ui)/1.4 ${MONO}` } : { fontSize: "var(--t-ui)", fontWeight: 600, color: ink }}>{value}</span>
     </div>
   );
 }
@@ -81,23 +81,23 @@ export default function Compare({ group, projects = [] }) {
   return (
     <section aria-label="Comparar motores" style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", overscrollBehavior: "contain", animation: "fade .3s ease-out" }}>
       <main style={{ maxWidth: "1180px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 44px) 56px", display: "flex", flexDirection: "column", gap: "24px" }}>
-        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: C.muted }}>
+        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: C.muted }}>
           <a href="/codigo" style={{ color: C.muted }}>Código</a><span aria-hidden="true">›</span>
           {project ? <><a href={"/codigo?proyecto=" + project.id} style={{ fontFamily: MONO, color: C.muted }}>{project.name}</a><span aria-hidden="true">›</span></> : null}
           <span style={{ color: C.ink, fontWeight: 500 }}>Comparar</span>
         </nav>
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <h1 style={{ margin: 0, font: `600 44px/1 ${HEAD}`, letterSpacing: "-0.04em" }}>{title}</h1>
-          <p style={{ margin: 0, fontSize: "16px", color: C.text2 }}>La misma petición a {WORDS[n] || n} motores, cada uno en su copia del proyecto. Elige el que se queda; los otros se archivan, no se borran.</p>
-          <p style={{ margin: "4px 0 0", padding: "14px 18px", borderRadius: "16px", background: C.white, fontSize: "15px", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>«{asked.trim()}»</p>
+          <h1 style={{ margin: 0, font: `600 var(--t-display-m)/1 ${HEAD}`, letterSpacing: "-0.04em" }}>{title}</h1>
+          <p style={{ margin: 0, fontSize: "var(--t-read)", color: C.text2 }}>La misma petición a {WORDS[n] || n} motores, cada uno en su copia del proyecto. Elige el que se queda; los otros se archivan, no se borran.</p>
+          <p style={{ margin: "4px 0 0", padding: "14px 18px", borderRadius: "var(--r-lg)", background: C.white, fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>«{asked.trim()}»</p>
         </header>
 
-        <section aria-label="Recomendación" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 22px", padding: "18px 22px", borderRadius: "22px", background: C.ink, color: C.white }}>
+        <section aria-label="Recomendación" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 22px", padding: "18px 22px", borderRadius: "var(--r-2xl)", background: C.ink, color: C.white }}>
           <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", background: C.white, clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
-          <p style={{ flex: "1 1 420px", margin: 0, fontSize: "15.5px", lineHeight: 1.55, color: "#E6E7EC" }}>{band.strong ? <strong style={{ color: C.white, fontWeight: 600 }}>{band.strong}</strong> : null}{band.text}</p>
-          {band.button ? <button type="button" onClick={band.button[1]} disabled={!!busy} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: C.white, color: C.ink, fontSize: "14.5px", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{busy === "tests" ? "Lanzando…" : band.button[0]}</button> : null}
+          <p style={{ flex: "1 1 420px", margin: 0, fontSize: "var(--t-read)", lineHeight: 1.55, color: "#E6E7EC" }}>{band.strong ? <strong style={{ color: C.white, fontWeight: 600 }}>{band.strong}</strong> : null}{band.text}</p>
+          {band.button ? <button type="button" onClick={band.button[1]} disabled={!!busy} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: C.white, color: C.ink, fontSize: "var(--t-body)", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{busy === "tests" ? "Lanzando…" : band.button[0]}</button> : null}
         </section>
-        {error ? <p role="alert" style={{ margin: 0, fontSize: "14px", color: C.red }}>{error}</p> : null}
+        {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: C.red }}>{error}</p> : null}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "14px" }}>
           {tasks.map((t) => {
@@ -107,38 +107,38 @@ export default function Compare({ group, projects = [] }) {
             const effort = EFFORT_LABEL[t.effort] ? " · esfuerzo " + EFFORT_LABEL[t.effort].toLowerCase() : "";
             const label = t.label ? t.label.split(" · ")[0] : engineOf(t);
             return (
-              <article key={t.id} style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "22px", background: C.white, boxShadow: "0 0 0 2px " + (on ? C.ink : "transparent"), opacity: t.archived && !on ? 0.7 : 1 }}>
+              <article key={t.id} style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "var(--r-2xl)", background: C.white, boxShadow: "0 0 0 2px " + (on ? C.ink : "transparent"), opacity: t.archived && !on ? 0.7 : 1 }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <span style={{ fontSize: "16px", fontWeight: 600 }}>{label}</span>
-                    <span style={{ font: `400 12.5px/1.3 ${MONO}`, color: C.muted }}>{t.model}{effort}</span>
+                    <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{label}</span>
+                    <span style={{ font: `400 var(--t-meta)/1.3 ${MONO}`, color: C.muted }}>{t.model}{effort}</span>
                   </div>
-                  {rec?.id === t.id ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.ink, color: C.white, fontSize: "12px", fontWeight: 600 }}>Recomendado</span>
-                    : t.running || t.status === "working" ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#EEF0F4", color: C.blue, fontSize: "12px", fontWeight: 600 }}>Trabajando</span>
-                      : t.archived && !on ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.track, color: C.text2, fontSize: "12px", fontWeight: 600 }}>Archivada</span> : null}
+                  {rec?.id === t.id ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.ink, color: C.white, fontSize: "var(--t-caption)", fontWeight: 600 }}>Recomendado</span>
+                    : t.running || t.status === "working" ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#EEF0F4", color: C.blue, fontSize: "var(--t-caption)", fontWeight: 600 }}>Trabajando</span>
+                      : t.archived && !on ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.track, color: C.text2, fontSize: "var(--t-caption)", fontWeight: 600 }}>Archivada</span> : null}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px" }}>
                   <Stat label="Tests" value={test ? test[0] : "Sin probar"} bg={test ? test[1] : C.card} ink={test ? test[2] : C.text2} />
-                  <div style={{ padding: "10px 12px", borderRadius: "12px", background: C.card }}><span style={{ display: "block", fontSize: "12px", color: C.text2 }}>Cambios</span><span style={{ font: `600 14px/1.4 ${MONO}` }}>{t.add || t.del ? <><span style={{ color: C.greenText }}>+{t.add || 0}</span> <span style={{ color: C.red }}>−{t.del || 0}</span></> : "—"}</span></div>
+                  <div style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: C.card }}><span style={{ display: "block", fontSize: "var(--t-caption)", color: C.text2 }}>Cambios</span><span style={{ font: `600 var(--t-ui)/1.4 ${MONO}` }}>{t.add || t.del ? <><span style={{ color: C.greenText }}>+{t.add || 0}</span> <span style={{ color: C.red }}>−{t.del || 0}</span></> : "—"}</span></div>
                   <Stat label="Tiempo" value={durationLabel(t.workMs) || "—"} />
                   <Stat label="Contexto" value={t.usage?.used ? tokens(t.usage.used) + " tokens" : "—"} />
                 </div>
-                <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.5, color: C.text, minHeight: "63px", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{t.said ? plain(t.said) : t.running ? "Aún trabajando…" : "Sin resumen."}</p>
+                <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text, minHeight: "63px", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{t.said ? plain(t.said) : t.running ? "Aún trabajando…" : "Sin resumen."}</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px", paddingTop: "10px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
                   {files.slice(0, 6).map((f) => (
-                    <div key={f.path} style={{ display: "flex", justifyContent: "space-between", gap: "10px", font: `400 12.5px/1.8 ${MONO}` }}>
+                    <div key={f.path} style={{ display: "flex", justifyContent: "space-between", gap: "10px", font: `400 var(--t-meta)/1.8 ${MONO}` }}>
                       <span title={f.path} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.path.split("/").pop()}</span>
                       <span style={{ flex: "none", color: C.greenText }}>{[f.add ? "+" + f.add : "", f.del ? "−" + f.del : ""].filter(Boolean).join(" ")}</span>
                     </div>
                   ))}
-                  {files.length > 6 ? <span style={{ fontSize: "12px", color: C.faint }}>y {files.length - 6} más</span> : null}
-                  {t.files === null ? <span style={{ fontSize: "12.5px", color: C.faint }}>Aún trabajando…</span> : !files.length ? <span style={{ fontSize: "12.5px", color: C.faint }}>No cambió archivos.</span> : null}
+                  {files.length > 6 ? <span style={{ fontSize: "var(--t-caption)", color: C.faint }}>y {files.length - 6} más</span> : null}
+                  {t.files === null ? <span style={{ fontSize: "var(--t-meta)", color: C.faint }}>Aún trabajando…</span> : !files.length ? <span style={{ fontSize: "var(--t-meta)", color: C.faint }}>No cambió archivos.</span> : null}
                 </div>
                 <span style={{ flex: 1 }} />
                 <div style={{ display: "flex", gap: "8px" }}>
                   <a href={"/codigo/" + t.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + t.id); }} style={{ ...BTN.outline, height: "42px", padding: "0 16px", fontWeight: 500 }}>Ver cambios</a>
                   <button type="button" onClick={() => !on && choose(t)} disabled={!!busy || t.running || !files.length}
-                    style={{ flex: 1, height: "42px", border: 0, borderRadius: "999px", background: on ? "#0B6B4A" : C.ink, color: C.white, fontSize: "14px", fontWeight: 600, cursor: busy || t.running || !files.length || on ? "default" : "pointer", opacity: !on && (t.running || !files.length) ? 0.45 : 1 }}>
+                    style={{ flex: 1, height: "42px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#0B6B4A" : C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600, cursor: busy || t.running || !files.length || on ? "default" : "pointer", opacity: !on && (t.running || !files.length) ? 0.45 : 1 }}>
                     {busy === "pick:" + t.id ? "Eligiendo…" : on ? "Elegido ✓" : "Elegir este"}
                   </button>
                 </div>
@@ -147,10 +147,10 @@ export default function Compare({ group, projects = [] }) {
           })}
         </div>
 
-        <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 18px", borderRadius: "18px", background: C.white, fontSize: "14.5px" }}>
+        <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: C.white, fontSize: "var(--t-body)" }}>
           <span style={{ flex: "1 1 300px", color: C.text }}>{bar}</span>
-          {chosenTask ? <a href={"/codigo/" + chosenTask.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + chosenTask.id); }} style={{ fontSize: "13.5px", fontWeight: 500, color: C.blue }}>Abrir la tarea</a> : null}
-          <a href="/ajustes/ia" onClick={(e) => { e.preventDefault(); navigate("/ajustes/ia"); }} style={{ fontSize: "13.5px", color: C.blue }}>Motores y modelos por defecto</a>
+          {chosenTask ? <a href={"/codigo/" + chosenTask.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + chosenTask.id); }} style={{ fontSize: "var(--t-ui)", fontWeight: 500, color: C.blue }}>Abrir la tarea</a> : null}
+          <a href="/ajustes/ia" onClick={(e) => { e.preventDefault(); navigate("/ajustes/ia"); }} style={{ fontSize: "var(--t-ui)", color: C.blue }}>Motores y modelos por defecto</a>
         </div>
       </main>
     </section>

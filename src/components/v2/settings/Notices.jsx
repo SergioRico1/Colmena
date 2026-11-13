@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useEffect, useState } from "react";
 import { Calendar, FileText, Folder, Mail, MessageSquare, Volume2 } from "lucide-react";
 import { playNoticeSound } from "../../../lib/noticeSounds.js";
@@ -55,9 +56,9 @@ function WatchRows({ bots }) {
               const trouble = s.unavailable ? "Esta app no ofrece todavía una lectura que Colmena entienda." : s.stopped ? "Parado tras varios fallos: " + (s.error || "") : s.error;
               return (
                 <button key={s.id} type="button" role="switch" aria-checked={s.on} disabled={act.busy} title={trouble || (s.on ? "Mira aquí. Pulsa para dejar de mirar." : "No mira aquí. Pulsa para que mire.")} onClick={() => save({ sources: { [s.id]: !s.on } })}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", cursor: act.busy ? "wait" : "pointer", fontSize: "13px", fontWeight: 500, background: s.on ? INK : "#F1F1EC", color: s.on ? "#FFFFFF" : "#3D404A" }}>
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: act.busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 500, background: s.on ? INK : "#F1F1EC", color: s.on ? "#FFFFFF" : "#3D404A" }}>
                   <Icon size={14} strokeWidth={2} aria-hidden="true" />{s.label}
-                  {s.on && trouble ? <span aria-label="Con problemas" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#E5675A" }} /> : null}
+                  {s.on && trouble ? <span aria-label="Con problemas" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#E5675A" }} /> : null}
                 </button>
               );
             })}
@@ -70,21 +71,21 @@ function WatchRows({ bots }) {
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
               <Pills label="Qué te cuenta" busy={act.busy} value={data.level} onPick={(v) => save({ level: v })} items={[["urgente", "Solo lo urgente"], ["importante", "Todo lo importante"]]} />
               {places.length ? <button type="button" disabled={act.busy} onClick={look} style={btn("outline", 34)}>{act.busy ? "Mirando…" : "Mirar ahora"}</button> : null}
-              {data.chatId && bot ? <a href={`/chat/${bot.id}?c=${data.chatId}`} style={{ fontSize: "13px", fontWeight: 600, color: "#1F4FD1" }}>Ver su chat</a> : null}
+              {data.chatId && bot ? <a href={`/chat/${bot.id}?c=${data.chatId}`} style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "#1F4FD1" }}>Ver su chat</a> : null}
             </span>
           </Row>
           <label style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 22px 16px", borderTop: LINE }}>
             <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              <span style={{ fontSize: "15px", fontWeight: 500 }}>Qué te importa</span>
-              <span style={{ fontSize: "13px", color: MUTED }}>{`Con tus palabras. ${name} lo tiene en cuenta cada vez que mira.`}</span>
+              <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>Qué te importa</span>
+              <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{`Con tus palabras. ${name} lo tiene en cuenta cada vez que mira.`}</span>
             </span>
             <textarea className="c-quiet" value={draft} maxLength={1500} rows={3} onChange={(e) => setList(e.target.value)} onBlur={keep}
               placeholder={"Avísame enseguida si escribe mi socia.\nLos pedidos de la tienda, mejor juntos en el resumen.\nNo me cuentes los boletines del banco."}
-              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: "84px", padding: "10px 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", font: "400 14.5px/1.5 'Geist', sans-serif", color: INK }} />
+              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: "84px", padding: "10px 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "400 var(--t-body)/1.5 'Geist', sans-serif", color: INK }} />
           </label>
         </>
       ) : null}
-      {act.error ? <p role="alert" style={{ margin: 0, padding: "10px 22px", fontSize: "14px", color: "#B4232A", borderTop: LINE }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, padding: "10px 22px", fontSize: "var(--t-ui)", color: "#B4232A", borderTop: LINE }}>{act.error}</p> : null}
     </>
   );
 }
@@ -109,7 +110,7 @@ function CheckinRows() {
     } catch (e) { setNote(e.message); } finally { setBusy(false); }
   };
   const when = state.lastAt ? new Date(state.lastAt).toLocaleString("es-ES", { weekday: "short", hour: "2-digit", minute: "2-digit" }) : null;
-  const hour = { ...select, width: "92px", height: "36px", fontSize: "13.5px" };
+  const hour = { ...select, width: "92px", height: "36px", fontSize: "var(--t-ui)" };
   return (
     <>
       <SwitchRow anchor="revision-atlas" title="Revisión de Atlas" sub="Mira lo que espera tu respuesta, las salas paradas y lo que vence, y solo te escribe si merece la pena. Con el modelo más barato." on={!!state.enabled} busy={busy} onChange={enable} />
@@ -119,14 +120,10 @@ function CheckinRows() {
             <Pills label="Cada cuánto revisa" busy={busy} value={state.everyHours} onPick={(h) => save({ everyHours: h })} items={EVERY} />
           </Row>
           <Row title="En qué horario" sub={when ? `Última: ${when}${state.lastResult ? " · " + (CHECKIN_RESULT[state.lastResult] || state.lastResult) : ""}` : "Aún no ha revisado."}>
-            <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "14px" }}>
-              <select aria-label="Desde" disabled={busy} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={hour}>
-                {Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{h + ":00"}</option>)}
-              </select>
+            <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)" }}>
+              <Select aria-label="Desde" disabled={busy} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={hour} options={Array.from({ length: 24 }, (_, h) => [h, h + ":00"])} />
               a
-              <select aria-label="Hasta" disabled={busy} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={hour}>
-                {Array.from({ length: 24 }, (_, h) => h + 1).map((h) => <option key={h} value={h}>{h + ":00"}</option>)}
-              </select>
+              <Select aria-label="Hasta" disabled={busy} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={hour} options={Array.from({ length: 24 }, (_, h) => [h + 1, (h + 1) + ":00"])} />
               <label style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <input type="checkbox" disabled={busy} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} style={{ accentColor: INK }} />
                 y fines de semana
@@ -136,7 +133,7 @@ function CheckinRows() {
           </Row>
         </>
       ) : null}
-      {note ? <p role="status" style={{ margin: 0, padding: "12px 22px", fontSize: "14px", color: "#0B6B4A", borderTop: LINE }}>{note}</p> : null}
+      {note ? <p role="status" style={{ margin: 0, padding: "12px 22px", fontSize: "var(--t-ui)", color: "#0B6B4A", borderTop: LINE }}>{note}</p> : null}
     </>
   );
 }
@@ -159,10 +156,7 @@ export default function NoticesSection() {
         <SwitchRow first anchor="como-avisa" title="Notificaciones del sistema" sub="Aunque Colmena esté cerrada en la bandeja." on={windows} onChange={(v) => setMode(modeOf(v, sound), v ? "Notificaciones encendidas" : "Notificaciones apagadas")} />
         <Row as="label" anchor="sonido-avisos" title="Sonido" sub="Uno si ha terminado y otro si te necesita.">
           <span style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-            <select aria-label="Sonido" value={sound ? "on" : "off"} onChange={(e) => setMode(modeOf(windows, e.target.value === "on"), e.target.value === "on" ? "Con sonido" : "Sin sonido")} style={{ ...select, width: "220px" }}>
-              <option value="on">Un sonido para cada aviso</option>
-              <option value="off">Sin sonido</option>
-            </select>
+            <Select aria-label="Sonido" value={sound ? "on" : "off"} onChange={(e) => setMode(modeOf(windows, e.target.value === "on"), e.target.value === "on" ? "Con sonido" : "Sin sonido")} style={{ ...select, width: "220px" }} options={[["on", "Un sonido para cada aviso"], ["off", "Sin sonido"]]} />
             {sound ? <button type="button" aria-label="Escuchar el sonido de «te necesita»" title="Escuchar" onClick={(e) => { e.preventDefault(); playNoticeSound("needs"); }} style={{ ...btn("outline", 40), width: "40px", padding: 0 }}><Volume2 size={16} strokeWidth={2} aria-hidden="true" /></button> : null}
           </span>
         </Row>

@@ -25,19 +25,19 @@ import {
 // yet come from the state (`teamsPending`).
 const INK = "#12131A", TEXT = "#3D404A", MUTED = "#5C606C";
 const LINE = "1px solid rgba(18,19,26,.06)";
-const panel = { display: "flex", flexDirection: "column", borderRadius: "22px", background: "#FFFFFF" };
-const h2 = { margin: 0, font: "600 24px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" };
-const h3 = { margin: 0, fontSize: "13px", fontWeight: 600, color: MUTED };
-const dark = { height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "13.5px", fontWeight: 600, cursor: "pointer" };
+const panel = { display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF" };
+const h2 = { margin: 0, font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" };
+const h3 = { margin: 0, fontSize: "var(--t-meta)", fontWeight: 600, color: MUTED };
+const dark = { height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer" };
 const danger = { ...dark, background: "#B4231A" };
-const tag = { flex: "none", height: "20px", padding: "0 8px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", color: TEXT, fontSize: "12px", fontWeight: 600 };
-const pendingText = { display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "13px", lineHeight: 1.4, color: TEXT };
+const tag = { flex: "none", height: "20px", padding: "0 8px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", color: TEXT, fontSize: "var(--t-caption)", fontWeight: 600 };
+const pendingText = { display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: 1.4, color: TEXT };
 const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", minHeight: "64px", padding: "12px 18px" };
 
 /** A read-only bot: its shape, its name and its role. */
 function BotChip({ bot }) {
   return (
-    <li style={{ display: "inline-flex", alignItems: "center", gap: "7px", minHeight: "28px", padding: "2px 10px 2px 8px", borderRadius: "999px", background: "#F6F6F3", fontSize: "13px", lineHeight: 1.2 }}>
+    <li style={{ display: "inline-flex", alignItems: "center", gap: "7px", minHeight: "28px", padding: "2px 10px 2px 8px", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.2 }}>
       <BotMark bot={bot} size={14} />
       <span style={{ fontWeight: 600 }}>{bot.name}</span>
       {bot.role ? <span style={{ color: MUTED }}>{bot.role}</span> : null}
@@ -55,9 +55,9 @@ function Confirm({ title, text, action, busy, onYes, onNo }) {
   const box = useRef(null);
   useEffect(() => { box.current?.querySelector("button")?.focus(); }, []);
   return (
-    <div ref={box} role="group" aria-label={title} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "16px", background: "#F6F6F3" }}>
-      <strong style={{ fontSize: "15px", fontWeight: 600 }}>{title}</strong>
-      <span style={{ maxWidth: "70ch", fontSize: "14px", lineHeight: 1.5, color: TEXT }}>{text}</span>
+    <div ref={box} role="group" aria-label={title} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
+      <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{title}</strong>
+      <span style={{ maxWidth: "70ch", fontSize: "var(--t-ui)", lineHeight: 1.5, color: TEXT }}>{text}</span>
       <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
         <button type="button" onClick={onNo} disabled={busy} style={outline}>{"Cancelar"}</button>
         <button type="button" onClick={onYes} disabled={busy} style={danger}>{busy ? "Un momento…" : action}</button>
@@ -153,8 +153,8 @@ export default function TeamSection() {
           {news.map((n, i) => (
             <li key={n.id} style={{ ...row, minHeight: "56px", borderTop: i ? LINE : 0 }}>
               <span style={{ flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{n.title}</span>
-                {n.text ? <span style={{ fontSize: "13px", lineHeight: 1.4, color: MUTED }}>{n.text}</span> : null}
+                <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{n.title}</span>
+                {n.text ? <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.4, color: MUTED }}>{n.text}</span> : null}
               </span>
               <button type="button" onClick={() => seen(n)} style={outline}>{"Entendido"}</button>
             </li>
@@ -166,16 +166,16 @@ export default function TeamSection() {
         <>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "12px" }}>
             <h2 id="team-t" tabIndex={-1} style={h2}>{"Solo tú"}</h2>
-            <span style={{ fontSize: "14px", color: MUTED }}>{"Todavía no estás en ningún equipo."}</span>
+            <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{"Todavía no estás en ningún equipo."}</span>
           </div>
           <div style={{ ...panel, gap: "14px", padding: "22px" }}>
-            <p style={{ margin: 0, maxWidth: "68ch", fontSize: "15px", lineHeight: 1.55, color: TEXT }}>{"Con un equipo hablas con tus compañeros y con los bots de todos en las mismas salas. Cada bot sigue trabajando en el ordenador de su dueño, con su cuenta y sus datos: el equipo comparte la conversación, nada más."}</p>
+            <p style={{ margin: 0, maxWidth: "68ch", fontSize: "var(--t-body)", lineHeight: 1.55, color: TEXT }}>{"Con un equipo hablas con tus compañeros y con los bots de todos en las mismas salas. Cada bot sigue trabajando en el ordenador de su dueño, con su cuenta y sus datos: el equipo comparte la conversación, nada más."}</p>
             {peopleOff ? (
-              <p style={{ margin: 0, fontSize: "14px", lineHeight: 1.5, color: TEXT }}>{peers?.me ? "Para crear un equipo o entrar en uno, primero conecta Colmena al buzón. " : "Colmena está preparando las claves de este ordenador. En unos segundos podrás crear un equipo. "}{peers?.me ? <a href="/ajustes/personas" style={{ fontWeight: 600, color: "#1F4FD1" }}>{"Abrir Ajustes › Personas"}</a> : null}</p>
+              <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: TEXT }}>{peers?.me ? "Para crear un equipo o entrar en uno, primero conecta Colmena al buzón. " : "Colmena está preparando las claves de este ordenador. En unos segundos podrás crear un equipo. "}{peers?.me ? <a href="/ajustes/personas" style={{ fontWeight: 600, color: "#1F4FD1" }}>{"Abrir Ajustes › Personas"}</a> : null}</p>
             ) : (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                <button type="button" onClick={() => setSheet({ kind: "create" })} style={{ ...dark, height: "44px", padding: "0 20px", fontSize: "15px" }}>{"Crear un equipo"}</button>
-                <button type="button" onClick={() => setSheet({ kind: "join" })} style={{ ...outline, height: "44px", padding: "0 18px", fontSize: "15px" }}>{"Unirme con un código"}</button>
+                <button type="button" onClick={() => setSheet({ kind: "create" })} style={{ ...dark, height: "44px", padding: "0 20px", fontSize: "var(--t-body)" }}>{"Crear un equipo"}</button>
+                <button type="button" onClick={() => setSheet({ kind: "join" })} style={{ ...outline, height: "44px", padding: "0 18px", fontSize: "var(--t-body)" }}>{"Unirme con un código"}</button>
               </div>
             )}
           </div>
@@ -186,14 +186,14 @@ export default function TeamSection() {
             {renaming != null ? (
               <form onSubmit={rename} style={{ flex: "1 1 320px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
                 <h2 id="team-t" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{`Cambiar el nombre de ${current.name}`}</h2>
-                <input className="c-quiet" autoFocus type="text" aria-label="Nombre del equipo" value={renaming} maxLength={60} onChange={(e) => setRenaming(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenaming(null); } }} style={{ flex: "1 1 220px", minWidth: 0, height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.2)", borderRadius: "12px", background: "#FFFFFF", fontSize: "16px", fontWeight: 600, color: INK }} />
+                <input className="c-quiet" autoFocus type="text" aria-label="Nombre del equipo" value={renaming} maxLength={60} onChange={(e) => setRenaming(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenaming(null); } }} style={{ flex: "1 1 220px", minWidth: 0, height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.2)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-read)", fontWeight: 600, color: INK }} />
                 <button type="submit" disabled={busy === "rename"} style={dark}>{busy === "rename" ? "Guardando…" : "Guardar"}</button>
                 <button type="button" onClick={() => { setRenaming(null); setError(null); }} style={outline}>{"Cancelar"}</button>
               </form>
             ) : (
               <div style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "6px 12px" }}>
                 <h2 id="team-t" tabIndex={-1} style={h2}>{team?.name || current.name}</h2>
-                <span style={{ fontSize: "14px", color: MUTED }}>{[countLine(team || current), team?.role === "creador" ? "Lo creaste tú" : team?.role === "admin" ? "Lo administras" : null].filter(Boolean).join(" · ")}</span>
+                <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{[countLine(team || current), team?.role === "creador" ? "Lo creaste tú" : team?.role === "admin" ? "Lo administras" : null].filter(Boolean).join(" · ")}</span>
               </div>
             )}
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
@@ -211,14 +211,14 @@ export default function TeamSection() {
             </div>
           </div>
 
-          {error ? <p role="alert" style={{ margin: 0, fontSize: "14px", lineHeight: 1.45, color: "#B4231A" }}>{error}</p> : null}
+          {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#B4231A" }}>{error}</p> : null}
           {confirm === "leave" ? <Confirm title={leaving.title} text={leaving.text} action={leaving.confirm} busy={busy === "leave"} onYes={leave} onNo={() => setConfirm(null)} /> : null}
           {rest.length ? <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>{rest.map((w, i) => <Pending key={i} text={waitingLine(w, team.members)} />)}</div> : null}
 
           {!team ? (
             <div style={{ ...panel, padding: "18px", gap: "12px" }} aria-busy={detail.error ? undefined : "true"}>
-              {detail.error ? <p role="alert" style={{ margin: 0, fontSize: "14px", lineHeight: 1.5, color: TEXT }}>{`No se pudo leer el equipo. ${detail.error}`}</p>
-                : [0, 1, 2].map((i) => <span key={i} className="colmena-skeleton" style={{ height: "40px", borderRadius: "12px" }} />)}
+              {detail.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: TEXT }}>{`No se pudo leer el equipo. ${detail.error}`}</p>
+                : [0, 1, 2].map((i) => <span key={i} className="colmena-skeleton" style={{ height: "40px", borderRadius: "var(--r-md)" }} />)}
             </div>
           ) : (
             <ul aria-label={`Personas de ${team.name}`} style={{ ...panel, margin: 0, padding: 0, listStyle: "none" }}>
@@ -240,11 +240,11 @@ export default function TeamSection() {
                         <PeerAvatar person={avatarOf(m)} size={38} ring="#FFFFFF" dot />
                         <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
                           <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px" }}>
-                            <span style={{ fontSize: "15px", fontWeight: 600, overflowWrap: "anywhere" }}>{m.name}</span>
-                            {m.you ? <span style={{ fontSize: "13px", color: MUTED }}>{"(tú)"}</span> : null}
+                            <span style={{ fontSize: "var(--t-body)", fontWeight: 600, overflowWrap: "anywhere" }}>{m.name}</span>
+                            {m.you ? <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{"(tú)"}</span> : null}
                             <span style={m.role === "miembro" ? { ...tag, padding: 0, background: "transparent", fontWeight: 400, color: MUTED } : tag}>{roleLabel(m.role)}</span>
                           </span>
-                          <span style={{ fontSize: "13px", color: words.online || words.mode !== "available" ? TEXT : MUTED }}>{words.text}</span>
+                          <span style={{ fontSize: "var(--t-meta)", color: words.online || words.mode !== "available" ? TEXT : MUTED }}>{words.text}</span>
                           {waits.map((w, k) => <Pending key={k} text={waitingLine(w, team.members)} />)}
                         </span>
                       </span>
@@ -252,7 +252,7 @@ export default function TeamSection() {
                         <ul aria-label={m.you ? "Tus bots" : `Bots de ${m.name}`} style={{ flex: "2 1 280px", minWidth: 0, display: "flex", flexWrap: "wrap", gap: "6px", margin: 0, padding: 0, listStyle: "none" }}>
                           {m.bots.map((b) => <BotChip key={b.id} bot={b} />)}
                         </ul>
-                      ) : <span style={{ flex: "2 1 280px", fontSize: "13px", color: MUTED }}>{"Sin bots a la vista"}</span>}
+                      ) : <span style={{ flex: "2 1 280px", fontSize: "var(--t-meta)", color: MUTED }}>{"Sin bots a la vista"}</span>}
                       <span style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px", minWidth: "36px", justifyContent: "flex-end" }}>
                         {canMessage(m) ? <button type="button" onClick={() => message(m)} disabled={busy === "dm:" + m.address} aria-label={`Mensaje directo a ${m.name}`} style={outline}><MessageSquare size={14} strokeWidth={2.2} aria-hidden="true" />{busy === "dm:" + m.address ? "Abriendo…" : "Mensaje"}</button> : null}
                         {more.length ? <More label={`Más acciones para ${m.name}`} items={more} /> : null}
@@ -266,8 +266,8 @@ export default function TeamSection() {
           )}
           {team && members.length === 1 ? (
             <div style={{ ...panel, padding: "18px", gap: "10px", alignItems: "flex-start" }}>
-              <strong style={{ fontSize: "15px", fontWeight: 600 }}>{"De momento solo estás tú"}</strong>
-              <span style={{ fontSize: "14px", lineHeight: 1.5, color: TEXT }}>{"Invita a alguien: le das un código, lo pega en su Colmena y entra en el equipo y en la sala «general», con sus bots."}</span>
+              <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"De momento solo estás tú"}</strong>
+              <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: TEXT }}>{"Invita a alguien: le das un código, lo pega en su Colmena y entra en el equipo y en la sala «general», con sus bots."}</span>
               {canInvite(team.role) ? <button type="button" onClick={() => setSheet({ kind: "invite", team: current })} disabled={peopleOff} style={dark}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Crear un código de invitación"}</button> : null}
             </div>
           ) : null}
@@ -279,8 +279,8 @@ export default function TeamSection() {
                 {invitations.map((inv, i) => (
                   <li key={inv.id} style={{ ...row, minHeight: "52px", borderTop: i ? LINE : 0 }}>
                     <span style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ fontSize: "14.5px", fontWeight: 600, overflowWrap: "anywhere" }}>{inv.name || "Alguien"}</span>
-                      <span style={{ fontSize: "13px", color: MUTED }}>{`Aún no la ha usado · vale ${untilText(inv.expiresAt)}`}</span>
+                      <span style={{ fontSize: "var(--t-body)", fontWeight: 600, overflowWrap: "anywhere" }}>{inv.name || "Alguien"}</span>
+                      <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{`Aún no la ha usado · vale ${untilText(inv.expiresAt)}`}</span>
                     </span>
                     <button type="button" onClick={() => cancelInvite(inv)} aria-label={`Cancelar la invitación de ${inv.name || "alguien"}`} style={outline}>{"Cancelar"}</button>
                   </li>
@@ -301,10 +301,10 @@ export default function TeamSection() {
                 <li key={p.id} style={{ ...row, minHeight: "56px", borderTop: i ? LINE : 0 }}>
                   <span style={{ flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
                     <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "14.5px", fontWeight: 600, overflowWrap: "anywhere" }}>{p.name}</span>
+                      <span style={{ fontSize: "var(--t-body)", fontWeight: 600, overflowWrap: "anywhere" }}>{p.name}</span>
                       <span style={tag}>{line.refused ? "No has entrado" : "Pendiente"}</span>
                     </span>
-                    <span style={{ fontSize: "13px", lineHeight: 1.4, color: MUTED }}>{line.text}</span>
+                    <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.4, color: MUTED }}>{line.text}</span>
                   </span>
                   <button type="button" onClick={() => discard(p)} aria-label={`${line.action}: ${p.name}`} style={outline}>{line.action}</button>
                 </li>

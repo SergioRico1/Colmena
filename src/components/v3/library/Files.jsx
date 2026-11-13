@@ -81,18 +81,18 @@ function Thumb({ a, big = false }) {
   const ext = String(a.format || "").toUpperCase().slice(0, 5) || "DOC";
   return (
     <span aria-hidden="true" style={big
-      ? { position: "relative", height: "170px", display: "grid", placeItems: "center", borderRadius: "14px", background: t[0] }
+      ? { position: "relative", height: "170px", display: "grid", placeItems: "center", borderRadius: "var(--r-lg)", background: t[0] }
       : { position: "relative", height: "112px", display: "grid", placeItems: "center", background: t[0] }}>
-      <span style={{ width: big ? "58%" : "62%", height: big ? "78%" : "72%", boxSizing: "border-box", padding: pic ? "0" : big ? "14px" : "12px", borderRadius: big ? "7px" : "6px", overflow: "hidden", background: pic ? "#FFFFFF" : t[2], boxShadow: big ? "0 12px 24px -14px rgba(18,19,26,.5)" : "0 10px 20px -14px rgba(18,19,26,.5)" }}>
+      <span style={{ width: big ? "58%" : "62%", height: big ? "78%" : "72%", boxSizing: "border-box", padding: pic ? "0" : big ? "14px" : "12px", borderRadius: big ? "var(--r-sm)" : "var(--r-sm)", overflow: "hidden", background: pic ? "#FFFFFF" : t[2], boxShadow: big ? "0 12px 24px -14px rgba(18,19,26,.5)" : "0 10px 20px -14px rgba(18,19,26,.5)" }}>
         {pic ? <img src={pic} alt="" loading="lazy" style={{ display: "block", width: "100%", height: "100%", objectFit: a.format === "svg" ? "contain" : "cover" }} /> : null}
       </span>
-      <span style={{ position: "absolute", left: big ? "12px" : "10px", top: big ? "12px" : "10px", height: "22px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "6px", background: "rgba(255,255,255,.92)", color: t[1], fontSize: "10.5px", fontWeight: "700" }}>{ext}</span>
+      <span style={{ position: "absolute", left: big ? "12px" : "10px", top: big ? "12px" : "10px", height: "22px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-sm)", background: "rgba(255,255,255,.92)", color: t[1], fontSize: "var(--t-micro)", fontWeight: "700" }}>{ext}</span>
     </span>
   );
 }
 const BotMark = ({ bot }) => (bot
   ? <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", background: bot.color || "#C9CBD1", borderRadius: shapeOf(bot).radius, clipPath: shapeOf(bot).clip }} />
-  : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "50%", background: "#12131A" }} />);
+  : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "var(--r-circle)", background: "#12131A" }} />);
 
 const missionHref = (m) => (m ? (m.conversation && m.botIds?.length === 1 && !m.room ? `/chat/${encodeURIComponent(m.botIds[0])}?c=${encodeURIComponent(m.id)}` : (m.room || m.conversation) && m.kind !== "tarea" ? `/sala/${encodeURIComponent(m.id)}` : `/encargo/${encodeURIComponent(m.id)}`) : null);
 
@@ -125,19 +125,19 @@ export default function Files({ artifacts, bots, missions, ready, expert, initia
   return (
     <>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
+        <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "var(--r-md)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar archivos"}</span>
-          <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o contenido" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "14.5px" }} />
+          <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o contenido" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />
         </label>
         {KINDS.map(([id, label]) => {
           const on = kind === id;
-          return <button key={id} type="button" aria-pressed={on} onClick={() => setKind(id)} style={{ height: "36px", padding: "0 13px", border: "0", borderRadius: "999px", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "13.5px", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
+          return <button key={id} type="button" aria-pressed={on} onClick={() => setKind(id)} style={{ height: "36px", padding: "0 13px", border: "0", borderRadius: "var(--r-pill)", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
         })}
       </div>
-      {!ready ? <div style={{ height: "240px", borderRadius: "22px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+      {!ready ? <div style={{ height: "240px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
       {ready && !items.length ? (
-        <p style={{ margin: 0, padding: "60px 0", textAlign: "center", fontSize: "16px", color: "#5C606C" }}>
+        <p style={{ margin: 0, padding: "60px 0", textAlign: "center", fontSize: "var(--t-read)", color: "#5C606C" }}>
           {artifacts.length ? "No hay nada que coincida. Prueba con otra palabra." : "Aún no han entregado nada. Lo que hagan tus bots aparecerá aquí."}
         </p>
       ) : null}
@@ -148,11 +148,11 @@ export default function Files({ artifacts, bots, missions, ready, expert, initia
               const bot = botOf(a.botId);
               const on = cur?.id === a.id;
               return (
-                <button key={a.id} type="button" aria-pressed={on} onClick={() => setSel(a.id)} onDoubleClick={() => setLook(a.id)} style={{ display: "flex", flexDirection: "column", gap: "0", padding: "0", border: `2px solid ${on ? "#12131A" : "transparent"}`, borderRadius: "18px", background: "#FFFFFF", textAlign: "left", overflow: "hidden", cursor: "pointer" }}>
+                <button key={a.id} type="button" aria-pressed={on} onClick={() => setSel(a.id)} onDoubleClick={() => setLook(a.id)} style={{ display: "flex", flexDirection: "column", gap: "0", padding: "0", border: `2px solid ${on ? "#12131A" : "transparent"}`, borderRadius: "var(--r-xl)", background: "#FFFFFF", textAlign: "left", overflow: "hidden", cursor: "pointer" }}>
                   <Thumb a={a} />
                   <span style={{ display: "flex", flexDirection: "column", gap: "3px", padding: "12px 14px 14px" }}>
-                    <span style={{ fontSize: "14px", fontWeight: "600", lineHeight: "1.3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: a.kind === "code" ? "'Geist Mono', monospace" : undefined }}>{a.title}</span>
-                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: "#5C606C" }}>
+                    <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", lineHeight: "1.3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: a.kind === "code" ? "'Geist Mono', monospace" : undefined }}>{a.title}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
                       <BotMark bot={bot} />
                       {[bot?.name || "Equipo", whenShort(a.updatedAt || a.createdAt), a.status && a.status !== "final" ? a.status : null].filter(Boolean).join(" · ")}
                     </span>
@@ -199,10 +199,10 @@ function Detail({ a, bot, place, mission, expert, onOpen }) {
   ].filter(Boolean);
   const href = missionHref(mission);
   return (
-    <aside aria-label="Detalle del archivo" style={{ flex: "1 1 300px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "22px", background: "#FFFFFF", animation: "fade .25s ease-out" }}>
+    <aside aria-label="Detalle del archivo" style={{ flex: "1 1 300px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "fade .25s ease-out" }}>
       <Thumb a={a} big />
-      <h2 style={{ margin: "0", font: "600 21px/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{a.title}</h2>
-      <dl style={{ margin: "0", display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 14px", fontSize: "13.5px" }}>
+      <h2 style={{ margin: "0", font: "600 var(--t-title)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{a.title}</h2>
+      <dl style={{ margin: "0", display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 14px", fontSize: "var(--t-ui)" }}>
         <dt style={{ color: "#5C606C" }}>{"Lo hizo"}</dt>
         <dd style={{ margin: "0", display: "flex", alignItems: "center", gap: "6px" }}>{bot ? <BotPresence bot={bot} size={14} /> : null}{bot?.name || "El equipo"}</dd>
         {place ? <><dt style={{ color: "#5C606C" }}>{"Dónde"}</dt><dd style={{ margin: "0" }}>{href ? <a href={href} style={{ color: "#1F4FD1" }}>{place}</a> : place}</dd></> : null}
@@ -213,26 +213,26 @@ function Detail({ a, bot, place, mission, expert, onOpen }) {
         {a.sheets?.length ? <><dt style={{ color: "#5C606C" }}>{"Hojas"}</dt><dd style={{ margin: "0" }}>{a.sheets.join(", ")}</dd></> : null}
       </dl>
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        <span style={{ fontSize: "13px", fontWeight: "600", color: "#5C606C" }}>{"Versiones"}</span>
+        <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#5C606C" }}>{"Versiones"}</span>
         {versions.map((x) => (
-          <div key={x.v} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "34px", fontSize: "13.5px" }}>
-            <span style={{ font: "500 12px/1 'Geist Mono', monospace", color: "#4A4D57" }}>{x.v}</span>
+          <div key={x.v} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "34px", fontSize: "var(--t-ui)" }}>
+            <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#4A4D57" }}>{x.v}</span>
             <span style={{ flex: "1" }}>{x.note}</span>
-            <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{x.when}</span>
+            <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{x.when}</span>
           </div>
         ))}
       </div>
       {expert ? (
-        <span style={{ padding: "10px 12px", borderRadius: "12px", background: "#F6F6F3", font: "500 12px/1.6 'Geist Mono', monospace", color: "#4A4D57", overflowWrap: "anywhere" }}>
+        <span style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: "#F6F6F3", font: "500 var(--t-caption)/1.6 'Geist Mono', monospace", color: "#4A4D57", overflowWrap: "anywhere" }}>
           {[`${a.kind} · ${a.format} · v${v}`, a.workFile ? a.workFile : null, a.id].filter(Boolean).map((l) => <span key={l} style={{ display: "block" }}>{l}</span>)}
         </span>
       ) : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        <button type="button" onClick={onOpen} style={{ flex: "1", height: "40px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>{"Abrir"}</button>
-        <button type="button" onClick={share} title="Copia el contenido para pegarlo donde quieras" style={{ height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", cursor: "pointer" }}>{copied ? "Copiado ✓" : "Compartir"}</button>
-        <button type="button" onClick={save} aria-label="Descargar el archivo" style={{ height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", cursor: "pointer" }}>{"Descargar"}</button>
+        <button type="button" onClick={onOpen} style={{ flex: "1", height: "40px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{"Abrir"}</button>
+        <button type="button" onClick={share} title="Copia el contenido para pegarlo donde quieras" style={{ height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{copied ? "Copiado ✓" : "Compartir"}</button>
+        <button type="button" onClick={save} aria-label="Descargar el archivo" style={{ height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Descargar"}</button>
       </div>
-      {href ? <a href={href} style={{ fontSize: "13.5px", color: "#1F4FD1" }}>{mission?.conversation ? "Cómo se hizo: ver la conversación" : "Cómo se hizo: ver la tarea"}</a> : null}
+      {href ? <a href={href} style={{ fontSize: "var(--t-ui)", color: "#1F4FD1" }}>{mission?.conversation ? "Cómo se hizo: ver la conversación" : "Cómo se hizo: ver la tarea"}</a> : null}
     </aside>
   );
 }
@@ -258,24 +258,24 @@ function Look({ a, bot, place, mission, onClose }) {
     ["Versiones", a.version > 1 ? `${a.version} · esta es la última` : "1"],
     a.status && a.status !== "final" ? ["Estado", a.status] : null,
   ].filter(Boolean);
-  const pill = { height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "14.5px", color: "#12131A" };
+  const pill = { height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)", color: "#12131A" };
   const href = missionHref(mission);
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: "40px 20px", background: "rgba(18,19,26,.32)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", animation: "fade .25s ease-out" }}>
-      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="look-t" style={{ width: full ? "min(1240px, 100%)" : "min(980px, 100%)", maxHeight: "100%", overflow: "auto", display: "flex", flexWrap: "wrap", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.6)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
-        <div style={{ flex: full ? "1 1 100%" : "3 1 420px", minHeight: "420px", maxHeight: full ? "none" : "70vh", margin: "14px", borderRadius: "20px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.05)", overflow: "auto", background: "#FBFBF9" }}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="look-t" style={{ width: full ? "min(1240px, 100%)" : "min(980px, 100%)", maxHeight: "100%", overflow: "auto", display: "flex", flexWrap: "wrap", background: "#FFFFFF", borderRadius: "var(--r-3xl)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.6)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+        <div style={{ flex: full ? "1 1 100%" : "3 1 420px", minHeight: "420px", maxHeight: full ? "none" : "70vh", margin: "14px", borderRadius: "var(--r-xl)", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.05)", overflow: "auto", background: "#FBFBF9" }}>
           {binary ? <img src={`/api/artifacts/${encodeURIComponent(a.id)}/file`} alt={a.title} style={{ display: "block", width: "100%", height: "100%", minHeight: "420px", objectFit: "contain" }} /> : (
             <div style={{ padding: "26px 28px" }}><ArtifactContent a={data} loading={loading} error={error} /></div>
           )}
         </div>
         <div style={{ flex: "2 1 300px", padding: full ? "8px 32px 28px" : "30px 30px 26px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
-            <h2 id="look-t" style={{ margin: 0, font: "600 26px/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{a.title}</h2>
-            <button data-autofocus="" type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "#F1F1EC", cursor: "pointer", color: "#12131A" }}>
+            <h2 id="look-t" style={{ margin: 0, font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{a.title}</h2>
+            <button data-autofocus="" type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "#F1F1EC", cursor: "pointer", color: "#12131A" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
             </button>
           </div>
-          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px 14px", fontSize: "14px" }}>
+          <dl style={{ margin: 0, display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px 14px", fontSize: "var(--t-ui)" }}>
             {rows.map(([k, v]) => (
               <div key={k} style={{ display: "contents" }}>
                 <dt style={{ color: "#5C606C" }}>{k}</dt>
@@ -287,7 +287,7 @@ function Look({ a, bot, place, mission, onClose }) {
             <button type="button" onClick={() => saveFile(a, data?.content)} style={{ ...pill, border: 0, background: "#12131A", color: "#FFFFFF", fontWeight: 600 }}>{"Descargar"}</button>
             {!binary ? <button type="button" onClick={() => setFull((x) => !x)} style={pill}>{full ? "Reducir" : "Ampliar"}</button> : null}
             <button type="button" onClick={share} style={pill}>{copied ? "Copiado ✓" : binary ? "Copiar el nombre" : "Copiar"}</button>
-            {href ? <a href={href} style={{ display: "flex", alignItems: "center", height: "44px", padding: "0 8px", fontSize: "14.5px", color: "#1F4FD1" }}>{"Cómo se hizo"}</a> : null}
+            {href ? <a href={href} style={{ display: "flex", alignItems: "center", height: "44px", padding: "0 8px", fontSize: "var(--t-body)", color: "#1F4FD1" }}>{"Cómo se hizo"}</a> : null}
           </div>
         </div>
       </div>

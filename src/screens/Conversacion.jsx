@@ -3,6 +3,9 @@ import { useWarmOnType } from "../lib/warm.js";
 import { FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal } from "lucide-react";
 import VoiceCall from "../components/v2/chat/VoiceCall.jsx";
 import Shell from "../components/v2/Shell.jsx";
+import Announcer from "../components/Announcer.jsx";
+import { useAnnouncer } from "../lib/useAnnouncer.js";
+import { leaveComposer } from "../lib/messageKeys.js";
 import { whenLabel } from "../components/v2/chat/ConvList.jsx";
 import NewRoomSheet from "../components/v3/team/NewRoomSheet.jsx";
 import ChatsHome from "../components/v2/chat/ChatsHome.jsx";
@@ -119,18 +122,18 @@ const SLASH = [
 function WhileWorking({ value, onChange, botName = "el bot", typing }) {
   const options = [["after", "Cuando acabe", `Espera en la cola y sale cuando ${botName} acabe`], ["steer", "Pasárselo ya", `${botName} lo lee en su siguiente paso, sin parar`]];
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", fontSize: "12px", color: "#6B6F7A", animation: "fade .2s ease-out" }}>
-      <span role="radiogroup" aria-label="Lo que escribas mientras trabaja" style={{ display: "inline-flex", padding: "3px", borderRadius: "999px", background: "rgba(18,19,26,.06)" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", fontSize: "var(--t-caption)", color: "#6B6F7A", animation: "fade .2s ease-out" }}>
+      <span role="radiogroup" aria-label="Lo que escribas mientras trabaja" style={{ display: "inline-flex", padding: "3px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)" }}>
         {options.map(([id, label, hint]) => (
           <button key={id} type="button" role="radio" aria-checked={value === id ? "true" : "false"} title={hint} onClick={() => onChange(id)}
-            style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "999px", background: value === id ? "#FFFFFF" : "transparent", boxShadow: value === id ? "0 1px 2px rgba(18,19,26,.12)" : "none", color: value === id ? "#12131A" : "#5C606C", cursor: "pointer", fontSize: "13px", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>{label}</button>
+            style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: value === id ? "#FFFFFF" : "transparent", boxShadow: value === id ? "0 1px 2px rgba(18,19,26,.12)" : "none", color: value === id ? "#12131A" : "#5C606C", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>{label}</button>
         ))}
       </span>
       <span>{typing ? `Intro: ${value === "steer" ? "se lo pasas ya" : "a la cola"} · Ctrl+Intro: ${value === "steer" ? "a la cola" : "se lo pasas ya"} · Esc lo para` : "Esc lo para"}</span>
     </div>
   );
 }
-const pill = { display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", fontSize: "14px", fontWeight: "500", cursor: "pointer", color: "#12131A" };
+const pill = { display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer", color: "#12131A" };
 
 /** A deliverable in the chat: a presentation, a Word document or a workbook shows itself; anything else is a card. */
 function FileCard({ artifact, onOpen }) {
@@ -314,6 +317,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     if (e.key === "Tab" && !e.shiftKey && !text && suggestions.length) { e.preventDefault(); setText(suggestions[0]); return; }
     if (e.key === "Escape" && slashOpen) { e.preventDefault(); setSlashOpen(false); return; }
     if (e.key === "Escape" && turn && !text.trim()) { e.preventDefault(); stopTurn(); return; }
+    // Any other Esc leaves the box for the messages (lib/messageKeys.js).
+    if (leaveComposer(e)) return;
     if (e.key === "Enter" && !e.shiftKey && SLASH.some((x) => x.cmd === text.trim() && !x.insert)) { e.preventDefault(); runSlash(text.trim()); return; }
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (e.repeat) return; submit(e, { now: e.ctrlKey || e.metaKey }); }
   };
@@ -353,6 +358,18 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   useOpenFileRequests(c, (f) => dock.open({ id: "file:" + f.path, kind: "file", path: f.path, name: f.name, type: f.type }));
   const now = activity.find((a) => a.botId) || null;
   const runningStep = steps.find((s) => s.status === "running") || null;
+  // New answers and «te espera», said once to a screen reader (lib/useAnnouncer.js): a message
+  // is said when it is finished (never as it is written), and never what you wrote yourself.
+  const writing = live.map((l) => l.stepId).join(",");
+  const spokenRows = useMemo(() => {
+    const busy = new Set(writing ? writing.split(",") : []);
+    return messages.map((m) => ({
+      id: m.id, name: m.role === "assistant" ? findBot(bots, m.botId || botId)?.name || "" : "", text: m.text || m.title || "",
+      skip: m.role !== "assistant" || !!m.optimistic || m.kind === "progress" || m.kind === "secret", done: !(m.stepId && busy.has(m.stepId)),
+    }));
+  }, [messages, bots, botId, writing]);
+  const waitingNow = useMemo(() => pending.map((a) => ({ id: a.id, name: findBot(bots, a.botId || botId)?.name || "", kind: a.kind })), [pending, bots, botId]);
+  const said = useAnnouncer({ scope: c || "nuevo:" + botId, ready: !room.loading, items: spokenRows, waiting: waitingNow });
   const needs = pending.filter((a) => a.kind !== "secret" && !(a.kind === "question" && messages.some((m) => m.approvalId === a.id)));
   const lastAssistant = (() => { for (let i = messages.length - 1; i >= 0; i--) if (messages[i].role === "assistant" && messages[i].text && !["question", "activity", "deliverable"].includes(messages[i].kind)) return i; return -1; })();
   const lastMessage = messages[messages.length - 1];
@@ -479,14 +496,14 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         {row.newChat ? (
           <div style={{ padding: "40px 0 8px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "16px" }}>
             <BotMark bot={bot} size={48} />
-            <h2 style={{ margin: "0", font: "600 34px/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{`Habla con ${bot?.name || ""}`}</h2>
-            <p style={{ margin: "0", maxWidth: "560px", fontSize: "16px", lineHeight: "1.55", color: "#4A4D57" }}>{bot?.instructions ? bot.instructions.split(/(?<=\.)\s/)[0] : bot?.role}</p>
+            <h2 style={{ margin: "0", font: "600 var(--t-display-s)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{`Habla con ${bot?.name || ""}`}</h2>
+            <p style={{ margin: "0", maxWidth: "560px", fontSize: "var(--t-read)", lineHeight: "1.55", color: "#4A4D57" }}>{bot?.instructions ? bot.instructions.split(/(?<=\.)\s/)[0] : bot?.role}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {startersFor(bot).map((idea) => <button key={idea} type="button" onClick={() => { setText(idea); requestAnimationFrame(() => inputRef.current?.focus()); }} style={{ height: "36px", padding: "0 14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", cursor: "pointer", fontSize: "14px", color: "#12131A" }}>{idea}</button>)}
+              {startersFor(bot).map((idea) => <button key={idea} type="button" onClick={() => { setText(idea); requestAnimationFrame(() => inputRef.current?.focus()); }} style={{ height: "36px", padding: "0 14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", color: "#12131A" }}>{idea}</button>)}
             </div>
             <button type="button" role="switch" aria-checked={row.incognito ? "true" : "false"} onClick={() => setIncognito((v) => { if (!v) saveDraft("chat:" + botId, ""); return !v; })}
-              style={{ display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px 0 8px", border: 0, borderRadius: "999px", background: row.incognito ? "#12131A" : "#EBEBE6", color: row.incognito ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}>
-              <span aria-hidden="true" style={{ width: "34px", height: "22px", borderRadius: "11px", background: row.incognito ? "#FFFFFF" : "#C9CBD1", position: "relative", transition: "background .15s ease" }}><span style={{ position: "absolute", top: "3px", left: row.incognito ? "15px" : "3px", width: "16px", height: "16px", borderRadius: "50%", background: row.incognito ? "#12131A" : "#FFFFFF", transition: "left .15s ease" }} /></span>
+              style={{ display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px 0 8px", border: 0, borderRadius: "var(--r-pill)", background: row.incognito ? "#12131A" : "#EBEBE6", color: row.incognito ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500 }}>
+              <span aria-hidden="true" style={{ width: "34px", height: "22px", borderRadius: "var(--r-pill)", background: row.incognito ? "#FFFFFF" : "#C9CBD1", position: "relative", transition: "background .15s ease" }}><span style={{ position: "absolute", top: "3px", left: row.incognito ? "15px" : "3px", width: "16px", height: "16px", borderRadius: "var(--r-circle)", background: row.incognito ? "#12131A" : "#FFFFFF", transition: "left .15s ease" }} /></span>
               {"De incógnito: no guarda nada y se borra en 24 horas"}
             </button>
           </div>
@@ -494,15 +511,15 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         {row.opening ? <span style={{ color: "#6B6F7A" }}>{"Abriendo la conversación…"}</span> : null}
         {row.older.length ? (
           <div style={{ alignSelf: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-            <button type="button" aria-expanded={row.showOlder ? "true" : "false"} onClick={() => setShowOlder((v) => !v)} style={{ ...pill, height: "34px", fontSize: "13px" }}>
+            <button type="button" aria-expanded={row.showOlder ? "true" : "false"} onClick={() => setShowOlder((v) => !v)} style={{ ...pill, height: "34px", fontSize: "var(--t-meta)" }}>
               {row.showOlder ? "Ocultar conversaciones anteriores" : `Conversaciones anteriores con ${bot?.name || "este bot"} · ${row.older.length}`}
             </button>
             {row.showOlder ? (
-              <div style={{ width: "min(520px, 100%)", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "20px", background: "#FFFFFF", animation: "rise .25s ease-out" }}>
+              <div style={{ width: "min(520px, 100%)", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-xl)", background: "#FFFFFF", animation: "rise .25s ease-out" }}>
                 {row.older.slice(0, 40).map((o) => (
-                  <a key={o.id} href={`/chat/${botId}?c=${o.id}`} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", borderRadius: "14px", fontSize: "14px", color: "#12131A", textDecoration: "none" }}>
+                  <a key={o.id} href={`/chat/${botId}?c=${o.id}`} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", borderRadius: "var(--r-lg)", fontSize: "var(--t-ui)", color: "#12131A", textDecoration: "none" }}>
                     <span style={{ flex: "1", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.title}</span>
-                    <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{whenLabel(o.updatedAt || o.createdAt)}</span>
+                    <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{whenLabel(o.updatedAt || o.createdAt)}</span>
                   </a>
                 ))}
               </div>
@@ -510,7 +527,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           </div>
         ) : null}
         {row.isOlder ? (
-          <p role="note" style={{ margin: 0, alignSelf: "center", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "10px", padding: "10px 16px", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "14px", color: "#3D404A" }}>
+          <p role="note" style={{ margin: 0, alignSelf: "center", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "10px", padding: "10px 16px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", fontSize: "var(--t-ui)", color: "#3D404A" }}>
             {`Conversación anterior con ${bot?.name || "este bot"}`}
             <a href={`/chat/${botId}`} style={{ fontWeight: 600, color: "#12131A", textDecoration: "underline" }}>{"Volver al chat"}</a>
           </p>
@@ -535,7 +552,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         );
       }
       case "secret": return <SecretLine message={m} approval={row.approval} bots={bots} />;
-      case "note": return <p style={{ margin: "0", textAlign: "center", fontSize: "13px", color: "#6B6F7A" }}>{plain(m.text)}<NoteLink link={m.link} /></p>;
+      case "note": return <p style={{ margin: "0", textAlign: "center", fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{plain(m.text)}<NoteLink link={m.link} /></p>;
       case "block": return <ChatBlock message={m} />;
       case "question": return row.a?.status === "pending"
         ? <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />
@@ -566,7 +583,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "done": return <CompletionNote missionId={row.missionId} />;
       case "follow": return <FollowUps list={row.list} onPick={(t) => { setText(t); requestAnimationFrame(() => focusBox(inputRef.current)); }} />;
       case "stopped": return <StoppedCard stopped={row.stopped} botName={row.name} onContinue={(why) => acts.current.control(row.status === "blocked" ? "retry" : "resume", why)} onDiscard={(why) => acts.current.control("discard", why)} onReason={(why) => acts.current.stopWhy(why)} />;
-      case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "16px 18px", background: "#FBE7DF", borderRadius: "20px", fontSize: "15px", lineHeight: "1.5" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;
+      case "error": return row.limited ? <LimitBanner mission={row.mission} botName={row.name} /> : <p role="alert" style={{ margin: 0, padding: "16px 18px", background: "#FBE7DF", borderRadius: "var(--r-xl)", fontSize: "var(--t-body)", lineHeight: "1.5" }}><strong>{`${row.name} no puede seguir: `}</strong>{row.error}</p>;
       case "browser": return <BrowserLive missionId={row.missionId} bot={row.bot} verb={row.verb} missionActive={row.active} />;
       default: return null;
     }
@@ -604,9 +621,9 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       <Shell active="chats" scroll={false}>
         <section style={{ height: "100%", display: "grid", placeItems: "center", padding: "40px", textAlign: "center" }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-            <strong style={{ font: "600 24px/1.1 'Bricolage Grotesque', sans-serif" }}>{"Este bot ya no está en tu equipo"}</strong>
-            <span style={{ fontSize: "15px", color: "#4A4D57" }}>{"Sus conversaciones siguen en Chats."}</span>
-            <a href="/chats" style={{ height: "44px", display: "flex", alignItems: "center", padding: "0 20px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontWeight: 600 }}>{"Ir a Chats"}</a>
+            <strong style={{ font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif" }}>{"Este bot ya no está en tu equipo"}</strong>
+            <span style={{ fontSize: "var(--t-body)", color: "#4A4D57" }}>{"Sus conversaciones siguen en Chats."}</span>
+            <a href="/chats" style={{ height: "44px", display: "flex", alignItems: "center", padding: "0 20px", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontWeight: 600 }}>{"Ir a Chats"}</a>
           </div>
         </section>
       </Shell>
@@ -626,10 +643,10 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const contextTokens = messages.reduce((n, m) => n + Math.ceil(String(m.text || "").length / 4), 0);
   const lastUsage = [...messages].reverse().find((m) => m.summary?.tokens)?.summary || null;
   const toolCount = Object.values(bot?.tools || {}).filter((v) => v && v !== "none").length;
-  const chip = { height: "30px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", font: "500 12px/1 'Geist Mono', monospace", color: "#12131A", whiteSpace: "nowrap" };
-  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "transparent", color: "#12131A", fontSize: "13.5px", fontWeight: 500, cursor: "pointer" };
-  const tool = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#F6F6F3", cursor: "pointer", whiteSpace: "nowrap", ...(expert ? { height: "30px", padding: "0 9px", font: "500 11.5px/1 'Geist Mono', monospace", color: "#12131A" } : { fontSize: "13px", color: "#3D404A" }) };
-  const ghostKey = (on) => ({ width: "36px", height: "36px", padding: 0, border: 0, borderRadius: "10px", background: on ? "#F1F1EC" : "transparent", color: "#4A4D57", fontSize: "16px", fontWeight: 600, cursor: "pointer" });
+  const chip = { height: "30px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "var(--r-pill)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#12131A", whiteSpace: "nowrap" };
+  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
+  const tool = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-pill)", background: "#F6F6F3", cursor: "pointer", whiteSpace: "nowrap", ...(expert ? { height: "30px", padding: "0 9px", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#12131A" } : { fontSize: "var(--t-meta)", color: "#3D404A" }) };
+  const ghostKey = (on) => ({ width: "36px", height: "36px", padding: 0, border: 0, borderRadius: "var(--r-md)", background: on ? "#F1F1EC" : "transparent", color: "#4A4D57", fontSize: "var(--t-read)", fontWeight: 600, cursor: "pointer" });
   const caret = <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>;
   const toggleDeep = () => toggleChosen("deep");
   const insertMention = () => { setText((t) => t + (t && !/\s$/.test(t) ? " @" : "@")); requestAnimationFrame(() => focusBox(inputRef.current)); };
@@ -637,13 +654,13 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const slashShown = (slashOpen || /^\/[a-záéíóú]*$/i.test(text)) && !plusOpen;
   const slashList = SLASH.filter((s) => !text.startsWith("/") || s.cmd.startsWith(text.trim().toLowerCase()) || text === "/");
   const slashMenu = slashShown && slashList.length ? (
-    <div role="menu" aria-label="Comandos" style={{ position: "absolute", left: 0, bottom: "calc(100% + 8px)", zIndex: 20, width: "min(360px, 100%)", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" }}>
-      <span style={{ padding: "6px 10px", fontSize: "12px", fontWeight: 600, color: "#5C606C" }}>{"Comandos"}</span>
+    <div role="menu" aria-label="Comandos" style={{ position: "absolute", left: 0, bottom: "calc(100% + 8px)", zIndex: 20, width: "min(360px, 100%)", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" }}>
+      <span style={{ padding: "6px 10px", fontSize: "var(--t-caption)", fontWeight: 600, color: "#5C606C" }}>{"Comandos"}</span>
       {slashList.map((s) => (
-        <button key={s.cmd} type="button" role="menuitem" onClick={() => runSlash(s.cmd)} style={{ minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "10px", background: "transparent", textAlign: "left", cursor: "pointer" }}
+        <button key={s.cmd} type="button" role="menuitem" onClick={() => runSlash(s.cmd)} style={{ minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", cursor: "pointer" }}
           onMouseEnter={(e) => { e.currentTarget.style.background = "#F6F6F3"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-          <span style={{ width: "74px", font: "500 13px/1 'Geist Mono', monospace" }}>{s.cmd}</span>
-          <span style={{ fontSize: "13.5px", color: "#4A4D57" }}>{s.desc.replace("{bot}", bot?.name || "el bot")}</span>
+          <span style={{ width: "74px", font: "500 var(--t-meta)/1 'Geist Mono', monospace" }}>{s.cmd}</span>
+          <span style={{ fontSize: "var(--t-ui)", color: "#4A4D57" }}>{s.desc.replace("{bot}", bot?.name || "el bot")}</span>
         </button>
       ))}
     </div>
@@ -674,41 +691,42 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       <Shell active="chats" scroll={false}>
         <div style={{ display: "flex", height: "100%", alignItems: "stretch" }}>
           <section ref={chatRoot} aria-label={`Conversación con ${bot?.name || ""}`} style={{ position: "relative", flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
+            <Announcer text={said} />
             {talking && c ? <VoiceCall bot={bot} missionId={c} onClose={() => setTalking(false)} /> : null}
             <header style={{ position: "relative", zIndex: 3, flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: expert ? "10px" : "12px", padding: expert ? "14px 24px" : "16px 28px", background: "rgba(245,245,242,.92)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
               <BotMark bot={bot} size={expert ? 28 : 30} state={state} />
               <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", marginRight: "auto" }}>
-                <h1 style={{ margin: 0, fontSize: "16px", fontWeight: 600, lineHeight: 1.2 }}><a href={`/equipo/${botId}`} style={{ color: "#12131A" }}>{bot?.name}</a></h1>
+                <h1 style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600, lineHeight: 1.2 }}><a href={`/equipo/${botId}`} style={{ color: "#12131A" }}>{bot?.name}</a></h1>
                 {expert ? (
-                  <span style={{ font: "400 12px/1.2 'Geist Mono', monospace", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c ? [`chat ${c.slice(-4)}`, `sesión ${botId}:${c.slice(-4)}`, lastUsage?.cachedPercent != null ? `caché ${lastUsage.cachedPercent} %` : null, status || null].filter(Boolean).join(" · ") : "chat nuevo · sin sesión"}</span>
+                  <span style={{ font: "400 var(--t-caption)/1.2 'Geist Mono', monospace", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c ? [`chat ${c.slice(-4)}`, `sesión ${botId}:${c.slice(-4)}`, lastUsage?.cachedPercent != null ? `caché ${lastUsage.cachedPercent} %` : null, status || null].filter(Boolean).join(" · ") : "chat nuevo · sin sesión"}</span>
                 ) : (
-                  <span role="status" style={{ fontSize: "13px", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bot?.role}{status ? <span style={{ color: statusColor, transition: "color .3s ease" }}>{(bot?.role ? " · " : "") + status}</span> : null}</span>
+                  <span style={{ fontSize: "var(--t-meta)", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bot?.role}{status ? <span style={{ color: statusColor, transition: "color .3s ease" }}>{(bot?.role ? " · " : "") + status}</span> : null}</span>
                 )}
               </div>
               {expert ? <>
                 {model ? <span title="Modelo y esfuerzo" style={chip}>{`${model} · ${thinking}`}</span> : null}
                 <span title="Contexto estimado de esta conversación" style={chip}>
-                  <span aria-hidden="true" style={{ position: "relative", width: "44px", height: "6px", borderRadius: "3px", background: "#EEEEEA", overflow: "hidden" }}><span style={{ position: "absolute", inset: "0 auto 0 0", width: Math.min(100, Math.round((contextTokens / 128000) * 100)) + "%", minWidth: contextTokens ? "3px" : 0, background: "#12131A" }} /></span>
+                  <span aria-hidden="true" style={{ position: "relative", width: "44px", height: "6px", borderRadius: "var(--r-xs)", background: "#EEEEEA", overflow: "hidden" }}><span style={{ position: "absolute", inset: "0 auto 0 0", width: Math.min(100, Math.round((contextTokens / 128000) * 100)) + "%", minWidth: contextTokens ? "3px" : 0, background: "#12131A" }} /></span>
                   {"≈ " + kTokens(contextTokens)}
                 </span>
-                <button type="button" aria-pressed={inspector ? "true" : "false"} onClick={toggleInspector} style={{ height: "30px", padding: "0 12px", border: inspector ? 0 : "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: inspector ? "#12131A" : "#FFFFFF", color: inspector ? "#FFFFFF" : "#12131A", fontSize: "12.5px", fontWeight: 600, cursor: "pointer" }}>{"Inspector · Ctrl I"}</button>
+                <button type="button" aria-pressed={inspector ? "true" : "false"} onClick={toggleInspector} style={{ height: "30px", padding: "0 12px", border: inspector ? 0 : "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: inspector ? "#12131A" : "#FFFFFF", color: inspector ? "#FFFFFF" : "#12131A", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" }}>{"Inspector · Ctrl I"}</button>
               </> : null}
               <button type="button" onClick={() => setRoomSheet(true)} style={outline}>{"Llevar a una sala"}</button>
               <span style={{ position: "relative" }}>
-                <button type="button" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "10px", background: moreOpen ? "#EBEBE6" : "transparent", color: "#4A4D57", cursor: "pointer" }}>
+                <button type="button" aria-haspopup="menu" aria-expanded={moreOpen ? "true" : "false"} aria-label="Más opciones" onClick={() => setMoreOpen((v) => !v)} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: moreOpen ? "#EBEBE6" : "transparent", color: "#4A4D57", cursor: "pointer" }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18.5" cy="12" r="1.6" /></svg>
                 </button>
                 {moreOpen ? (
-                  <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "240px", padding: "6px", borderRadius: "14px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out", display: "flex", flexDirection: "column" }}>
+                  <div role="menu" onMouseLeave={() => setMoreOpen(false)} style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "240px", padding: "6px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out", display: "flex", flexDirection: "column" }}>
                     {moreItems.map(([label, fn]) => (
-                      <button key={label} type="button" role="menuitem" onClick={() => { setMoreOpen(false); Promise.resolve(fn()).catch(() => {}); }} style={{ height: "38px", padding: "0 12px", border: 0, borderRadius: "9px", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "14px", color: "#12131A" }}
+                      <button key={label} type="button" role="menuitem" onClick={() => { setMoreOpen(false); Promise.resolve(fn()).catch(() => {}); }} style={{ height: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "#12131A" }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = "#F6F6F3"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>{label}</button>
                     ))}
                   </div>
                 ) : null}
               </span>
             </header>
-            {mission?.incognito ? <p role="note" style={{ flex: "none", margin: 0, padding: "10px 28px", background: "#12131A", color: "#FFFFFF", fontSize: "13px" }}>{`De incógnito: ${bot?.name || "el bot"} no guarda nada de esta conversación y se borra en 24 horas.`}</p> : null}
+            {mission?.incognito ? <p role="note" style={{ flex: "none", margin: 0, padding: "10px 28px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-meta)" }}>{`De incógnito: ${bot?.name || "el bot"} no guarda nada de esta conversación y se borra en 24 horas.`}</p> : null}
             <div style={{ flex: "1", minHeight: 0, display: "flex" }}>
               {c ? <SelectionPopup scope={scope} onQuote={(t) => quoteInto(c, t)} onAsk={(t) => { askAsideAbout(c, t); dock.open(ASIDE_TAB); }} /> : null}
               <Timeline key={c || "nuevo:" + botId} listKey={c || "nuevo:" + botId} handle={timeline} rows={rows} renderRow={renderRow} estimate={estimateRow}
@@ -731,7 +749,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
                 <BtwNotes btw={btw} botName={bot?.name} nameOf={(id) => findBot(bots, id)?.name} />
               </>}
               below={<>
-                {send.error || fileError || control.error ? <p role="alert" style={{ margin: "8px 18px 0", fontSize: "13px", color: "#B4232A" }}>{send.error || fileError || control.error}</p> : null}
+                {send.error || fileError || control.error ? <p role="alert" style={{ margin: "8px 18px 0", fontSize: "var(--t-meta)", color: "#B4232A" }}>{send.error || fileError || control.error}</p> : null}
                 {(turn && !expert) || stash.length || stashed ? (
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", margin: "10px 6px 0" }}>
                     {turn && !expert ? <WhileWorking value={whileWorking} onChange={chooseWhileWorking} botName={bot?.name} typing={!!text.trim()} /> : null}

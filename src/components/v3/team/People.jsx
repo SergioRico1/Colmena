@@ -1,3 +1,4 @@
+import Select from "../../Select.jsx";
 import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useAction } from "../../../lib/store.jsx";
@@ -47,13 +48,13 @@ const STATUS = [
 
 function Avatar({ ini, dot, dashed = false }) {
   return (
-    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: "38px", height: "38px", display: "grid", placeItems: "center", borderRadius: "50%", boxSizing: "border-box", background: "#E6E7EC", fontSize: "12px", fontWeight: "600", border: dashed ? "1.5px dashed #8C8F99" : "0" }}>
+    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: "38px", height: "38px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxSizing: "border-box", background: "#E6E7EC", fontSize: "var(--t-caption)", fontWeight: "600", border: dashed ? "1.5px dashed #8C8F99" : "0" }}>
       {ini}
-      <span style={{ position: "absolute", right: "-1px", bottom: "-1px", width: "11px", height: "11px", borderRadius: "50%", background: dot, boxShadow: dot === "transparent" ? "none" : "0 0 0 2px #FFFFFF" }} />
+      <span style={{ position: "absolute", right: "-1px", bottom: "-1px", width: "11px", height: "11px", borderRadius: "var(--r-circle)", background: dot, boxShadow: dot === "transparent" ? "none" : "0 0 0 2px #FFFFFF" }} />
     </span>
   );
 }
-const ctaStyle = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13.5px", fontWeight: "500", cursor: "pointer" };
+const ctaStyle = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" };
 
 export default function EquipoPeople({ peers }) {
   const act = useAction();
@@ -72,22 +73,22 @@ export default function EquipoPeople({ peers }) {
   return (
     <section aria-labelledby="ppl-t" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "12px" }}>
-        <h2 id="ppl-t" style={{ margin: "0", font: "600 24px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Personas"}</h2>
-        <span style={{ fontSize: "14px", color: "#5C606C" }}>{"Gente con su propia Colmena. Chateáis cifrado y vuestros bots pueden colaborar."}</span>
+        <h2 id="ppl-t" style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Personas"}</h2>
+        <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Gente con su propia Colmena. Chateáis cifrado y vuestros bots pueden colaborar."}</span>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", alignItems: "flex-start" }}>
-        <div style={{ flex: "999 1 480px", minWidth: "0", display: "flex", flexDirection: "column", borderRadius: "22px", background: "#FFFFFF", overflow: "hidden" }}>
-          {!peers?.me ? <div style={{ ...row, borderTop: "0", color: "#5C606C", fontSize: "14px" }}>{"Preparando «Personas»: Colmena está creando las claves de este ordenador…"}</div> : null}
+        <div style={{ flex: "999 1 480px", minWidth: "0", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF", overflow: "hidden" }}>
+          {!peers?.me ? <div style={{ ...row, borderTop: "0", color: "#5C606C", fontSize: "var(--t-ui)" }}>{"Preparando «Personas»: Colmena está creando las claves de este ordenador…"}</div> : null}
           {peers?.me && !contacts.length && !invites.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px" }}>
-              <span style={{ fontSize: "15px", fontWeight: "600" }}>{"Aún no hablas con nadie desde Colmena"}</span>
+              <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{"Aún no hablas con nadie desde Colmena"}</span>
               {INTRO_STEPS.map(([Icon, title, text]) => (
                 <span key={title} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                  <span aria-hidden="true" style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", borderRadius: "10px", background: "#F1F1EC" }}><Icon size={15} strokeWidth={2} /></span>
-                  <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ fontSize: "14px", fontWeight: "600" }}>{title}</span><span style={{ fontSize: "13px", lineHeight: "1.45", color: "#5C606C" }}>{text}</span></span>
+                  <span aria-hidden="true" style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F1F1EC" }}><Icon size={15} strokeWidth={2} /></span>
+                  <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{title}</span><span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C" }}>{text}</span></span>
                 </span>
               ))}
-              <a href={HELP_URL} style={{ fontSize: "14px", fontWeight: "600", color: "#1F4FD1" }}>{"Cómo funciona"}</a>
+              <a href={HELP_URL} style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#1F4FD1" }}>{"Cómo funciona"}</a>
             </div>
           ) : null}
           {contacts.map((c, i) => {
@@ -102,31 +103,31 @@ export default function EquipoPeople({ peers }) {
                   <button type="button" aria-expanded={isOpen ? "true" : "false"} onClick={() => setOpen(isOpen ? null : c.id)} style={{ flex: "1 1 260px", minWidth: "0", display: "flex", alignItems: "center", gap: "14px", padding: "0", border: "0", background: "transparent", textAlign: "left", cursor: "pointer" }}>
                     <Avatar ini={c.initials || initialsOf(c.name)} dot={dot} dashed={c.status === "pending"} />
                     <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "15px", fontWeight: "600" }}>{c.name}{c.verifiedAt ? <ShieldCheck size={14} strokeWidth={2.2} color="#0B8A5F" aria-label="Palabras comprobadas" /> : null}</span>
-                      <span style={{ fontSize: "13px", color: "#5C606C" }}>{note}</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-body)", fontWeight: "600" }}>{c.name}{c.verifiedAt ? <ShieldCheck size={14} strokeWidth={2.2} color="#0B8A5F" aria-label="Palabras comprobadas" /> : null}</span>
+                      <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{note}</span>
                     </span>
                   </button>
-                  <span style={{ fontSize: "13px", color: "#4A4D57" }}>{status}</span>
+                  <span style={{ fontSize: "var(--t-meta)", color: "#4A4D57" }}>{status}</span>
                   {c.dm ? <a href={`/con/${encodeURIComponent(c.dm)}`} style={ctaStyle}>{"Chatear"}</a> : c.status === "known" ? <button type="button" disabled={relayOff} onClick={() => setSheet({ kind: "invitar", name: c.name })} style={ctaStyle}>{"Invitar"}</button> : null}
                 </div>
                 {isOpen ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 18px 20px 70px", animation: "rise .2s ease-out" }}>
                     {c.words?.length ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "16px", background: "#F6F6F3" }}>
-                        <span style={{ fontSize: "13px", color: "#5C606C" }}>{`Vuestras palabras de seguridad. ${first(c.name)} tiene que ver las mismas:`}</span>
-                        <strong style={{ font: "600 19px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{c.words.join(" · ")}</strong>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
+                        <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{`Vuestras palabras de seguridad. ${first(c.name)} tiene que ver las mismas:`}</span>
+                        <strong style={{ font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{c.words.join(" · ")}</strong>
                         <button type="button" disabled={act.busy} onClick={() => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { verified: !c.verifiedAt }))} style={{ ...ctaStyle, alignSelf: "flex-start", background: c.verifiedAt ? "#FFFFFF" : "#12131A", color: c.verifiedAt ? "#12131A" : "#FFFFFF", border: c.verifiedAt ? ctaStyle.border : "0", fontWeight: "600" }}>{c.verifiedAt ? "Comprobadas · deshacer" : "Las hemos comprobado"}</button>
                       </div>
                     ) : null}
-                    {c.status !== "known" ? <span style={{ fontSize: "13px", fontWeight: "600", color: "#3D404A" }}>{"Lo que puede pedirte su bot"}</span> : null}
+                    {c.status !== "known" ? <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#3D404A" }}>{"Lo que puede pedirte su bot"}</span> : null}
                     {c.status !== "known" ? ASKS.map(([key, title, sub, items]) => (
                       <div key={key} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px" }}>
-                        <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ fontSize: "14.5px", fontWeight: "500" }}>{title}</span><span style={{ fontSize: "12.5px", color: "#5C606C" }}>{sub}</span></span>
+                        <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{title}</span><span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{sub}</span></span>
                         <span style={{ flex: "0 1 300px" }}><Segmented label={title} items={items} value={c.asks?.[key]} busy={act.busy} onPick={(v) => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { asks: { [key]: v } }))} /></span>
                       </div>
                     )) : null}
-                    <span style={{ fontSize: "12.5px", color: "#5C606C" }}>{"Enviar, comprar, publicar o pagar por algo que pida otra persona o su bot siempre te pregunta, aunque digas «Siempre»."}</span>
-                    <button type="button" onClick={() => remove(c)} style={{ alignSelf: "flex-start", height: "32px", padding: "0", border: "0", background: "transparent", color: "#B4232A", fontSize: "13.5px", cursor: "pointer" }}>{"Dejar de hablar con " + first(c.name)}</button>
+                    <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Enviar, comprar, publicar o pagar por algo que pida otra persona o su bot siempre te pregunta, aunque digas «Siempre»."}</span>
+                    <button type="button" onClick={() => remove(c)} style={{ alignSelf: "flex-start", height: "32px", padding: "0", border: "0", background: "transparent", color: "#B4232A", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Dejar de hablar con " + first(c.name)}</button>
                   </div>
                 ) : null}
               </div>
@@ -136,10 +137,10 @@ export default function EquipoPeople({ peers }) {
             <div key={inv.id} style={{ ...row, borderTop: contacts.length || i ? row.borderTop : "0" }}>
               <Avatar ini={initialsOf(inv.name)} dot="transparent" dashed />
               <span style={{ flex: "1 1 200px", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "15px", fontWeight: "600" }}>{inv.name}</span>
-                <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Invitación enviada " + sinceText(inv.createdAt)}</span>
+                <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{inv.name}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Invitación enviada " + sinceText(inv.createdAt)}</span>
               </span>
-              <span style={{ fontSize: "13px", color: "#4A4D57" }}>{"Esperando"}</span>
+              <span style={{ fontSize: "var(--t-meta)", color: "#4A4D57" }}>{"Esperando"}</span>
               <button type="button" disabled={relayOff} onClick={() => setSheet({ kind: "invitar", name: inv.name })} style={ctaStyle}>{"Reenviar"}</button>
               <More label={`Más sobre la invitación a ${inv.name}`} items={[{ label: "Cancelar la invitación", run: () => cancel(inv), danger: true }]} />
             </div>
@@ -148,8 +149,8 @@ export default function EquipoPeople({ peers }) {
         <aside style={{ flex: "1 1 280px", minWidth: "0", display: "flex", flexDirection: "column", gap: "12px" }}>
           <InviteCard disabled={!peers?.me || relayOff} onAccept={() => setSheet({ kind: "aceptar" })} />
           {peers?.me ? <StatusCard status={peers.me.status} act={act} /> : null}
-          <a href="/ajustes/contactos#buzon" style={{ padding: "0 6px", fontSize: "13.5px", color: "#1F4FD1" }}>{"El buzón y los encargos de otras personas, en Ajustes"}</a>
-          {act.error ? <p role="alert" style={{ margin: "0", fontSize: "13.5px", color: "#B4232A" }}>{act.error}</p> : null}
+          <a href="/ajustes/contactos#buzon" style={{ padding: "0 6px", fontSize: "var(--t-ui)", color: "#1F4FD1" }}>{"El buzón y los encargos de otras personas, en Ajustes"}</a>
+          {act.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "#B4232A" }}>{act.error}</p> : null}
         </aside>
       </div>
       {sheet?.kind === "invitar" ? <InviteSheet initialName={sheet.name || ""} onClose={() => setSheet(null)} /> : null}
@@ -174,29 +175,29 @@ function InviteCard({ disabled, onAccept }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(made.text); setCopied(true); } catch { setError("No se pudo copiar. Selecciona el código y cópialo tú."); }
   };
-  const white = { height: "40px", border: "0", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "14px", fontWeight: "600", cursor: "pointer" };
+  const white = { height: "40px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "18px 20px", borderRadius: "20px", background: "#12131A", color: "#FFFFFF" }}>
-      <h3 style={{ margin: "0", fontSize: "15px", fontWeight: "600" }}>{"Invitar con un código"}</h3>
-      <p style={{ margin: "0", fontSize: "13.5px", lineHeight: "1.5", color: "#C9CBD3" }}>{"Le mandas un código de un solo uso. Al aceptarlo, los dos veréis las mismas cuatro palabras: así sabéis que sois vosotros."}</p>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "18px 20px", borderRadius: "var(--r-xl)", background: "#12131A", color: "#FFFFFF" }}>
+      <h3 style={{ margin: "0", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Invitar con un código"}</h3>
+      <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#C9CBD3" }}>{"Le mandas un código de un solo uso. Al aceptarlo, los dos veréis las mismas cuatro palabras: así sabéis que sois vosotros."}</p>
       {made ? (
         <>
-          <span style={{ padding: "10px 12px", borderRadius: "12px", background: "rgba(255,255,255,.08)", font: "500 14px/1.3 'Geist Mono', monospace", letterSpacing: ".04em", userSelect: "all", overflowWrap: "anywhere" }}>{made.code}</span>
-          <span style={{ fontSize: "12.5px", color: "#A9ACB6" }}>{`Para ${made.name || name}. Caduca en 24 horas.`}</span>
+          <span style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.08)", font: "500 var(--t-ui)/1.3 'Geist Mono', monospace", letterSpacing: ".04em", userSelect: "all", overflowWrap: "anywhere" }}>{made.code}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{`Para ${made.name || name}. Caduca en 24 horas.`}</span>
           <button type="button" onClick={copy} style={white}>{copied ? "Copiada ✓" : "Copiar invitación"}</button>
-          <button type="button" onClick={() => { setMade(null); setName(""); }} style={{ height: "30px", border: "0", background: "transparent", color: "#C9CBD3", fontSize: "13px", cursor: "pointer" }}>{"Invitar a otra persona"}</button>
+          <button type="button" onClick={() => { setMade(null); setName(""); }} style={{ height: "30px", border: "0", background: "transparent", color: "#C9CBD3", fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Invitar a otra persona"}</button>
         </>
       ) : (
         <>
           <label style={{ display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre de la persona"}</span>
-            <input className="c-quiet" type="text" value={name} maxLength={80} disabled={disabled} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: "1", minWidth: "0", height: "40px", padding: "0 12px", border: "0", borderRadius: "12px", background: "rgba(255,255,255,.08)", color: "#FFFFFF", fontSize: "14px" }} />
+            <input className="c-quiet" type="text" value={name} maxLength={80} disabled={disabled} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: "1", minWidth: "0", height: "40px", padding: "0 12px", border: "0", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.08)", color: "#FFFFFF", fontSize: "var(--t-ui)" }} />
           </label>
           <button type="button" disabled={disabled || !name.trim() || busy} onClick={make} style={{ ...white, opacity: disabled || !name.trim() ? 0.6 : 1 }}>{busy ? "Creando…" : "Crear la invitación"}</button>
         </>
       )}
-      <button type="button" disabled={disabled} onClick={onAccept} style={{ height: "30px", border: "0", background: "transparent", color: "#FFFFFF", fontSize: "13px", fontWeight: "500", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}>{"Tengo una invitación"}</button>
-      {error ? <span role="alert" style={{ fontSize: "13px", color: "#FFB4B8" }}>{error}</span> : null}
+      <button type="button" disabled={disabled} onClick={onAccept} style={{ height: "30px", border: "0", background: "transparent", color: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: "500", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}>{"Tengo una invitación"}</button>
+      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#FFB4B8" }}>{error}</span> : null}
     </div>
   );
 }
@@ -205,13 +206,10 @@ function StatusCard({ status, act }) {
   const mode = status?.mode || "available";
   const current = mode === "available" ? "available" : "now";
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF", fontSize: "14px", fontWeight: "600" }}>
+    <label style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>
       {"Tu estado para los demás"}
-      <select value={current} disabled={act.busy} onChange={(e) => { const s = STATUS.find((x) => x[0] === e.target.value); if (s) act.act(() => patch("/peers/status", s[2]())); }} style={{ height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", background: "#FFFFFF", fontSize: "14px", fontWeight: "400" }}>
-        {mode !== "available" ? <option value="now">{statusText(status)}</option> : null}
-        {STATUS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-      </select>
-      <span style={{ fontSize: "12.5px", fontWeight: "400", color: "#5C606C" }}>{mode === "available" ? "Lo ven las personas con las que hablas." : "Mientras tanto no te salta ni te suena ningún aviso."}</span>
+      <Select label="Tu estado para los demás" value={current} disabled={act.busy} onChange={(e) => { const s = STATUS.find((x) => x[0] === e.target.value); if (s) act.act(() => patch("/peers/status", s[2]())); }} style={{ height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "400" }} options={[...(mode !== "available" ? [["now", statusText(status)]] : []), ...STATUS]} />
+      <span style={{ fontSize: "var(--t-meta)", fontWeight: "400", color: "#5C606C" }}>{mode === "available" ? "Lo ven las personas con las que hablas." : "Mientras tanto no te salta ni te suena ningún aviso."}</span>
     </label>
   );
 }

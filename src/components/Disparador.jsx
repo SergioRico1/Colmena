@@ -1,3 +1,4 @@
+import Select from "./Select.jsx";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { get } from "../lib/api.js";
 
@@ -199,30 +200,30 @@ export function nextRuns(t, s, now = new Date()) {
 const CONNECTOR_FOR = { correo: ["correo", "El correo"], evento: ["calendario", "El calendario"], hoja: ["hojas", "Las hojas de cálculo"] };
 
 // ── shared inline styles copied from the mockup ──
-const labelStyle = { display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: "600" };
-const inputStyle = { height: "44px", padding: "0 12px", border: "0", borderRadius: "10px", fontFamily: "inherit", fontSize: "15px", color: "#12131A", background: "#FFFFFF" };
-const timeInput = { ...inputStyle, fontSize: "16px" };
-const selectStyle = { height: "44px", padding: "0 10px", border: "0", borderRadius: "10px", fontFamily: "inherit", fontSize: "15px", color: "#12131A", background: "#FFFFFF" };
-const segWrap = { display: "flex", flexWrap: "wrap", gap: "4px", padding: "4px", background: "#F4F4F0", borderRadius: "12px" };
-const fieldTitle = { fontSize: "13px", fontWeight: "600" };
+const labelStyle = { display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-meta)", fontWeight: "600" };
+const inputStyle = { height: "44px", padding: "0 12px", border: "0", borderRadius: "var(--r-md)", fontFamily: "inherit", fontSize: "var(--t-body)", color: "#12131A", background: "#FFFFFF" };
+const timeInput = { ...inputStyle, fontSize: "var(--t-read)" };
+const selectStyle = { height: "44px", padding: "0 10px", border: "0", borderRadius: "var(--r-md)", fontFamily: "inherit", fontSize: "var(--t-body)", color: "#12131A", background: "#FFFFFF" };
+const segWrap = { display: "flex", flexWrap: "wrap", gap: "4px", padding: "4px", background: "#F4F4F0", borderRadius: "var(--r-md)" };
+const fieldTitle = { fontSize: "var(--t-meta)", fontWeight: "600" };
 const col18 = { display: "flex", flexDirection: "column", gap: "18px" };
 const col8 = { display: "flex", flexDirection: "column", gap: "8px" };
 
 function Switch({ on, label, onToggle }) {
   return (
-    <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={label} onClick={onToggle} style={{ width: "52px", height: "30px", flex: "none", padding: "3px", border: "0", borderRadius: "15px", cursor: "pointer", display: "flex", background: on ? "#12131A" : "rgba(18,19,26,.1)", justifyContent: on ? "flex-end" : "flex-start" }}>
-      <span style={{ width: "24px", height: "24px", borderRadius: "50%", background: on ? "#FFC93C" : "#FFFFFF" }} />
+    <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={label} onClick={onToggle} style={{ width: "52px", height: "30px", flex: "none", padding: "3px", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", background: on ? "#12131A" : "rgba(18,19,26,.1)", justifyContent: on ? "flex-end" : "flex-start" }}>
+      <span style={{ width: "24px", height: "24px", borderRadius: "var(--r-circle)", background: on ? "#FFC93C" : "#FFFFFF" }} />
     </button>
   );
 }
 
 function Seg({ label, value, options, onPick, minHeight = "38px", padding = "0 12px", wrap = true }) {
   return (
-    <div role="radiogroup" aria-label={label} style={wrap ? segWrap : { display: "flex", gap: "4px", padding: "4px", background: "#F4F4F0", borderRadius: "12px" }}>
+    <div role="radiogroup" aria-label={label} style={wrap ? segWrap : { display: "flex", gap: "4px", padding: "4px", background: "#F4F4F0", borderRadius: "var(--r-md)" }}>
       {options.map(([id, text]) => {
         const on = value === id;
         return (
-          <button key={String(id)} type="button" role="radio" aria-checked={on ? "true" : "false"} onClick={() => onPick(id)} style={{ flex: "1 1 auto", minHeight, padding, border: "0", borderRadius: "9px", cursor: "pointer", fontFamily: "inherit", fontSize: "13px", fontWeight: "600", background: on ? "#12131A" : "transparent", color: on ? "#FFFFFF" : "#12131A" }}>
+          <button key={String(id)} type="button" role="radio" aria-checked={on ? "true" : "false"} onClick={() => onPick(id)} style={{ flex: "1 1 auto", minHeight, padding, border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontFamily: "inherit", fontSize: "var(--t-meta)", fontWeight: "600", background: on ? "#12131A" : "transparent", color: on ? "#FFFFFF" : "#12131A" }}>
             {text}
           </button>
         );
@@ -233,7 +234,7 @@ function Seg({ label, value, options, onPick, minHeight = "38px", padding = "0 1
 
 function Notice({ children }) {
   return (
-    <div role="note" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", background: "#FFF4D1", borderRadius: "12px", fontSize: "13px", lineHeight: "1.45", color: "#3D404A" }}>
+    <div role="note" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", background: "#FFF4D1", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#3D404A" }}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><circle cx="12" cy="12" r="9" /><path d="M12 7v6M12 16.5v.5" /></svg>
       <span>{children}</span>
     </div>
@@ -282,16 +283,14 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
 
   const meta = TRIGGER_META[t];
   const DAYS = [[1, "L", "lunes"], [2, "M", "martes"], [3, "X", "miércoles"], [4, "J", "jueves"], [5, "V", "viernes"], [6, "S", "sábado"], [0, "D", "domingo"]];
-  const dayStyle = (on) => ({ height: "44px", borderRadius: "10px", cursor: "pointer", fontFamily: "inherit", fontSize: "15px", fontWeight: "700", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#12131A", border: on ? "2px solid #12131A" : "1px solid #C9CED8" });
+  const dayStyle = (on) => ({ height: "44px", borderRadius: "var(--r-md)", cursor: "pointer", fontFamily: "inherit", fontSize: "var(--t-body)", fontWeight: "700", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#12131A", border: on ? "2px solid #12131A" : "1px solid #C9CED8" });
   const isTime = TIME_TRIGGERS.includes(t);
   const runs = isTime ? nextRuns(t, s) : [];
   const zoneOptions = !s.zona || ZONES.some(([z]) => z === s.zona) ? ZONES : [...ZONES, [s.zona, s.zona.split("/").pop().replace(/_/g, " ")]];
   const zoneSelect = (
     <label style={labelStyle}>
       {"Zona horaria"}
-      <select value={s.zona || ZONES[0][0]} onChange={set("zona")} style={selectStyle}>
-        {zoneOptions.map(([z, label]) => <option key={z} value={z}>{`${label} (${zoneOffset(z)})`}</option>)}
-      </select>
+      <Select label="Zona horaria" value={s.zona || ZONES[0][0]} onChange={set("zona")} style={selectStyle} options={zoneOptions.map(([z, label]) => [z, `${label} (${zoneOffset(z)})`])} />
     </label>
   );
   const connectorWarning = (() => {
@@ -342,14 +341,14 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
   };
 
   return (
-    <div style={{ fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "#12131A", background: "#FFFFFF", border: "0", borderRadius: "16px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <div style={{ fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "#12131A", background: "#FFFFFF", border: "0", borderRadius: "var(--r-lg)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px", background: "#F6F6F3", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
-        <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", borderRadius: "9px" }}>
+        <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-sm)" }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={meta[1]} /></svg>
         </span>
         <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
-          <span style={{ font: "500 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{"Configurar disparador"}</span>
-          <strong style={{ font: "600 17px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{meta[0]}</strong>
+          <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{"Configurar disparador"}</span>
+          <strong style={{ font: "600 var(--t-lead)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{meta[0]}</strong>
         </div>
       </div>
       <div style={{ padding: "18px", display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -364,7 +363,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                 <span style={fieldTitle}>{"Qué días"}</span>
                 <span style={{ display: "flex", gap: "4px" }}>
                   {[["Laborables", [1, 2, 3, 4, 5]], ["Todos", [0, 1, 2, 3, 4, 5, 6]], ["Fin de semana", [6, 0]]].map(([label, dias]) => (
-                    <button key={label} type="button" onClick={() => update({ dias })} style={{ height: "30px", padding: "0 10px", background: "#FFFFFF", border: "0", borderRadius: "15px", cursor: "pointer", fontFamily: "inherit", fontSize: "12px", color: "#12131A" }}>{label}</button>
+                    <button key={label} type="button" onClick={() => update({ dias })} style={{ height: "30px", padding: "0 10px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontFamily: "inherit", fontSize: "var(--t-caption)", color: "#12131A" }}>{label}</button>
                   ))}
                 </span>
               </div>
@@ -374,7 +373,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                   return <button key={d} type="button" aria-pressed={on ? "true" : "false"} aria-label={full} onClick={() => update({ dias: on ? s.dias.filter((x) => x !== d) : [...(s.dias || []), d] })} style={dayStyle(on)}>{short}</button>;
                 })}
               </div>
-              {(s.dias || []).length === 0 ? <span role="alert" style={{ fontSize: "13px", fontWeight: "600", color: "#B4372A" }}>{"Elige al menos un día."}</span> : null}
+              {(s.dias || []).length === 0 ? <span role="alert" style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#B4372A" }}>{"Elige al menos un día."}</span> : null}
             </div>
             <div style={col8}>
               <span style={fieldTitle}>{"Si cae en festivo"}</span>
@@ -398,12 +397,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <label style={labelStyle}>{"Hora"}<input type="time" value={s.hora} onChange={set("hora")} style={timeInput} /></label>
               <label style={labelStyle}>
                 {"Cada cuántas semanas"}
-                <select value={String(s.cada)} onChange={set("cada", true)} style={selectStyle}>
-                  <option value="1">{"Cada semana"}</option>
-                  <option value="2">{"Cada 2 semanas"}</option>
-                  <option value="3">{"Cada 3 semanas"}</option>
-                  <option value="4">{"Cada 4 semanas"}</option>
-                </select>
+                <Select label="Cada cuántas semanas" value={String(s.cada)} onChange={set("cada", true)} style={selectStyle} options={[["1", "Cada semana"], ["2", "Cada 2 semanas"], ["3", "Cada 3 semanas"], ["4", "Cada 4 semanas"]]} />
               </label>
             </div>
             {zoneSelect}
@@ -419,7 +413,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                 <Seg label="Unidad" value={s.cadaUnidad} onPick={(cadaUnidad) => update({ cadaUnidad })} options={[["minutos", "Minutos"], ["horas", "Horas"]]} />
               </div>
             </div>
-            {(Number(s.cadaN) || 0) * (s.cadaUnidad === "minutos" ? 1 : 60) < 15 ? <span role="alert" style={{ fontSize: "13px", fontWeight: "600", color: "#B4372A" }}>{"Como poco, cada 15 minutos."}</span> : null}
+            {(Number(s.cadaN) || 0) * (s.cadaUnidad === "minutos" ? 1 : 60) < 15 ? <span role="alert" style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#B4372A" }}>{"Como poco, cada 15 minutos."}</span> : null}
           </div>
         ) : null}
 
@@ -431,13 +425,13 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
               <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "14px", fontWeight: "600" }}>{"Avisarme el día antes"}</span>
-                <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Por si quieres cambiar algo"}</span>
+                <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Avisarme el día antes"}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Por si quieres cambiar algo"}</span>
               </span>
               <Switch on={!!s.avisarAntes} label="Avisarme el día antes" onToggle={() => update({ avisarAntes: !s.avisarAntes })} />
             </div>
-            <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Después de ejecutarse, la automatización se pausa sola."}</span>
-            {runs.length === 0 && s.fecha ? <span role="alert" style={{ fontSize: "13px", fontWeight: "600", color: "#B4372A" }}>{"Esa fecha y hora ya han pasado."}</span> : null}
+            <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Después de ejecutarse, la automatización se pausa sola."}</span>
+            {runs.length === 0 && s.fecha ? <span role="alert" style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#B4372A" }}>{"Esa fecha y hora ya han pasado."}</span> : null}
           </div>
         ) : null}
 
@@ -452,16 +446,16 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <span style={fieldTitle}>{"De quién"}</span>
               <Seg label="Remitente" value={s.de} onPick={(de) => update({ de })} options={[["todos", "Cualquiera"], ["algunos", "Solo de estos remitentes"]]} />
               {s.de === "algunos" ? (
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "4px 6px", border: "0", borderRadius: "10px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "4px 6px", border: "0", borderRadius: "var(--r-md)" }}>
                   {(s.remitentes || []).map((addr) => (
-                    <span key={addr} style={{ display: "flex", alignItems: "center", gap: "2px", height: "34px", padding: "0 2px 0 12px", background: "#F4F4F0", borderRadius: "17px", fontSize: "14px" }}>
+                    <span key={addr} style={{ display: "flex", alignItems: "center", gap: "2px", height: "34px", padding: "0 2px 0 12px", background: "#F4F4F0", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)" }}>
                       {addr}
-                      <button type="button" aria-label={"Quitar " + addr} onClick={() => update({ remitentes: s.remitentes.filter((x) => x !== addr) })} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "50%", cursor: "pointer", color: "#12131A" }}>
+                      <button type="button" aria-label={"Quitar " + addr} onClick={() => update({ remitentes: s.remitentes.filter((x) => x !== addr) })} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", color: "#12131A" }}>
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
                       </button>
                     </span>
                   ))}
-                  <input className="c-bare" type="text" aria-label="Añadir remitente" value={nuevoRem} onChange={(e) => setNuevoRem(e.target.value)} onKeyDown={addRem} placeholder="Dirección o @dominio y pulsa Intro" style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", background: "transparent", fontFamily: "inherit", fontSize: "14px", color: "#12131A" }} />
+                  <input className="c-bare" type="text" aria-label="Añadir remitente" value={nuevoRem} onChange={(e) => setNuevoRem(e.target.value)} onKeyDown={addRem} placeholder="Dirección o @dominio y pulsa Intro" style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", background: "transparent", fontFamily: "inherit", fontSize: "var(--t-ui)", color: "#12131A" }} />
                 </div>
               ) : null}
             </div>
@@ -472,11 +466,11 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                 <Seg label="Adjuntos" wrap={false} minHeight="36px" padding="0 8px" value={s.adjuntos} onPick={(adjuntos) => update({ adjuntos })} options={[["igual", "Da igual"], ["si", "Con adjuntos"], ["pdf", "Solo PDF"]]} />
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", background: "#FFF4D1", borderRadius: "12px" }}>
-              <span aria-hidden="true" style={{ width: "26px", height: "26px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 12px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", background: "#FFF4D1", borderRadius: "var(--r-md)" }}>
+              <span aria-hidden="true" style={{ width: "26px", height: "26px", flex: "none", display: "grid", placeItems: "center", background: "radial-gradient(circle at 32% 26%, rgba(255,255,255,.62), rgba(255,255,255,0) 54%), #FFC93C", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", font: "600 var(--t-caption)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }} />
               <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "14px", fontWeight: "600" }}>{"Entender el contenido"}</span>
-                <span style={{ fontSize: "13px", lineHeight: "1.4", color: "#3D404A" }}>{"Reconoce una factura aunque el asunto no lo diga."}</span>
+                <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Entender el contenido"}</span>
+                <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#3D404A" }}>{"Reconoce una factura aunque el asunto no lo diga."}</span>
               </span>
               <Switch on={!!s.entender} label="Entender el contenido" onToggle={() => update({ entender: !s.entender })} />
             </div>
@@ -489,22 +483,19 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={fieldTitle}>{"En qué carpeta"}</span>
               {folders.length ? (
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "6px 6px 6px 12px", border: "0", borderRadius: "10px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "6px 6px 6px 12px", border: "0", borderRadius: "var(--r-md)" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h7l2 2h9v11H3z" /></svg>
                   {carpetaParts.map((label, i) => (
-                    <span key={i} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: i === carpetaParts.length - 1 ? "700" : "500" }}>
+                    <span key={i} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", fontWeight: i === carpetaParts.length - 1 ? "700" : "500" }}>
                       {label}
                       {i < carpetaParts.length - 1 ? <span aria-hidden="true" style={{ color: "#8C91A0" }}>{"›"}</span> : null}
                     </span>
                   ))}
                   <span style={{ flex: "1" }} />
-                  <select aria-label="Cambiar carpeta" value={folder?.id || ""} onChange={(e) => { const f = folders.find((x) => x.id === e.target.value); if (f) update({ carpetaId: f.id, carpeta: folderPath(f) }); }} style={{ height: "36px", padding: "0 8px", border: "0", borderRadius: "999px", fontFamily: "inherit", fontSize: "13px", color: "#12131A", background: "#FFFFFF" }}>
-                    {folder ? null : <option value="">{"Elige una carpeta"}</option>}
-                    {folders.map((f) => <option key={f.id} value={f.id}>{folderPath(f).split("/").filter(Boolean).join(" / ")}</option>)}
-                  </select>
+                  <Select aria-label="Cambiar carpeta" value={folder?.id || ""} onChange={(e) => { const f = folders.find((x) => x.id === e.target.value); if (f) update({ carpetaId: f.id, carpeta: folderPath(f) }); }} style={{ height: "36px", padding: "0 8px", border: "0", borderRadius: "var(--r-pill)", fontFamily: "inherit", fontSize: "var(--t-meta)", color: "#12131A", background: "#FFFFFF" }} options={[...(folder ? [] : [["", "Elige una carpeta"]]), ...folders.map((f) => [f.id, folderPath(f).split("/").filter(Boolean).join(" / ")])]} />
                 </div>
               ) : (
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "6px 6px 6px 12px", border: "0", borderRadius: "10px", fontSize: "14px", color: "#5C606C" , background: "#FFFFFF"}}>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "48px", padding: "6px 6px 6px 12px", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#5C606C" , background: "#FFFFFF"}}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h7l2 2h9v11H3z" /></svg>
                   {"Aún no has compartido ninguna carpeta."}
                   <a href="/ajustes/ordenador" style={{ fontWeight: "600", color: "#1F4FD1" }}>{"Añadir carpeta en Ajustes › Este ordenador"}</a>
@@ -512,7 +503,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-              <span style={{ fontSize: "14px", fontWeight: "600" }}>{"Incluir subcarpetas"}</span>
+              <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Incluir subcarpetas"}</span>
               <Switch on={!!s.subcarpetas} label="Incluir subcarpetas" onToggle={() => update({ subcarpetas: !s.subcarpetas })} />
             </div>
             <div style={col8}>
@@ -523,11 +514,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <label style={labelStyle}>{"El nombre contiene"}<input type="text" value={s.nombre} onChange={set("nombre")} placeholder="Opcional, p. ej. «factura»" style={inputStyle} /></label>
               <label style={labelStyle}>
                 {"Quién lo sube"}
-                <select value={s.quien} onChange={set("quien")} style={selectStyle}>
-                  <option value="todos">{"Cualquiera"}</option>
-                  <option value="equipo">{"Solo gente del equipo"}</option>
-                  <option value="fuera">{"Solo gente de fuera"}</option>
-                </select>
+                <Select label="Quién lo sube" value={s.quien} onChange={set("quien")} style={selectStyle} options={[["todos", "Cualquiera"], ["equipo", "Solo gente del equipo"], ["fuera", "Solo gente de fuera"]]} />
               </label>
             </div>
           </div>
@@ -549,17 +536,13 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <span style={fieldTitle}>{"Con cuánta antelación"}</span>
               <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: "8px" }}>
                 <input type="number" min="1" max="99" aria-label="Cantidad" value={s.antelacion} onChange={(e) => update({ antelacion: Math.max(1, Math.min(99, Number(e.target.value) || 1)) })} style={timeInput} />
-                <select aria-label="Unidad" value={s.unidad} onChange={set("unidad")} style={selectStyle}>
-                  <option value="minutos">{"minutos antes"}</option>
-                  <option value="horas">{"horas antes"}</option>
-                  <option value="días">{"días antes"}</option>
-                </select>
+                <Select aria-label="Unidad" value={s.unidad} onChange={set("unidad")} style={selectStyle} options={[["minutos", "minutos antes"], ["horas", "horas antes"], ["días", "días antes"]]} />
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
               <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ fontSize: "14px", fontWeight: "600" }}>{"Solo en horario laboral"}</span>
-                <span style={{ fontSize: "13px", color: "#5C606C" }}>{"De lunes a viernes, de 8:00 a 19:00"}</span>
+                <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Solo en horario laboral"}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"De lunes a viernes, de 8:00 a 19:00"}</span>
               </span>
               <Switch on={!!s.laboral} label="Solo en horario laboral" onToggle={() => update({ laboral: !s.laboral })} />
             </div>
@@ -571,11 +554,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
           <div style={col18}>
             <label style={labelStyle}>
               {"En qué sala"}
-              <select value={s.sala || "*"} onChange={(e) => { const r = rooms.find((x) => x.room === e.target.value); update({ sala: e.target.value, missionId: r?.id || null }); }} style={selectStyle}>
-                {rooms.map((r) => <option key={r.id} value={r.room}>{"# " + r.room}</option>)}
-                {s.sala && s.sala !== "*" && !rooms.some((r) => r.room === s.sala) ? <option value={s.sala}>{"# " + s.sala}</option> : null}
-                <option value="*">{"Cualquier sala"}</option>
-              </select>
+              <Select label="En qué sala" value={s.sala || "*"} onChange={(e) => { const r = rooms.find((x) => x.room === e.target.value); update({ sala: e.target.value, missionId: r?.id || null }); }} style={selectStyle} options={[...rooms.map((r) => [r.room, "# " + r.room]), ...(s.sala && s.sala !== "*" && !rooms.some((r) => r.room === s.sala) ? [[s.sala, "# " + s.sala]] : []), ["*", "Cualquier sala"]]} />
             </label>
             <div style={col8}>
               <span style={fieldTitle}>{"Cuándo cuenta"}</span>
@@ -583,8 +562,8 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                 {[["todo", "Cualquier mensaje"], ["mencion", "Cuando mencionen a un bot con @"], ["palabras", "Cuando contenga ciertas palabras"]].map(([id, label]) => {
                   const on = s.modo === id;
                   return (
-                    <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} onClick={() => update({ modo: id })} style={{ display: "grid", gridTemplateColumns: "20px 1fr", gap: "10px", alignItems: "center", minHeight: "46px", padding: "8px 12px", textAlign: "left", borderRadius: "10px", cursor: "pointer", fontFamily: "inherit", fontSize: "14px", color: "#12131A", background: on ? "#FFF4D1" : "#FFFFFF", border: on ? "2px solid #12131A" : "1px solid rgba(18,19,26,.1)" }}>
-                      <span style={{ width: "18px", height: "18px", borderRadius: "50%", border: "0", display: "grid", placeItems: "center" }}><span style={{ width: "8px", height: "8px", borderRadius: "50%", background: on ? "#12131A" : "transparent" }} /></span>
+                    <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} onClick={() => update({ modo: id })} style={{ display: "grid", gridTemplateColumns: "20px 1fr", gap: "10px", alignItems: "center", minHeight: "46px", padding: "8px 12px", textAlign: "left", borderRadius: "var(--r-md)", cursor: "pointer", fontFamily: "inherit", fontSize: "var(--t-ui)", color: "#12131A", background: on ? "#FFF4D1" : "#FFFFFF", border: on ? "2px solid #12131A" : "1px solid rgba(18,19,26,.1)" }}>
+                      <span style={{ width: "18px", height: "18px", borderRadius: "var(--r-circle)", border: "0", display: "grid", placeItems: "center" }}><span style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent" }} /></span>
                       {label}
                     </button>
                   );
@@ -594,12 +573,9 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
             </div>
             <label style={labelStyle}>
               {"De quién"}
-              <select value={s.deQuien} onChange={set("deQuien")} style={selectStyle}>
-                <option value="personas">{"Solo personas"}</option>
-                <option value="todos">{"Personas y bots"}</option>
-              </select>
+              <Select label="De quién" value={s.deQuien} onChange={set("deQuien")} style={selectStyle} options={[["personas", "Solo personas"], ["todos", "Personas y bots"]]} />
             </label>
-            <span style={{ fontSize: "13px", lineHeight: "1.45", color: "#5C606C" }}>{"Para evitar bucles, los mensajes del propio bot nunca lo vuelven a poner en marcha."}</span>
+            <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C" }}>{"Para evitar bucles, los mensajes del propio bot nunca lo vuelven a poner en marcha."}</span>
           </div>
         ) : null}
 
@@ -619,7 +595,7 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
                 {s.cambio === "supere" ? <label style={labelStyle}>{"Supere"}<input type="text" value={s.valor} onChange={set("valor")} style={inputStyle} /></label> : null}
               </div>
             ) : null}
-            <span style={{ fontSize: "13px", color: "#5C606C" }}>{"Se comprueba cada 5 minutos."}</span>
+            <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Se comprueba cada 5 minutos."}</span>
             {connectorWarning}
           </div>
         ) : null}
@@ -650,41 +626,41 @@ export default function Disparador({ tipo = "correo", value, sentence: sentenceP
               <span style={fieldTitle}>{"Cada cuánto mirarla"}</span>
               <Seg label="Cada cuánto mirarla" padding="0 10px" value={s.frecuencia} onPick={(frecuencia) => update({ frecuencia })} options={[["15m", "Cada 15 min"], ["1h", "Cada hora"], ["1d", "Una vez al día"]]} />
             </div>
-            <span style={{ fontSize: "13px", lineHeight: "1.45", color: "#5C606C" }}>{"Solo páginas públicas. No cuenta lo que cambia solo, como «hace 2 días». Si la página falla 5 veces seguidas, la automatización se pausa y te dice por qué."}</span>
+            <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C" }}>{"Solo páginas públicas. No cuenta lo que cambia solo, como «hace 2 días». Si la página falla 5 veces seguidas, la automatización se pausa y te dice por qué."}</span>
           </div>
         ) : null}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "14px" }}>
-          <span style={{ font: "500 11px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#C9CCD6" }}>{"Se pondrá en marcha cuando"}</span>
-          <span aria-live="polite" style={{ font: "600 17px/1.4 'Bricolage Grotesque', sans-serif" }}>{sentence}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-lg)" }}>
+          <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#C9CCD6" }}>{"Se pondrá en marcha cuando"}</span>
+          <span aria-live="polite" style={{ font: "600 var(--t-lead)/1.4 'Bricolage Grotesque', sans-serif" }}>{sentence}</span>
           {isTime && runs.length ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingTop: "4px" }}>
-              <span style={{ fontSize: "12px", color: "#C9CCD6", alignSelf: "center", marginRight: "2px" }}>{"Próximas:"}</span>
-              {runs.map((label) => <span key={label} style={{ padding: "5px 9px", background: "#2C2F3A", borderRadius: "7px", font: "500 12px/1 'Geist Mono', monospace" }}>{label}</span>)}
+              <span style={{ fontSize: "var(--t-caption)", color: "#C9CCD6", alignSelf: "center", marginRight: "2px" }}>{"Próximas:"}</span>
+              {runs.map((label) => <span key={label} style={{ padding: "5px 9px", background: "#2C2F3A", borderRadius: "var(--r-sm)", font: "500 var(--t-caption)/1 'Geist Mono', monospace" }}>{label}</span>)}
             </div>
           ) : null}
           {t === "web" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingTop: "4px" }}>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
-                <button type="button" onClick={probarWeb} disabled={preview?.busy} aria-busy={preview?.busy ? "true" : "false"} style={{ height: "36px", padding: "0 14px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", border: "0", cursor: "pointer", fontFamily: "inherit", fontSize: "13px", fontWeight: "700" }}>{"Probar ahora"}</button>
-                <span role="status" style={{ fontSize: "13px", color: preview?.error ? "#FFB4A8" : "rgba(18,19,26,.06)" }}>
+                <button type="button" onClick={probarWeb} disabled={preview?.busy} aria-busy={preview?.busy ? "true" : "false"} style={{ height: "36px", padding: "0 14px", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", border: "0", cursor: "pointer", fontFamily: "inherit", fontSize: "var(--t-meta)", fontWeight: "700" }}>{"Probar ahora"}</button>
+                <span role="status" style={{ fontSize: "var(--t-meta)", color: preview?.error ? "#FFB4A8" : "rgba(18,19,26,.06)" }}>
                   {preview?.busy ? "Leyendo la página…" : preview?.error || (preview?.title || preview?.excerpt ? `Leída ${preview.domain || ""}`.trim() : "Lee la página ahora para comprobar que se puede vigilar.")}
                 </span>
               </div>
               {preview && !preview.busy && !preview.error ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", background: "#2C2F3A", borderRadius: "10px" }}>
-                  <strong style={{ fontSize: "14px", lineHeight: "1.35", overflowWrap: "anywhere" }}>{preview.title || preview.domain || "Página sin título"}</strong>
-                  {preview.excerpt ? <span style={{ fontSize: "13px", lineHeight: "1.45", color: "#C9CCD6", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{preview.excerpt}</span> : null}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", background: "#2C2F3A", borderRadius: "var(--r-md)" }}>
+                  <strong style={{ fontSize: "var(--t-ui)", lineHeight: "1.35", overflowWrap: "anywhere" }}>{preview.title || preview.domain || "Página sin título"}</strong>
+                  {preview.excerpt ? <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#C9CCD6", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{preview.excerpt}</span> : null}
                   {s.condicion === "precio_bajo" ? (
-                    <span style={{ font: "500 12px/1.4 'Geist Mono', monospace", color: "#FFC93C" }}>{preview.price != null ? `Precio que se vigilará: ${String(preview.price).replace(".", ",")} €` : "No encuentro un precio en la página. Prueba con «Cerca del texto»."}</span>
+                    <span style={{ font: "500 var(--t-caption)/1.4 'Geist Mono', monospace", color: "#FFC93C" }}>{preview.price != null ? `Precio que se vigilará: ${String(preview.price).replace(".", ",")} €` : "No encuentro un precio en la página. Prueba con «Cerca del texto»."}</span>
                   ) : null}
                 </div>
               ) : null}
             </div>
           ) : !isTime ? (
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", paddingTop: "4px" }}>
-              <button type="button" onClick={probar} disabled={probe.busy} aria-busy={probe.busy ? "true" : "false"} style={{ height: "36px", padding: "0 14px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", border: "0", cursor: "pointer", fontFamily: "inherit", fontSize: "13px", fontWeight: "700" }}>{"Probar con lo último"}</button>
-              <span role="status" style={{ fontSize: "13px", color: probe.error ? "#FFB4A8" : "rgba(18,19,26,.06)" }}>{probe.text || (onProbar ? "Comprueba qué habría pasado esta semana." : "Guárdalo como automatización para probarlo con lo que ya ha pasado.")}</span>
+              <button type="button" onClick={probar} disabled={probe.busy} aria-busy={probe.busy ? "true" : "false"} style={{ height: "36px", padding: "0 14px", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", border: "0", cursor: "pointer", fontFamily: "inherit", fontSize: "var(--t-meta)", fontWeight: "700" }}>{"Probar con lo último"}</button>
+              <span role="status" style={{ fontSize: "var(--t-meta)", color: probe.error ? "#FFB4A8" : "rgba(18,19,26,.06)" }}>{probe.text || (onProbar ? "Comprueba qué habría pasado esta semana." : "Guárdalo como automatización para probarlo con lo que ya ha pasado.")}</span>
             </div>
           ) : null}
         </div>

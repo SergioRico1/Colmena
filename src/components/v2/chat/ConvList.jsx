@@ -58,19 +58,19 @@ export default function ConvList({ current = null }) {
   return (
     <aside data-convlist="" aria-label="Chats" style={{ flex: "none", width: "320px", height: "100%", overflowY: "auto", overscrollBehavior: "contain", padding: "28px 14px 28px 20px", display: "flex", flexDirection: "column", gap: "14px", borderRight: "1px solid rgba(18,19,26,.07)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 8px" }}>
-        <h2 style={{ margin: "0", font: "600 22px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Chats"}</h2>
-        <button type="button" onClick={() => setSheet(true)} title="Nuevo chat o sala (Ctrl+N)" style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px 0 11px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
+        <h2 style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Chats"}</h2>
+        <button type="button" onClick={() => setSheet(true)} title="Nuevo chat o sala (Ctrl+N)" style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px 0 11px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           {"Nueva"}
         </button>
       </div>
-      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", margin: "0 4px", padding: "0 12px", background: "rgba(18,19,26,.045)", borderRadius: "12px", color: "#5C606C" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", margin: "0 4px", padding: "0 12px", background: "rgba(18,19,26,.045)", borderRadius: "var(--r-md)", color: "#5C606C" }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4-4" /></svg>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar chats y salas"}</span>
-        <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "14px" }} />
+        <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
       </label>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        {shown.length === 0 ? <p style={{ margin: "8px 10px", fontSize: "14px", color: "#6B6F7A" }}>{q.trim() ? "Ningún chat ni sala coincide." : "Aún no hay chats. Pulsa «Nueva» para empezar."}</p> : null}
+        {shown.length === 0 ? <p style={{ margin: "8px 10px", fontSize: "var(--t-ui)", color: "#6B6F7A" }}>{q.trim() ? "Ningún chat ni sala coincide." : "Aún no hay chats. Pulsa «Nueva» para empezar."}</p> : null}
         {shown.map((m) => {
           const on = m.id === current;
           if (m.share) return <ShareRow key={m.id} share={m.share} on={on} />;
@@ -81,20 +81,20 @@ export default function ConvList({ current = null }) {
           const line = m.narration?.text || (m.conversation ? (m.incognito ? "De incógnito · " : "") + (m.lastLine || m.title) : m.activityLine || m.title);
           return (
             <a key={m.id} href={m.conversation ? chatUrl(m) : salaUrl(m)} aria-current={on ? "page" : undefined}
-              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "16px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)" : "none" }}>
+              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "var(--r-lg)", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)" : "none" }}>
               {bot ? (
                 <span style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center" }}><BotPresence bot={bot} size={28} state={m.status === "running" ? "work" : attention ? "wait" : "rest"} /></span>
               ) : (
-                <span aria-hidden="true" style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", borderRadius: "12px", background: "#E9E9E4", font: "600 16px/1 'Geist', sans-serif", color: "#3D404A" }}>{"#"}</span>
+                <span aria-hidden="true" style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#E9E9E4", font: "600 var(--t-read)/1 'Geist', sans-serif", color: "#3D404A" }}>{"#"}</span>
               )}
               <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <strong style={{ flex: "1", minWidth: "0", fontSize: "14px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</strong>
-                  <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{whenLabel(m.rowAt || m.updatedAt || m.createdAt)}</span>
+                  <strong style={{ flex: "1", minWidth: "0", fontSize: "var(--t-ui)", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</strong>
+                  <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{whenLabel(m.rowAt || m.updatedAt || m.createdAt)}</span>
                 </span>
                 <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ flex: "1", minWidth: "0", fontSize: "13px", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
-                  {attention || (unread && !on) ? <span aria-label={attention ? "Te necesita" : "Mensajes nuevos"} style={{ width: "8px", height: "8px", flex: "none", borderRadius: "50%", background: attention ? "#FFC93C" : "#12131A", boxShadow: attention ? "0 0 0 3px rgba(255,201,60,.25)" : "none" }} /> : null}
+                  <span style={{ flex: "1", minWidth: "0", fontSize: "var(--t-meta)", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
+                  {attention || (unread && !on) ? <span aria-label={attention ? "Te necesita" : "Mensajes nuevos"} style={{ width: "8px", height: "8px", flex: "none", borderRadius: "var(--r-circle)", background: attention ? "#FFC93C" : "#12131A", boxShadow: attention ? "0 0 0 3px rgba(255,201,60,.25)" : "none" }} /> : null}
                 </span>
               </span>
             </a>
@@ -117,16 +117,16 @@ function ShareRow({ share, on }) {
   const unread = !on && share.unread > 0;
   return (
     <a href={shareUrl(share.id)} aria-current={on ? "page" : undefined}
-      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "16px", color: "#12131A", textDecoration: "none", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)" : "none" }}>
+      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "var(--r-lg)", color: "#12131A", textDecoration: "none", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)" : "none" }}>
       <ShareFace share={share} ring={on ? "#FFFFFF" : "#F5F5F2"} />
       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <strong style={{ flex: "1", minWidth: "0", fontSize: "14px", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share.title}</strong>
-          <span style={{ fontSize: "12px", color: "#6B6F7A" }}>{whenLabel(share.lastAt)}</span>
+          <strong style={{ flex: "1", minWidth: "0", fontSize: "var(--t-ui)", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share.title}</strong>
+          <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{whenLabel(share.lastAt)}</span>
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ flex: "1", minWidth: "0", fontSize: "13px", color: typing ? "#1E2029" : "#5C606C", fontWeight: unread ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
-          {unread ? <span aria-label={share.unread === 1 ? "Un mensaje nuevo" : share.unread + " mensajes nuevos"} style={{ minWidth: "18px", height: "18px", padding: "0 5px", flex: "none", borderRadius: "9px", background: "#12131A", color: "#FFFFFF", font: "600 10px/18px 'Geist', sans-serif", textAlign: "center", boxSizing: "border-box" }}>{share.unread > 9 ? "9+" : share.unread}</span> : null}
+          <span style={{ flex: "1", minWidth: "0", fontSize: "var(--t-meta)", color: typing ? "#1E2029" : "#5C606C", fontWeight: unread ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
+          {unread ? <span aria-label={share.unread === 1 ? "Un mensaje nuevo" : share.unread + " mensajes nuevos"} style={{ minWidth: "18px", height: "18px", padding: "0 5px", flex: "none", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", font: "600 var(--t-micro)/18px 'Geist', sans-serif", textAlign: "center", boxSizing: "border-box" }}>{share.unread > 9 ? "9+" : share.unread}</span> : null}
         </span>
       </span>
     </a>
@@ -192,62 +192,62 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
   };
   return (
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: "0", zIndex: "70", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px 24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
-      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="nc-t" style={{ width: "min(620px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "32px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="nc-t" style={{ width: "min(620px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "var(--r-3xl)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "24px 24px 6px 28px" }}>
-          <h2 id="nc-t" style={{ margin: "0", font: "600 30px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{withPeople ? (isRoom ? "Nueva conversación" : "Nuevo chat") : isRoom || (salaMode && !chosen.length) ? "Nueva sala" : "Nuevo chat"}</h2>
-          <button type="button" aria-label="Cerrar" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer" }}>
+          <h2 id="nc-t" style={{ margin: "0", font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{withPeople ? (isRoom ? "Nueva conversación" : "Nuevo chat") : isRoom || (salaMode && !chosen.length) ? "Nueva sala" : "Nuevo chat"}</h2>
+          <button type="button" aria-label="Cerrar" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.06)", cursor: "pointer" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
         </div>
         <div style={{ flex: "none", padding: "14px 28px 0", display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "52px", padding: "6px 8px 6px 14px", borderRadius: "18px", background: "#F6F6F3" }}>
-            <span style={{ fontSize: "14px", color: "#6B6F7A", marginRight: "4px" }}>{"Con"}</span>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", minHeight: "52px", padding: "6px 8px 6px 14px", borderRadius: "var(--r-xl)", background: "#F6F6F3" }}>
+            <span style={{ fontSize: "var(--t-ui)", color: "#6B6F7A", marginRight: "4px" }}>{"Con"}</span>
             {chosen.map((b) => (
-              <span key={b.id} style={{ display: "flex", alignItems: "center", gap: "7px", height: "36px", padding: "0 6px 0 8px", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", fontWeight: "600", animation: "pop .25s ease-out" }}>
+              <span key={b.id} style={{ display: "flex", alignItems: "center", gap: "7px", height: "36px", padding: "0 6px 0 8px", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", animation: "pop .25s ease-out" }}>
                 <span aria-hidden="true" style={{ width: "18px", height: "18px", background: gloss(b.color), clipPath: shapeOf(b).clip, borderRadius: shapeOf(b).radius }} />
                 {b.name}
-                <button type="button" aria-label={"Quitar a " + b.name} onClick={() => pick(b.id)} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                <button type="button" aria-label={"Quitar a " + b.name} onClick={() => pick(b.id)} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
                 </button>
               </span>
             ))}
             {chosenPeople.map((c) => (
-              <span key={c.id} style={{ display: "flex", alignItems: "center", gap: "7px", height: "36px", padding: "0 6px 0 5px", borderRadius: "999px", background: "#FFFFFF", fontSize: "14px", fontWeight: "600", animation: "pop .25s ease-out" }}>
+              <span key={c.id} style={{ display: "flex", alignItems: "center", gap: "7px", height: "36px", padding: "0 6px 0 5px", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", animation: "pop .25s ease-out" }}>
                 <PeerAvatar person={c} size={26} />
                 {c.name}
-                <button type="button" aria-label={"Quitar a " + c.name} onClick={() => pickPerson(c.id)} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                <button type="button" aria-label={"Quitar a " + c.name} onClick={() => pickPerson(c.id)} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
                 </button>
               </span>
             ))}
             <input className="c-bare" autoFocus type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chosen.length ? "Añadir otro bot" : withPeople ? "Añadir otra persona" : "Escribe un nombre"} aria-label="Buscar bots y personas"
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (q.trim() && !withPeople && items[0]) { pick(items[0].id); setQ(""); } else if (q.trim() && peopleItems[0]) { pickPerson(peopleItems[0].id); setQ(""); } else go(); } }}
-              style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", background: "transparent", fontSize: "15px" }} />
+              style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />
           </div>
-          <span style={{ padding: "0 4px", fontSize: "13px", lineHeight: "1.45", color: "#5C606C" }}>{hint}</span>
+          <span style={{ padding: "0 4px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C" }}>{hint}</span>
           {isRoom ? (
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "50px", padding: "0 16px", borderRadius: "16px", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", animation: "fade .3s ease-out" }}>
-              <span aria-hidden="true" style={{ font: "600 17px/1 'Geist', sans-serif", color: "#8A8D96" }}>{"#"}</span>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "50px", padding: "0 16px", borderRadius: "var(--r-lg)", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", animation: "fade .3s ease-out" }}>
+              <span aria-hidden="true" style={{ font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "#8A8D96" }}>{"#"}</span>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre de la sala"}</span>
-              <input className="c-bare" type="text" value={name || auto} onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "16px", fontWeight: "600" }} />
+              <input className="c-bare" type="text" value={name || auto} onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-read)", fontWeight: "600" }} />
             </label>
           ) : null}
         </div>
         <div style={{ flex: "1", minHeight: "0", overflowY: "auto", padding: "14px 18px 6px" }}>
           {peers?.me ? (
             <>
-              <span style={{ display: "block", padding: "4px 10px 6px", fontSize: "12px", fontWeight: "500", color: "#6B6F7A" }}>{"Personas"}</span>
+              <span style={{ display: "block", padding: "4px 10px 6px", fontSize: "var(--t-caption)", fontWeight: "500", color: "#6B6F7A" }}>{"Personas"}</span>
               {peopleItems.map((c) => {
                 const on = people.includes(c.id);
                 return (
                   <button key={c.id} type="button" role="checkbox" aria-checked={on ? "true" : "false"} onClick={() => { pickPerson(c.id); setQ(""); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "14px", minHeight: "58px", padding: "6px 10px", border: 0, borderRadius: "16px", background: on ? "rgba(18,19,26,.045)" : "transparent", cursor: "pointer", textAlign: "left" }}>
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "14px", minHeight: "58px", padding: "6px 10px", border: 0, borderRadius: "var(--r-lg)", background: on ? "rgba(18,19,26,.045)" : "transparent", cursor: "pointer", textAlign: "left" }}>
                     <PeerAvatar person={c} size={32} dot ring="#FFFFFF" />
                     <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <strong style={{ fontSize: "15px", fontWeight: "600" }}>{c.name}</strong>
-                      <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{c.online ? "Conectada" : "En su Colmena"}</span>
+                      <strong style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{c.name}</strong>
+                      <span style={{ fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{c.online ? "Conectada" : "En su Colmena"}</span>
                     </span>
-                    <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
+                    <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
                     </span>
                   </button>
@@ -258,37 +258,37 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                 <PeopleIntro compact onInvite={() => onPeople("invitar")} onCode={() => onPeople("aceptar")} />
               ) : onPeople && !q.trim() ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "6px 10px 14px" }}>
-                  <button type="button" onClick={() => onPeople("invitar")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
-                  <button type="button" onClick={() => onPeople("aceptar")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}><Ticket size={15} strokeWidth={2.2} aria-hidden="true" />{"Tengo una invitación"}</button>
+                  <button type="button" onClick={() => onPeople("invitar")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
+                  <button type="button" onClick={() => onPeople("aceptar")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}><Ticket size={15} strokeWidth={2.2} aria-hidden="true" />{"Tengo una invitación"}</button>
                 </div>
               ) : null}
             </>
           ) : null}
           {withPeople ? null : <>
-          <span style={{ display: "block", padding: "4px 10px 6px", fontSize: "12px", fontWeight: "500", color: "#6B6F7A" }}>{"Bots"}</span>
+          <span style={{ display: "block", padding: "4px 10px 6px", fontSize: "var(--t-caption)", fontWeight: "500", color: "#6B6F7A" }}>{"Bots"}</span>
           {items.map((b) => {
             const on = sel.includes(b.id);
             return (
               <button key={b.id} type="button" role="checkbox" aria-checked={on ? "true" : "false"} onClick={() => { pick(b.id); setQ(""); }}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: "14px", minHeight: "58px", padding: "6px 10px", border: 0, borderRadius: "16px", background: on ? "rgba(18,19,26,.045)" : "transparent", cursor: "pointer", textAlign: "left" }}>
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: "14px", minHeight: "58px", padding: "6px 10px", border: 0, borderRadius: "var(--r-lg)", background: on ? "rgba(18,19,26,.045)" : "transparent", cursor: "pointer", textAlign: "left" }}>
                 <BotPresence bot={b} size={30} state="rest" />
                 <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <strong style={{ fontSize: "15px", fontWeight: "600" }}>{b.name}</strong>
-                  <span style={{ fontSize: "13px", color: "#6B6F7A" }}>{b.role}</span>
+                  <strong style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{b.name}</strong>
+                  <span style={{ fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{b.role}</span>
                 </span>
-                <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
+                <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
                 </span>
               </button>
             );
           })}
-          {items.length === 0 && !(q.trim() && peopleItems.length) ? <p style={{ margin: "10px", fontSize: "14px", color: "#6B6F7A" }}>{"No hay ningún bot con ese nombre."}</p> : null}
+          {items.length === 0 && !(q.trim() && peopleItems.length) ? <p style={{ margin: "10px", fontSize: "var(--t-ui)", color: "#6B6F7A" }}>{"No hay ningún bot con ese nombre."}</p> : null}
           </>}
         </div>
-        {error ? <p role="alert" style={{ margin: "0 28px 8px", fontSize: "14px", color: "#B4231A" }}>{error}</p> : null}
+        {error ? <p role="alert" style={{ margin: "0 28px 8px", fontSize: "var(--t-ui)", color: "#B4231A" }}>{error}</p> : null}
         <div style={{ flex: "none", display: "flex", justifyContent: "flex-end", gap: "10px", padding: "14px 24px 22px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
-          <button type="button" onClick={onClose} style={{ height: "50px", padding: "0 20px", border: "0", borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "15px", fontWeight: "600" }}>{"Cancelar"}</button>
-          <button type="button" disabled={!(chosen.length || withPeople) || busy} onClick={go} style={{ height: "50px", padding: "0 26px", border: "0", borderRadius: "999px", background: chosen.length || withPeople ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: chosen.length || withPeople ? "pointer" : "default", fontSize: "15px", fontWeight: "600" }}>
+          <button type="button" onClick={onClose} style={{ height: "50px", padding: "0 20px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Cancelar"}</button>
+          <button type="button" disabled={!(chosen.length || withPeople) || busy} onClick={go} style={{ height: "50px", padding: "0 26px", border: "0", borderRadius: "var(--r-pill)", background: chosen.length || withPeople ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: chosen.length || withPeople ? "pointer" : "default", fontSize: "var(--t-body)", fontWeight: "600" }}>
             {withPeople ? (isRoom ? "Crear conversación" : `Hablar con ${chosenPeople[0].name.split(" ")[0]}`) : isRoom ? "Crear sala" : chosen.length ? `Hablar con ${chosen[0].name}` : "Empezar"}
           </button>
         </div>

@@ -15,7 +15,7 @@ function Shape({ bot, size }) {
 /** In a message: a real pill (its padding may take room). */
 export function MentionPill({ bot, name }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", verticalAlign: "baseline", padding: "0 8px 0 4px", borderRadius: "999px", background: tint(bot?.color), color: "#12131A", fontWeight: 600, lineHeight: "1.45", whiteSpace: "nowrap" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", verticalAlign: "baseline", padding: "0 8px 0 4px", borderRadius: "var(--r-pill)", background: tint(bot?.color), color: "#12131A", fontWeight: 600, lineHeight: "1.45", whiteSpace: "nowrap" }}>
       <Shape bot={bot} size="0.85em" />
       {name || bot?.name}
     </span>
@@ -50,7 +50,7 @@ export const MentionMirror = forwardRef(function MentionMirror({ value, bots, st
   found.forEach((f, i) => {
     if (f.start > at) parts.push(value.slice(at, f.start));
     parts.push(
-      <span key={i} style={{ position: "relative", borderRadius: "999px", background: tint(f.bot.color), boxShadow: `0 0 0 3px ${tint(f.bot.color)}`, color: "#12131A" }}>
+      <span key={i} style={{ position: "relative", borderRadius: "var(--r-pill)", background: tint(f.bot.color), boxShadow: `0 0 0 3px ${tint(f.bot.color)}`, color: "#12131A" }}>
         <span style={{ color: "transparent" }}>{"@"}</span>
         <span aria-hidden="true" style={{ position: "absolute", left: "0.05em", top: "50%", transform: "translateY(-50%)", display: "flex" }}><Shape bot={f.bot} size="0.8em" /></span>
         {value.slice(f.start + 1, f.end)}

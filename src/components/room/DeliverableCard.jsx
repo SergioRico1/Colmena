@@ -59,19 +59,19 @@ export default function DeliverableCard({ artifact, variant = "room", onOpen, pr
       aria-pressed={pressed === undefined ? undefined : pressed ? "true" : "false"}
       aria-label={`Abrir ${artifact.title}`}
       style={chat
-        ? { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "14px", width: "min(100%, 440px)", padding: "14px 16px", background: "#FFFFFF", border: "0", borderRadius: "20px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 12px 30px -18px rgba(18,19,26,.28)", cursor: "pointer", textAlign: "left" }
-        : { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "12px", width: "min(100%, 440px)", padding: "12px 14px", background: "#FFFFFF", border: "0", borderRadius: "18px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 12px 30px -18px rgba(18,19,26,.28)", cursor: "pointer", textAlign: "left" }}
+        ? { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "14px", width: "min(100%, 440px)", padding: "14px 16px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 12px 30px -18px rgba(18,19,26,.28)", cursor: "pointer", textAlign: "left" }
+        : { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "12px", width: "min(100%, 440px)", padding: "12px 14px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 12px 30px -18px rgba(18,19,26,.28)", cursor: "pointer", textAlign: "left" }}
     >
       <span aria-hidden="true" style={chat
-        ? { width: "44px", height: "44px", flex: "none", borderRadius: "10px", background: "#E7EEFF", display: "grid", placeItems: "center" }
-        : { width: "40px", height: "40px", flex: "none", borderRadius: "9px", background: "#E7EEFF", display: "grid", placeItems: "center" }}>
+        ? { width: "44px", height: "44px", flex: "none", borderRadius: "var(--r-md)", background: "#E7EEFF", display: "grid", placeItems: "center" }
+        : { width: "40px", height: "40px", flex: "none", borderRadius: "var(--r-sm)", background: "#E7EEFF", display: "grid", placeItems: "center" }}>
         {artifactIcon(artifact, chat ? 22 : 20)}
       </span>
       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
-        <strong style={{ fontSize: chat ? "15px" : "14px", overflowWrap: "anywhere" }}>{artifact.title}</strong>
-        <span style={{ fontSize: "13px", color: "#555A68" }}>{artifactMeta(artifact)}</span>
+        <strong style={{ fontSize: chat ? "var(--t-body)" : "var(--t-ui)", overflowWrap: "anywhere" }}>{artifact.title}</strong>
+        <span style={{ fontSize: "var(--t-meta)", color: "#555A68" }}>{artifactMeta(artifact)}</span>
       </span>
-      {chat ? <span style={{ fontSize: "13px", fontWeight: "600" }}>{"Abrir"}</span> : null}
+      {chat ? <span style={{ fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Abrir"}</span> : null}
     </button>
   );
   if (!spoken) return card;
