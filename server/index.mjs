@@ -28,7 +28,7 @@ import { Connections } from "./connections.mjs";
 import { AppTools } from "./apptools.mjs";
 import { Projects } from "./projects/tools.mjs";
 import { CodeService } from "./code/service.mjs";
-import { pendingCount } from "./notifications.mjs";
+import { pendingCount, workingBots } from "./notifications.mjs";
 import { watchStalls } from "./stalls.mjs";
 import { DEFAULT_RELAY, Peers } from "./peers/service.mjs";
 import { PeerBots } from "./peers/bots.mjs";
@@ -149,7 +149,8 @@ if (typeof process.send === "function") {
     // line («3 te esperan») and the taskbar badge read the same number.
     const waiting = pendingCount(store);
     const presence = {
-      working: missions.filter((m) => ["running", "planning", "queued"].includes(m.status)).length,
+      // Bots at work, as the sidebar's foot counts them (not rooms: three bots in one room are three).
+      working: workingBots(store),
       waiting,
       paused: !!store.get("settings", "main")?.paused,
       finished: missions.filter((m) => m.status === "completed").length,
@@ -162,7 +163,7 @@ if (typeof process.send === "function") {
   };
   store.listeners.add((event) => {
     if (event?.type === "notify") process.send({ type: "notify", kind: event.kind || null, title: event.title, text: event.text, url: event.url || "/", tag: event.tag || null, toast: event.toast !== false, sound: event.sound || null, ...(event.quick ? { quick: event.quick } : {}) });
-    if (event?.type === "record" && ["missions", "approvals", "settings", "watchNotes", "peerErrands"].includes(event.kind) && !presenceTimer) presenceTimer = setTimeout(sendPresence, 400);
+    if (event?.type === "record" && ["missions", "approvals", "settings", "watchNotes", "peerErrands", "steps", "bots"].includes(event.kind) && !presenceTimer) presenceTimer = setTimeout(sendPresence, 400);
   });
   setTimeout(sendPresence, 1500).unref();
 }

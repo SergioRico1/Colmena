@@ -7,7 +7,7 @@ import http from "node:http";
 import { Store } from "../server/store.mjs";
 import { Runtime } from "../server/runtime.mjs";
 import { createApp } from "../server/app.mjs";
-import { pendingCount } from "../server/notifications.mjs";
+import { pendingCount, workingBots } from "../server/notifications.mjs";
 import { isExpired, waitingCount, waitingItems } from "../server/waiting.mjs";
 import { countIn, needsCount, needsOf, waitingBy, waitingOf } from "../src/components/v2/needs.js";
 import { needsYou } from "../src/lib/format.js";
@@ -73,6 +73,27 @@ async function setup(t) {
   });
   return { store, state: async () => (await fetch(origin + "/api/state")).json() };
 }
+
+test("the tray counts bots at work, as the sidebar's foot does: not rooms", async (t) => {
+  const { store, state } = await setup(t);
+  const mission = (id, status) => store.put("missions", { id, title: id, room: id, prompt: "x", mode: "equipo", botIds: ["atlas", "vera", "nora"], conversation: false, status, createdAt: ago(30), updatedAt: ago(1) });
+  const step = (id, missionId, botId, status) => store.put("steps", { id, missionId, botId, status, title: id, createdAt: ago(5) });
+  assert.equal(workingBots(store), 0);
+  // One room with three bots at it: three, not one.
+  mission("m-a", "running");
+  step("s1", "m-a", "atlas", "running"); step("s2", "m-a", "vera", "running"); step("s3", "m-a", "nora", "running"); step("s4", "m-a", "tomas", "completed");
+  assert.equal(workingBots(store), 3);
+  // Vera in a second room is still one bot; a room that waits or ended has nobody working.
+  mission("m-b", "running");
+  step("s5", "m-b", "vera", "running");
+  mission("m-c", "waiting");
+  step("s6", "m-c", "iris", "running");
+  mission("m-d", "completed");
+  step("s7", "m-d", "bruno", "running");
+  assert.equal(workingBots(store), 3);
+  // The same number the state gives the sidebar (bots whose status is «trabaja»).
+  assert.equal((await state()).bots.filter((b) => b.status === "trabaja").length, 3);
+});
 
 test("a request to your bot in a room that has no sala yet waits in that room", async (t) => {
   const { store } = await setup(t);

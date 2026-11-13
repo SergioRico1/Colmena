@@ -131,6 +131,20 @@ export function noticeTag(key) {
 export function pendingCount(store, time = Date.now()) {
   return waitingItems(store, time).length;
 }
+/**
+ * How many of your bots are working now: the number of the sidebar's foot («2 trabajando»,
+ * server/state.mjs › botView), for the tray. A bot counts once however many rooms it works in;
+ * a room that runs counts as many bots as have a step running in it.
+ */
+export function workingBots(store) {
+  const off = new Set(store.list("bots").filter((b) => b.enabled === false || b.paused).map((b) => b.id));
+  const bots = new Set();
+  for (const m of store.list("missions")) {
+    if (!["queued", "planning", "running"].includes(m.status)) continue;
+    for (const s of store.where("steps", "missionId", m.id)) if (s.status === "running" && s.botId && !off.has(s.botId)) bots.add(s.botId);
+  }
+  return bots.size;
+}
 /** The pending approvals that wait for the person now: not the ones put off, not the expired. */
 export function waitingApprovals(store, time = Date.now()) {
   return store.list("approvals").filter((a) => a.status === "pending" && !isSnoozed(a, time) && !isExpired(a, time));
