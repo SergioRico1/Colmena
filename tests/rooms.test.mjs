@@ -858,7 +858,7 @@ test("the API: rooms over HTTP, in /api/state, and the routes of today's screens
 
   // Inviting from the room; with people the message goes through «Personas».
   const invited = await call("POST", "/rooms/" + room.id + "/people", { address: addr(marta) });
-  assert.deepEqual([invited.status, invited.json.room.private, invited.json.room.href], [200, false, "/con/" + room.id]);
+  assert.deepEqual([invited.status, invited.json.room.private, invited.json.room.href], [200, false, "/sala/" + room.id]);
   await until(() => marta.rooms.resolveRoom(room.id), "Marta tiene la sala");
   const hello = await call("POST", "/rooms/" + room.id + "/messages", { text: "Hola Marta" });
   assert.deepEqual([hello.json.engine, hello.json.turn], ["peer", null]);

@@ -283,7 +283,8 @@ export class Rooms {
       mine: !s || s.owner === me.address,
       unread: (s?.unread || 0) + stats.unread, lastAt: later(later(s?.lastAt, stats.lastAt), room.createdAt),
       // Where today's screens open it, until there is one screen for every room.
-      href: s ? "/con/" + s.id : "/sala/" + room.missionId,
+      // Every room opens at /sala/:id: with people at its own id, a private one at its sala's.
+      href: "/sala/" + (s ? room.id : room.missionId),
       ...(s?.leftAt ? { left: true } : {}), ...(s?.removedAt ? { removed: true } : {}),
     };
   }

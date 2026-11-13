@@ -517,7 +517,7 @@ Diseño en `docs/PLAN-equipo-y-salas.md`, contrato de datos en `docs/ROOMS-CONTR
   createdBy: <dirección>, createdAt, archived: bool, snoozedUntil|null, seenAt|null,
   mine: bool,                       // la creaste tú (o es privada): puedes renombrarla y añadir personas
   unread, lastAt,                   // sin leer (abajo) y última actividad de los dos almacenes
-  href,                             // dónde la abren las pantallas de hoy: /con/<share> si tiene personas, si no /sala/<misión>
+  href,                             // dónde se abre: /sala/<id> si tiene personas, si no /sala/<misión>
   left?: true, removed?: true }     // saliste o te quitaron
 ```
 - **Sin leer**: lo que escribieron las personas (`share.unread`) más lo que dijeron tus bots (mensaje, entregable, pregunta, plan) después de `seenAt`. Una sala que nunca se ha marcado vista (`seenAt: null`) no cuenta nada de los bots, como hasta ahora las salas; la pantalla de la sala llama a `POST …/seen` al abrirla.
