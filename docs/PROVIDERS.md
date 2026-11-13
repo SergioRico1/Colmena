@@ -58,6 +58,35 @@ handed back to the runtime as a `function_call` (its `tool_use` id) and the MCP 
 the next `respond()` delivers the output and the stream continues. A new step, another model or
 tool set, or a dead process starts a fresh CLI reseeded with the step's transcript.
 
+## Código engines: a correction mid-turn («Corrección»)
+
+The three «Código» engines keep one live process per task, so a message sent while a turn runs
+can reach that turn (`server/code/steer.mjs`; the contract is in CONTRACT.md):
+
+- **Codex** (`codex app-server`, never `codex exec` for tasks): `turn/steer {threadId,
+  expectedTurnId, input, clientUserMessageId}` appends the input to the in-flight turn and answers
+  `{turnId}`; it fails when there is no active turn or the id does not match, emits no new
+  `turn/started`, and takes no turn-level overrides. The input is recorded as a `userMessage`
+  item whose `clientId` is our id: that is the «leída» acknowledgement. Checked against codex-cli
+  0.167.1 (`codex app-server generate-json-schema --experimental`: `TurnSteerParams`,
+  `TurnSteerResponse`, `UserMessageThreadItem.clientId`) and the app-server docs. An app-server
+  from before `turn/steer` answers «unknown variant»/-32601: the engine marks itself
+  `steerable=false` and messages wait for the end of the turn, with a sentence saying so.
+- **Claude Code** (`--input-format stream-json`): a `user` line written while a turn runs is
+  queued by the CLI and taken in at its next step (between tool calls). If the turn is already
+  giving its last answer, the CLI runs it right after as a turn of its own (another `result`);
+  Colmena adopts that turn as the next one instead of dropping its events, and after «Parar»
+  interrupts it. The CLI says nothing when it reads the message (ack «sent»), and mid-turn
+  messages may not be written to the session file (anthropics/claude-code#41230), so a resume
+  can miss them; Colmena's timeline keeps them.
+- **OpenCode** (`opencode serve`): `prompt_async` on the busy session (ack «sent»). Whether its
+  loop takes it at the next step or right after the current answer depends on the OpenCode
+  version (anomalyco/opencode#32157 discusses queue vs steer); either way the session stays busy
+  until it is answered, so it ends inside the same Colmena turn. Not changed in this round.
+
+Verified with the fakes in `tests/fixtures` (`tests/code-steer.test.mjs`), not against a real
+account.
+
 ## Failover
 
 `Runtime#infer` retries the same model (2 s, 6 s, 15 s), then asks `hub.fallbackFor(model)`:
