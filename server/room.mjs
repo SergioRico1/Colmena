@@ -400,10 +400,12 @@ export class Rooms {
       const c = p.contact(member.id);
       if (c?.bots?.length) bots.push({ owner: { address: member.id, name: c.name || "Alguien", you: false }, bots: c.bots });
     }
-    const requests = s && s.owner === me.address ? this.store.where("roomRequests", "shareId", s.id).filter((r) => r.status === "asked").map((r) => this.requestView(r)) : [];
+    const requests = s && s.owner === me.address ? this.store.where("roomRequests", "shareId", s.id).filter((r) => r.status === "asked" && r.dir !== "out").map((r) => this.requestView(r)) : [];
+    // What you asked its owner and still waits (neutral: it waits for them, not for you).
+    const asked = this.askedByMe(s);
     // Who is at work here now (your bots and other people's), and what other people ask your bots (server/room-work.mjs).
     const asks = s ? this.work.asksOf(room) : [];
-    return { ...this.view(room), people, bots, activity: s ? this.work.activity(room) : [], ...(asks.length ? { asks } : {}), ...(requests.length ? { requests } : {}) };
+    return { ...this.view(room), people, bots, activity: s ? this.work.activity(room) : [], ...(asks.length ? { asks } : {}), ...(requests.length ? { requests } : {}), ...(asked.length ? { asked } : {}) };
   }
   requestView(r) {
     const p = this.peers;
@@ -533,7 +535,7 @@ export class Rooms {
    * Only whoever made the room signs who is in it: anyone else's request goes to them
    * (room.req) and waits for their OK.
    */
-  async invite(x, { address = null, invite = null } = {}) {
+  async invite(x, { address = null, invite = null, role = "member" } = {}) {
     const room = this.must(x), p = this.needPeers();
     if (room.general) throw new RoomError("En «general» entra quien entra en el equipo.", 409);
     let s = this.share(room);
@@ -545,9 +547,15 @@ export class Rooms {
     }
     if (address) {
       if (!isAddress(address) || address === p.address) throw new RoomError("Esa persona no es válida.");
-      if (!s) this.ensureForShare(this.store.get("peerShares", p.createGroup(clip(room.title, ROOM_LIMITS.title), [address], { id: room.id, teamId: room.teamId || null }).id));
-      else p.addMembers(s.id, [address]);
-      return { added: { address, name: p.contact(address)?.name || "Alguien" }, room: this.detail(room.id) };
+      if (s?.members.some((m) => m.id === address)) throw new RoomError((p.contact(address)?.name || "Esa persona") + " ya está en la sala.", 409);
+      // «Invitado»: reads and writes; what they write never wakes a bot (peers/bots.mjs).
+      const as = role === "guest" ? "guest" : "member";
+      if (!s) {
+        s = this.store.get("peerShares", p.createGroup(clip(room.title, ROOM_LIMITS.title), [address], { id: room.id, teamId: room.teamId || null }).id);
+        this.ensureForShare(s);
+        if (as === "guest") p.setRole(s.id, address, "guest");
+      } else p.addMembers(s.id, [address], as);
+      return { added: { address, name: p.contact(address)?.name || "Alguien", role: as }, room: this.detail(room.id) };
     }
     const label = clip(invite?.name, PEER_LIMITS.name);
     if (!label) throw new RoomError("Escribe cómo se llama.");
@@ -574,7 +582,19 @@ export class Rooms {
     p.enqueue(address, { type: "room.intro", share: s.id, owner: { id: owner.id, box: owner.box, name: owner.name, card: owner.card } });
     if (!p.enqueue(s.owner, { type: "room.req", share: s.id, op: "add", member: { id: c.id, box: c.box, name: c.name, card: c.card } })) throw new RoomError("No se pudo avisar a quien creó la sala.", 409);
     void p.flushOutbox();
+    // Kept here (`dir: "out"`, never sent) so the room says «Pendiente: se lo hemos pedido a Sergio»
+    // until the person is in or the owner says no. Asking again for the same person refreshes it.
+    const before = this.store.where("roomRequests", "shareId", s.id).find((r) => r.dir === "out" && r.member?.id === address);
+    this.store.put("roomRequests", { ...(before || {}), id: before?.id || randomUUID(), dir: "out", roomId: room.id, shareId: s.id, missionId: room.missionId || null, from: p.address, member: { id: c.id, name: c.name }, owner: s.owner, status: "asked", at: now() });
     return { asked: true, owner: { address: s.owner, name: owner?.name || "Alguien" }, person: { address, name: c.name }, text: "Se lo hemos pedido a " + (owner?.name || "quien creó la sala") + "." };
+  }
+  /** What you asked the owner of a room and is still pending: the person is not in yet and nobody said no. */
+  askedByMe(s) {
+    const p = this.peers;
+    if (!p || !s || s.owner === p.address) return [];
+    const inIt = new Set(s.members.map((m) => m.id));
+    return this.store.where("roomRequests", "shareId", s.id).filter((r) => r.dir === "out" && r.status === "asked" && !inIt.has(r.member?.id))
+      .map((r) => ({ id: r.id, person: { address: r.member.id, name: p.contact(r.member.id)?.name || r.member.name || "Alguien" }, at: r.at }));
   }
   receive(from, body) {
     switch (body.type) {
@@ -619,12 +639,12 @@ export class Rooms {
     if (!isAddress(member?.id) || !isAddress(member.box) || member.id === p.address || s.members.some((m) => m.id === member.id)) return;
     const day = new Date(Date.now() - 864e5).toISOString();
     if (this.store.where("roomRequests", "from", from.id).filter((r) => String(r.at) > day).length >= ROOM_LIMITS.intros) return;
-    const open = this.store.where("roomRequests", "shareId", s.id).filter((r) => r.status === "asked");
+    const open = this.store.where("roomRequests", "shareId", s.id).filter((r) => r.status === "asked" && r.dir !== "out");
     if (open.length >= ROOM_LIMITS.requests || open.some((r) => r.member.id === member.id)) return;
     const room = this.roomOfShare(s);
     const name = clip(p.contact(member.id)?.name || member.name, PEER_LIMITS.name) || "Alguien";
     const record = this.store.put("roomRequests", { id: randomUUID(), roomId: room.id, shareId: s.id, missionId: room.missionId || null, from: from.id, member: { id: member.id, box: member.box, name }, status: "asked", at: now() });
-    this.notice({ title: from.name + " pide añadir a " + name + " a «" + s.title + "»", text: "Entra en la sala si tú quieres.", room, extra: { roomRequest: record.id } });
+    this.notice({ title: from.name + " pide añadir a " + name + " a «" + s.title + "»", text: "Lo decides tú en la sala: «Añadir» o «Ahora no». No entra nadie hasta que digas que sí.", room, extra: { roomRequest: record.id } });
   }
   /**
    * Someone you talk to is asking a room's owner to add you, and tells you who that is: known
@@ -661,6 +681,7 @@ export class Rooms {
     const p = this.needPeers();
     const s = typeof body.share === "string" ? this.store.get("peerShares", body.share) : null;
     if (!s || s.owner !== from.id || !isAddress(body.member)) return;
+    for (const r of this.store.where("roomRequests", "shareId", s.id).filter((x) => x.dir === "out" && x.status === "asked" && x.member?.id === body.member)) this.store.patch("roomRequests", r.id, { status: "declined", decidedAt: now() });
     this.notice({ title: from.name + " no ha añadido a " + (p.contact(body.member)?.name || "esa persona") + " a «" + s.title + "»", text: "Puedes hablarlo en la sala.", room: this.roomOfShare(s) });
   }
   notice({ title, text, room, extra = {} }) {

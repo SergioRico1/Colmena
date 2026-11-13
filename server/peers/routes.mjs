@@ -2,13 +2,15 @@
 // GET  /api/peers                              me, mailbox, contacts, open invitations, conversations
 // PATCH /api/peers/settings {relayUrl}         the mailbox this Colmena uses
 // POST /api/peers/invites {name}               → {code, text, expiresAt}: you send it yourself
-// DELETE /api/peers/invites/:id
+// GET  /api/peers/invites/:id                  an open code again, with its message («Copiar de nuevo»)
+// DELETE /api/peers/invites/:id                «Revocar»: the code stops working at once
 // POST /api/peers/invites/preview {code}       who invites you and the safety words
 // POST /api/peers/invites/accept {code}
 // PATCH /api/peers/contacts/:id {asks?, verified?}   DELETE /api/peers/contacts/:id
 // POST /api/peers/dm/:contact                  → the direct conversation with a contact
 // POST /api/peers/shares {title, members, team?}   a group (up to 32 people); with `team`, a room of that team
 // POST /api/peers/shares/:id/members {members} POST /api/peers/shares/:id/leave
+// PATCH /api/peers/shares/:id/prefs {muted?, archived?}   this computer only
 // GET  /api/peers/shares/:id/messages?before=  POST /api/peers/shares/:id/messages {text, replyTo?}
 // POST /api/peers/shares/:id/seen              POST /api/peers/shares/:id/typing
 // POST /api/peers/messages/:id/reactions {emoji}   POST /api/peers/messages/:id/retry
@@ -54,6 +56,7 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
     return p.setStatus(data.mode, data.until || null);
   }));
   app.post("/api/peers/invites", run((req, p) => { const data = check(z.object({ name: z.string().trim().min(1).max(PEER_LIMITS.name), room: id.optional(), role: z.enum(["member", "guest"]).optional() }).strict(), req.body); return p.createInvite(data.name, { room: data.room || null, role: data.role || "member" }); }));
+  app.get("/api/peers/invites/:id", run((req, p) => p.inviteView(id.parse(req.params.id))));
   app.delete("/api/peers/invites/:id", run((req, p) => p.cancelInvite(req.params.id)));
   app.post("/api/peers/invites/preview", run((req, p) => p.previewInvite(check(code, req.body).code)));
   app.post("/api/peers/invites/accept", run((req, p) => p.acceptInvite(check(code, req.body).code)));
@@ -74,6 +77,8 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   app.post("/api/peers/shares/:id/members", run((req, p) => { const data = check(z.object({ members: z.array(id).min(1).max(PEER_LIMITS.members - 1), role: z.enum(["member", "guest"]).optional() }).strict(), req.body); return p.addMembers(req.params.id, data.members, data.role || "member"); }));
   app.post("/api/peers/shares/:id/leave", run((req, p) => p.leave(req.params.id)));
   // A group of yours: its name, each person's role (member or guest), taking someone out.
+  // Yours only, nothing is sent: silence a conversation, or archive it until someone writes.
+  app.patch("/api/peers/shares/:id/prefs", run((req, p) => p.setSharePrefs(req.params.id, check(z.object({ muted: z.boolean().optional(), archived: z.boolean().optional() }).strict(), req.body))));
   app.patch("/api/peers/shares/:id", run((req, p) => p.renameGroup(req.params.id, check(z.object({ title: z.string().trim().min(1).max(PEER_LIMITS.title) }).strict(), req.body).title)));
   app.patch("/api/peers/shares/:id/members/:member", run((req, p) => p.setRole(req.params.id, req.params.member, check(z.object({ role: z.enum(["member", "guest"]) }).strict(), req.body).role)));
   app.delete("/api/peers/shares/:id/members/:member", run((req, p) => p.removeMember(req.params.id, req.params.member)));

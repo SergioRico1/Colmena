@@ -6,7 +6,7 @@
 // PATCH /api/rooms/:id {title?, archived?, snooze?, snoozedUntil?}   with people, only its creator renames
 // GET   /api/rooms/:id/timeline?cursor=&limit=   one page of both stores as one conversation
 // POST  /api/rooms/:id/messages {text, to?, thread?, replyTo?, mentions?, people?, …}   routed by what the room is
-// POST  /api/rooms/:id/people {address} | {invite: {name, role?}}   the first person gives a private room its share
+// POST  /api/rooms/:id/people {address, role?} | {invite: {name, role?}}   the first person gives a private room its share
 // POST  /api/rooms/:id/requests/:request {decision}   a «please add» a member sent you: approve | decline
 // POST  /api/rooms/:id/asks/:ask {decision}  what another person asks one of your bots: go | later | always | never
 // POST  /api/rooms/:id/share {artifactId, caption?}   a deliverable of yours, to everyone in the room, as a file
@@ -58,7 +58,7 @@ export function registerRoomRoutes(app, { store, rooms, messageView, stepView, s
   }));
   app.post("/api/rooms/:id/people", async (req, res) => {
     const data = check(z.union([
-      z.object({ address }).strict(),
+      z.object({ address, role: z.enum(["member", "guest"]).optional() }).strict(),
       z.object({ invite: z.object({ name: z.string().trim().min(1).max(PEER_LIMITS.name), role: z.enum(["member", "guest"]).optional() }).strict() }).strict(),
     ]), req.body);
     const out = await rooms.invite(req.params.id, data);

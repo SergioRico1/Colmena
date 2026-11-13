@@ -97,7 +97,9 @@ test("an invitation connects two Colmenas once, with the same safety words on bo
   assert.match(words, /instálala\. Es gratis, para Windows y Mac/);
   assert.match(words, /«Unirme con un código»/);
   assert.doesNotMatch(words, /github|releases|descárgala/i);
-  assert.match(inviteText("Ana", "Yo", "C", null, "Acme"), /Te invito al equipo «Acme»[\s\S]*«Unirme a un equipo»/);
+  // One door for every code: a team's, a room's or a person's is pasted in «Unirme con un código».
+  assert.match(inviteText("Ana", "Yo", "C", null, "Acme"), /Te invito al equipo «Acme»[\s\S]*«Unirme con un código»/);
+  assert.match(inviteText("Ana", "Yo", "C", "diseño"), /Te invito a la sala #diseño[\s\S]*«Unirme con un código»/);
   // Without a name of your own there is no invitation: it would read «soy Sin nombre».
   const nameOf = sergio.peers.nameOf;
   sergio.peers.nameOf = () => "  ";
@@ -113,15 +115,15 @@ test("an invitation connects two Colmenas once, with the same safety words on bo
   assert.equal(fromMarta.name, "Sergio Rico");
   assert.deepEqual(fromSergio.words, fromMarta.words);
   assert.deepEqual(fromSergio.words, preview.words);
-  assert.ok(sergio.notices.some((n) => /Marta Ruiz ya está en tus personas/.test(n.title)));
+  assert.ok(sergio.notices.some((n) => /Marta Ruiz ha aceptado tu invitación/.test(n.title)));
   // Used once: the card is gone from the mailbox and the code no longer works.
   await until(async () => { try { await marta.peers.previewInvite(inv.code); return false; } catch (e) { return e.status === 404; } }, "la invitación se borra del buzón");
   const third = await mkdtemp(path.join(os.tmpdir(), "colmena-peers-x-"));
   t.after(() => rm(third, { recursive: true, force: true }));
   // Its own invitation is refused, and a made-up code too.
   const again = await sergio.peers.createInvite("Otra");
-  await assert.rejects(sergio.peers.previewInvite(again.code), /la has creado tú/);
-  await assert.rejects(marta.peers.previewInvite("COLMENA-0000-0000-0000-0000"), /no existe/);
+  await assert.rejects(sergio.peers.previewInvite(again.code), /lo has creado tú/);
+  await assert.rejects(marta.peers.previewInvite("COLMENA-0000-0000-0000-0000"), (e) => e.status === 404 && /ya no sirve/.test(e.message));
 });
 
 test("a hello without the code is ignored, and strangers cannot write to you", async (t) => {
@@ -452,7 +454,7 @@ test("an invitation straight into a room: the code connects you and puts you in 
   const group = sergio.peers.createGroup("presupuesto-2027", [marta.peers.address]);
   const inv = await sergio.peers.createInvite("Luis Gómez", { room: group.id, role: "guest" });
   assert.equal(inv.room, "presupuesto-2027");
-  assert.match(inv.text, /a la conversación «presupuesto-2027»/);
+  assert.match(inv.text, /a la sala #presupuesto-2027/);
   const preview = await luis.peers.previewInvite(inv.code);
   assert.equal(preview.room, "presupuesto-2027");
   await luis.peers.acceptInvite(inv.code);

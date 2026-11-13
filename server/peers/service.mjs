@@ -301,6 +301,8 @@ export class Peers extends EventEmitter {
       // The face of the row: the last other person who wrote (or the first one), then «+N».
       face: (others.find((m) => m.id === s.lastFromOther) || others[0]) || null, more: Math.max(0, others.length - 1),
       left: !!s.leftAt, removed: !!s.removedAt, typing: this.typingIn(s.id), thinking: this.typingIn(s.id, true), createdAt: s.createdAt,
+      // Yours only, never sent: no notices from it (`muted`), out of the list until someone writes (`archived`).
+      muted: !!s.muted, archived: !!s.hidden,
       // A room of a team, and whether it is the one with everyone (teams.mjs).
       ...(s.teamId ? { teamId: s.teamId } : {}), ...(s.general ? { general: true } : {}),
     };
@@ -311,7 +313,8 @@ export class Peers extends EventEmitter {
       me: this.address ? { address: this.address, name: this.myName(), status: this.myStatus() } : null,
       relay: { url: this.relayUrl(), status: this.relayStatus.status, error: this.relayStatus.error },
       contacts: this.contacts().filter((c) => ["active", "pending", "known"].includes(c.status)).map((c) => this.contactView(c)).sort((a, b) => a.name.localeCompare(b.name, "es")),
-      invites: invites.map((i) => ({ id: i.id, name: i.name, createdAt: i.createdAt, expiresAt: i.expiresAt })),
+      // What each code is for (a room's share, a team, or neither: to talk), so every screen lists its own.
+      invites: invites.map((i) => this.inviteRow(i)),
       shares: this.store.list("peerShares").filter((s) => !s.hidden).map((s) => this.shareView(s)).sort((a, b) => String(b.lastAt).localeCompare(String(a.lastAt))),
     };
   }
@@ -472,6 +475,25 @@ export class Peers extends EventEmitter {
     const record = this.store.put("peerInvites", { id: randomUUID(), code, lookup, name: label, status: "open", createdAt: now(), expiresAt: new Date(expiresAt).toISOString(), ...(group ? { room: group.id, roomTitle: group.title, role: role === "guest" ? "guest" : "member" } : {}), ...(team ? { team: team.id } : {}) });
     return { id: record.id, code: formatInviteCode(code), name: label, expiresAt: record.expiresAt, room: group ? group.title : null, team: team ? team.name : null, text: inviteText(label, this.myName(), formatInviteCode(code), group?.title, team?.name), download: DOWNLOAD_URL };
   }
+  /** A code nobody used yet as every list shows it: who it is for and what it opens. */
+  inviteRow(i) {
+    return {
+      id: i.id, name: i.name, createdAt: i.createdAt, expiresAt: i.expiresAt,
+      kind: i.team ? "team" : i.room ? "room" : "person", room: i.room || null, roomTitle: i.roomTitle || null, role: i.room ? i.role || "member" : null, team: i.team || null,
+    };
+  }
+  /**
+   * «Copiar de nuevo»: an open code of yours with the message that goes with it. Only while it
+   * can still be used (a used, revoked or expired one has no code left).
+   */
+  inviteView(id) {
+    const inv = this.store.get("peerInvites", String(id));
+    if (!inv) throw new PeerError("No existe esa invitación.", 404);
+    if (inv.status !== "open" || !inv.code || Date.parse(inv.expiresAt) <= this.clock()) throw new PeerError("Ese código ya no sirve: se usó, lo revocaste o caducó. Crea uno nuevo.", 410);
+    const code = formatInviteCode(inv.code);
+    const teamName = inv.team ? this.teams?.record?.(inv.team)?.name || null : null;
+    return { ...this.inviteRow(inv), code, text: inviteText(inv.name, this.myName(), code, inv.roomTitle || null, teamName), download: DOWNLOAD_URL };
+  }
   async cancelInvite(id) {
     const inv = this.store.get("peerInvites", id);
     if (!inv) throw new PeerError("No existe esa invitación.", 404);
@@ -487,14 +509,19 @@ export class Peers extends EventEmitter {
     try {
       found = await this.client.getInvite(inviteLookup(code));
     } catch (error) {
-      throw new PeerError(error.status === 404 ? "Esa invitación no existe, ya se usó o ha caducado. Pide otra." : "No se pudo consultar el buzón: " + error.message, error.status === 404 ? 404 : 502);
+      // The mailbox keeps a card until it is used, revoked or 24 hours old, and cannot say which of the three.
+      throw new PeerError(error.status === 404 ? "Ese código ya no sirve: caducó (duran 24 horas), ya se usó o lo revocaron. Pide uno nuevo a quien te lo mandó." : error.status === 429 ? "Demasiados intentos seguidos. Espera un minuto y vuelve a probar." : "No se pudo consultar el buzón, así que no sabemos si el código vale. Comprueba la conexión y vuelve a probar.", error.status === 404 ? 404 : error.status === 429 ? 429 : 502);
     }
+    if (Number(found.expiresAt) && Number(found.expiresAt) <= this.clock()) throw new PeerError("Ese código ya caducó: duran 24 horas. Pide uno nuevo a quien te lo mandó.", 404);
     const card = openInvite(code, found.blob);
-    if (!card || !isAddress(card.addr) || !isAddress(card.box)) throw new PeerError("La invitación está dañada. Pide otra.");
-    if (card.addr === this.address) throw new PeerError("Esa invitación la has creado tú: mándasela a la otra persona.");
+    if (!card || !isAddress(card.addr) || !isAddress(card.box)) throw new PeerError("Ese código está dañado. Pide uno nuevo a quien te lo mandó.");
+    if (card.addr === this.address) throw new PeerError("Ese código lo has creado tú: mándaselo a la otra persona.");
     this.previews.set(code, card);
     const already = this.contact(card.addr);
-    return { name: clip(card.name, PEER_LIMITS.name), words: safetyWords(this.address, card.addr), expiresAt: new Date(found.expiresAt).toISOString(), already: already?.status === "active", room: card.room ? clip(card.room, PEER_LIMITS.title) : null, team: card.team && typeof card.team === "object" ? clip(card.team.name, PEER_LIMITS.title) || "Equipo" : null };
+    const room = card.room ? clip(card.room, PEER_LIMITS.title) : null;
+    const team = card.team && typeof card.team === "object" ? clip(card.team.name, PEER_LIMITS.title) || "Equipo" : null;
+    // `address`: who made it, so the screen can follow where accepting takes you (their room, their team).
+    return { name: clip(card.name, PEER_LIMITS.name), address: card.addr, kind: team ? "team" : room ? "room" : "person", words: safetyWords(this.address, card.addr), expiresAt: new Date(found.expiresAt).toISOString(), already: already?.status === "active", room, team };
   }
   async acceptInvite(text) {
     const code = parseInviteCode(text);
@@ -554,6 +581,18 @@ export class Peers extends EventEmitter {
     const s = this.store.get("peerShares", id);
     if (!s) throw new PeerError("No existe esa conversación.", 404);
     return s;
+  }
+  /**
+   * How a conversation behaves on this computer only (nothing is sent): `muted` (no notice or
+   * sound; it still counts as unread) and `archived` (out of the lists until someone writes in it).
+   */
+  setSharePrefs(id, { muted, archived } = {}) {
+    const s = this.share(id);
+    const next = { ...(muted !== undefined ? { muted: !!muted } : {}), ...(archived !== undefined ? { hidden: !!archived } : {}) };
+    if (Object.keys(next).length) this.store.patch("peerShares", s.id, next);
+    if (muted) for (const n of this.store.list("notifications").filter((x) => x.peerShare === s.id && !x.read)) this.store.remove("notifications", n.id);
+    this.changed();
+    return this.shareView(this.store.get("peerShares", s.id));
   }
   others(s) { return s.members.map((m) => m.id).filter((id) => id !== this.address); }
   /**
@@ -944,7 +983,7 @@ export class Peers extends EventEmitter {
     }
     // Invited to a team: teams.mjs puts them in (or asks its creator to) and says who joined.
     if (inv.team) return void this.emit("joined", { invite: inv, from });
-    this.notify({ title: name + " ya está en tus personas", text: room ? "Aceptó tu invitación y ya está en «" + room.title + "»." : "Aceptó tu invitación. Ya podéis escribiros.", shareId: room ? room.id : dmId(this.address, from) });
+    this.notify({ title: room ? name + " ha entrado en #" + room.title : name + " ha aceptado tu invitación", text: room ? "Usó tu código. Verá lo que se escriba a partir de ahora, no lo anterior." : "Usó tu código. Ya podéis escribiros a solas.", shareId: room ? room.id : dmId(this.address, from) });
   }
   dispatch(c, body) {
     const from = c.id;
@@ -1142,7 +1181,8 @@ export class Peers extends EventEmitter {
       ...(typeof body.replyTo === "string" ? { replyTo: body.replyTo.slice(0, 64) } : {}), ...(root ? { thread: root.id } : {}), ...(bot ? { bot } : {}), ...(mentions.length ? { mentions } : {}), ...(people.length ? { people } : {}), ...(card ? { card } : {}), ...(part ? { part } : {}),
       ...(body.req === 1 && !bot && mentions.length && s.kind === "group" ? { req: 1 } : {}),
     });
-    this.store.patch("peerShares", s.id, { lastAt: at > (s.lastAt || "") ? at : s.lastAt, lastLine: lastLineOf((bot ? bot.name + ": " : "") + text), lastFrom: c.id, lastFromOther: c.id, unread: (s.unread || 0) + (calls && !more ? 1 : 0) });
+    // An archived conversation comes back to the lists when someone writes in it.
+    this.store.patch("peerShares", s.id, { lastAt: at > (s.lastAt || "") ? at : s.lastAt, lastLine: lastLineOf((bot ? bot.name + ": " : "") + text), lastFrom: c.id, lastFromOther: c.id, unread: (s.unread || 0) + (calls && !more ? 1 : 0), ...(s.hidden ? { hidden: false } : {}) });
     this.typing.get(s.id)?.delete(bot ? c.id + "#" + bot.name : c.id);
     this.emit("live", { type: "message", shareId: s.id, message: this.messageView(m) });
     if (root) this.emitMessage(s.id, root.id);
@@ -1157,6 +1197,8 @@ export class Peers extends EventEmitter {
   }
   notify({ title, text, shareId, mention = false, thread = null }) {
     if (!this.notifier) return;
+    // A conversation you silenced says nothing, unless someone names you in it.
+    if (!mention && this.store.get("peerShares", shareId)?.muted) return;
     // One notice per conversation: the newest replaces the one you did not read.
     for (const n of this.store.list("notifications").filter((n) => n.peerShare === shareId && !n.read)) this.store.remove("notifications", n.id);
     try {
@@ -1188,10 +1230,11 @@ export class Peers extends EventEmitter {
 export function inviteText(to, from, code, room = null, team = null) {
   const first = String(to).split(/\s+/)[0] || "";
   return [
-    team ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito al equipo «${team}» en Colmena.` : room ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito a la conversación «${room}» en Colmena.` : `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena.`,
+    team ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito al equipo «${team}» en Colmena.` : room ? `Hola${first ? " " + first : ""}, soy ${from}. Te invito a la sala #${room} en Colmena.` : `Hola${first ? " " + first : ""}, soy ${from}. Te invito a hablar conmigo desde Colmena.`,
     "Colmena es una app para el ordenador donde las personas de un equipo y sus bots de IA trabajan en el mismo sitio.",
     `1. Si aún no la tienes, instálala. Es gratis, para Windows y Mac: ${DOWNLOAD_URL}`,
-    team ? "2. Ábrela, elige «Unirme a un equipo» y pega este código:" : "2. Ábrela, elige «Unirme con un código» y pega este:",
+    // The same words as the app's button, whatever the code is for.
+    "2. Ábrela, elige «Unirme con un código» y pega este:",
     code,
     "Vale una sola vez y caduca en 24 horas. Al pegarlo verás cuatro palabras: dime cuáles te salen y compruebo que son las mismas que veo yo.",
   ].join("\n");

@@ -11,7 +11,8 @@
 //     (a room whose only request is put off does not wait either: it comes back with it);
 //   - open notes of the bot that watches your apps (watch.mjs);
 //   - people-side asks: an errand another person sent to one of your bots that waits for your
-//     OK (state `asked`, server/peers/errands.mjs). It is read from the stored records only.
+//     OK (state `asked`, server/peers/errands.mjs). It is read from the stored records only;
+//   - «please add» requests of a room you made (`roomRequests` you received, still `asked`).
 import { approvalExpiresAt } from "./state.mjs";
 import { isSnoozed } from "./snooze.mjs";
 
@@ -66,8 +67,26 @@ export function waitingItems(store, now = Date.now(), { approvals = null } = {})
   // Today: inbound errands that wait for the owner's OK. Requests to your bots from a shared
   // room (the owner's rule «Pregúntame») belong here too once server/peers stores them.
   for (const item of peerAsks(store)) items.push(item);
+  for (const item of addAsks(store)) items.push(item);
   return items.sort((x, y) => (stamp(x.at) ?? 0) - (stamp(y.at) ?? 0));
 }
+
+/**
+ * «Please add»: a member of a room you made asks you to let someone in (server/room.mjs). It
+ * waits for you, the owner, in that room. What YOU asked another owner (`dir: "out"`) waits
+ * for them, not for you, and is never counted.
+ */
+function addAsks(store) {
+  let rows = [];
+  try { rows = store.list("roomRequests"); } catch { return []; }
+  return rows.filter((r) => r.status === "asked" && r.dir !== "out" && r.roomId).map((r) => ({
+    kind: "roomadd", id: r.id, missionId: null, roomId: r.roomId, botId: null, what: "roomadd", at: r.at ?? null,
+    title: `${firstOf(nameOf(store, r.from))} pide añadir a ${r.member?.name || "una persona"}`, room: roomTitle(store, r.roomId),
+  }));
+}
+const roomTitle = (store, id) => { try { return store.get("rooms", id)?.title || null; } catch { return null; } };
+const firstOf = (name) => String(name || "Alguien").trim().split(/\s+/)[0] || "Alguien";
+const nameOf = (store, address) => { try { return store.get("peerContacts", address)?.name || null; } catch { return null; } };
 
 /** Inbound errands in state `asked`: another person asked one of your bots and you decide. */
 function peerAsks(store) {
