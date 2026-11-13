@@ -7,6 +7,7 @@ import { navigate, setLeaveGuard } from "../../../../lib/router.jsx";
 import { byName, completeLink, linkOptions, linkTrigger, noteUrl } from "../../../../lib/wikiLinks.js";
 import { whenShort } from "../Files.jsx";
 import { Back, CARD, DARK, Dialog, ERROR, FIELD, LABEL, MUTED, PILL, Who, filterChip } from "./parts.jsx";
+import { C } from "../../../../lib/theme.js";
 
 // Biblioteca › Notas, writing a note (?ver=editar): a plain Markdown box, `[[` offers the
 // titles of the other notes (and a new one), Ctrl+S saves, and nothing is lost on the way out:
@@ -150,8 +151,8 @@ export default function NoteEditor({ page, bots = [], onSaved }) {
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
           <h2 id="edit-t" style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em", overflowWrap: "anywhere" }}>{page.title}</h2>
           <div role="group" aria-label="Cómo ver la nota" style={{ display: "flex", gap: "6px" }}>
-            <button type="button" aria-pressed={!preview} onClick={() => setPreview(false)} style={{ ...filterChip(!preview), background: !preview ? "#12131A" : "var(--c-chip)" }}>{"Escribir"}</button>
-            <button type="button" aria-pressed={preview} onClick={() => { setPreview(true); setMenu(null); }} style={{ ...filterChip(preview), background: preview ? "#12131A" : "var(--c-chip)" }}>{"Ver cómo queda"}</button>
+            <button type="button" aria-pressed={!preview} onClick={() => setPreview(false)} style={{ ...filterChip(!preview), background: !preview ? C.btn : "var(--c-chip)" }}>{"Escribir"}</button>
+            <button type="button" aria-pressed={preview} onClick={() => { setPreview(true); setMenu(null); }} style={{ ...filterChip(preview), background: preview ? C.btn : "var(--c-chip)" }}>{"Ver cómo queda"}</button>
           </div>
         </div>
         {recovered ? <p role="status" style={MUTED}>{"Tenías cambios sin guardar en esta nota: los hemos recuperado."}</p> : null}
@@ -198,7 +199,7 @@ export default function NoteEditor({ page, bots = [], onSaved }) {
                   onChange={(e) => { setBody(e.target.value); look(e.target); }} onKeyDown={onKey} onKeyUp={(e) => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) look(e.target); }} onClick={(e) => look(e.target)} onBlur={() => setTimeout(() => setMenu(null), 150)}
                   style={{ minHeight: "420px", resize: "vertical", padding: "14px 16px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-lg)", background: "var(--c-card)", font: "400 var(--t-body)/1.65 'Geist Mono', monospace", color: "var(--c-text)" }} />
                 {menu ? (
-                  <ul id="note-links" role="listbox" aria-label="Notas para enlazar" style={{ position: "absolute", zIndex: 5, top: menu.top + "px", left: "12px", width: "min(440px, calc(100% - 24px))", margin: 0, padding: "6px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 20px 44px -24px rgba(18,19,26,.4)" }}>
+                  <ul id="note-links" role="listbox" aria-label="Notas para enlazar" style={{ position: "absolute", zIndex: 5, top: menu.top + "px", left: "12px", width: "min(440px, calc(100% - 24px))", margin: 0, padding: "6px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .08), var(--c-shadow-pop)" }}>
                     {menu.options.map((o, i) => (
                       <li key={o.kind + (o.slug || o.title)} id={"note-link-" + i} role="option" aria-selected={i === menu.at} onMouseDown={(e) => { e.preventDefault(); choose(o); }} onMouseEnter={() => setMenu((m) => (m ? { ...m, at: i } : m))}
                         style={{ display: "flex", alignItems: "baseline", gap: "10px", minHeight: "36px", padding: "6px 10px", borderRadius: "var(--r-sm)", background: i === menu.at ? "var(--c-chip)" : "transparent", fontSize: "var(--t-ui)", cursor: "pointer" }}>

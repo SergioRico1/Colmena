@@ -15,6 +15,7 @@ import { createNote } from "./actions.js";
 import NoteEditor from "./NoteEditor.jsx";
 import NoteHistory from "./NoteHistory.jsx";
 import NoteGraph from "./NoteGraph.jsx";
+import { C } from "../../../../lib/theme.js";
 
 // Biblioteca › Notas, one note (/biblioteca/notas/<slug>): its text with the `[[links]]` as
 // links, who last changed it, where it is filed, what names it («Aparece en») and what it
@@ -41,7 +42,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
 
   if (error === NOT_FOUND && !page) return <Absent name={slug} />;
   if (error && !page) return <><Back /><p role="alert" style={ERROR}>{error}</p></>;
-  if (!page) return <><Back /><div aria-busy={loading} style={{ height: "320px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", animation: "shimmer 1.6s ease-in-out infinite" }} /></>;
+  if (!page) return <><Back /><div aria-busy={loading} style={{ height: "320px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "shimmer 1.6s ease-in-out infinite" }} /></>;
   if (page.slug !== slug && error === NOT_FOUND) return <Absent name={slug} />;
 
   const run = (fn) => act.act(async () => { const next = await fn(); if (next?.slug) setData(next); return next; });
@@ -205,7 +206,7 @@ function Delete({ page, onClose }) {
   };
   return (
     <Dialog title={`¿Borrar «${page.title}» para siempre?`} onClose={onClose}
-      footer={<><button type="button" data-autofocus="" onClick={onClose} style={PILL}>{"No, dejarla archivada"}</button><button type="button" disabled={act.busy} onClick={go} style={{ ...DARK, background: "#B4232A" }}>{"Borrarla para siempre"}</button></>}>
+      footer={<><button type="button" data-autofocus="" onClick={onClose} style={PILL}>{"No, dejarla archivada"}</button><button type="button" disabled={act.busy} onClick={go} style={{ ...DARK, background: C.error }}>{"Borrarla para siempre"}</button></>}>
       <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.55", color: "var(--c-text-2)" }}>{"Se borra la nota con todo su historial y no se puede recuperar. Lo que la nombraba pasa a «Por crear»."}</p>
       {act.error ? <p role="alert" style={ERROR}>{act.error}</p> : null}
     </Dialog>

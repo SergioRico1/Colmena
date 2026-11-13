@@ -105,7 +105,7 @@ export default function NoteList({ view = "notas", bots = [], onNew }) {
             </div>
           ) : null}
           {error ? <p role="alert" style={ERROR}>{error}</p> : null}
-          {loading && !data ? <div style={{ height: "240px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+          {loading && !data ? <div style={{ height: "240px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
           {empty ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", padding: "60px 0", textAlign: "center" }}>
               <p style={{ margin: 0, maxWidth: "520px", fontSize: "var(--t-read)", lineHeight: "1.5", color: "var(--c-text-3)" }}>
@@ -145,7 +145,7 @@ function Missing({ data, error, loading }) {
   const list = data?.missing || [];
   const create = (m) => act.act(() => createNote(m.title));
   if (error) return <p role="alert" style={ERROR}>{error}</p>;
-  if (loading && !data) return <div style={{ height: "160px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", animation: "shimmer 1.6s ease-in-out infinite" }} />;
+  if (loading && !data) return <div style={{ height: "160px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "shimmer 1.6s ease-in-out infinite" }} />;
   if (!list.length) return <p style={{ margin: 0, padding: "60px 0", textAlign: "center", fontSize: "var(--t-read)", color: "var(--c-text-3)" }}>{"No hay nada por crear. Cuando una nota o un chat nombre con [[corchetes]] una nota que aún no existe, saldrá aquí."}</p>;
   return (
     <div style={{ ...CARD, display: "flex", flexDirection: "column", overflow: "hidden" }}>

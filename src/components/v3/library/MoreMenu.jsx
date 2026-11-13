@@ -1,5 +1,6 @@
 import { useClickAway } from "../../../lib/useClickAway.js";
 import { useRef, useState } from "react";
+import { C } from "../../../lib/theme.js";
 
 // «···» (design/V3Habilidades.dc.html): what is used rarely, behind one small button. A plain
 // list of actions that opens below the button and closes on Escape, outside clicks or a pick.
@@ -14,10 +15,10 @@ export default function MoreMenu({ label, items, style = null }) {
         {"···"}
       </button>
       {open ? (
-        <span role="menu" style={{ position: "absolute", right: "0", top: "36px", zIndex: 20, minWidth: "200px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 1px 2px rgba(18,19,26,.06), 0 18px 40px -16px rgba(18,19,26,.35)", animation: "rise .18s ease-out" }}>
+        <span role="menu" style={{ position: "absolute", right: "0", top: "36px", zIndex: 20, minWidth: "200px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", animation: "rise .18s ease-out" }}>
           {shown.map((it) => (
             <button key={it.label} type="button" role="menuitem" disabled={it.disabled} onClick={() => { setOpen(false); it.run(); }} style={{ minHeight: "36px", padding: "0 12px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", textAlign: "left", fontSize: "var(--t-ui)", color: it.danger ? "var(--c-error)" : "var(--c-text)", cursor: it.disabled ? "default" : "pointer", opacity: it.disabled ? 0.5 : 1 }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#F6F6F3"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+              onMouseEnter={(e) => { e.currentTarget.style.background = C.hover; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
               {it.label}
             </button>
           ))}

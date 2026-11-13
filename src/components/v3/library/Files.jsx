@@ -9,22 +9,25 @@ import { navigate } from "../../../lib/router.jsx";
 import { time } from "../../../lib/format.js";
 import { isSala } from "../../../lib/rooms.js";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
+import { KIND, PAPER } from "../../../lib/palette4.js";
+import { C, alpha } from "../../../lib/theme.js";
 
 // Biblioteca › Archivos (design/V3Archivos.dc.html): what the bots delivered, as small pages
 // with their type, who made it and when; the chosen one on the right with where it was made,
 // its versions and Abrir (the full preview: slides, Word pages, workbooks, code, images).
 
 const IMAGE = new Set(["png", "jpg", "jpeg", "webp", "gif"]);
-const LINES = (c) => "linear-gradient(" + c + ", " + c + ") 0 0 / 70% 5px no-repeat content-box, repeating-linear-gradient(180deg, #E6E7EC 0 3px, transparent 3px 10px) 0 14px / 100% calc(100% - 14px) no-repeat content-box, #FFFFFF";
-// [thumb background, label ink, page pattern] per type, as drawn on the board (code added).
+const LINES = (c) => "linear-gradient(" + c + ", " + c + ") 0 0 / 70% 5px no-repeat content-box, repeating-linear-gradient(180deg, " + PAPER.line + " 0 3px, transparent 3px 10px) 0 14px / 100% calc(100% - 14px) no-repeat content-box, " + PAPER.bg;
+// [thumb background, label ink, page pattern] per type, as drawn on the board (code added); the
+// palette follows the theme (src/styles/palette.css), so a page is never a white glare in dark.
 const T = {
-  doc: ["#E3EBFF", "#1F4FD1", LINES("#1F4FD1")],
-  xls: ["#E3F4EC", "#0B6B4A", "linear-gradient(#0B8A5F, #0B8A5F) 0 0 / 100% 6px no-repeat content-box, linear-gradient(90deg, #D3E6DC 1px, transparent 1px) 0 0 / 25% 100% content-box, linear-gradient(180deg, #D3E6DC 1px, transparent 1px) 0 0 / 100% 11px content-box, #FFFFFF"],
-  ppt: ["#FFE9DC", "#C2410C", "linear-gradient(#FF7A1A, #FF7A1A) 0 0 / 55% 7px no-repeat content-box, linear-gradient(#FFE9DC, #FFE9DC) 0 100% / 100% 58% no-repeat content-box, #FFFFFF"],
-  img: ["#FFE3F0", "#B4236E", "radial-gradient(circle at 70% 32%, #FF5CA8 0 16%, transparent 17%), linear-gradient(180deg, #FFF4F9 0 58%, #F8CFE1 58%)"],
-  pdf: ["#FBE9EA", "#B4232A", LINES("#B4232A")],
-  md: ["#ECECE7", "#3D404A", LINES("#12131A")],
-  code: ["#E6E7EC", "#12131A", "linear-gradient(#7DD3A8, #7DD3A8) 0 0 / 40% 5px no-repeat content-box, repeating-linear-gradient(180deg, #4A4D57 0 3px, transparent 3px 10px) 0 14px / 80% calc(100% - 14px) no-repeat content-box, #12131A"],
+  doc: [KIND.doc[0], KIND.doc[1], LINES(KIND.doc[2])],
+  xls: [KIND.xls[0], KIND.xls[1], `linear-gradient(${KIND.xls[2]}, ${KIND.xls[2]}) 0 0 / 100% 6px no-repeat content-box, linear-gradient(90deg, ${PAPER.line} 1px, transparent 1px) 0 0 / 25% 100% content-box, linear-gradient(180deg, ${PAPER.line} 1px, transparent 1px) 0 0 / 100% 11px content-box, ${PAPER.bg}`],
+  ppt: [KIND.ppt[0], KIND.ppt[1], `linear-gradient(${KIND.ppt[2]}, ${KIND.ppt[2]}) 0 0 / 55% 7px no-repeat content-box, linear-gradient(${KIND.ppt[0]}, ${KIND.ppt[0]}) 0 100% / 100% 58% no-repeat content-box, ${PAPER.bg}`],
+  img: [KIND.img[0], KIND.img[1], `radial-gradient(circle at 70% 32%, ${KIND.img[2]} 0 16%, transparent 17%), linear-gradient(180deg, var(--c-kind-img-sky) 0 58%, var(--c-kind-img-hill) 58%)`],
+  pdf: [KIND.pdf[0], KIND.pdf[1], LINES(KIND.pdf[2])],
+  md: [KIND.md[0], KIND.md[1], LINES(KIND.md[2])],
+  code: [KIND.code[0], KIND.code[1], `linear-gradient(${KIND.code[2]}, ${KIND.code[2]}) 0 0 / 40% 5px no-repeat content-box, repeating-linear-gradient(180deg, var(--c-term-dim) 0 3px, transparent 3px 10px) 0 14px / 80% calc(100% - 14px) no-repeat content-box, var(--c-term-bg)`],
 };
 const typeOf = (a) => {
   if (IMAGE.has(a.format) || a.format === "svg" || a.kind === "design") return "img";
@@ -86,16 +89,16 @@ function Thumb({ a, big = false }) {
     <span aria-hidden="true" style={big
       ? { position: "relative", height: "170px", display: "grid", placeItems: "center", borderRadius: "var(--r-lg)", background: t[0] }
       : { position: "relative", height: "112px", display: "grid", placeItems: "center", background: t[0] }}>
-      <span style={{ width: big ? "58%" : "62%", height: big ? "78%" : "72%", boxSizing: "border-box", padding: pic ? "0" : big ? "14px" : "12px", borderRadius: big ? "var(--r-sm)" : "var(--r-sm)", overflow: "hidden", background: pic ? "var(--c-card)" : t[2], boxShadow: big ? "0 12px 24px -14px rgba(18,19,26,.5)" : "0 10px 20px -14px rgba(18,19,26,.5)" }}>
+      <span style={{ width: big ? "58%" : "62%", height: big ? "78%" : "72%", boxSizing: "border-box", padding: pic ? "0" : big ? "14px" : "12px", borderRadius: big ? "var(--r-sm)" : "var(--r-sm)", overflow: "hidden", background: pic ? "var(--c-card)" : t[2], boxShadow: big ? "var(--c-shadow-pop)" : "var(--c-shadow-pop)" }}>
         {pic ? <img src={pic} alt="" loading="lazy" style={{ display: "block", width: "100%", height: "100%", objectFit: a.format === "svg" ? "contain" : "cover" }} /> : null}
       </span>
-      <span style={{ position: "absolute", left: big ? "12px" : "10px", top: big ? "12px" : "10px", height: "22px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-sm)", background: "rgba(255,255,255,.92)", color: t[1], fontSize: "var(--t-micro)", fontWeight: "700" }}>{ext}</span>
+      <span style={{ position: "absolute", left: big ? "12px" : "10px", top: big ? "12px" : "10px", height: "22px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-sm)", background: PAPER.bg, color: t[1], boxShadow: "0 0 0 1px var(--c-line)", fontSize: "var(--t-micro)", fontWeight: "700" }}>{ext}</span>
     </span>
   );
 }
 const BotMark = ({ bot }) => (bot
   ? <BotFace bot={bot} size={16} decorative />
-  : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "var(--r-circle)", background: "#12131A" }} />);
+  : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "var(--r-circle)", background: C.btn }} />);
 
 const missionHref = (m) => (m ? (m.conversation && m.botIds?.length === 1 && !m.room ? `/chat/${encodeURIComponent(m.botIds[0])}?c=${encodeURIComponent(m.id)}` : isSala(m) ? `/sala/${encodeURIComponent(m.id)}` : `/encargo/${encodeURIComponent(m.id)}`) : null);
 
@@ -135,10 +138,10 @@ export default function Files({ artifacts, bots, missions, ready, expert, initia
         </label>
         {KINDS.map(([id, label]) => {
           const on = kind === id;
-          return <button key={id} type="button" aria-pressed={on} onClick={() => setKind(id)} style={{ height: "36px", padding: "0 13px", border: "0", borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
+          return <button key={id} type="button" aria-pressed={on} onClick={() => setKind(id)} style={{ height: "32px", padding: "0 12px", border: on ? "1px solid var(--c-btn)" : "1px solid var(--c-line)", borderRadius: "var(--r-sm)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-meta)", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
         })}
       </div>
-      {!ready ? <div style={{ height: "240px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+      {!ready ? <div style={{ height: "240px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
       {ready && !items.length ? (
         <p style={{ margin: 0, padding: "60px 0", textAlign: "center", fontSize: "var(--t-read)", color: "var(--c-text-3)" }}>
           {artifacts.length ? "No hay nada que coincida. Prueba con otra palabra." : "Aún no han entregado nada. Lo que hagan tus bots aparecerá aquí."}
@@ -151,7 +154,7 @@ export default function Files({ artifacts, bots, missions, ready, expert, initia
               const bot = botOf(a.botId);
               const on = cur?.id === a.id;
               return (
-                <button key={a.id} type="button" aria-pressed={on} onClick={() => setSel(a.id)} onDoubleClick={() => setLook(a.id)} style={{ display: "flex", flexDirection: "column", gap: "0", padding: "0", border: `2px solid ${on ? "var(--c-text)" : "transparent"}`, borderRadius: "var(--r-xl)", background: "var(--c-card)", textAlign: "left", overflow: "hidden", cursor: "pointer" }}>
+                <button key={a.id} type="button" aria-pressed={on} onClick={() => setSel(a.id)} onDoubleClick={() => setLook(a.id)} style={{ display: "flex", flexDirection: "column", gap: "0", padding: "0", border: on ? "2px solid var(--c-text)" : "1px solid var(--c-line)", margin: on ? 0 : "1px", borderRadius: "var(--r-md)", background: "var(--c-card)", textAlign: "left", overflow: "hidden", cursor: "pointer" }}>
                   <Thumb a={a} />
                   <span style={{ display: "flex", flexDirection: "column", gap: "3px", padding: "12px 14px 14px" }}>
                     <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", lineHeight: "1.3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: a.kind === "code" ? "'Geist Mono', monospace" : undefined }}>{a.title}</span>
@@ -202,7 +205,7 @@ function Detail({ a, bot, place, mission, expert, onOpen }) {
   ].filter(Boolean);
   const href = missionHref(mission);
   return (
-    <aside aria-label="Detalle del archivo" style={{ flex: "1 1 300px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", animation: "fade .25s ease-out" }}>
+    <aside aria-label="Detalle del archivo" style={{ flex: "1 1 300px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "fade .25s ease-out" }}>
       <Thumb a={a} big />
       <h2 style={{ margin: "0", font: "600 var(--t-title)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{a.title}</h2>
       <dl style={{ margin: "0", display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 14px", fontSize: "var(--t-ui)" }}>
@@ -231,9 +234,9 @@ function Detail({ a, bot, place, mission, expert, onOpen }) {
         </span>
       ) : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        <button type="button" onClick={onOpen} style={{ flex: "1", height: "40px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{"Abrir"}</button>
-        <button type="button" onClick={share} title="Copia el contenido para pegarlo donde quieras" style={{ height: "40px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{copied ? "Copiado ✓" : "Compartir"}</button>
-        <button type="button" onClick={save} aria-label="Descargar el archivo" style={{ height: "40px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Descargar"}</button>
+        <button type="button" onClick={onOpen} style={{ flex: "1", height: "36px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{"Abrir"}</button>
+        <button type="button" onClick={share} title="Copia el contenido para pegarlo donde quieras" style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{copied ? "Copiado ✓" : "Compartir"}</button>
+        <button type="button" onClick={save} aria-label="Descargar el archivo" style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Descargar"}</button>
       </div>
       {href ? <a href={href} style={{ fontSize: "var(--t-ui)", color: "var(--c-accent-ink)" }}>{mission?.conversation ? "Cómo se hizo: ver la conversación" : "Cómo se hizo: ver la tarea"}</a> : null}
     </aside>
@@ -261,11 +264,11 @@ function Look({ a, bot, place, mission, onClose }) {
     ["Versiones", a.version > 1 ? `${a.version} · esta es la última` : "1"],
     a.status && a.status !== "final" ? ["Estado", a.status] : null,
   ].filter(Boolean);
-  const pill = { height: "44px", padding: "0 18px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-body)", color: "var(--c-text)" };
+  const pill = { height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-sm)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-ui)", color: "var(--c-text)" };
   const href = missionHref(mission);
   return (
-    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: "40px 20px", background: "rgba(18,19,26,.32)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", animation: "fade .25s ease-out" }}>
-      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="look-t" style={{ width: full ? "min(1240px, 100%)" : "min(980px, 100%)", maxHeight: "100%", overflow: "auto", display: "flex", flexWrap: "wrap", background: "var(--c-card)", borderRadius: "var(--r-3xl)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.6)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+    <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: "40px 20px", background: "var(--c-scrim)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", animation: "fade .25s ease-out" }}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="look-t" style={{ width: full ? "min(1240px, 100%)" : "min(980px, 100%)", maxHeight: "100%", overflow: "auto", display: "flex", flexWrap: "wrap", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ flex: full ? "1 1 100%" : "3 1 420px", minHeight: "420px", maxHeight: full ? "none" : "70vh", margin: "14px", borderRadius: "var(--r-xl)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .05)", overflow: "auto", background: "var(--c-sunken)" }}>
           {binary ? <img src={`/api/artifacts/${encodeURIComponent(a.id)}/file`} alt={a.title} style={{ display: "block", width: "100%", height: "100%", minHeight: "420px", objectFit: "contain" }} /> : (
             <div style={{ padding: "26px 28px" }}><ArtifactContent a={data} loading={loading} error={error} /></div>
@@ -273,7 +276,7 @@ function Look({ a, bot, place, mission, onClose }) {
         </div>
         <div style={{ flex: "2 1 300px", padding: full ? "8px 32px 28px" : "30px 30px 26px 16px", display: "flex", flexDirection: "column", gap: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
-            <h2 id="look-t" style={{ margin: 0, font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{a.title}</h2>
+            <h2 id="look-t" style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif", overflowWrap: "anywhere" }}>{a.title}</h2>
             <button data-autofocus="" type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "var(--c-chip)", cursor: "pointer", color: "var(--c-text)" }}>
               <X size={14} weight="bold" />
             </button>

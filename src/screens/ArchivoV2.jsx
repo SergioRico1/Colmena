@@ -46,19 +46,19 @@ export default function ArchivoV2({ params = {}, query = {} }) {
     setNote(ok !== undefined ? { text: `«${files[0].name}» importada. Revisa sus pasos antes de activarla.` } : { error: true, text: act.error || "No se pudo importar" });
   };
   const action = tab === "habilidades"
-    ? <button type="button" onClick={importSkill} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Importar una habilidad"}</button>
+    ? <button type="button" onClick={importSkill} disabled={act.busy} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Importar una habilidad"}</button>
     : tab === "memoria"
-      ? <button type="button" onClick={() => setImporting(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Importar de ChatGPT"}</button>
+      ? <button type="button" onClick={() => setImporting(true)} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Importar de ChatGPT"}</button>
       : tab === "notas" && params.slug === undefined
         ? <NotesActions onNew={() => setNoteDialog("new")} onImport={() => setNoteDialog("import")} />
         : null;
 
   return (
-    <Shell active="biblioteca">
+    <Shell active="biblioteca" background="var(--c-app)">
       <main style={{ maxWidth: WIDTH, margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "22px" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Biblioteca"}</h1>
+            <h1 style={{ margin: "0", font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>{"Biblioteca"}</h1>
             <p style={{ margin: "0", fontSize: "var(--t-read)", color: "var(--c-text-2)" }}>{"Lo que producen tus bots y lo que saben: archivos, notas, habilidades y memoria."}</p>
           </div>
           {action}
