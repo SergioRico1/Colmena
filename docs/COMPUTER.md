@@ -9,7 +9,7 @@ envía, compra, publica o ejecuta pasa por la Bandeja y siempre se puede «Tomar
 
 | Archivo | Qué hace |
 |---|---|
-| `desktop/browser.cjs` | Navegador de los bots (Electron). Una ventana oculta por misión y bot (`BaseWindow` + `WebContentsView`), partición `persist:colmena-navegador`, `sandbox`, sin preload ni Node. CDP (`debugger.attach('1.3')`): `Accessibility.getFullAXTree` → snapshot; `DOM.getContentQuads` + `Input.dispatch*` para actuar; `Page.captureScreenshot` (JPEG 60, ≤1280 px) y fotogramas cada segundo mientras el bot actúa (90 s) o la persona tiene el control. |
+| `desktop/browser.cjs` | Navegador de los bots (Electron). Una ventana oculta por misión y bot (`BaseWindow` + `WebContentsView`), partición `persist:colmena-navegador` (sesión Principal) o la de su sesión con nombre (`persist:colmena-s-<id>`), `sandbox`, sin preload ni Node. CDP (`debugger.attach('1.3')`): `Accessibility.getFullAXTree` → snapshot; `DOM.getContentQuads` + `Input.dispatch*` para actuar; `Page.captureScreenshot` (JPEG 60, ≤1280 px) y fotogramas cada segundo mientras el bot actúa (90 s) o la persona tiene el control. |
 | `desktop/axsnapshot.cjs` | AX tree → texto con refs `e1, e2…` (rol, nombre, valor, estado; máx. 12 000 caracteres; `query` filtra). Detecta captcha/2FA/contraseña/pago. |
 | `desktop/netguard.cjs` | Copia CommonJS de la política de `server/web.mjs`: solo http(s) públicos; bloquea loopback, LAN, link-local, `file:`, nombres `.local`/sin punto y DNS que resuelve a IP privada (falla cerrado). Se aplica en `webRequest.onBeforeRequest`, `will-navigate`, `will-redirect`, `will-frame-navigate` y ventanas nuevas. |
 | `desktop/main.cjs` | Arranca el servidor con `stdio: [..., 'ipc']` y `COLMENA_COMPUTER=1`; crea el gestor y responde con `attachBackend`. Al cerrar la ventana principal sale de la app. |
@@ -76,6 +76,70 @@ Todas las ops de pestaña llevan `missionId` y `botId`. Errores con `code`: `PAS
   ordena parar y pedir «Tomar el control».
 - Las páginas se marcan como dato no fiable (`notice`). Diálogos JS: `alert` se acepta, `confirm/prompt` se cancelan
   (y se devuelven al bot en `dialog`). Permisos del navegador (cámara, micro, ubicación, notificaciones): denegados.
+
+## Contraseñas: la bóveda y los gestores de contraseñas
+
+Los bots nunca ven ni escriben una contraseña. `browser_sign_in {entry}` rellena el acceso en el navegador del
+bot con una cuenta de la **bóveda** (`server/vault.mjs`, DPAPI) o con un inicio de sesión de un **gestor de
+contraseñas** (`server/managers/`), y solo si la página abierta es de ese sitio (`sameSite`, en el servidor y otra
+vez en Electron).
+
+- **Permisos por bot** (`grants`, `tool: "browser_sign_in"`): `vault:<id>` o `login:<id>`. Una cuenta de la bóveda
+  sin permiso pide aprobación la primera vez (con «Permitir siempre»). Un login de un gestor **solo** lo puede usar
+  un bot que la persona marcó (Ajustes › Memoria y privacidad › Contraseñas de webs, o la ficha del bot); sin
+  marcar ni se ofrece ni se acepta. Por defecto, ninguno.
+- **Nunca** en un turno para otra persona (`mission.peerErrand`, la lista cerrada de `server/request-turn.mjs` no la
+  incluye), en una sesión aparte (`ctx.session`) ni en incógnito (`INCOGNITO_DENY`): `server/computer/wire.mjs`
+  `passwordsAllowed` y `ctx.noPasswords`.
+
+### Gestores de contraseñas (`server/managers/`)
+
+| Gestor | Programa | Comandos (sin consola, argv, entorno mínimo, 30 s) |
+|---|---|---|
+| 1Password | `op` (integración con la app: la desbloquea Windows Hello, Touch ID o su contraseña, en su ventana) | `op account list --format json` · `op whoami --format json` (estado) · `op item list --categories Login --format json` (para elegir) · `op item get <id> --fields label=username,label=password --reveal --format json` (solo al entrar) |
+| Bitwarden | `bw` | `bw status --nointeraction` · `bw list items --nointeraction` (para elegir) · `bw get username <id> --nointeraction` y `bw get password <id> --nointeraction` (solo al entrar); `BW_SESSION` va en el entorno, nunca en argv |
+
+Fuentes: developer.1password.com/docs/cli (referencia de `op item`, integración con la app) y bitwarden.com/help/cli.
+
+- **Dónde se busca**: `COLMENA_OP_PATH` / `COLMENA_BW_PATH` (las pruebas y QA apuntan a `tests/fixtures/fake-op.mjs` y
+  `fake-bw.mjs`), luego el PATH, luego los sitios de instalación habituales (WinGet Links y Packages, Program
+  Files, scoop, Chocolatey, el `bw.js` de npm; en macOS `/opt/homebrew/bin`, `/usr/local/bin`). Una ruta `.js/.mjs`
+  se ejecuta con el Node de Colmena.
+- **Qué se guarda**: solo lo que la persona marca, de uno en uno: id del elemento, título, dominio y usuario
+  enmascarado (`logins` en SQLite). Nada se importa en bloque. `bw list items` trae contraseñas: se leen del
+  búfer el id, el nombre, la web y el usuario enmascarado y el búfer se pone a cero.
+- **Al entrar**: el usuario y la contraseña se piden al gestor en ese momento y van directos a la operación
+  `signIn` de Electron (el mismo camino que la bóveda). No llegan al modelo, a un resultado, a un recibo, a una
+  tarjeta de aprobación ni a ningún registro. Los búferes de salida de `op`/`bw` se ponen a cero; las cadenas de
+  JavaScript no se pueden borrar, así que se sueltan (`null`) en cuanto Electron responde.
+- **Desbloquear Bitwarden sin que Colmena vea la contraseña maestra**: `bw-window.mjs` abre una consola propia
+  (Windows: `cmd /c start`; macOS: Terminal) con `bw-unlock-helper.mjs`, que ejecuta `bw unlock --raw`; la persona
+  escribe la contraseña maestra en el aviso de `bw`. Solo vuelve la clave de sesión, por una tubería local con
+  nombre aleatorio (`\\.\pipe\colmena-bw-…` o un socket en la carpeta temporal), a la memoria del servidor. Nunca
+  se guarda. También vale arrancar Colmena con `BW_SESSION` en el entorno. «Bloquear» la olvida.
+- **Estados en Ajustes**: Conectado · Bloqueado — desbloquéalo en 1Password · Falta un paso (1Password sin la
+  integración activada, Bitwarden sin `bw login`) · No instalado (con enlace a cómo instalarlo).
+
+## Sesiones del navegador (`server/computer/sessions.mjs`)
+
+Cada sesión es una partición persistente de Electron: sus cookies no se mezclan con las de otra.
+
+- **Principal** (`id: "principal"`) es `persist:colmena-navegador`, la de siempre: no hay nada que migrar. Las
+  demás (`browserSessions` en SQLite: `{id, name, createdAt}`) son `persist:colmena-s-<id>` (`desktop/browser.cjs`
+  `partitionFor`; la pestaña lleva `@<id>` en su clave).
+- **Cuál usa un bot**: `mission.browserSession` (una sala o misión que manda) → `bot.browserSession` → Principal. Una
+  sesión borrada vuelve a Principal. Las herramientas mandan `profile` al puente solo si no es Principal.
+- **Un turno para otra persona** sigue en su sesión aparte, vacía y en memoria: `session` siempre gana a `profile`.
+- **Iniciar sesión a mano** (`sessionOpen`): una ventana de esa sesión con una barra de direcciones sin JavaScript
+  (un formulario que navega a `colmena-nav://go?u=…`, que Electron intercepta) y «Listo». Mismo filtro de red que
+  los bots. Lo que la persona deja abierto ahí lo reutilizan los bots de esa sesión.
+- **Webs con la sesión abierta** (`sessionSites`): solo los dominios de las cookies, nunca nombres ni valores.
+  **Cerrar todas las sesiones** (`sessionClear`): cierra sus pestañas y borra almacenamiento, caché y credenciales
+  HTTP de la partición. **Borrar sesión**: lo mismo, y sus bots y misiones vuelven a Principal.
+- Las sesiones se quedan en este ordenador: ni cookies ni contraseñas viajan por el relé de «Personas».
+
+Ops nuevas del protocolo IPC: `sessionSites {profile}`, `sessionClear {profile}`, `sessionOpen {profile, name, url?}`; y
+`profile` opcional en todas las de pestaña.
 
 ## Proyectos (desarrollos a medida)
 
@@ -234,6 +298,9 @@ Si se añade `browser_frame` a `LIVE`, tratarlo **antes** de `schedule()` para n
 
 ## Pruebas
 
+`node --test tests/password-managers.test.mjs tests/browser-sessions.test.mjs` (`op` y `bw` falsos; la contraseña no
+aparece en la base de datos, los registros, el resultado ni la tarjeta; permisos por bot; mismo sitio; turnos para otra
+persona e incógnito; particiones y vuelta a Principal).
 `node --test tests/computer-*.test.mjs` (bridge falso, sin Electron): políticas por autonomía, línea roja de envío y
 comandos peligrosos, extensiones ejecutables, IPs privadas y DNS rebinding, contraseñas, snapshot, reglas con caducidad,
 fotogramas sin SQLite, rutas de captura y toma de control.

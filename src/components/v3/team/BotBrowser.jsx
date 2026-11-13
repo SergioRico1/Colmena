@@ -45,7 +45,7 @@ export default function BotBrowser({ bot, subhead, row }) {
           <Select label={`Sesión del navegador de ${bot.name}`} value={current} disabled={pick.busy || !list.length}
             options={list.map((s) => [s.id, s.name])}
             onChange={(e) => pick.act(async () => { await put(`/bots/${encodeURIComponent(bot.id)}/browser-session`, { session: e.target.value }); })}
-            style={{ height: "36px", minWidth: "180px" }} />
+            style={{ width: "240px", maxWidth: "100%", height: "40px", padding: "0 10px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-md)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-body)", boxSizing: "border-box" }} />
         </div>
         {pick.error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{pick.error}</span> : null}
         <div style={{ ...row, alignItems: "flex-start", flexDirection: "column", gap: "8px" }}>

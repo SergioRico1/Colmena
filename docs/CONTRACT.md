@@ -569,3 +569,27 @@ Todo son campos **añadidos**; nada de lo anterior cambia de forma.
 - `POST /api/rooms/:id/share {artifactId, caption?}` → `{message, file}` (como `POST /api/peers/shares/:id/files/artifact`): compartes a mano un entregable tuyo con la sala. `409` en una sala privada, `404` si no existe.
 - En vivo (`/api/peers/events?share=`): `{type: 'room-activity', shareId, roomId, activity}` cada vez que cambia y `{type: 'room-line', shareId, roomId, item}` con cada línea nueva.
 - Herramienta nueva de los bots, solo en un turno que responde a otra persona: `ask_room {question}` (pregunta en la sala a quien lo pidió). `ask_user` sigue preguntando al dueño.
+
+## 19. Entrar en webs sin «inicia sesión, por favor»: gestores de contraseñas y sesiones del navegador
+
+Detalle en `docs/COMPUTER.md` › «Gestores de contraseñas» y «Sesiones del navegador». Ningún endpoint devuelve, acepta ni registra una contraseña, una contraseña maestra o la clave de sesión de Bitwarden.
+
+### Login (un inicio de sesión de un gestor que la persona eligió)
+`{id, manager: '1password'|'bitwarden', managerLabel, itemId, label, title, domain, username, createdAt, lastUsedAt, uses}`. `username` va enmascarado («m…@ejemplo.es»); en SQLite (`logins`) solo `id, manager, itemId, title, domain, user` (enmascarado), `createdAt, uses, lastUsedAt`.
+
+### Endpoints
+- `GET /api/password-managers` → `{managers: [{id, label, state: connected|locked|setup|missing, detail, install, chosen, canUnlock?, unlockedByColmena?}], logins}`. Ejecuta `op`/`bw` (unos cientos de ms): pídelo al abrir el panel, no en cada refresco.
+- `GET /api/logins` → `{logins}` (sin ejecutar nada).
+- `GET /api/password-managers/:manager/items` → `{items: [{itemId, title, domain, user, chosenId}]}`; 409 «… está bloqueado…».
+- `POST /api/password-managers/:manager/logins {itemId}` → `Login` (201). Los datos se vuelven a leer del gestor; nunca del cliente.
+- `DELETE /api/logins/:id` → `{ok}`; se van también sus permisos por bot.
+- `POST /api/password-managers/bitwarden/unlock` → estado de Bitwarden (abre la ventana de `bw unlock`; espera hasta 3 min). `POST …/bitwarden/lock` → `{ok}`.
+- `GET /api/sign-in-grants` → `{grants: {"vault:<id>"|"login:<id>": [botId]}}`.
+- `PUT /api/sign-in-grants {scope, botIds}` → `{scope, botIds}` (exactamente esos bots). `PUT /api/bots/:id/sign-ins {scopes}` → `{botId, scopes}` (exactamente esas cuentas para ese bot). Son `grants` de siempre (`tool: "browser_sign_in"`, `origin: "ajustes"`).
+- `GET /api/browser-sessions` → `{available, sessions: [{id, name, principal, createdAt, bots: [{id, name}]}]}`; la primera es siempre `{id: "principal", name: "Principal"}`.
+- `POST /api/browser-sessions {name}` (201; 409 si el nombre ya existe o hay 20) · `PATCH /api/browser-sessions/:id {name}` · `DELETE /api/browser-sessions/:id` → `{ok}` (bots y misiones vuelven a Principal; Principal no se borra: 400).
+- `GET /api/browser-sessions/:id/sites` → `{available, domains}` (solo dominios con cookies) · `POST …/:id/clear` → `{cleared}` · `POST …/:id/open {url?}` → `{opened}` («Iniciar sesión a mano»; 409 fuera de la app de escritorio).
+- `PUT /api/bots/:id/browser-session {session}` → `{botId, browserSession}` · `PUT /api/missions/:id/browser-session {session|null}` → `{missionId, browserSession}` (una sala o misión que manda sobre la de cada bot; `null` = la de cada bot).
+
+### Bot
+Añade `browserSession: string|null` (`null` = Principal).

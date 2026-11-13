@@ -38,8 +38,8 @@ function SessionRow({ s, first, available }) {
               : <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Ninguna todavía.</span>}
           </div>
           <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" disabled={!available || busy} title={available ? undefined : "Solo en la app de escritorio"} onClick={() => act(() => post(`/browser-sessions/${s.id}/open`, {}))} style={btn("dark", 34)}><SignIn size={15} aria-hidden="true" />Iniciar sesión a mano</button>
-            <button type="button" disabled={!available || busy} onClick={() => setAsking("clear")} style={btn("outline", 34)}>Cerrar todas las sesiones…</button>
+            <button type="button" disabled={!available || busy} title={available ? undefined : "Solo en la app de escritorio"} onClick={() => act(() => post(`/browser-sessions/${s.id}/open`, {}))} style={{ ...btn("dark", 34), opacity: available ? 1 : 0.5, cursor: available ? "pointer" : "not-allowed" }}><SignIn size={15} aria-hidden="true" />Iniciar sesión a mano</button>
+            <button type="button" disabled={!available || busy} title={available ? undefined : "Solo en la app de escritorio"} onClick={() => setAsking("clear")} style={{ ...btn("outline", 34), opacity: available ? 1 : 0.5, cursor: available ? "pointer" : "not-allowed" }}>Cerrar todas las sesiones…</button>
             {!s.principal ? <button type="button" disabled={busy} onClick={() => setAsking("delete")} style={danger(34)}>Borrar sesión…</button> : null}
           </span>
           <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-3)" }}>Se abre una ventana de esta sesión: entra en la web con tu usuario y pulsa «Listo». Los bots que la usan ya no tendrán que pedírtelo.</span>

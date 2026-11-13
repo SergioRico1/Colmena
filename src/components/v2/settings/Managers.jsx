@@ -102,7 +102,7 @@ function ManagerRow({ m, first, onChanged, picking, setPicking }) {
         <span style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {m.state === "missing" ? <button type="button" onClick={() => window.open(m.install, "_blank", "noopener")} style={btn("outline", 34)}><ExternalLink size={14} aria-hidden="true" />Cómo instalarlo</button> : null}
           {m.id === "bitwarden" && m.state === "locked" && m.canUnlock ? <button type="button" disabled={busy} onClick={() => act(async () => { await post("/password-managers/bitwarden/unlock"); onChanged(); })} style={btn("dark", 34)}>{busy ? "Esperando a Bitwarden…" : "Desbloquear"}</button> : null}
-          {usable ? <button type="button" aria-expanded={picking} onClick={() => setPicking(picking ? null : m.id)} style={btn(m.state === "connected" && !m.chosen ? "dark" : "outline", 34)}>{picking ? "Ocultar" : "Elegir inicios de sesión"}</button> : null}
+          {usable ? <button type="button" aria-expanded={picking} onClick={() => setPicking(picking ? null : m.id)} style={btn(!picking && m.state === "connected" && !m.chosen ? "dark" : "outline", 34)}>{picking ? "Ocultar" : "Elegir inicios de sesión"}</button> : null}
           {m.id === "bitwarden" && m.unlockedByColmena ? <button type="button" onClick={() => act(async () => { await post("/password-managers/bitwarden/lock"); onChanged(); })} style={btn("ghost", 34)}>Bloquear</button> : null}
         </span>
       </div>
