@@ -46,7 +46,7 @@ export function WatchedView({ watching, name, busy = false, onTake, takeStyle, q
     >
       {children}
       {asking ? (
-        <div ref={prompt} data-take-prompt="" role="dialog" aria-labelledby={title} style={{ position: "absolute", left: "16px", right: "16px", bottom: "16px", margin: "0 auto", maxWidth: "440px", display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-lg)", background: "var(--c-card)", color: "var(--c-text)", boxShadow: "0 2px 6px rgba(18,19,26,.12), 0 24px 48px -20px rgba(18,19,26,.5)", textAlign: "left" }}>
+        <div ref={prompt} data-take-prompt="" role="dialog" aria-labelledby={title} style={{ position: "absolute", left: "16px", right: "16px", bottom: "16px", margin: "0 auto", maxWidth: "440px", display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-lg)", background: "var(--c-card)", color: "var(--c-text)", boxShadow: "var(--c-shadow-pop)", textAlign: "left" }}>
           <strong id={title} style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"¿Quieres tomar el control?"}</strong>
           <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text-2)" }}>{`Ahora solo estás mirando. Si lo tomas, ${name} se para y espera sin tocar nada hasta que se lo devuelvas.`}</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
