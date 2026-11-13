@@ -373,7 +373,7 @@ function Moment({ item, done = false }) {
     <li style={{ display: "flex", alignItems: "baseline", gap: "12px", padding: "9px 18px", fontSize: "14px", lineHeight: "1.45" }}>
       <span style={{ flex: "none", width: "66px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", color: "#5C606C" }}>{when(item.at)}</span>
       <span aria-hidden="true" style={{ flex: "none", alignSelf: "center", width: "14px", height: "14px", display: "grid", placeItems: "center", color: done ? "#0B6B4A" : "var(--c-placeholder)" }}>{done ? <Check size={14} strokeWidth={2.8} /> : <Circle size={11} strokeWidth={2.8} />}</span>
-      {item.href ? <a href={item.href} style={{ color: "inherit", minWidth: 0 }}>{text}</a> : text}
+      {item.href ? <a href={item.href} className="c-hit" style={{ color: "inherit", minWidth: 0 }}>{text}</a> : text}
     </li>
   );
 }

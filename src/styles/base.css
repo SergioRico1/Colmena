@@ -29,6 +29,14 @@
    (3.0–3.3:1) in their own style sheets, injected after this file: this selector outranks them. */
 :is(input,textarea)::placeholder{color:var(--c-placeholder);opacity:1}
 :is(input,textarea).c-on-dark::placeholder{color:var(--c-placeholder-dark)}
+/* Targets: a control is never hit through less than 24×24 px. A link or button that is only
+   text (no element inside) and anything marked .c-hit gets an invisible area around it, 24 px
+   tall at least, without changing its size or the rhythm of the layout. Links inside running
+   text (a paragraph, a bot answer) are left alone: a link that wraps would cover its sentence. */
+:where(a[href],button,[role="button"],summary):where(:not(:has(*)),.c-hit):not(:where(p,.rm-md) a){position:relative}
+:where(a[href],button,[role="button"],summary):where(:not(:has(*)),.c-hit):not(:where(p,.rm-md) a)::after{content:"";position:absolute;top:min(0px,calc(50% - 12px));bottom:min(0px,calc(50% - 12px));left:min(0px,calc(50% - 12px));right:min(0px,calc(50% - 12px))}
+/* A native checkbox or radio keeps its drawn size; its label (or this area) takes the click. */
+:where(input[type="checkbox"],input[type="radio"]).c-hit{position:relative}
 body{margin:0;background:#EEF0F4;font-family:'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;color:#12131A;-webkit-font-smoothing:antialiased}
 button,input,textarea,select{font:inherit;color:inherit}
 a{color:#12131A;text-decoration:none}a:hover{color:#2F6BFF}

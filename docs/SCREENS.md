@@ -38,5 +38,7 @@ Las maquetas aprobadas están en `design/<Pantalla>.dc.html` y se convierten sin
 
 ## Comprobación
 - `npx vite build` sin errores.
+- `node scripts/a11y-scan.mjs <url>` (servidor con datos de QA, `scripts/seed-qa.mjs`): recorre las rutas principales y avisa de
+  contraste bajo, controles de menos de 24 px o sin nombre, zonas `main` y saltos de encabezados; termina en 1 si encuentra algo.
 - Compara visualmente `/_design/<Pantalla>` con la ruta real a 1440 px (el servidor de desarrollo
   ya está en http://localhost:4318; no arranques otro en ese puerto).

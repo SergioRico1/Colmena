@@ -368,7 +368,7 @@ function PlanPhases({ assignments, bots, pending }) {
                       ) : null}
                       {showDetail ? (
                         <>
-                          <button type="button" className="rm-focus" aria-expanded={isOpen ? "true" : "false"} onClick={() => setOpen({ ...open, [a.index]: !isOpen })} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "4px", padding: "2px 0", background: "transparent", border: "0", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>
+                          <button type="button" className="rm-focus c-hit" aria-expanded={isOpen ? "true" : "false"} onClick={() => setOpen({ ...open, [a.index]: !isOpen })} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "4px", padding: "2px 0", background: "transparent", border: "0", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#1F4FD1" }}>
                             {isOpen ? "Ocultar detalle" : "Ver detalle"}
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ transform: isOpen ? "rotate(180deg)" : "none" }}><path d="m6 9 6 6 6-6" /></svg>
                           </button>

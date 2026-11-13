@@ -56,7 +56,14 @@ const SOURCE = { importado: "De ChatGPT", dijiste: "Se lo dijiste", dedujo: "Lo 
 const MISSION_LABEL = { running: "En curso", planning: "Planificando", queued: "En cola", waiting: "Te espera", awaiting_plan: "Plan por aprobar", awaiting_choice: "Elige propuesta", blocked: "Atascada", paused: "En pausa", completed: "Terminada", cancelled: "Cancelada" };
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const uses = (s) => (s.uses ? `Usada ${s.uses === 1 ? "1 vez" : `${s.uses} veces`}` : "Aún sin usar");
-const MD_CSS = ".v3-soul-md{font-size:15px;line-height:1.6;color:#3D404A}.v3-soul-md>*:first-child{margin-top:0}.v3-soul-md>*:last-child{margin-bottom:0}.v3-soul-md h1{font:600 18px/1.25 'Bricolage Grotesque',sans-serif;margin:0 0 8px;color:#12131A}.v3-soul-md h2,.v3-soul-md h3{font:600 15px/1.3 'Bricolage Grotesque',sans-serif;margin:14px 0 6px;color:#12131A}.v3-soul-md p{margin:0 0 10px}.v3-soul-md ul{margin:0 0 10px;padding-left:20px}.v3-soul-md hr{border:0;border-top:1px solid rgba(18,19,26,.06);margin:14px 0}";
+// The bot's document sits inside a section of the page: its own «# title» is a third-level
+// heading there, so the page keeps one h1 and an outline without jumps. Looks stay the same.
+const SOUL_HEADINGS = {
+  h1: ({ node: _n, ...p }) => <h3 data-h="1" {...p} />,
+  h2: ({ node: _n, ...p }) => <h4 data-h="2" {...p} />,
+  h3: ({ node: _n, ...p }) => <h5 data-h="2" {...p} />,
+};
+const MD_CSS = ".v3-soul-md{font-size:15px;line-height:1.6;color:#3D404A}.v3-soul-md>*:first-child{margin-top:0}.v3-soul-md>*:last-child{margin-bottom:0}.v3-soul-md [data-h=\"1\"]{font:600 18px/1.25 'Bricolage Grotesque',sans-serif;margin:0 0 8px;color:#12131A}.v3-soul-md [data-h=\"2\"]{font:600 15px/1.3 'Bricolage Grotesque',sans-serif;margin:14px 0 6px;color:#12131A}.v3-soul-md p{margin:0 0 10px}.v3-soul-md ul{margin:0 0 10px;padding-left:20px}.v3-soul-md hr{border:0;border-top:1px solid rgba(18,19,26,.06);margin:14px 0}";
 
 function skillNote(s) {
   if (s.status === "pending") return s.origin === "imported" ? `Importada el ${longDay(s.createdAt)} · espera tu visto bueno` : s.origin === "shared" ? "Compartida · espera tu visto bueno" : `Nueva · la aprendió ${s.learnedFrom || `el ${longDay(s.createdAt)}`}`;
@@ -227,9 +234,9 @@ const Lock = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" s
 
 function Fact({ label, value, open, onClick, href }) {
   const inner = <><span style={{ color: TEXT3 }}>{label}</span>{" "}<strong style={{ fontWeight: "600" }}>{value}</strong></>;
-  if (href) return <a href={href} style={{ color: INK }}>{inner}</a>;
+  if (href) return <a href={href} className="c-hit" style={{ color: INK }}>{inner}</a>;
   return (
-    <button type="button" aria-expanded={open ? "true" : "false"} onClick={onClick} title="Cambiar" style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0", border: "0", background: "transparent", fontSize: "14px", color: INK, cursor: "pointer" }}>
+    <button type="button" className="c-hit" aria-expanded={open ? "true" : "false"} onClick={onClick} title="Cambiar" style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0", border: "0", background: "transparent", fontSize: "14px", color: INK, cursor: "pointer" }}>
       <span>{inner}</span><ChevronDown size={13} strokeWidth={2.4} aria-hidden="true" style={{ color: TEXT3, transition: "transform .2s ease", transform: open ? "rotate(180deg)" : "none" }} />
     </button>
   );
@@ -590,7 +597,7 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
             </div>
           </>
         ) : soul ? (
-          <div className="v3-soul-md" tabIndex={0} aria-label="Personalidad del bot" style={{ ...frame, maxHeight: "260px", overflowY: "auto" }}><ReactMarkdown>{soul}</ReactMarkdown></div>
+          <div className="v3-soul-md" tabIndex={0} aria-label="Personalidad del bot" style={{ ...frame, maxHeight: "260px", overflowY: "auto" }}><ReactMarkdown components={SOUL_HEADINGS}>{soul}</ReactMarkdown></div>
         ) : <div style={{ ...frame, color: TEXT3 }}>{data ? "Aún no tiene personalidad escrita." : "Cargando…"}</div>}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
