@@ -43,6 +43,8 @@ Las maquetas aprobadas están en `design/<Pantalla>.dc.html` y se convierten sin
   al pulsar fuera usan `useClickAway` (`src/lib/useClickAway.js`).
 - Conversaciones: `<Announcer text={useAnnouncer({ scope, ready, items, waiting })} />` (una sola zona `aria-live`), la lista de
   mensajes con `messageListProps()` y `leaveComposer(e)` en el Escape del cuadro de texto (`src/lib/messageKeys.js`).
+- Datos de QA de Código: `COLMENA_DATA_DIR=.local/qa-code node scripts/seed-code-qa.mjs` crea repos git desechables y tareas en cada estado
+  (trabajando, te espera, revisión P0–P3, PR con CI, conflictos, compartida, traspaso, comparar); con `--serve` lo sirve con motores falsos.
 - Un control de menos de 24 px de alto que no sea solo texto lleva `className="c-hit"`; un avatar de bot sin nombre al lado,
   `botAlt()`/`botsAlt()` de `src/lib/alt.js`.
 

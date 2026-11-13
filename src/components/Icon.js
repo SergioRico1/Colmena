@@ -283,3 +283,6 @@ export const Wrench = /* @__PURE__ */ icon(G.Wrench, "Wrench");
 export const X = /* @__PURE__ */ icon(G.X, "X");
 export const ZoomIn = /* @__PURE__ */ icon(G.MagnifyingGlassPlus, "ZoomIn");
 export const ZoomOut = /* @__PURE__ */ icon(G.MagnifyingGlassMinus, "ZoomOut");
+export const FoldVertical = /* @__PURE__ */ icon(G.ArrowsInLineVertical, "FoldVertical");
+export const UnfoldVertical = /* @__PURE__ */ icon(G.ArrowsOutLineVertical, "UnfoldVertical");
+export const FileMinus = /* @__PURE__ */ icon(G.FileMinus, "FileMinus");
