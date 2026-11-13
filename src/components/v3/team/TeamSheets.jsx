@@ -4,7 +4,7 @@ import { get, post } from "../../../lib/api.js";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { shareUrl } from "../../../lib/peers.js";
-import { useDialogFocus } from "../../../lib/useDialogFocus.js";
+import { DIALOG_VEIL, useDialogFocus } from "../../../lib/useDialogFocus.js";
 import { adminNames, codeKind, findCode, listNames } from "../../../lib/teams.js";
 
 // The team's sheets (docs/PLAN-equipo-y-salas.md › 4.1), opened from the sidebar's team menu
@@ -18,7 +18,7 @@ import { adminNames, codeKind, findCode, listNames } from "../../../lib/teams.js
 export const INK = "#12131A", MUTED = "#5C606C";
 /** «Cómo funciona», at what the others see of your bots' work. */
 const HELP = "/personas/como-funciona#que-ven";
-const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", animation: "fade .2s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitAppRegion: "no-drag" };
+const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: DIALOG_VEIL, animation: "fade .2s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitAppRegion: "no-drag" };
 const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "32px", background: "#FFFFFF", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
 export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: on ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: on ? INK : "#C9CBD1", color: on ? "#FFFFFF" : "#3D404A" });
 export const quietBtn = { minHeight: "44px", padding: "0 18px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: MUTED };

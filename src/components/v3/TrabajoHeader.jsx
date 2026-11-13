@@ -11,8 +11,9 @@ export const TRABAJO_TABS = [
   { id: "objetivos", label: "Objetivos", hint: "a largo plazo", href: "/trabajo/objetivos" },
 ];
 
-/** The page column every Trabajo screen sits in (the boards' <main>). */
-export const trabajoMain = (maxWidth = "1180px") => ({ maxWidth, margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "24px" });
+/** The page column every Trabajo screen sits in (the boards' <main>): one width for the three
+ *  tabs, so the left edge of the text does not move when you switch. */
+export const trabajoMain = () => ({ maxWidth: "1180px", margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "24px" });
 
 const go = (href) => (e) => {
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;

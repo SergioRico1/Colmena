@@ -176,7 +176,7 @@ export default function Tareas({ query = {} }) {
 
   return (
     <Shell active="trabajo">
-      <main style={trabajoMain("1180px")}>
+      <main style={trabajoMain()}>
         <TrabajoHeader tab="tareas" action={{ label: "Nueva tarea", onClick: () => setCreating(true) }} />
 
         {creating ? <NewTask team={team} onClose={() => { setCreating(false); if (query.nueva) navigate("/trabajo", { replace: true }); }} /> : null}

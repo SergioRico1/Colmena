@@ -79,7 +79,7 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
 
   return (
     <Shell active="trabajo">
-      <main style={trabajoMain("1160px")}>
+      <main style={trabajoMain()}>
         <TrabajoHeader tab="objetivos" action={{ label: "Nuevo objetivo", onClick: () => setCreating(true) }} />
         <p style={{ margin: 0, maxWidth: "760px", fontSize: "15px", lineHeight: 1.5, color: "#4A4D57" }}>{`Lo que quieres conseguir en semanas o meses. ${owner?.name || "Atlas"} lo parte en hitos, engancha las tareas que lo empujan y te avisa si algo se atasca.`}</p>
 

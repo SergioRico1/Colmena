@@ -5,13 +5,13 @@ import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { shareUrl } from "../../../lib/peers.js";
 import { lacksOwnName } from "../../../lib/ownName.js";
-import { useDialogFocus } from "../../../lib/useDialogFocus.js";
+import { DIALOG_VEIL, useDialogFocus } from "../../../lib/useDialogFocus.js";
 
 // «Hablar con una persona» and «Tengo una invitación» (design/V2Personas.dc.html, paso
 // invitar / aceptar). Colmena never sends the invitation: you copy it and send it yourself.
 // The invitation says who you are («Hola Marta, soy Sergio…»): when Colmena does not know your
 // name yet, the sheet asks for it first and keeps it as your name (Ajustes › Tu nombre).
-const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", animation: "fade .25s ease-out" };
+const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: DIALOG_VEIL, animation: "fade .25s ease-out" };
 const card = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "22px", padding: "28px", borderRadius: "32px", background: "rgba(255,255,255,.97)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box" });
 const dark = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: on ? "pointer" : "default", fontSize: "14px", fontWeight: 600, background: on ? "#12131A" : "#C9CBD1", color: "#FFFFFF" });
 const quiet = { height: "44px", padding: "0 18px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: "#5C606C" };

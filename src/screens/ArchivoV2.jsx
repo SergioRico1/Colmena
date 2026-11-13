@@ -23,7 +23,8 @@ const TABS = [
 ];
 const ALIAS = { done: "archivos", skills: "habilidades", mem: "memoria", "saben-de-ti": "memoria", wiki: "notas" };
 const tabOf = (v) => (TABS.some((t) => t.id === v) ? v : ALIAS[v] || "archivos");
-const WIDTH = { archivos: "1180px", notas: "1180px", habilidades: "1120px", memoria: "1080px" };
+// One column for the four tabs: the left edge of the text stays put when you switch.
+const WIDTH = "1180px";
 
 export default function ArchivoV2({ params = {}, query = {} }) {
   const { artifacts = [], bots = [], missions = [], skills = [], memories = [], ready } = useStore();
@@ -54,7 +55,7 @@ export default function ArchivoV2({ params = {}, query = {} }) {
 
   return (
     <Shell active="biblioteca">
-      <main style={{ maxWidth: WIDTH[tab], margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "22px" }}>
+      <main style={{ maxWidth: WIDTH, margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "22px" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             <h1 style={{ margin: "0", font: "600 44px/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Biblioteca"}</h1>
