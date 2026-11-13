@@ -10,6 +10,7 @@ import { ago, isRoom } from "../lib/format.js";
 import { later, useHidden } from "../lib/undoToast.js";
 import { scrollBehavior } from "../lib/motion.js";
 import WebhookPanel, { HOOK_DEFAULT } from "../components/rutinas/WebhookPanel.jsx";
+import { C, alpha } from "../lib/theme.js";
 
 // Colmena 3 · Trabajo › Rutinas (design/V3Rutinas.dc.html): what repeats. «Nueva rutina» reads
 // as a sentence you tap to change (?nueva=1 opens it, with ?texto= and ?bot= from a chat).
@@ -17,8 +18,8 @@ import WebhookPanel, { HOOK_DEFAULT } from "../components/rutinas/WebhookPanel.j
 // (automations with a trigger), encargos (standing orders a bot keeps in mind) and
 // recordatorios por tema (intents: «cuando se hable de X, recuérdame Y»).
 
-const INK = "#12131A";
-const MUTED = "#4A4D57";
+const INK = C.text;
+const MUTED = C.text2;
 
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 const low = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
@@ -83,10 +84,10 @@ function whereLabel(where, missions) {
 }
 
 const OUTS = [
-  { id: "hoy", label: "te lo deja en Inicio", title: "Te lo deja en Inicio", desc: "Lo verás al abrir Colmena", glyph: "☀", tint: "#FFF4D1", notify: "resultado", prompt: "" },
-  { id: "correo", label: "te lo manda por correo", title: "Te lo manda por correo", desc: "Antes de enviarlo te pide permiso", glyph: "@", tint: "#EAF0FF", notify: "resultado", prompt: "Cuando acabes, mándame el resultado por correo." },
-  { id: "archivo", label: "lo guarda en la Biblioteca", title: "Lo guarda en la Biblioteca", desc: "Sin avisarte; lo buscas cuando quieras", glyph: "▤", tint: "#EAF6F0", notify: "fallo", prompt: "Guarda el resultado como un archivo, sin avisarme salvo que algo falle." },
-  { id: "ok", label: "te pide OK antes de hacer nada", title: "Te pide OK antes de nada", desc: "Te llega a Inicio como algo que te toca", glyph: "✓", tint: "#FFF4D1", notify: "siempre", prompt: "Antes de hacer nada que cambie algo, prepáralo y pídeme el OK." },
+  { id: "hoy", label: "te lo deja en Inicio", title: "Te lo deja en Inicio", desc: "Lo verás al abrir Colmena", glyph: "☀", tint: C.honeySoft, notify: "resultado", prompt: "" },
+  { id: "correo", label: "te lo manda por correo", title: "Te lo manda por correo", desc: "Antes de enviarlo te pide permiso", glyph: "@", tint: "var(--c-accent-soft)", notify: "resultado", prompt: "Cuando acabes, mándame el resultado por correo." },
+  { id: "archivo", label: "lo guarda en la Biblioteca", title: "Lo guarda en la Biblioteca", desc: "Sin avisarte; lo buscas cuando quieras", glyph: "▤", tint: "var(--c-ok-soft)", notify: "fallo", prompt: "Guarda el resultado como un archivo, sin avisarme salvo que algo falle." },
+  { id: "ok", label: "te pide OK antes de hacer nada", title: "Te pide OK antes de nada", desc: "Te llega a Inicio como algo que te toca", glyph: "✓", tint: C.honeySoft, notify: "siempre", prompt: "Antes de hacer nada que cambie algo, prepáralo y pídeme el OK." },
 ];
 
 const GENERIC_IDEAS = [
@@ -106,7 +107,7 @@ const EVENT_TYPES = ["correo", "archivo", "evento", "sala", "hoja", "webhook"];
 // «Cuando …» of a webhook trigger, as server/triggers.mjs words it.
 const HOOK_WHEN = { github_pr: "se abra una pull request en GitHub", github_check: "falle una comprobación en GitHub", sentry: "aparezca un error nuevo en Sentry" };
 const FILTERS = [["todas", "Todas"], ["hora", "Por horario"], ["algo", "Cuando pasa algo"], ["recordatorio", "Recordatorios"], ["encargo", "Tareas fijas"]];
-const sel = (on) => (on ? INK : "rgba(18,19,26,.1)");
+const sel = (on) => (on ? INK : alpha(.1));
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
 
 /** «hoy 17:00», «mañana 9:00», «lunes 9:00», «12 nov». */
@@ -161,7 +162,7 @@ export default function RutinasV2() {
   const editingOrder = editing ? orderList.find((o) => o.id === editing) : null;
 
   return (
-    <Shell active="trabajo">
+    <Shell active="trabajo" background="var(--c-app)">
       <main style={trabajoMain()}>
         <TrabajoHeader tab="rutinas" action={{ label: "Nueva rutina", onClick: openNew }} />
         {open ? <RoutineBuilder team={team} skills={skills} missions={missions} initialWhat={query.texto || ""} initialWho={query.bot || null} onClose={() => setOpen(false)} onSaved={(id) => openChange(id, "when")} /> : null}
@@ -169,10 +170,10 @@ export default function RutinasV2() {
 
         <section aria-labelledby="act-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
-            <h2 id="act-t" style={{ margin: "0 10px 0 0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Tus rutinas</h2>
+            <h2 id="act-t" style={{ margin: "0 10px 0 0", font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>Tus rutinas</h2>
             {FILTERS.map(([id, label]) => {
               const on = filter === id;
-              return <button key={id} type="button" aria-pressed={on} onClick={() => setFilter(id)} style={{ height: "34px", padding: "0 13px", border: 0, borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{id === "todas" ? `${label} · ${rows.length}` : label}</button>;
+              return <button key={id} type="button" aria-pressed={on} onClick={() => setFilter(id)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{id === "todas" ? `${label} · ${rows.length}` : label}</button>;
             })}
           </div>
           {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{act.error}</p> : null}
@@ -181,21 +182,21 @@ export default function RutinasV2() {
           {filter === "encargo" && !orderForm && !editingOrder ? (
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "var(--c-chip)", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
               <span style={{ flex: "1 1 320px", color: "var(--c-text-2)" }}>Una tarea fija es algo que un bot atiende siempre que haga falta, con sus límites claros, como registrar las facturas que lleguen.</span>
-              <button type="button" onClick={() => setOrderForm(true)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>Nueva tarea fija</button>
+              <button type="button" onClick={() => setOrderForm(true)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>Nueva tarea fija</button>
             </div>
           ) : null}
           {orderForm ? <OrderForm team={team} onClose={() => setOrderForm(false)} /> : null}
           {editingOrder ? <OrderForm key={editingOrder.id} team={team} initial={editingOrder} onClose={() => setEditing(null)} /> : null}
 
-          {loading && !list.length ? <div style={{ height: "88px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+          {loading && !list.length ? <div style={{ height: "88px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
           {!loading && !rows.length && !open ? (
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px", padding: "22px", borderRadius: "var(--r-2xl)", background: "var(--c-card)" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px", padding: "22px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
               <span style={{ flex: "1 1 300px", fontSize: "var(--t-body)", lineHeight: 1.5 }}>Aún no hay rutinas. Empieza por algo que repites cada semana.</span>
-              <button type="button" onClick={openNew} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>Nueva rutina</button>
+              <button type="button" onClick={openNew} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>Nueva rutina</button>
             </div>
           ) : null}
           {list.length ? (
-            <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)" }}>
+            <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
               {list.map((r, i) => <RoutineRow key={r.key} r={r} first={i === 0} busy={act.busy} />)}
             </div>
           ) : !loading && rows.length ? <p style={{ margin: 0, padding: "16px 4px", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{{ hora: "Ninguna rutina por horario.", algo: "Ninguna rutina que salte cuando pasa algo.", recordatorio: "Sin recordatorios por tema.", encargo: "Sin tareas fijas." }[filter]}</p> : null}
@@ -217,7 +218,7 @@ function ruleRow(a, bot, act, missions, openChange) {
   const stopped = !a.enabled && !!a.stoppedBy;
   const meta = (blocked || stopped) && a.error ? a.error
     : [a.nextRun && a.enabled ? "Próxima: " + when(a.nextRun) : !TIME_TYPES.includes(type) ? a.trigger?.sentence || a.subtitle : null, a.lastRun ? "última: " + ago(a.lastRun) : null, where !== "nueva" ? whereLabel(where, missions) : null].filter(Boolean).join(" · ") || a.subtitle || "";
-  const status = stopped && a.stoppedBy === "loop" ? ["Parada: te necesita", "#FFC93C", INK] : !a.enabled ? ["En pausa", "#F1F1EC", MUTED] : account ? ["Falta la cuenta de IA", "#FFC93C", INK] : app ? ["Falta una app", "#FFC93C", INK] : blocked ? ["Atascada", "#FBE9EA", "#B4232A"] : a.state === "running" ? ["En marcha", "#EEF0F4", "#1F4FD1"] : null;
+  const status = stopped && a.stoppedBy === "loop" ? ["Parada: te necesita", C.honey, C.honeyInk] : !a.enabled ? ["En pausa", C.chip, MUTED] : account ? ["Falta la cuenta de IA", C.honey, C.honeyInk] : app ? ["Falta una app", C.honey, INK] : blocked ? ["Atascada", C.errorSoft, C.error] : a.state === "running" ? ["En marcha", C.chip, C.accentInk] : null;
   const id = encodeURIComponent(a.id);
   return {
     key: "a:" + a.id, f: TIME_TYPES.includes(type) ? "hora" : "algo", bot, work: a.state === "running", text: a.name, meta, status, on: a.enabled,
@@ -244,7 +245,7 @@ function orderRow(o, bot, automations, act, setEditing) {
   ].filter(Boolean).join(" · ");
   return {
     key: "o:" + o.id, f: "encargo", bot, text: `${bot?.name || "Un bot"} se encarga: ${low(o.what)}`, meta,
-    status: o.expired ? ["Terminado", "#F1F1EC", MUTED] : !o.active ? ["En pausa", "#F1F1EC", MUTED] : null, on: o.active && !o.expired,
+    status: o.expired ? ["Terminado", C.chip, MUTED] : !o.active ? ["En pausa", C.chip, MUTED] : null, on: o.active && !o.expired,
     label: (o.active ? "Pausar: " : "Reanudar: ") + o.title,
     toggle: () => act.act(() => patch(`/standing-orders/${id}`, { active: !o.active })),
     menu: [
@@ -264,7 +265,7 @@ function intentRow(r, atlas, missions, act) {
     key: "i:" + r.id, f: "recordatorio", bot: atlas,
     text: <>{"Cuando se hable de "}<strong style={{ fontWeight: 600 }}>{r.keywords.join(", ")}</strong>{", recuérdame "}{r.remind.replace(/\.$/, "")}{"."}</>,
     meta: ["Recordatorio", room ? "solo en #" + room : "en cualquier sala o chat", said].join(" · "),
-    status: expired ? ["Caducado", "#F1F1EC", MUTED] : !r.active ? ["En pausa", "#F1F1EC", MUTED] : maxed ? ["Ya lo recordó", "#E3F4EC", "#0B6B4A"] : null,
+    status: expired ? ["Caducado", C.chip, MUTED] : !r.active ? ["En pausa", C.chip, MUTED] : maxed ? ["Ya lo recordó", C.okSoft, C.okInk] : null,
     on: r.active && !maxed && !expired, label: (r.active ? "Pausar" : "Reactivar") + " este recordatorio",
     toggle: () => act.act(() => patch(`/intents/${id}`, { active: !(r.active && !maxed) })),
     menu: [["Borrar", () => later({ id: "intent:" + r.id, keys: ["intent:" + r.id], text: "Recordatorio borrado", error: "No se pudo borrar el recordatorio", run: () => act.act(() => del(`/intents/${id}`)) })]],
@@ -282,15 +283,15 @@ function RoutineRow({ r, first, busy }) {
         <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{r.meta}</span>
       </span>
       {r.status ? <span style={{ flex: "none", height: "26px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: r.status[1], color: r.status[2], fontSize: "var(--t-meta)", fontWeight: 600 }}>{r.status[0]}</span> : null}
-      <button type="button" role="switch" aria-checked={on} aria-label={r.label} disabled={busy} onClick={r.toggle} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: on ? INK : "#8A8D96", cursor: busy ? "wait" : "pointer", transition: "background .2s ease" }}>
-        <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: on ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s ease" }} />
+      <button type="button" role="switch" aria-checked={on} aria-label={r.label} disabled={busy} onClick={r.toggle} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: on ? INK : C.text4, cursor: busy ? "wait" : "pointer", transition: "background .2s ease" }}>
+        <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: on ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: C.card, boxShadow: "var(--c-shadow-lift)", transition: "left .2s ease" }} />
       </button>
       <span style={{ position: "relative", flex: "none" }}>
         <button type="button" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((v) => !v)} style={{ width: "34px", height: "34px", padding: 0, border: 0, borderRadius: "var(--r-md)", background: menu ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}>···</button>
         {menu ? (
           <>
             <button type="button" aria-label="Cerrar el menú" onClick={() => setMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 15, border: 0, background: "transparent", cursor: "default" }} />
-            <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 22, minWidth: "220px", padding: "6px", display: "flex", flexDirection: "column", gap: "2px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 18px 40px rgba(18,19,26,.2)", animation: "rise .2s ease-out" }}>
+            <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 22, minWidth: "220px", padding: "6px", display: "flex", flexDirection: "column", gap: "2px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)", animation: "rise .2s ease-out" }}>
               {r.menu.map(([label, fn]) => (
                 <button key={label} type="button" role="menuitem" onClick={() => { setMenu(false); fn(); }} style={{ minHeight: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", textAlign: "left", fontSize: "var(--t-ui)", cursor: "pointer", color: label === "Borrar" ? "var(--c-error)" : "var(--c-text)" }}>{label}</button>
               ))}
@@ -576,7 +577,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
   const homeList = b.where.startsWith("sala:") && !homes.some((m) => "sala:" + m.id === b.where) ? [...homes, ...missions.filter((m) => "sala:" + m.id === b.where)] : homes;
 
   return (
-    <section id="nueva" aria-labelledby="new-t" style={{ scrollMarginTop: "24px", display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+    <section id="nueva" aria-labelledby="new-t" style={{ scrollMarginTop: "24px", display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
         <h2 id="new-t" style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>{editing ? "Cambiar la rutina" : "Nueva rutina"}</h2>
         <span style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>
@@ -588,7 +589,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
         {tokens.map(([before, label, k]) => (
           <span key={k}>
             <span>{before}</span>
-            <button type="button" onClick={() => setOpen(open === k ? null : k)} aria-expanded={open === k} style={{ padding: "0 8px", margin: "0 2px", border: 0, borderRadius: "var(--r-md)", background: open === k ? "#E3EBFF" : "var(--c-chip)", color: INK, font: "inherit", textDecoration: "underline", textDecorationColor: "rgba(18,19,26,.3)", textUnderlineOffset: "6px", cursor: "pointer" }}>{label}</button>
+            <button type="button" onClick={() => setOpen(open === k ? null : k)} aria-expanded={open === k} style={{ padding: "0 8px", margin: "0 2px", border: 0, borderRadius: "var(--r-md)", background: open === k ? C.accentSoft : "var(--c-chip)", color: INK, font: "inherit", textDecoration: "underline", textDecorationColor: alpha(.3), textUnderlineOffset: "6px", cursor: "pointer" }}>{label}</button>
           </span>
         ))}
         .
@@ -599,7 +600,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
           <div role="tablist" aria-label="Tipo de rutina" style={{ display: "inline-flex", alignSelf: "flex-start", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "var(--c-chip)" }}>
             {[["hora", "A una hora", "semana"], ["algo", "Cuando pase algo", "correo"]].map(([id, label, first]) => {
               const on = kind === id;
-              return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => { if (!on) { setWhen({ type: first }); setMsg(null); } }} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+              return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => { if (!on) { setWhen({ type: first }); setMsg(null); } }} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgb(var(--c-ink-rgb) / .1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
             })}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))", gap: "8px" }}>
@@ -669,7 +670,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .1)" }}>
             <input className="c-bare" type="text" aria-label="Otra cosa" value={b.custom} onChange={(e) => setB((x) => ({ ...x, custom: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") applyCustom(); }} placeholder="Otra cosa: escríbelo con tus palabras" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "var(--t-body)" }} />
-            <button type="button" onClick={applyCustom} disabled={!b.custom.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: b.custom.trim() ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .08)", color: b.custom.trim() ? "var(--c-btn-text)" : "#8A8D96" }}>Usar</button>
+            <button type="button" onClick={applyCustom} disabled={!b.custom.trim()} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: b.custom.trim() ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .08)", color: b.custom.trim() ? "var(--c-btn-text)" : C.text4 }}>Usar</button>
           </div>
         </div>
       ) : null}
@@ -704,7 +705,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
       {conflict || changedElsewhere ? (
         <div role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 16px", borderRadius: "var(--r-lg)", background: "var(--c-chip)", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
           <span style={{ flex: "1 1 300px" }}>Esta rutina ha cambiado mientras la editabas. Para no pisar esos cambios, ábrela otra vez con lo último y vuelve a hacer los tuyos.</span>
-          <button type="button" onClick={onReload} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>Ver lo último</button>
+          <button type="button" onClick={onReload} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>Ver lo último</button>
         </div>
       ) : null}
       <span role="status" style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: msg?.error || (act.error && !conflict) ? "var(--c-error)" : "var(--c-text-2)" }}>
@@ -713,8 +714,8 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
       </span>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", paddingTop: "4px" }}>
         <span style={{ flex: "1 1 260px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Aunque la rutina diga otra cosa, enviar fuera, pagar, publicar y borrar siempre te preguntan.</span>
-        <button type="button" onClick={onTest} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: 500, cursor: act.busy ? "wait" : "pointer" }}>{savedId ? "Probar otra vez" : "Probar ahora"}</button>
-        <button type="button" onClick={onActivate} disabled={act.busy || (editing && (conflict || changedElsewhere))} style={{ height: "44px", padding: "0 22px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: act.busy ? "wait" : "pointer", opacity: editing && (conflict || changedElsewhere) ? 0.5 : 1 }}>{editing ? "Guardar cambios" : "Activar"}</button>
+        <button type="button" onClick={onTest} disabled={act.busy} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: act.busy ? "wait" : "pointer" }}>{savedId ? "Probar otra vez" : "Probar ahora"}</button>
+        <button type="button" onClick={onActivate} disabled={act.busy || (editing && (conflict || changedElsewhere))} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: act.busy ? "wait" : "pointer", opacity: editing && (conflict || changedElsewhere) ? 0.5 : 1 }}>{editing ? "Guardar cambios" : "Activar"}</button>
       </div>
     </section>
   );
@@ -748,7 +749,7 @@ function OrderForm({ team, initial, onClose }) {
   });
   const label = (text) => <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: "var(--c-text-2)" }}>{text}</span>;
   return (
-    <section aria-labelledby="of-t" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "24px 26px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+    <section aria-labelledby="of-t" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "24px 26px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
       <h2 id="of-t" style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>{initial ? "Cambiar la tarea fija" : "Nueva tarea fija"}</h2>
       <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {label("Nombre de la tarea fija")}
@@ -770,8 +771,8 @@ function OrderForm({ team, initial, onClose }) {
       <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Aunque la tarea fija diga otra cosa, enviar algo fuera, mover dinero, borrar archivos e instalar programas siempre te preguntan.</span>
       {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{act.error}</p> : null}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-        <button type="button" onClick={onClose} style={{ height: "42px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: 500 }}>Cancelar</button>
-        <button type="button" onClick={save} disabled={!ready || act.busy} style={{ height: "42px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", cursor: ready ? "pointer" : "default", fontSize: "var(--t-body)", fontWeight: 600, background: ready ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .08)", color: ready ? "var(--c-btn-text)" : "#8A8D96" }}>{initial ? "Guardar cambios" : "Guardar tarea fija"}</button>
+        <button type="button" onClick={onClose} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500 }}>Cancelar</button>
+        <button type="button" onClick={save} disabled={!ready || act.busy} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", cursor: ready ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: ready ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .08)", color: ready ? "var(--c-btn-text)" : C.text4 }}>{initial ? "Guardar cambios" : "Guardar tarea fija"}</button>
       </div>
     </section>
   );
@@ -808,14 +809,14 @@ function ReminderForm() {
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <span role="status" style={{ fontSize: "var(--t-meta)", color: act.error ? "var(--c-error)" : touched && !ready ? "var(--c-text)" : "var(--c-text-3)" }}>{act.error || (touched && !ready ? "Escribe al menos una palabra o frase en cada lado." : "Palabras o frases separadas por comas.")}</span>
-        <button type="button" onClick={add} disabled={!ready || act.busy} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: ready ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: ready ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .08)", color: ready ? "var(--c-btn-text)" : "#8A8D96" }}>Añadir</button>
+        <button type="button" onClick={add} disabled={!ready || act.busy} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", cursor: ready ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: ready ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .08)", color: ready ? "var(--c-btn-text)" : C.text4 }}>Añadir</button>
       </div>
     </section>
   );
 }
 function ReminderSample({ sample, atlas }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 20px", borderRadius: "var(--r-xl)", background: "rgba(255,255,255,.55)" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 20px", borderRadius: "var(--r-xl)", background: "var(--c-sunken)" }}>
       <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: "var(--c-text-3)" }}>Así aparece en una sala</span>
       <div style={{ display: "grid", gridTemplateColumns: "24px 1fr", gap: "12px", alignItems: "start" }}>
         {atlas ? <BotPresence bot={atlas} size={22} /> : <span />}
