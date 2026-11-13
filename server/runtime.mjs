@@ -1129,7 +1129,8 @@ export class Runtime {
               receipt = effect
                 ? finishEffect(this.store, receiptId, result, { ms: Date.now() - began, stored })
                 : this.store.put("receipts", { id: receiptId, tool: call.name, status: RECEIPT.done, result: stored, ms: Date.now() - began, at: now() });
-              try { bumpLearningCounter(this.store, bot.id, "toolCalls"); } catch {}
+              // A turn for another person's request teaches the bot nothing (learning.mjs forOtherStep).
+              if (!this.forOther(step)) try { bumpLearningCounter(this.store, bot.id, "toolCalls"); } catch {}
               if (READ_TOOLS.has(call.name) && !result?.error)
                 this.store.patch("steps", step.id, { reads: (this.store.get("steps", step.id).reads || 0) + 1 });
               if (result?.error) looping ||= this.countFailure(step.id, call, result.error);

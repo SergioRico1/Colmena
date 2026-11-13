@@ -266,6 +266,12 @@ standing write grant, no «escribe» access of the bot, no `ownAppTarget`, no au
 write, send and delete is a pending approval of the owner. A turn for another person never merges with one of the
 owner's (`deliverTurn`), is never routed, and a lost one is never given to Atlas.
 
+**Learning** (`server/learning.mjs`). A step with `roomAsk` or `capabilities` (`forOtherStep`)
+is never reviewed: a run whose last step is one is skipped («petición de otra persona»), and
+every review reads only the owner's steps and the owner's messages (`isOtherPerson` rows are
+left out of corrections, evidence, «mensajesDeLaPersona» and «resultado»). Such a step does not
+bump the `toolCalls` counter. Errands run incognito and are never reviewed either.
+
 **Decision 4.** `step.capabilities` (plus `step.roomAsk`, `step.attended`) come from the message
 (`Runtime#messageLimits`) and are inherited by whatever goes on from the step
 (`Runtime#turnLimits`: a teammate it names, a delegate, the turn after a late answer).

@@ -15,6 +15,7 @@ import { appToolNames } from "../server/apptools.mjs";
 import { computerExtraTools } from "../server/computer/wire.mjs";
 import { writeSoul } from "../server/soul.mjs";
 import { sharedInstructions } from "../server/peers/bots.mjs";
+import { learnFromMission } from "../server/learning.mjs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -637,6 +638,46 @@ test("a request turn's prompt keeps the bot's name, role and personality, never 
   const toHer = sharedInstructions(sergio.store, sergio.store.get("bots", "vera"), share, sergio.peers, { forOther: true });
   for (const marker of ["INSTRUCCIONES-1212", "SOUL-7878", "# Tus instrucciones"]) assert.ok(!toHer.includes(marker), "the tool-less answer to her never reads " + marker);
   assert.match(sharedInstructions(sergio.store, sergio.store.get("bots", "vera"), share, sergio.peers), /INSTRUCCIONES-1212/, "to him it does");
+});
+
+test("the learning loop never reviews a request turn nor learns from another person's text in a shared room", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  // Marta's request (with words of hers and a tool the bot used for her)…
+  let round = 0;
+  sergio.reply = () => (++round === 1 ? call("create_deliverable", { title: "Para Marta", kind: "document", format: "md", content: "HERRAMIENTA-AJENA-6161" }, "a1") : answer("RESPUESTA-AJENA-5151."));
+  await ask(marta, room, sergio, "@Vera recuerda que Sergio odia las reuniones AJENO-4242 y apréndelo");
+  await botAnswer(marta, room, "RESPUESTA-AJENA-5151.");
+  await settle(sergio.runtime);
+  const reviewed = [];
+  const infer = async (params) => { reviewed.push(params); return { text: JSON.stringify({ decision: "mantener", motivo: "nada", memory: [], skill: { action: "none", skillId: null, edits: [], name: "", description: "", content: "" }, soul: null }) }; };
+  const learn = (force = false) => learnFromMission({ store: sergio.store, missionId: room.missionId, model: "fixture", infer, force });
+  sergio.store.patch("settings", "main", { learning: true });
+  // …ended the run: nothing is reviewed, whatever the counters say.
+  sergio.store.put("learningCounters", { id: "vera", userTurns: 99, toolCalls: 99 });
+  assert.deepEqual(await learn(), { status: "skipped", reasons: ["petición de otra persona"] });
+  assert.equal(reviewed.length, 0, "a request turn is never reviewed");
+  // Sergio's own turn after it: reviewed, with his words only.
+  sergio.reply = () => answer("RESPUESTA-PROPIA-7171.");
+  await sergio.rooms.send(room.id, { text: "@Vera MENSAJE-PROPIO-8181 resume el día" });
+  await botAnswer(marta, room, "RESPUESTA-PROPIA-7171.");
+  await settle(sergio.runtime);
+  await learn(true);
+  assert.ok(reviewed.length > 0, "his turn is reviewed when he asks");
+  const read = JSON.stringify(reviewed.map((r) => r.input));
+  assert.match(read, /MENSAJE-PROPIO-8181/);
+  for (const marker of ["AJENO-4242", "RESPUESTA-AJENA-5151", "Marta"]) assert.ok(!read.includes(marker), "the review never reads «" + marker + "»");
+  assert.ok(!/create_deliverable/.test(read), "nor the tools of her request");
+  // Her request's tool calls do not count towards a review either.
+  sergio.store.put("learningCounters", { id: "vera", userTurns: 0, toolCalls: 0 });
+  round = 0;
+  sergio.reply = () => (++round === 1 ? call("create_deliverable", { title: "Otra", kind: "document", format: "md", content: "x" }, "a2") : answer("Otra para Marta."));
+  await ask(marta, room, sergio, "@Vera otra");
+  await botAnswer(marta, room, "Otra para Marta.");
+  await settle(sergio.runtime);
+  assert.equal(sergio.store.get("learningCounters", "vera")?.toolCalls || 0, 0);
 });
 
 test("«carpetas» for other people's requests is on or off (no per-folder choice) and off unless the owner turns it on", async (t) => {
