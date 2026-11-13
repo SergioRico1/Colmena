@@ -4,18 +4,19 @@
 // action in a step («Nora leyó 4 páginas web»), newest first, with a technical line for
 // expert mode («web_fetch ×4 · ine.es → no responde»). Kept apart so it can be tested.
 import { isSala } from "../../../lib/rooms.js";
+import { C } from "../../../lib/theme.js";
 
 // Filters of the board: Todo · Pidió permiso · Leyó y calculó · Escribió · Envió fuera · Errores.
 export const FILTERS = [["todo", "Todo"], ["permiso", "Pidió permiso"], ["leer", "Leyó y calculó"], ["escribir", "Escribió"], ["enviar", "Envió fuera"], ["error", "Errores"]];
 
 // Status of a row → its words and colours (the board's S map, plus «Descartado»).
 export const STATUS = {
-  ok: { label: "Hecho", bg: "#E3F4EC", ink: "#0B6B4A" },
-  wait: { label: "Espera tu OK", bg: "#FFC93C", ink: "#12131A" },
-  run: { label: "En curso", bg: "#EEF0F4", ink: "#1F4FD1" },
-  unk: { label: "Sin confirmar", bg: "#F1F1EC", ink: "#4A4D57" },
-  err: { label: "Error", bg: "#FBE9EA", ink: "#B4232A" },
-  off: { label: "Descartado", bg: "#F1F1EC", ink: "#4A4D57" },
+  ok: { label: "Hecho", bg: C.okSoft, ink: C.okInk },
+  wait: { label: "Espera tu OK", bg: C.honey, ink: C.honeyInk },
+  run: { label: "En curso", bg: C.chip, ink: C.accentInk },
+  unk: { label: "Sin confirmar", bg: C.chip, ink: C.text2 },
+  err: { label: "Error", bg: C.errorSoft, ink: C.error },
+  off: { label: "Descartado", bg: C.chip, ink: C.text2 },
 };
 
 const SEND = /send|post_?message|publish|reply|forward|invite|transfer|pay|tweet|share|upload|create_event|chat_post/i;

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { BotPresence } from "../../v2/Presence.jsx";
 import { formatTokens } from "../../settings/format.jsx";
 import { weekRange, weekSummary } from "../../../lib/week.js";
+import { C } from "../../../lib/theme.js";
 
 // «Tu semana con el equipo» (it lived at the foot of Inicio; now in Actividad, where what the
 // team did is told): what the last seven days were and what comes, once per week («Leído»).
@@ -13,17 +14,17 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
   const week = useMemo(() => weekSummary({ missions, approvals, skills, goals, artifacts }), [missions, approvals, skills, goals, artifacts]);
   if (dismissed || (!week.done && !week.approved && !week.skills)) return null;
   const spend = usage?.percent != null ? { n: usage.percent + " %", label: "del gasto del mes" } : { n: formatTokens(usage?.monthTokens || 0), label: "tokens este mes" };
-  const atlas = bots.find((b) => b.id === "atlas") || { shape: "hex", color: "#12131A" };
+  const atlas = bots.find((b) => b.id === "atlas") || { shape: "hex", color: C.text };
   const stat = (value, label) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,.08)" }}>
-      <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{value}</span>
-      <span style={{ fontSize: "var(--t-meta)", color: "#B8BBC4" }}>{label}</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "color-mix(in srgb, var(--c-btn-text) 8%, transparent)" }}>
+      <span style={{ font: "600 var(--t-read)/1.3 'Geist', sans-serif", fontVariantNumeric: "tabular-nums" }}>{value}</span>
+      <span style={{ fontSize: "var(--t-meta)", color: C.text4 }}>{label}</span>
     </div>
   );
   const list = (head, items) => (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", color: "#B8BBC4" }}>{head}</span>
-      <ul style={{ margin: "0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#E6E7EC" }}>
+      <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", color: C.text4 }}>{head}</span>
+      <ul style={{ margin: "0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-body)", lineHeight: "1.5", color: C.line }}>
         {items.map((t, i) => <li key={i}>{t}</li>)}
       </ul>
     </div>
@@ -36,10 +37,10 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
           <BotPresence bot={atlas} size={26} state="rest" />
           <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
             <h2 id="wk-t" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Tu semana con el equipo"}</h2>
-            <span style={{ fontSize: "var(--t-meta)", color: "#B8BBC4" }}>{weekRange(week.from, week.to) + " · te lo resume " + (atlas.name || "Atlas")}</span>
+            <span style={{ fontSize: "var(--t-meta)", color: C.text4 }}>{weekRange(week.from, week.to) + " · te lo resume " + (atlas.name || "Atlas")}</span>
           </div>
         </div>
-        <button type="button" onClick={() => { try { localStorage.setItem(key, "1"); } catch {} setDismissed(true); }} style={{ ...pill, border: "0", background: "rgba(255,255,255,.1)", color: "#FFFFFF", cursor: "pointer" }}>{"Leído"}</button>
+        <button type="button" onClick={() => { try { localStorage.setItem(key, "1"); } catch {} setDismissed(true); }} style={{ ...pill, border: "0", background: "color-mix(in srgb, var(--c-btn-text) 10%, transparent)", color: C.btnText, cursor: "pointer" }}>{"Leído"}</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "10px" }}>
         {stat(week.done, week.done === 1 ? "trabajo terminado" : "trabajos terminados")}
@@ -55,7 +56,7 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
       ) : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
         {week.skills ? <a href="/biblioteca/habilidades" style={{ ...pill, background: "var(--c-card)", color: "var(--c-text)" }}>{"Revisar las habilidades"}</a> : null}
-        <a href="/trabajo/objetivos" style={{ ...pill, background: "rgba(255,255,255,.1)", color: "#FFFFFF" }}>{"Ver objetivos"}</a>
+        <a href="/trabajo/objetivos" style={{ ...pill, background: "color-mix(in srgb, var(--c-btn-text) 10%, transparent)", color: C.btnText }}>{"Ver objetivos"}</a>
       </div>
     </section>
   );

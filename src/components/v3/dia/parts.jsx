@@ -1,5 +1,6 @@
 import BotFace from "../../BotFace.jsx";
 import { useUndoable } from "../../../lib/undoable.js";
+import { B } from "../../../lib/ui4.js";
 
 // Small pieces the «Tu día» screens share (design/V3Inicio, V3Actividad, V3Revisar): a bot as a
 // flat shape (the boards draw them without gloss at these sizes), the honey label of what
@@ -9,21 +10,21 @@ import { useUndoable } from "../../../lib/undoable.js";
 export function Shape({ bot, size = 20, anim = false, halo = false, style = null }) {
   const dot = <BotFace bot={bot} size={size} state={anim ? "work" : halo ? "wait" : null} decorative style={halo ? null : style} />;
   if (!halo) return dot;
-  return <span aria-hidden="true" style={{ flex: "none", width: size + 10 + "px", height: size + 10 + "px", margin: "-5px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxShadow: "inset 0 0 0 2px #FFC93C", ...style }}>{dot}</span>;
+  return <span aria-hidden="true" style={{ flex: "none", width: size + 10 + "px", height: size + 10 + "px", margin: "-5px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxShadow: "inset 0 0 0 2px var(--c-honey-ring)", ...style }}>{dot}</span>;
 }
 
 /** «Aprobar un envío», «Decidir»…: honey label, only for what needs you. */
 export function NeedLabel({ children }) {
-  return <span style={{ flex: "none", marginLeft: "auto", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-honey-soft)", color: "var(--c-honey-text)", fontSize: "var(--t-caption)", fontWeight: "600" }}>{children}</span>;
+  return <span style={{ flex: "none", marginLeft: "auto", height: "22px", padding: "0 8px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-honey)", color: "var(--c-honey-ink)", fontSize: "var(--t-caption)", fontWeight: "600" }}>{children}</span>;
 }
 
 /** The 10-second window of a send or decision, with «Deshacer». */
 export function UndoBar({ id, text = "Se envía en", onUndo, tail = "" }) {
   const { secs } = useUndoable(id);
   return (
-    <div role="status" style={{ flex: "1", display: "flex", alignItems: "center", gap: "14px", padding: "8px 8px 8px 18px", borderRadius: "var(--r-lg)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", animation: "fade .25s ease-out" }}>
+    <div role="status" style={{ flex: "1", display: "flex", alignItems: "center", gap: "14px", padding: "6px 6px 6px 14px", borderRadius: "var(--r-md)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", animation: "fade .25s ease-out" }}>
       <span style={{ flex: "1" }}>{`${text} ${secs} s${tail}`}</span>
-      <button type="button" onClick={onUndo} style={{ height: "34px", padding: "0 14px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{"Deshacer"}</button>
+      <button type="button" onClick={onUndo} style={{ height: "30px", padding: "0 12px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: "600", cursor: "pointer" }}>{"Deshacer"}</button>
     </div>
   );
 }
@@ -32,6 +33,13 @@ export const btn = {
   dark: { height: "40px", padding: "0 18px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: "600", cursor: "pointer", textDecoration: "none" },
   line: { height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-card)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .16)", color: "var(--c-text)", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer", textDecoration: "none" },
   text: { height: "40px", padding: "0 10px", border: "0", background: "transparent", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-text-2)", cursor: "pointer" },
+};
+
+/** The same three buttons in the v4 density (src/lib/ui4.js): the cards of what waits for you. */
+export const btn4 = {
+  dark: { ...B.primary, ...B.lg },
+  line: { ...B.secondary, ...B.lg },
+  text: { ...B.ghost, ...B.lg, fontWeight: 500 },
 };
 
 export const sectionTitle = { margin: "0", font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" };

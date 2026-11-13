@@ -20,6 +20,7 @@ Ligero: nunca incluye contenidos grandes (texto de artefactos, SKILL.md, SOUL).
     limits: { monthlyTokens: number|null, pauseAtLimit: bool, warnAt80: bool,
               planPauseAt?: 50..99|null },   // long work waits from this % of the AI plan (unset = 95, null = never)
     fallback: 'local'|'none',
+    setupHidden?: ['about'|'ai'|'apps'|'invite'|'all'],  // Inicio › «Para empezar»: «Ahora no» per step; 'all' = card closed
   },
   usage: { monthTokens, limitTokens|null, percent|null },
   paused: bool,                       // "Pausar a todo el equipo"

@@ -1,10 +1,11 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { FileText, X, Check as CheckGlyph } from "../../Icon.js";
-import { btn } from "./parts.jsx";
+import { btn4 as btn } from "./parts.jsx";
 import { freshCompletions } from "../../../lib/completion.js";
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { useStore } from "../../../lib/store.jsx";
+import { C } from "../../../lib/theme.js";
 
 // A visible end when work finishes (lib/completion.js): a calm card on Inicio and a line in
 // the conversation, for what finished while you were in the app. What was delivered, how long
@@ -46,8 +47,8 @@ export function useCompletions() {
 
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
 const Check = ({ size = 22 }) => (
-  <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F" }}>
-    <CheckGlyph size={size / 2} weight="bold" color="#FFFFFF" />
+  <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: C.ok }}>
+    <CheckGlyph size={size / 2} weight="bold" color={C.btnText} />
   </span>
 );
 const fileChip = { display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "34px", padding: "0 12px", borderRadius: "var(--r-md)", background: "var(--c-sunken)", fontSize: "var(--t-ui)", color: "var(--c-text)" };
@@ -85,7 +86,7 @@ export function CompletionCards() {
   return (
     <section aria-label="Terminado" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
       {list.map((s) => (
-        <article key={s.id + s.at} aria-label={`Terminado: ${s.title}`} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", animation: "rise .4s ease-out" }}>
+        <article key={s.id + s.at} aria-label={`Terminado: ${s.title}`} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-md)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .08)", animation: "rise .4s ease-out" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
             <Check />
             <div role="status" style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -121,7 +122,7 @@ export function CompletionNote({ missionId }) {
   const summary = useCompletions().find((s) => s.id === missionId) || null;
   if (!summary) return null;
   return (
-    <section role="status" aria-label="Terminado" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", animation: "rise .3s ease-out" }}>
+    <section role="status" aria-label="Terminado" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .08)", animation: "rise .3s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <Check size={20} />
         <span style={{ flex: "1", minWidth: "180px", fontSize: "var(--t-body)", lineHeight: "1.4" }}>
