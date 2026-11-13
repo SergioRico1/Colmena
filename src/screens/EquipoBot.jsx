@@ -160,7 +160,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
   });
   const duplicate = async () => { const copy = await act(() => post(`/bots/${encodeURIComponent(bot.id)}/duplicate`)); if (copy?.id) navigate(`/equipo/${copy.id}`); };
   const retire = () => later({ id: "bot:" + bot.id, keys: ["bot:" + bot.id], text: `${bot.name} sale del equipo`, ms: UNDO_MS, error: "No se pudo retirar", run: async () => { await act(() => patch(`/bots/${encodeURIComponent(bot.id)}`, { enabled: false })); navigate("/equipo"); } });
-  const tint = `color-mix(in srgb, ${color} 14%, #FFFFFF)`;
+  const tint = `color-mix(in srgb, ${color} 14%, var(--c-app))`;
 
   return (
     <Shell active="equipo" extraCss={MD_CSS}>
