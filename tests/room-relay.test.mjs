@@ -306,6 +306,24 @@ test("an approval that expires undecided ends the wait for the others, and close
   await until(() => lines(marta, other).includes("Vera no ha podido terminarlo"), "Marta lee que no pudo");
 });
 
+test("two statuses of a bot said in the same millisecond both reach the room, in order (a turn that ends as its approval expires)", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  const share = sergio.store.get("peerShares", room.id);
+  // The clock does not move between the two: as when sweepOwn closes the step («done») and then says «expired».
+  const frozen = sergio.peers.clock();
+  sergio.rooms.work.clock = () => frozen;
+  const from = sergio.out.length;
+  sergio.rooms.work.say(share, "vera", "done", { tools: 1, ms: 1000 });
+  sergio.rooms.work.say(share, "vera", "expired");
+  const said = sergio.out.slice(from).filter((o) => o.body.type === "room.status").map((o) => [o.body.state, o.body.at]);
+  assert.deepEqual(said.map(([state]) => state), ["done", "expired"]);
+  assert.ok(said[1][1] > said[0][1], "strictly later");
+  await until(() => lines(marta, room).includes("Vera no llegó a tener el OK de Sergio"), "Marta lee las dos");
+  assert.equal(marta.store.list("roomStatus").find((s) => s.bot === "vera")?.state, "expired");
+});
+
 test("a bot's answer that ends while the mailbox is unreachable still reaches the room, with what it made, also after a restart", async (t) => {
   const people = await world(t);
   let [sergio] = people;

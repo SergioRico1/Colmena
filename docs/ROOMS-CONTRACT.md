@@ -405,7 +405,8 @@ own loop guard does.
 
 - `room.status {share, bot, state, at, tools?, ms?}`: `bot` an id, `state` one of thinking,
   working, waiting, limited, done, declined, stopped, failed, throttled, expired; `at` the sender's clock
-  in ms; `tools`/`ms` integers, only with `done`. Built and accepted by `cleanStatus`, which
+  in ms, strictly increasing per (room, bot) on the sender (`RoomWork#say`: two said in the same
+  millisecond would tie, and a receiver keeps only a newer one); `tools`/`ms` integers, only with `done`. Built and accepted by `cleanStatus`, which
   copies those fields and nothing else. `thinking`/`working` are ephemeral (not kept by the
   mailbox, refreshed every 30 s to whoever is connected); the rest are queued like any message.
   Not remembered in `peerSeen`: a status older than the last one known is ignored. The newest

@@ -510,13 +510,19 @@ export class RoomWork {
   say(share, botId, state, extra = {}, { only = null } = {}) {
     const p = this.peers;
     if (!p || !share || share.leftAt || share.removedAt) return;
-    const status = cleanStatus({ bot: botId, state, at: this.clock(), ...extra }, this.clock());
+    const id = share.id + ":" + p.address + ":" + botId;
+    // Strictly later than the last one said of this bot here: the others keep only a status newer
+    // than the newest they heard, so two said in the same millisecond (a turn that ends as its
+    // approval expires: «done», then «expired») must not tie and lose the second.
+    const at = Math.max(this.clock(), ((this.saidAt ??= new Map()).get(id) || 0) + 1);
+    this.saidAt.set(id, at);
+    if (this.saidAt.size > 2000) this.saidAt.delete(this.saidAt.keys().next().value);
+    const status = cleanStatus({ bot: botId, state, at, ...extra }, at);
     if (!status) return;
     // A turn that used no tools ends without a summary: the answer is all there is to see.
     const quiet = status.state === "done" && !status.tools;
     this.keep(share, p.address, status, { quiet });
     const body = { type: "room.status", share: share.id, ...status };
-    const id = share.id + ":" + p.address + ":" + botId;
     if (LIVE.has(state)) {
       this.told.set(id, this.clock());
       // The first one reaches everybody; refreshes only whoever is connected.
