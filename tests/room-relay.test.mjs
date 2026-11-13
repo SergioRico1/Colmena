@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { answer, settle } from "./fixtures/runtime-fixture.mjs";
-import { ROOM_WORK } from "../server/room-work.mjs";
+import { ROOM_STATES, ROOM_WORK, cleanStatus, statusText } from "../server/room-work.mjs";
 import { countOf } from "../server/peers/service.mjs";
 import { addr, ask, botAnswer, card, friends, lines, pause, peerRows, rule, sharedRoom, until, world } from "./fixtures/people-world.mjs";
 
@@ -238,4 +238,70 @@ test("stopping a bot is said once to the room", async (t) => {
   await pause(400);
   assert.equal(stops().length, 2, "once more, once");
   assert.equal(sergio.store.list("roomAsks").at(-1).state, "stopped");
+});
+
+test("an approval that expires undecided ends the wait for the others, and closes the request it belonged to; a request left at work by a close is settled on start", async (t) => {
+  const people = await world(t);
+  let [sergio] = people;
+  const marta = people[1];
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  sergio.store.patch("settings", "main", { peerErrandTools: { web: true, carpetas: false, apps: true, ordenador: false } });
+  assert.ok(ROOM_STATES.includes("expired"));
+  assert.deepEqual([statusText("expired", { bot: "Vera", owner: "Sergio Rico" }), statusText("expired", { bot: "Vera", owner: "Sergio Rico", you: true })], ["Vera no llegó a tener el OK de Sergio", "No llegaste a dar el OK a Vera"]);
+  assert.deepEqual(Object.keys(cleanStatus({ bot: "vera", state: "expired", at: Date.now(), tools: 3, text: "enviar a ana@x.es" })).sort(), ["at", "bot", "state"]);
+  const send = (id) => ({ text: "", output: [{ type: "function_call", name: "apps_execute", arguments: JSON.stringify({ tool: "GMAIL_SEND_EMAIL", account: "acc", arguments_json: JSON.stringify({ recipient_email: "ana@lumbre.es", subject: "Informe", body: "Te lo paso." }) }), call_id: id }] });
+  const states = (p) => p.rooms.detail(room.id).activity.map((a) => a.state);
+  const old = () => new Date(Date.now() - 31 * 60000).toISOString();
+  // Marta's request needs a send: it waits for Sergio, and she reads so.
+  sergio.reply = ({ input }) => (input.some((x) => x.type === "function_call_output") ? answer("No se envió.") : send("s1"));
+  await ask(marta, room, sergio, "@Vera envía el informe a Ana");
+  const step = await until(() => sergio.store.where("steps", "missionId", sergio.rooms.must(room.id).missionId).find((s) => s.status === "waiting"), "el turno espera");
+  await until(() => states(marta).includes("waiting"), "Marta lee que espera");
+  // Half an hour passes and nobody decided.
+  const approvalId = step.id + ":s1";
+  sergio.store.patch("approvals", approvalId, { createdAt: old(), preparedAt: old() });
+  sergio.rooms.work.tick();
+  await until(() => lines(marta, room).includes("Vera no llegó a tener el OK de Sergio"), "Marta lee que no se aprobó");
+  await settle(sergio.runtime);
+  assert.deepEqual(states(marta).filter((x) => x === "waiting"), []);
+  assert.deepEqual(lines(sergio, room).filter((x) => /No llegaste/.test(x)), ["No llegaste a dar el OK a Vera"]);
+  const request = sergio.store.list("roomAsks")[0];
+  assert.deepEqual([request.state, sergio.store.get("approvals", approvalId).status, sergio.store.get("steps", step.id).status, sergio.effects], ["expired", "denied", "completed", []]);
+  assert.deepEqual(sergio.rooms.detail(room.id).asks, undefined, "nothing of it is left open");
+  await until(() => !["waiting", "running", "queued"].includes(sergio.store.get("missions", step.missionId).status), "la sala no se queda esperando");
+  const expired = sergio.out.filter((o) => o.body.type === "room.status" && o.body.state === "expired");
+  assert.deepEqual(expired.map((o) => Object.keys(o.body).sort()), [["at", "bot", "share", "state", "type"]]);
+  sergio.rooms.work.tick();
+  sergio.rooms.work.tick();
+  assert.equal(sergio.out.filter((o) => o.body.type === "room.status" && o.body.state === "expired").length, 1, "said once");
+  // A turn of his own that waits and expires: the others stop reading that it waits; the card stays his.
+  sergio.reply = ({ input }) => (input.some((x) => x.type === "function_call_output") ? answer("Hecho.") : send("s2"));
+  await sergio.rooms.send(room.id, { text: "@Vera prepara y manda el informe a quien toque" });
+  const own = await until(() => sergio.store.where("steps", "missionId", step.missionId).find((s) => s.status === "waiting"), "su turno espera");
+  await until(() => states(marta).includes("waiting"), "Marta lee que espera");
+  sergio.store.patch("approvals", own.id + ":s2", { createdAt: old(), preparedAt: old() });
+  sergio.rooms.work.tick();
+  await until(() => lines(marta, room).filter((x) => /no llegó a tener el OK/.test(x)).length === 2, "Marta lo lee otra vez");
+  assert.equal(sergio.store.get("approvals", own.id + ":s2").status, "pending");
+  // A request that was at work when Colmena closed and does not go on: settled on start.
+  const other = await sharedRoom(sergio, marta, "Otra sala");
+  sergio.reply = () => answer("Terminado.");
+  await ask(marta, other, sergio, "@Vera una cosa");
+  await botAnswer(marta, other, "Terminado.");
+  await settle(sergio.runtime);
+  const left = sergio.store.list("roomAsks").find((a) => a.shareId === other.id);
+  const missionId = sergio.rooms.must(other.id).missionId;
+  const last = sergio.store.where("steps", "missionId", missionId).at(-1);
+  sergio.store.patch("roomAsks", left.id, { state: "working", endedAt: null });
+  sergio.store.patch("steps", last.id, { status: "pending" }, { silent: true });
+  sergio.store.patch("missions", missionId, { status: "paused" });
+  sergio = await people.reopen(sergio);
+  sergio.rooms.work.tick();
+  assert.equal(sergio.store.get("roomAsks", left.id).state, "working", "it gets a moment to go on with its sala");
+  sergio.rooms.work.startedAt = Date.now() - ROOM_WORK.settleMs - 1000;
+  sergio.rooms.work.tick();
+  assert.equal(sergio.store.get("roomAsks", left.id).state, "failed");
+  await until(() => lines(marta, other).includes("Vera no ha podido terminarlo"), "Marta lee que no pudo");
 });

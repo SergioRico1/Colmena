@@ -322,7 +322,7 @@ own loop guard does.
 **What leaves (wire).** Besides the final answer (unchanged):
 
 - `room.status {share, bot, state, at, tools?, ms?}`: `bot` an id, `state` one of thinking,
-  working, waiting, limited, done, declined, stopped, failed, throttled; `at` the sender's clock
+  working, waiting, limited, done, declined, stopped, failed, throttled, expired; `at` the sender's clock
   in ms; `tools`/`ms` integers, only with `done`. Built and accepted by `cleanStatus`, which
   copies those fields and nothing else. `thinking`/`working` are ephemeral (not kept by the
   mailbox, refreshed every 30 s to whoever is connected); the rest are queued like any message.
@@ -348,6 +348,8 @@ hand-offs; at most 400 a room). Names come from the bots the owner announced, ne
 status. Live states are dropped after 90 s without a refresh, or shown as `away` while their
 owner is offline (up to 12 h); ended ones stay 2 minutes as the status; waiting/limited 7 days.
 `RoomWork#tick` (every 10 s) refreshes and sweeps.
+
+**Expiry and start** (`RoomWork#sweepOwn`, every tick, from the store). An own `waiting` status whose pending approvals of that bot have all expired (`approvalExpiresAt`) becomes `expired`; an approval of a step with `roomAsk` is denied (`decidedBy: "colmena"`), its step is completed as skipped and the request ends as `expired`. `ROOM_WORK.settleMs` (30 s) after start, a `roomAsks` still `working` whose sala is neither running nor waiting ends as `failed` (or `done` when no step of it is open). `roomAsks.state`: asked, working, done, declined, failed, stopped, expired.
 
 **Old peers.** They ignore `room.status` and `room.handoff` (the `room.*` dispatch falls through)
 and see final answers and files, as before. Their mention carries no `req`, so it gets the

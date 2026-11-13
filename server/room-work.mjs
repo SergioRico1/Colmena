@@ -26,17 +26,18 @@ import { createHash, randomUUID } from "node:crypto";
 import { stat } from "node:fs/promises";
 import { now } from "./store.mjs";
 import { isAutomated } from "./origin.mjs";
+import { approvalExpiresAt } from "./state.mjs";
 import { ERRAND_LIMITS, ERRAND_TOOLS_DEFAULT } from "./peers/errands.mjs";
 import { cleanBot } from "./peers/service.mjs";
 
 /** Every state a status can say. Nothing else travels, and nothing else is accepted. */
-export const ROOM_STATES = Object.freeze(["thinking", "working", "waiting", "limited", "done", "declined", "stopped", "failed", "throttled"]);
+export const ROOM_STATES = Object.freeze(["thinking", "working", "waiting", "limited", "done", "declined", "stopped", "failed", "throttled", "expired"]);
 /** Refreshed by the owner's Colmena while the step runs; stale without news. */
 const LIVE = new Set(["thinking", "working"]);
 /** Hold until something else is said (the owner decides, the plan renews). */
 const HELD = new Set(["waiting", "limited"]);
 /** Said once: a line in the conversation, and the status for a short while. */
-const ENDED = new Set(["done", "declined", "stopped", "failed", "throttled"]);
+const ENDED = new Set(["done", "declined", "stopped", "failed", "throttled", "expired"]);
 // How much other people's requests may make your computer work. Every request that reaches your
 // rule is a `roomAsks` record with the moment it came (`t`), so the counts hold across a restart.
 //  · perHour 6: one person in one room. A person working with your bot asks a handful of things
@@ -68,6 +69,7 @@ export const ROOM_WORK = Object.freeze({
   endedMs: 120000, // how long an ended status stays as the bot's status
   heldMs: 7 * 864e5, // «waiting» / «limited» with no news at all
   awayMs: 12 * 3600000, // «Sergio no está; Vera seguirá cuando vuelva»
+  settleMs: 30000, // after Colmena starts, how long a request that was at work may take to go on before it is closed
   handoffMs: 60000, // the same two bots are said to hand over once in this long
   lines: 400, // lines kept per room
   tools: 100000, ms: 30 * 864e5, // the most a summary may say
@@ -114,6 +116,7 @@ export function statusText(state, { bot, owner, you = false, tools = 0, ms = 0 }
     case "stopped": return you ? "Has parado a " + bot : o + " ha parado a " + bot;
     case "failed": return bot + " no ha podido terminarlo";
     case "throttled": return bot + " no atiende más peticiones por ahora";
+    case "expired": return you ? "No llegaste a dar el OK a " + bot : bot + " no llegó a tener el OK de " + o;
     case "away": return o + " no está; " + bot + " seguirá cuando vuelva";
     default: return bot;
   }
@@ -138,6 +141,7 @@ export class RoomWork {
   clock() { return this.rooms.getPeers?.()?.clock?.() ?? Date.now(); }
   log(message) { this.rooms.log(message); }
   start() {
+    this.startedAt = Date.now();
     if (this.runtime && typeof this.runtime.toolsForStep === "function") this.runtime.stepTools = (mission, step, bot) => this.tools(mission, step, bot);
     this.timer = setInterval(() => { try { this.tick(); } catch (error) { this.log(error.message); } }, 10000);
     this.timer.unref?.();
@@ -778,6 +782,7 @@ export class RoomWork {
   tick() {
     const p = this.peers;
     if (!p) return;
+    try { this.sweepOwn(); } catch (error) { this.log(error.message); }
     const t = this.clock();
     const rooms = new Set();
     for (const s of this.store.list("roomStatus")) {
@@ -796,6 +801,55 @@ export class RoomWork {
       const signature = JSON.stringify(this.activity(room).map((a) => [a.owner.address, a.bot.id, a.state, a.since]));
       if (this.shown.get(room.id) !== signature) this.announce(room);
     }
+  }
+  /**
+   * What your own bots were last said to be doing that is no longer so (every tick, read from
+   * what is stored, so it also holds after a restart):
+   *  · «espera el OK de…» for an approval that expired undecided (sends and changes in apps
+   *    expire after 30 minutes): the others read that it never got the OK. In a turn for
+   *    another person's request the approval is closed, the turn ends and so does the request;
+   *    in a turn of your own the card stays with you as expired.
+   *  · a request that was at work when Colmena closed and did not go on with its sala: it ends
+   *    as «no ha podido terminarlo» instead of staying at work for good.
+   */
+  sweepOwn() {
+    const p = this.peers;
+    for (const s of this.store.list("roomStatus")) {
+      if (s.owner !== p.address || s.state !== "waiting") continue;
+      const share = this.store.get("peerShares", s.shareId), room = this.rooms.ofShare(s.shareId);
+      if (!share || share.leftAt || share.removedAt || !room?.missionId) continue;
+      if (this.store.where("roomAsks", "shareId", share.id).some((a) => a.botId === s.bot && a.state === "asked")) continue;
+      const pending = this.store.where("approvals", "missionId", room.missionId).filter((a) => a.botId === s.bot && a.status === "pending" && !a.roomRequest && !a.roomShare);
+      const dead = pending.filter((a) => { const end = approvalExpiresAt(a); return !!end && Date.parse(end) <= Date.now(); });
+      if (!dead.length || dead.length < pending.length) continue;
+      for (const a of dead) this.expired(a);
+      this.say(share, s.bot, "expired");
+      this.announce(room);
+    }
+    if (Date.now() - (this.startedAt || 0) < ROOM_WORK.settleMs || this.settled) return;
+    this.settled = true;
+    for (const ask of this.store.list("roomAsks").filter((a) => a.state === "working")) {
+      const mission = ask.missionId ? this.store.get("missions", ask.missionId) : null;
+      const open = mission ? this.store.where("steps", "missionId", mission.id).filter((x) => x.roomAsk === ask.id && x.status !== "completed") : [];
+      if (mission && !open.length) { this.end(ask.id, "done"); continue; }
+      // Going on with its sala (running again, or waiting for you): it will say so itself.
+      if (mission && (this.runtime?.active?.has?.(mission.id) || ["queued", "running", "planning", "waiting"].includes(mission.status))) continue;
+      this.end(ask.id, "failed");
+      const share = this.store.get("peerShares", ask.shareId);
+      if (share) { this.say(share, ask.botId, "failed"); const room = this.rooms.ofShare(share.id); if (room) this.announce(room); }
+    }
+  }
+  /** An approval of a turn for another person's request that nobody decided in time: closed, and the request with it. */
+  expired(a) {
+    // (An approval of a connected app has no `stepId`: its id is «step:call».)
+    const step = this.store.get("steps", a.stepId || String(a.id).slice(0, String(a.id).lastIndexOf(":")));
+    if (!step?.roomAsk) return;
+    const close = () => this.store.patch("approvals", a.id, { status: "denied", decidedAt: now(), decidedBy: "colmena", resolution: "Caducó sin decidir" });
+    if (a.tool === "apps_execute" && this.runtime?.connections?.decide) void this.runtime.connections.decide(a.id, { decision: "denied" }).then(() => this.store.patch("approvals", a.id, { decidedBy: "colmena", resolution: "Caducó sin decidir" })).catch(close);
+    else close();
+    if (this.store.get("roomAsks", step.roomAsk)?.state === "working") this.end(step.roomAsk, "expired");
+    if (step.status !== "completed") this.store.patch("steps", step.id, { status: "completed", skipped: true, stalled: null, pending: [], completedAt: now() });
+    try { this.runtime?.wake?.(step.missionId); } catch (error) { this.log(error.message); }
   }
   /** What the store tells (server/room.mjs changed): your decision on a card, a hand-off, a sala that stopped. */
   changed({ kind, op, data }) {
