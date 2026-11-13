@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Check, Checks, MessageSquare, Pencil, RotateCw, SmilePlus, Trash2 } from "../Icon.js";
-import { MentionPill, PersonPill, QUICK, hhmm, messageParts, names } from "../v2/people/PeopleMessage.jsx";
+import { Check, Checks, Ellipsis, MessageSquare, RotateCw, SmilePlus } from "../Icon.js";
+import { MentionPill, PersonPill, QUICK, hhmm, messageMenu, messageParts, names, selectionInside } from "../v2/people/PeopleMessage.jsx";
+import { MenuButton, useContextMenu } from "../Menu.js";
 import { PeoplePile } from "../v2/people/PeerAvatar.jsx";
 import { copyRealSecrets, SecretText } from "./SecretText.jsx";
 import "../../styles/conversation.css";
@@ -28,15 +29,19 @@ export default function PeerMine({ m, botOf, shared, lastSeen = false, dm = fals
     try { await onEdit(m.id, value); setEditing(null); } catch (x) { onError(x.message); } finally { setSaving(false); }
   };
   const seen = m.seenBy?.length ? (dm ? "Visto" : "Visto por " + names(m.seenBy)) : null;
+  // One-click things on hover; «…» and a right-click open the message's menu (PeopleMessage › messageMenu).
+  const actions = (full) => messageMenu({ m, mine: true, onThread, onReactMore: () => setPicker(true), onEdit: () => setEditing(m.text), onDelete, full });
+  const ctx = useContextMenu((e) => (selectionInside(e) || editing !== null ? null : { label: "Tu mensaje", items: actions(true) }));
+  const [toolsOpen, setToolsOpen] = useState(false);
   return (
-    <div data-message-id={m.id} className={"msg-row v4-mine" + (continued ? " is-continued" : "")} style={{ background: "transparent" }}>
+    <div data-message-id={m.id} onContextMenu={ctx.onContextMenu} className={"msg-row v4-mine" + (continued ? " is-continued" : "")} style={{ background: "transparent" }}>
+      {ctx.menu}
       {m.deleted || editing !== null ? null : (
-        <span className="msg-actions" role="toolbar" aria-label="Acciones del mensaje">
+        <span className={"msg-actions" + (toolsOpen ? " is-open" : "")} role="toolbar" aria-label="Acciones del mensaje">
           {QUICK.map((e) => <button key={e} type="button" aria-label={"Reaccionar " + e} onClick={() => react(e)} style={{ ...tool, fontSize: "var(--t-read)", lineHeight: 1 }}>{e}</button>)}
           <button type="button" aria-label="Otra reacción" title="Otra reacción" onClick={() => setPicker((p) => !p)} style={tool}><SmilePlus size={16} /></button>
           {onThread ? <button type="button" aria-label="Responder en un hilo" title="Responder en un hilo" onClick={() => onThread(m)} style={tool}><MessageSquare size={16} /></button> : null}
-          {!m.local ? <button type="button" aria-label="Editar" title="Editar" onClick={() => setEditing(m.text)} style={tool}><Pencil size={15} /></button> : null}
-          <button type="button" aria-label="Borrar para todos" title="Borrar para todos" onClick={() => onDelete(m)} style={{ ...tool, color: "var(--c-error)" }}><Trash2 size={15} /></button>
+          <MenuButton label="Más acciones" menuLabel="Acciones de tu mensaje" items={actions(false)} placement="bottom-start" style={tool} onOpenChange={setToolsOpen}><Ellipsis size={16} /></MenuButton>
         </span>
       )}
       {editing !== null ? (
