@@ -1,13 +1,14 @@
 import { CircleHelp, Minus, TrendingDown, TrendingUp } from "../../Icon.js";
+import { C, alpha } from "../../../lib/theme.js";
 
 // «¿Le ayuda?» (verdicts.mjs): whether something a bot learned made its work better, measured
 // on the work that followed. Quiet by design: a small mark, the words only where there is room.
 
 const LOOK = {
-  ayudo: { Icon: TrendingUp, label: "Ayudó", color: "#0B5A3E", bg: "#E1F4EC" },
-  empeoro: { Icon: TrendingDown, label: "Empeoró", color: "#9A2F24", bg: "#FBE9E6" },
-  "sin-efecto": { Icon: Minus, label: "Sin efecto observado", color: "#5C606C", bg: "rgba(18,19,26,.06)" },
-  dudoso: { Icon: CircleHelp, label: "Dudoso", color: "#5C606C", bg: "rgba(18,19,26,.06)" },
+  ayudo: { Icon: TrendingUp, label: "Ayudó", color: C.okInk, bg: C.okSoft },
+  empeoro: { Icon: TrendingDown, label: "Empeoró", color: C.error, bg: C.errorSoft },
+  "sin-efecto": { Icon: Minus, label: "Sin efecto observado", color: C.text3, bg: alpha(.06) },
+  dudoso: { Icon: CircleHelp, label: "Dudoso", color: C.text3, bg: alpha(.06) },
 };
 const CONFIDENCE = { baja: "confianza baja", media: "confianza media", alta: "confianza alta" };
 

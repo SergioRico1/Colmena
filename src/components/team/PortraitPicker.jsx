@@ -79,7 +79,7 @@ export default function PortraitPicker({ bot, onClose, onSaved }) {
 
   return (
     <dialog ref={dialog} onClose={onClose} aria-labelledby="pp-t"
-      style={{ width: "min(560px, 94vw)", padding: 0, border: "0", borderRadius: "var(--r-3xl)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.5), 0 2px 6px rgba(18,19,26,.06)", background: "var(--c-card)", color: "var(--c-text)" }}>
+      style={{ width: "min(560px, 94vw)", padding: 0, border: "0", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)", background: "var(--c-card)", color: "var(--c-text)" }}>
       <header style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "20px 22px 12px" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
           <h2 id="pp-t" style={{ margin: 0, font: "700 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif" }}>{`Un retrato para ${bot.name}`}</h2>
@@ -90,13 +90,13 @@ export default function PortraitPicker({ bot, onClose, onSaved }) {
         <button type="button" className="rm-focus" aria-label="Cerrar" onClick={() => dialog.current.close()} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-md)", cursor: "pointer", color: "var(--c-text-2)" }}><X size={18} strokeWidth={2.2} aria-hidden="true" /></button>
       </header>
       <div style={{ padding: "6px 22px 18px", display: "flex", flexDirection: "column", gap: "14px" }}>
-        {error ? <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "var(--c-error-soft)", border: "1px solid #F1B5B7", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</p> : null}
+        {error ? <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "var(--c-error-soft)", border: "1px solid color-mix(in srgb, var(--c-error) 35%, transparent)", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</p> : null}
         <div role={sheet ? "radiogroup" : undefined} aria-label={sheet ? "Opciones de retrato" : undefined}
           style={{ position: "relative", aspectRatio: "1 / 1", borderRadius: "var(--r-lg)", overflow: "hidden", background: "var(--c-sunken)", border: "1px solid var(--c-line)", display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr" }}>
           {sheet ? <img src={sheet} alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : null}
           {[0, 1, 2, 3].map((n) => sheet ? (
             <button key={n} type="button" role="radio" aria-checked={pick === n ? "true" : "false"} aria-label={`Opción ${n + 1}, ${CORNERS[n]}`} onClick={() => setPick(n)} className="rm-focus"
-              style={{ position: "relative", padding: 0, border: 0, cursor: "pointer", background: pick !== null && pick !== n ? "rgba(255,255,255,.55)" : "transparent", boxShadow: pick === n ? "inset 0 0 0 4px #12131A, inset 0 0 0 7px #FFC93C" : "none", transition: "background .15s ease" }}>
+              style={{ position: "relative", padding: 0, border: 0, cursor: "pointer", background: pick !== null && pick !== n ? "color-mix(in srgb, var(--c-card) 55%, transparent)" : "transparent", boxShadow: pick === n ? "inset 0 0 0 4px var(--c-text), inset 0 0 0 7px var(--c-honey)" : "none", transition: "background .15s ease" }}>
               <span style={{ position: "absolute", top: "8px", left: "8px", width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: pick === n ? "var(--c-honey)" : "var(--c-card)", border: "1.5px solid var(--c-text)", font: "700 var(--t-meta)/1 'Geist Mono', monospace", color: "var(--c-honey-ink)" }}>{n + 1}</span>
             </button>
           ) : (

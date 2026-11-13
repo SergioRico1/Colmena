@@ -38,7 +38,7 @@ export function Toggle({ on, onChange, label, disabled = false }) {
   return (
     <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={label} disabled={disabled} onClick={() => onChange(!on)}
       style={{ width: "52px", height: "32px", flex: "none", padding: "3px", border: 0, borderRadius: "var(--r-pill)", cursor: disabled ? "default" : "pointer", transition: "background .25s ease", background: on ? "#0B8A5F" : "rgb(var(--c-ink-rgb) / .14)", opacity: disabled ? 0.6 : 1 }}>
-      <span style={{ display: "block", width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.2)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", transform: on ? "translateX(20px)" : "translateX(0)" }} />
+      <span style={{ display: "block", width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-knob)", boxShadow: "var(--c-shadow-lift)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", transform: on ? "translateX(20px)" : "translateX(0)" }} />
     </button>
   );
 }

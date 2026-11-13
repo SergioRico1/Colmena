@@ -15,6 +15,7 @@ import {
   avatarOf, canInvite, canMakeAdmin, canMessage, canRemove, canRename, canStepDown, canUnmakeAdmin, countLine, currentTeam, leaveText, pendingLine,
   presenceWords, realTeams, removeText, roleLabel, sortMembers, untilText, waitingFor, waitingLine, waitingRest,
 } from "../../../lib/teams.js";
+import { C } from "../../../lib/theme.js";
 
 // Equipo › the team (docs/PLAN-equipo-y-salas.md › 4.1): the team the sidebar shows, as every
 // member sees it. GET /api/teams/:id → its people with their role, whether they are there,
@@ -26,11 +27,11 @@ import {
 // Alone, one invitation to create a team or join one. Teams you asked to join and are not in
 // yet come from the state (`teamsPending`).
 const LINE = "1px solid rgb(var(--c-ink-rgb) / .06)";
-const panel = { display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)" };
+const panel = { display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)" };
 const h2 = { margin: 0, font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" };
 const h3 = { margin: 0, fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-3)" };
-const dark = { height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer" };
-const danger = { ...dark, background: "#B4231A" };
+const dark = { height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer" };
+const danger = { ...dark, background: C.error };
 const tag = { flex: "none", height: "20px", padding: "0 8px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-chip)", color: "var(--c-text-2)", fontSize: "var(--t-caption)", fontWeight: 600 };
 const pendingText = { display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: 1.4, color: "var(--c-text-2)" };
 const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", minHeight: "64px", padding: "12px 18px" };
@@ -39,7 +40,7 @@ const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10p
 function BotChip({ bot, owner = null }) {
   return (
     <li style={{ display: "inline-flex", alignItems: "center", gap: "7px", minHeight: "28px", padding: "2px 10px 2px 6px", borderRadius: "var(--r-pill)", background: "var(--c-hover)", fontSize: "var(--t-meta)", lineHeight: 1.2 }}>
-      <BotMark bot={bot} size={18} owner={owner} ring="#F6F6F3" style={{ marginRight: owner && !owner.you ? "3px" : 0 }} />
+      <BotMark bot={bot} size={18} owner={owner} ring={C.hover} style={{ marginRight: owner && !owner.you ? "3px" : 0 }} />
       <span style={{ fontWeight: 600 }}>{bot.name}</span>
       {owner && !owner.you ? <span style={srOnly}>{botA11yName(bot, owner).slice(bot.name.length)}</span> : null}
       {bot.role ? <span style={{ color: "var(--c-text-3)" }}>{bot.role}</span> : null}
@@ -239,7 +240,7 @@ export default function TeamSection() {
                   <li key={m.address || "tu"} style={{ display: "flex", flexDirection: "column", borderTop: i ? LINE : 0 }}>
                     <div style={row}>
                       <span style={{ flex: "1 1 220px", minWidth: 0, display: "flex", alignItems: "center", gap: "14px" }}>
-                        <PeerAvatar person={avatarOf(m)} size={38} ring="#FFFFFF" dot />
+                        <PeerAvatar person={avatarOf(m)} size={38} ring={C.card} dot />
                         <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
                           <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px" }}>
                             <span style={{ fontSize: "var(--t-body)", fontWeight: 600, overflowWrap: "anywhere" }}>{m.name}</span>

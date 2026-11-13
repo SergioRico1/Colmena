@@ -3,6 +3,7 @@ import { History, RotateCcw } from "../../Icon.js";
 import { useAction, useResource } from "../../../lib/store.jsx";
 import { post } from "../../../lib/api.js";
 import { dateTime } from "../../../lib/format.js";
+import { C } from "../../../lib/theme.js";
 
 // Versions of a bot's SOUL.md or of your USER.md (doc-history.mjs): every change keeps the
 // text it replaced, so any earlier one can be seen and brought back. Restoring is one more
@@ -26,16 +27,16 @@ export default function DocHistory({ doc, botId = null, limit = 4, empty = "Aún
       {shown.map((v, i) => (
         <div key={v.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 20px", borderTop: i ? "1px solid rgb(var(--c-ink-rgb) / .06)" : 0 }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
-            <History size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: v.current ? "#0B8A5F" : "#9A9DA6" }} />
+            <History size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: v.current ? C.ok : C.text4 }} />
             <span style={{ flex: "1 1 220px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
               <span style={{ fontSize: "var(--t-body)", color: "var(--c-text)" }}>{v.sourceLabel}{v.current ? <span style={{ marginLeft: "8px", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-ok-ink)" }}>En uso</span> : null}</span>
               <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[dateTime(v.createdAt), v.reason].filter(Boolean).join(" · ")}</span>
             </span>
-            <button type="button" aria-expanded={open === v.id} onClick={() => setOpen((x) => (x === v.id ? null : v.id))} style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" }}>
+            <button type="button" aria-expanded={open === v.id} onClick={() => setOpen((x) => (x === v.id ? null : v.id))} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .05)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" }}>
               {open === v.id ? "Ocultar" : "Ver"}
             </button>
             {v.current ? null : (
-              <button type="button" disabled={busy} onClick={() => restore(v)} style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              <button type="button" disabled={busy} onClick={() => restore(v)} style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>
                 <RotateCcw size={13} strokeWidth={2.4} aria-hidden="true" />Restaurar
               </button>
             )}

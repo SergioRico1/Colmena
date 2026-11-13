@@ -6,6 +6,7 @@ import { navigate } from "../../../lib/router.jsx";
 import { shareUrl } from "../../../lib/peers.js";
 import { DIALOG_VEIL, useDialogFocus } from "../../../lib/useDialogFocus.js";
 import { adminNames, codeKind, findCode, listNames } from "../../../lib/teams.js";
+import { C } from "../../../lib/theme.js";
 
 // The team's sheets (docs/PLAN-equipo-y-salas.md › 4.1), opened from the sidebar's team menu
 // and from Equipo. Same vocabulary as «Hablar con una persona» (v2/people/InviteSheets.jsx).
@@ -15,12 +16,12 @@ import { adminNames, codeKind, findCode, listNames } from "../../../lib/teams.js
 //                                    room's to POST /api/peers/invites/accept
 //   invite  «Invitar al equipo»      POST /api/teams/:id/invite {name?} → {code, text, expiresAt}
 // Colmena never sends an invitation: you copy it and send it yourself.
-export const INK = "#12131A", MUTED = "#5C606C";
+export const INK = C.text, MUTED = C.text3;
 /** «Cómo funciona», at what the others see of your bots' work. */
 const HELP = "/personas/como-funciona#que-ven";
 const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: DIALOG_VEIL, animation: "fade .2s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitAppRegion: "no-drag" };
-const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "var(--r-3xl)", background: "var(--c-card)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
-export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", cursor: on ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: on ? "var(--c-btn)" : "#C9CBD1", color: on ? "var(--c-btn-text)" : "#3D404A" });
+const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .06), var(--c-shadow-pop)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
+export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", cursor: on ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: on ? "var(--c-btn)" : C.lineStrong, color: on ? "var(--c-btn-text)" : C.text2 });
 export const quietBtn = { minHeight: "44px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text-3)" };
 export const fieldBox = { display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "var(--r-pill)", background: "var(--c-sunken)" };
 export const fieldInput = { flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", fontSize: "var(--t-read)", color: "var(--c-text)" };
@@ -36,7 +37,7 @@ export function Sheet({ id, title, sub = null, width = 540, onClose, children })
       <section ref={box} role="dialog" aria-modal="true" aria-labelledby={id} style={cardStyle(width)}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
-            <h2 id={id} style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{title}</h2>
+            <h2 id={id} style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif", overflowWrap: "anywhere" }}>{title}</h2>
             {sub ? <span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{sub}</span> : null}
           </span>
           <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)", cursor: "pointer" }}><X size={15} strokeWidth={2.6} aria-hidden="true" /></button>
