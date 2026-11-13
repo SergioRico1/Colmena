@@ -10,13 +10,22 @@ import { C, MONO, BotShape, botOf, SR, timeAgo } from "./parts.jsx";
 import { EngineMark, ENGINE_NAME } from "./EngineModels.jsx";
 import { GROUPS, groupOf, snoozePresets, whenLabel } from "./model.js";
 import { listSections, needOf, stateText, ciOf } from "./flow.js";
-import { useMenu, MenuSheet, Item, Rule, Heading } from "./menu.jsx";
+import { MenuButton } from "../../Menu.js";
 
 // «Tareas» of Código: one list in the order a developer works it — what needs you (the only honey),
 // what is working, what is ready to save, what is done; put-off and archived folded at the end.
 // Each row says the engine, the branch, +/− and the CI; its «…» pins, puts off, archives or deletes.
 
-export { GROUPS, groupOf, whenLabel, useMenu, MenuSheet, Item, Rule, Heading };
+export { GROUPS, groupOf, whenLabel };
+
+/**
+ * A row's «…» inside a link: the press opens the menu, never the row's link. Clicks inside the
+ * menu (drawn in <body>) bubble here through React too; those are left alone.
+ */
+export function RowMenu({ children, ...props }) {
+  const stop = (e) => { if (e.currentTarget.contains(e.target)) { e.preventDefault(); e.stopPropagation(); } };
+  return <span onClick={stop} style={{ display: "contents" }}><MenuButton {...props}>{children}</MenuButton></span>;
+}
 
 const SHELF_KEY = "colmena:code-shelves";
 const readShelves = () => { try { return JSON.parse(localStorage.getItem(SHELF_KEY) || "{}"); } catch { return {}; } };
@@ -25,87 +34,75 @@ const readShelves = () => { try { return JSON.parse(localStorage.getItem(SHELF_K
 const act = (fn) => fn().catch((e) => failure("No se pudo hacer el cambio", e.message));
 const toLocalInput = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
-/** Pin, snooze, archive, delete: the items of a task's «…» (the list and the task's «Más»). */
-export function TaskActions({ task, current, done }) {
-  const [custom, setCustom] = useState(false);
+/** «Elegir día y hora…»: the menu's own small form (components/Menu.js `panel`). */
+function SnoozeAt({ onPick, back }) {
   const [when, setWhen] = useState(() => toLocalInput(new Date(Date.now() + 2 * 3600000)));
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); const d = new Date(when); if (d > new Date()) onPick(d.toISOString()); }} style={{ display: "flex", flexDirection: "column", gap: "8px", width: "260px" }}>
+      <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-caption)", fontWeight: 600, color: C.muted }}>
+        Posponer hasta
+        <input type="datetime-local" value={when} min={toLocalInput(new Date())} onChange={(e) => setWhen(e.target.value)} style={{ height: "32px", padding: "0 8px", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", color: C.ink, font: `400 var(--t-meta)/1 ${MONO}` }} />
+      </label>
+      <span style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
+        <button type="button" className="c-menu-btn" onClick={back}>Volver</button>
+        <button type="submit" className="c-menu-btn" style={{ borderColor: "transparent", background: "var(--c-btn)", color: "var(--c-btn-text)", fontWeight: 600 }}>Posponer</button>
+      </span>
+    </form>
+  );
+}
+
+/**
+ * Pin, snooze, archive, delete: the entries of a task's «…» (the list and the task's «Más»),
+ * for the app's one menu (components/Menu.js). Each one closes the menu as it runs.
+ */
+export function taskActions(task, current) {
   const base = "/code/tasks/" + task.id;
-  const close = () => { done(); setCustom(false); };
   const pin = (on) => act(async () => {
-    close();
     await patch(base, { pinned: on });
     if (!on) reversible({ id: "codepin:" + task.id, text: `«${task.title}» ya no está fijada`, undo: () => patch(base, { pinned: true }) });
   });
   const snooze = (iso) => act(async () => {
-    close();
     await post(base + "/snooze", { until: iso });
     reversible({ id: "codesnooze:" + task.id, text: `Pospuesta hasta ${whenLabel(iso)}`, undo: () => post(base + "/snooze", { until: null }) });
     if (current) navigate("/codigo");
   });
-  const wake = () => act(async () => { close(); await post(base + "/snooze", { until: null }); });
+  const wake = () => act(async () => { await post(base + "/snooze", { until: null }); });
   const archive = (on) => act(async () => {
-    close();
     await post(base + "/archive", { archived: on });
     if (on) reversible({ id: "codearchive:" + task.id, text: `Tarea «${task.title}» archivada`, undo: () => post(base + "/archive", { archived: false }) });
   });
-  const auto = (on) => act(async () => { close(); await patch(base, { autoArchive: on }); });
+  const auto = (on) => act(async () => { await patch(base, { autoArchive: on }); });
   // The task (its copy, its preview server) goes after the five-second «Deshacer».
   const remove = () => {
-    close();
     later({ id: "codetask:" + task.id, keys: ["codetask:" + task.id], text: `Tarea «${task.title}» borrada`, error: "No se pudo borrar la tarea", run: () => del(base) });
     if (current) navigate("/codigo");
   };
-  return (
-    <>
-      <Heading>Organizar</Heading>
-      {task.archived ? <Item icon={ArchiveRestore} text="Desarchivar" onClick={() => archive(false)} />
-        : task.pinned ? <Item icon={PinOff} text="Quitar de fijadas" onClick={() => pin(false)} /> : <Item icon={Pin} text="Fijar arriba" onClick={() => pin(true)} />}
-      {!task.archived ? <Item icon={Hourglass} text="Archivar sola si se queda quieta" checked={task.autoArchive !== false} onClick={() => auto(task.autoArchive === false)} /> : null}
-      {task.snoozed ? <Item icon={Sun} text="Despertar ahora" note={whenLabel(task.snoozed.until)} onClick={wake} /> : null}
-      {!task.archived && !task.snoozed ? (
-        <>
-          <Rule />
-          <Heading>Posponer hasta</Heading>
-          {snoozePresets().map((p) => <Item key={p.id} icon={AlarmClock} text={p.label} note={whenLabel(p.until)} onClick={() => snooze(p.until)} />)}
-          {custom ? (
-            <form onSubmit={(e) => { e.preventDefault(); const d = new Date(when); if (d > new Date()) snooze(d.toISOString()); }} style={{ display: "flex", gap: "6px", padding: "6px 8px" }}>
-              <input type="datetime-local" value={when} min={toLocalInput(new Date())} onChange={(e) => setWhen(e.target.value)} aria-label="Hasta cuándo" style={{ flex: 1, minWidth: 0, height: "32px", padding: "0 8px", border: 0, borderRadius: "var(--r-sm)", background: C.soft, font: `400 var(--t-caption)/1 ${MONO}` }} />
-              <button type="submit" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Posponer</button>
-            </form>
-          ) : <Item icon={CalendarClock} text="Elegir día y hora…" onClick={() => setCustom(true)} />}
-        </>
-      ) : null}
-      <Rule />
-      {!task.archived ? <Item icon={Archive} text="Archivar" danger note={task.running ? "trabaja" : null} onClick={() => archive(true)} /> : null}
-      <Item icon={Trash2} text="Borrar la tarea" danger confirm="Pulsa otra vez: borra su copia" onClick={remove} />
-    </>
-  );
+  return [
+    { group: "Organizar", items: [
+      task.archived ? { label: "Desarchivar", icon: ArchiveRestore, onSelect: () => archive(false) }
+        : task.pinned ? { label: "Quitar de fijadas", icon: PinOff, onSelect: () => pin(false) } : { label: "Fijar arriba", icon: Pin, onSelect: () => pin(true) },
+      !task.archived ? { label: "Archivar sola si se queda quieta", icon: Hourglass, checked: task.autoArchive !== false, onSelect: () => auto(task.autoArchive === false) } : null,
+      task.snoozed ? { label: "Despertar ahora", icon: Sun, meta: whenLabel(task.snoozed.until), onSelect: wake } : null,
+    ] },
+    !task.archived && !task.snoozed ? { group: "Posponer hasta", items: [
+      ...snoozePresets().map((p) => ({ id: "snooze:" + p.id, label: p.label, icon: AlarmClock, meta: whenLabel(p.until), onSelect: () => snooze(p.until) })),
+      { label: "Elegir día y hora…", icon: CalendarClock, panel: ({ close, back }) => <SnoozeAt back={back} onPick={(iso) => { close(); snooze(iso); }} /> },
+    ] } : null,
+    !task.archived ? { label: "Archivar", icon: Archive, danger: true, meta: task.running ? "trabaja" : null, onSelect: () => archive(true) } : null,
+    { label: "Borrar la tarea", icon: Trash2, danger: true, confirm: { title: "¿Borrar la tarea?", text: "Se borra su copia del proyecto y su vista previa. Tienes unos segundos para deshacerlo.", action: "Borrar" }, onSelect: remove },
+  ];
 }
 
-function TaskMenu({ task, current, menu }) {
-  return (
-    <MenuSheet menu={menu} label={"Acciones de «" + task.title + "»"} width={290}>
-      <TaskActions task={task} current={current} done={menu.close} />
-    </MenuSheet>
-  );
-}
-
-/** A project's own archiving rule, over Ajustes (T3 Code environment rules). */
-export function ProjectMenu({ project, menu }) {
+/** A project's own archiving rule, over Ajustes (T3 Code environment rules): menu entries. */
+export function projectArchiveEntries(project) {
   const own = project.archive || {};
-  const set = (archive) => act(async () => { menu.close(); await patch("/code/projects/" + project.id, { archive }); });
+  const set = (archive) => act(() => patch("/code/projects/" + project.id, { archive }));
   const days = [[null, "Según Ajustes"], [0, "Nunca"], [1, "Tras 1 día"], [3, "Tras 3 días"], [7, "Tras 7 días"], [14, "Tras 14 días"], [30, "Tras 30 días"]];
-  return (
-    <MenuSheet menu={menu} label={"Archivado de " + project.name} width={262}>
-      <Heading>Archivar las tareas quietas</Heading>
-      {days.map(([d, label]) => <Item key={String(d)} icon={d === null ? Settings2 : Hourglass} text={label} on={(own.idleDays ?? null) === d} onClick={() => set({ idleDays: d })} />)}
-      <Rule />
-      <Heading>Si tienen una PR abierta</Heading>
-      {[[null, "Según Ajustes", Settings2], [true, "Conservarlas", GitPullRequest], [false, "Archivarlas igual", Archive]].map(([v, label, icon]) => <Item key={String(v)} icon={icon} text={label} on={(own.keepWithPr ?? null) === v} onClick={() => set({ keepWithPr: v })} />)}
-      <Rule />
-      <Item icon={Settings2} text="Más en Ajustes" onClick={() => { menu.close(); navigate("/ajustes/autonomia#codigo-archivar"); }} />
-    </MenuSheet>
-  );
+  return [
+    { group: "Archivar las tareas quietas", items: days.map(([d, label]) => ({ id: "idle:" + d, label, icon: d === null ? Settings2 : Hourglass, radio: true, checked: (own.idleDays ?? null) === d, onSelect: () => set({ idleDays: d }) })) },
+    { group: "Si tienen una PR abierta", items: [[null, "Según Ajustes", Settings2], [true, "Conservarlas", GitPullRequest], [false, "Archivarlas igual", Archive]].map(([v, label, icon]) => ({ id: "pr:" + v, label, icon, radio: true, checked: (own.keepWithPr ?? null) === v, onSelect: () => set({ keepWithPr: v }) })) },
+    { group: null, items: [{ label: "Más en Ajustes", icon: Settings2, onSelect: () => navigate("/ajustes/autonomia#codigo-archivar") }] },
+  ];
 }
 
 const ROW = { position: "relative", display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 14px 8px 16px", borderTop: "1px solid var(--c-line)", color: C.ink, textDecoration: "none" };
@@ -146,7 +143,6 @@ function metaOf(task, project) {
 }
 
 function TaskRow({ task, project, bots }) {
-  const menu = useMenu(290);
   const need = needOf(task);
   const running = task.running || task.status === "working";
   const pr = task.pr?.number && task.pr.state !== "CLOSED" ? task.pr : null;
@@ -174,11 +170,11 @@ function TaskRow({ task, project, bots }) {
           : running ? <span style={{ ...SMALL, height: "24px", padding: "0 9px", fontWeight: 600, borderRadius: "var(--r-pill)", ...TONE.run }}><span aria-hidden="true" className="code-pulse" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: "currentColor" }} />Trabajando</span>
             : <span style={{ fontSize: "var(--t-caption)", color: C.muted, whiteSpace: "nowrap" }}>{stateText(task)}</span>}
       </span>
-      <button type="button" className={menu.at ? undefined : "code-x"} onClick={menu.open} aria-label={"Acciones de la tarea " + task.title} aria-haspopup="menu" aria-expanded={!!menu.at} title="Fijar, posponer, archivar o borrar"
+      <RowMenu items={() => taskActions(task, false)} className="code-x" label={"Acciones de la tarea " + task.title} menuLabel={"Acciones de «" + task.title + "»"} title="Fijar, posponer, archivar o borrar"
+        openStyle={{ background: C.track }}
         style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", padding: 0, display: "grid", placeItems: "center", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: C.text, cursor: "pointer" }}>
         <Ellipsis size={16} aria-hidden="true" />
-      </button>
-      <TaskMenu task={task} current={false} menu={menu} />
+      </RowMenu>
     </a>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Download } from "../../Icon.js";
+import { Download, TriangleAlert } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import ProviderMark from "../ProviderMark.jsx";
 import { C, MONO } from "./parts.jsx";
@@ -34,60 +34,45 @@ export function modelNote(m) {
   return older.trim();
 }
 
-/**
- * `engines`: GET /api/code engines ({id, label, available, models, need, note, installable}).
- * `current` {engine, model}; `onPick(engine, model)`; `switchNote`: what changing engine means here.
- */
-export default function EngineModelMenu({ engines = [], current, onPick, close, switchNote = null, multi = null }) {
+/** «Instalar OpenCode» from inside the menu: its state lives with the menu's owner. */
+export function useEngineInstall() {
   const [installing, setInstalling] = useState(false);
   const [error, setError] = useState(null);
-  const order = [...engines].sort((a, b) => (a.id === current?.engine ? -1 : b.id === current?.engine ? 1 : 0));
   const install = async () => {
     setInstalling(true); setError(null);
     try { await post("/code/engines/opencode/install", {}); } catch (e) { setError(e.message); } finally { setInstalling(false); }
   };
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-      {order.map((e, k) => (
-        <div key={e.id} role="group" aria-label={e.label} style={{ display: "flex", flexDirection: "column", gap: "2px", paddingTop: k ? "6px" : 0, marginTop: k ? "4px" : 0, borderTop: k ? "1px solid " + C.rule : 0 }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px 4px" }}>
-            <EngineMark engine={e.id} size={14} />
-            <span style={{ flex: 1, fontSize: "var(--t-caption)", fontWeight: 600, color: C.muted }}>{e.label}</span>
-            {e.id === current?.engine ? <span style={{ font: `500 var(--t-micro)/1 ${MONO}`, color: C.quiet }}>ahora</span> : null}
-          </span>
-          {!e.available ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "2px 8px 6px", padding: "10px 12px", borderRadius: "var(--r-lg)", background: C.soft }}>
-              <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.5, color: C.text }}>{e.installing || installing ? "Instalando OpenCode para Colmena…" : e.need || "No está disponible en este ordenador."}</span>
-              {e.installable ? (
-                <button type="button" disabled={installing || e.installing} onClick={install}
-                  style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: C.ink, color: C.white, cursor: installing || e.installing ? "default" : "pointer", fontSize: "var(--t-caption)", fontWeight: 600, opacity: installing || e.installing ? 0.6 : 1 }}>
-                  <Download size={12} strokeWidth={2.4} aria-hidden="true" />{installing || e.installing ? "Instalando…" : "Instalar OpenCode"}
-                </button>
-              ) : null}
-              {error && e.installable ? <span role="alert" style={{ fontSize: "var(--t-caption)", color: C.red }}>{error}</span> : null}
-            </div>
-          ) : (
-            <>
-              {e.models.map((m) => {
-                const on = multi ? multi.some((x) => x.engine === e.id && x.model === m.id) : current?.engine === e.id && current?.model === m.id;
-                return (
-                  <button key={m.id} type="button" role="menuitemradio" aria-checked={on} data-label={m.label} className="code-hover" onClick={() => { onPick(e.id, m.id); if (!multi) close?.(); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "9px 12px", border: 0, borderRadius: "var(--r-lg)", background: on ? C.soft : "transparent", cursor: "pointer", textAlign: "left" }}>
-                    <span aria-hidden="true" style={{ flex: "none", display: "inline-flex", alignSelf: "flex-start", marginTop: "2px" }}><EngineMark engine={e.id} size={16} /></span>
-                    <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                      <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: C.ink }}>{m.label}</strong>
-                      {modelNote(m) ? <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.45, color: C.muted }}>{modelNote(m)}</span> : null}
-                    </span>
-                    {on ? <Check size={15} strokeWidth={2.6} color={C.ink} aria-hidden="true" /> : null}
-                  </button>
-                );
-              })}
-              {e.note ? <span style={{ padding: "2px 12px 6px", fontSize: "var(--t-micro)", lineHeight: 1.45, color: C.faint }}>{e.note}</span> : null}
-            </>
-          )}
-        </div>
-      ))}
-      {switchNote ? <p style={{ margin: "6px 12px 4px", fontSize: "var(--t-caption)", lineHeight: 1.5, color: C.faint }}>{switchNote}</p> : null}
-    </div>
-  );
+  return { installing, error, install };
+}
+
+/**
+ * The engines and their models as groups of the app's one menu (components/Menu.js): one group
+ * per engine, headed by its mark, the current one first («ahora»).
+ * `engines`: GET /api/code engines ({id, label, available, models, need, note, installable}).
+ * `current` {engine, model}; `onPick(engine, model)`; `install` from useEngineInstall();
+ * `multi`: the picks when several are tried at once (checkboxes; the menu stays open).
+ */
+export function engineModelGroups(engines = [], { current, onPick, install = null, multi = null }) {
+  const order = [...engines].sort((a, b) => (a.id === current?.engine ? -1 : b.id === current?.engine ? 1 : 0));
+  return order.map((e) => {
+    const heading = (
+      <span>
+        <EngineMark engine={e.id} size={14} />{e.label}
+        {e.id === current?.engine ? <span style={{ font: `500 var(--t-micro)/1 ${MONO}`, color: C.quiet }}>ahora</span> : null}
+      </span>
+    );
+    if (!e.available) {
+      const busy = !!(e.installing || install?.installing);
+      const need = e.need || "No está disponible en este ordenador.";
+      const item = e.installable
+        ? { id: e.id + ":install", label: busy ? "Instalando OpenCode…" : "Instalar OpenCode", icon: Download, hint: install?.error || need, disabled: busy ? "Se está instalando para Colmena" : false, keepOpen: true, onSelect: () => install?.install() }
+        : { id: e.id + ":off", label: "No está listo", icon: TriangleAlert, hint: need, disabled: need };
+      return { group: heading, items: [item] };
+    }
+    const items = e.models.map((m) => {
+      const on = multi ? multi.some((x) => x.engine === e.id && x.model === m.id) : current?.engine === e.id && current?.model === m.id;
+      return { id: e.id + ":" + m.id, label: m.label, hint: modelNote(m) || undefined, icon: <EngineMark engine={e.id} size={16} />, radio: !multi, checked: on, keepOpen: !!multi, onSelect: () => onPick(e.id, m.id) };
+    });
+    return { group: heading, items, note: e.note || null };
+  });
 }

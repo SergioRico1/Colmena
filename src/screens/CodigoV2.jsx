@@ -2,7 +2,8 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files as FilesIcon, FolderOpen, SquareArrowOutUpRight, Stop } from "../components/Icon.js";
 import { useRevealMessage } from "../lib/reveal.js";
 import Shell from "../components/v2/Shell.jsx";
-import { whenLabel, useMenu, MenuSheet, Item, Rule, Heading, TaskActions, CiChip } from "../components/v2/code/ProjectList.jsx";
+import { whenLabel, taskActions, CiChip } from "../components/v2/code/ProjectList.jsx";
+import { MenuButton } from "../components/Menu.js";
 import PrPanel from "../components/v2/code/PrPanel.jsx";
 import { nextAction } from "../components/v2/code/flow.js";
 import { TERM } from "../lib/palette4.js";
@@ -274,7 +275,6 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
   useWatch(taskId);
   const saving = useSave(task, reload);
   const [prBusy, setPrBusy] = useState(null); // "merge" | "ready": a button on the PR in GitHub
-  const more = useMenu(300);
   // «/btw …»: ask Bruno something while he works, apart from the task (BtwNotes.jsx).
   const btw = useBtw("/code/tasks/" + taskId + "/btw");
   const sectionRef = useRef(null);
@@ -437,6 +437,37 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
   const points = items.filter((i) => i.kind === "turn").map((i) => ({ n: i.n, add: i.add, del: i.del, files: (i.files || []).length }));
   const tabLabel = (id, text) => (id === "cambios" && count ? text + " · " + count : id === "pr" && task.pr?.number ? "PR #" + task.pr.number : text);
   const shownTabs = TABS.filter(([id]) => id !== "pr" || canSave || task.pr?.number);
+  // «Más acciones» (the app's one menu, components/Menu.js): other ways to save, the PR on
+  // GitHub, reviewing, what to see, and the task's own pin / snooze / archive / delete last.
+  const waitWhy = running ? name + " está trabajando: espera a que acabe" : null;
+  const moreEntries = () => [
+    saveItems.length ? { group: "Guardar", items: [
+      ...saveItems.map(([to, Icon, text, blocked]) => {
+        const why = waitWhy || blocked || (ghOff && (to === "push" || to === "pr") ? "GitHub CLI sin sesión: ejecuta «gh auth login»" : null) || (saving.busy ? "Ya se está guardando" : null);
+        return { id: "save:" + to, label: text, icon: Icon, hint: why || undefined, disabled: why || false, onSelect: () => saving.save(to) };
+      }),
+      blockedWhy && !running ? { id: "save:force", label: (task.isolated ? "Fusionar en " + base : "Guardar") + " igualmente", icon: GitMerge, disabled: saving.busy ? "Ya se está guardando" : false,
+        confirm: { title: task.isolated ? "¿Fusionar en " + base + " con los avisos?" : "¿Guardar con los avisos?", text: blockedWhy + ".", action: task.isolated ? "Fusionar igualmente" : "Guardar igualmente" },
+        onSelect: () => saving.save(task.isolated ? "base" : "branch", { force: true }) } : null,
+    ] } : null,
+    openPr ? { group: "PR #" + openPr.number, items: [
+      openPr.isDraft ? { label: prBusy === "ready" ? "Marcando como lista…" : "Marcar la PR como lista", icon: GitPullRequestArrow, disabled: prBusy ? "Espera a que acabe lo de GitHub" : false, onSelect: () => prAction("ready") } : null,
+      (() => { const why = prMergeWhy || (running ? name + " está trabajando" : null) || (prBusy ? "Espera a que acabe lo de GitHub" : null); return { label: prBusy === "merge" ? "Fusionando en GitHub…" : "Fusionar en GitHub", icon: GitMerge, hint: why || undefined, disabled: why || false, onSelect: () => prAction("merge") }; })(),
+      openPr.url ? { label: "Abrir en GitHub", icon: ExternalLink, onSelect: () => window.open(openPr.url, "_blank", "noopener") } : null,
+    ] } : null,
+    { group: "Revisar", items: [
+      canSave && !task.saved ? { label: "Revisar los cambios", icon: ShieldCheck, hint: running ? name + " está trabajando" : undefined, disabled: running ? name + " está trabajando" : saving.busy ? "Ya se está guardando" : false, onSelect: () => saving.save("review") } : null,
+      task.isolated && !task.saved ? { label: "Ponerse al día con " + base, icon: RefreshCw, hint: running ? name + " está trabajando" : undefined, disabled: running ? name + " está trabajando" : saving.busy ? "Ya se está guardando" : false, onSelect: () => saving.save("catchup") } : null,
+      task.group ? { label: "Comparar con los otros motores", icon: Columns3, onSelect: () => navigate("/codigo/comparar/" + task.group) } : null,
+      { label: "Ver los cambios", icon: FilesIcon, shortcut: "Ctrl+1", onSelect: () => { onPanel(true); setTab("cambios"); } },
+    ] },
+    { group: "Ver", items: [
+      { label: "Panel de trabajo", icon: PanelRight, checked: !!panel, shortcut: "Ctrl+J", onSelect: () => onPanel(!panel) },
+      { label: "Abrir la carpeta de la copia", icon: FolderOpen, onSelect: openFolder },
+      { label: "Atajos de teclado", icon: Keyboard, shortcut: "F1", onSelect: () => window.dispatchEvent(new Event("colmena:code-shortcuts")) },
+    ] },
+    ...taskActions(task, true),
+  ];
   const tabDot = (id) => (id === "pr" && ciFailing ? "var(--c-error)" : id === "cambios" && findings.length ? "var(--c-error)" : null);
   return (
     <div ref={sectionRef} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", flexDirection: "column" }}>
@@ -452,43 +483,10 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
           <TaskPeople taskId={task.id} project={project ? { id: project.id, name: project.name } : null} look={{ ...BTN.outline, fontSize: "var(--t-ui)", fontWeight: 400 }} />
           <button type="button" onClick={openEditor} title={"Abre la copia de la tarea en VS Code, Cursor o Windsurf: " + task.cwd} style={BTN.outline}><SquareArrowOutUpRight size={16} aria-hidden="true" />Abrir en el editor</button>
           {primary}
-          <button type="button" onClick={more.open} aria-haspopup="menu" aria-expanded={!!more.at} aria-label="Más acciones" title="Más: guardar de otras formas, la PR, posponer, archivar…" style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: more.at ? C.track : "var(--c-raised)", color: C.text, cursor: "pointer" }}>
+          <MenuButton label="Más acciones" title="Más: guardar de otras formas, la PR, posponer, archivar…" items={moreEntries} openStyle={{ background: C.track }}
+            style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: C.text, cursor: "pointer" }}>
             <Ellipsis size={18} aria-hidden="true" />
-          </button>
-          <MenuSheet menu={more} label="Más acciones" width={320}>
-            {saveItems.length ? (
-              <>
-                <Heading>Guardar</Heading>
-                {saveItems.map(([to, Icon, text, blocked]) => {
-                  const why = running ? name + " está trabajando: espera a que acabe" : blocked || (ghOff && (to === "push" || to === "pr") ? "GitHub CLI sin sesión: ejecuta «gh auth login»" : null);
-                  return <Item key={to + text} icon={Icon} text={text} why={why} disabled={!!saving.busy} onClick={() => { more.close(); saving.save(to); }} />;
-                })}
-                {blockedWhy && !running ? <Item icon={GitMerge} text={(task.isolated ? "Fusionar en " + base : "Guardar") + " igualmente"} disabled={!!saving.busy} confirm="Pulsa otra vez: se fusiona con los avisos" onClick={() => { more.close(); saving.save(task.isolated ? "base" : "branch", { force: true }); }} /> : null}
-                <Rule />
-              </>
-            ) : null}
-            {openPr ? (
-              <>
-                <Heading>{"PR #" + openPr.number}</Heading>
-                {openPr.isDraft ? <Item icon={GitPullRequestArrow} text={prBusy === "ready" ? "Marcando como lista…" : "Marcar la PR como lista"} disabled={!!prBusy} onClick={() => { more.close(); prAction("ready"); }} /> : null}
-                <Item icon={GitMerge} text={prBusy === "merge" ? "Fusionando en GitHub…" : "Fusionar en GitHub"} why={prMergeWhy || (running ? name + " está trabajando" : null)} disabled={!!prBusy} onClick={() => { more.close(); prAction("merge"); }} />
-                {openPr.url ? <Item icon={ExternalLink} text="Abrir en GitHub" onClick={() => { more.close(); window.open(openPr.url, "_blank", "noopener"); }} /> : null}
-                <Rule />
-              </>
-            ) : null}
-            <Heading>Revisar</Heading>
-            {canSave && !task.saved ? <Item icon={ShieldCheck} text="Revisar los cambios" why={running ? name + " está trabajando" : null} disabled={!!saving.busy} onClick={() => { more.close(); saving.save("review"); }} /> : null}
-            {task.isolated && !task.saved ? <Item icon={RefreshCw} text={"Ponerse al día con " + base} why={running ? name + " está trabajando" : null} disabled={!!saving.busy} onClick={() => { more.close(); saving.save("catchup"); }} /> : null}
-            {task.group ? <Item icon={Columns3} text="Comparar con los otros motores" onClick={() => { more.close(); navigate("/codigo/comparar/" + task.group); }} /> : null}
-            <Item icon={FilesIcon} text="Ver los cambios" note="Ctrl 1" onClick={() => { more.close(); onPanel(true); setTab("cambios"); }} />
-            <Rule />
-            <Heading>Ver</Heading>
-            <Item icon={PanelRight} text="Panel de trabajo" checked={!!panel} note="Ctrl J" onClick={() => { more.close(); onPanel(!panel); }} />
-            <Item icon={FolderOpen} text="Abrir la carpeta de la copia" onClick={() => { more.close(); openFolder(); }} />
-            <Item icon={Keyboard} text="Atajos de teclado" note="F1" onClick={() => { more.close(); window.dispatchEvent(new Event("colmena:code-shortcuts")); }} />
-            <Rule />
-            <TaskActions task={task} current done={more.close} />
-          </MenuSheet>
+          </MenuButton>
           {saving.error ? <p role="alert" onClick={() => saving.setError(null)} style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "340px", margin: 0, padding: "12px 14px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: SHEET, fontSize: "var(--t-meta)", lineHeight: 1.45, color: C.red }}>{saving.error}</p> : null}
           {saving.warn ? (
             <div role="alertdialog" aria-label="Antes de fusionar" style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "350px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>

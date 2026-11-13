@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, MonitorSmartphone, RefreshCw, MessageSquarePlus, Check, CircleAlert } from "../../Icon.js";
+import { ExternalLink, MonitorSmartphone, RefreshCw, MessageSquarePlus, Check, CircleAlert, Server, ChevronDown } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
-import { C, MONO, MenuChip, MenuItem, SHEET, timeAgo } from "./parts.jsx";
+import { C, MONO, SHEET, timeAgo } from "./parts.jsx";
+import { MenuButton } from "../../Menu.js";
 import { addContext } from "./Extras.jsx";
 
 // «Vista previa» (T3 Code preview + port scanner): the web servers this task started are found
@@ -106,9 +107,11 @@ export default function Preview({ task, onAsk = null }) {
           <span aria-hidden="true" style={{ width: "7px", height: "7px", flex: "none", borderRadius: "var(--r-circle)", background: url ? C.green : "var(--c-line-strong)" }} />{url ? url.replace("http://", "") : "Sin servidor en marcha"}
         </span>
         {ports && ports.length > 1 ? (
-          <MenuChip up={false} align="right" width={240} title="Servidores de esta tarea" label={<span style={{ font: `500 var(--t-caption)/1 ${MONO}` }}>{ports.map((p) => p.port).join(" · ")}</span>}>
-            {(close) => ports.map((p) => <MenuItem key={p.port} title={"127.0.0.1:" + p.port} text={p.name} on={p.port === port} onClick={() => { setPort(p.port); close(); }} />)}
-          </MenuChip>
+          <MenuButton label={"Servidores de esta tarea: " + ports.map((p) => p.port).join(", ")} title="Servidores de esta tarea" placement="bottom-end" openStyle={{ background: C.soft }}
+            style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", color: C.text, whiteSpace: "nowrap" }}
+            items={() => ports.map((p) => ({ id: "port:" + p.port, label: "127.0.0.1:" + p.port, icon: Server, hint: p.name || undefined, radio: true, checked: p.port === port, onSelect: () => setPort(p.port) }))}>
+            <span style={{ font: `500 var(--t-caption)/1 ${MONO}` }}>{ports.map((p) => p.port).join(" · ")}</span><ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
+          </MenuButton>
         ) : null}
         <button type="button" onClick={() => { setMarking(!marking); setBox(null); }} disabled={!url} aria-pressed={marking} title="Marca una zona y escribe qué cambiarías: va a tu próximo mensaje con una captura"
           style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 11px", border: 0, borderRadius: "var(--r-pill)", background: marking ? C.ink : "transparent", color: marking ? C.white : url ? C.text : C.quiet, cursor: url ? "pointer" : "default", fontSize: "var(--t-caption)", fontWeight: 600 }}>

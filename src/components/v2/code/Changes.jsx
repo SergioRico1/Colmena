@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Undo2, SquareArrowOutUpRight, Copy, ChevronDown, ChevronRight, ChevronUp, FoldVertical, UnfoldVertical, History, FolderOpen, Sidebar } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
-import { C, MONO, Seg, SR, MenuChip, MenuItem } from "./parts.jsx";
+import { C, MONO, Seg, SR } from "./parts.jsx";
+import { MenuButton } from "../../Menu.js";
 import { parsePatch, diffContext, sideBySide } from "./model.js";
 import { fileStatusOf, fileTree, splitPath, hunkStarts, stepHunk, stepFile, findingsByLine } from "./flow.js";
 import { addContext } from "./Extras.jsx";
@@ -360,17 +361,14 @@ export default function Changes({ task, turn, onTurn, onCount = null, points = [
         <div role="toolbar" aria-label="Opciones de los cambios" style={{ flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "10px 14px", borderBottom: "1px solid var(--c-line)" }}>
           {files.length ? <button type="button" onClick={() => setTree(!tree)} aria-pressed={tree} aria-label="Lista de archivos" title={tree ? "Ocultar la lista de archivos" : "Ver la lista de archivos"} style={{ ...iconBtn, background: tree ? C.track : "transparent", color: tree ? C.ink : C.muted }}><Sidebar size={16} aria-hidden="true" /></button> : null}
           {turns > 1 || turn || points.length > 1 ? (
-            <MenuChip title="Qué cambios ver" up={false} width={300} label={<><History size={14} aria-hidden="true" style={{ verticalAlign: "-2px", marginRight: "6px" }} />{scopeLabel}</>} look={{ height: "32px", border: "1px solid var(--c-line)", background: "var(--c-card)", color: C.ink }}>
-              {(close) => (
-                <>
-                  <MenuItem icon={<FolderOpen size={16} />} title="Toda la tarea" text="Desde donde empezó la copia" on={effective === "task"} onClick={() => { setScope("task"); onTurn?.(null); close(); }} />
-                  {[...points].reverse().map((p) => (
-                    <MenuItem key={p.n} icon={<History size={16} />} title={"Punto " + p.n} text={(p.files === 1 ? "1 archivo" : p.files + " archivos") + " · +" + (p.add || 0) + " −" + (p.del || 0)} on={effective === "turn" && n === p.n}
-                      onClick={() => { setScope("turn"); onTurn?.(p.n); close(); }} />
-                  ))}
-                </>
-              )}
-            </MenuChip>
+            <MenuButton label={"Qué cambios ver: " + scopeLabel} title="Qué cambios ver" placement="bottom-start" openStyle={{ background: C.track }}
+              style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", background: "var(--c-card)", color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" }}
+              items={() => [
+                { label: "Toda la tarea", icon: FolderOpen, hint: "Desde donde empezó la copia", radio: true, checked: effective === "task", onSelect: () => { setScope("task"); onTurn?.(null); } },
+                { group: "Puntos de restauración", items: [...points].reverse().map((p) => ({ id: "turn:" + p.n, label: "Punto " + p.n, icon: History, hint: (p.files === 1 ? "1 archivo" : p.files + " archivos") + " · +" + (p.add || 0) + " −" + (p.del || 0), radio: true, checked: effective === "turn" && n === p.n, onSelect: () => { setScope("turn"); onTurn?.(p.n); } })) },
+              ]}>
+              <History size={14} aria-hidden="true" />{scopeLabel}<ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
+            </MenuButton>
           ) : null}
           <label style={{ flex: "1 1 180px", display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 10px", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", color: C.muted }}>
             <Search size={14} aria-hidden="true" />

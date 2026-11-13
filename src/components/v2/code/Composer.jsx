@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUp, Ellipsis, X, Wrench, ListChecks, Lightning, FolderCode, ShieldCheck, LockOpen } from "../../Icon.js";
-import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO, SR } from "./parts.jsx";
+import { C, Seg, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO, SR } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
-import EngineModelMenu, { ENGINE_NAME, EngineMark, modelNote } from "./EngineModels.jsx";
+import { engineModelGroups, useEngineInstall, ENGINE_NAME, EngineMark, modelNote } from "./EngineModels.jsx";
+import { MenuButton } from "../../Menu.js";
 import { useExpert } from "../../../lib/expert.js";
 
 export { ENGINE_NAME, modelNote };
@@ -25,6 +26,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
   const [expert] = useExpert();
   const [text, setText] = useState("");
   const [when, setWhen] = useState(readWhen);
+  const install = useEngineInstall();
   const area = useRef(null);
   const extras = useComposerExtras({ text, setText, area, taskId: task?.id || null, projectId, commands, onCommand, below: home });
   useEffect(() => { if (draft != null) { setText(draft.text || ""); area.current?.focus(); } }, [draft]);
@@ -123,29 +125,11 @@ export default function Composer({ task = null, models = [], busy = false, runni
           model, effort and access this task uses (detail beneath, nothing moves). */}
       <div style={{ display: "flex", alignItems: "center", gap: "2px", minHeight: "36px", margin: "4px 0 -8px -2px" }}>
             {/* «Más»: mode, engine · model, effort and access (the board keeps the line to write clean). */}
-            <MenuChip title="Más opciones: modo, motor y modelo, esfuerzo, acceso" icon={<Ellipsis size={17} strokeWidth={2.2} aria-hidden="true" />} label="" chevron={false} width={360} align="left" look={{ width: "36px", height: "36px", color: C.muted }}>
-              {(close) => (
-                <>
-                  {onMode ? (
-                    <>
-                      <MenuHeading>Modo</MenuHeading>
-                      <MenuItem icon={<Wrench size={16} />} title="Construir" text="Bruno hace los cambios." on={mode === "build"} onClick={() => { onMode("build"); close(); }} />
-                      <MenuItem icon={<ListChecks size={16} />} title="Plan" text="Primero un plan; nada cambia hasta «Implementar»." on={mode === "plan"} onClick={() => { onMode("plan"); close(); }} />
-                    </>
-                  ) : null}
-                  <MenuHeading>{"Motor y modelo · " + engineLabel}</MenuHeading>
-                  {engines.length ? (
-                    <EngineModelMenu engines={engines} current={{ engine: task.engine, model: task.model }} close={close}
-                      onPick={(engine, model) => onChange(engine === task.engine ? { model } : { engine, model })}
-                      switchNote={running ? "Si eliges otro motor, sigue con él al acabar este turno." : "Otro motor sigue en la misma copia, con lo hablado hasta ahora."} />
-                  ) : shown.map((m) => <MenuItem key={m.id} icon={<EngineMark engine={task.engine} size={16} />} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
-                  <MenuHeading>{"Esfuerzo · " + (EFFORT_LABEL[task.effort] || task.effort)}</MenuHeading>
-                  <EffortItems task={task} onChange={onChange} close={close} />
-                  <MenuHeading>{"Qué puede hacer Bruno · " + (ACCESS_INFO[task.access]?.label || "Su copia")}</MenuHeading>
-                  <AccessItems task={task} onChange={onChange} close={close} />
-                </>
-              )}
-            </MenuChip>
+            <MenuButton label="Más opciones: modo, motor y modelo, esfuerzo, acceso" placement="top-start" openStyle={{ background: C.soft }}
+              items={() => optionGroups({ task, mode, onMode, onChange, engines, shown, install, running })}
+              style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: C.muted, cursor: "pointer" }}>
+              <Ellipsis size={17} strokeWidth={2.2} aria-hidden="true" />
+            </MenuButton>
         <span title={expert && task ? engineLabel + " · esfuerzo " + (EFFORT_LABEL[task.effort] || task.effort || "").toLowerCase() + " · " + (ACCESS_INFO[task.access]?.label || "Su copia").toLowerCase() : undefined}
           style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "6px", font: "400 var(--t-caption)/1.4 'Geist Mono', monospace", color: C.muted, overflow: "hidden", whiteSpace: "nowrap" }}>
           {expert && task ? <><EngineMark engine={task.engine} size={11} /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{engineLabel} · {(EFFORT_LABEL[task.effort] || task.effort || "").toLowerCase()} · {(ACCESS_INFO[task.access]?.label || "Su copia").toLowerCase()}</span></> : null}
@@ -158,19 +142,30 @@ export default function Composer({ task = null, models = [], busy = false, runni
   );
 }
 
-// The same choices inline and inside «…».
-function EffortItems({ task, onChange, close }) {
-  return Object.entries(EFFORT_LABEL).map(([id, label]) => <MenuItem key={id} icon={<Lightning size={16} />} title={label} on={task.effort === id} onClick={() => { onChange({ effort: id }); close(); }} />);
+/**
+ * The composer's «…» as groups of the app's one menu (components/Menu.js): the mode, the engine
+ * and model, the effort and what Bruno may do, each choice a radio with its tick.
+ */
+function optionGroups({ task, mode, onMode, onChange, engines, shown, install, running }) {
+  const radio = (id, on, label, icon, hint, pick) => ({ id, label, icon, hint, radio: true, checked: on, onSelect: pick });
+  const engineGroups = engines.length
+    ? engineModelGroups(engines, { current: { engine: task.engine, model: task.model }, install, onPick: (engine, model) => onChange(engine === task.engine ? { model } : { engine, model }) })
+    : [{ group: "Motor y modelo", items: shown.map((m) => radio("model:" + m.id, task.model === m.id, (ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label, <EngineMark engine={task.engine} size={16} />, modelNote(m) || undefined, () => onChange({ model: m.id }))) }];
+  // What changing engine means here: under the last engine.
+  const last = engineGroups.at(-1);
+  if (engines.length && last) last.note = [last.note, running ? "Si eliges otro motor, sigue con él al acabar este turno." : "Otro motor sigue en la misma copia, con lo hablado hasta ahora."].filter(Boolean).join(" ");
+  return [
+    onMode ? { group: "Modo", items: [
+      radio("mode:build", mode === "build", "Construir", Wrench, "Bruno hace los cambios.", () => onMode("build")),
+      radio("mode:plan", mode === "plan", "Plan", ListChecks, "Primero un plan; nada cambia hasta «Implementar».", () => onMode("plan")),
+    ] } : null,
+    ...engineGroups,
+    { group: "Esfuerzo · " + (EFFORT_LABEL[task.effort] || task.effort), items: Object.entries(EFFORT_LABEL).map(([id, label]) => radio("effort:" + id, task.effort === id, label, Lightning, undefined, () => onChange({ effort: id }))) },
+    { group: "Qué puede hacer Bruno · " + (ACCESS_INFO[task.access]?.label || "Su copia"),
+      items: Object.entries(ACCESS_INFO).map(([id, a]) => radio("access:" + id, task.access === id, a.title, id === "full" ? LockOpen : id === "ask" ? ShieldCheck : FolderCode, a.text, () => onChange({ access: id }))),
+      note: "Siempre te pregunta antes de publicar, subir a GitHub, borrar fuera del proyecto o instalar programas en Windows." },
+  ];
 }
-function AccessItems({ task, onChange, close }) {
-  return (
-    <>
-      {Object.entries(ACCESS_INFO).map(([id, a]) => <MenuItem key={id} icon={id === "full" ? <LockOpen size={16} /> : id === "ask" ? <ShieldCheck size={16} /> : <FolderCode size={16} />} title={a.title} text={a.text} on={task.access === id} onClick={() => { onChange({ access: id }); close(); }} />)}
-      <p style={{ margin: "6px 12px 6px", fontSize: "var(--t-caption)", lineHeight: 1.5, color: C.faint }}>Siempre te pregunta antes de publicar, subir a GitHub, borrar fuera del proyecto o instalar programas en Windows.</p>
-    </>
-  );
-}
-const MenuHeading = ({ children }) => <span role="presentation" style={{ display: "block", padding: "10px 12px 4px", fontSize: "var(--t-caption)", fontWeight: 600, color: C.muted }}>{children}</span>;
 
 export const modelLabel = (models, id) => models.find((m) => m.id === id)?.label || MODEL_LABEL[id] || id;
 

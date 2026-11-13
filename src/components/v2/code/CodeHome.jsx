@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Check, FolderOpen, FolderCode, GitBranch, Sparkles, Ellipsis } from "../../Icon.js";
+import { Check, ChevronDown, FolderOpen, FolderCode, GitBranch, Sparkles, Ellipsis } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { useStore } from "../../../lib/store.jsx";
 import { useHandoffs, useSharedTasks } from "../../../lib/codeshare.js";
-import { C, MONO, HEAD, BTN, CHIP, SR, MenuChip, MenuItem, BotShape, botOf } from "./parts.jsx";
+import { C, MONO, HEAD, BTN, CHIP, SR, BotShape, botOf } from "./parts.jsx";
 import Composer, { ENGINE_NAME } from "./Composer.jsx";
-import EngineModelMenu from "./EngineModels.jsx";
-import TaskSections, { useMenu, MenuSheet, Item, ProjectMenu } from "./ProjectList.jsx";
+import { engineModelGroups, useEngineInstall } from "./EngineModels.jsx";
+import TaskSections, { projectArchiveEntries } from "./ProjectList.jsx";
+import { MenuButton } from "../../Menu.js";
 import { PeerAvatar } from "../people/PeerAvatar.jsx";
 import { sharedStatus } from "../people/SharedTasks.jsx";
 
@@ -31,10 +32,10 @@ const readChoice = () => { try { return JSON.parse(localStorage.getItem(ENGINE_K
 const MODE_KEY = "colmena:code-start-mode";
 const readMode = () => { try { return localStorage.getItem(MODE_KEY) === "build" ? "build" : "plan"; } catch { return "plan"; } };
 const CARD = { display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: C.white };
+const CHIP_BUTTON = { display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", minWidth: 0, height: "32px", padding: "0 10px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, color: C.text, whiteSpace: "nowrap", ...CHIP };
 const CARD_H = { margin: "0 0 6px", fontSize: "var(--t-ui)", fontWeight: 600 };
 
 function ProjectRow({ p, n, on, onPick }) {
-  const menu = useMenu(262);
   return (
     <div className="code-task" style={{ position: "relative", display: "flex", alignItems: "center", gap: "10px", minHeight: "48px" }}>
       <button type="button" onClick={onPick} aria-pressed={on} title={"Nuevas tareas y la lista, en " + p.name} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "10px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left" }}>
@@ -45,11 +46,10 @@ function ProjectRow({ p, n, on, onPick }) {
         </span>
         <span className="code-stat" style={{ fontSize: "var(--t-meta)", color: C.muted, whiteSpace: "nowrap" }}>{n === 1 ? "1 tarea" : n + " tareas"}</span>
       </button>
-      <button type="button" className={menu.at ? undefined : "code-x"} onClick={menu.open} aria-label={"Archivado de " + p.name} aria-haspopup="menu" title="Cuándo se archivan sus tareas"
+      <MenuButton items={() => projectArchiveEntries(p)} className="code-x" label={"Archivado de " + p.name} title="Cuándo se archivan sus tareas" openStyle={{ background: C.track }}
         style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", display: "grid", placeItems: "center", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-circle)", background: C.white, color: C.text, cursor: "pointer" }}>
         <Ellipsis size={15} strokeWidth={2.4} aria-hidden="true" />
-      </button>
-      <ProjectMenu project={p} menu={menu} />
+      </MenuButton>
     </div>
   );
 }
@@ -135,7 +135,7 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const open = useMenu(300);
+  const install = useEngineInstall();
   const project = projects.find((p) => p.id === selected) || [...projects].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0] || null;
   const run = async (fn) => {
     setBusy(true); setError(null);
@@ -180,12 +180,14 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
             <h1 style={{ margin: 0, font: `700 var(--t-headline)/1.15 ${HEAD}`, letterSpacing: "-0.015em" }}>Código</h1>
             <p style={{ margin: 0, maxWidth: "680px", fontSize: "var(--t-read)", lineHeight: 1.5, color: C.text2 }}>Tus bots programan en una copia aparte de tu proyecto. Ves cada cambio, lo pruebas en la vista previa y decides qué se queda.</p>
           </div>
-          <button type="button" onClick={open.open} aria-haspopup="menu" aria-expanded={!!open.at} disabled={busy} style={{ ...BTN.outline, height: "44px", padding: "0 18px", fontSize: "var(--t-body)", fontWeight: 500 }}>Abrir un proyecto</button>
-          <MenuSheet menu={open} label="Abrir un proyecto" width={300}>
-            <Item icon={FolderOpen} text="Abrir una carpeta del ordenador" onClick={() => { open.close(); openFolder(); }} />
-            <Item icon={GitBranch} text="Clonar de GitHub" onClick={() => { open.close(); setMode("clone"); setValue(""); }} />
-            <Item icon={Sparkles} text="Empezar de cero" note="Documentos › Colmena" onClick={() => { open.close(); setMode("new"); setValue(""); }} />
-          </MenuSheet>
+          <MenuButton menuLabel="Abrir un proyecto" showTitle={false} disabled={busy} openStyle={{ background: C.track }} style={{ ...BTN.outline, height: "44px", padding: "0 18px", fontSize: "var(--t-body)", fontWeight: 500 }}
+            items={[
+              { label: "Abrir una carpeta del ordenador", icon: FolderOpen, onSelect: openFolder },
+              { label: "Clonar de GitHub", icon: GitBranch, onSelect: () => { setMode("clone"); setValue(""); } },
+              { label: "Empezar de cero", icon: Sparkles, hint: "En Documentos › Colmena", onSelect: () => { setMode("new"); setValue(""); } },
+            ]}>
+            Abrir un proyecto
+          </MenuButton>
         </header>
         {mode ? (
           <form onSubmit={confirm} style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", marginTop: "-8px", animation: "rise .25s ease-out" }}>
@@ -205,23 +207,21 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
           placeholder="¿Qué construimos? Describe el cambio como se lo contarías a un compañero…"
           footer={
             <>
-              <MenuChip title="Proyecto y rama" up={false} width={320} look={CHIP} chevron
-                label={project ? <><span style={{ font: `500 var(--t-caption)/1 ${MONO}`, color: C.ink }}>{project.name}</span>{project.repo ? <span style={{ color: C.muted }}> {project.base || "main"}</span> : null}</> : "Proyecto nuevo"}>
-                {(close) => (
-                  <>
-                    {projects.map((p) => <MenuItem key={p.id} icon={<FolderCode size={16} />} title={p.name} text={p.root} on={project?.id === p.id} onClick={() => { onSelect(p.id); close(); }} />)}
-                    <MenuItem icon={<FolderOpen size={16} />} title="Abrir otra carpeta…" onClick={() => { close(); openFolder(); }} />
-                  </>
-                )}
-              </MenuChip>
+              <MenuButton label={"Proyecto y rama: " + (project ? project.name : "proyecto nuevo")} title="Proyecto y rama" placement="bottom-start" openStyle={{ background: C.track }} style={CHIP_BUTTON}
+                items={() => [
+                  { group: null, items: projects.map((p) => ({ id: p.id, label: p.name, icon: FolderCode, hint: shortPath(p.root), title: p.root, radio: true, checked: project?.id === p.id, onSelect: () => onSelect(p.id) })) },
+                  { group: null, items: [{ label: "Abrir otra carpeta…", icon: FolderOpen, onSelect: openFolder }] },
+                ]}>
+                <span className="code-chip-label">{project ? <><span style={{ font: `500 var(--t-caption)/1 ${MONO}`, color: C.ink }}>{project.name}</span>{project.repo ? <span style={{ color: C.muted }}> {project.base || "main"}</span> : null}</> : "Proyecto nuevo"}</span>
+                <ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
+              </MenuButton>
               {engine ? (
-                <MenuChip title="Bot, motor y modelo" up={false} width={360} look={CHIP} keepLabel icon={<BotShape bot={bruno} size={14} />} label={engineChip}>
-                  {(close) => (
-                    <EngineModelMenu engines={engines} current={{ engine: engine.id, model: model?.id }} close={close} multi={multi ? picks : null}
-                      onPick={(e, m) => { if (multi) togglePick({ engine: e, model: m }); else setChoice({ engine: e, model: m }); }}
-                      switchNote={multi ? "Marca hasta 4: cada uno hace la misma tarea en su copia y luego los comparas." : null} />
-                  )}
-                </MenuChip>
+                <MenuButton label={"Bot, motor y modelo: " + engineChip} title="Bot, motor y modelo" placement="bottom-start" openStyle={{ background: C.track }} style={CHIP_BUTTON}
+                  items={() => engineModelGroups(engines, { current: { engine: engine.id, model: model?.id }, install, multi: multi ? picks : null, onPick: (e, m) => { if (multi) togglePick({ engine: e, model: m }); else setChoice({ engine: e, model: m }); } })}
+                  footer={multi ? "Marca hasta 4: cada uno hace la misma tarea en su copia y luego los comparas." : null}>
+                  <BotShape bot={bruno} size={14} /><span className="code-chip-label">{engineChip}</span>
+                  <ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
+                </MenuButton>
               ) : null}
               <div role="radiogroup" aria-label="Cómo empieza" style={{ display: "inline-flex", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: C.track }}>
                 {[["plan", "Plan primero"], ["build", "Directo"]].map(([id, text]) => (
