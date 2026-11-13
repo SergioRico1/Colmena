@@ -53,6 +53,23 @@ export function splitSnoozed(approvals = [], now = Date.now()) {
   return { waiting, snoozed };
 }
 
+/**
+ * «Posponer» a room or a conversation (PATCH /api/rooms/:id or /missions/:id { snooze }): the
+ * same presets as the server (server/rooms.mjs › snoozeUntil), each with when it comes back.
+ * «Hasta esta tarde» only while it is still before 17:00.
+ * @returns {{id: "tarde"|"manana"|"lunes", label: string, hint: string}[]}
+ */
+export function roomSnoozeChoices(from = new Date()) {
+  const at = (days, h) => { const d = new Date(from); d.setDate(d.getDate() + days); d.setHours(h, 0, 0, 0); return d; };
+  const afternoon = at(0, 17);
+  const monday = at(((8 - from.getDay()) % 7) || 7, 9);
+  return [
+    ...(afternoon > from ? [{ id: "tarde", label: "Hasta esta tarde", hint: hhmm(afternoon) }] : []),
+    { id: "manana", label: "Hasta mañana", hint: hhmm(at(1, 9)) },
+    { id: "lunes", label: "Hasta el lunes", hint: monday.toLocaleDateString("es-ES", { day: "numeric", month: "short" }) },
+  ];
+}
+
 /** «2 pospuestos». */
 export const snoozedLabel = (n) => (n === 1 ? "1 pospuesto" : `${n} pospuestos`);
 
