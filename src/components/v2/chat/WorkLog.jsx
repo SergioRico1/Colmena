@@ -45,13 +45,13 @@ export function CommandOutput({ stepId, callId, running, fallback = null }) {
       aria-live={live ? "polite" : undefined} aria-label="Salida del programa"
       style={{ ...MONO, margin: 0, maxHeight: "240px", overflow: "auto", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "#12131A", color: "#E6E7EC", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
       {text || <span style={{ color: "#8A8D96" }}>{live ? "Aún no ha escrito nada." : "No escribió nada."}</span>}
-      {live ? <span aria-hidden="true" style={{ display: "inline-block", width: "7px", height: "14px", marginLeft: "2px", verticalAlign: "-2px", background: "#FFC93C", animation: "caret 1s steps(1) infinite" }} /> : null}
+      {live ? <span aria-hidden="true" style={{ display: "inline-block", width: "7px", height: "14px", marginLeft: "2px", verticalAlign: "-2px", background: "var(--c-honey)", color: "var(--c-honey-ink)", animation: "caret 1s steps(1) infinite" }} /> : null}
     </pre>
   );
 }
 
 const MONO_ROW = { font: "500 var(--t-meta)/1.3 'Geist Mono', monospace" };
-const TICK = { flex: "none", width: "20px", height: "20px", marginTop: "1px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#E3F4EC", color: "#0B6B4A", fontSize: "var(--t-micro)", fontWeight: 700 };
+const TICK = { flex: "none", width: "20px", height: "20px", marginTop: "1px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-ok-soft)", color: "var(--c-ok-ink)", fontSize: "var(--t-micro)", fontWeight: 700 };
 
 /** «2 min 14 s» / «40 s». */
 export function durationText(seconds) {
@@ -100,14 +100,14 @@ function WorkStep({ tool, bots, stepId, onOpenArtifact }) {
   return (
     <li data-tool={tool.name} data-status={tool.status} style={{ display: "flex", flexDirection: "column", gap: "6px", paddingTop: "10px" }}>
       <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)}
-        style={{ display: "flex", gap: "12px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#12131A" }}>
-        <span aria-hidden="true" style={{ ...TICK, ...(bad ? { background: "#FBE9EA", color: "#B4232A" } : running ? { background: "#EEF0F4", color: "#1F4FD1" } : {}) }}>{bad ? "!" : running ? "·" : "✓"}</span>
+        style={{ display: "flex", gap: "12px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "var(--c-text)" }}>
+        <span aria-hidden="true" style={{ ...TICK, ...(bad ? { background: "var(--c-error-soft)", color: "var(--c-error)" } : running ? { background: "var(--c-chip)", color: "var(--c-accent-ink)" } : {}) }}>{bad ? "!" : running ? "·" : "✓"}</span>
         <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-          <span>{headline(tool, bots)}{tool.times > 1 ? <span style={{ marginLeft: "6px", font: "600 var(--t-caption)/1 'Geist Mono', monospace", color: "#5C606C" }}>{"×" + tool.times}</span> : null}</span>
-          {running || bad ? <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}><Status tool={tool} /></span> : null}
+          <span>{headline(tool, bots)}{tool.times > 1 ? <span style={{ marginLeft: "6px", font: "600 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{"×" + tool.times}</span> : null}</span>
+          {running || bad ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}><Status tool={tool} /></span> : null}
         </span>
       </button>
-      {open ? <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 0 4px 32px", fontSize: "var(--t-meta)", color: "#5C606C", animation: "fade .2s ease-out" }}><Detail tool={tool} bots={bots} onOpenArtifact={onOpenArtifact} liveOutput={command && running ? <CommandOutput stepId={stepId} callId={tool.id} running /> : null} /></div> : null}
+      {open ? <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 0 4px 32px", fontSize: "var(--t-meta)", color: "var(--c-text-3)", animation: "fade .2s ease-out" }}><Detail tool={tool} bots={bots} onOpenArtifact={onOpenArtifact} liveOutput={command && running ? <CommandOutput stepId={stepId} callId={tool.id} running /> : null} /></div> : null}
     </li>
   );
 }
@@ -119,11 +119,11 @@ function ToolRow({ tool, stepId, first }) {
   const running = tool.status === "running";
   const out = open ? outputOf(tool) : "";
   return (
-    <div data-tool={tool.name} data-status={tool.status} style={{ display: "flex", flexDirection: "column", borderTop: first ? "0" : "1px solid rgba(18,19,26,.06)" }}>
+    <div data-tool={tool.name} data-status={tool.status} style={{ display: "flex", flexDirection: "column", borderTop: first ? "0" : "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
       <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} style={{ minHeight: "42px", display: "flex", alignItems: "center", gap: "10px", padding: "0 14px", border: 0, background: "transparent", textAlign: "left", cursor: "pointer" }}>
-        <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: bad ? "#FBE9EA" : running ? "#EEF0F4" : "#E3F4EC", color: bad ? "#B4232A" : running ? "#1F4FD1" : "#0B6B4A", fontSize: "var(--t-micro)", fontWeight: 700 }}>{bad ? "!" : running ? "·" : "✓"}</span>
+        <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: bad ? "var(--c-error-soft)" : running ? "var(--c-chip)" : "var(--c-ok-soft)", color: bad ? "var(--c-error)" : running ? "var(--c-accent-ink)" : "var(--c-ok-ink)", fontSize: "var(--t-micro)", fontWeight: 700 }}>{bad ? "!" : running ? "·" : "✓"}</span>
         <span style={{ flex: "1", minWidth: 0, ...MONO_ROW, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{callOf(tool)}</span>
-        <span style={{ flex: "none", font: "400 var(--t-caption)/1 'Geist Mono', monospace", color: bad ? "#B4232A" : "#5C606C" }}>{bad ? "error" : running ? "en curso" : metaOf(tool)}</span>
+        <span style={{ flex: "none", font: "400 var(--t-caption)/1 'Geist Mono', monospace", color: bad ? "var(--c-error)" : "var(--c-text-3)" }}>{bad ? "error" : running ? "en curso" : metaOf(tool)}</span>
       </button>
       {open ? (
         tool.card?.type === "command" && running
@@ -150,7 +150,7 @@ export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenAr
   const rows = () => steps.map((t, i) => <RowBoundary key={t.id || i} label={STEP_FAILED} resetKey={t.status}><ToolRow tool={t} stepId={stepId} first={i === 0} /></RowBoundary>);
   if (expert && !turn) {
     return (
-      <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", overflow: "hidden", animation: "fade .4s ease-out", minWidth: 0 }}>
+      <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .07)", overflow: "hidden", animation: "fade .4s ease-out", minWidth: 0 }}>
         {rows()}
       </div>
     );
@@ -160,20 +160,20 @@ export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenAr
   // Folded: «Usó 4 herramientas» and, in grey, how long it took and what did not work.
   const [title, ...rest] = turn ? turn.text.split(" · ") : [bad ? "No salió" : steps.length === 1 ? "Hecho en 1 paso" : `Hecho en ${steps.length} pasos`, summary.text, ...(time ? [time] : [])];
   return (
-    <div data-work-fold={turn ? "" : undefined} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", animation: "fade .4s ease-out", minWidth: 0 }}>
+    <div data-work-fold={turn ? "" : undefined} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .07)", animation: "fade .4s ease-out", minWidth: 0 }}>
       <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={open ? "Ocultar los pasos" : steps.length === 1 ? "Ver el paso" : `Ver los ${steps.length} pasos`}
-        style={{ minHeight: "46px", display: "flex", alignItems: "center", gap: "10px", padding: "8px 16px", border: 0, background: "transparent", textAlign: "left", cursor: "pointer", fontSize: "var(--t-ui)", color: "#12131A" }}>
-        <span aria-hidden="true" style={{ color: bad ? "#B4232A" : "#0B6B4A", fontWeight: 600 }}>{bad ? "!" : "✓"}</span>
+        style={{ minHeight: "46px", display: "flex", alignItems: "center", gap: "10px", padding: "8px 16px", border: 0, background: "transparent", textAlign: "left", cursor: "pointer", fontSize: "var(--t-ui)", color: "var(--c-text)" }}>
+        <span aria-hidden="true" style={{ color: bad ? "var(--c-error)" : "var(--c-ok-ink)", fontWeight: 600 }}>{bad ? "!" : "✓"}</span>
         <span style={{ flex: "1", minWidth: 0 }}>
           <strong style={{ fontWeight: 600 }}>{title}</strong>
-          {rest.length ? <span style={{ color: "#5C606C" }}>{" · " + rest.join(" · ")}</span> : null}
+          {rest.length ? <span style={{ color: "var(--c-text-3)" }}>{" · " + rest.join(" · ")}</span> : null}
         </span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="2.2" aria-hidden="true" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}><path d="m6 9 6 6 6-6" /></svg>
       </button>
-      {open && turn && summary.text ? <p style={{ margin: 0, padding: "10px 16px 0", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#5C606C" }}>{summary.text}</p> : null}
-      {open && expert ? <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderTop: "1px solid rgba(18,19,26,.06)", animation: "rise .25s ease-out" }}>{rows()}</div> : null}
+      {open && turn && summary.text ? <p style={{ margin: 0, padding: "10px 16px 0", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "var(--c-text-3)" }}>{summary.text}</p> : null}
+      {open && expert ? <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", animation: "rise .25s ease-out" }}>{rows()}</div> : null}
       {open && !expert ? (
-        <ol aria-label="Pasos" style={{ margin: 0, padding: "0 16px 14px", listStyle: "none", display: "flex", flexDirection: "column", borderTop: turn && summary.text ? 0 : "1px solid rgba(18,19,26,.06)", animation: "rise .25s ease-out" }}>
+        <ol aria-label="Pasos" style={{ margin: 0, padding: "0 16px 14px", listStyle: "none", display: "flex", flexDirection: "column", borderTop: turn && summary.text ? 0 : "1px solid rgb(var(--c-ink-rgb) / .06)", animation: "rise .25s ease-out" }}>
           {steps.map((t, i) => <RowBoundary key={t.id || i} label={STEP_FAILED} resetKey={t.status}><WorkStep tool={t} bots={bots} stepId={stepId} onOpenArtifact={onOpenArtifact} /></RowBoundary>)}
         </ol>
       ) : null}

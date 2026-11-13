@@ -20,29 +20,29 @@ export default function Stash({ entries = [], onRestore, onDelete, saved = false
   return (
     <span ref={ref} style={{ position: "relative", display: "inline-flex" }}>
       {saved ? (
-        <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", fontSize: "var(--t-meta)", color: "#0B6B4A", animation: "fade .2s ease-out" }}>
+        <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", fontSize: "var(--t-meta)", color: "var(--c-ok-ink)", animation: "fade .2s ease-out" }}>
           <Bookmark size={14} strokeWidth={2.2} aria-hidden="true" />{"Guardado para después"}
         </span>
       ) : (
         <button type="button" className="rm-focus" aria-haspopup="dialog" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={`Lo que guardaste con ${comboLabel("mod+s")}`}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 12px 0 10px", border: 0, borderRadius: "var(--r-pill)", background: open ? "#12131A" : "rgba(18,19,26,.06)", color: open ? "#FFFFFF" : "#3D404A", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 12px 0 10px", border: 0, borderRadius: "var(--r-pill)", background: open ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: open ? "var(--c-btn-text)" : "#3D404A", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>
           <Bookmark size={14} strokeWidth={2.2} aria-hidden="true" />
           {`Guardados para después · ${entries.length}`}
         </button>
       )}
       {open ? (
-        <div role="dialog" aria-label="Guardados para después" style={{ position: "absolute", right: 0, bottom: "calc(100% + 8px)", zIndex: 30, width: "min(460px, 80vw)", padding: "6px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
-          <p style={{ margin: 0, padding: "8px 12px 6px", fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{`Pulsa uno para seguir escribiéndolo. ${comboLabel("mod+s")} guarda lo que tengas en el cuadro.`}</p>
+        <div role="dialog" aria-label="Guardados para después" style={{ position: "absolute", right: 0, bottom: "calc(100% + 8px)", zIndex: 30, width: "min(460px, 80vw)", padding: "6px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
+          <p style={{ margin: 0, padding: "8px 12px 6px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{`Pulsa uno para seguir escribiéndolo. ${comboLabel("mod+s")} guarda lo que tengas en el cuadro.`}</p>
           <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", maxHeight: "320px", overflowY: "auto" }}>
             {entries.map((e) => (
               <li key={e.id} style={{ display: "flex", alignItems: "center", gap: "4px", borderRadius: "var(--r-lg)" }}>
                 <button type="button" className="rm-focus" onClick={() => { setOpen(false); onRestore(e); }} aria-label={`Seguir escribiendo: ${snippet(e.text)}`}
                   style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "2px", padding: "10px 12px", border: 0, borderRadius: "var(--r-lg)", background: "transparent", cursor: "pointer", textAlign: "left" }}>
-                  <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "var(--t-ui)", color: "#12131A" }}>{snippet(e.text)}</span>
-                  <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{[e.label, whenLabel(new Date(e.at).toISOString())].filter(Boolean).join(" · ")}</span>
+                  <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "var(--t-ui)", color: "var(--c-text)" }}>{snippet(e.text)}</span>
+                  <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{[e.label, whenLabel(new Date(e.at).toISOString())].filter(Boolean).join(" · ")}</span>
                 </button>
                 <button type="button" className="rm-focus" onClick={() => onDelete(e)} aria-label={`Borrar el guardado: ${snippet(e.text)}`} title="Borrar"
-                  style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-md)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                  style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-md)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
                   <X size={15} strokeWidth={2.4} aria-hidden="true" />
                 </button>
               </li>

@@ -7,7 +7,7 @@ import { RELAY_LABEL, statusText } from "../../../lib/peers.js";
 import { PeerAvatar } from "../people/PeerAvatar.jsx";
 import { AcceptSheet, InviteSheet } from "../people/InviteSheets.jsx";
 import PeopleIntro, { HELP_URL } from "../people/PeopleIntro.jsx";
-import { Chevron, FieldRow, Group, LINE, LinkRow, MUTED, Segmented, SwitchRow, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
+import { Chevron, FieldRow, Group, LINE, LinkRow, Segmented, SwitchRow, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
 
 // Ajustes › Personas (design/V2Personas.dc.html, paso personas): who you talk to from
 // Colmena, what each one's bot may ask you, your safety words with each, invitations not yet
@@ -67,15 +67,15 @@ export default function PeopleSettings() {
               </button>
               {isOpen ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "4px 20px 22px 76px", animation: "rise .2s ease-out" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "var(--r-xl)", background: "#F4F4F0" }}>
-                    <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{`Vuestras palabras de seguridad. ${c.name.split(" ")[0]} tiene que ver las mismas:`}</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "var(--r-xl)", background: "var(--c-sunken)" }}>
+                    <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`Vuestras palabras de seguridad. ${c.name.split(" ")[0]} tiene que ver las mismas:`}</span>
                     <strong style={{ font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{c.words.join(" · ")}</strong>
                     <button type="button" onClick={() => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { verified: !c.verifiedAt }))} style={{ ...pill(!c.verifiedAt), alignSelf: "flex-start", height: "36px", fontSize: "var(--t-meta)" }}>{c.verifiedAt ? "Comprobadas · deshacer" : "Las hemos comprobado"}</button>
                   </div>
-                  <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: MUTED }}>{"Lo que puede pedirte su bot"}</span>
+                  <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: "var(--c-text-3)" }}>{"Lo que puede pedirte su bot"}</span>
                   {ASKS.map(([key, title, sub, items]) => (
                     <div key={key} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px" }}>
-                      <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "2px" }}><strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{title}</strong><span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{sub}</span></span>
+                      <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: "2px" }}><strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{title}</strong><span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{sub}</span></span>
                       <span style={{ flex: "0 1 300px" }}><Segmented label={title} items={items} value={c.asks[key]} busy={act.busy} onPick={(v) => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { asks: { [key]: v } }))} /></span>
                     </div>
                   ))}
@@ -136,7 +136,7 @@ function StatusRow({ status, act }) {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px" }}>
         <span style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "3px" }}>
           <strong style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{"Tu estado"}</strong>
-          <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{mode === "available" ? "Disponible. Lo ven las personas con las que hablas." : statusText(status) + ". Mientras tanto no te salta ni te suena ningún aviso."}</span>
+          <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{mode === "available" ? "Disponible. Lo ven las personas con las que hablas." : statusText(status) + ". Mientras tanto no te salta ni te suena ningún aviso."}</span>
         </span>
         <span style={{ flex: "0 1 360px" }}><Segmented label="Tu estado" items={[["available", "Disponible"], ["dnd", "No molestar"], ["away", "Fuera"]]} value={picking || mode} busy={act.busy} onPick={choose} /></span>
       </div>
@@ -144,12 +144,12 @@ function StatusRow({ status, act }) {
         <div role="group" aria-label="Hasta cuándo" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", animation: "rise .2s ease-out" }}>
           {UNTIL[picking].map(([label, at]) => <button key={label} type="button" onClick={() => set(picking, at())} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)" }}>{label}</button>)}
           {picking === "away" ? (
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: MUTED }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
               {"Hasta el"}
-              <input type="date" value={day} min={new Date(Date.now() + 864e5).toISOString().slice(0, 10)} onChange={(e) => { setDay(e.target.value); if (e.target.value) set("away", new Date(e.target.value + "T09:00:00").toISOString()); }} style={{ height: "36px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: "#F4F4F0", font: "inherit", fontSize: "var(--t-meta)" }} />
+              <input type="date" value={day} min={new Date(Date.now() + 864e5).toISOString().slice(0, 10)} onChange={(e) => { setDay(e.target.value); if (e.target.value) set("away", new Date(e.target.value + "T09:00:00").toISOString()); }} style={{ height: "36px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: "var(--c-sunken)", font: "inherit", fontSize: "var(--t-meta)" }} />
             </label>
           ) : null}
-          <button type="button" onClick={() => setPicking(null)} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)", background: "transparent", color: MUTED }}>{"Cancelar"}</button>
+          <button type="button" onClick={() => setPicking(null)} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)", background: "transparent", color: "var(--c-text-3)" }}>{"Cancelar"}</button>
         </div>
       ) : null}
     </div>

@@ -19,14 +19,14 @@ export const INK = "#12131A", MUTED = "#5C606C";
 /** «Cómo funciona», at what the others see of your bots' work. */
 const HELP = "/personas/como-funciona#que-ven";
 const veil = { position: "fixed", inset: 0, zIndex: 80, display: "grid", placeItems: "center", padding: "24px", background: DIALOG_VEIL, animation: "fade .2s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: INK, WebkitAppRegion: "no-drag" };
-const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "var(--r-3xl)", background: "#FFFFFF", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
-export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", cursor: on ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: on ? INK : "#C9CBD1", color: on ? "#FFFFFF" : "#3D404A" });
-export const quietBtn = { minHeight: "44px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, color: MUTED };
-export const fieldBox = { display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "var(--r-pill)", background: "#F2F2EE" };
-export const fieldInput = { flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", fontSize: "var(--t-read)", color: INK };
+const cardStyle = (w) => ({ width: `min(${w}px, 100%)`, maxHeight: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "20px", padding: "28px", borderRadius: "var(--r-3xl)", background: "var(--c-card)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 0 0 1px rgba(18,19,26,.06)", animation: "sheet .3s cubic-bezier(.2,.8,.2,1)", boxSizing: "border-box", textAlign: "left" });
+export const darkBtn = (on = true) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", cursor: on ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: on ? "var(--c-btn)" : "#C9CBD1", color: on ? "var(--c-btn-text)" : "#3D404A" });
+export const quietBtn = { minHeight: "44px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text-3)" };
+export const fieldBox = { display: "flex", alignItems: "center", gap: "8px", padding: "6px 6px 6px 18px", borderRadius: "var(--r-pill)", background: "var(--c-sunken)" };
+export const fieldInput = { flex: 1, minWidth: 0, height: "44px", border: 0, background: "transparent", fontSize: "var(--t-read)", color: "var(--c-text)" };
 export const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
-export const note = { margin: 0, fontSize: "var(--t-meta)", lineHeight: 1.5, color: MUTED };
-export const errorLine = { margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#B4231A" };
+export const note = { margin: 0, fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" };
+export const errorLine = { margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-error)" };
 
 /** The sheet itself: a veil, a dialog that keeps the keyboard inside, a title and «Cerrar». */
 export function Sheet({ id, title, sub = null, width = 540, onClose, children }) {
@@ -37,9 +37,9 @@ export function Sheet({ id, title, sub = null, width = 540, onClose, children })
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0 }}>
             <h2 id={id} style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{title}</h2>
-            {sub ? <span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: MUTED }}>{sub}</span> : null}
+            {sub ? <span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{sub}</span> : null}
           </span>
-          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.06)", color: INK, cursor: "pointer" }}><X size={15} strokeWidth={2.6} aria-hidden="true" /></button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)", cursor: "pointer" }}><X size={15} strokeWidth={2.6} aria-hidden="true" /></button>
         </div>
         {children}
       </section>
@@ -54,15 +54,15 @@ export function CodeCard({ made, onError }) {
     try { await navigator.clipboard.writeText(made.text || made.code); setCopied(true); } catch { onError("No se pudo copiar. Selecciona el texto y cópialo tú."); }
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "var(--r-2xl)", background: "#F4F4F0" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#1E2029", userSelect: "text" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "var(--r-2xl)", background: "var(--c-sunken)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text)", userSelect: "text" }}>
         {String(made.text || made.code).split("\n").map((line, i) => line === made.code
-          ? <code key={i} style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{line}</code>
+          ? <code key={i} style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "var(--r-md)", background: "var(--c-card)", font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .08)", userSelect: "all" }}>{line}</code>
           : <span key={i} style={{ overflowWrap: "anywhere" }}>{line}</span>)}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
         <button type="button" onClick={copy} data-autofocus="" style={darkBtn()}><Copy size={15} strokeWidth={2.2} aria-hidden="true" />{copied ? "Copiada" : "Copiar invitación"}</button>
-        <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{"24 h, un solo uso"}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"24 h, un solo uso"}</span>
         <span role="status" style={hidden}>{copied ? "Invitación copiada" : ""}</span>
       </div>
     </div>
@@ -155,7 +155,7 @@ export function TeamInviteSheet({ team, onClose, fresh = false }) {
             </label>
             <button type="submit" disabled={busy} style={darkBtn(!busy)}>{busy ? "Creando…" : "Crear invitación"}</button>
           </form>
-          <p style={note}>{"El código sirve 24 h y una sola vez. El nombre solo es para que reconozcas la invitación en la lista. "}<a href={HELP} onClick={() => onClose()} style={{ color: "#1F4FD1", fontWeight: 600 }}>{"Qué verá quien entre"}</a></p>
+          <p style={note}>{"El código sirve 24 h y una sola vez. El nombre solo es para que reconozcas la invitación en la lista. "}<a href={HELP} onClick={() => onClose()} style={{ color: "var(--c-accent-ink)", fontWeight: 600 }}>{"Qué verá quien entre"}</a></p>
         </>
       )}
       {error ? <p role="alert" style={errorLine}>{error}</p> : null}
@@ -203,10 +203,10 @@ export function JoinSheet({ onClose }) {
   if (preview) {
     return (
       <Sheet id="team-join-t" title={what.title} sub={what.text} onClose={onClose}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px", borderRadius: "var(--r-2xl)", background: "#F4F4F0" }}>
-          <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px", borderRadius: "var(--r-2xl)", background: "var(--c-sunken)" }}>
+          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
           <strong style={{ font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{(preview.words || []).join(" · ")}</strong>
-          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: MUTED }}>{`Si coinciden, la invitación es de verdad de ${what.from}. Si no, no sigas.`}</span>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-3)" }}>{`Si coinciden, la invitación es de verdad de ${what.from}. Si no, no sigas.`}</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <button type="button" data-autofocus="" onClick={accept} disabled={busy} style={{ ...darkBtn(!busy), minHeight: "50px", fontSize: "var(--t-body)" }}>{busy ? "Un momento…" : what.confirm}</button>

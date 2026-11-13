@@ -38,11 +38,11 @@ const ORIGIN = {
 };
 
 const STATUS = {
-  pending: { label: "Sin revisar", style: { background: "#FFF4D1", color: "#12131A" } },
-  active: { label: "Activa", style: { background: "#E1F4EC", color: "#0B5E41" } },
-  disabled: { label: "Descartada", style: { background: "#F4F4F0", color: "#5C606C" } },
-  stale: { label: "Sin usar", style: { background: "#FFF4D1", color: "#12131A" } },
-  archived: { label: "Archivada", style: { background: "#F4F4F0", color: "#5C606C" } },
+  pending: { label: "Sin revisar", style: { background: "var(--c-honey-soft)", color: "var(--c-text)" } },
+  active: { label: "Activa", style: { background: "var(--c-ok-soft)", color: "var(--c-ok-ink)" } },
+  disabled: { label: "Descartada", style: { background: "var(--c-sunken)", color: "var(--c-text-3)" } },
+  stale: { label: "Sin usar", style: { background: "var(--c-honey-soft)", color: "var(--c-text)" } },
+  archived: { label: "Archivada", style: { background: "var(--c-sunken)", color: "var(--c-text-3)" } },
 };
 
 const MD_CSS = `
@@ -97,17 +97,17 @@ export default function SkillReview({ skillId, onClose }) {
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 32px", overflowY: "auto" }}>
       <style>{MD_CSS}</style>
-      <div ref={dialog} tabIndex={-1} data-autofocus="" role="dialog" aria-modal="true" aria-labelledby="skill-review-t" style={{ width: "min(720px, 100%)", maxHeight: "calc(100vh - 128px)", background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", padding: "20px 22px 16px", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
+      <div ref={dialog} tabIndex={-1} data-autofocus="" role="dialog" aria-modal="true" aria-labelledby="skill-review-t" style={{ width: "min(720px, 100%)", maxHeight: "calc(100vh - 128px)", background: "var(--c-card)", border: "0", borderRadius: "var(--r-xl)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "14px", padding: "20px 22px 16px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
           {bot ? <BotAvatar bot={bot} size={40} /> : null}
           <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>Revisar pasos{bot ? ` · ${bot.name}` : ""}</span>
+            <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>Revisar pasos{bot ? ` · ${bot.name}` : ""}</span>
             <h2 id="skill-review-t" style={{ margin: 0, font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{skill?.name || (loading ? "Cargando…" : "Habilidad")}</h2>
             {skill ? (
-              <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "#5C606C" }}>
+              <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>
                 {origin}{skill.createdAt ? ` · ${longDay(skill.createdAt)}` : ""}
                 <span style={{ padding: "3px 8px", borderRadius: "var(--r-sm)", font: "600 var(--t-micro)/1.4 'Geist Mono', monospace", letterSpacing: "0.04em", textTransform: "uppercase", ...status.style }}>{status.label}</span>
-                {skill.version ? <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#6B6F7A" }}>v{skill.version}</span> : null}
+                {skill.version ? <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>v{skill.version}</span> : null}
               </span>
             ) : null}
           </div>
@@ -116,32 +116,32 @@ export default function SkillReview({ skillId, onClose }) {
 
         <div style={{ flex: "1", minHeight: 0, overflowY: "auto", padding: "18px 22px", display: "flex", flexDirection: "column", gap: "18px" }}>
           {missing ? <Notice>{"No encuentro esta habilidad: puede que se haya actualizado o borrado mientras la mirabas. Cierra y vuelve a abrirla desde la lista."}</Notice> : error && attempt ? <Notice>{error}</Notice> : null}
-          {skill?.description ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.5", color: "#3D404A" }}>{skill.description}</p> : null}
+          {skill?.description ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{skill.description}</p> : null}
           {skill && ["stale", "archived"].includes(skill.status) ? (
-            <p style={{ margin: 0, padding: "12px 14px", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
+            <p style={{ margin: 0, padding: "12px 14px", background: "var(--c-hover)", border: "1px solid rgb(var(--c-ink-rgb) / .06)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
               <strong>{skill.status === "stale" ? "Lleva un mes sin usarse." : "Archivada por falta de uso."}</strong> Ya no se ofrece a los bots; no se ha borrado nada. Reactívala si la quieres de nuevo.
             </p>
           ) : null}
           {skill && skill.status === "pending" ? (
-            <p style={{ margin: 0, padding: "12px 14px", background: "#FFF4D1", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
+            <p style={{ margin: 0, padding: "12px 14px", background: "var(--c-honey-soft)", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
               <strong>Aún no la usa.</strong> Revisa los pasos: solo la aplicará cuando la actives.
             </p>
           ) : null}
           {skill ? (
-            body ? <div className="colmena-skill-md"><ReactMarkdown>{body}</ReactMarkdown></div> : <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#6B6F7A" }}>Esta habilidad no tiene pasos escritos.</p>
+            body ? <div className="colmena-skill-md"><ReactMarkdown>{body}</ReactMarkdown></div> : <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Esta habilidad no tiene pasos escritos.</p>
           ) : null}
           {diff ? (
             <section aria-labelledby="skill-diff-t" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "8px" }}>
                 <h3 id="skill-diff-t" style={{ margin: 0, font: "600 var(--t-lead)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Qué cambia respecto a la versión {skill.previous.version}</h3>
-                <span style={{ display: "flex", gap: "10px", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#6B6F7A" }}>
+                <span style={{ display: "flex", gap: "10px", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>
                   <span><span style={{ padding: "1px 5px", background: "#E3F6EE", borderRadius: "var(--r-xs)", color: "#0B5E41" }}>+ {diff.filter((d) => d.type === "add").length}</span></span>
-                  <span><span style={{ padding: "1px 5px", background: "#FDE8E8", borderRadius: "var(--r-xs)", color: "#8A1C1C" }}>− {diff.filter((d) => d.type === "del").length}</span></span>
+                  <span><span style={{ padding: "1px 5px", background: "var(--c-error-soft)", borderRadius: "var(--r-xs)", color: "var(--c-error)" }}>− {diff.filter((d) => d.type === "del").length}</span></span>
                 </span>
               </div>
-              <div role="list" aria-label="Diferencias línea a línea" style={{ border: "1px solid rgba(18,19,26,.06)", borderRadius: "var(--r-md)", overflow: "hidden", font: "400 var(--t-meta)/1.55 'Geist Mono', monospace" }}>
+              <div role="list" aria-label="Diferencias línea a línea" style={{ border: "1px solid rgb(var(--c-ink-rgb) / .06)", borderRadius: "var(--r-md)", overflow: "hidden", font: "400 var(--t-meta)/1.55 'Geist Mono', monospace" }}>
                 {diff.map((d, i) => (
-                  <div key={i} role="listitem" style={{ display: "grid", gridTemplateColumns: "24px 1fr", padding: "1px 10px", background: d.type === "add" ? "#E3F6EE" : d.type === "del" ? "#FDE8E8" : "#FFFFFF", color: d.type === "del" ? "#8A1C1C" : d.type === "add" ? "#0B5E41" : "#5C606C" }}>
+                  <div key={i} role="listitem" style={{ display: "grid", gridTemplateColumns: "24px 1fr", padding: "1px 10px", background: d.type === "add" ? "#E3F6EE" : d.type === "del" ? "var(--c-error-soft)" : "var(--c-card)", color: d.type === "del" ? "#8A1C1C" : d.type === "add" ? "#0B5E41" : "#5C606C" }}>
                     <span aria-label={d.type === "add" ? "Añadida" : d.type === "del" ? "Quitada" : undefined}>{d.type === "add" ? "+" : d.type === "del" ? "−" : ""}</span>
                     <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", textDecoration: d.type === "del" ? "line-through" : "none" }}>{d.text || " "}</span>
                   </div>
@@ -152,13 +152,13 @@ export default function SkillReview({ skillId, onClose }) {
           {actionError ? <Notice>{actionError}</Notice> : null}
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: "8px", padding: "14px 22px", borderTop: "1px solid rgba(18,19,26,.06)", background: "#F6F6F3" }}>
-          <button type="button" onClick={onClose} style={{ height: "44px", padding: "0 16px", background: "transparent", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", textDecoration: "underline", color: "#5C606C" }}>Cerrar</button>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: "8px", padding: "14px 22px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", background: "var(--c-hover)" }}>
+          <button type="button" onClick={onClose} style={{ height: "44px", padding: "0 16px", background: "transparent", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", textDecoration: "underline", color: "var(--c-text-3)" }}>Cerrar</button>
           {skill && skill.status !== "disabled" ? (
-            <button type="button" disabled={busy} onClick={() => setStatus("disabled")} style={{ height: "44px", padding: "0 16px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "var(--r-pill)", cursor: busy ? "wait" : "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{skill.status === "active" ? "Desactivar" : "Descartar"}</button>
+            <button type="button" disabled={busy} onClick={() => setStatus("disabled")} style={{ height: "44px", padding: "0 16px", background: "rgb(var(--c-ink-rgb) / .06)", border: "0", borderRadius: "var(--r-pill)", cursor: busy ? "wait" : "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{skill.status === "active" ? "Desactivar" : "Descartar"}</button>
           ) : null}
           {skill && skill.status !== "active" ? (
-            <button type="button" disabled={busy} onClick={() => setStatus("active")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 18px", background: "#FFC93C", border: "0", borderRadius: "var(--r-pill)", cursor: busy ? "wait" : "pointer", fontWeight: "700", fontSize: "var(--t-ui)" }}>{busy ? <Spinner size={14} /> : null}{["stale", "archived"].includes(skill.status) ? "Reactivar" : "Activar"}</button>
+            <button type="button" disabled={busy} onClick={() => setStatus("active")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 18px", background: "var(--c-honey)", color: "var(--c-honey-ink)", border: "0", borderRadius: "var(--r-pill)", cursor: busy ? "wait" : "pointer", fontWeight: "700", fontSize: "var(--t-ui)" }}>{busy ? <Spinner size={14} /> : null}{["stale", "archived"].includes(skill.status) ? "Reactivar" : "Activar"}</button>
           ) : null}
         </div>
       </div>

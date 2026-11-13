@@ -23,7 +23,7 @@ function CitedLink({ href, ...props }) {
 /** Inline code; when it is exactly a file the turn changed, a link that opens it. */
 function InlineCode({ children, ...props }) {
   const file = useCodeFile(typeof children === "string" ? children : Array.isArray(children) ? children.join("") : "");
-  const code = <code style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", padding: "3px 6px", background: "#E7EEFF", color: "#1F4FD1", borderRadius: "var(--r-xs)" }} {...props}>{children}</code>;
+  const code = <code style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", padding: "3px 6px", background: "var(--c-accent-soft)", color: "var(--c-accent-ink)", borderRadius: "var(--r-xs)" }} {...props}>{children}</code>;
   return file ? <FileLink file={file}>{code}</FileLink> : code;
 }
 
@@ -40,8 +40,8 @@ const make = (size) => ({
   h2: ({ node, ...props }) => <h3 style={{ margin: "4px 0 0", font: `700 ${stepOf(size + 4)}px/1.2 'Bricolage Grotesque', sans-serif` }} {...props} />,
   h3: ({ node, ...props }) => <h4 style={{ margin: "4px 0 0", font: `700 ${stepOf(size + 2)}px/1.25 'Bricolage Grotesque', sans-serif` }} {...props} />,
   h4: ({ node, ...props }) => <h4 style={{ margin: "4px 0 0", fontSize: size + "px", fontWeight: "700" }} {...props} />,
-  blockquote: ({ node, ...props }) => <blockquote style={{ margin: "0", padding: "2px 0 2px 14px", borderLeft: "3px solid #DCE0E8", color: "#2B2D36" }} {...props} />,
-  hr: () => <hr style={{ width: "100%", border: "0", borderTop: "1px solid #E6E8EE", margin: "4px 0" }} />,
+  blockquote: ({ node, ...props }) => <blockquote style={{ margin: "0", padding: "2px 0 2px 14px", borderLeft: "3px solid var(--c-line)", color: "var(--c-text)" }} {...props} />,
+  hr: () => <hr style={{ width: "100%", border: "0", borderTop: "1px solid var(--c-line)", margin: "4px 0" }} />,
   a: ({ node, href, ...props }) =>
     String(href || "").startsWith("#@")
       ? <MentionLink href={href}>{props.children}</MentionLink>
@@ -66,11 +66,11 @@ const make = (size) => ({
   // GFM tables (bots write them for schedules, comparisons…): the same look as the
   // interactive table, scrolling sideways inside the message when they are wide.
   table: ({ node, ...props }) => <Table size={size} {...props} />,
-  th: ({ node, style, ...props }) => <th style={{ textAlign: style?.textAlign || "left", padding: "8px 10px", borderBottom: "1.5px solid #12131A", verticalAlign: "bottom", fontWeight: "700" }} {...props} />,
-  td: ({ node, style, ...props }) => <td style={{ textAlign: style?.textAlign || "left", padding: "8px 10px", borderBottom: "1px solid #E6E8EE", verticalAlign: "top" }} {...props} />,
-  del: ({ node, ...props }) => <del style={{ color: "#555A68" }} {...props} />,
+  th: ({ node, style, ...props }) => <th style={{ textAlign: style?.textAlign || "left", padding: "8px 10px", borderBottom: "1.5px solid var(--c-text)", verticalAlign: "bottom", fontWeight: "700" }} {...props} />,
+  td: ({ node, style, ...props }) => <td style={{ textAlign: style?.textAlign || "left", padding: "8px 10px", borderBottom: "1px solid var(--c-line)", verticalAlign: "top" }} {...props} />,
+  del: ({ node, ...props }) => <del style={{ color: "var(--c-text-3)" }} {...props} />,
   input: ({ node, ...props }) => <input {...props} disabled style={{ margin: "0 6px 0 0", verticalAlign: "-1px" }} />,
-  img: ({ node, alt }) => <span style={{ color: "#555A68" }}>{alt ? `[${alt}]` : ""}</span>,
+  img: ({ node, alt }) => <span style={{ color: "var(--c-text-3)" }}>{alt ? `[${alt}]` : ""}</span>,
 });
 
 /** «Copiado» for a moment after a copy (OpenClaw: 1.5 s, 2 s when it failed). */
@@ -93,7 +93,7 @@ function Table({ size, ...props }) {
         <table ref={ref} style={{ width: "100%", borderCollapse: "collapse", fontSize: stepOf(Math.max(13, size - 2)) + "px", lineHeight: "1.45" }} {...props} />
       </div>
       <button type="button" className="rm-focus c-md-copy" onClick={() => ref.current && copy(tableToTSV(ref.current))} title="Copia la tabla para pegarla en Excel o Hojas de cálculo"
-        style={{ alignSelf: "flex-end", display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: copied === "ok" ? "#0B6B4A" : "#4A4F5C" }}>
+        style={{ alignSelf: "flex-end", display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: copied === "ok" ? "var(--c-ok-ink)" : "var(--c-text-2)" }}>
         {copied === "ok" ? <Check size={13} strokeWidth={2.4} aria-hidden="true" /> : <ClipboardCopy size={13} strokeWidth={2.2} aria-hidden="true" />}
         {copied === "ok" ? "Copiada" : copied === "fail" ? "No se pudo copiar" : "Copiar para Excel"}
       </button>

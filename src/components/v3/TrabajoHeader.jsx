@@ -28,25 +28,25 @@ export default function TrabajoHeader({ tab, action = null, counts = null }) {
       <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <h1 style={{ margin: 0, font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>Trabajo</h1>
-          <p style={{ margin: 0, fontSize: "var(--t-read)", color: "#4A4D57" }}>Todo lo que hacen tus bots: una vez, cada cierto tiempo o a largo plazo.</p>
+          <p style={{ margin: 0, fontSize: "var(--t-read)", color: "var(--c-text-2)" }}>Todo lo que hacen tus bots: una vez, cada cierto tiempo o a largo plazo.</p>
         </div>
         {action ? (
-          <button type="button" onClick={action.onClick} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>
+          <button type="button" onClick={action.onClick} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
             {action.label}
           </button>
         ) : null}
       </header>
-      <nav aria-label="Partes de Trabajo" style={{ display: "flex", gap: "4px", borderBottom: "1px solid rgba(18,19,26,.1)", overflowX: "auto" }}>
+      <nav aria-label="Partes de Trabajo" style={{ display: "flex", gap: "4px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .1)", overflowX: "auto" }}>
         {TRABAJO_TABS.map((t) => {
           const on = t.id === tab;
           const n = counts?.[t.id];
           return (
             <a key={t.id} href={t.href} onClick={go(t.href)} aria-current={on ? "page" : undefined}
-              style={{ flex: "none", height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", ...(on ? { borderBottom: "2px solid #12131A", marginBottom: "-1px" } : {}), color: on ? "#12131A" : "#4A4D57", fontSize: "var(--t-body)", fontWeight: on ? 600 : 500 }}>
+              style={{ flex: "none", height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", ...(on ? { borderBottom: "2px solid var(--c-text)", marginBottom: "-1px" } : {}), color: on ? "var(--c-text)" : "var(--c-text-2)", fontSize: "var(--t-body)", fontWeight: on ? 600 : 500 }}>
               {t.label}
-              <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{t.hint}</span>
-              {n ? <span style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "#EBEBE6", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A", fontVariantNumeric: "tabular-nums" }}>{n}</span> : null}
+              <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{t.hint}</span>
+              {n ? <span style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-chip)", fontSize: "var(--t-caption)", fontWeight: 600, color: "var(--c-text)", fontVariantNumeric: "tabular-nums" }}>{n}</span> : null}
             </a>
           );
         })}

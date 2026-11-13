@@ -164,7 +164,7 @@ function metaOf(task, project) {
   return parts.filter(Boolean).join(" · ");
 }
 
-const ROW = { position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "64px", padding: "10px 18px", borderTop: "1px solid rgba(18,19,26,.05)", color: C.ink };
+const ROW = { position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "64px", padding: "10px 18px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)", color: C.ink };
 const META = { font: `400 var(--t-meta)/1.3 ${MONO}`, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 const TITLE = { fontSize: "var(--t-body)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 
@@ -187,7 +187,7 @@ function TaskRow({ task, project, bots }) {
       {task.add || task.del ? <span style={{ font: `500 var(--t-meta)/1 ${MONO}`, whiteSpace: "nowrap" }}><span style={{ color: C.greenText }}>{task.add ? "+" + task.add : ""}</span> <span style={{ color: C.red }}>{task.del ? "−" + task.del : ""}</span></span> : null}
       <span className="code-pill" style={{ display: "flex" }}><Pill pill={pill} /></span>
       <button type="button" className={menu.at ? undefined : "code-x"} onClick={menu.open} aria-label={"Acciones de la tarea " + task.title} aria-haspopup="menu" aria-expanded={!!menu.at} title="Fijar, posponer, archivar o borrar"
-        style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", padding: 0, display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: C.white, color: C.text, cursor: "pointer" }}>
+        style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", padding: 0, display: "grid", placeItems: "center", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: C.white, color: C.text, cursor: "pointer" }}>
         <Ellipsis size={15} strokeWidth={2.4} aria-hidden="true" />
       </button>
       <TaskMenu task={task} current={false} menu={menu} />
@@ -200,7 +200,7 @@ function OverlapChip({ overlap, more = 0 }) {
   const open = (e) => { e.preventDefault(); e.stopPropagation(); navigate("/codigo/" + overlap.task); };
   return (
     <button type="button" onClick={open} title={`También los cambia «${overlap.title}»: ${overlap.files.join(", ")}${overlap.count > overlap.files.length ? "…" : ""}. Al fusionar pueden chocar.`}
-      style={{ flex: "0 1 auto", minWidth: 0, display: "inline-flex", alignItems: "center", gap: "5px", height: "20px", padding: "0 8px", border: 0, borderRadius: "var(--r-pill)", background: "#FFF1C7", color: C.honeyText, cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      style={{ flex: "0 1 auto", minWidth: 0, display: "inline-flex", alignItems: "center", gap: "5px", height: "20px", padding: "0 8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-honey-soft)", color: C.honeyText, cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
       <Files size={11} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>mismos archivos que «{overlap.title}»{more > 0 ? " y " + (more === 1 ? "otra" : more + " más") : ""}</span>
     </button>
@@ -292,7 +292,7 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
         ) : null}
         <span style={{ flex: 1 }} />
         {total || query ? (
-          <label title="Busca en los títulos y en lo que se ha dicho en cada tarea, también en las archivadas" style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "240px", padding: "0 12px", borderRadius: "var(--r-pill)", background: C.white, border: "1px solid rgba(18,19,26,.1)", color: C.muted }}>
+          <label title="Busca en los títulos y en lo que se ha dicho en cada tarea, también en las archivadas" style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "240px", padding: "0 12px", borderRadius: "var(--r-pill)", background: C.white, border: "1px solid rgb(var(--c-ink-rgb) / .1)", color: C.muted }}>
             <Search size={14} strokeWidth={2.2} aria-hidden="true" />
             <span style={SR}>Buscar en las tareas</span>
             <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)" }} />

@@ -11,12 +11,12 @@ import { maskSecret, secretSegments, suggestKey } from "../../lib/secretMask.js"
 
 const MARKER = /\{\{\s*secret:([A-Z][A-Z0-9_]{0,127})\s*\}\}/g;
 const I = { size: 12, strokeWidth: 2.3, "aria-hidden": "true" };
-const LINK = { display: "inline-flex", alignItems: "center", gap: "4px", height: "22px", padding: "0 7px", margin: "0 0 0 4px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", color: "#3D404A", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, verticalAlign: "1px", userSelect: "none", whiteSpace: "nowrap" };
+const LINK = { display: "inline-flex", alignItems: "center", gap: "4px", height: "22px", padding: "0 7px", margin: "0 0 0 4px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text-2)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, verticalAlign: "1px", userSelect: "none", whiteSpace: "nowrap" };
 
 /** A key already in «Llaves»: its name only. */
 function KeyMarker({ name }) {
   return (
-    <span title="Guardada cifrada en tus llaves" style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "0 8px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.07)", fontSize: "0.9em", fontWeight: 600, whiteSpace: "nowrap", verticalAlign: "baseline" }}>
+    <span title="Guardada cifrada en tus llaves" style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "0 8px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .07)", fontSize: "0.9em", fontWeight: 600, whiteSpace: "nowrap", verticalAlign: "baseline" }}>
       <KeyRound size={12} strokeWidth={2.3} aria-hidden="true" />{name}
     </span>
   );
@@ -43,30 +43,30 @@ function SaveKey({ secret, messageId, onClose }) {
       setBusy(false);
     }
   };
-  const field = { display: "block", width: "100%", boxSizing: "border-box", height: "34px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "inherit", fontSize: "var(--t-ui)", color: "#12131A" };
+  const field = { display: "block", width: "100%", boxSizing: "border-box", height: "34px", padding: "0 10px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-md)", background: "var(--c-card)", font: "inherit", fontSize: "var(--t-ui)", color: "var(--c-text)" };
   return (
     <span role="dialog" aria-label="Guardar en llaves" data-secret-ui="" className="c-pop" onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "Enter") save(e); }}
-      style={{ position: "absolute", zIndex: 30, bottom: "calc(100% + 6px)", right: 0, width: "300px", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px -18px rgba(18,19,26,.35)", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#12131A", textAlign: "left", whiteSpace: "normal", userSelect: "none" }}>
+      style={{ position: "absolute", zIndex: 30, bottom: "calc(100% + 6px)", right: 0, width: "300px", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px -18px rgba(18,19,26,.35)", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text)", textAlign: "left", whiteSpace: "normal", userSelect: "none" }}>
       {saved ? (
         <span role="status" style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-          <KeyRound size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px", color: "#0B6B4A" }} />
+          <KeyRound size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px", color: "var(--c-ok-ink)" }} />
           <span>{`Guardada como ${saved}. Los bots pueden usarla sin verla.`}</span>
         </span>
       ) : (<>
         <span style={{ display: "block", fontWeight: 600, fontSize: "var(--t-ui)" }}>{"Guardar en llaves"}</span>
-        <span style={{ display: "block", color: "#4A4D57" }}>{messageId ? "Se guarda cifrada en este ordenador y en el mensaje queda solo su nombre." : "Se guarda cifrada en este ordenador."}</span>
+        <span style={{ display: "block", color: "var(--c-text-2)" }}>{messageId ? "Se guarda cifrada en este ordenador y en el mensaje queda solo su nombre." : "Se guarda cifrada en este ordenador."}</span>
         <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Nombre"}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Nombre"}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} spellCheck={false} autoFocus style={{ ...field, fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", textTransform: "uppercase" }} />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Dónde se puede usar"}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Dónde se puede usar"}</span>
           <input value={hosts} onChange={(e) => setHosts(e.target.value)} placeholder="api.ejemplo.com" spellCheck={false} style={field} />
         </label>
-        {error ? <span role="alert" style={{ display: "block", color: "#B4232A", fontSize: "var(--t-meta)" }}>{error}</span> : null}
+        {error ? <span role="alert" style={{ display: "block", color: "var(--c-error)", fontSize: "var(--t-meta)" }}>{error}</span> : null}
         <span style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A" }}>{"Cancelar"}</button>
-          <button type="button" onClick={save} disabled={busy || !name.trim() || !hosts.trim()} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600, opacity: !name.trim() || !hosts.trim() ? 0.5 : 1 }}>{busy ? "Guardando…" : "Guardar"}</button>
+          <button type="button" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" }}>{"Cancelar"}</button>
+          <button type="button" onClick={save} disabled={busy || !name.trim() || !hosts.trim()} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600, opacity: !name.trim() || !hosts.trim() ? 0.5 : 1 }}>{busy ? "Guardando…" : "Guardar"}</button>
         </span>
       </>)}
     </span>
@@ -82,7 +82,7 @@ export function MaskedSecret({ secret, messageId = null }) {
   return (
     <span style={{ position: "relative", whiteSpace: "pre-wrap" }}>
       <span data-secret={secret.value} title={shown ? undefined : "Clave oculta"}
-        style={{ padding: "1px 5px", borderRadius: "var(--r-sm)", background: "rgba(18,19,26,.06)", fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", fontSize: "0.88em", letterSpacing: shown ? 0 : ".02em", overflowWrap: "anywhere" }}>
+        style={{ padding: "1px 5px", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .06)", fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", fontSize: "0.88em", letterSpacing: shown ? 0 : ".02em", overflowWrap: "anywhere" }}>
         {shown ? secret.value : maskSecret(secret.value)}
       </span>
       <button type="button" data-secret-ui="" aria-pressed={shown ? "true" : "false"} onClick={() => setShown((v) => !v)} style={LINK}>

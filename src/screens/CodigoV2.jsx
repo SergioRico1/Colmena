@@ -118,7 +118,7 @@ function GoalRow({ task, onGoal }) {
   }[g.status] || { text: g.status, fg: C.faint, bar: "#C9CBD1" };
   const pct = g.status === "complete" ? 1 : Math.min(1, (g.turns + (task.running ? 0.5 : 0)) / max);
   const live = g.status === "active";
-  const btn = { height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" };
+  const btn = { height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" };
   return (
     <div role="status" aria-label="Objetivo" style={{ position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", padding: "8px 8px 8px 12px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05)", animation: "rise .25s ease-out" }}>
       <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: g.status === "complete" ? C.greenSoft : live ? "rgba(255,122,26,.12)" : C.soft, color: g.status === "complete" ? C.green : live ? C.bruno : C.muted }}>
@@ -155,7 +155,7 @@ function useWatch(taskId) {
   }, [taskId]);
 }
 
-const CHIP = { height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-sm)", background: C.white, border: "1px solid rgba(18,19,26,.08)", whiteSpace: "nowrap", color: C.text2 };
+const CHIP = { height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-sm)", background: C.white, border: "1px solid rgb(var(--c-ink-rgb) / .08)", whiteSpace: "nowrap", color: C.text2 };
 const SIGNAL = (bg, fg) => ({ ...CHIP, border: 0, background: bg, color: fg, fontFamily: "'Geist', sans-serif", fontWeight: 600 });
 
 /** What GitHub says of an open PR: draft, approved, changes requested ([text, look, title]). */
@@ -407,7 +407,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
   const tabLabel = (id, text) => (id === "cambios" && count ? text + " · " + count : text);
   return (
     <div ref={sectionRef} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", flexDirection: "column" }}>
-      <header style={{ position: "relative", flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 28px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
+      <header style={{ position: "relative", flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 28px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
         <div style={{ flex: "1 1 380px", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
           <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: C.muted }}>
             <a href="/codigo" style={{ color: C.muted }}>Código</a><span aria-hidden="true">›</span><span style={{ fontFamily: MONO }}>{project?.name || "proyecto"}</span>
@@ -463,7 +463,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
       <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
         {showChat ? (
           <section aria-label={"Conversación con " + name} className={panel ? "code-chat" : undefined}
-            style={{ position: "relative", ...(panel ? (chat.width ? { flex: `0 0 ${chat.width}px`, width: chat.width + "px" } : { flex: "1 1 340px", maxWidth: "440px" }) : { flex: 1 }), minWidth: 0, display: "flex", flexDirection: "column", borderRight: panel ? "1px solid rgba(18,19,26,.07)" : 0 }}>
+            style={{ position: "relative", ...(panel ? (chat.width ? { flex: `0 0 ${chat.width}px`, width: chat.width + "px" } : { flex: "1 1 340px", maxWidth: "440px" }) : { flex: 1 }), minWidth: 0, display: "flex", flexDirection: "column", borderRight: panel ? "1px solid rgb(var(--c-ink-rgb) / .07)" : 0 }}>
             {panel ? chat.handle : null}
             <PeerComments taskId={task.id} />
             <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
@@ -511,7 +511,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
 
         {panel ? (
           <section data-codepanel="" aria-label="Espacio de trabajo" style={{ flex: "999 1 480px", minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div role="tablist" aria-label="Vista" style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", padding: "10px 20px 0", borderBottom: "1px solid rgba(18,19,26,.07)", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none" }}>
+            <div role="tablist" aria-label="Vista" style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", padding: "10px 20px 0", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none" }}>
               {TABS.map(([id, text]) => {
                 const on = tab === id;
                 return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setTab(id)} style={{ flex: "none", whiteSpace: "nowrap", height: "42px", padding: "0 12px", border: 0, borderBottom: "2px solid " + (on ? C.ink : "transparent"), marginBottom: "-1px", background: "transparent", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: on ? C.ink : C.text2, cursor: "pointer" }}>{tabLabel(id, text)}</button>;
@@ -522,7 +522,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
               </button>
             </div>
             {tab === "plan" ? <PlanTab plan={plan} name={name} />
-              : tab === "vista" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid rgba(18,19,26,.1)", background: C.white }}><Preview task={task} project={project} onAsk={(text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {})} /></div>
+              : tab === "vista" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid rgb(var(--c-ink-rgb) / .1)", background: C.white }}><Preview task={task} project={project} onAsk={(text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {})} /></div>
                 : tab === "terminal" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "var(--r-lg)", overflow: "hidden", background: C.ink }}><Suspense fallback={null}><TerminalPanel task={task} /></Suspense></div>
                   : tab === "archivos" ? <Files task={task} />
                     : tab === "procesos" ? <Processes task={task} name={name} />

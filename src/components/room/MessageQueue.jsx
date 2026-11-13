@@ -12,7 +12,7 @@ import { later, useHidden } from "../../lib/undoToast.js";
 // never resends on its own. «Pasárselo ya» (OpenClaw steer) gives one message to the bot at
 // its next step instead of waiting for the turn to end.
 
-const ICON_BTN = { width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "#4A4F5C" };
+const ICON_BTN = { width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text-2)" };
 const EMPTY = [];
 
 /**
@@ -86,28 +86,28 @@ function QueueItem({ index, message, onRemove, onEdit, onSayNow, sayBusy, botNam
     setEditing(false);
   };
   return (
-    <li {...(editing ? {} : drag.props)} className="rm-focus" style={{ display: "flex", alignItems: editing ? "stretch" : "center", gap: "10px", minHeight: "48px", padding: "6px 6px 6px 10px", background: "#FFFFFF", borderRadius: "var(--r-xl)", boxShadow: "0 0 0 1px rgba(18,19,26,.06)", opacity: message.sending ? 0.6 : 1, transition: "opacity .2s ease, box-shadow .15s ease", animation: "rise .25s ease-out", ...drag.style }}>
+    <li {...(editing ? {} : drag.props)} className="rm-focus" style={{ display: "flex", alignItems: editing ? "stretch" : "center", gap: "10px", minHeight: "48px", padding: "6px 6px 6px 10px", background: "var(--c-card)", borderRadius: "var(--r-xl)", boxShadow: "0 0 0 1px rgba(18,19,26,.06)", opacity: message.sending ? 0.6 : 1, transition: "opacity .2s ease, box-shadow .15s ease", animation: "rise .25s ease-out", ...drag.style }}>
       {editing ? null : <GripVertical size={15} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: "#A3A6AE", cursor: drag.props.draggable ? "grab" : "default" }} />}
-      <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.06)", font: "600 var(--t-micro)/1 'Geist Mono', monospace", color: "#5C606C", alignSelf: editing ? "flex-start" : "center", marginTop: editing ? "9px" : 0 }}>{index + 1}</span>
+      <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .06)", font: "600 var(--t-micro)/1 'Geist Mono', monospace", color: "var(--c-text-3)", alignSelf: editing ? "flex-start" : "center", marginTop: editing ? "9px" : 0 }}>{index + 1}</span>
       {editing ? (
         <form onSubmit={(e) => { e.preventDefault(); save(); }} style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "8px", padding: "2px 0" }}>
           <label style={{ display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{`Editar el mensaje ${index + 1} de la cola`}</span>
             <textarea className="c-quiet" autoFocus rows="2" value={value} onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); save(); } if (e.key === "Escape") { e.stopPropagation(); setValue(message.text); setEditing(false); } }}
-              style={{ flex: "1", resize: "none", border: 0, borderRadius: "var(--r-md)", padding: "10px 12px", background: "#F5F5F2", fontSize: "var(--t-body)", lineHeight: "1.45", fontFamily: "inherit", fieldSizing: "content", maxHeight: "160px" }} />
+              style={{ flex: "1", resize: "none", border: 0, borderRadius: "var(--r-md)", padding: "10px 12px", background: "var(--c-sunken)", fontSize: "var(--t-body)", lineHeight: "1.45", fontFamily: "inherit", fieldSizing: "content", maxHeight: "160px" }} />
           </label>
           <span style={{ display: "flex", gap: "6px" }}>
-            <button type="submit" style={{ height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Guardar"}</button>
-            <button type="button" onClick={() => { setValue(message.text); setEditing(false); }} style={{ height: "34px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, color: "#3D404A" }}>{"Cancelar"}</button>
+            <button type="submit" style={{ height: "34px", padding: "0 16px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Guardar"}</button>
+            <button type="button" onClick={() => { setValue(message.text); setEditing(false); }} style={{ height: "34px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, color: "var(--c-text-2)" }}>{"Cancelar"}</button>
           </span>
         </form>
       ) : (
         <>
-          <span onDoubleClick={() => setEditing(true)} style={{ flex: "1", minWidth: "0", fontSize: "var(--t-body)", lineHeight: "1.45", color: "#12131A", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{message.text}</span>
+          <span onDoubleClick={() => setEditing(true)} style={{ flex: "1", minWidth: "0", fontSize: "var(--t-body)", lineHeight: "1.45", color: "var(--c-text)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflowWrap: "anywhere" }}>{message.text}</span>
           {onSayNow ? (
             <button type="button" className="rm-focus" disabled={sayBusy} onClick={onSayNow} title={`Se lo pasas a ${botName} ya: lo lee en su siguiente paso, sin esperar a que acabe`} aria-label={`Pasarle ya a ${botName} el mensaje ${index + 1}`}
-              style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", flex: "none", padding: "0 14px 0 12px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "var(--r-pill)", cursor: sayBusy ? "progress" : "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A", whiteSpace: "nowrap" }}>
+              style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", flex: "none", padding: "0 14px 0 12px", background: "rgb(var(--c-ink-rgb) / .06)", border: "0", borderRadius: "var(--r-pill)", cursor: sayBusy ? "progress" : "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text)", whiteSpace: "nowrap" }}>
               <CornerDownRight size={14} strokeWidth={2.4} aria-hidden="true" />{"Pasárselo ya"}
             </button>
           ) : null}
@@ -185,15 +185,15 @@ export default function MessageQueue({ queue, botName = "el bot", missionPaused 
   return (
     <section aria-label="Mensajes en cola" style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "12px 0 0", animation: "fade .2s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", padding: "0 6px" }}>
-        <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
           <ListOrdered size={14} strokeWidth={2.2} aria-hidden="true" />
           {!pending.length && told.length && !missionPaused ? `${botName} lo verá en su siguiente paso` : pending.length
             ? stopped ? `${count} · en pausa` : `${count} · ${pending.length === 1 ? "sale" : "salen"} cuando ${botName} acabe`
             : missionPaused ? `Has parado a ${botName}` : "Cola en pausa"}
         </span>
         <span style={{ flex: "1" }} />
-        {missionPaused && onResumeMission ? <button type="button" disabled={resumeBusy} onClick={onResumeMission} style={{ ...pill, background: "rgba(18,19,26,.06)", color: "#12131A" }}>{`Reanudar a ${botName}`}</button> : null}
-        {paused && pending.length ? <button type="button" onClick={queue.resume} style={{ ...pill, background: "#12131A", color: "#FFFFFF" }}>{"Enviar la cola"}</button> : null}
+        {missionPaused && onResumeMission ? <button type="button" disabled={resumeBusy} onClick={onResumeMission} style={{ ...pill, background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)" }}>{`Reanudar a ${botName}`}</button> : null}
+        {paused && pending.length ? <button type="button" onClick={queue.resume} style={{ ...pill, background: "var(--c-btn)", color: "var(--c-btn-text)" }}>{"Enviar la cola"}</button> : null}
       </div>
       {error ? (
         <p role="alert" style={{ margin: "0", padding: "10px 14px", background: "#FBE7DF", borderRadius: "var(--r-lg)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5A1E16" }}>
@@ -201,12 +201,12 @@ export default function MessageQueue({ queue, botName = "el bot", missionPaused 
         </p>
       ) : null}
       {told.map((t) => (
-        <p key={t.id} role="status" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", background: "#E1F4EC", borderRadius: "var(--r-lg)", fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#0B5A3E", animation: "rise .25s ease-out" }}>
+        <p key={t.id} role="status" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", background: "var(--c-ok-soft)", borderRadius: "var(--r-lg)", fontSize: "var(--t-meta)", lineHeight: "1.4", color: "var(--c-ok-ink)", animation: "rise .25s ease-out" }}>
           <Check size={14} strokeWidth={2.8} aria-hidden="true" style={{ flex: "none" }} />
           <span style={{ minWidth: "0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><strong>{"Se lo has pasado: "}</strong>{t.text}</span>
         </p>
       ))}
-      {sayError ? <p role="alert" style={{ margin: "0 6px", fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: "600" }}>{sayError}</p> : null}
+      {sayError ? <p role="alert" style={{ margin: "0 6px", fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}>{sayError}</p> : null}
       {pending.length ? (
         <ol style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
           {pending.map((m, i) => <QueueItem key={m.id} index={i} message={m} botName={botName} sayBusy={sayBusy} drag={dragFor(m, i)} onSayNow={working && !missionPaused && !m.sending ? () => sayNow(m) : null} onRemove={() => queue.remove(m.id)} onEdit={(text) => queue.edit(m.id, text)} />)}

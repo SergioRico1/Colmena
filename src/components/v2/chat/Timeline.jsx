@@ -255,9 +255,9 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
         {loadingOlder || olderError ? (
           <div style={{ position: "absolute", top: lift + 8 + "px", left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 1 }}>
             {olderError
-              ? <button type="button" onClick={() => onReachTop?.(true)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A" }}>{"No se cargaron los mensajes anteriores · Reintentar"}</button>
+              ? <button type="button" onClick={() => onReachTop?.(true)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" }}>{"No se cargaron los mensajes anteriores · Reintentar"}</button>
               : <span role="status" style={{ height: "32px", display: "flex", alignItems: "center", gap: "8px", padding: "0 14px", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.9)", fontSize: "var(--t-meta)", color: "#5C606C", animation: "fade .2s ease-out" }}>
-                  <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "var(--r-circle)", border: "2px solid rgba(18,19,26,.15)", borderTopColor: "#12131A", animation: "spin .8s linear infinite" }} />
+                  <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "var(--r-circle)", border: "2px solid rgb(var(--c-ink-rgb) / .15)", borderTopColor: "var(--c-text)", animation: "spin .8s linear infinite" }} />
                   {"Cargando mensajes anteriores…"}
                 </span>}
           </div>
@@ -281,7 +281,7 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
 function NewMark() {
   const line = { flex: "1", height: "1px", background: "rgba(31,79,209,.28)" };
   return (
-    <div role="separator" aria-label="Mensajes nuevos" data-unseen-mark="" style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-meta)", fontWeight: 600, color: "#1F4FD1", animation: "fade .2s ease-out" }}>
+    <div role="separator" aria-label="Mensajes nuevos" data-unseen-mark="" style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-accent-ink)", animation: "fade .2s ease-out" }}>
       <span style={line} />
       {"Nuevos"}
       <span style={line} />
@@ -294,7 +294,7 @@ function ToEnd({ count, onClick }) {
   const fresh = count > 0;
   return (
     <button type="button" className="rm-focus" onClick={onClick} aria-label={fresh ? `Ir a los mensajes nuevos: ${unseenLabel(count)}` : "Ir al final de la conversación"}
-      style={{ position: "absolute", left: "50%", bottom: "14px", transform: "translateX(-50%)", zIndex: 5, display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: fresh ? "0 14px 0 12px" : "0", width: fresh ? "auto" : "36px", justifyContent: "center", border: 0, borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 10px 24px -12px rgba(18,19,26,.45)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", animation: "rise .2s ease-out" }}>
+      style={{ position: "absolute", left: "50%", bottom: "14px", transform: "translateX(-50%)", zIndex: 5, display: "flex", alignItems: "center", gap: "6px", height: "36px", padding: fresh ? "0 14px 0 12px" : "0", width: fresh ? "auto" : "36px", justifyContent: "center", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 10px 24px -12px rgba(18,19,26,.45)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", animation: "rise .2s ease-out" }}>
       <ArrowDown size={16} strokeWidth={2.4} aria-hidden="true" />
       {fresh ? unseenLabel(count) : null}
     </button>

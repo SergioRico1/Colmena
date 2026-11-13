@@ -11,9 +11,9 @@ export function BotAvatar({ bot, size = 24, style }) {
 export function Notice({ children, tone = "error", style }) {
   if (!children) return null;
   const tones = {
-    error: { background: "#FBEAE7", color: "#8F1D22" },
-    info: { background: "#F6F6F3", color: "#12131A" },
-    ok: { background: "#E1F4EC", color: "#0B5A3E" },
+    error: { background: "var(--c-error-soft)", color: "var(--c-error)" },
+    info: { background: "var(--c-hover)", color: "var(--c-text)" },
+    ok: { background: "var(--c-ok-soft)", color: "var(--c-ok-ink)" },
   };
   return (
     <p role={tone === "error" ? "alert" : "status"} style={{ margin: 0, padding: "12px 16px", borderRadius: "var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: "1.45", ...tones[tone], ...style }}>
@@ -31,8 +31,8 @@ export function Switch({ on, label, onClick, disabled, title }) {
     <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={label} aria-disabled={disabled ? "true" : undefined} title={title} onClick={onClick}
       style={on
         ? { width: "52px", height: "32px", flex: "none", padding: "3px", background: "#0B8A5F", border: "0", borderRadius: "var(--r-pill)", cursor: disabled ? "default" : "pointer", display: "flex", justifyContent: "flex-end", opacity: disabled ? 0.75 : 1 }
-        : { width: "52px", height: "32px", flex: "none", padding: "3px", background: "rgba(18,19,26,.14)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-start" }}>
-      <span style={on ? { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)" } : { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)" }} />
+        : { width: "52px", height: "32px", flex: "none", padding: "3px", background: "rgb(var(--c-ink-rgb) / .14)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", display: "flex", justifyContent: "flex-start" }}>
+      <span style={on ? { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.2)" } : { width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.2)" }} />
     </button>
   );
 }

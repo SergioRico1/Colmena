@@ -5,7 +5,7 @@ import { useResource, useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
 import { BotMark, PersonMark } from "../../v2/chat/Mark.jsx";
 import { ROOM_MAX_BOTS, currentTeam, realTeams, roomHint, roomPayload, roomPeople } from "../../../lib/teams.js";
-import { INK, MUTED, Sheet, darkBtn, errorLine, hidden, note, quietBtn } from "./TeamSheets.jsx";
+import { Sheet, darkBtn, errorLine, hidden, note, quietBtn } from "./TeamSheets.jsx";
 import { coordinatorOf } from "../../../lib/bots.js";
 
 // «Nuevo → Sala» (docs/CONTRACT.md §18): a name, where it lives (one of your teams or
@@ -13,9 +13,9 @@ import { coordinatorOf } from "../../../lib/bots.js";
 // opened at /sala/<id>. People are the teammates of the chosen team (GET /api/teams/:id), or
 // the people you already talk to for a private room. Without a team or people it is the room
 // of your bots it always was.
-const label = { fontSize: "var(--t-meta)", fontWeight: 600, color: INK };
+const label = { fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" };
 const group = { display: "flex", flexDirection: "column", gap: "8px", minWidth: 0, margin: 0, padding: 0, border: 0 };
-const chip = (on, off = false) => ({ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "40px", padding: "4px 12px 4px 8px", border: 0, borderRadius: "var(--r-pill)", background: on ? INK : "#F4F4F0", color: on ? "#FFFFFF" : INK, fontSize: "var(--t-ui)", textAlign: "left", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1 });
+const chip = (on, off = false) => ({ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "40px", padding: "4px 12px 4px 8px", border: 0, borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "var(--c-sunken)", color: on ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-ui)", textAlign: "left", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1 });
 
 export default function NewRoomSheet({ onClose, preset = [] }) {
   const { bots = [], teams = [], peers = null, run } = useStore();
@@ -55,7 +55,7 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
       <form onSubmit={(e) => { e.preventDefault(); create(); }} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         <label style={group}>
           <span style={label}>{"Nombre"}</span>
-          <input className="c-quiet" autoFocus data-autofocus="" type="text" value={title} maxLength={60} onChange={(e) => { setTitle(e.target.value); setError(null); }} placeholder="lanzamiento-web" style={{ height: "48px", padding: "0 16px", border: 0, borderRadius: "var(--r-lg)", background: "#F2F2EE", fontSize: "var(--t-read)", color: INK }} />
+          <input className="c-quiet" autoFocus data-autofocus="" type="text" value={title} maxLength={60} onChange={(e) => { setTitle(e.target.value); setError(null); }} placeholder="lanzamiento-web" style={{ height: "48px", padding: "0 16px", border: 0, borderRadius: "var(--r-lg)", background: "var(--c-sunken)", fontSize: "var(--t-read)", color: "var(--c-text)" }} />
         </label>
 
         {mine.length ? (
@@ -71,7 +71,7 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
         ) : null}
 
         <fieldset style={group}>
-          <legend style={{ ...label, padding: 0, marginBottom: "8px" }}>{team ? "Personas del equipo" : "Personas"}<span style={{ fontWeight: 400, color: MUTED }}>{" · opcional"}</span></legend>
+          <legend style={{ ...label, padding: 0, marginBottom: "8px" }}>{team ? "Personas del equipo" : "Personas"}<span style={{ fontWeight: 400, color: "var(--c-text-3)" }}>{" · opcional"}</span></legend>
           {team && !view ? <span style={note}>{detail.error ? "No se pudo leer el equipo. Puedes crear la sala e invitar desde ella." : "Leyendo el equipo…"}</span> : null}
           {candidates.length ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", maxHeight: "168px", overflowY: "auto" }}>
@@ -90,7 +90,7 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
         </fieldset>
 
         <fieldset style={group}>
-          <legend style={{ ...label, padding: 0, marginBottom: "8px" }}>{"Tus bots"}<span style={{ fontWeight: 400, color: MUTED }}>{` · ${coord} coordina; hasta ${ROOM_MAX_BOTS} más`}</span></legend>
+          <legend style={{ ...label, padding: 0, marginBottom: "8px" }}>{"Tus bots"}<span style={{ fontWeight: 400, color: "var(--c-text-3)" }}>{` · ${coord} coordina; hasta ${ROOM_MAX_BOTS} más`}</span></legend>
           {myBots.length ? (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", maxHeight: "168px", overflowY: "auto" }}>
               {myBots.map((b) => {
@@ -101,7 +101,7 @@ export default function NewRoomSheet({ onClose, preset = [] }) {
                     <span aria-hidden="true" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center" }}><BotMark bot={b} size={18} /></span>
                     <span style={{ display: "flex", flexDirection: "column", gap: "1px", lineHeight: 1.2 }}>
                       <span style={{ fontWeight: 600 }}>{b.name}</span>
-                      {b.role ? <span style={{ fontSize: "var(--t-caption)", color: on ? "#D6D8DE" : MUTED }}>{b.role}</span> : null}
+                      {b.role ? <span style={{ fontSize: "var(--t-caption)", color: on ? "#D6D8DE" : "var(--c-text-3)" }}>{b.role}</span> : null}
                     </span>
                     {on ? <Check size={14} strokeWidth={2.6} aria-hidden="true" /> : null}
                   </button>

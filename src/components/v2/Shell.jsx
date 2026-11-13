@@ -5,7 +5,7 @@ import Sidebar from "../v3/Sidebar.jsx";
 // Every place: the Colmena 3 sidebar on the left (never moves) and the content beside it,
 // which is the only thing that scrolls. The window as a whole never scrolls. In the desktop
 // app an invisible strip along the top lets you drag the window (the rail drags too).
-export default function Shell({ active, children, background = "#F5F5F2", scroll = true, extraCss = null }) {
+export default function Shell({ active, children, background = "var(--c-page)", scroll = true, extraCss = null }) {
   useLayoutEffect(() => {
     document.documentElement.dataset.v2 = "1";
     return () => { delete document.documentElement.dataset.v2; };

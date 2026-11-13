@@ -102,7 +102,7 @@ export default function PositionRail({ scroller, items, version = 0, locate = nu
   return (
     <nav aria-label="Ir a un mensaje de la conversación" onMouseLeave={() => setHover(null)}
       style={{ position: "fixed", zIndex: 6, top: box.top + "px", left: box.left + "px", width: "16px", height: box.height + "px" }}>
-      <span aria-hidden="true" style={{ position: "absolute", left: "7px", top: 0, bottom: 0, width: "2px", background: "#EEF0F4", borderRadius: "var(--r-xs)" }} />
+      <span aria-hidden="true" style={{ position: "absolute", left: "7px", top: 0, bottom: 0, width: "2px", background: "var(--c-chip)", borderRadius: "var(--r-xs)" }} />
       {marks.map((m, i) => {
         const it = byId.get(m.id);
         const on = m.id === active;
@@ -118,9 +118,9 @@ export default function PositionRail({ scroller, items, version = 0, locate = nu
         );
       })}
       {shown && shownMark ? (
-        <div role="tooltip" className="c-pop" style={{ position: "absolute", right: "22px", top: `calc(${(shownMark.at * 100).toFixed(2)}% - 18px)`, width: "260px", padding: "10px 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", boxShadow: "0 12px 28px -16px rgba(18,19,26,.45)", pointerEvents: "none" }}>
+        <div role="tooltip" className="c-pop" style={{ position: "absolute", right: "22px", top: `calc(${(shownMark.at * 100).toFixed(2)}% - 18px)`, width: "260px", padding: "10px 12px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", boxShadow: "0 12px 28px -16px rgba(18,19,26,.45)", pointerEvents: "none" }}>
           <strong style={{ display: "block", fontSize: "var(--t-caption)", marginBottom: "3px" }}>{shown.who}</strong>
-          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#2B2D36", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "var(--c-text)", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {String(shown.text || "").replace(/[#*_`>|[\]()]/g, "").replace(/\s+/g, " ").trim().slice(0, PREVIEW) || "…"}
           </span>
         </div>

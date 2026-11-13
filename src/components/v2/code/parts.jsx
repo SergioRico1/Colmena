@@ -109,13 +109,13 @@ export function Pill({ pill, size = "sm" }) {
 
 /** Buttons of Colmena 3: one ink action per screen, the others outlined, the rare ones quiet. */
 export const BTN = {
-  primary: { height: "40px", padding: "0 18px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
-  outline: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 400, cursor: "pointer", whiteSpace: "nowrap" },
-  blocked: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px dashed rgba(18,19,26,.2)", borderRadius: "var(--r-pill)", background: "transparent", color: "#5C606C", fontSize: "var(--t-ui)", cursor: "not-allowed", whiteSpace: "nowrap" },
-  quiet: { height: "40px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "#4A4D57", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
+  primary: { height: "40px", padding: "0 18px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
+  outline: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 400, cursor: "pointer", whiteSpace: "nowrap" },
+  blocked: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px dashed rgb(var(--c-ink-rgb) / .2)", borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-ui)", cursor: "not-allowed", whiteSpace: "nowrap" },
+  quiet: { height: "40px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
 };
 /** The soft chips of the composers (project, engine): #F6F6F3 with a hairline. */
-export const CHIP = { height: "34px", padding: "0 12px", gap: "8px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-ui)", fontWeight: 400, color: "#12131A" };
+export const CHIP = { height: "34px", padding: "0 12px", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .1)", borderRadius: "var(--r-pill)", background: "var(--c-hover)", fontSize: "var(--t-ui)", fontWeight: 400, color: "var(--c-text)" };
 export const SR = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 
 export const CODE_CSS = `

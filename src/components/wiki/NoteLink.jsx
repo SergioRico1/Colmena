@@ -21,8 +21,8 @@ export default function NoteLink({ target, children }) {
     <a href={href} data-note={hit?.slug || ""} data-note-missing={missing ? "" : undefined} title={title}
       onClick={missing && ctx?.onMissing ? (e) => { e.preventDefault(); ctx.onMissing(name); } : undefined}
       style={missing
-        ? { color: "#5C606C", textDecoration: "underline dashed", textUnderlineOffset: "3px" }
-        : { color: "#1F4FD1", textDecoration: "underline", textDecorationColor: "rgba(31,79,209,.35)", textUnderlineOffset: "3px" }}>
+        ? { color: "var(--c-text-3)", textDecoration: "underline dashed", textUnderlineOffset: "3px" }
+        : { color: "var(--c-accent-ink)", textDecoration: "underline", textDecorationColor: "rgba(31,79,209,.35)", textUnderlineOffset: "3px" }}>
       {children}
     </a>
   );

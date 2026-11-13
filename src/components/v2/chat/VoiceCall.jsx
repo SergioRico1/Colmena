@@ -7,10 +7,9 @@ import { BotPresence } from "../Presence.jsx";
 import { useVoiceCall } from "../../../lib/voiceCall.js";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
 
-const ink = "#12131A", grey = "#5C606C";
 const shimmer = { background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" };
-const round = (dark) => ({ width: "60px", height: "60px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", cursor: "pointer", background: dark ? ink : "#FFFFFF", color: dark ? "#FFFFFF" : ink, boxShadow: dark ? "0 14px 30px -14px rgba(18,19,26,.55)" : "0 0 0 1px rgba(18,19,26,.08), 0 10px 24px -16px rgba(18,19,26,.3)", transition: "transform .15s ease, background .2s ease" });
-const label = { fontSize: "var(--t-caption)", color: grey, textAlign: "center" };
+const round = (dark) => ({ width: "60px", height: "60px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", cursor: "pointer", background: dark ? "var(--c-btn)" : "var(--c-card)", color: dark ? "var(--c-btn-text)" : "var(--c-text)", boxShadow: dark ? "0 14px 30px -14px rgba(18,19,26,.55)" : "0 0 0 1px rgba(18,19,26,.08), 0 10px 24px -16px rgba(18,19,26,.3)", transition: "transform .15s ease, background .2s ease" });
+const label = { fontSize: "var(--t-caption)", color: "var(--c-text-3)", textAlign: "center" };
 const voiceName = (v) => (v ? v[0].toUpperCase() + v.slice(1) : "");
 
 const STATUS = { connecting: "Conectando…", listening: "Escuchando", speaking: "Hablando", thinking: "Pensando…", ended: "Llamada terminada", error: "No se pudo hablar", idle: "" };
@@ -57,9 +56,9 @@ export default function VoiceCall({ bot, missionId, onClose }) {
 
   return (
     <div ref={box} role="dialog" aria-modal="true" aria-label={`Llamada con ${name}`}
-      style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", flexDirection: "column", background: "rgba(245,245,242,.94)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", animation: "fade .25s ease-out" }}>
+      style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", flexDirection: "column", background: "color-mix(in oklab, var(--c-page) 94%, transparent)", backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", animation: "fade .25s ease-out" }}>
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "28px clamp(20px, 5vw, 56px) 30px", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
-        <p style={{ margin: 0, fontSize: "var(--t-meta)", color: grey, letterSpacing: "0.01em" }}>{`${name} · Voz ${voiceName(voice) || "…"}`}</p>
+        <p style={{ margin: 0, fontSize: "var(--t-meta)", color: "var(--c-text-3)", letterSpacing: "0.01em" }}>{`${name} · Voz ${voiceName(voice) || "…"}`}</p>
 
         <div style={{ flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "26px" }}>
           <div aria-hidden="true" style={{ position: "relative", width: "240px", height: "240px", display: "grid", placeItems: "center" }}>
@@ -70,18 +69,18 @@ export default function VoiceCall({ bot, missionId, onClose }) {
             </span>
           </div>
 
-          <span role="status" aria-live="polite" style={{ minHeight: "20px", fontSize: "var(--t-body)", fontWeight: 500, color: grey, ...(phase === "thinking" || phase === "connecting" ? shimmer : {}) }}>{unavailable ? "" : status}</span>
+          <span role="status" aria-live="polite" style={{ minHeight: "20px", fontSize: "var(--t-body)", fontWeight: 500, color: "var(--c-text-3)", ...(phase === "thinking" || phase === "connecting" ? shimmer : {}) }}>{unavailable ? "" : status}</span>
 
           <div aria-live="polite" style={{ width: "100%", maxWidth: "640px", minHeight: "96px", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
             {unavailable ? (
-              <p style={{ margin: 0, font: "500 var(--t-title)/1.4 'Geist', sans-serif", color: ink, animation: "rise .3s ease-out" }}>{info.reason}</p>
+              <p style={{ margin: 0, font: "500 var(--t-title)/1.4 'Geist', sans-serif", color: "var(--c-text)", animation: "rise .3s ease-out" }}>{info.reason}</p>
             ) : error && !inCall ? (
-              <p role="alert" style={{ margin: 0, font: "500 var(--t-title)/1.4 'Geist', sans-serif", color: ink, animation: "rise .3s ease-out" }}>{error}</p>
+              <p role="alert" style={{ margin: 0, font: "500 var(--t-title)/1.4 'Geist', sans-serif", color: "var(--c-text)", animation: "rise .3s ease-out" }}>{error}</p>
             ) : (
               <>
-                {before ? <p key={"b" + other + before.slice(0, 12)} style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.45, color: "#6B6F7A", animation: "fade .3s ease-out", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{before}</p> : null}
-                {main ? <p key={"m" + captions.last + main.slice(0, 12)} style={{ margin: 0, font: `500 ${captions.last === "assistant" ? 23 : 20}px/1.38 'Geist', sans-serif`, letterSpacing: "-0.01em", color: captions.last === "assistant" ? ink : grey, animation: "fade .3s ease-out", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{main}</p>
-                  : phase === "listening" ? <p style={{ margin: 0, fontSize: "var(--t-lead)", color: "#6B6F7A", animation: "fade .6s ease-out" }}>{`Habla cuando quieras. Para cortar a ${name}, háblale por encima.`}</p> : null}
+                {before ? <p key={"b" + other + before.slice(0, 12)} style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.45, color: "var(--c-text-3)", animation: "fade .3s ease-out", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{before}</p> : null}
+                {main ? <p key={"m" + captions.last + main.slice(0, 12)} style={{ margin: 0, font: `500 ${captions.last === "assistant" ? 23 : 20}px/1.38 'Geist', sans-serif`, letterSpacing: "-0.01em", color: captions.last === "assistant" ? "var(--c-text)" : "var(--c-text-3)", animation: "fade .3s ease-out", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{main}</p>
+                  : phase === "listening" ? <p style={{ margin: 0, fontSize: "var(--t-lead)", color: "var(--c-text-3)", animation: "fade .6s ease-out" }}>{`Habla cuando quieras. Para cortar a ${name}, háblale por encima.`}</p> : null}
               </>
             )}
           </div>
@@ -89,15 +88,15 @@ export default function VoiceCall({ bot, missionId, onClose }) {
 
         {confirms.map((c) => (
           <div key={c.id} role="group" aria-label="Confirmación pendiente"
-            style={{ width: "100%", maxWidth: "520px", marginBottom: "22px", background: "#FFFFFF", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .3s ease-out" }}>
-            <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "#8A5A00" }}>{"Por voz no se hace: confírmalo aquí"}</span>
+            style={{ width: "100%", maxWidth: "520px", marginBottom: "22px", background: "var(--c-card)", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "18px 20px", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .3s ease-out" }}>
+            <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-honey-text)" }}>{"Por voz no se hace: confírmalo aquí"}</span>
             <strong style={{ font: "600 var(--t-title)/1.25 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.015em" }}>{c.accion}</strong>
-            <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, color: grey }}>{c.detalle}</p>
+            <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{c.detalle}</p>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <button type="button" onClick={() => call.answer(c, true)} style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "44px", padding: "0 20px", background: ink, color: "#FFFFFF", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: 600, fontSize: "var(--t-body)" }}>
+              <button type="button" onClick={() => call.answer(c, true)} style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "44px", padding: "0 20px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: 600, fontSize: "var(--t-body)" }}>
                 <Check size={17} strokeWidth={2.4} aria-hidden="true" />{"Confirmar y pasarlo al chat"}
               </button>
-              <button type="button" onClick={() => call.answer(c, false)} style={{ minHeight: "44px", padding: "0 18px", background: "#F6F6F3", color: ink, border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: 600, fontSize: "var(--t-body)" }}>{"No"}</button>
+              <button type="button" onClick={() => call.answer(c, false)} style={{ minHeight: "44px", padding: "0 18px", background: "var(--c-hover)", color: "var(--c-text)", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: 600, fontSize: "var(--t-body)" }}>{"No"}</button>
             </div>
           </div>
         ))}
@@ -121,10 +120,10 @@ export default function VoiceCall({ bot, missionId, onClose }) {
               <span style={label}>{"Voz"}</span>
               {voicesOpen ? (
                 <div role="listbox" aria-label="Voces" onMouseLeave={() => setVoicesOpen(false)}
-                  style={{ position: "absolute", bottom: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", zIndex: 2, width: "200px", maxHeight: "300px", overflowY: "auto", padding: "6px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
+                  style={{ position: "absolute", bottom: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", zIndex: 2, width: "200px", maxHeight: "300px", overflowY: "auto", padding: "6px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
                   {info.voices.map((v) => (
                     <button key={v} type="button" role="option" aria-selected={v === voice ? "true" : "false"} onClick={() => { setVoicesOpen(false); if (v !== voice) void call.chooseVoice(v); }}
-                      style={{ width: "100%", minHeight: "40px", padding: "0 12px", display: "flex", alignItems: "center", justifyContent: "space-between", border: 0, borderRadius: "var(--r-md)", background: v === voice ? "rgba(18,19,26,.05)" : "transparent", cursor: "pointer", fontSize: "var(--t-ui)", color: ink }}>
+                      style={{ width: "100%", minHeight: "40px", padding: "0 12px", display: "flex", alignItems: "center", justifyContent: "space-between", border: 0, borderRadius: "var(--r-md)", background: v === voice ? "rgb(var(--c-ink-rgb) / .05)" : "transparent", cursor: "pointer", fontSize: "var(--t-ui)", color: "var(--c-text)" }}>
                       {voiceName(v)}{v === voice ? <Check size={15} strokeWidth={2.4} aria-hidden="true" /> : null}
                     </button>
                   ))}

@@ -110,26 +110,26 @@ export default function PeopleHelp() {
   return (
     <Shell active="conversaciones">
       <article style={{ width: "100%", maxWidth: "760px", margin: "0 auto", padding: "40px clamp(20px, 4vw, 44px) 72px", display: "flex", flexDirection: "column", gap: "28px", boxSizing: "border-box" }}>
-        <a href="/ajustes/contactos" onClick={(e) => { e.preventDefault(); if (history.length > 1) history.back(); else navigate("/ajustes/contactos"); }} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", fontWeight: 600, color: "#5C606C", textDecoration: "none" }}><ArrowLeft size={15} strokeWidth={2.2} aria-hidden="true" />{"Volver"}</a>
+        <a href="/ajustes/contactos" onClick={(e) => { e.preventDefault(); if (history.length > 1) history.back(); else navigate("/ajustes/contactos"); }} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text-3)", textDecoration: "none" }}><ArrowLeft size={15} strokeWidth={2.2} aria-hidden="true" />{"Volver"}</a>
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <h1 style={{ margin: 0, font: "600 var(--t-display-m)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{"Cómo funciona"}</h1>
-          <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: 1.55, color: "#3D404A" }}>{"Colmena es un chat de equipo para personas y para los bots de cada una. Cada persona usa su Colmena en su ordenador, con sus bots; el equipo comparte la conversación, no los datos."}</p>
+          <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: 1.55, color: "var(--c-text-2)" }}>{"Colmena es un chat de equipo para personas y para los bots de cada una. Cada persona usa su Colmena en su ordenador, con sus bots; el equipo comparte la conversación, no los datos."}</p>
         </header>
-        <ol style={{ margin: 0, padding: "22px", listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", borderRadius: "var(--r-2xl)", background: "#FFFFFF" }}>
+        <ol style={{ margin: 0, padding: "22px", listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", borderRadius: "var(--r-2xl)", background: "var(--c-card)" }}>
           {INTRO_STEPS.map(([Icon, title, text]) => (
             <li key={title} style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
-              <span aria-hidden="true" style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F2F2EE" }}><Icon size={18} strokeWidth={2} /></span>
-              <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}><strong style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{title}</strong><span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: "#5C606C" }}>{text}</span></span>
+              <span aria-hidden="true" style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-sunken)" }}><Icon size={18} strokeWidth={2} /></span>
+              <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}><strong style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{title}</strong><span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{text}</span></span>
             </li>
           ))}
         </ol>
         <nav aria-label="En esta página" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {ALL.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>{title}</a>)}
+          {ALL.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)", textDecoration: "none" }}>{title}</a>)}
         </nav>
         {ALL.map(([id, Icon, title, paragraphs]) => (
           <section key={id} id={id} aria-labelledby={id + "-t"} style={{ display: "flex", flexDirection: "column", gap: "12px", scrollMarginTop: "24px" }}>
             <h2 id={id + "-t"} style={{ margin: 0, display: "flex", alignItems: "center", gap: "10px", font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}><Icon size={20} strokeWidth={2} aria-hidden="true" />{title}</h2>
-            {paragraphs.map((p) => <p key={p} style={{ margin: 0, fontSize: "var(--t-read)", lineHeight: 1.6, color: "#3D404A" }}>{p}</p>)}
+            {paragraphs.map((p) => <p key={p} style={{ margin: 0, fontSize: "var(--t-read)", lineHeight: 1.6, color: "var(--c-text-2)" }}>{p}</p>)}
           </section>
         ))}
       </article>

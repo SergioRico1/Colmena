@@ -101,7 +101,7 @@ export function UserText({ text, size = 15, messageId = null }) {
         const body = b.lines.join("\n").replace(/^\n+|\n+$/g, "");
         if (!body) return null;
         return b.quoted
-          ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid #FFC93C", color: "#4A4F5C", fontSize: stepOf(size - 1) + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} />} /></blockquote>
+          ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid #FFC93C", color: "var(--c-text-2)", fontSize: stepOf(size - 1) + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} />} /></blockquote>
           : <p key={i} style={{ margin: 0, fontSize: size + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} plain={(x) => <PillText text={x} />} />} /></p>;
       })}
     </div>

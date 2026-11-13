@@ -40,20 +40,20 @@ export function parseCsv(text) {
 /** CSV rendered with the comparison-table styles of the Chat mockup. */
 export function CsvTable({ text }) {
   const rows = parseCsv(text);
-  if (!rows.length) return <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "#555A68" }}>{"La tabla está vacía."}</p>;
+  if (!rows.length) return <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{"La tabla está vacía."}</p>;
   const [head, ...body] = rows;
   return (
     <table style={{ width: "100%", minWidth: "360px", borderCollapse: "collapse", fontSize: "var(--t-ui)", lineHeight: "1.4" }}>
       <thead>
         <tr style={{ textAlign: "left" }}>
-          {head.map((h, i) => <th key={i} style={{ padding: "10px 8px", borderBottom: "2px solid #12131A", fontWeight: "600" }}>{h}</th>)}
+          {head.map((h, i) => <th key={i} style={{ padding: "10px 8px", borderBottom: "2px solid var(--c-text)", fontWeight: "600" }}>{h}</th>)}
         </tr>
       </thead>
       <tbody>
         {body.map((r, i) => (
           <tr key={i}>
             {head.map((_, j) => (
-              <td key={j} style={j === 0 ? { padding: "12px 8px", borderBottom: "1px solid #E6E8EE", fontWeight: "600" } : { padding: "12px 8px", borderBottom: "1px solid #E6E8EE" }}>{r[j] ?? ""}</td>
+              <td key={j} style={j === 0 ? { padding: "12px 8px", borderBottom: "1px solid var(--c-line)", fontWeight: "600" } : { padding: "12px 8px", borderBottom: "1px solid var(--c-line)" }}>{r[j] ?? ""}</td>
             ))}
           </tr>
         ))}
@@ -76,15 +76,15 @@ function FieldsTable({ fields }) {
     <table style={{ width: "100%", minWidth: "320px", borderCollapse: "collapse", fontSize: "var(--t-ui)", lineHeight: "1.4" }}>
       <thead>
         <tr style={{ textAlign: "left" }}>
-          <th style={{ padding: "10px 8px", borderBottom: "2px solid #12131A", fontWeight: "600" }}>{"Campo"}</th>
-          <th style={{ padding: "10px 8px", borderBottom: "2px solid #12131A", fontWeight: "600" }}>{"Valor"}</th>
+          <th style={{ padding: "10px 8px", borderBottom: "2px solid var(--c-text)", fontWeight: "600" }}>{"Campo"}</th>
+          <th style={{ padding: "10px 8px", borderBottom: "2px solid var(--c-text)", fontWeight: "600" }}>{"Valor"}</th>
         </tr>
       </thead>
       <tbody>
         {fields.map((f, i) => (
           <tr key={f.name || i}>
-            <td style={{ padding: "12px 8px", borderBottom: "1px solid #E6E8EE", fontWeight: "600", overflowWrap: "anywhere" }}>{f.name}</td>
-            <td style={{ padding: "12px 8px", borderBottom: "1px solid #E6E8EE", overflowWrap: "anywhere" }}>{String(f.value ?? "")}</td>
+            <td style={{ padding: "12px 8px", borderBottom: "1px solid var(--c-line)", fontWeight: "600", overflowWrap: "anywhere" }}>{f.name}</td>
+            <td style={{ padding: "12px 8px", borderBottom: "1px solid var(--c-line)", overflowWrap: "anywhere" }}>{String(f.value ?? "")}</td>
           </tr>
         ))}
       </tbody>
@@ -99,15 +99,15 @@ function PdfPages({ artifact, meta }) {
   return (
     <div data-gallery="" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       {failed ? (
-        <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#555A68" }}>{"No se puede mostrar la vista previa en este equipo. Descarga el PDF para verlo."}</p>
+        <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{"No se puede mostrar la vista previa en este equipo. Descarga el PDF para verlo."}</p>
       ) : (
         Array.from({ length: pages }, (_, i) => (
           <img key={i} data-lightbox="" data-name={`${artifact?.title || "Documento"} · página ${i + 1}`} src={artifactPageUrl(artifact.id, i + 1)} alt={`Página ${i + 1} de ${meta?.pages || pages}`} loading="lazy" onError={() => setFailed(true)}
-            style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />
+            style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "var(--c-card)" }} />
         ))
       )}
-      {meta?.pages > 20 ? <p style={{ margin: "0", fontSize: "var(--t-meta)", color: "#555A68" }}>{`Se muestran 20 de ${meta.pages} páginas.`}</p> : null}
-      <a href={artifactFileUrl(artifact.id, true)} download style={{ alignSelf: "flex-start", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>{"Descargar el PDF"}</a>
+      {meta?.pages > 20 ? <p style={{ margin: "0", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`Se muestran 20 de ${meta.pages} páginas.`}</p> : null}
+      <a href={artifactFileUrl(artifact.id, true)} download style={{ alignSelf: "flex-start", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{"Descargar el PDF"}</a>
     </div>
   );
 }
@@ -126,24 +126,24 @@ export function ArtifactBody({ artifact, content, meta = null }) {
   if (format === "png" && artifact?.id) {
     return (
       <figure style={{ margin: "0", display: "flex", flexDirection: "column", gap: "10px" }}>
-        <img data-lightbox="" data-name={(artifact?.title || "imagen") + ".png"} loading="lazy" decoding="async" src={artifactFileUrl(artifact.id)} alt={artifact?.title || "Imagen"} style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#F7F8FA" }} />
-        {meta?.prompt ? <figcaption style={{ fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#555A68" }}>{`Petición: «${meta.prompt}»`}{meta.width ? ` · ${meta.width}×${meta.height}` : ""}</figcaption> : null}
+        <img data-lightbox="" data-name={(artifact?.title || "imagen") + ".png"} loading="lazy" decoding="async" src={artifactFileUrl(artifact.id)} alt={artifact?.title || "Imagen"} style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "var(--c-sunken)" }} />
+        {meta?.prompt ? <figcaption style={{ fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{`Petición: «${meta.prompt}»`}{meta.width ? ` · ${meta.width}×${meta.height}` : ""}</figcaption> : null}
       </figure>
     );
   }
   if (format === "pdf" && artifact?.id) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-        {meta?.source?.name ? <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#2B2D36" }}>{`Copia rellena de «${meta.source.name}». El original no se ha modificado.`}</p> : null}
+        {meta?.source?.name ? <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text)" }}>{`Copia rellena de «${meta.source.name}». El original no se ha modificado.`}</p> : null}
         <FieldsTable fields={meta?.fields} />
         <PdfPages artifact={artifact} meta={meta} />
       </div>
     );
   }
   if (format === "csv" || kind === "table" || kind === "sheet") return <CsvTable text={content} />;
-  if (format === "svg") return <img loading="lazy" decoding="async" src={svgSrc(content)} alt={artifact?.title || "Diseño"} style={{ display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />;
+  if (format === "svg") return <img loading="lazy" decoding="async" src={svgSrc(content)} alt={artifact?.title || "Diseño"} style={{ display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "var(--c-card)" }} />;
   if (format === "html" && (kind === "slides" || kind === "design")) {
-    return <iframe title={artifact?.title || "Vista previa"} sandbox="" srcDoc={String(content || "")} style={{ width: "100%", height: "520px", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", background: "#FFFFFF" }} />;
+    return <iframe title={artifact?.title || "Vista previa"} sandbox="" srcDoc={String(content || "")} style={{ width: "100%", height: "520px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-card)" }} />;
   }
   if (kind === "code" || CODE_FORMATS.has(format) || format === "html") {
     return <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.75 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}>{content}</pre>;
@@ -185,23 +185,23 @@ export default function ArtifactPanel({ artifactId, live, bots = [], onClose, va
 
   return (
     <Frame bare={bare} label={`${title} abierto`} style={{ ...(room
-      ? { flex: "1 1 360px", minWidth: "0", background: "#FFFFFF", borderLeft: "1px solid #DCE0E8", display: "flex", flexDirection: "column" }
-      : { flex: "1 1 420px", minWidth: "0", background: "#FFFFFF", borderLeft: "1px solid #DCE0E8", display: "flex", flexDirection: "column" }), ...resize.style }}>
+      ? { flex: "1 1 360px", minWidth: "0", background: "var(--c-card)", borderLeft: "1px solid var(--c-line)", display: "flex", flexDirection: "column" }
+      : { flex: "1 1 420px", minWidth: "0", background: "var(--c-card)", borderLeft: "1px solid var(--c-line)", display: "flex", flexDirection: "column" }), ...resize.style }}>
       {bare ? null : resize.handle}
       <div style={bare ? { display: "flex", flexDirection: "column" } : { position: "sticky", top: "0", maxHeight: "100vh", overflowY: "auto", display: "flex", flexDirection: "column" }}>
-      <div style={{ position: "sticky", top: "0", zIndex: "1", background: "#FFFFFF", minHeight: "64px", padding: "10px 12px 10px 20px", borderBottom: "1px solid #E6E8EE", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+      <div style={{ position: "sticky", top: "0", zIndex: "1", background: "var(--c-card)", minHeight: "64px", padding: "10px 12px 10px 20px", borderBottom: "1px solid var(--c-line)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: "0" }}>
           <strong style={{ fontSize: "var(--t-body)", overflowWrap: "anywhere" }}>{title}</strong>
-          <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{meta}</span>
+          <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{meta}</span>
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
           {content && !fileBased ? (
-            <button type="button" className="rm-focus" onClick={copy} style={{ height: "40px", padding: "0 12px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)" }}>{copied ? <span className="c-ok"><Check size={13} strokeWidth={2.6} aria-hidden="true" />Copiado</span> : "Copiar"}</button>
+            <button type="button" className="rm-focus" onClick={copy} style={{ height: "40px", padding: "0 12px", background: "transparent", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)" }}>{copied ? <span className="c-ok"><Check size={13} strokeWidth={2.6} aria-hidden="true" />Copiado</span> : "Copiar"}</button>
           ) : null}
           {artifact && fileBased ? (
-            <a href={artifactFileUrl(artifact.id, true)} download className="rm-focus" onClick={() => setSaved(true)} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", display: "flex", alignItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", textDecoration: "none" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</a>
+            <a href={artifactFileUrl(artifact.id, true)} download className="rm-focus" onClick={() => setSaved(true)} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", display: "flex", alignItems: "center", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", textDecoration: "none" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</a>
           ) : artifact && content != null ? (
-            <button type="button" className="rm-focus" onClick={save} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</button>
+            <button type="button" className="rm-focus" onClick={save} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</button>
           ) : null}
           {bare ? null : <button type="button" className="rm-focus" aria-label="Cerrar panel" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-md)", cursor: "pointer" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
@@ -210,10 +210,10 @@ export default function ArtifactPanel({ artifactId, live, bots = [], onClose, va
       </div>
       <div style={{ padding: "24px 20px", display: "flex", flexDirection: "column", gap: "18px", overflowX: "auto" }}>
         <h2 style={{ margin: "0", font: "700 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{title}</h2>
-        {artifactId && loading && !data ? <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "#555A68" }}>{"Abriendo…"}</p> : null}
+        {artifactId && loading && !data ? <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{"Abriendo…"}</p> : null}
         {artifactId && error ? <ErrorLine>{`No he podido abrir el entregable: ${error}`}</ErrorLine> : null}
         {content != null && (artifact || live) ? <ArtifactBody artifact={artifact || { format: "md" }} content={content} meta={fileMeta} /> : null}
-        {artifact?.room ? <p style={{ margin: "0", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#555A68" }}>{`Guardado en la Biblioteca · sala #${artifact.room}`}</p> : null}
+        {artifact?.room ? <p style={{ margin: "0", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{`Guardado en la Biblioteca · sala #${artifact.room}`}</p> : null}
       </div>
       </div>
     </Frame>
@@ -222,6 +222,6 @@ export default function ArtifactPanel({ artifactId, live, bots = [], onClose, va
 
 /** On its own (an <aside>) or as a tab of the SideDock («bare»). */
 function Frame({ bare, label, style, children }) {
-  if (bare) return <div aria-label={label} style={{ display: "flex", flexDirection: "column", minHeight: "100%", background: "#FFFFFF" }}>{children}</div>;
+  if (bare) return <div aria-label={label} style={{ display: "flex", flexDirection: "column", minHeight: "100%", background: "var(--c-card)" }}>{children}</div>;
   return <aside aria-label={label} className="c-panel" style={style}>{children}</aside>;
 }

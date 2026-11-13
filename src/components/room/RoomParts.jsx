@@ -74,17 +74,17 @@ export function StuckBand({ mission, bots }) {
   const control = (action) => act(() => post(`/missions/${mission.id}/control`, { action }));
   const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
   return (
-    <div role="status" className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE", fontSize: "var(--t-ui)" }}>
-      {bot?.id === "atlas" ? <BotAvatar bot={bot} size={26} mood="plano" /> : <Hourglass size={18} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#4A4F5C" }} />}
+    <div role="status" className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "var(--c-sunken)", borderBottom: "1px solid var(--c-line)", fontSize: "var(--t-ui)" }}>
+      {bot?.id === "atlas" ? <BotAvatar bot={bot} size={26} mood="plano" /> : <Hourglass size={18} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-2)" }} />}
       <span style={{ flex: "1 1 280px" }}>
         <strong>{(bot ? bot.name : "El equipo") + " lleva " + minutes + " min sin avanzar."}</strong>
         {" " + (doing ? "Lo último: " + doing + ". " : "") + "Puede ser una web lenta o que se haya atascado."}
-        {error ? <span style={{ color: "#B4372A" }}>{" " + error}</span> : null}
+        {error ? <span style={{ color: "var(--c-error)" }}>{" " + error}</span> : null}
       </span>
-      <button type="button" className="rm-focus" disabled={busy} onClick={() => control("retry")} style={{ ...btn, background: "#12131A", color: "#FFFFFF", border: "0" }}>
+      <button type="button" className="rm-focus" disabled={busy} onClick={() => control("retry")} style={{ ...btn, background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0" }}>
         <RotateCcw size={14} strokeWidth={2.4} aria-hidden="true" />Reintentar
       </button>
-      <button type="button" className="rm-focus" disabled={busy} onClick={() => control("pause")} style={{ ...btn, background: "transparent", color: "#12131A", border: "1px solid #DCE0E8" }}>
+      <button type="button" className="rm-focus" disabled={busy} onClick={() => control("pause")} style={{ ...btn, background: "transparent", color: "var(--c-text)", border: "1px solid var(--c-line)" }}>
         <Pause size={14} strokeWidth={2.4} aria-hidden="true" />Pausar
       </button>
     </div>
@@ -125,14 +125,14 @@ export function BlockerBand({ mission, pending, bots }) {
       }
     : undefined;
   return (
-    <a href={href} onClick={onClick} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "#FFF4D1", borderBottom: "1px solid #F2D27A", fontSize: "var(--t-ui)" }}>
-      {bot ? <BotAvatar bot={bot} size={22} mood="duda" /> : <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 700, color: "#12131A" }}>{"#"}</span>}
+    <a href={href} onClick={onClick} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "var(--c-honey-soft)", borderBottom: "1px solid var(--c-honey-ring)", fontSize: "var(--t-ui)" }}>
+      {bot ? <BotAvatar bot={bot} size={22} mood="duda" /> : <span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-meta)", fontWeight: 700, color: "var(--c-text)" }}>{"#"}</span>}
       <span style={{ flex: "1 1 280px" }}>
         <strong>{bot ? `${bot.name} te espera:` : "La sala te espera:"}</strong>
         {" " + (text || "") + more}
       </span>
       {/* The one action of this decision in the room (the header no longer repeats it). */}
-      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-pill)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{!first ? "Elegir propuesta" : first.kind === "plan" ? "Revisar el plan" : first.kind === "question" ? "Responder" : "Revisar"}</span>
+      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "var(--c-btn)", color: "var(--c-btn-text)", borderRadius: "var(--r-pill)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{!first ? "Elegir propuesta" : first.kind === "plan" ? "Revisar el plan" : first.kind === "question" ? "Responder" : "Revisar"}</span>
     </a>
   );
 }
@@ -151,10 +151,10 @@ function toLabel(to, bots) {
 /** How a row of the sala travelled to the people of a shared room: «Enviando…», «Visto por …». */
 function TravelLine({ peer }) {
   if (!peer) return null;
-  const style = { fontSize: "var(--t-meta)", lineHeight: "1.3", color: "#5C606C" };
+  const style = { fontSize: "var(--t-meta)", lineHeight: "1.3", color: "var(--c-text-3)" };
   if (peer.deleted) return <span style={style}>{"Borrado para todos"}</span>;
   if (peer.status === "sending") return <span role="status" style={style}>{"Enviando…"}</span>;
-  if (peer.status === "failed") return <span role="alert" style={{ ...style, color: "#B4372A" }}>{"No ha salido hacia los demás. Colmena lo reintenta sola."}</span>;
+  if (peer.status === "failed") return <span role="alert" style={{ ...style, color: "var(--c-error)" }}>{"No ha salido hacia los demás. Colmena lo reintenta sola."}</span>;
   if (peer.seenBy?.length) return <span style={style}>{"Visto por " + listNames(peer.seenBy)}</span>;
   return null;
 }
@@ -183,7 +183,7 @@ function ReplyButton({ onClick }) {
   if (!onClick) return null;
   return (
     <button type="button" className="rm-focus" onClick={onClick} aria-label="Responder en un hilo" title="Responder en un hilo"
-      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "#4A4F5C" }}>
+      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text-2)" }}>
       {REPLY_ICON}
     </button>
   );
@@ -206,7 +206,7 @@ function ForkButton({ message }) {
   };
   return (
     <button type="button" className="rm-focus" onClick={fork} disabled={busy} aria-label="Duplicar desde aquí" title="Duplicar desde aquí: una sala nueva con la conversación hasta este mensaje"
-      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: busy ? "default" : "pointer", color: "#4A4F5C", opacity: busy ? 0.5 : 1 }}>
+      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: busy ? "default" : "pointer", color: "var(--c-text-2)", opacity: busy ? 0.5 : 1 }}>
       <GitBranch size={16} strokeWidth={2} aria-hidden="true" />
     </button>
   );
@@ -219,20 +219,20 @@ function RepliesLink({ replies, bots, onOpen, pressed }) {
   const who = [...new Set(replies.map((r) => (r.role === "user" ? "user" : r.botId || "atlas")))].slice(0, 3);
   return (
     <button type="button" className="rm-focus" onClick={onOpen} aria-pressed={pressed ? "true" : "false"}
-      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "32px", padding: "2px 10px 2px 4px", background: pressed ? "#EEF0F4" : "transparent", border: "1px solid " + (pressed ? "#DCE0E8" : "transparent"), borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)" }}>
+      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "32px", padding: "2px 10px 2px 4px", background: pressed ? "var(--c-chip)" : "transparent", border: "1px solid " + (pressed ? "#DCE0E8" : "transparent"), borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)" }}>
       <span style={{ display: "flex" }}>{who.map((w) => (w === "user" ? <UserAvatar key="u" size={22} /> : <BotAvatar key={w} bot={findBot(bots, w)} size={22} />))}</span>
-      <strong style={{ color: "#1F4FD1" }}>{replies.length === 1 ? "1 respuesta" : replies.length + " respuestas"}</strong>
-      {last?.at ? <span style={{ color: "#555A68" }}>{"última a las " + time(last.at)}</span> : null}
+      <strong style={{ color: "var(--c-accent-ink)" }}>{replies.length === 1 ? "1 respuesta" : replies.length + " respuestas"}</strong>
+      {last?.at ? <span style={{ color: "var(--c-text-3)" }}>{"última a las " + time(last.at)}</span> : null}
     </button>
   );
 }
 
 export function DaySeparator({ label }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 12px", fontSize: "var(--t-caption)", fontWeight: "600", color: "#555A68" }}>
-      <span style={{ flex: "1", height: "1px", background: "#E6E8EE" }} />
-      <span style={{ padding: "4px 12px", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)" }}>{label}</span>
-      <span style={{ flex: "1", height: "1px", background: "#E6E8EE" }} />
+    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 12px", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>
+      <span style={{ flex: "1", height: "1px", background: "var(--c-line)" }} />
+      <span style={{ padding: "4px 12px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)" }}>{label}</span>
+      <span style={{ flex: "1", height: "1px", background: "var(--c-line)" }} />
     </div>
   );
 }
@@ -257,14 +257,14 @@ function useResend(message) {
 /** «No se envió · Reintentar · Descartar» under a message that did not reach the room. */
 export function FailedLine({ error, onRetry, onDiscard }) {
   return (
-    <span role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-meta)", color: "#B4372A" }}>
+    <span role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-meta)", color: "var(--c-error)" }}>
       <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
       <strong>{"No se envió"}</strong>
-      <span style={{ color: "#4A4F5C" }}>{error}</span>
-      <button type="button" className="rm-focus" onClick={onRetry} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 8px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}>
+      <span style={{ color: "var(--c-text-2)" }}>{error}</span>
+      <button type="button" className="rm-focus" onClick={onRetry} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 8px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}>
         <RotateCcw size={12} strokeWidth={2.4} aria-hidden="true" />Reintentar
       </button>
-      <button type="button" className="rm-focus" onClick={onDiscard} style={{ height: "26px", padding: "0 8px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: "#12131A" }}>Descartar</button>
+      <button type="button" className="rm-focus" onClick={onDiscard} style={{ height: "26px", padding: "0 8px", background: "transparent", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text)" }}>Descartar</button>
     </span>
   );
 }
@@ -275,7 +275,7 @@ export function FailedLine({ error, onRetry, onDiscard }) {
  * responde…» while it decides.
  */
 function RoutedLine({ message, bots }) {
-  const style = { fontSize: "var(--t-meta)", lineHeight: "1.3", color: "#6B6F7A" };
+  const style = { fontSize: "var(--t-meta)", lineHeight: "1.3", color: "var(--c-text-3)" };
   if (message.routing) return <span role="status" style={style}>{"Eligiendo quién responde…"}</span>;
   const routed = message.routed;
   const who = toLabel(routed?.to, bots);
@@ -335,18 +335,18 @@ function PlanPhases({ assignments, bots, pending }) {
   const [open, setOpen] = useState({});
   const phases = planPhases(assignments);
   return (
-    <div style={{ maxWidth: "640px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-2xl)", boxShadow: pending ? "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)", overflow: "hidden" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "12px 16px", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE" }}>
-        <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>{`Plan del equipo · ${assignments.length} ${assignments.length === 1 ? "tarea" : "tareas"}`}</span>
-        <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{phases.length > 1 ? `${phases.length} fases, en orden` : "Todos a la vez"}</span>
+    <div style={{ maxWidth: "640px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", boxShadow: pending ? "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)", overflow: "hidden" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "12px 16px", background: "var(--c-sunken)", borderBottom: "1px solid var(--c-line)" }}>
+        <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>{`Plan del equipo · ${assignments.length} ${assignments.length === 1 ? "tarea" : "tareas"}`}</span>
+        <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{phases.length > 1 ? `${phases.length} fases, en orden` : "Todos a la vez"}</span>
       </div>
       <ol style={{ margin: "0", padding: "6px 16px 10px", listStyle: "none", display: "flex", flexDirection: "column" }}>
         {phases.map((phase, p) => {
           const waitFor = [...new Set(phase.flatMap((a) => a.deps))].map((b) => findBot(bots, b).name);
           return (
-            <li key={p} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "10px 0", borderTop: p ? "1px solid #E6E8EE" : "0" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#4A4F5C" }}>
-                <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#12131A", color: "#FFFFFF", font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{p + 1}</span>
+            <li key={p} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "10px 0", borderTop: p ? "1px solid var(--c-line)" : "0" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text-2)" }}>
+                <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-btn)", color: "var(--c-btn-text)", font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{p + 1}</span>
                 {waitFor.length ? `Cuando ${waitFor.length > 1 ? "terminen" : "termine"} ${names(waitFor)}` : "Empieza ya"}
               </span>
               {phase.map((a) => {
@@ -359,26 +359,26 @@ function PlanPhases({ assignments, bots, pending }) {
                   <div key={a.index} style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: "10px", padding: "8px 0 4px 32px" }}>
                     <BotAvatar bot={bot} size={28} />
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>
-                      <span style={{ fontSize: "var(--t-body)", lineHeight: "1.4" }}><strong>{bot.name}</strong><span style={{ color: "#555A68" }}>{" · "}</span><span style={{ fontWeight: "600" }}>{title}</span></span>
+                      <span style={{ fontSize: "var(--t-body)", lineHeight: "1.4" }}><strong>{bot.name}</strong><span style={{ color: "var(--c-text-3)" }}>{" · "}</span><span style={{ fontWeight: "600" }}>{title}</span></span>
                       {a.deliverable ? (
-                        <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
+                        <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
                           <FileText size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
-                          <span><strong style={{ fontWeight: "600", color: "#2B2D36" }}>{"Entrega: "}</strong>{plain(a.deliverable)}</span>
+                          <span><strong style={{ fontWeight: "600", color: "var(--c-text)" }}>{"Entrega: "}</strong>{plain(a.deliverable)}</span>
                         </span>
                       ) : null}
                       {a.avoid ? (
-                        <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
+                        <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
                           <Ban size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
-                          <span><strong style={{ fontWeight: "600", color: "#2B2D36" }}>{"No hace: "}</strong>{plain(a.avoid)}</span>
+                          <span><strong style={{ fontWeight: "600", color: "var(--c-text)" }}>{"No hace: "}</strong>{plain(a.avoid)}</span>
                         </span>
                       ) : null}
                       {showDetail ? (
                         <>
-                          <button type="button" className="rm-focus c-hit" aria-expanded={isOpen ? "true" : "false"} onClick={() => setOpen({ ...open, [a.index]: !isOpen })} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "4px", padding: "2px 0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>
+                          <button type="button" className="rm-focus c-hit" aria-expanded={isOpen ? "true" : "false"} onClick={() => setOpen({ ...open, [a.index]: !isOpen })} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "4px", padding: "2px 0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>
                             {isOpen ? "Ocultar detalle" : "Ver detalle"}
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ transform: isOpen ? "rotate(180deg)" : "none" }}><path d="m6 9 6 6 6-6" /></svg>
                           </button>
-                          {isOpen ? <Markdown text={detail} size={14} style={{ padding: "10px 12px", background: "#F7F8FA", borderRadius: "var(--r-md)", color: "#2B2D36" }} /> : null}
+                          {isOpen ? <Markdown text={detail} size={14} style={{ padding: "10px 12px", background: "var(--c-sunken)", borderRadius: "var(--r-md)", color: "var(--c-text)" }} /> : null}
                         </>
                       ) : null}
                     </div>
@@ -417,13 +417,13 @@ function PlanBlock({ mission, message, bots }) {
       setNote("");
     });
   const control = (action) => act(() => post(`/missions/${mission.id}/control`, { action }));
-  const pill = { minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 14px", background: "rgba(18,19,26,.06)", color: "#12131A", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
+  const pill = { minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 14px", background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
   const changeForm = (onSend, placeholder) => (
     <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) onSend(); }} style={{ maxWidth: "560px" }}>
-      <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "var(--r-md)" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "var(--c-card)", border: "1.5px solid var(--c-line-strong)", borderRadius: "var(--r-md)" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Qué cambiarías del plan"}</span>
         <input className="c-bare" type="text" autoFocus value={note} onChange={(e) => setNote(e.target.value)} placeholder={placeholder} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
-        <button type="submit" aria-label="Enviar cambios" disabled={busy || !note.trim()} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
+        <button type="submit" aria-label="Enviar cambios" disabled={busy || !note.trim()} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
           <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />
         </button>
       </label>
@@ -435,7 +435,7 @@ function PlanBlock({ mission, message, bots }) {
       {live ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "36px", padding: "0 4px 0 2px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "36px", padding: "0 4px 0 2px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
               <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: paused ? "#A9AEBB" : "#0B8A5F", animation: paused ? "none" : "breathe 1.4s ease-in-out infinite" }} />
               {paused ? "En pausa" : "En marcha · puedes pararlo o cambiarlo"}
             </span>
@@ -452,15 +452,15 @@ function PlanBlock({ mission, message, bots }) {
           <ErrorLine>{error}</ErrorLine>
         </div>
       ) : plan.approved && plan.auto ? null : plan.approved ? (
-        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#E1F4EC", border: "1px solid #9ED4BC", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "#0B5A3E" }}>
+        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "var(--c-ok-soft)", border: "1px solid #9ED4BC", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-ok-ink)" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
           {"Aprobado por ti"}
         </span>
       ) : pendingPlan ? (
         <div id="plan" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>{"Aprobar plan"}</button>
-            <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={{ minHeight: "46px", padding: "0 20px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{"Pedir cambios"}</button>
+            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>{"Aprobar plan"}</button>
+            <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={{ minHeight: "46px", padding: "0 20px", background: "rgb(var(--c-ink-rgb) / .06)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{"Pedir cambios"}</button>
           </div>
           {changing ? changeForm(() => decide("changes"), "¿Qué cambiarías del reparto?") : null}
           <ErrorLine>{error}</ErrorLine>
@@ -481,15 +481,15 @@ export function ThreadSummary({ thread, summary, bots, pressed, onClick }) {
   }
   const lastAgo = ago(last.at);
   return (
-    <button type="button" className="rm-focus" onClick={onClick} aria-pressed={pressed ? "true" : "false"} style={{ alignSelf: "stretch", maxWidth: "560px", display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", background: pressed ? "#E7EEFF" : "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left" }}>
+    <button type="button" className="rm-focus" onClick={onClick} aria-pressed={pressed ? "true" : "false"} style={{ alignSelf: "stretch", maxWidth: "560px", display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", background: pressed ? "var(--c-accent-soft)" : "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
         <span role="img" aria-label={botsAlt(people.map((id) => findBot(bots, id)))} style={{ display: "flex" }}>
           {people.map((id, i) => <BotAvatar key={id} bot={findBot(bots, id)} size={22} ring={i > 0} style={i > 0 ? { marginLeft: "-4px", font: "800 var(--t-micro)/1 'Bricolage Grotesque', sans-serif" } : { font: "800 var(--t-micro)/1 'Bricolage Grotesque', sans-serif" }} />)}
         </span>
-        <strong style={{ fontSize: "var(--t-ui)", color: "#1F4FD1" }}>{`${thread.length} ${thread.length === 1 ? "respuesta" : "respuestas"} entre bots`}</strong>
-        {lastAgo ? <span style={{ fontSize: "var(--t-meta)", color: "#555A68" }}>{lastAgo === "ahora" ? "Última ahora mismo" : `Última ${lastAgo}`}</span> : null}
+        <strong style={{ fontSize: "var(--t-ui)", color: "var(--c-accent-ink)" }}>{`${thread.length} ${thread.length === 1 ? "respuesta" : "respuestas"} entre bots`}</strong>
+        {lastAgo ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{lastAgo === "ahora" ? "Última ahora mismo" : `Última ${lastAgo}`}</span> : null}
       </span>
-      <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#2B2D36" }}>{plain(summary || last.text)}</span>
+      <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "var(--c-text)" }}>{plain(summary || last.text)}</span>
     </button>
   );
 }
@@ -506,7 +506,7 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
   // Atlas's face: «duda» while his question or plan waits for you, «feliz» on the final delivery.
   const mood = (isQuestion && approval?.status === "pending") || (kind === "plan" && mission?.status === "awaiting_plan") ? "duda" : message.phase === "synthesis" ? "feliz" : null;
   return (
-    <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} entering={entering} avatar={<BotAvatar bot={bot} size={40} mood={mood} />} continued={continued} at={message.at} padding={padding} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{kind !== "plan" && message.text ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "#4A4F5C" }} /><ForkButton message={message} /></> : null}</>}>
+    <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} entering={entering} avatar={<BotAvatar bot={bot} size={40} mood={mood} />} continued={continued} at={message.at} padding={padding} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{kind !== "plan" && message.text ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "var(--c-text-2)" }} /><ForkButton message={message} /></> : null}</>}>
       {continued ? null : <AuthorHead author={authorOf(message, bots)} at={message.at} to={toLabel(message.to, bots)} />}
         {step?.tools?.length && (!message.part || message.summary) ? <ActivityLog bot={findBot(bots, message.botId)} summary={message.summary} activity={step.activity || []} tools={step.tools} bots={bots} onOpenArtifact={onOpenArtifact} /> : null}
         {isQuestion ? (
@@ -557,7 +557,7 @@ function LiveTurnCard({ step, bot }) {
       <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
         <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
           <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{bot.name}</strong>
-          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{[bot.role, "escribiendo…"].filter(Boolean).join(" · ")}</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[bot.role, "escribiendo…"].filter(Boolean).join(" · ")}</span>
         </div>
         <div><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div>
       </MessageRow>
@@ -566,24 +566,24 @@ function LiveTurnCard({ step, bot }) {
   const shown = log.slice(-LIVE_SHOWN);
   const fresh = freshness("live:" + step.id, shown.flatMap((e, i) => [(e.callId || i) + "", (e.callId || i) + ":" + e.status]));
   const earlier = log.length - shown.length;
-  const row = { display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#2B2D36" };
-  const spin = <WorkingDots style={{ flex: "none", marginTop: "4px", color: "#12131A" }} />;
+  const row = { display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text)" };
+  const spin = <WorkingDots style={{ flex: "none", marginTop: "4px", color: "var(--c-text)" }} />;
   return (
     <MessageRow live avatar={<BotAvatar bot={bot} size={40} mood="pensando" />} at={null}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
         <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{bot.name}</strong>
-        <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{[bot.role, "trabajando…"].filter(Boolean).join(" · ")}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[bot.role, "trabajando…"].filter(Boolean).join(" · ")}</span>
       </div>
-      <div role="group" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "#F7F8FA", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
-        {step.kind === "work" && step.title ? <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A" }}>{plain(step.title).replace(new RegExp("^" + bot.name + ": "), "")}</span> : null}
-        {earlier > 0 ? <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{earlier === 1 ? "1 paso antes" : earlier + " pasos antes"}</span> : null}
-        {note ? <span key={note} className="c-phrase" style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: step.narration?.text ? "#12131A" : "#6B7080", fontStyle: step.narration?.text ? "normal" : "italic" }}>{note}</span> : null}
+      <div role="group" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "var(--c-sunken)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
+        {step.kind === "work" && step.title ? <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text)" }}>{plain(step.title).replace(new RegExp("^" + bot.name + ": "), "")}</span> : null}
+        {earlier > 0 ? <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{earlier === 1 ? "1 paso antes" : earlier + " pasos antes"}</span> : null}
+        {note ? <span key={note} className="c-phrase" style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: step.narration?.text ? "var(--c-text)" : "var(--c-text-3)", fontStyle: step.narration?.text ? "normal" : "italic" }}>{note}</span> : null}
         {shown.map((e, i) => (
           <span key={e.callId || i} className={fresh((e.callId || i) + "") ? "c-enter" : undefined} style={row}>
             {e.status === "running" ? spin : (
               <span key={e.status} className={fresh((e.callId || i) + ":" + e.status) ? "c-pop" : undefined} style={{ display: "inline-flex", flex: "none", marginTop: "2px" }}>
                 {e.status === "error"
-                  ? <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ color: "#B4372A" }} />
+                  ? <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ color: "var(--c-error)" }} />
                   : <Check size={14} strokeWidth={2.6} aria-hidden="true" style={{ color: "#0B8A5F" }} />}
               </span>
             )}
@@ -610,28 +610,28 @@ function LearnedLine({ message, bot, entering = false }) {
   const link = { display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" };
   return (
     <div className={entering ? "c-enter c-flash" : undefined}>
-    <p style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
-      <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#555A68" }} />
-      {bot ? <strong style={{ color: "#12131A" }}>{bot.name}</strong> : null}
-      <span style={done ? { textDecoration: "line-through", color: "#555A68" } : null}>{text.replace(/^Deshecho: /, "")}</span>
-      {message.at ? <span style={{ color: "#555A68" }}>{"· " + time(message.at)}</span> : null}
+    <p style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
+      <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-3)" }} />
+      {bot ? <strong style={{ color: "var(--c-text)" }}>{bot.name}</strong> : null}
+      <span style={done ? { textDecoration: "line-through", color: "var(--c-text-3)" } : null}>{text.replace(/^Deshecho: /, "")}</span>
+      {message.at ? <span style={{ color: "var(--c-text-3)" }}>{"· " + time(message.at)}</span> : null}
       {reasons.length ? (
-        <button type="button" className="rm-focus" aria-expanded={why} onClick={() => setWhy((x) => !x)} style={{ ...link, color: "#4A4F5C" }}>
+        <button type="button" className="rm-focus" aria-expanded={why} onClick={() => setWhy((x) => !x)} style={{ ...link, color: "var(--c-text-2)" }}>
           <ChevronDown size={13} strokeWidth={2.4} aria-hidden="true" style={{ transition: "transform .2s ease", transform: why ? "rotate(180deg)" : "none" }} />Por qué
         </button>
       ) : null}
-      {done ? <span style={{ color: "#555A68" }}>· deshecho</span> : (
+      {done ? <span style={{ color: "var(--c-text-3)" }}>· deshecho</span> : (
         <button type="button" className="rm-focus" disabled={busy} onClick={() => act(async () => setUndone(await post("/messages/" + message.id + "/undo")))}
-          style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>
+          style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>
           <Undo2 size={13} strokeWidth={2.4} aria-hidden="true" />Deshacer
         </button>
       )}
-      {error ? <span style={{ color: "#B4372A" }}>{error}</span> : null}
+      {error ? <span style={{ color: "var(--c-error)" }}>{error}</span> : null}
     </p>
     {why ? (
-      <ul style={{ margin: "0 0 6px 52px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "var(--r-md)", background: "rgba(18,19,26,.04)", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#3D404A", animation: "rise .25s ease-out" }}>
+      <ul style={{ margin: "0 0 6px 52px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "var(--r-md)", background: "rgb(var(--c-ink-rgb) / .04)", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-2)", animation: "rise .25s ease-out" }}>
         {reasons.map((w, i) => (
-          <li key={i}><span style={{ color: "#6B6F7A" }}>{(WHY_LABEL[w.type] || "Visto") + ": "}</span>{"«" + w.quote + "»"}</li>
+          <li key={i}><span style={{ color: "var(--c-text-3)" }}>{(WHY_LABEL[w.type] || "Visto") + ": "}</span>{"«" + w.quote + "»"}</li>
         ))}
       </ul>
     ) : null}
@@ -643,9 +643,9 @@ function LearnedLine({ message, bot, entering = false }) {
 function GuardLine({ message, entering = false }) {
   const Icon = message.kind === "fork" ? GitBranch : CirclePause;
   return (
-    <p role="status" className={entering ? "c-enter" : undefined} style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
-      <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px", color: "#555A68" }} />
-      <span>{message.text}{message.at ? <span style={{ color: "#555A68" }}>{" · " + time(message.at)}</span> : null}</span>
+    <p role="status" className={entering ? "c-enter" : undefined} style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
+      <Icon size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px", color: "var(--c-text-3)" }} />
+      <span>{message.text}{message.at ? <span style={{ color: "var(--c-text-3)" }}>{" · " + time(message.at)}</span> : null}</span>
     </p>
   );
 }
@@ -659,13 +659,13 @@ function ActivityLine({ run, bot }) {
     return bot && t.startsWith(bot.name + " ") ? t.slice(bot.name.length + 1) : t;
   };
   const last = run[run.length - 1];
-  const line = { margin: "0", padding: "4px 0 4px 52px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" };
+  const line = { margin: "0", padding: "4px 0 4px 52px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-2)" };
   if (run.length === 1) {
     return (
       <p style={{ ...line, padding: "6px 0 6px 52px" }}>
-        {bot ? <strong style={{ color: "#12131A" }}>{bot.name + " "}</strong> : null}
+        {bot ? <strong style={{ color: "var(--c-text)" }}>{bot.name + " "}</strong> : null}
         {text(last)}
-        {last.at ? <span style={{ color: "#555A68" }}>{" · " + time(last.at)}</span> : null}
+        {last.at ? <span style={{ color: "var(--c-text-3)" }}>{" · " + time(last.at)}</span> : null}
         <NoteLink link={last.link} />
       </p>
     );
@@ -673,15 +673,15 @@ function ActivityLine({ run, bot }) {
   return (
     <div style={{ padding: "4px 0" }}>
       <p style={line}>
-        {bot ? <strong style={{ color: "#12131A" }}>{bot.name + " "}</strong> : null}
+        {bot ? <strong style={{ color: "var(--c-text)" }}>{bot.name + " "}</strong> : null}
         {`hizo ${run.length} acciones · la última: ${text(last)}`}
-        {last.at ? <span style={{ color: "#555A68" }}>{" · " + time(last.at)}</span> : null}
+        {last.at ? <span style={{ color: "var(--c-text-3)" }}>{" · " + time(last.at)}</span> : null}
         {" "}
-        <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>{open ? "Ocultar" : `Ver las ${run.length}`}</button>
+        <button type="button" className="rm-focus" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{open ? "Ocultar" : `Ver las ${run.length}`}</button>
       </p>
       {open ? (
-        <ol style={{ margin: "4px 0 0", padding: "0 0 0 70px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
-          {run.map((m, k) => <li key={m.id || k}>{text(m)}{m.at ? <span style={{ color: "#555A68" }}>{" · " + time(m.at)}</span> : null}<NoteLink link={m.link} /></li>)}
+        <ol style={{ margin: "4px 0 0", padding: "0 0 0 70px", display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
+          {run.map((m, k) => <li key={m.id || k}>{text(m)}{m.at ? <span style={{ color: "var(--c-text-3)" }}>{" · " + time(m.at)}</span> : null}<NoteLink link={m.link} /></li>)}
         </ol>
       ) : null}
     </div>
@@ -827,7 +827,7 @@ export function NewBelow({ show, onClick }) {
   if (!show) return null;
   return (
     <button type="button" className="rm-focus c-new-below" onClick={onClick}
-      style={{ position: "absolute", left: "50%", top: "-46px", transform: "translateX(-50%)", zIndex: 4, display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", boxShadow: "0 8px 20px -10px rgba(18,19,26,.6)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" }}>
+      style={{ position: "absolute", left: "50%", top: "-46px", transform: "translateX(-50%)", zIndex: 4, display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", boxShadow: "0 8px 20px -10px rgba(18,19,26,.6)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" }}>
       <ArrowDown size={15} strokeWidth={2.4} aria-hidden="true" />{"Mensajes nuevos"}
     </button>
   );
@@ -841,10 +841,10 @@ export function Suggestions({ list, onPick }) {
   if (!list?.length) return null;
   return (
     <div role="group" aria-label="Respuestas sugeridas" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", margin: "0 0 8px" }}>
-      <Sparkles size={14} strokeWidth={2.2} aria-hidden="true" style={{ color: "#555A68" }} />
+      <Sparkles size={14} strokeWidth={2.2} aria-hidden="true" style={{ color: "var(--c-text-3)" }} />
       {list.map((t, i) => (
         <button key={i} type="button" className="rm-focus" onClick={() => onPick(t)} title={i === 0 ? "Tab para usarla" : undefined}
-          style={{ height: "30px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", color: "#2B2D36", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          style={{ height: "30px", padding: "0 12px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", color: "var(--c-text)", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {t}
         </button>
       ))}
@@ -875,21 +875,21 @@ export function QueueModeHint({ mission }) {
     patch("/missions/" + mission.id, { queueMode: id }).catch(() => setLocal(null));
   };
   return (
-    <span ref={ref} style={{ position: "relative", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
+    <span ref={ref} style={{ position: "relative", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
       {"Si escribes ahora, tu mensaje"}
       <button type="button" className="rm-focus" aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} title={current.detail}
-        style={{ display: "inline-flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", background: open ? "#EEF0F4" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A" }}>
+        style={{ display: "inline-flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", background: open ? "var(--c-chip)" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text)" }}>
         {current.label}<ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" />
       </button>
       {open ? (
         <span role="menu" aria-label="Qué hace tu mensaje mientras trabajan" style={{ ...popoverStyle, bottom: "calc(100% + 6px)", right: "0", minWidth: "300px" }}>
           {QUEUE_OPTIONS.map((o) => (
             <button key={o.id} type="button" role="menuitemradio" aria-checked={o.id === current.id ? "true" : "false"} className="rm-focus" onClick={() => pick(o.id)}
-              style={{ ...popoverItem, alignItems: "flex-start", background: o.id === current.id ? "#EEF0F4" : "transparent" }}>
+              style={{ ...popoverItem, alignItems: "flex-start", background: o.id === current.id ? "var(--c-chip)" : "transparent" }}>
               <span style={{ width: "16px", flex: "none", paddingTop: "2px" }}>{o.id === current.id ? <Check size={15} strokeWidth={2.4} aria-hidden="true" /> : null}</span>
               <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <strong style={{ fontSize: "var(--t-ui)", color: "#12131A" }}>{o.label[0].toUpperCase() + o.label.slice(1)}</strong>
-                <span style={{ fontSize: "var(--t-meta)", color: "#555A68", lineHeight: "1.4" }}>{o.detail}</span>
+                <strong style={{ fontSize: "var(--t-ui)", color: "var(--c-text)" }}>{o.label[0].toUpperCase() + o.label.slice(1)}</strong>
+                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", lineHeight: "1.4" }}>{o.detail}</span>
               </span>
             </button>
           ))}
@@ -1070,20 +1070,20 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
 
   if (variant === "live") {
     return (
-      <form onSubmit={send} style={{ position: "sticky", bottom: "0", padding: "4px clamp(16px, 3vw, 28px) 20px", background: "#FFFFFF" }}>
-        <p style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
+      <form onSubmit={send} style={{ position: "sticky", bottom: "0", padding: "4px clamp(16px, 3vw, 28px) 20px", background: "var(--c-card)" }}>
+        <p style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
           <Dots name="dots" />
           {`${workingCount} ${workingCount === 1 ? "bot trabajando" : "bots trabajando"}`}
           <QueueModeHint mission={mission} />
         </p>
-        <div className="c-ring" style={{ position: "relative", border: "2px solid #12131A", borderRadius: "var(--r-xl)", padding: "12px 12px 12px 16px", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div className="c-ring" style={{ position: "relative", border: "2px solid var(--c-text)", borderRadius: "var(--r-xl)", padding: "12px 12px 12px 16px", display: "flex", alignItems: "center", gap: "8px" }}>
           {mentions.menu}
           <label style={{ flex: "1", display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
             <input className="c-bare" ref={inputRef} type="text" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />
           </label>
           <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} />
-          <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-md)", cursor: "pointer" }}>
+          <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "2px solid var(--c-text)", borderRadius: "var(--r-md)", cursor: "pointer" }}>
             <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" /></span>
           </button>
         </div>
@@ -1101,7 +1101,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
       <Suggestions list={suggestions} onPick={pickSuggestion} />
       {shared?.above || null}
       {typing || WORKING.includes(mission?.status) ? (
-        <div style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#5C606C", minHeight: "26px" }}>
+        <div style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-3)", minHeight: "26px" }}>
           {typing ? (
             <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
               {/* V2Sala: a bot at work is its own small shape, breathing (dots are for people typing). */}
@@ -1113,15 +1113,15 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <QueueModeHint mission={mission} />
         </div>
       ) : null}
-      <div className="c-ring" style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "var(--r-2xl)" : "var(--r-3xl)", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging && !shared ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "var(--r-2xl)" : "var(--r-3xl)" }}>Suelta aquí para adjuntar</div> : null}
+      <div className="c-ring" style={{ position: "relative", background: "var(--c-card)", borderRadius: tools ? "var(--r-2xl)" : "var(--r-3xl)", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging && !shared ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "var(--r-2xl)" : "var(--r-3xl)" }}>Suelta aquí para adjuntar</div> : null}
         {plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={shared ? () => filePicker.current?.click() : attach} onCapture={shared ? null : (file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /> : mentions.menu}
         {mentions.chips.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {mentions.chips.map((ch) => (
-              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "var(--r-md)", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "var(--r-md)", background: "rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
                 {ch.icon}
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.label}</span>
-                <button type="button" onClick={() => mentions.removeRef(ch.key)} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                <button type="button" onClick={() => mentions.removeRef(ch.key)} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
                   <X size={12} strokeWidth={2.6} aria-hidden="true" />
                 </button>
               </span>
@@ -1131,9 +1131,9 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
         {chosen.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {chosenChips(chosen).map((ch) => (
-              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "30px", padding: "0 4px 0 12px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "30px", padding: "0 4px 0 12px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
                 {ch.label}
-                <button type="button" onClick={() => setChosen((list) => list.filter((k) => k !== ch.key))} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                <button type="button" onClick={() => setChosen((list) => list.filter((k) => k !== ch.key))} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "var(--c-text-3)" }}>
                   <X size={12} strokeWidth={2.6} aria-hidden="true" />
                 </button>
               </span>
@@ -1152,27 +1152,27 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <textarea className="c-bare" ref={inputRef} rows={tools ? 2 : 1} placeholder={placeholder || `Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} disabled={shared?.disabled || undefined} maxLength={shared ? 8000 : undefined}
             onInput={shared?.onTyping ? () => shared.onTyping() : undefined}
             onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
-            style={{ position: "relative", flex: "1", resize: "none", border: "0", fontSize: "var(--t-read)", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "#12131A" } : {}) }} />
+            style={{ position: "relative", flex: "1", resize: "none", border: "0", fontSize: "var(--t-read)", lineHeight: "1.5", padding: "8px 0 4px", background: "transparent", fieldSizing: "content", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "var(--c-text)" } : {}) }} />
         </label>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: tools ? "-8px" : 0 }}>
           {tools}
-          <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title={shared ? "Compartir un archivo, o elegir herramientas para tus bots" : "Añadir archivos, herramientas o apps"} onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "#12131A" : "rgba(18,19,26,.05)", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", color: plusOpen ? "#FFFFFF" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
+          <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title={shared ? "Compartir un archivo, o elegir herramientas para tus bots" : "Añadir archivos, herramientas o apps"} onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .05)", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", color: plusOpen ? "var(--c-btn-text)" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
             <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
           </button>
-          <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={40} style={{ borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.05)", color: "#3D404A" }} />
-          <button type="button" className="rm-focus" aria-label={shared ? "Mencionar a alguien" : "Mencionar a un bot"} title={shared ? "Mencionar a una persona o a un bot (@)" : "Mencionar a un bot (@)"} onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgba(18,19,26,.05)", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "#3D404A" }}>{"@"}</button>
-          <span style={{ flex: "1", textAlign: "right", fontSize: "var(--t-caption)", color: "#555A68", paddingRight: "4px" }}>
+          <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={40} style={{ borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .05)", color: "var(--c-text-2)" }} />
+          <button type="button" className="rm-focus" aria-label={shared ? "Mencionar a alguien" : "Mencionar a un bot"} title={shared ? "Mencionar a una persona o a un bot (@)" : "Mencionar a un bot (@)"} onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgb(var(--c-ink-rgb) / .05)", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "var(--c-text-2)" }}>{"@"}</button>
+          <span style={{ flex: "1", textAlign: "right", fontSize: "var(--t-caption)", color: "var(--c-text-3)", paddingRight: "4px" }}>
             {text.trim()
               ? working ? `Intro: ${SEND_LABEL[roomMode].toLowerCase()} · Ctrl+Intro: ${SEND_LABEL[otherMode].toLowerCase()}` : "Enter para enviar · Mayús+Enter, nueva línea"
               : working ? "Esc para pausarlos" : ""}
           </span>
-          <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Enter)"} disabled={busy} className="c-press" style={{ minWidth: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: working ? "0 16px" : "0", background: text.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)", transition: "background .2s ease" }}>
+          <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Enter)"} disabled={busy} className="c-press" style={{ minWidth: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: working ? "0 16px" : "0", background: text.trim() ? "var(--c-btn)" : "#C9CBD1", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)", transition: "background .2s ease" }}>
             <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" /></span>
             {working ? SEND_LABEL[roomMode] : null}
           </button>
         </div>
       </div>
-      {shared && requestHint(text, mentions.picks) ? <p role="status" style={{ margin: "8px 4px 0", fontSize: "var(--t-meta)", color: "#5C606C" }}>{requestHint(text, mentions.picks) + "."}</p> : null}
+      {shared && requestHint(text, mentions.picks) ? <p role="status" style={{ margin: "8px 4px 0", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{requestHint(text, mentions.picks) + "."}</p> : null}
       <ErrorLine style={{ marginTop: "8px" }}>{error || fileError}</ErrorLine>
     </form>
   );
@@ -1188,11 +1188,11 @@ function PanelFrame({ bare, label, style, children }) {
 
 function PanelHead({ title, sub, onClose, closeLabel }) {
   return (
-    <div style={{ minHeight: "60px", padding: "8px 10px 8px 20px", borderBottom: "1px solid #E6E8EE", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+    <div style={{ minHeight: "60px", padding: "8px 10px 8px 20px", borderBottom: "1px solid var(--c-line)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
       {sub ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
           <strong style={{ font: "700 var(--t-lead)/1.1 'Bricolage Grotesque', sans-serif" }}>{title}</strong>
-          <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{sub}</span>
+          <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{sub}</span>
         </div>
       ) : (
         <strong style={{ font: "700 var(--t-lead)/1.1 'Bricolage Grotesque', sans-serif" }}>{title}</strong>
@@ -1231,21 +1231,21 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
       <div key={m.id} style={{ display: "grid", gridTemplateColumns: "30px 1fr", gap: "10px" }}>
         {user ? <UserAvatar size={30} /> : <BotAvatar bot={bot} size={30} />}
         <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>
-          <span style={{ fontSize: "var(--t-meta)" }}><strong>{user ? "Tú" : bot.name}</strong>{" "}<span style={{ color: "#555A68" }}>{m.at ? time(m.at) : ""}</span></span>
+          <span style={{ fontSize: "var(--t-meta)" }}><strong>{user ? "Tú" : bot.name}</strong>{" "}<span style={{ color: "var(--c-text-3)" }}>{m.at ? time(m.at) : ""}</span></span>
           {user ? <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{m.text}</p> : <Markdown text={m.text} size={14} mentions={bots.map((b) => b.name)} />}
         </div>
       </div>
     );
   };
   return (
-    <PanelFrame bare={bare} label="Hilo de un mensaje" style={{ ...{ flex: "1 1 380px", minWidth: "0", background: "#F7F8FA", borderLeft: "1px solid #DCE0E8", display: "flex", flexDirection: "column" }, ...resize.style }}>
+    <PanelFrame bare={bare} label="Hilo de un mensaje" style={{ ...{ flex: "1 1 380px", minWidth: "0", background: "var(--c-sunken)", borderLeft: "1px solid var(--c-line)", display: "flex", flexDirection: "column" }, ...resize.style }}>
       {bare ? null : resize.handle}
       {bare ? null : <PanelHead title="Hilo" sub={`# ${mission?.room || "sala"}`} onClose={onClose} closeLabel="Cerrar el hilo" />}
       <div style={{ flex: "1", minHeight: "0", overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-        {parent ? row(parent) : <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#4A4F5C" }}>Este mensaje ya no está.</p>}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-caption)", color: "#555A68" }}>
+        {parent ? row(parent) : <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>Este mensaje ya no está.</p>}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>
           <span>{replies.length ? (replies.length === 1 ? "1 respuesta" : replies.length + " respuestas") : "Aún sin respuestas"}</span>
-          <span style={{ flex: "1", height: "1px", background: "#DCE0E8" }} />
+          <span style={{ flex: "1", height: "1px", background: "var(--c-line)" }} />
         </div>
         {replies.map(row)}
         {streaming.map(({ step, text: t }) => {
@@ -1254,22 +1254,22 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
             <div key={step.id} style={{ display: "grid", gridTemplateColumns: "30px 1fr", gap: "10px" }}>
               <BotAvatar bot={bot} size={30} />
               <div style={{ minWidth: 0 }}>
-                <span style={{ fontSize: "var(--t-meta)" }}><strong>{bot.name}</strong>{" "}<span style={{ color: "#555A68" }}>{step.status === "running" ? "escribiendo…" : "responderá aquí en cuanto pueda"}</span></span>
+                <span style={{ fontSize: "var(--t-meta)" }}><strong>{bot.name}</strong>{" "}<span style={{ color: "var(--c-text-3)" }}>{step.status === "running" ? "escribiendo…" : "responderá aquí en cuanto pueda"}</span></span>
                 {t ? <Markdown text={t} size={14} /> : null}
               </div>
             </div>
           );
         })}
       </div>
-      <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px", background: "#F7F8FA" }}>
-        <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-lg)" }}>
+      <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid var(--c-line)", display: "flex", flexDirection: "column", gap: "8px", background: "var(--c-sunken)" }}>
+        <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "var(--c-card)", border: "2px solid var(--c-text)", borderRadius: "var(--r-lg)" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
           <textarea className="c-bare" rows="2" value={text} autoFocus onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) send(e); }} placeholder="Responder en el hilo…" style={{ flex: "1", minWidth: "0", resize: "none", border: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", background: "transparent", padding: "4px 0" }} />
-          <button type="submit" aria-label="Responder" disabled={busy || !text.trim()} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-md)", cursor: "pointer", opacity: busy || !text.trim() ? 0.55 : 1 }}>
+          <button type="submit" aria-label="Responder" disabled={busy || !text.trim()} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "2px solid var(--c-text)", borderRadius: "var(--r-md)", cursor: "pointer", opacity: busy || !text.trim() ? 0.55 : 1 }}>
             <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </label>
-        {error ? <ErrorLine>{error}</ErrorLine> : <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{"La respuesta se queda en este hilo; no interrumpe la sala."}</span>}
+        {error ? <ErrorLine>{error}</ErrorLine> : <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{"La respuesta se queda en este hilo; no interrumpe la sala."}</span>}
       </form>
     </PanelFrame>
   );
@@ -1291,12 +1291,12 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
     });
   };
   return (
-    <PanelFrame bare={bare} label="Hilo entre bots" style={{ ...{ flex: "1 1 360px", minWidth: "0", background: "#F7F8FA", borderLeft: "1px solid #DCE0E8", display: "flex", flexDirection: "column" }, ...resize.style }}>
+    <PanelFrame bare={bare} label="Hilo entre bots" style={{ ...{ flex: "1 1 360px", minWidth: "0", background: "var(--c-sunken)", borderLeft: "1px solid var(--c-line)", display: "flex", flexDirection: "column" }, ...resize.style }}>
       {bare ? null : resize.handle}
       <div style={bare ? { display: "flex", flexDirection: "column", flex: "1 1 auto" } : { position: "sticky", top: "0", maxHeight: "100vh", overflowY: "auto", display: "flex", flexDirection: "column", flex: "0 1 auto" }}>
       {bare ? null : <PanelHead title="Hilo entre bots" sub={`# ${mission?.room || "sala"}`} onClose={onClose} closeLabel="Cerrar hilo" />}
       <div style={{ flex: "1", padding: "16px 20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-caption)", color: "#555A68" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>
           <span>
             {thread.length === 0
               ? "Aún no han hablado entre ellos"
@@ -1304,9 +1304,9 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
                 ? `${thread.length} respuestas · se muestran las 5 últimas`
                 : `${thread.length} ${thread.length === 1 ? "respuesta" : "respuestas"}`}
           </span>
-          <span style={{ flex: "1", height: "1px", background: "#DCE0E8" }} />
+          <span style={{ flex: "1", height: "1px", background: "var(--c-line)" }} />
           {thread.length > 5 ? (
-            <button type="button" className="rm-focus" onClick={() => setAll(!all)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: "#1F4FD1" }}>{all ? "Ver las últimas" : "Ver todas"}</button>
+            <button type="button" className="rm-focus" onClick={() => setAll(!all)} style={{ padding: "0", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{all ? "Ver las últimas" : "Ver todas"}</button>
           ) : null}
         </div>
         {shown.map((t, i) => {
@@ -1321,7 +1321,7 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
                 <span style={{ fontSize: "var(--t-meta)" }}>
                   <strong>{user ? "Tú" : bot.name}</strong>
                   {" "}
-                  <span style={{ color: "#555A68" }}>{time(t.at)}</span>
+                  <span style={{ color: "var(--c-text-3)" }}>{time(t.at)}</span>
                 </span>
                 <Markdown text={body} size={14} mentions={bots.map((b) => b.name)} />
               </div>
@@ -1329,15 +1329,15 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
           );
         })}
       </div>
-      <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", bottom: "0", background: "#F7F8FA" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "var(--r-md)" }}>
+      <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid var(--c-line)", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", bottom: "0", background: "var(--c-sunken)" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "var(--c-card)", border: "1.5px solid var(--c-line-strong)", borderRadius: "var(--r-md)" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
           <input className="c-bare" type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Corrígeles o dales una pista…" style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
-          <button type="submit" aria-label="Enviar al hilo" disabled={busy} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
+          <button type="submit" aria-label="Enviar al hilo" disabled={busy} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
             <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </label>
-        {error ? <ErrorLine>{error}</ErrorLine> : <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{"Los bots leen el hilo y ajustan su trabajo."}</span>}
+        {error ? <ErrorLine>{error}</ErrorLine> : <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{"Los bots leen el hilo y ajustan su trabajo."}</span>}
       </form>
       </div>
     </PanelFrame>
@@ -1350,13 +1350,13 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
   const work = steps.filter((s) => s.kind !== "plan");
   const waitingBots = new Set(pending.map((a) => a.botId));
   return (
-    <PanelFrame bare={bare} label="Progreso de la sala" style={{ ...{ flex: "1 1 360px", minWidth: "0", background: "#F7F8FA", borderLeft: "1px solid #DCE0E8", display: "flex", flexDirection: "column" }, ...resize.style }}>
+    <PanelFrame bare={bare} label="Progreso de la sala" style={{ ...{ flex: "1 1 360px", minWidth: "0", background: "var(--c-sunken)", borderLeft: "1px solid var(--c-line)", display: "flex", flexDirection: "column" }, ...resize.style }}>
       {bare ? null : resize.handle}
       <div style={bare ? { display: "flex", flexDirection: "column", flex: "1 1 auto" } : { position: "sticky", top: "0", maxHeight: "100vh", overflowY: "auto", display: "flex", flexDirection: "column", flex: "0 1 auto" }}>
       {bare ? null : <PanelHead title="Progreso" onClose={onClose} closeLabel="Cerrar progreso" />}
       <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
         {work.length === 0 ? (
-          <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4F5C" }}>{`${coordinatorName(bots)} aún no ha repartido el trabajo.`}</p>
+          <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{`${coordinatorName(bots)} aún no ha repartido el trabajo.`}</p>
         ) : null}
         {work.map((s) => {
           const bot = findBot(bots, s.botId);
@@ -1364,16 +1364,16 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
           const title = <span style={{ flex: "1", minWidth: "0" }}>{s.title || bot.name}</span>;
           if (s.status === "waiting" || (waitingBots.has(s.botId) && !DONE_STEP.has(s.status))) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFF4D1", border: "2px solid #12131A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "var(--c-honey-soft)", border: "2px solid var(--c-text)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
                 {avatar}{title}<strong style={{ fontSize: "var(--t-meta)" }}>{"Te espera"}</strong>
               </div>
             );
           }
           if (DONE_STEP.has(s.status)) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
                 {avatar}{title}
-                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "#0B6B4A", fontWeight: "600" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "var(--c-ok-ink)", fontWeight: "600" }}>
                   <Check size={14} strokeWidth={2.6} aria-hidden="true" />
                   {"Hecho"}
                 </span>
@@ -1383,7 +1383,7 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
           if (BLOCKED_STEP.has(s.status)) {
             return (
               <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
-                {avatar}{title}<strong style={{ fontSize: "var(--t-meta)", color: "#B4372A" }}>{"Bloqueado"}</strong>
+                {avatar}{title}<strong style={{ fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{"Bloqueado"}</strong>
               </div>
             );
           }
@@ -1392,18 +1392,18 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
             const lastStepActivity = (s.activity || [])[s.activity?.length - 1];
             const detail = now?.detail || now?.verb || lastStepActivity?.text || "En marcha";
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
-                {avatar}{title}<span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C", textAlign: "right", maxWidth: "45%" }}>{detail}</span>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
+                {avatar}{title}<span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)", textAlign: "right", maxWidth: "45%" }}>{detail}</span>
               </div>
             );
           }
           return (
-            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", border: "1px dashed #A9AEBB", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
-              {avatar}{title}<span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C" }}>{"Pendiente"}</span>
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", border: "1px dashed var(--c-line-strong)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
+              {avatar}{title}<span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>{"Pendiente"}</span>
             </div>
           );
         })}
-        <a href={`/misiones/${mission.id}`} style={{ marginTop: "8px", fontSize: "var(--t-ui)", fontWeight: "600", color: "#1F4FD1" }}>{"Ver la línea de tiempo completa"}</a>
+        <a href={`/misiones/${mission.id}`} style={{ marginTop: "8px", fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-accent-ink)" }}>{"Ver la línea de tiempo completa"}</a>
       </div>
       </div>
     </PanelFrame>
@@ -1429,7 +1429,7 @@ export function OlderMessages({ count, onShow }) {
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}>
       <button type="button" className="rm-focus" onClick={show} disabled={busy} aria-busy={busy ? "true" : undefined}
-        style={{ height: "34px", padding: "0 14px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-pill)", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#2B2D36" }}>
+        style={{ height: "34px", padding: "0 14px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-pill)", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text)" }}>
         {busy ? "Cargando…" : count === 1 ? "Ver el mensaje anterior" : `Ver mensajes anteriores · quedan ${count.toLocaleString("es-ES")}`}
       </button>
     </div>

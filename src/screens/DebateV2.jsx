@@ -83,31 +83,31 @@ export default function DebateV2({ params = {} }) {
   return (
     <Shell active="chats">
       <main style={{ maxWidth: "1140px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 52px) 40px", display: "flex", flexDirection: "column", gap: "26px" }}>
-        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "#5C606C" }}>
-          <a href="/chats" style={{ color: "#5C606C" }}>{"Chats"}</a>
+        <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>
+          <a href="/chats" style={{ color: "var(--c-text-3)" }}>{"Chats"}</a>
           <span aria-hidden="true">{"›"}</span>
-          <a href={`/sala/${id}`} style={{ color: "#5C606C" }}>{roomName}</a>
+          <a href={`/sala/${id}`} style={{ color: "var(--c-text-3)" }}>{roomName}</a>
           <span aria-hidden="true">{"›"}</span>
-          <span style={{ color: "#12131A", fontWeight: 500 }}>{"Elegir propuesta"}</span>
+          <span style={{ color: "var(--c-text)", fontWeight: 500 }}>{"Elegir propuesta"}</span>
         </nav>
 
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <h1 style={{ margin: 0, font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{proposals.length ? `${COUNT[proposals.length] || proposals.length + " ideas"} para «${mission.title}»` : mission.title}</h1>
-          <p style={{ margin: 0, maxWidth: "760px", fontSize: "var(--t-read)", lineHeight: "1.5", color: "#4A4D57" }}>
+          <p style={{ margin: 0, maxWidth: "760px", fontSize: "var(--t-read)", lineHeight: "1.5", color: "var(--c-text-2)" }}>
             {first ? `Pediste «${shorten(String(first.text).replace(/\s+/g, " "), 140)}». ` : ""}{`Cada bot propuso una idea, los demás la criticaron y ${coord} te resume. Elige una, o marca dos para combinarlas.`}
           </p>
         </header>
 
         {synthesis ? (
-          <section aria-label={"Recomendación de " + coord} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 24px", padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "#12131A", color: "#FFFFFF" }}>
-            <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", background: "#FFFFFF", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
+          <section aria-label={"Recomendación de " + coord} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 24px", padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "var(--c-btn)", color: "var(--c-btn-text)" }}>
+            <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", background: "var(--c-card)", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
             <p style={{ flex: "1 1 420px", margin: 0, fontSize: "var(--t-read)", lineHeight: "1.55", color: "#E6E7EC" }}><strong style={{ color: "#FFFFFF", fontWeight: 600 }}>{atlasLead}</strong>{" " + shorten(plain(synthesis).replace(/\s+/g, " "), 420)}</p>
-            {advised.length && deciding && !chosen ? <button type="button" onClick={() => (advised.length === 1 ? decide(advised) : setMarked(advised))} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Seguir su consejo"}</button> : null}
+            {advised.length && deciding && !chosen ? <button type="button" onClick={() => (advised.length === 1 ? decide(advised) : setMarked(advised))} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Seguir su consejo"}</button> : null}
           </section>
         ) : null}
 
         {!proposals.length ? (
-          <p style={{ margin: 0, padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#4A4D57" }}>{"Los bots están preparando sus propuestas. Aparecerán aquí en cuanto terminen."}</p>
+          <p style={{ margin: 0, padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", fontSize: "var(--t-body)", color: "var(--c-text-2)" }}>{"Los bots están preparando sus propuestas. Aparecerán aquí en cuanto terminen."}</p>
         ) : (
           <div role="group" aria-label="Propuestas" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: "14px" }}>
             {proposals.map((p, i) => {
@@ -123,8 +123,8 @@ export default function DebateV2({ params = {} }) {
               const full = open === l;
               const tag = advised.includes(l) ? "recomendada" : (b?.role || "propuesta").toLowerCase();
               return (
-                <article key={l} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF", overflow: "hidden", boxShadow: `0 0 0 2px ${isChosen ? "#12131A" : isMarked ? "#1F4FD1" : "transparent"}, 0 18px 40px -30px rgba(18,19,26,.4)`, transition: "box-shadow .2s ease" }}>
-                  <div aria-hidden="true" style={{ position: "relative", height: "190px", background: svg ? "#FFFFFF" : art.bg, overflow: "hidden" }}>
+                <article key={l} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)", overflow: "hidden", boxShadow: `0 0 0 2px ${isChosen ? "#12131A" : isMarked ? "#1F4FD1" : "transparent"}, 0 18px 40px -30px rgba(18,19,26,.4)`, transition: "box-shadow .2s ease" }}>
+                  <div aria-hidden="true" style={{ position: "relative", height: "190px", background: svg ? "var(--c-card)" : art.bg, overflow: "hidden" }}>
                     {svg ? <img src={svgSrc(svg)} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} /> : <>
                       <span style={{ position: "absolute", left: art.ax, top: art.ay, width: "120px", height: "120px", borderRadius: art.ar, background: art.a }} />
                       <span style={{ position: "absolute", right: "22px", bottom: "18px", width: "70px", height: "70px", borderRadius: "var(--r-circle)", background: art.b }} />
@@ -133,30 +133,30 @@ export default function DebateV2({ params = {} }) {
                   </div>
                   <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px 20px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 700 }}>{l}</span>
+                      <span style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-meta)", fontWeight: 700 }}>{l}</span>
                       <BotMark bot={b} size={16} />
                       <span style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{b?.name || "Un bot"}</span>
-                      <span style={{ marginLeft: "auto", fontSize: "var(--t-meta)", color: "#5C606C" }}>{tag}</span>
+                      <span style={{ marginLeft: "auto", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{tag}</span>
                     </div>
-                    {body ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.5", color: "#3D404A", ...(full ? {} : { display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }) }}>{body}</p> : null}
-                    {body.length > 260 ? <button type="button" onClick={() => setOpen(full ? null : l)} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: "#1F4FD1" }}>{full ? "Ver menos" : "Leerla entera"}</button> : null}
+                    {body ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text-2)", ...(full ? {} : { display: "-webkit-box", WebkitLineClamp: "4", WebkitBoxOrient: "vertical", overflow: "hidden" }) }}>{body}</p> : null}
+                    {body.length > 260 ? <button type="button" onClick={() => setOpen(full ? null : l)} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: "var(--c-accent-ink)" }}>{full ? "Ver menos" : "Leerla entera"}</button> : null}
                     {(p.critiques || []).length ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", paddingTop: "10px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
-                        <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "#5C606C" }}>{"Lo que opinan los demás"}</span>
-                        {p.critiques.map((c, j) => <span key={j} style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#4A4D57" }}><strong style={{ fontWeight: 600, color: "#12131A" }}>{(findBot(bots, c.botId)?.name || "Un bot") + ":"}</strong>{" " + shorten(plain(c.text), 220)}</span>)}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", paddingTop: "10px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
+                        <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-3)" }}>{"Lo que opinan los demás"}</span>
+                        {p.critiques.map((c, j) => <span key={j} style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "var(--c-text-2)" }}><strong style={{ fontWeight: 600, color: "var(--c-text)" }}>{(findBot(bots, c.botId)?.name || "Un bot") + ":"}</strong>{" " + shorten(plain(c.text), 220)}</span>)}
                       </div>
                     ) : null}
                     <span style={{ flex: "1" }} />
                     {deciding && !(chosen && !isChosen) ? (
                       <div style={{ display: "flex", gap: "8px" }}>
-                        <button type="button" disabled={!!chosen} onClick={() => decide([l])} style={{ flex: "1", height: "42px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: chosen ? "default" : "pointer", opacity: chosen && !isChosen ? 0.4 : 1 }}>{isChosen ? (chosen?.length === 2 ? "Combinada" : "Elegida") : `Elegir la ${l}`}</button>
+                        <button type="button" disabled={!!chosen} onClick={() => decide([l])} style={{ flex: "1", height: "42px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: chosen ? "default" : "pointer", opacity: chosen && !isChosen ? 0.4 : 1 }}>{isChosen ? (chosen?.length === 2 ? "Combinada" : "Elegida") : `Elegir la ${l}`}</button>
                         {chosen ? null : (
-                          <label style={{ height: "42px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", cursor: "pointer" }}>
-                            <input type="checkbox" checked={isMarked} onChange={() => mark(l)} style={{ width: "16px", height: "16px", accentColor: "#12131A" }} />{"Combinar"}
+                          <label style={{ height: "42px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", cursor: "pointer" }}>
+                            <input type="checkbox" checked={isMarked} onChange={() => mark(l)} style={{ width: "16px", height: "16px", accentColor: "var(--c-text)" }} />{"Combinar"}
                           </label>
                         )}
                       </div>
-                    ) : isChosen ? <span style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "#0B6B4A" }}>{"✓ La elegiste"}</span> : null}
+                    ) : isChosen ? <span style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-ok-ink)" }}>{"✓ La elegiste"}</span> : null}
                   </div>
                 </article>
               );
@@ -164,21 +164,21 @@ export default function DebateV2({ params = {} }) {
           </div>
         )}
 
-        <div style={{ position: "sticky", bottom: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 14px 14px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 20px 40px -20px rgba(18,19,26,.35)" }}>
+        <div style={{ position: "sticky", bottom: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 14px 14px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 20px 40px -20px rgba(18,19,26,.35)" }}>
           <span role="status" style={{ flex: "1 1 300px", fontSize: "var(--t-body)" }}>{barText}</span>
           {!chosen && marked.length === 2 && deciding ? <>
             <label style={{ flex: "1 1 240px", display: "flex" }}>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Qué tomas de cada una"}</span>
-              <input className="c-quiet" type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué tomas de cada una? (opcional)" style={{ flex: "1", minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-body)" }} />
+              <input className="c-quiet" type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="¿Qué tomas de cada una? (opcional)" style={{ flex: "1", minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .1)", borderRadius: "var(--r-pill)", background: "var(--c-hover)", fontSize: "var(--t-body)" }} />
             </label>
-            <button type="button" onClick={() => decide(marked)} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Combinarlas"}</button>
+            <button type="button" onClick={() => decide(marked)} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Combinarlas"}</button>
           </> : null}
           {chosen ? <>
-            {undo.waiting ? <button type="button" onClick={back} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", cursor: "pointer" }}>{"Deshacer"}</button> : null}
-            <a href={`/sala/${id}`} style={{ height: "44px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }}>{"Volver a la sala"}</a>
-          </> : decidedBefore ? <a href={`/sala/${id}`} style={{ height: "44px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }}>{"Volver a la sala"}</a> : null}
+            {undo.waiting ? <button type="button" onClick={back} style={{ height: "44px", padding: "0 18px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", cursor: "pointer" }}>{"Deshacer"}</button> : null}
+            <a href={`/sala/${id}`} style={{ height: "44px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600 }}>{"Volver a la sala"}</a>
+          </> : decidedBefore ? <a href={`/sala/${id}`} style={{ height: "44px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600 }}>{"Volver a la sala"}</a> : null}
         </div>
-        {error ? <p role="alert" style={{ margin: 0, color: "#B4232A" }}>{error}</p> : null}
+        {error ? <p role="alert" style={{ margin: 0, color: "var(--c-error)" }}>{error}</p> : null}
       </main>
     </Shell>
   );

@@ -114,7 +114,7 @@ export default function Compare({ group, projects = [] }) {
                     <span style={{ font: `400 var(--t-meta)/1.3 ${MONO}`, color: C.muted }}>{t.model}{effort}</span>
                   </div>
                   {rec?.id === t.id ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.ink, color: C.white, fontSize: "var(--t-caption)", fontWeight: 600 }}>Recomendado</span>
-                    : t.running || t.status === "working" ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#EEF0F4", color: C.blue, fontSize: "var(--t-caption)", fontWeight: 600 }}>Trabajando</span>
+                    : t.running || t.status === "working" ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-chip)", color: C.blue, fontSize: "var(--t-caption)", fontWeight: 600 }}>Trabajando</span>
                       : t.archived && !on ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.track, color: C.text2, fontSize: "var(--t-caption)", fontWeight: 600 }}>Archivada</span> : null}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px" }}>
@@ -124,7 +124,7 @@ export default function Compare({ group, projects = [] }) {
                   <Stat label="Contexto" value={t.usage?.used ? tokens(t.usage.used) + " tokens" : "—"} />
                 </div>
                 <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text, minHeight: "63px", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{t.said ? plain(t.said) : t.running ? "Aún trabajando…" : "Sin resumen."}</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", paddingTop: "10px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", paddingTop: "10px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
                   {files.slice(0, 6).map((f) => (
                     <div key={f.path} style={{ display: "flex", justifyContent: "space-between", gap: "10px", font: `400 var(--t-meta)/1.8 ${MONO}` }}>
                       <span title={f.path} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.path.split("/").pop()}</span>

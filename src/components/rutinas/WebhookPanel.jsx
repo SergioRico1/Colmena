@@ -9,12 +9,11 @@ import { ago } from "../../lib/format.js";
 
 const INK = "#12131A";
 const MUTED = "#4A4D57";
-const FAINT = "#5C606C";
 const sel = (on) => (on ? INK : "rgba(18,19,26,.1)");
-const label = { fontSize: "var(--t-meta)", fontWeight: 500, color: MUTED };
-const input = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK, minWidth: 0 };
-const pill = (on) => ({ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "var(--r-md)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK });
-const quiet = (busy) => ({ height: "38px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 500, color: INK, cursor: busy ? "wait" : "pointer" });
+const label = { fontSize: "var(--t-meta)", fontWeight: 500, color: "var(--c-text-2)" };
+const input = { height: "44px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .1)", borderRadius: "var(--r-md)", background: "var(--c-card)", fontSize: "var(--t-body)", color: "var(--c-text)", minWidth: 0 };
+const pill = (on) => ({ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "var(--r-md)", background: "var(--c-card)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: "var(--c-text)" });
+const quiet = (busy) => ({ height: "38px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, color: "var(--c-text)", cursor: busy ? "wait" : "pointer" });
 
 /** The presets as the server gives them; these stand in until they load (same ids and settings). */
 export const HOOK_DEFAULT = { servicio: "generico", firma: "ninguna", cabeceraFirma: "", cabeceraEvento: "", eventos: "", filtros: [], asuntoRuta: "" };
@@ -83,8 +82,8 @@ export default function WebhookPanel({ hook, onChange, ruleId, onCreate, busy })
         {filtros.length < 5 ? <button type="button" onClick={() => onChange({ filtros: [...filtros, { ruta: "", op: "igual", valor: "" }] })} style={{ ...quiet(false), alignSelf: "flex-start" }}>Añadir un filtro</button> : null}
       </div>
       {ruleId ? <Address ruleId={ruleId} signed={hook.firma !== "ninguna"} steps={preset?.steps || []} /> : (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
-          <span style={{ flex: "1 1 280px", color: MUTED }}>La dirección secreta que pegarás en esa app se crea al guardar la rutina. Se guarda en pausa hasta que la actives.</span>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-card)", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
+          <span style={{ flex: "1 1 280px", color: "var(--c-text-2)" }}>La dirección secreta que pegarás en esa app se crea al guardar la rutina. Se guarda en pausa hasta que la actives.</span>
           <button type="button" onClick={onCreate} disabled={busy} style={quiet(busy)}>Crear la dirección</button>
         </div>
       )}
@@ -115,11 +114,11 @@ function Address({ ruleId, signed, steps }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(view.url); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { setError("No se pudo copiar. Selecciona la dirección y cópiala a mano."); }
   };
-  if (!view) return <span role="status" style={{ fontSize: "var(--t-ui)", color: error ? "#B4232A" : FAINT }}>{error || "Preparando la dirección…"}</span>;
+  if (!view) return <span role="status" style={{ fontSize: "var(--t-ui)", color: error ? "var(--c-error)" : "var(--c-text-3)" }}>{error || "Preparando la dirección…"}</span>;
   const revoked = view.state === "revocada";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "16px", borderRadius: "var(--r-lg)", background: "#FFFFFF" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "16px", borderRadius: "var(--r-lg)", background: "var(--c-card)" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={label}>Dirección para pegar en esa app</span>
         {view.url ? (
@@ -128,14 +127,14 @@ function Address({ ruleId, signed, steps }) {
             <button type="button" onClick={copy} style={quiet(false)}>{copied ? "Copiada" : "Copiar"}</button>
           </div>
         ) : (
-          <span role="status" style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: view.error ? "#B4232A" : MUTED }}>{revoked ? "Anulaste la dirección: ahora no llega nada. Crea otra cuando quieras." : view.error || "Preparando la dirección…"}</span>
+          <span role="status" style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: view.error ? "var(--c-error)" : "var(--c-text-2)" }}>{revoked ? "Anulaste la dirección: ahora no llega nada. Crea otra cuando quieras." : view.error || "Preparando la dirección…"}</span>
         )}
-        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: FAINT }}>Quien tenga esta dirección puede poner en marcha la rutina, así que no la compartas. El buzón de Colmena cifra cada aviso para este ordenador nada más llegar y lo guarda 3 días como mucho, hasta que Colmena esté abierta.</span>
+        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Quien tenga esta dirección puede poner en marcha la rutina, así que no la compartas. El buzón de Colmena cifra cada aviso para este ordenador nada más llegar y lo guarda 3 días como mucho, hasta que Colmena esté abierta.</span>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
           {confirm ? (
             <>
-              <span style={{ flex: "1 1 240px", fontSize: "var(--t-ui)", color: MUTED }}>{confirm === "rotate" ? "La dirección de ahora dejará de funcionar y tendrás que pegar la nueva en esa app." : "Dejará de llegar todo hasta que crees otra dirección."}</span>
-              <button type="button" disabled={working} onClick={() => run(() => post(`${path}/${confirm}`, {}))} style={{ ...quiet(working), background: INK, color: "#FFFFFF", border: 0 }}>{confirm === "rotate" ? "Sí, cambiarla" : "Sí, anularla"}</button>
+              <span style={{ flex: "1 1 240px", fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>{confirm === "rotate" ? "La dirección de ahora dejará de funcionar y tendrás que pegar la nueva en esa app." : "Dejará de llegar todo hasta que crees otra dirección."}</span>
+              <button type="button" disabled={working} onClick={() => run(() => post(`${path}/${confirm}`, {}))} style={{ ...quiet(working), background: "var(--c-btn)", color: "var(--c-btn-text)", border: 0 }}>{confirm === "rotate" ? "Sí, cambiarla" : "Sí, anularla"}</button>
               <button type="button" disabled={working} onClick={() => setConfirm(null)} style={quiet(working)}>No</button>
             </>
           ) : revoked || !view.url ? (
@@ -158,17 +157,17 @@ function Address({ ruleId, signed, steps }) {
               <button type="button" disabled={working || !secret.trim()} onClick={() => run(async () => { const v = await put(`${path}/secret`, { value: secret }); setSecret(""); return v; })} style={quiet(working)}>Guardar</button>
               {view.secret ? <button type="button" disabled={working} onClick={() => run(() => del(`${path}/secret`))} style={quiet(working)}>Quitar</button> : null}
             </div>
-          ) : <span style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>En este ordenador no puedo guardar el secreto de forma segura, así que no puedo comprobar firmas.</span>}
-          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: FAINT }}>Se guarda cifrado en este ordenador y no sale de él: la firma se comprueba aquí.</span>
+          ) : <span style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>En este ordenador no puedo guardar el secreto de forma segura, así que no puedo comprobar firmas.</span>}
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Se guarda cifrado en este ordenador y no sale de él: la firma se comprueba aquí.</span>
         </div>
       ) : (
-        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: FAINT }}>Sin firma, cualquiera que conozca la dirección puede mandar un aviso. Si esa app sabe firmarlos, elige cómo arriba.</span>
+        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Sin firma, cualquiera que conozca la dirección puede mandar un aviso. Si esa app sabe firmarlos, elige cómo arriba.</span>
       )}
 
       {steps.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <span style={label}>Qué hacer en esa app</span>
-          <ol style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-ui)", lineHeight: 1.45, color: INK }}>{steps.map((s) => <li key={s}>{s}</li>)}</ol>
+          <ol style={{ margin: 0, paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text)" }}>{steps.map((s) => <li key={s}>{s}</li>)}</ol>
         </div>
       ) : null}
 
@@ -177,15 +176,15 @@ function Address({ ruleId, signed, steps }) {
         {view.deliveries.length ? view.deliveries.slice(0, 10).map((d, i) => {
           const [text, bg, fg] = STATUS[d.status] || STATUS.recibido;
           return (
-            <div key={d.at + i} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", minHeight: "40px", padding: "4px 0", borderTop: i ? "1px solid rgba(18,19,26,.06)" : 0, fontSize: "var(--t-ui)" }}>
-              <span style={{ flex: "none", width: "92px", color: FAINT }}>{ago(d.at)}</span>
+            <div key={d.at + i} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", minHeight: "40px", padding: "4px 0", borderTop: i ? "1px solid rgb(var(--c-ink-rgb) / .06)" : 0, fontSize: "var(--t-ui)" }}>
+              <span style={{ flex: "none", width: "92px", color: "var(--c-text-3)" }}>{ago(d.at)}</span>
               <span style={{ flex: "none", height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: bg, color: fg, fontSize: "var(--t-meta)", fontWeight: 600 }}>{text}{d.count > 1 ? ` · ${d.count}` : ""}</span>
-              <span style={{ flex: "1 1 200px", minWidth: 0, color: MUTED }}>{[d.event, d.detail].filter(Boolean).join(" · ")}</span>
+              <span style={{ flex: "1 1 200px", minWidth: 0, color: "var(--c-text-2)" }}>{[d.event, d.detail].filter(Boolean).join(" · ")}</span>
             </div>
           );
-        }) : <span style={{ fontSize: "var(--t-ui)", color: FAINT }}>Aún no ha llegado ninguno.</span>}
+        }) : <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Aún no ha llegado ninguno.</span>}
       </div>
-      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</span> : null}
     </div>
   );
 }

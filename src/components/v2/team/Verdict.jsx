@@ -32,13 +32,13 @@ export function VerdictMark({ verdict, compact = false, consolidated = false }) 
 /** The verdict with its hint (when it applies) and what it is based on, for a detail view. */
 export function VerdictNote({ verdict, style = null }) {
   if (!verdict || !LOOK[verdict.value]) {
-    return <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#6B6F7A", ...style }}>Aún no se ha medido si le ayuda: se verá en las próximas tareas en las que la use.</p>;
+    return <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-3)", ...style }}>Aún no se ha medido si le ayuda: se verá en las próximas tareas en las que la use.</p>;
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px", ...style }}>
       <VerdictMark verdict={verdict} />
-      {verdict.hint ? <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#3D404A" }}>{verdict.hint}</span> : null}
-      {verdict.summary ? <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#6B6F7A" }}>{verdict.summary}</span> : null}
+      {verdict.hint ? <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{verdict.hint}</span> : null}
+      {verdict.summary ? <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{verdict.summary}</span> : null}
     </div>
   );
 }
@@ -56,7 +56,7 @@ export function VerdictList({ verdicts = [], limit = 4 }) {
         <li key={v.id} title={[v.hint, v.summary].filter(Boolean).join(" · ")} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", fontSize: "var(--t-ui)" }}>
           <VerdictMark verdict={v} compact />
           <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            <span style={{ color: "#6B6F7A" }}>{KIND[v.kind] + " "}</span>{v.title}
+            <span style={{ color: "var(--c-text-3)" }}>{KIND[v.kind] + " "}</span>{v.title}
           </span>
           <span style={{ flex: "none", fontSize: "var(--t-meta)", color: LOOK[v.value].color }}>{LOOK[v.value].label}</span>
         </li>

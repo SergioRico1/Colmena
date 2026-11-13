@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Download } from "lucide-react";
 import { del, get, post, postFile, put } from "../../../lib/api.js";
 import { reversible } from "../../../lib/undoToast.js";
-import { Alert, INK, LINE, MUTED, Pills, SOFT, UNDO_MS, anchorOf, btn, field, h3 } from "./v3.jsx";
+import { Alert, LINE, Pills, UNDO_MS, anchorOf, btn, field, h3 } from "./v3.jsx";
 
 // Ajustes › Privacidad y datos › «Copias de seguridad» (design/V3Privacidad.dc.html,
 // server/backup-service.mjs): a copy of everything that is yours in Colmena, sealed with a
@@ -14,7 +14,6 @@ import { Alert, INK, LINE, MUTED, Pills, SOFT, UNDO_MS, anchorOf, btn, field, h3
 const SCHEDULE = [["off", "Solo cuando la pida"], ["daily", "Cada día"], ["weekly", "Cada semana"]];
 const SCHEDULE_TEXT = { off: "Solo cuando la pidas", daily: "Cada día", weekly: "Cada semana" };
 const KEEP = [[3, "3"], [7, "7"], [14, "14"], [30, "30"]];
-const RED = "#B4232A";
 export const size = (bytes) => (bytes == null ? "" : bytes >= 1e9 ? (bytes / 1e9).toFixed(1).replace(".", ",") + " GB" : bytes >= 1e6 ? Math.round(bytes / 1e6) + " MB" : Math.max(1, Math.round(bytes / 1e3)) + " KB");
 export const when = (iso) => {
   if (!iso) return "";
@@ -27,7 +26,7 @@ export const when = (iso) => {
 export const folderLabel = (v) => v?.folders?.find((f) => f.path === v.folder)?.label || String(v?.folder || "").split(/[\\/]/).filter(Boolean).at(-1) || "";
 
 const input = { ...field, width: "auto", flex: "1 1 220px" };
-const sub = { fontSize: "var(--t-meta)", color: MUTED };
+const sub = { fontSize: "var(--t-meta)", color: "var(--c-text-3)" };
 
 function PasswordForm({ onSave, onCancel, busy }) {
   const [a, setA] = useState("");
@@ -41,7 +40,7 @@ function PasswordForm({ onSave, onCancel, busy }) {
         <input type="password" autoComplete="new-password" aria-label="Contraseña de las copias" placeholder="Contraseña (8 o más caracteres)" value={a} onChange={(e) => setA(e.target.value)} style={input} autoFocus />
         <input type="password" autoComplete="new-password" aria-label="Repite la contraseña" placeholder="Repítela" value={b} onChange={(e) => setB(e.target.value)} style={input} />
       </span>
-      <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: short || differ ? RED : MUTED }}>
+      <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: short || differ ? "var(--c-error)" : "var(--c-text-3)" }}>
         {short ? "Necesita al menos 8 caracteres." : differ ? "No coinciden." : "Apúntala en un lugar seguro: sin ella nadie puede abrir tus copias, ni siquiera tú."}
       </span>
       <span style={{ display: "flex", gap: "8px" }}>
@@ -63,16 +62,16 @@ function RestorePanel({ file, onStaged, onClose }) {
     try { onStaged(await post("/backup/restore", { path: file.path, password, identity })); } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
   return (
-    <form onSubmit={go} style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "0 22px 16px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3", animation: "fade .25s ease-out" }}>
+    <form onSubmit={go} style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "0 22px 16px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-hover)", animation: "fade .25s ease-out" }}>
       <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"Restaurar la copia del " + when(file.at || file.createdAt).toLowerCase()}</span>
-        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: SOFT }}>Colmena vuelve a como estaba entonces: conversaciones, entregables, lo que saben tus bots y tus ajustes. Lo de ahora no se borra: se aparta en tu carpeta de Colmena.</span>
+        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-2)" }}>Colmena vuelve a como estaba entonces: conversaciones, entregables, lo que saben tus bots y tus ajustes. Lo de ahora no se borra: se aparta en tu carpeta de Colmena.</span>
       </span>
       <input type="password" autoComplete="current-password" aria-label="Contraseña de la copia" placeholder="Contraseña de la copia" value={password} onChange={(e) => setPassword(e.target.value)} style={{ ...field, width: "100%" }} autoFocus />
       {file.identity ? (
         <label style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "var(--t-ui)", lineHeight: 1.5, cursor: "pointer" }}>
-          <input type="checkbox" checked={identity} onChange={(e) => setIdentity(e.target.checked)} style={{ marginTop: "3px", accentColor: INK }} />
-          <span>Recuperar también mi dirección de Personas<br /><span style={{ color: MUTED }}>Tus contactos te seguirán encontrando. Úsala en un solo ordenador a la vez.</span></span>
+          <input type="checkbox" checked={identity} onChange={(e) => setIdentity(e.target.checked)} style={{ marginTop: "3px", accentColor: "var(--c-text)" }} />
+          <span>Recuperar también mi dirección de Personas<br /><span style={{ color: "var(--c-text-3)" }}>Tus contactos te seguirán encontrando. Úsala en un solo ordenador a la vez.</span></span>
         </label>
       ) : null}
       <Alert>{error}</Alert>
@@ -91,7 +90,7 @@ function Line({ anchor, k, n, v, children, first }) {
         <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{k}</span>
         {n ? <span style={{ ...sub, overflowWrap: "anywhere" }}>{n}</span> : null}
       </span>
-      {v ? <span style={{ fontSize: "var(--t-ui)", color: "#3D404A" }}>{v}</span> : null}
+      {v ? <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>{v}</span> : null}
       {children}
     </div>
   );
@@ -112,9 +111,9 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
   };
   if (!v) {
     return (
-      <section {...anchorOf("copias")} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "18px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF" }}>
+      <section {...anchorOf("copias")} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "18px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
         <h3 style={{ ...h3, fontSize: "var(--t-read)" }}>Copias de seguridad</h3>
-        <span style={{ fontSize: "var(--t-meta)", color: loadError ? RED : MUTED }}>{loadError || "Cargando…"}</span>
+        <span style={{ fontSize: "var(--t-meta)", color: loadError ? "var(--c-error)" : "var(--c-text-3)" }}>{loadError || "Cargando…"}</span>
       </section>
     );
   }
@@ -134,27 +133,27 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
   const pending = v.pending;
   const detected = v.folders.find((f) => f.path === v.folder && (f.kind === "onedrive" || f.kind === "gdrive"));
   const restoreHere = restoring && !v.backups.some((b) => b.path === restoring.path);
-  const chip = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", borderRadius: "var(--r-pill)", border: 0, cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: on ? "#FFFFFF" : "#3D404A", background: on ? INK : "#F1F1EC" });
+  const chip = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", borderRadius: "var(--r-pill)", border: 0, cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: on ? "var(--c-btn-text)" : "var(--c-text-2)", background: on ? "var(--c-btn)" : "var(--c-chip)" });
 
   return (
     <>
       {pending ? (
-        <section role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 18px", padding: "16px 22px", borderRadius: "var(--r-xl)", background: "#FFF6DC", animation: "rise .35s cubic-bezier(.2,.8,.2,1)" }}>
+        <section role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 18px", padding: "16px 22px", borderRadius: "var(--r-xl)", background: "var(--c-honey-soft)", animation: "rise .35s cubic-bezier(.2,.8,.2,1)" }}>
           <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
             <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>La copia está lista para restaurarse</span>
-            <span style={{ fontSize: "var(--t-meta)", color: SOFT }}>{`Del ${when(pending.createdAt).toLowerCase()} · ${pending.files} archivos${pending.identity ? " · con tu dirección de Personas" : ""}. Se aplica al reiniciar Colmena.`}</span>
+            <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>{`Del ${when(pending.createdAt).toLowerCase()} · ${pending.files} archivos${pending.identity ? " · con tu dirección de Personas" : ""}. Se aplica al reiniciar Colmena.`}</span>
           </span>
-          {v.canRelaunch ? <button type="button" onClick={() => act("restart", () => post("/backup/relaunch", {}))} disabled={busy === "restart"} style={btn("dark", 38)}>{busy === "restart" ? "Reiniciando…" : "Reiniciar ahora"}</button> : <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>Cierra Colmena y vuelve a abrirla.</span>}
+          {v.canRelaunch ? <button type="button" onClick={() => act("restart", () => post("/backup/relaunch", {}))} disabled={busy === "restart"} style={btn("dark", 38)}>{busy === "restart" ? "Reiniciando…" : "Reiniciar ahora"}</button> : <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Cierra Colmena y vuelve a abrirla.</span>}
           <button type="button" onClick={() => act("settings", async () => { await del("/backup/restore"); return get("/backup"); })} style={btn("outline", 38)}>Anular</button>
         </section>
       ) : null}
-      {v.restored && !pending ? <p role="status" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#0B6B4A" }}>{`✓ Restaurada la copia del ${when(v.restored.from).toLowerCase()}. Lo que había antes está en la carpeta «${v.restored.aside}».`}</p> : null}
+      {v.restored && !pending ? <p role="status" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-ok-ink)" }}>{`✓ Restaurada la copia del ${when(v.restored.from).toLowerCase()}. Lo que había antes está en la carpeta «${v.restored.aside}».`}</p> : null}
 
-      <section {...anchorOf("copias")} aria-labelledby="copy-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", overflow: "hidden", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("copias")} aria-labelledby="copy-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", overflow: "hidden", scrollMarginTop: "24px" }}>
         <div {...anchorOf("copia-ahora")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "18px 22px 10px", scrollMarginTop: "24px" }}>
           <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
             <h3 id="copy-t" style={{ ...h3, fontSize: "var(--t-read)" }}>Copias de seguridad</h3>
-            <span style={{ fontSize: "var(--t-meta)", color: v.lastError ? RED : MUTED }}>{v.lastError || (v.hasPassword ? "Cifradas con tu contraseña. Sirven para pasar Colmena a otro ordenador." : "Pon una contraseña para poder hacer copias. Sirven para pasar Colmena a otro ordenador.")}</span>
+            <span style={{ fontSize: "var(--t-meta)", color: v.lastError ? "var(--c-error)" : "var(--c-text-3)" }}>{v.lastError || (v.hasPassword ? "Cifradas con tu contraseña. Sirven para pasar Colmena a otro ordenador." : "Pon una contraseña para poder hacer copias. Sirven para pasar Colmena a otro ordenador.")}</span>
           </span>
           <button type="button" onClick={runNow} disabled={!v.hasPassword || busy === "run" || v.running} title={v.hasPassword ? undefined : "Pon antes la contraseña de las copias"} style={{ ...btn("dark", 40), opacity: v.hasPassword ? 1 : 0.4, cursor: busy === "run" ? "wait" : v.hasPassword ? "pointer" : "default" }}>
             {busy === "run" || v.running ? "Haciendo la copia…" : done ? "✓ Copia hecha" : "Hacer una copia ahora"}
@@ -168,11 +167,11 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "0 22px 16px", animation: "fade .25s ease-out" }}>
             <Pills label="Copias automáticas" items={SCHEDULE} value={v.schedule} busy={busy === "settings" || !v.hasPassword} onPick={(schedule) => schedule !== v.schedule && settings({ schedule }, "Copias: " + SCHEDULE_TEXT[schedule].toLowerCase(), { schedule: v.schedule })} />
             {v.schedule !== "off" ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: MUTED }}>Conservar
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Conservar
                 <Pills label="Cuántas conservar" items={KEEP} value={v.keep} busy={busy === "settings"} onPick={(keep) => keep !== v.keep && settings({ keep }, `Se conservan las ${keep} últimas`, { keep: v.keep })} />
               </span>
             ) : null}
-            {!v.hasPassword ? <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Pon antes la contraseña.</span> : null}
+            {!v.hasPassword ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Pon antes la contraseña.</span> : null}
           </div>
         ) : null}
 
@@ -191,7 +190,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
                 <button type="submit" disabled={otherFolder.trim().length < 3} style={btn("dark", 40)}>Usar esta carpeta</button>
               </form>
             ) : null}
-            <span style={{ font: "400 var(--t-caption)/1.4 'Geist Mono', monospace", color: MUTED, overflowWrap: "anywhere" }}>{v.folder}</span>
+            <span style={{ font: "400 var(--t-caption)/1.4 'Geist Mono', monospace", color: "var(--c-text-3)", overflowWrap: "anywhere" }}>{v.folder}</span>
           </div>
         ) : null}
 
@@ -201,7 +200,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
         {open === "password" ? (
           <>
             <PasswordForm busy={busy === "password"} onCancel={() => setOpen(null)} onSave={async (p) => { const r = await act("password", () => post("/backup/password", { password: p })); if (r) setOpen(null); }} />
-            {v.hasPassword ? <p style={{ margin: "-6px 22px 14px", fontSize: "var(--t-meta)", color: MUTED }}>¿Ya no quieres copias? <button type="button" onClick={() => act("password", () => del("/backup/password")).then(() => setOpen(null))} style={{ padding: 0, border: 0, background: "none", font: "inherit", fontWeight: 600, color: INK, textDecoration: "underline", cursor: "pointer" }}>Olvidar la contraseña</button>.</p> : null}
+            {v.hasPassword ? <p style={{ margin: "-6px 22px 14px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>¿Ya no quieres copias? <button type="button" onClick={() => act("password", () => del("/backup/password")).then(() => setOpen(null))} style={{ padding: 0, border: 0, background: "none", font: "inherit", fontWeight: 600, color: "var(--c-text)", textDecoration: "underline", cursor: "pointer" }}>Olvidar la contraseña</button>.</p> : null}
           </>
         ) : null}
 
@@ -217,7 +216,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
           <div key={b.name}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "52px", padding: "6px 22px 6px 38px", borderTop: LINE }}>
               <span style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "1px" }}>
-                <span style={{ fontSize: "var(--t-ui)" }}>{when(b.at)}{b.name.startsWith("colmena-auto-") ? <span style={{ color: MUTED }}> · automática</span> : null}</span>
+                <span style={{ fontSize: "var(--t-ui)" }}>{when(b.at)}{b.name.startsWith("colmena-auto-") ? <span style={{ color: "var(--c-text-3)" }}> · automática</span> : null}</span>
                 <span style={sub}>{size(b.bytes)}</span>
               </span>
               <a href={"/api/backup/file/" + encodeURIComponent(b.name)} download title="Guardar este archivo en otro sitio" aria-label={"Descargar la copia de " + when(b.at)} style={{ ...btn("outline", 32), width: "32px", padding: 0 }}><Download size={14} strokeWidth={2} aria-hidden="true" /></a>
@@ -231,9 +230,9 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
           </div>
         )) : null}
 
-        <details {...anchorOf("copia-que-protege")} style={{ margin: "4px 22px 18px", padding: "12px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
+        <details {...anchorOf("copia-que-protege")} style={{ margin: "4px 22px 18px", padding: "12px 14px", borderRadius: "var(--r-md)", background: "var(--c-hover)", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
           <summary style={{ cursor: "pointer", fontWeight: 600 }}>Qué lleva cada copia y qué no</summary>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px", color: "#3D404A" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px", color: "var(--c-text-2)" }}>
             <span>Va entera cifrada con tu contraseña: si alguien la encuentra en la nube o en un disco, no puede leer nada. Si la tocan, Colmena lo nota y no la restaura.</span>
             <span>Lleva tus conversaciones y su historial, entregables y archivos, lo que saben tus bots y tus ajustes. Tu dirección de Personas va aparte, con su propia clave, y solo vuelve si lo eliges.</span>
             <span>No lleva tus sesiones de ChatGPT, Claude y las apps conectadas, las contraseñas de webs ni las claves de API: en otro ordenador vuelves a entrar.</span>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAction, useStore } from "../../../lib/store.jsx";
 import { del, get, patch, post, put } from "../../../lib/api.js";
 import { later, reversible, useHiddenVersion, visible } from "../../../lib/undoToast.js";
-import { Alert, BotMark, Card, Go, MUTED, Panel, Pills, Row, Switch, SwitchRow, UNDO_MS, anchorOf, btn, useSettings } from "./v3.jsx";
+import { Alert, BotMark, Card, Go, Panel, Pills, Row, Switch, SwitchRow, UNDO_MS, anchorOf, btn, useSettings } from "./v3.jsx";
 
 // Ajustes › Permisos y autonomía (design/V3Permisos.dc.html): the red lines, which no setting,
 // routine or bot can skip (send outside, pay, publish, delete for real, type passwords,
@@ -42,7 +42,7 @@ function CodeArchive() {
     <Card anchor="codigo-archivar" label="Tareas de Código">
       <div style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "18px 22px 10px" }}>
         <h3 style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600 }}>Tareas de Código</h3>
-        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: MUTED }}>Archivar no borra nada: la tarea pasa a «Archivadas» y vuelve si le escribes. Nunca se archiva si está fijada, trabaja, te espera o está pospuesta.</span>
+        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-3)" }}>Archivar no borra nada: la tarea pasa a «Archivadas» y vuelve si le escribes. Nunca se archiva si está fijada, trabaja, te espera o está pospuesta.</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column" }}>
         <Row title="Archivar las inactivas" sub="Tras estos días sin que escribas ni trabaje.">
@@ -66,7 +66,7 @@ export function PauseButton() {
   });
   return (
     <button type="button" {...anchorOf("pausa")} disabled={act.busy} onClick={flip} title={on ? "Ningún bot trabaja ni ejecuta rutinas. Lo hecho se conserva." : "Detiene a todos los bots y rutinas al momento. Lo hecho se conserva."}
-      style={{ ...btn(on ? "dark" : "outline", 40), fontWeight: 500, borderColor: "rgba(18,19,26,.16)" }}>
+      style={{ ...btn(on ? "dark" : "outline", 40), fontWeight: 500, borderColor: "rgb(var(--c-ink-rgb) / .16)" }}>
       {on ? "Reanudar al equipo" : "Pausar a todo el equipo"}
     </button>
   );
@@ -95,7 +95,7 @@ export default function AutonomySection() {
   return (
     <>
       <Alert>{error || act.error}</Alert>
-      <section {...anchorOf("lineas-rojas")} aria-labelledby="red-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#12131A", color: "#FFFFFF", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("lineas-rojas")} aria-labelledby="red-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-btn)", color: "var(--c-btn-text)", scrollMarginTop: "24px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h3 id="red-t" style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600 }}>Siempre te preguntan antes de…</h3>
           <span style={{ fontSize: "var(--t-ui)", color: "#C9CBD3" }}>Las líneas rojas. Ningún ajuste, rutina ni bot puede saltárselas. Navegar por la web nunca pregunta.</span>
@@ -109,32 +109,32 @@ export default function AutonomySection() {
       <Panel big anchor="autonomia-bot" title="Cuánto hace solo cada bot" sub="Fuera de las líneas rojas." style={{ gap: "6px" }}>
         <>
           {team.map((b) => (
-            <div key={b.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "52px", borderTop: "1px solid rgba(18,19,26,.05)" }}>
+            <div key={b.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "52px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)" }}>
               <span style={{ flex: "1 1 140px", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: 500 }}><BotMark bot={b} size={18} />{b.name}</span>
-              <div role="radiogroup" aria-label={"Autonomía de " + b.name} style={{ display: "inline-flex", flexWrap: "wrap", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "#F1F1EC" }}>
+              <div role="radiogroup" aria-label={"Autonomía de " + b.name} style={{ display: "inline-flex", flexWrap: "wrap", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "var(--c-chip)" }}>
                 {AUTONOMY.map(([v, label]) => {
                   const on = (b.autonomy || "sugiere") === v;
-                  return <button key={v} type="button" role="radio" aria-checked={on} disabled={act.busy} onClick={() => !on && setBot(b, { autonomy: v }, `${b.name} ${AUTONOMY_WORD[v]}`, { autonomy: b.autonomy || "sugiere" })} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#12131A" : "transparent", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+                  return <button key={v} type="button" role="radio" aria-checked={on} disabled={act.busy} onClick={() => !on && setBot(b, { autonomy: v }, `${b.name} ${AUTONOMY_WORD[v]}`, { autonomy: b.autonomy || "sugiere" })} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "transparent", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
                 })}
               </div>
             </div>
           ))}
-          {!team.length ? <p style={{ margin: 0, padding: "12px 0", fontSize: "var(--t-ui)", color: MUTED }}>{ready ? "Aún no hay bots en el equipo." : "Cargando el equipo…"}</p> : null}
+          {!team.length ? <p style={{ margin: 0, padding: "12px 0", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{ready ? "Aún no hay bots en el equipo." : "Cargando el equipo…"}</p> : null}
         </>
       </Panel>
 
       <Panel big anchor="que-app" title="Qué app usa cada bot" sub={<>Toca una casilla para cambiarla: No → Lee → Escribe. Las apps se conectan en <Go to="/ajustes/apps">Apps y carpetas</Go>.</>}>
         <div role="table" aria-label="Qué app usa cada bot" style={{ display: "flex", flexDirection: "column", overflowX: "auto" }}>
-          <div role="row" style={{ display: "grid", gridTemplateColumns: `minmax(120px, 1.3fr) repeat(${apps.length}, minmax(84px, 1fr))`, gap: "6px", alignItems: "center", minWidth: "560px", padding: "4px 0 8px", fontSize: "var(--t-meta)", fontWeight: 600, color: MUTED }}>
+          <div role="row" style={{ display: "grid", gridTemplateColumns: `minmax(120px, 1.3fr) repeat(${apps.length}, minmax(84px, 1fr))`, gap: "6px", alignItems: "center", minWidth: "560px", padding: "4px 0 8px", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-3)" }}>
             <span role="columnheader">Bot</span>
             {apps.map(([k, label]) => (
               <span key={k} role="columnheader" title={connected(k) ? "Conectada" : "Sin conectar"} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
-                {label}<span aria-label={connected(k) ? "conectada" : "sin conectar"} style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: connected(k) ? "#0B8A5F" : "rgba(18,19,26,.18)" }} />
+                {label}<span aria-label={connected(k) ? "conectada" : "sin conectar"} style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: connected(k) ? "#0B8A5F" : "rgb(var(--c-ink-rgb) / .18)" }} />
               </span>
             ))}
           </div>
           {team.map((b) => (
-            <div key={b.id} role="row" style={{ display: "grid", gridTemplateColumns: `minmax(120px, 1.3fr) repeat(${apps.length}, minmax(84px, 1fr))`, gap: "6px", alignItems: "center", minWidth: "560px", minHeight: "50px", borderTop: "1px solid rgba(18,19,26,.06)" }}>
+            <div key={b.id} role="row" style={{ display: "grid", gridTemplateColumns: `minmax(120px, 1.3fr) repeat(${apps.length}, minmax(84px, 1fr))`, gap: "6px", alignItems: "center", minWidth: "560px", minHeight: "50px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
               <span role="rowheader" style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", fontWeight: 500 }}><BotMark bot={b} size={14} />{b.name}</span>
               {apps.map(([k, label]) => {
                 const v = b.tools?.[k] || "none";
@@ -153,12 +153,12 @@ export default function AutonomySection() {
 
       <Panel big anchor="permisos" title="Permisos que diste para siempre" sub="Cuando pulsaste «Permitir siempre». Retíralos cuando quieras. Las líneas rojas nunca entran aquí." style={{ gap: "6px" }}>
         <>
-          {!shownGrants.length ? <p style={{ margin: 0, padding: "12px 0", fontSize: "var(--t-ui)", color: MUTED, borderTop: "1px solid rgba(18,19,26,.05)" }}>Ninguno. Te preguntarán cada vez.</p> : null}
+          {!shownGrants.length ? <p style={{ margin: 0, padding: "12px 0", fontSize: "var(--t-ui)", color: "var(--c-text-3)", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)" }}>Ninguno. Te preguntarán cada vez.</p> : null}
           {shownGrants.map((g) => (
-            <div key={g.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "54px", borderTop: "1px solid rgba(18,19,26,.05)" }}>
+            <div key={g.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "54px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)" }}>
               <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "2px" }}>
                 <span style={{ fontSize: "var(--t-body)" }}>{[botOf(g.botId)?.name, g.label || g.title || g.text || "Permiso"].filter(Boolean).join(" · ")}</span>
-                <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{[g.botId ? null : "Todos los bots", g.createdAt ? "Desde el " + new Date(g.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" }) : null, g.uses ? `usado ${g.uses} ${g.uses === 1 ? "vez" : "veces"}` : null].filter(Boolean).join(" · ")}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[g.botId ? null : "Todos los bots", g.createdAt ? "Desde el " + new Date(g.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" }) : null, g.uses ? `usado ${g.uses} ${g.uses === 1 ? "vez" : "veces"}` : null].filter(Boolean).join(" · ")}</span>
               </span>
               <button type="button" onClick={() => later({ id: "grant:" + g.id, keys: ["grant:" + g.id], ms: UNDO_MS, text: "Permiso retirado", error: "No se pudo retirar", run: () => run(() => del(`/grants/${encodeURIComponent(g.id)}`)) })} style={btn("outline", 34)}>Retirar</button>
             </div>

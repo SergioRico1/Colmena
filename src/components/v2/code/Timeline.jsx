@@ -72,7 +72,7 @@ function WorkLog({ row }) {
     const now = running ? entryLine(row.entries.at(-1)) : null;
     return (
       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        <button type="button" onClick={() => setOpen(true)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-meta)", color: C.text2, cursor: "pointer" }}>{n === 1 ? "Ver el paso" : "Ver los " + n + " pasos"}</button>
+        <button type="button" onClick={() => setOpen(true)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-meta)", color: C.text2, cursor: "pointer" }}>{n === 1 ? "Ver el paso" : "Ver los " + n + " pasos"}</button>
         {now ? <span style={{ minWidth: 0, fontSize: "var(--t-meta)", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{now}…</span> : null}
       </span>
     );
@@ -112,7 +112,7 @@ function AskCard({ item, onAnswer }) {
   const pending = item.status === "pending";
   const red = item.ask === "redline";
   const box = { display: "flex", flexDirection: "column", gap: "12px", padding: pending ? "16px" : "12px 16px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: pending ? RING : CARD, animation: pending ? "sheet .45s cubic-bezier(.2,.8,.2,1)" : "none" };
-  const choice = (on) => ({ minHeight: "36px", padding: "7px 14px", border: on ? "1px solid " + C.ink : "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: 500, textAlign: "left", background: on ? C.ink : C.white, color: on ? C.white : C.ink });
+  const choice = (on) => ({ minHeight: "36px", padding: "7px 14px", border: on ? "1px solid " + C.ink : "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: 500, textAlign: "left", background: on ? C.ink : C.white, color: on ? C.white : C.ink });
   if (item.ask === "question") {
     const qs = item.questions || [];
     const ready = qs.every((q) => picked[q.question]);
@@ -189,7 +189,7 @@ function ReviewCard({ item, onFinding, current, pr = null, onPublish = null }) {
               {f.title}{f.file ? <> <span style={{ font: `400 var(--t-caption)/1 ${MONO}`, color: C.muted }}>{f.file.split("/").pop()}{f.line ? ":" + f.line : ""}</span></> : null}
               {f.detail && expert ? <span style={{ display: "block", marginTop: "2px", fontSize: "var(--t-meta)", color: C.muted }}>{f.detail}</span> : null}
             </span>
-            <button type="button" className="code-tools" onClick={() => onFinding(f)} title="Añádelo a tu próximo mensaje" style={{ position: "absolute", right: 0, top: "-2px", height: "24px", padding: "0 9px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: C.white, boxShadow: "0 4px 12px -4px rgba(18,19,26,.25)", cursor: "pointer", fontSize: "var(--t-caption)", whiteSpace: "nowrap" }}>Pasar a Bruno</button>
+            <button type="button" className="code-tools" onClick={() => onFinding(f)} title="Añádelo a tu próximo mensaje" style={{ position: "absolute", right: 0, top: "-2px", height: "24px", padding: "0 9px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: C.white, boxShadow: "0 4px 12px -4px rgba(18,19,26,.25)", cursor: "pointer", fontSize: "var(--t-caption)", whiteSpace: "nowrap" }}>Pasar a Bruno</button>
           </div>
         );
       })}
@@ -252,7 +252,7 @@ export function TimelineRow({ row, ctx }) {
           {item.steer ? <span style={{ display: "block", fontSize: "var(--t-caption)", color: C.faint, marginBottom: "4px" }}>Se lo pasaste mientras trabajaba</span> : null}{item.text}
           {item.contexts?.length ? (
             <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "8px" : 0 }}>
-              {item.contexts.map((c, k) => <span key={k} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ padding: "3px 9px", borderRadius: "var(--r-pill)", background: "#FFF1C7", fontSize: "var(--t-caption)", color: "#5C4300" }}>{c.label}</span>)}
+              {item.contexts.map((c, k) => <span key={k} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ padding: "3px 9px", borderRadius: "var(--r-pill)", background: "var(--c-honey-soft)", fontSize: "var(--t-caption)", color: "var(--c-honey-text)" }}>{c.label}</span>)}
             </span>
           ) : null}
           {item.attachments?.length ? (
@@ -263,7 +263,7 @@ export function TimelineRow({ row, ctx }) {
         </div>
         {canEdit ? (
           <span className="code-tools" style={{ display: "flex", gap: "4px" }}>
-            <button type="button" onClick={() => ctx.onEditFrom(item)} title="Vuelve los archivos a antes de este mensaje y te deja reescribirlo" style={{ display: "flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 500 }}>
+            <button type="button" onClick={() => ctx.onEditFrom(item)} title="Vuelve los archivos a antes de este mensaje y te deja reescribirlo" style={{ display: "flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 500 }}>
               <Pencil size={12} strokeWidth={2.2} aria-hidden="true" />Editar desde aquí
             </button>
           </span>
@@ -291,13 +291,13 @@ export function TimelineRow({ row, ctx }) {
         {item.url ? <a href={item.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Abrir en GitHub</a> : null}
         {item.overlap ? <a href={"/codigo/" + item.overlap} style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Ver la otra tarea</a> : null}
         {item.undo && ctx.lastNotice === item.id && !ctx.busy ? (
-          <button type="button" onClick={() => ctx.onUndoRestore(item)} style={{ display: "flex", alignItems: "center", gap: "5px", height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink }}>
+          <button type="button" onClick={() => ctx.onUndoRestore(item)} style={{ display: "flex", alignItems: "center", gap: "5px", height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink }}>
             <Undo2 size={12} strokeWidth={2.4} aria-hidden="true" />Deshacer
           </button>
         ) : null}
       </span>
     );
   }
-  if (row.kind === "error") return <p data-message-id={item.id} role="alert" style={{ margin: 0, padding: "10px 14px", borderRadius: "var(--r-lg)", background: "#FBE9EA", color: "#B4232A", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>{item.text}</p>;
+  if (row.kind === "error") return <p data-message-id={item.id} role="alert" style={{ margin: 0, padding: "10px 14px", borderRadius: "var(--r-lg)", background: "var(--c-error-soft)", color: "var(--c-error)", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>{item.text}</p>;
   return null;
 }

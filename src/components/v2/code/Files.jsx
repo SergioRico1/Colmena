@@ -79,7 +79,7 @@ function Viewer({ task, file, changed, onNote }) {
   }, [task.id, file]);
   const editor = () => post("/code/tasks/" + task.id + "/open-editor", { path: file, line: line || 1 }).then((r) => onNote(r.editor ? null : { info: "No encuentro VS Code, Cursor ni Windsurf: se abre con el programa de ese tipo de archivo." }), (e) => onNote(e.message));
   const reveal = () => revealInTask(task.id, file).then(() => onNote(null), (e) => onNote(e.message));
-  const tool = { height: "30px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" };
+  const tool = { height: "30px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" };
   const status = changed.get(file);
   return (
     <>
@@ -91,7 +91,7 @@ function Viewer({ task, file, changed, onNote }) {
         <button type="button" onClick={editor} title={line ? "Abre el archivo en la línea " + line : "Abre el archivo en VS Code, Cursor o Windsurf"} style={tool}><SquareArrowOutUpRight size={13} strokeWidth={2.2} aria-hidden="true" />Abrir en el editor</button>
         <button type="button" onClick={reveal} style={tool}><FolderOpen size={13} strokeWidth={2.2} aria-hidden="true" />{REVEAL_LABEL}</button>
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflow: "hidden" }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgb(var(--c-ink-rgb) / .08)", overflow: "hidden" }}>
         {error ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.red }}>{error}</p>
           : !data ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.faint }}>Abriendo…</p>
             : data.kind === "image" ? (
@@ -158,7 +158,7 @@ export default function Files({ task }) {
   const mark = (status) => status ? <span style={{ flex: "none", font: `600 var(--t-micro)/1 ${MONO}`, color: status === "A" ? C.greenText : C.blue }} title={status === "A" ? "Nuevo en la tarea" : "Cambiado en la tarea"}>{status}</span> : null;
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", animation: "fade .25s ease-out" }}>
-      <div style={{ flex: "0 1 270px", minWidth: "180px", display: "flex", flexDirection: "column", borderRight: "1px solid rgba(18,19,26,.06)" }}>
+      <div style={{ flex: "0 1 270px", minWidth: "180px", display: "flex", flexDirection: "column", borderRight: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
         <div style={{ flex: "none", display: "flex", flexDirection: "column", gap: "8px", padding: "14px 10px 8px" }}>
           <div className="code-turn" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 4px" }}>
             <span title={task.cwd} style={{ flex: 1, minWidth: 0, fontSize: "var(--t-meta)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{folderName}</span>
@@ -167,7 +167,7 @@ export default function Files({ task }) {
               <FolderOpen size={14} strokeWidth={2.2} aria-hidden="true" />
             </button>
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.045)", color: C.muted }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .045)", color: C.muted }}>
             <Search size={13} strokeWidth={2.2} aria-hidden="true" />
             <span style={SR}>Filtrar archivos</span>
             <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />

@@ -55,7 +55,7 @@ function Elapsed({ since }) {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, [since]);
-  return <span aria-hidden="true" style={{ flex: "none", minWidth: "44px", textAlign: "right", font: "400 var(--t-meta)/1 'Geist Mono', monospace", fontVariantNumeric: "tabular-nums", color: "#5C606C" }}>{elapsedText(since, now)}</span>;
+  return <span aria-hidden="true" style={{ flex: "none", minWidth: "44px", textAlign: "right", font: "400 var(--t-meta)/1 'Geist Mono', monospace", fontVariantNumeric: "tabular-nums", color: "var(--c-text-3)" }}>{elapsedText(since, now)}</span>;
 }
 
 function Line({ item, bot, onShow }) {
@@ -63,11 +63,11 @@ function Line({ item, bot, onShow }) {
   const text = item.narration || (item.verb ? verbLabel(phase) + (item.detail ? " · " + item.detail : "") : "Pensando");
   return (
     <button type="button" className="rm-focus" onClick={onShow} title="Ir a lo que está haciendo" aria-label={`${bot?.name || "El bot"}: ${text}. Ir a lo que está haciendo`}
-      style={{ flex: "1", minWidth: 0, minHeight: "32px", display: "flex", alignItems: "center", gap: "10px", padding: "0 8px 0 0", border: 0, borderRadius: "var(--r-md)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "#12131A" }}>
+      style={{ flex: "1", minWidth: 0, minHeight: "32px", display: "flex", alignItems: "center", gap: "10px", padding: "0 8px 0 0", border: 0, borderRadius: "var(--r-md)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "var(--c-text)" }}>
       <BotMark bot={bot} size={16} state="work" />
       <strong style={{ flex: "none", fontWeight: 600 }}>{bot?.name || "Bot"}</strong>
       {/* Its own area: whatever the text, what comes after it stays where it is. */}
-      <span style={{ flex: "1", minWidth: 0, height: "20px", overflow: "hidden", color: "#4A4D57" }}>
+      <span style={{ flex: "1", minWidth: 0, height: "20px", overflow: "hidden", color: "var(--c-text-2)" }}>
         <span key={text} data-now-text="" style={{ display: "block", lineHeight: "20px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", animation: "c-rise 160ms ease-out both" }}>{text}</span>
       </span>
       <Elapsed since={item.since} />
@@ -96,12 +96,12 @@ export default function NowBar({ missionId, active, steps = [], bots = [], scrol
   if (!working.length) return null;
   const more = moreText(working.length);
   return (
-    <div role="group" aria-label="Qué está haciendo ahora" data-now-bar="" style={{ display: "flex", alignItems: "center", gap: "6px", margin: "0 0 10px", padding: "4px 6px 4px 14px", borderRadius: "var(--r-lg)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.07)", animation: "rise .2s ease-out", ...style }}>
+    <div role="group" aria-label="Qué está haciendo ahora" data-now-bar="" style={{ display: "flex", alignItems: "center", gap: "6px", margin: "0 0 10px", padding: "4px 6px 4px 14px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .07)", animation: "rise .2s ease-out", ...style }}>
       <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column" }}>
         {working.slice(0, MAX_LINES).map((item) => <div key={item.botId} style={{ display: "flex", minWidth: 0 }}><Line item={item} bot={findBot(bots, item.botId)} onShow={onShow} /></div>)}
-        {more ? <span style={{ padding: "0 0 4px 26px", fontSize: "var(--t-meta)", color: "#5C606C" }}>{more}</span> : null}
+        {more ? <span style={{ padding: "0 0 4px 26px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{more}</span> : null}
       </div>
-      {onStop ? <button type="button" className="rm-focus chat-stop" onClick={onStop} title="Parar (Esc)" style={{ flex: "none", height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "#5C606C", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{"Parar"}</button> : null}
+      {onStop ? <button type="button" className="rm-focus chat-stop" onClick={onStop} title="Parar (Esc)" style={{ flex: "none", height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{"Parar"}</button> : null}
     </div>
   );
 }

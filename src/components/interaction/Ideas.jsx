@@ -10,7 +10,7 @@ import { roomUrl } from "../../lib/format.js";
 // comes from («Ver de dónde sale»). Same card as design/Automatizaciones (blue note).
 // Plus the weekly summary card for Inicio (OpenClaw team-reports).
 
-const errStyle = { fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: "600" };
+const errStyle = { fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" };
 
 function Evidence({ items }) {
   return (
@@ -19,11 +19,11 @@ function Evidence({ items }) {
         const internal = typeof e.url === "string" && e.url.startsWith("/");
         const external = typeof e.url === "string" && e.url.startsWith("https://");
         return (
-          <li key={i} style={{ display: "flex", flexDirection: "column", gap: "3px", padding: "8px 10px", background: "#FFFFFF", border: "1px solid #CBD8FF", borderRadius: "var(--r-md)" }}>
-            <span style={{ font: "500 var(--t-micro)/1.3 'Geist Mono', monospace", letterSpacing: "0.04em", textTransform: "uppercase", color: "#4A4F5C" }}>{e.source}</span>
-            {e.quote ? <q style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#2B2D36", quotes: "«» «»" }}>{e.quote}</q> : null}
-            {internal ? <a href={e.url} style={{ alignSelf: "flex-start", fontSize: "var(--t-caption)", fontWeight: "600", color: "#1F4FD1", textDecoration: "underline" }}>{"Abrir"}</a> : null}
-            {external ? <a href={e.url} target="_blank" rel="noreferrer noopener" style={{ alignSelf: "flex-start", fontSize: "var(--t-caption)", fontWeight: "600", color: "#1F4FD1", textDecoration: "underline" }}>{"Abrir en el calendario"}</a> : null}
+          <li key={i} style={{ display: "flex", flexDirection: "column", gap: "3px", padding: "8px 10px", background: "var(--c-card)", border: "1px solid #CBD8FF", borderRadius: "var(--r-md)" }}>
+            <span style={{ font: "500 var(--t-micro)/1.3 'Geist Mono', monospace", letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--c-text-2)" }}>{e.source}</span>
+            {e.quote ? <q style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text)", quotes: "«» «»" }}>{e.quote}</q> : null}
+            {internal ? <a href={e.url} style={{ alignSelf: "flex-start", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-accent-ink)", textDecoration: "underline" }}>{"Abrir"}</a> : null}
+            {external ? <a href={e.url} target="_blank" rel="noreferrer noopener" style={{ alignSelf: "flex-start", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-accent-ink)", textDecoration: "underline" }}>{"Abrir en el calendario"}</a> : null}
           </li>
         );
       })}
@@ -45,16 +45,16 @@ export function SuggestionCard({ s, bots, fallbackCta = "Sí, hazlo" }) {
       return result;
     });
   return (
-    <div style={{ display: "flex", gap: "12px", padding: "14px 16px", background: "#E7EEFF", border: "1px solid #B4C8FF", borderRadius: "var(--r-lg)" }}>
+    <div style={{ display: "flex", gap: "12px", padding: "14px 16px", background: "var(--c-accent-soft)", border: "1px solid #B4C8FF", borderRadius: "var(--r-lg)" }}>
       <BotPresence bot={b} size={30} />
       <div style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "10px", fontSize: "var(--t-ui)", lineHeight: "1.45" }}>
         <span><strong>{(botById(bots, "atlas")?.name || "Atlas") + " ha notado"}</strong>{" " + text}</span>
         {open && evidence.length ? <Evidence items={evidence} /> : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          <button type="button" disabled={busy} onClick={() => decide("accept")} style={{ height: "38px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" }}>{s.cta || fallbackCta}</button>
-          <button type="button" disabled={busy} onClick={() => decide("dismiss")} style={{ height: "38px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", color: "#2B2D36" }}>{"Ahora no"}</button>
+          <button type="button" disabled={busy} onClick={() => decide("accept")} style={{ height: "38px", padding: "0 12px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" }}>{s.cta || fallbackCta}</button>
+          <button type="button" disabled={busy} onClick={() => decide("dismiss")} style={{ height: "38px", padding: "0 12px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", color: "var(--c-text)" }}>{"Ahora no"}</button>
           {evidence.length ? (
-            <button type="button" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} style={{ display: "flex", alignItems: "center", gap: "4px", height: "38px", padding: "0 6px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>
+            <button type="button" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} style={{ display: "flex", alignItems: "center", gap: "4px", height: "38px", padding: "0 6px", background: "transparent", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-accent-ink)" }}>
               {open ? "Ocultar de dónde sale" : "Ver de dónde sale"}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none" }}><path d="m6 9 6 6 6-6" /></svg>
             </button>

@@ -55,17 +55,17 @@ export function scheduleApproval(a, model, always = false) {
   });
 }
 
-const card = (wide, ring) => ({ display: "flex", flexDirection: "column", gap: wide ? "14px" : "12px", padding: "20px 22px", background: "#FFFFFF", borderRadius: "var(--r-xl)", boxShadow: ring, transition: "box-shadow .4s ease", animation: "rise .4s ease-out" });
+const card = (wide, ring) => ({ display: "flex", flexDirection: "column", gap: wide ? "14px" : "12px", padding: "20px 22px", background: "var(--c-card)", borderRadius: "var(--r-xl)", boxShadow: ring, transition: "box-shadow .4s ease", animation: "rise .4s ease-out" });
 const title = (wide) => (wide ? { margin: "0", fontSize: "var(--t-lead)", fontWeight: "600", letterSpacing: "-0.01em", lineHeight: "1.3" } : { margin: "0", fontSize: "var(--t-read)", fontWeight: "600", lineHeight: "1.35" });
-const body = { margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#4A4D57", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" };
-const strong = { fontWeight: "600", color: "#12131A" };
+const body = { margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text-2)", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" };
+const strong = { fontWeight: "600", color: "var(--c-text)" };
 const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" };
 
 function Head({ bot, where, at, label }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
       <Shape bot={bot} size={20} />
-      <span style={{ fontSize: "var(--t-ui)", color: "#5C606C", minWidth: 0 }}>
+      <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)", minWidth: 0 }}>
         <strong style={strong}>{bot?.name || "Un bot"}</strong>
         {where ? <>{" · "}{where}</> : null}
         {at ? " · " + time(at) : null}
@@ -77,7 +77,7 @@ function Head({ bot, where, at, label }) {
 
 function Settled({ text }) {
   return (
-    <span role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "#0B6B4A", animation: "fade .3s ease-out" }}>
+    <span role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-ok-ink)", animation: "fade .3s ease-out" }}>
       <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
       </span>
@@ -186,7 +186,7 @@ export const ApprovalNeed = withRowBoundary(function ApprovalNeed({ a, bot, miss
               : <button key={s.id} type="button" onClick={deny} style={btn.text}>{s.label}</button>))}
           {a.kind === "secret" ? null : <SnoozeMenu items={[a]} style={btn.text} onError={setError} />}
           {wide && (outside || a.impact?.headline) ? (
-            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
+            <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
               {outside ? <><Lock />{"Sale de tu empresa: siempre te pregunta"}</> : a.impact.headline}
             </span>
           ) : null}
@@ -194,7 +194,7 @@ export const ApprovalNeed = withRowBoundary(function ApprovalNeed({ a, bot, miss
       )}
       {/* The undo window and what happens if nobody decides, wherever this request is shown. */}
       {waiting ? null : <ApprovalNotes model={model} />}
-      {error || failures.get(a.id) ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{error || failures.get(a.id)}</span> : null}
+      {error || failures.get(a.id) ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error || failures.get(a.id)}</span> : null}
     </article>
   );
 }, guard);
@@ -260,12 +260,12 @@ export const GroupNeed = withRowBoundary(function GroupNeed({ group, bot, missio
         <h3 style={title(wide)}>{heading}</h3>
         <ul style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "4px" }}>
           {listed.shown.map((a) => (
-            <li key={a.id} style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-body)", lineHeight: "1.45", color: "#4A4D57" }}>
+            <li key={a.id} style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-body)", lineHeight: "1.45", color: "var(--c-text-2)" }}>
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{groupLine(a, bot?.name, group.label)}</span>
-              {failures.has(a.id) ? <span style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{failures.get(a.id)}</span> : null}
+              {failures.has(a.id) ? <span style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{failures.get(a.id)}</span> : null}
             </li>
           ))}
-          {listed.more ? <li style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{`y ${listed.more} más`}</li> : null}
+          {listed.more ? <li style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{`y ${listed.more} más`}</li> : null}
         </ul>
       </div>
       {waiting ? (
@@ -278,10 +278,10 @@ export const GroupNeed = withRowBoundary(function GroupNeed({ group, bot, missio
             <button type="button" onClick={deny} style={btn.text}>{GROUP_VERBS.deny}</button>
             <SnoozeMenu items={items} style={btn.text} onError={setError} />
           </div>
-          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C" }}>{GROUP_VERBS.undoLine}</span>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)" }}>{GROUP_VERBS.undoLine}</span>
         </>
       )}
-      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</span> : null}
     </article>
   );
 }, { label: "No se han podido mostrar estas peticiones", resetKey: ({ group }) => group?.id + ":" + group?.items?.length });
@@ -313,20 +313,20 @@ export function SnoozedNeeds({ items = [], bots = [] }) {
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <button ref={toggle} type="button" aria-expanded={open ? "true" : "false"} aria-controls="snoozed-needs" onClick={() => setOpen((v) => !v)} style={{ ...btn.text, alignSelf: "flex-start", height: "32px", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", color: "#5C606C" }}>
+      <button ref={toggle} type="button" aria-expanded={open ? "true" : "false"} aria-controls="snoozed-needs" onClick={() => setOpen((v) => !v)} style={{ ...btn.text, alignSelf: "flex-start", height: "32px", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>
         {snoozedLabel(items.length)}
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}><path d="m6 9 6 6 6-6" /></svg>
       </button>
       {open ? (
-        <ul id="snoozed-needs" aria-label="Pospuestos" style={{ margin: "0", padding: "4px 18px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", animation: "fade .2s ease-out" }}>
+        <ul id="snoozed-needs" aria-label="Pospuestos" style={{ margin: "0", padding: "4px 18px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", animation: "fade .2s ease-out" }}>
           {items.map((a, i) => {
             const bot = bots.find((b) => b.id === a.botId) || null;
             return (
-              <li key={a.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", padding: "10px 0", borderTop: i ? "1px solid rgba(18,19,26,.06)" : "0" }}>
+              <li key={a.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", padding: "10px 0", borderTop: i ? "1px solid rgb(var(--c-ink-rgb) / .06)" : "0" }}>
                 <Shape bot={bot} size={14} />
                 <span style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
                   <span style={{ fontSize: "var(--t-body)", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</span>
-                  <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{`${bot?.name || "Un bot"} · vuelve ${snoozeWhen(a.snoozedUntil)}`}</span>
+                  <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`${bot?.name || "Un bot"} · vuelve ${snoozeWhen(a.snoozedUntil)}`}</span>
                 </span>
                 <button type="button" disabled={busy === a.id} onClick={() => back(a)} style={{ ...btn.line, height: "34px", padding: "0 14px", fontSize: "var(--t-ui)" }}>{"Traer de vuelta"}</button>
               </li>
@@ -334,7 +334,7 @@ export function SnoozedNeeds({ items = [], bots = [] }) {
           })}
         </ul>
       ) : null}
-      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</span> : null}
     </div>
   );
 }
@@ -406,7 +406,7 @@ export function WatchNeed({ n, bot, wide = false }) {
           {n.sources.slice(0, 3).map((s, i) => {
             const Icon = (WHERE[s.fuente] || WHERE.Correo)[1];
             return (
-              <a key={i} href={s.url} target="_blank" rel="noreferrer" title={s.asunto} style={{ display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", background: "#F3F3EF", fontSize: "var(--t-meta)", color: "#3D404A" }}>
+              <a key={i} href={s.url} target="_blank" rel="noreferrer" title={s.asunto} style={{ display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", background: "var(--c-sunken)", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
                 <Icon size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.asunto || "Ver el original"}</span>
               </a>
@@ -426,7 +426,7 @@ export function WatchNeed({ n, bot, wide = false }) {
           <button type="button" onClick={dismiss} style={btn.text}>{"Ahora no"}</button>
         </div>
       )}
-      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</span> : null}
     </article>
   );
 }

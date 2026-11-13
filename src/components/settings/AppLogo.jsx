@@ -25,13 +25,13 @@ export default function AppLogo({ id, name, logo = null, size = 36 }) {
   const icon = ICONS[id];
   if (icon)
     return (
-      <span aria-hidden="true" style={{ ...tile, background: "#F6F6F3" }}>
+      <span aria-hidden="true" style={{ ...tile, background: "var(--c-hover)" }}>
         <svg width={Math.round(size * 0.55)} height={Math.round(size * 0.55)} viewBox="0 0 24 24" fill={ON_WHITE[id] || "#" + icon.hex}><path d={icon.path} /></svg>
       </span>
     );
   if (logo && !broken)
     return (
-      <span aria-hidden="true" style={{ ...tile, background: "#F6F6F3" }}>
+      <span aria-hidden="true" style={{ ...tile, background: "var(--c-hover)" }}>
         <img src={logo} alt="" width={Math.round(size * 0.6)} height={Math.round(size * 0.6)} onError={() => setBroken(true)} style={{ objectFit: "contain" }} />
       </span>
     );

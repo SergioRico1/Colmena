@@ -12,13 +12,13 @@ import { CodeCard } from "../team/TeamSheets.jsx";
 //   POST /api/peers/invites/preview {code} · POST /api/teams/join | /api/peers/invites/accept
 // Nothing here is needed to go on: «Empezar solo» is a choice like the others, and a team
 // can be created or joined later from the bar's header.
-const INK = "#12131A", MUTED = "#5C606C", TEXT2 = "#4A4D57", GREEN = "#0B6B4A", RED = "#B4232A";
+const INK = "#12131A", GREEN = "#0B6B4A";
 const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 const fieldRow = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" };
-const input = { flex: "1 1 240px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK };
-const dark = (on = true) => ({ height: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: on ? "pointer" : "default", opacity: on ? 1 : 0.5, flex: "none" });
-const quiet = { height: "46px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: TEXT2, fontSize: "var(--t-body)", fontWeight: 500, cursor: "pointer" };
-const note = { margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: MUTED };
+const input = { flex: "1 1 240px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-lg)", background: "var(--c-card)", fontSize: "var(--t-body)", color: "var(--c-text)" };
+const dark = (on = true) => ({ height: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: on ? "pointer" : "default", opacity: on ? 1 : 0.5, flex: "none" });
+const quiet = { height: "46px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-2)", fontSize: "var(--t-body)", fontWeight: 500, cursor: "pointer" };
+const note = { margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text-3)" };
 const body = { display: "flex", flexDirection: "column", gap: "12px", padding: "0 20px 20px 20px", animation: "rise .25s ease-out" };
 
 /**
@@ -62,7 +62,7 @@ export default function TeamStep({ value, onChange, off = false }) {
   const panels = {
     create: value?.team ? (
       <div style={body}>
-        <p role="status" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600, color: GREEN }}><Check size={16} strokeWidth={2.8} aria-hidden="true" />{`«${value.team.name}» está creado, con su sala «general».`}</p>
+        <p role="status" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-body)", fontWeight: 600, color: "var(--c-ok-ink)" }}><Check size={16} strokeWidth={2.8} aria-hidden="true" />{`«${value.team.name}» está creado, con su sala «general».`}</p>
         {made ? (
           <>
             <CodeCard made={made} onError={setError} />
@@ -98,7 +98,7 @@ export default function TeamStep({ value, onChange, off = false }) {
     ),
     join: value?.joined ? (
       <div style={body}>
-        <p role="status" style={{ margin: 0, display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-body)", lineHeight: 1.45, fontWeight: 600, color: GREEN }}>
+        <p role="status" style={{ margin: 0, display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-body)", lineHeight: 1.45, fontWeight: 600, color: "var(--c-ok-ink)" }}>
           <Check size={16} strokeWidth={2.8} aria-hidden="true" style={{ flex: "none", marginTop: "3px" }} />
           {value.joined.kind === "team" ? `Has pedido entrar en «${value.joined.name}».` : `Ya puedes escribirte con ${value.joined.name}.`}
         </p>
@@ -107,8 +107,8 @@ export default function TeamStep({ value, onChange, off = false }) {
     ) : preview ? (
       <div style={body}>
         <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5 }}><strong style={{ fontWeight: 600 }}>{what.title + "."}</strong>{" " + what.text}</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F4F4F0" }}>
-          <span style={{ fontSize: "var(--t-ui)", color: TEXT2 }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-sunken)" }}>
+          <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
           <strong style={{ font: "600 var(--t-title)/1.25 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{(preview.words || []).join(" · ")}</strong>
         </div>
         <div style={fieldRow}>
@@ -143,18 +143,18 @@ export default function TeamStep({ value, onChange, off = false }) {
         const on = choice === c.id;
         const done = (c.id === "create" && value?.team) || (c.id === "join" && value?.joined);
         return (
-          <div key={c.id} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: `inset 0 0 0 2px ${on ? INK : "transparent"}` }}>
+          <div key={c.id} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: `inset 0 0 0 2px ${on ? INK : "transparent"}` }}>
             <button type="button" role="radio" aria-checked={on} onClick={() => pick(c.id)} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "72px", padding: "14px 20px", border: 0, borderRadius: "var(--r-xl)", background: "transparent", textAlign: "left", cursor: "pointer" }}>
               <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
                 <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{c.title}</span>
-                <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: MUTED }}>{c.text}</span>
+                <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text-3)" }}>{c.text}</span>
               </span>
               <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: done ? GREEN : on ? INK : "transparent", boxShadow: on || done ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.25)" }}>
                 <Check size={12} strokeWidth={3.2} color="#FFFFFF" style={{ opacity: on || done ? 1 : 0 }} />
               </span>
             </button>
             {on ? panels[c.id] : null}
-            {on && error ? <p role="alert" style={{ margin: 0, padding: "0 20px 18px", fontSize: "var(--t-ui)", lineHeight: 1.45, color: RED }}>{error}</p> : null}
+            {on && error ? <p role="alert" style={{ margin: 0, padding: "0 20px 18px", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-error)" }}>{error}</p> : null}
           </div>
         );
       })}

@@ -33,13 +33,13 @@ function parseCsv(text) {
 /** The content of a deliverable: image, table, page, markdown or code. */
 export function ArtifactContent({ a, loading = false, error = null }) {
   const content = a?.content ?? "";
-  if (loading && !a) return <p style={{ margin: 0, color: "#4A4F5C" }}>Abriendo…</p>;
-  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "#FDECEC", border: "1px solid #F1B5B7", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#8F1D22" }}>{`No se pudo abrir: ${error}`}</p>;
-  if (!content) return <p style={{ margin: 0, color: "#4A4F5C" }}>{a?.status === "en curso" ? "Todavía se está haciendo. Aparecerá aquí en cuanto el bot lo termine." : "Este entregable está vacío."}</p>;
+  if (loading && !a) return <p style={{ margin: 0, color: "var(--c-text-2)" }}>Abriendo…</p>;
+  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "var(--c-error-soft)", border: "1px solid #F1B5B7", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{`No se pudo abrir: ${error}`}</p>;
+  if (!content) return <p style={{ margin: 0, color: "var(--c-text-2)" }}>{a?.status === "en curso" ? "Todavía se está haciendo. Aparecerá aquí en cuanto el bot lo termine." : "Este entregable está vacío."}</p>;
   if (isDeck(a)) return <SlideViewer artifact={a} />;
   if (isWordDoc(a)) return <DocViewer artifact={a} />;
   if (isWorkbook(a)) return <SheetViewer artifact={a} />;
-  if (a.format === "svg") return <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(content)}`} alt={a.title} style={{ maxWidth: "100%", display: "block", margin: "0 auto", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)" }} />;
+  if (a.format === "svg") return <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(content)}`} alt={a.title} style={{ maxWidth: "100%", display: "block", margin: "0 auto", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)" }} />;
   if (a.format === "csv") {
     const rows = parseCsv(content);
     return (
@@ -48,15 +48,15 @@ export function ArtifactContent({ a, loading = false, error = null }) {
           <tbody>
             {rows.map((r, i) => (
               <tr key={i}>{r.map((c, j) => i === 0
-                ? <th key={j} scope="col" style={{ padding: "8px", borderBottom: "2px solid #12131A", textAlign: "left", fontWeight: "600", whiteSpace: "nowrap" }}>{c}</th>
-                : <td key={j} style={{ padding: "8px", borderBottom: "1px solid #E6E8EE", fontFamily: /^-?[\d.,%€$ ]+$/.test(c) ? "'Geist Mono', monospace" : "inherit" }}>{c}</td>)}</tr>
+                ? <th key={j} scope="col" style={{ padding: "8px", borderBottom: "2px solid var(--c-text)", textAlign: "left", fontWeight: "600", whiteSpace: "nowrap" }}>{c}</th>
+                : <td key={j} style={{ padding: "8px", borderBottom: "1px solid var(--c-line)", fontFamily: /^-?[\d.,%€$ ]+$/.test(c) ? "'Geist Mono', monospace" : "inherit" }}>{c}</td>)}</tr>
             ))}
           </tbody>
         </table>
       </div>
     );
   }
-  if (a.format === "html") return <iframe title={a.title} sandbox="" srcDoc={content} style={{ width: "100%", height: "70vh", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", background: "#FFFFFF" }} />;
+  if (a.format === "html") return <iframe title={a.title} sandbox="" srcDoc={content} style={{ width: "100%", height: "70vh", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-card)" }} />;
   if (a.format === "md" || a.format === "txt" || a.kind === "document" || a.kind === "slides") return <div className="colmena-md"><ReactMarkdown components={MD}>{linkifyNotes(content)}</ReactMarkdown></div>;
   return <pre style={{ margin: 0, padding: "16px", background: "#12131A", color: "#E6E8EE", borderRadius: "var(--r-md)", overflow: "auto", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace" }}>{content}</pre>;
 }

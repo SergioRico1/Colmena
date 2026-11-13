@@ -86,6 +86,6 @@ export function useFileDrop(add, onError, { pasteCards = false } = {}) {
 export const dropOverlay = {
   animation: "c-fade 140ms ease both",
   position: "absolute", inset: "0", zIndex: 5, display: "grid", placeItems: "center", borderRadius: "inherit",
-  background: "rgba(255, 244, 209, 0.92)", border: "2px dashed #12131A", pointerEvents: "none",
+  background: "rgba(255, 244, 209, 0.92)", border: "2px dashed var(--c-text)", pointerEvents: "none",
   font: "700 var(--t-body)/1.2 'Geist', sans-serif", color: "#12131A",
 };

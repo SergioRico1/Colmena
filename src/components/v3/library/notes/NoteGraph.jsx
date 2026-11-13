@@ -41,17 +41,17 @@ export default function NoteGraph({ focus = "", title = "" }) {
         {focus ? (
           <div role="group" aria-label="Hasta dónde mirar" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <span style={MUTED}>{"Saltos"}</span>
-            {[1, 2, 3].map((d) => <button key={d} type="button" aria-pressed={depth === d} onClick={() => setDepth(d)} style={{ ...filterChip(depth === d), background: depth === d ? "#12131A" : "#F1F1EC", minWidth: "36px", justifyContent: "center" }}>{String(d)}</button>)}
+            {[1, 2, 3].map((d) => <button key={d} type="button" aria-pressed={depth === d} onClick={() => setDepth(d)} style={{ ...filterChip(depth === d), background: depth === d ? "#12131A" : "var(--c-chip)", minWidth: "36px", justifyContent: "center" }}>{String(d)}</button>)}
           </div>
         ) : null}
       </div>
       {error ? <p role="alert" style={ERROR}>{error}</p> : null}
       {act.error ? <p role="alert" style={ERROR}>{act.error}</p> : null}
-      {loading && !data ? <div style={{ height: "320px", borderRadius: "var(--r-lg)", background: "#F6F6F3", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
-      {data && !view.nodes.length ? <p style={{ margin: 0, padding: "40px 0", textAlign: "center", fontSize: "var(--t-body)", color: "#5C606C" }}>{"Aún no hay notas que dibujar."}</p> : null}
+      {loading && !data ? <div style={{ height: "320px", borderRadius: "var(--r-lg)", background: "var(--c-hover)", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+      {data && !view.nodes.length ? <p style={{ margin: 0, padding: "40px 0", textAlign: "center", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{"Aún no hay notas que dibujar."}</p> : null}
       {view.nodes.length ? (
         <>
-          <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={`Mapa con ${view.nodes.length} notas y ${view.edges.length} enlaces`} style={{ width: "100%", height: "auto", maxHeight: "70vh", borderRadius: "var(--r-lg)", background: "#FBFBF9", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.05)" }} onMouseLeave={() => setHot(null)}>
+          <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={`Mapa con ${view.nodes.length} notas y ${view.edges.length} enlaces`} style={{ width: "100%", height: "auto", maxHeight: "70vh", borderRadius: "var(--r-lg)", background: "var(--c-sunken)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .05)" }} onMouseLeave={() => setHot(null)}>
             <g aria-hidden="true">
               {view.edges.map((e) => <line key={e.from + ">" + e.to} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} stroke="#12131A" strokeOpacity={lit(e) ? (hot ? 0.55 : 0.16) : 0.05} strokeWidth={hot && lit(e) ? 1.4 : 1} />)}
             </g>
@@ -71,13 +71,13 @@ export default function NoteGraph({ focus = "", title = "" }) {
           </svg>
           {data.truncated ? <p style={MUTED}>{`Hay ${data.total?.nodes ?? "más"} notas: aquí salen las ${view.nodes.length} más enlazadas. Abre una nota y pulsa «Ver en el mapa» para ver sus alrededores.`}</p> : null}
           <details>
-            <summary style={{ fontSize: "var(--t-ui)", color: "#1F4FD1", cursor: "pointer" }}>{"Ver lo mismo como lista"}</summary>
+            <summary style={{ fontSize: "var(--t-ui)", color: "var(--c-accent-ink)", cursor: "pointer" }}>{"Ver lo mismo como lista"}</summary>
             <ul style={{ margin: "10px 0 0", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", fontSize: "var(--t-ui)" }}>
               {view.nodes.map((n) => (
                 <li key={n.id} style={{ display: "flex", flexWrap: "wrap", gap: "2px 8px" }}>
-                  <a href={noteUrl(n.exists ? n.id : n.title)} onClick={n.exists ? undefined : (e) => { e.preventDefault(); open(n); }} style={n.exists ? { color: "#1F4FD1", fontWeight: n.id === focus ? "600" : "400" } : { color: "#5C606C", textDecoration: "underline dashed", textUnderlineOffset: "3px" }}>{n.title}</a>
-                  {!n.exists ? <span style={{ color: "#5C606C" }}>{"(por crear)"}</span> : null}
-                  {near.get(n.id)?.length ? <span style={{ color: "#5C606C" }}>{"enlazada con " + near.get(n.id).map((id) => byId.get(id)?.title || id).slice(0, 6).join(", ") + (near.get(n.id).length > 6 ? "…" : "")}</span> : <span style={{ color: "#5C606C" }}>{"sin enlaces"}</span>}
+                  <a href={noteUrl(n.exists ? n.id : n.title)} onClick={n.exists ? undefined : (e) => { e.preventDefault(); open(n); }} style={n.exists ? { color: "var(--c-accent-ink)", fontWeight: n.id === focus ? "600" : "400" } : { color: "var(--c-text-3)", textDecoration: "underline dashed", textUnderlineOffset: "3px" }}>{n.title}</a>
+                  {!n.exists ? <span style={{ color: "var(--c-text-3)" }}>{"(por crear)"}</span> : null}
+                  {near.get(n.id)?.length ? <span style={{ color: "var(--c-text-3)" }}>{"enlazada con " + near.get(n.id).map((id) => byId.get(id)?.title || id).slice(0, 6).join(", ") + (near.get(n.id).length > 6 ? "…" : "")}</span> : <span style={{ color: "var(--c-text-3)" }}>{"sin enlaces"}</span>}
                 </li>
               ))}
             </ul>

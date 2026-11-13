@@ -66,7 +66,7 @@ function Line({ row, query, active, picked = false, onPick = null }) {
 
 /** One half of a side-by-side row: its number (click to pick) and its text. */
 function Half({ row, side, picked, onPick }) {
-  if (!row) return <span style={{ gridColumn: "span 2", background: "rgba(18,19,26,.025)" }} />;
+  if (!row) return <span style={{ gridColumn: "span 2", background: "rgb(var(--c-ink-rgb) / .025)" }} />;
   const s = STYLE[row.type];
   const num = side === "left" ? row.a : row.b;
   const bg = picked ? "rgba(255,201,60,.28)" : row.type === "ctx" ? "transparent" : s.bg;
@@ -92,7 +92,7 @@ function FileDiff({ file, query, activeKey, pick = null, onPick = null, onCommen
       onEditor={onEditor ? () => onEditor(diffContext(file.path, rows, pick.from, pick.to, "").lines[0] || firstLine) : null} />
   ) : null);
   const tool = { width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: C.muted };
-  const hunk = { padding: "4px 12px 4px 60px", font: `400 var(--t-caption)/1.5 ${MONO}`, color: C.faint, background: "rgba(18,19,26,.03)", whiteSpace: "normal" };
+  const hunk = { padding: "4px 12px 4px 60px", font: `400 var(--t-caption)/1.5 ${MONO}`, color: C.faint, background: "rgb(var(--c-ink-rgb) / .03)", whiteSpace: "normal" };
   return (
     <>
       <div className="code-turn" style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "28px", font: `500 var(--t-meta)/1 ${MONO}` }}>
@@ -108,7 +108,7 @@ function FileDiff({ file, query, activeKey, pick = null, onPick = null, onCommen
         ) : null}
         <span style={{ whiteSpace: "nowrap" }}>{file.add ? <span style={{ color: C.greenText }}>+{file.add}</span> : null}{file.add && file.del ? " " : ""}{file.del ? <span style={{ color: C.red }}>−{file.del}</span> : null}</span>
       </div>
-      <div style={{ borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflowX: "auto", font: `400 var(--t-meta)/1.75 ${MONO}` }}>
+      <div style={{ borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgb(var(--c-ink-rgb) / .08)", overflowX: "auto", font: `400 var(--t-meta)/1.75 ${MONO}` }}>
         {file.binary ? <p style={{ margin: 0, padding: "12px 16px", fontFamily: "'Geist', sans-serif", fontSize: "var(--t-meta)", color: C.faint }}>Archivo binario: no se puede mostrar el cambio línea a línea.</p> : null}
         {split ? pairs.map((p) => p.type === "hunk"
           ? <div key={"h" + p.k} style={hunk}>línea {p.start}{p.text ? " · " + p.text : ""}</div>
@@ -178,7 +178,7 @@ export default function Changes({ task, turn, onTurn, onCount = null }) {
   const shown = files.find((f) => f.path === file) || files[0] || null;
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", animation: "fade .25s ease-out" }}>
-      <div style={{ flex: "0 1 220px", minWidth: "160px", display: "flex", flexDirection: "column", gap: "2px", padding: "14px 10px", borderRight: "1px solid rgba(18,19,26,.06)", overflowY: "auto" }}>
+      <div style={{ flex: "0 1 220px", minWidth: "160px", display: "flex", flexDirection: "column", gap: "2px", padding: "14px 10px", borderRight: "1px solid rgb(var(--c-ink-rgb) / .06)", overflowY: "auto" }}>
         {turns > 1 || turn ? (
           <div style={{ display: "flex", marginBottom: "8px" }}>
             <Seg small label="Qué cambios" value={effective} onChange={(v) => { setScope(v); if (v === "turn" && onTurn) onTurn(null); }} options={[["task", "Toda la tarea"], ["turn", n && n !== turns ? "Punto " + n : "Último turno"]]} />
@@ -195,7 +195,7 @@ export default function Changes({ task, turn, onTurn, onCount = null }) {
       <div data-codediff="" style={{ flex: "999 1 380px", minWidth: 0, display: "flex", flexDirection: "column", gap: "10px", padding: "14px 18px", overflowY: "auto" }}>
         {files.length ? (
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <label style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.045)", color: C.muted }}>
+            <label style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .045)", color: C.muted }}>
               <Search size={13} strokeWidth={2.2} aria-hidden="true" />
               <span style={SR}>Buscar en los cambios</span>
               <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && hits.length) { e.preventDefault(); setHit((h) => (h + (e.shiftKey ? hits.length - 1 : 1)) % hits.length); } }} placeholder="Buscar en los cambios" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />

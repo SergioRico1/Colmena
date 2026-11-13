@@ -17,17 +17,17 @@ test("a room-level decision has one action: the banner, not the header too", () 
 test("a colleague's request to your bot: the card only, no honey line above it", () => {
   const room = src("src/screens/Room.jsx");
   assert.ok(!room.includes('" · decidir"'), "no «Vera espera tu OK · decidir» line");
-  assert.ok(!/renderForeign[\s\S]{0,1600}#FFC93C/.test(room), "nothing honey among the people's messages");
+  assert.ok(!/renderForeign[\s\S]{0,1600}(?:#FFC93C|--c-honey\))/.test(room), "nothing honey among the people's messages");
 });
 
 test("Revisar explains in neutral; the skills to review and the room's unread are not honey", () => {
   const revisar = src("src/screens/Revisar.jsx");
   const why = revisar.slice(revisar.indexOf('{"Por qué te pregunta"}') - 120, revisar.indexOf('{"Por qué te pregunta"}'));
-  assert.ok(!/FFF6DC|FFC93C|FFF1C7/.test(why), "«Por qué te pregunta» is explanation");
-  assert.match(revisar, /background: "#FFC93C", [^>]*>\{"Te necesita"\}/, "honey stays on the «Te necesita» chip");
+  assert.ok(!/FFF6DC|FFC93C|FFF1C7|--c-honey\)|--c-honey-soft/.test(why), "«Por qué te pregunta» is explanation");
+  assert.match(revisar, /background: "(?:#FFC93C|var\(--c-honey\))", [^>]*>\{"Te necesita"\}/, "honey stays on the «Te necesita» chip");
   const library = src("src/screens/ArchivoV2.jsx");
-  assert.ok(!/por revisar`\} style=\{\{[^}]*#FFC93C/.test(library), "«Habilidades 1» is a neutral count");
-  assert.ok(!src("src/components/v3/library/Skills.jsx").includes("#FFC93C"));
+  assert.ok(!/por revisar`\} style=\{\{[^}]*(?:#FFC93C|--c-honey\))/.test(library), "«Habilidades 1» is a neutral count");
+  assert.ok(!/#FFC93C|--c-honey\)/.test(src("src/components/v3/library/Skills.jsx")));
   const sidebar = src("src/components/v3/Sidebar.jsx");
   assert.match(sidebar, /\{r\.unread \? <Count n=\{r\.unread\} \/> : null\}/, "a room's unread count is dark on light");
 });

@@ -39,14 +39,14 @@ export function VoicePicker({ bot, onSaved }) {
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
           <label style={{ flex: "1 1 220px", display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{`Voz de ${bot.name}`}</span>
-            <Select label={`Voz de ${bot.name}`} value={current?.voiceURI || ""} disabled={busy} onChange={(e) => choose(e.target.value)} style={{ flex: "1", minWidth: 0, height: "40px", padding: "0 10px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", cursor: "pointer" }} options={options.map((v) => [v.voiceURI, `${v.name.replace(/^Microsoft\s+/i, "").replace(/\s+-\s+.*$/, "")} · ${v.lang}`])} />
+            <Select label={`Voz de ${bot.name}`} value={current?.voiceURI || ""} disabled={busy} onChange={(e) => choose(e.target.value)} style={{ flex: "1", minWidth: 0, height: "40px", padding: "0 10px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", cursor: "pointer" }} options={options.map((v) => [v.voiceURI, `${v.name.replace(/^Microsoft\s+/i, "").replace(/\s+-\s+.*$/, "")} · ${v.lang}`])} />
           </label>
           <button type="button" onClick={tryIt} aria-pressed={trying ? "true" : "false"} style={{ height: "40px", padding: "0 12px", background: "transparent", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)" }}>{trying ? "Parar" : "Probar"}</button>
         </div>
       ) : (
-        <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#6B6F7A" }}>Este ordenador no tiene voces en español. Añádelas en Configuración de Windows › Hora e idioma › Voz para poder escuchar las respuestas.</span>
+        <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)" }}>Este ordenador no tiene voces en español. Añádelas en Configuración de Windows › Hora e idioma › Voz para poder escuchar las respuestas.</span>
       )}
-      <span style={{ fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{`Con «Escuchar» lee en voz alta sus respuestas y entregables.`}</span>
+      <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`Con «Escuchar» lee en voz alta sus respuestas y entregables.`}</span>
       {error ? <Notice>{error}</Notice> : null}
     </div>
   );

@@ -50,40 +50,40 @@ export function ForgetDialog({ missionId, title, onClose, onDone }) {
     }
   };
   const row = (item, text, sub) => (
-    <label key={item.id} style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: "10px", alignItems: "start", padding: "10px 12px", background: picked[item.id] ? "#FFFFFF" : "#F6F6F3", border: picked[item.id] ? "1.5px solid #12131A" : "1px solid rgba(18,19,26,.06)", borderRadius: "var(--r-md)", cursor: "pointer" }}>
-      <input type="checkbox" checked={!!picked[item.id]} onChange={() => setPicked((p) => ({ ...p, [item.id]: !p[item.id] }))} style={{ width: "18px", height: "18px", marginTop: "2px", accentColor: "#12131A" }} />
+    <label key={item.id} style={{ display: "grid", gridTemplateColumns: "22px 1fr", gap: "10px", alignItems: "start", padding: "10px 12px", background: picked[item.id] ? "var(--c-card)" : "var(--c-hover)", border: picked[item.id] ? "1.5px solid var(--c-text)" : "1px solid rgb(var(--c-ink-rgb) / .06)", borderRadius: "var(--r-md)", cursor: "pointer" }}>
+      <input type="checkbox" checked={!!picked[item.id]} onChange={() => setPicked((p) => ({ ...p, [item.id]: !p[item.id] }))} style={{ width: "18px", height: "18px", marginTop: "2px", accentColor: "var(--c-text)" }} />
       <span style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: "0" }}>
         <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", overflowWrap: "anywhere" }}>{text}</span>
-        {sub ? <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{sub}</span> : null}
+        {sub ? <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{sub}</span> : null}
       </span>
     </label>
   );
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 32px" }}>
-      <div ref={box} tabIndex={-1} data-autofocus="" role="dialog" aria-modal="true" aria-labelledby="olvidar-t" style={{ width: "min(560px, 100%)", maxHeight: "calc(100vh - 128px)", background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", overflow: "hidden", display: "flex", flexDirection: "column", color: "#12131A" }}>
-        <div style={{ padding: "20px 22px 14px", borderBottom: "1px solid rgba(18,19,26,.06)", display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{title ? `«${title}»` : "Esta misión"}</span>
+      <div ref={box} tabIndex={-1} data-autofocus="" role="dialog" aria-modal="true" aria-labelledby="olvidar-t" style={{ width: "min(560px, 100%)", maxHeight: "calc(100vh - 128px)", background: "var(--c-card)", border: "0", borderRadius: "var(--r-xl)", overflow: "hidden", display: "flex", flexDirection: "column", color: "var(--c-text)" }}>
+        <div style={{ padding: "20px 22px 14px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)", display: "flex", flexDirection: "column", gap: "6px" }}>
+          <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>{title ? `«${title}»` : "Esta misión"}</span>
           <h2 id="olvidar-t" style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Olvidar lo aprendido aquí"}</h2>
-          <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{"Los bots dejarán de usar lo que marques y no lo volverán a sacar de esta misión. Lo que tú les dijiste a mano no se toca."}</p>
+          <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{"Los bots dejarán de usar lo que marques y no lo volverán a sacar de esta misión. Lo que tú les dijiste a mano no se toca."}</p>
         </div>
         <div style={{ flex: "1 1 auto", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", padding: "16px 22px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          {!data && !error ? <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "#6B6F7A" }}>{"Buscando lo que se aprendió aquí…"}</p> : null}
+          {!data && !error ? <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{"Buscando lo que se aprendió aquí…"}</p> : null}
           {done ? (
-            <p role="status" style={{ margin: "0", padding: "12px 14px", background: "#E1F4EC", border: "1px solid #A8DCC5", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#0B5E41" }}>
+            <p role="status" style={{ margin: "0", padding: "12px 14px", background: "var(--c-ok-soft)", border: "1px solid #A8DCC5", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "var(--c-ok-ink)" }}>
               {`Hecho: ${done.memories === 1 ? "1 recuerdo" : `${done.memories} recuerdos`} y ${done.skills === 1 ? "1 habilidad" : `${done.skills} habilidades`} olvidados. No se volverán a aprender de aquí.`}
             </p>
           ) : null}
-          {data && !done && !memories.length && !skills.length ? <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{data.forgotten ? "Ya olvidaste lo aprendido aquí. Esta misión no se volverá a revisar." : "De esta misión no salió ningún recuerdo ni habilidad. No hay nada que olvidar."}</p> : null}
+          {data && !done && !memories.length && !skills.length ? <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{data.forgotten ? "Ya olvidaste lo aprendido aquí. Esta misión no se volverá a revisar." : "De esta misión no salió ningún recuerdo ni habilidad. No hay nada que olvidar."}</p> : null}
           {!done && memories.length ? <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", paddingTop: "2px" }}>{`Recuerdos (${memories.length})`}</span> : null}
           {!done ? memories.map((m) => row(m, m.text, m.sourceLabel)) : null}
           {!done && skills.length ? <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", paddingTop: "8px" }}>{`Habilidades (${skills.length})`}</span> : null}
           {!done ? skills.map((s) => row(s, s.name, s.description)) : null}
-          {error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: "600" }}>{error}</p> : null}
+          {error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}>{error}</p> : null}
         </div>
-        <div style={{ padding: "14px 22px 18px", borderTop: "1px solid rgba(18,19,26,.06)", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "8px" }}>
+        <div style={{ padding: "14px 22px 18px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "8px" }}>
           <button type="button" onClick={onClose} style={{ height: "44px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)" }}>{done ? "Cerrar" : "Cancelar"}</button>
           {!done && (memories.length || skills.length) ? (
-            <button type="button" onClick={confirm} disabled={busy || !total} aria-busy={busy ? "true" : undefined} style={{ height: "44px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: busy ? "progress" : "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: total ? 1 : 0.55 }}>
+            <button type="button" onClick={confirm} disabled={busy || !total} aria-busy={busy ? "true" : undefined} style={{ height: "44px", padding: "0 16px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: busy ? "progress" : "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: total ? 1 : 0.55 }}>
               {total ? `Olvidar ${total === 1 ? "1 cosa" : `${total} cosas`}` : "Marca qué olvidar"}
             </button>
           ) : null}
@@ -97,10 +97,10 @@ export function ForgetDialog({ missionId, title, onClose, onDone }) {
 export default function ForgetButton({ missionId, title, variant = "header", count = null, onDone }) {
   const [open, setOpen] = useState(false);
   const style = variant === "menu"
-    ? { width: "100%", display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "0 12px", background: "transparent", color: "#12131A", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left" }
+    ? { width: "100%", display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", padding: "0 12px", background: "transparent", color: "var(--c-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left" }
     : variant === "row"
     ? { height: "36px", padding: "0 10px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", whiteSpace: "nowrap" }
-    : { display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 16px", background: "#FFFFFF", color: "#12131A", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" };
+    : { display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 16px", background: "var(--c-card)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" };
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" style={style} title="Ver y quitar los recuerdos y habilidades que salieron de aquí">

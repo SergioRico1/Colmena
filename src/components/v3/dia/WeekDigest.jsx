@@ -30,7 +30,7 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
   );
   const pill = { display: "inline-flex", alignItems: "center", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: "600" };
   return (
-    <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "24px 28px", borderRadius: "var(--r-2xl)", background: "#12131A", color: "#FFFFFF", animation: "rise .5s ease-out" }}>
+    <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "24px 28px", borderRadius: "var(--r-2xl)", background: "var(--c-btn)", color: "var(--c-btn-text)", animation: "rise .5s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <BotPresence bot={atlas} size={26} state="rest" />
@@ -54,7 +54,7 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
         </div>
       ) : null}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        {week.skills ? <a href="/biblioteca/habilidades" style={{ ...pill, background: "#FFFFFF", color: "#12131A" }}>{"Revisar las habilidades"}</a> : null}
+        {week.skills ? <a href="/biblioteca/habilidades" style={{ ...pill, background: "var(--c-card)", color: "var(--c-text)" }}>{"Revisar las habilidades"}</a> : null}
         <a href="/trabajo/objetivos" style={{ ...pill, background: "rgba(255,255,255,.1)", color: "#FFFFFF" }}>{"Ver objetivos"}</a>
       </div>
     </section>

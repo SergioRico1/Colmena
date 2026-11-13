@@ -21,11 +21,11 @@ export const BotNames = createContext(null);
 export const useBotNames = () => useContext(BotNames);
 
 /** A person's round avatar. `presence`: "online" | "offline" draws the dot (filled: here; ring: not). */
-export function PersonAvatar({ person, size = 40, ring = "#F5F5F2", presence = null }) {
+export function PersonAvatar({ person, size = 40, ring = "var(--c-page)", presence = null }) {
   const you = !!(person?.you || person?.me);
   const dot = Math.max(8, Math.round(size / 3.6));
   return (
-    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: you ? person?.color || "#12131A" : person?.color || tintOf(person?.name), color: you && !person?.color ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em" }}>
+    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: you ? person?.color || "var(--c-btn)" : person?.color || tintOf(person?.name), color: you && !person?.color ? "var(--c-btn-text)" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em" }}>
       {fitInitials(you ? "TÚ" : person?.initials || initialsOf(person?.name), size)}
       {presence ? <span style={{ position: "absolute", right: "-1px", bottom: "-1px", width: dot + "px", height: dot + "px", boxSizing: "border-box", borderRadius: "var(--r-circle)", background: presence === "online" ? "#1E9E6A" : ring, border: presence === "online" ? "0" : "2px solid #8A8D96", boxShadow: `0 0 0 2px ${ring}` }} /> : null}
     </span>
@@ -35,7 +35,7 @@ export function PersonAvatar({ person, size = 40, ring = "#F5F5F2", presence = n
 /** The avatar of a row's author: round for a person, the bot's shape for a bot. */
 export function AuthorAvatar({ author, size = 40, state = "rest" }) {
   // Someone else's bot carries its owner's initials in a round chip in the corner.
-  if (author?.kind === "bot") return <span aria-hidden="true" style={{ position: badgeSize(author.owner, size) ? "relative" : undefined, width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center" }}><BotPresence bot={author} size={size} state={state} /><OwnerBadge owner={author.owner} size={size} ring="#F5F5F2" /></span>;
+  if (author?.kind === "bot") return <span aria-hidden="true" style={{ position: badgeSize(author.owner, size) ? "relative" : undefined, width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center" }}><BotPresence bot={author} size={size} state={state} /><OwnerBadge owner={author.owner} size={size} ring="var(--c-page)" /></span>;
   return <PersonAvatar person={author} size={size} />;
 }
 
@@ -49,14 +49,14 @@ export function AuthorHead({ author, at = null, to = null, note = null, children
       <strong style={{ fontWeight: "600" }}>{v.name}</strong>
       {/* A bot of yours shows its role only: «bot» is said to a screen reader (someone else's says «bot de …»). */}
       {v.kind === "bot" && v.mine ? <span style={srOnly}>{", bot"}</span> : null}
-      {v.kind === "bot" && v.sub ? <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{" · " + v.sub}</span> : null}
-      {tail.length ? <span style={{ color: "#5C606C" }}>{" " + tail.map((x) => "· " + x).join(" ")}</span> : null}
+      {v.kind === "bot" && v.sub ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{" · " + v.sub}</span> : null}
+      {tail.length ? <span style={{ color: "var(--c-text-3)" }}>{" " + tail.map((x) => "· " + x).join(" ")}</span> : null}
       {children}
     </span>
   );
 }
 
-const quiet = { margin: 0, padding: "5px 0 5px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C" };
+const quiet = { margin: 0, padding: "5px 0 5px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)" };
 
 /** One quiet line about another owner's bot («Vera espera el OK de Sergio»). Never honey. */
 export function StatusLine({ item }) {
@@ -77,7 +77,7 @@ export function HandoffLine({ item }) {
   if (!line) return null;
   return (
     <p data-message-id={item.id || undefined} role="img" aria-label={line.label} style={quiet}>
-      <span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "#3D404A", fontWeight: 500 }}>
+      <span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "var(--c-text-2)", fontWeight: 500 }}>
         <BotMark bot={line.fromBot} size={12} />{line.from}
         <ArrowLeftRight size={14} strokeWidth={2.2} color="#5C606C" />
         <BotMark bot={line.toBot} size={12} />{line.to}

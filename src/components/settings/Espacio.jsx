@@ -34,31 +34,31 @@ function CheckinCard() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
         <span style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
           <strong style={{ fontSize: "var(--t-body)" }}>{state.enabled ? `Atlas revisa cada ${state.everyHours === 1 ? "hora" : state.everyHours + " horas"}, de ${state.from ?? 9} a ${state.to ?? 20} h${state.weekends ? "" : ", entre semana"}` : "Revisión desactivada"}</strong>
-          <span style={{ color: "#5C606C" }}>Mira lo que espera tu respuesta, las salas paradas, los hitos que vencen y las automatizaciones que fallan, y solo te escribe si merece la pena. Usa el modelo más barato y no gasta nada si no ha cambiado nada.</span>
+          <span style={{ color: "var(--c-text-3)" }}>Mira lo que espera tu respuesta, las salas paradas, los hitos que vencen y las automatizaciones que fallan, y solo te escribe si merece la pena. Usa el modelo más barato y no gasta nada si no ha cambiado nada.</span>
         </span>
         <Toggle large on={state.enabled} disabled={busy} label="Revisión de Atlas" onChange={(v) => save({ enabled: v })} />
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-ui)" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px", paddingTop: "12px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-ui)" }}>
         <span role="group" aria-label="Cada cuánto" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ color: "#5C606C", marginRight: "4px" }}>Cada</span>
+          <span style={{ color: "var(--c-text-3)", marginRight: "4px" }}>Cada</span>
           {EVERY.map((h) => {
             const on = state.everyHours === h;
-            return <button key={h} type="button" aria-pressed={on ? "true" : "false"} disabled={busy || !state.enabled} onClick={() => save({ everyHours: h })} style={{ height: "34px", padding: "0 12px", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", ...(on ? { background: "#12131A", color: "#FFFFFF", border: "0", fontWeight: "600" } : { background: "rgba(18,19,26,.06)", border: "0" }) }}>{h === 1 ? "1 h" : h + " h"}</button>;
+            return <button key={h} type="button" aria-pressed={on ? "true" : "false"} disabled={busy || !state.enabled} onClick={() => save({ everyHours: h })} style={{ height: "34px", padding: "0 12px", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", ...(on ? { background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", fontWeight: "600" } : { background: "rgb(var(--c-ink-rgb) / .06)", border: "0" }) }}>{h === 1 ? "1 h" : h + " h"}</button>;
           })}
         </span>
         <span role="group" aria-label="En qué horario" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-          <span style={{ color: "#5C606C" }}>de</span>
-          <Select aria-label="Desde" disabled={busy || !state.enabled} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-meta)" }} options={Array.from({ length: 24 }, (_, h) => [h, String(h).padStart(2, "0") + ":00"])} />
-          <span style={{ color: "#5C606C" }}>a</span>
-          <Select aria-label="Hasta" disabled={busy || !state.enabled} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-meta)" }} options={Array.from({ length: 24 }, (_, h) => [h + 1, String(h + 1).padStart(2, "0") + ":00"])} />
-          <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "6px", color: "#5C606C" }}>
+          <span style={{ color: "var(--c-text-3)" }}>de</span>
+          <Select aria-label="Desde" disabled={busy || !state.enabled} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-meta)" }} options={Array.from({ length: 24 }, (_, h) => [h, String(h).padStart(2, "0") + ":00"])} />
+          <span style={{ color: "var(--c-text-3)" }}>a</span>
+          <Select aria-label="Hasta" disabled={busy || !state.enabled} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-meta)" }} options={Array.from({ length: 24 }, (_, h) => [h + 1, String(h + 1).padStart(2, "0") + ":00"])} />
+          <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "6px", color: "var(--c-text-3)" }}>
             <input type="checkbox" disabled={busy || !state.enabled} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} />
             {"también fines de semana"}
           </label>
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{when ? `Última: ${when}${state.lastResult ? " · " + (RESULT[state.lastResult] || state.lastResult) : ""}` : "Aún no ha revisado."}</span>
-          <button type="button" onClick={runNow} disabled={busy} style={{ ...btn.quiet, color: "#12131A" }}>{busy ? "Revisando…" : "Revisar ahora"}</button>
+          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{when ? `Última: ${when}${state.lastResult ? " · " + (RESULT[state.lastResult] || state.lastResult) : ""}` : "Aún no ha revisado."}</span>
+          <button type="button" onClick={runNow} disabled={busy} style={{ ...btn.quiet, color: "var(--c-text)" }}>{busy ? "Revisando…" : "Revisar ahora"}</button>
         </span>
       </div>
       {note ? <Notice tone="ok">{note}</Notice> : null}
@@ -90,7 +90,7 @@ export default function Espacio() {
       <PageHeader title="Espacio">El equipo o departamento que trabaja aquí: su nombre, quién eres tú y cómo aprenden los bots.</PageHeader>
       <Notice>{error}</Notice>
 
-      <form onSubmit={save} aria-labelledby="nombres" style={{ background: "#FFFFFF", border: "0", borderRadius: "var(--r-2xl)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      <form onSubmit={save} aria-labelledby="nombres" style={{ background: "var(--c-card)", border: "0", borderRadius: "var(--r-2xl)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
         <h2 id="nombres" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Nombre y cuenta</h2>
         <label style={field.label}>
           Nombre del espacio
@@ -107,10 +107,10 @@ export default function Espacio() {
             <datalist id="roles-espacio"><option value="Administrador" /><option value="Responsable" /><option value="Colaborador" /></datalist>
           </label>
         </div>
-        <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>Tu nombre firma lo que apruebas en el registro y aparece abajo en la barra lateral.</span>
+        <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Tu nombre firma lo que apruebas en el registro y aparece abajo en la barra lateral.</span>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
           <button type="submit" disabled={busy || !dirty} style={{ ...btn.dark, height: "44px", borderRadius: "var(--r-pill)", opacity: dirty ? 1 : 0.55 }}>Guardar cambios</button>
-          {saved && !dirty ? <span role="status" style={{ fontSize: "var(--t-meta)", color: "#0B6B4A", fontWeight: "600" }}>Guardado</span> : null}
+          {saved && !dirty ? <span role="status" style={{ fontSize: "var(--t-meta)", color: "var(--c-ok-ink)", fontWeight: "600" }}>Guardado</span> : null}
         </div>
       </form>
 
@@ -118,13 +118,13 @@ export default function Espacio() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
             <strong style={{ fontSize: "var(--t-body)" }}>{settings.learning !== false ? "Los bots aprenden de su trabajo" : "Aprendizaje desactivado"}</strong>
-            <span style={{ color: "#5C606C" }}>Los bots crean y mejoran habilidades al repetir tareas, y las usan desde ese momento. En la sala verás «Aprendido: …» con Deshacer, y puedes revisar sus pasos en el perfil de cada bot.</span>
+            <span style={{ color: "var(--c-text-3)" }}>Los bots crean y mejoran habilidades al repetir tareas, y las usan desde ese momento. En la sala verás «Aprendido: …» con Deshacer, y puedes revisar sus pasos en el perfil de cada bot.</span>
           </span>
           <Toggle large on={settings.learning !== false} disabled={busy} label="Aprendizaje automático" onChange={(v) => act(() => patch("/settings", { learning: v }))} />
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-ui)" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px", paddingTop: "12px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-ui)" }}>
           <span>{pending ? `${pending} ${pending === 1 ? "habilidad espera" : "habilidades esperan"} tu revisión.` : "Ninguna habilidad espera revisión."}</span>
-          <a href="/biblioteca?tab=habilidades" style={{ ...btn.quiet, color: "#12131A", textDecoration: "none" }}>Ver habilidades</a>
+          <a href="/biblioteca?tab=habilidades" style={{ ...btn.quiet, color: "var(--c-text)", textDecoration: "none" }}>Ver habilidades</a>
         </div>
       </Card>
 
@@ -132,7 +132,7 @@ export default function Espacio() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
             <strong style={{ fontSize: "var(--t-body)" }}>{settings.suggestions !== false ? "Te sugiere qué responder" : "Sin sugerencias"}</strong>
-            <span style={{ color: "#5C606C" }}>Cuando un bot contesta, el modelo más barato propone hasta tres respuestas. Solo rellenan la caja al pulsarlas (o con Tab); nunca se envían solas.</span>
+            <span style={{ color: "var(--c-text-3)" }}>Cuando un bot contesta, el modelo más barato propone hasta tres respuestas. Solo rellenan la caja al pulsarlas (o con Tab); nunca se envían solas.</span>
           </span>
           <Toggle large on={settings.suggestions !== false} disabled={busy} label="Respuestas sugeridas" onChange={(v) => act(() => patch("/settings", { suggestions: v }))} />
         </div>
@@ -142,7 +142,7 @@ export default function Espacio() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", lineHeight: "1.5" }}>
             <strong style={{ fontSize: "var(--t-body)" }}>{settings.narration !== false ? "Te cuentan en qué están" : "Solo el estado"}</strong>
-            <span style={{ color: "#5C606C" }}>En los trabajos largos, cada bot te dice en una frase qué está haciendo y qué le falta («Ya tengo dos tarifas; me falta la de Iberdrola»). Lo escribe el modelo más barato, como mucho cada 15 segundos.</span>
+            <span style={{ color: "var(--c-text-3)" }}>En los trabajos largos, cada bot te dice en una frase qué está haciendo y qué le falta («Ya tengo dos tarifas; me falta la de Iberdrola»). Lo escribe el modelo más barato, como mucho cada 15 segundos.</span>
           </span>
           <Toggle large on={settings.narration !== false} disabled={busy} label="Narración del trabajo" onChange={(v) => act(() => patch("/settings", { narration: v }))} />
         </div>
@@ -151,11 +151,11 @@ export default function Espacio() {
       <CheckinCard />
 
       <section aria-labelledby="pausa" style={paused
-        ? { background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", padding: "22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }
-        : { background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", padding: "22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }}>
+        ? { background: "var(--c-card)", border: "0", borderRadius: "var(--r-xl)", padding: "22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }
+        : { background: "var(--c-card)", border: "0", borderRadius: "var(--r-xl)", padding: "22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }}>
         <span style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "6px" }}>
           <h2 id="pausa" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{paused ? "El equipo está en pausa" : "Pausar a todo el equipo"}</h2>
-          <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{paused
+          <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{paused
             ? "Ningún bot trabaja ni ejecuta automatizaciones. El trabajo hecho se conserva y sigue donde lo dejó al reanudar."
             : "Detiene a todos los bots y automatizaciones al momento. El trabajo hecho se conserva."}</span>
         </span>

@@ -24,7 +24,7 @@ function NoteBox({ box, onAdd, onCancel }) {
         style={{ border: 0, resize: "none", background: "transparent", fontSize: "var(--t-meta)", lineHeight: 1.5 }} />
       <span style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
         <button type="button" onClick={onCancel} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.muted }}>Cancelar</button>
-        <button type="submit" disabled={!note.trim()} style={{ height: "30px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: note.trim() ? C.ink : "rgba(18,19,26,.12)", color: C.white, cursor: note.trim() ? "pointer" : "default", fontSize: "var(--t-caption)", fontWeight: 600 }}>Añadir al mensaje</button>
+        <button type="submit" disabled={!note.trim()} style={{ height: "30px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: note.trim() ? C.ink : "rgb(var(--c-ink-rgb) / .12)", color: C.white, cursor: note.trim() ? "pointer" : "default", fontSize: "var(--t-caption)", fontWeight: 600 }}>Añadir al mensaje</button>
       </span>
     </form>
   );
@@ -100,7 +100,7 @@ export default function Preview({ task, onAsk = null }) {
   const passErrors = () => addContext(task.id, { kind: "preview", label: "Vista previa · " + (check.loadError ? "no carga" : check.errors === 1 ? "1 error" : check.errors + " errores"), url: check.url, note: "Esto sale en la consola de la vista previa: arréglalo y vuelve a mirarla.", text: check.loadError || check.first || "" });
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", animation: "fade .25s ease-out" }}>
-      <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: "#F7F7F4", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
+      <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: "var(--c-sunken)", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
         <button type="button" onClick={() => setReload((r) => r + 1)} disabled={!url} aria-label="Recargar" title="Recargar" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: url ? "pointer" : "default", color: C.muted }}><RefreshCw size={14} strokeWidth={2.2} aria-hidden="true" /></button>
         <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-md)", background: C.white, font: `400 var(--t-meta)/1 ${MONO}`, color: url ? C.text : C.quiet, overflow: "hidden", whiteSpace: "nowrap" }}>
           <span aria-hidden="true" style={{ width: "7px", height: "7px", flex: "none", borderRadius: "var(--r-circle)", background: url ? C.green : "#C9CBD1" }} />{url ? url.replace("http://", "") : "Sin servidor en marcha"}
@@ -118,7 +118,7 @@ export default function Preview({ task, onAsk = null }) {
         <button type="button" onClick={open} disabled={!url} aria-label="Abrir en el navegador" title="Abrir en el navegador" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", color: C.muted, cursor: url ? "pointer" : "default" }}><ExternalLink size={14} strokeWidth={2} aria-hidden="true" /></button>
       </div>
       {current?.source ? (
-        <div role="status" style={{ flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "12px 14px", background: "#FFF4D1", borderBottom: "1px solid rgba(255,201,60,.5)", fontSize: "var(--t-meta)", lineHeight: 1.45, color: "#5C4300" }}>
+        <div role="status" style={{ flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "12px 14px", background: "var(--c-honey-soft)", borderBottom: "1px solid rgba(255,201,60,.5)", fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-honey-text)" }}>
           <span style={{ flex: "1 1 220px" }}>Ves el código porque el servidor de la app envía la página como texto ({current.contentType}), no como web.</span>
           {onAsk ? (
             <button type="button" disabled={asked} onClick={() => { setAsked(true); onAsk(`La vista previa en ${url} enseña el código fuente en vez de la página: el servidor la envía con Content-Type ${current.contentType}. Arréglalo para que envíe el HTML como text/html (y CSS y JS con su tipo) y comprueba que se ve como página.`); }}
@@ -129,7 +129,7 @@ export default function Preview({ task, onAsk = null }) {
         </div>
       ) : null}
       {marking ? <div role="status" style={{ flex: "none", padding: "8px 14px", background: C.ink, color: "#E6E7EC", fontSize: "var(--t-caption)" }}>Arrastra sobre la página para marcar una zona y escribe qué cambiarías. Esc para salir.</div> : null}
-      <div ref={area} style={{ position: "relative", flex: 1, minHeight: 0, background: "#FAFAF8", display: "flex", justifyContent: "center" }}>
+      <div ref={area} style={{ position: "relative", flex: 1, minHeight: 0, background: "var(--c-sunken)", display: "flex", justifyContent: "center" }}>
         {url ? (
           <iframe key={url + reload} src={url} title="Vista previa" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             style={{ width: phone ? "390px" : "100%", maxWidth: "100%", height: "100%", border: 0, background: C.white, boxShadow: phone ? "0 0 0 1px rgba(18,19,26,.08), 0 30px 60px -30px rgba(18,19,26,.4)" : "none", animation: "develop .6s ease-out" }} />
@@ -141,19 +141,19 @@ export default function Preview({ task, onAsk = null }) {
         )}
         {marking && url ? (
           <div onMouseDown={down} onMouseMove={move} onMouseUp={up} onMouseLeave={up} onKeyDown={(e) => { if (e.key === "Escape") { setMarking(false); setBox(null); } }} tabIndex={-1}
-            style={{ position: "absolute", inset: 0, zIndex: 2, cursor: box?.done ? "default" : "crosshair", background: "rgba(18,19,26,.04)" }}>
+            style={{ position: "absolute", inset: 0, zIndex: 2, cursor: box?.done ? "default" : "crosshair", background: "rgb(var(--c-ink-rgb) / .04)" }}>
             {box ? <span aria-hidden="true" style={{ position: "absolute", left: box.x + "px", top: box.y + "px", width: box.w + "px", height: box.h + "px", borderRadius: "var(--r-sm)", boxShadow: "0 0 0 2px #FF7A1A, 0 0 0 6px rgba(255,122,26,.18)", background: "rgba(255,122,26,.06)" }} /> : null}
             {box?.done ? <NoteBox box={box} onAdd={addNote} onCancel={() => setBox(null)} /> : null}
           </div>
         ) : null}
       </div>
       {url ? (
-        <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", padding: "9px 12px 9px 14px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-caption)", color: check && (check.errors || check.loadError) ? C.red : check ? C.greenText : C.faint }}>
+        <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", padding: "9px 12px 9px 14px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-caption)", color: check && (check.errors || check.loadError) ? C.red : check ? C.greenText : C.faint }}>
           {check ? (check.errors || check.loadError ? <CircleAlert size={13} strokeWidth={2.4} aria-hidden="true" /> : <Check size={13} strokeWidth={2.6} aria-hidden="true" />) : null}
           <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={check?.first || ""}>
             {problem || (!check ? "Bruno revisa la página después de cada cambio." : check.loadError ? "No cargó: " + check.loadError : check.errors ? `${check.errors === 1 ? "1 error" : check.errors + " errores"} en la consola: ${check.first || ""}` : "Consola sin errores · Bruno la revisó " + ((t) => (/min$/.test(t) ? "hace " + t : t === "ahora" ? "ahora" : "a las " + t))(timeAgo(check.at)))}
           </span>
-          {check && (check.errors || check.loadError) ? <button type="button" onClick={passErrors} style={{ height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" }}>Pasar a Bruno</button> : null}
+          {check && (check.errors || check.loadError) ? <button type="button" onClick={passErrors} style={{ height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" }}>Pasar a Bruno</button> : null}
           {desktop() ? <button type="button" onClick={look} disabled={checking} style={{ height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", cursor: checking ? "default" : "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.muted, whiteSpace: "nowrap" }}>{checking ? "Mirando…" : "Revisar ahora"}</button> : null}
         </div>
       ) : null}

@@ -18,8 +18,8 @@ export const PLACES = [
 ];
 
 const piece = { position: "relative", width: "72px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px", padding: "8px 0 7px", borderRadius: "var(--r-lg)" };
-const on = { background: "#FFFFFF", color: "#12131A", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)" };
-const off = { background: "transparent", color: "#4A4D57" };
+const on = { background: "var(--c-card)", color: "var(--c-text)", boxShadow: "0 1px 2px rgba(18,19,26,.08), 0 6px 14px -8px rgba(18,19,26,.3)" };
+const off = { background: "transparent", color: "var(--c-text-2)" };
 
 /** Close · minimise · maximise as the three drawn dots; a glyph shows on hover. */
 /** The window buttons (close, minimise, maximise); `dark` on the dark welcome screens. */
@@ -32,7 +32,7 @@ export function WindowDots({ dark = false, inline = false, compact = false }) {
   // 14 px dots inside 20 px buttons: easy to see and to hit, 8 px apart. `compact` (the
   // folded sidebar, 44 px of room): 12 px dots in 14 px buttons.
   const size = compact ? 12 : 14, box = (compact ? 14 : 20) + "px";
-  const dot = { width: size + "px", height: size + "px", borderRadius: "var(--r-circle)", background: dark ? "rgba(255,255,255,.16)" : "rgba(18,19,26,.14)" };
+  const dot = { width: size + "px", height: size + "px", borderRadius: "var(--r-circle)", background: dark ? "rgba(255,255,255,.16)" : "rgb(var(--c-ink-rgb) / .14)" };
   const row = { display: "flex", alignItems: "center", gap: "2px", height: box, margin: compact ? "0 -1px" : "0 -3px", marginBottom: inline ? "0" : "10px" };
   if (!api) {
     return (
@@ -67,7 +67,7 @@ export default function Rail({ active = "hoy" }) {
   const needs = needsCount(store);
   const mentioned = (store.notifications || []).some((n) => !n.read && n.missionId && (n.kind === "mention" || n.kind === "message"));
   return (
-    <nav aria-label="Lugares de Colmena" style={{ position: "relative", zIndex: "40", flex: "none", width: "84px", height: "100%", minHeight: "560px", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "14px 0 16px", background: "#EBEBE6", borderRight: "1px solid rgba(18,19,26,.07)", WebkitAppRegion: "drag" }}>
+    <nav aria-label="Lugares de Colmena" style={{ position: "relative", zIndex: "40", flex: "none", width: "84px", height: "100%", minHeight: "560px", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "14px 0 16px", background: "var(--c-chip)", borderRight: "1px solid rgb(var(--c-ink-rgb) / .07)", WebkitAppRegion: "drag" }}>
       <WindowDots />
       <a href="/" aria-label="Colmena" style={{ width: "48px", height: "48px", marginBottom: "12px", display: "grid", placeItems: "center", WebkitAppRegion: "no-drag" }}>
         <img src="/colmena-icon-128.png" alt="" width="38" height="38" style={{ display: "block", width: "38px", height: "38px", filter: "drop-shadow(0 3px 6px rgba(201,120,0,.35))" }} />
@@ -81,7 +81,7 @@ export default function Rail({ active = "hoy" }) {
               {p.label.map((l, i) => <span key={i}>{i ? <br /> : null}{l}</span>)}
             </span>
             {p.id === "hoy" && needs > 0 ? (
-              <span aria-label={needs === 1 ? "1 cosa te espera" : `${needs} cosas te esperan`} style={{ position: "absolute", top: "2px", right: "8px", minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "var(--r-pill)", background: "#FFC93C", color: "#12131A", font: "600 var(--t-micro)/18px 'Geist', sans-serif", textAlign: "center", boxShadow: "0 0 0 2px #EBEBE6" }}>{needs}</span>
+              <span aria-label={needs === 1 ? "1 cosa te espera" : `${needs} cosas te esperan`} style={{ position: "absolute", top: "2px", right: "8px", minWidth: "18px", height: "18px", padding: "0 5px", borderRadius: "var(--r-pill)", background: "var(--c-honey)", color: "var(--c-honey-ink)", font: "600 var(--t-micro)/18px 'Geist', sans-serif", textAlign: "center", boxShadow: "0 0 0 2px #EBEBE6" }}>{needs}</span>
             ) : null}
             {p.id === "conversaciones" && mentioned && !current ? (
               <span aria-label="Te han escrito" style={{ position: "absolute", top: "6px", right: "16px", width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "#12131A", boxShadow: "0 0 0 2px #EBEBE6" }} />
@@ -90,8 +90,8 @@ export default function Rail({ active = "hoy" }) {
         );
       })}
       <span style={{ flex: "1" }} />
-      <a href="/ajustes" aria-label="Tu cuenta y ajustes" aria-current={active === "ajustes" ? "page" : undefined} style={{ width: "72px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px", padding: "8px 0 2px", borderRadius: "var(--r-lg)", color: "#4A4D57", WebkitAppRegion: "no-drag", ...(active === "ajustes" ? on : {}) }}>
-        <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#12131A", color: "#FFFFFF", font: "600 var(--t-micro)/1 'Geist', sans-serif" }}>{"TÚ"}</span>
+      <a href="/ajustes" aria-label="Tu cuenta y ajustes" aria-current={active === "ajustes" ? "page" : undefined} style={{ width: "72px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px", padding: "8px 0 2px", borderRadius: "var(--r-lg)", color: "var(--c-text-2)", WebkitAppRegion: "no-drag", ...(active === "ajustes" ? on : {}) }}>
+        <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-btn)", color: "var(--c-btn-text)", font: "600 var(--t-micro)/1 'Geist', sans-serif" }}>{"TÚ"}</span>
         <span style={{ fontSize: "var(--t-micro)", fontWeight: "500" }}>{"Ajustes"}</span>
       </a>
     </nav>

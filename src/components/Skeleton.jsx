@@ -15,7 +15,7 @@ export function SkeletonLines({ lines = 3, label = "Cargando", style }) {
 /** A card-shaped placeholder (lists of cards: missions, goals…). */
 export function SkeletonCard({ style }) {
   return (
-    <div role="status" aria-label="Cargando" style={{ background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-lg)", padding: "16px", display: "flex", flexDirection: "column", gap: "10px", ...style }}>
+    <div role="status" aria-label="Cargando" style={{ background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", padding: "16px", display: "flex", flexDirection: "column", gap: "10px", ...style }}>
       <span aria-hidden="true" className="colmena-skeleton" style={{ display: "block", height: "10px", width: "40%", borderRadius: "var(--r-pill)" }} />
       <span aria-hidden="true" className="colmena-skeleton" style={{ display: "block", height: "16px", width: "85%", borderRadius: "var(--r-sm)" }} />
       <span aria-hidden="true" className="colmena-skeleton" style={{ display: "block", height: "12px", width: "60%", borderRadius: "var(--r-pill)" }} />

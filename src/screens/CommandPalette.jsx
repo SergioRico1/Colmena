@@ -29,7 +29,7 @@ import { useDialogFocus } from "../lib/useDialogFocus.js";
 // list; ⌫ on an empty box goes back); «@» picks a bot or a person. ↑↓ move, Intro opens, Esc closes.
 
 const KIND_WORD = { document: "documento", table: "tabla", slides: "presentación", design: "diseño", code: "código", sheet: "hoja de cálculo" };
-const KBD = { font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#5C606C", whiteSpace: "nowrap" };
+const KBD = { font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-3)", whiteSpace: "nowrap" };
 const SCOPES = [["todo", "Todo"], ["chats", "Chats"], ["tareas", "Tareas"], ["archivos", "Archivos"], ["bots", "Bots"], ["ajustes", "Ajustes"], ["comandos", "Comandos"]];
 const short = (s, n = 48) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
 const capital = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -38,11 +38,11 @@ const ext = (name) => (String(name || "").split(".").pop() || "").slice(0, 3).to
 
 /** The square at the start of each row: a glyph, an icon or a bot's shape. */
 function Tile({ children, dark = false, small = false }) {
-  return <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: dark ? "#12131A" : "#F1F1EC", font: `600 ${small ? "var(--t-micro)" : "var(--t-caption)"}/1 'Geist', sans-serif`, color: "#3D404A" }}>{children}</span>;
+  return <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: dark ? "#12131A" : "var(--c-chip)", font: `600 ${small ? "var(--t-micro)" : "var(--t-caption)"}/1 'Geist', sans-serif`, color: "#3D404A" }}>{children}</span>;
 }
 const glyph = (g, small) => <Tile small={small}>{g}</Tile>;
 // A person is a circle with initials (circles are people; bots keep their shapes).
-const personTile = (initials) => <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#E6E7EC", font: "600 var(--t-micro)/1 'Geist', sans-serif", color: "#12131A" }}>{initials}</span>;
+const personTile = (initials) => <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-chip)", font: "600 var(--t-micro)/1 'Geist', sans-serif", color: "var(--c-text)" }}>{initials}</span>;
 const iconTile = (Icon) => <Tile><Icon size={16} strokeWidth={2} /></Tile>;
 const botTile = (bot) => <Tile><Shape bot={bot} size={16} /></Tile>;
 const pathTile = (d) => <Tile><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg></Tile>;
@@ -587,17 +587,17 @@ export default function CommandPalette() {
   const placeholder = menu ? (menu.id === "model" ? "Elige con qué piensan…" : "¿Adónde quieres ir?") : "Busca chats, tareas, archivos, bots, ajustes… o pide algo";
   const cur = options[current] || null;
   const preview = cur?.preview || null;
-  const hint = { ...KBD, color: "#12131A" };
+  const hint = { ...KBD, color: "var(--c-text)" };
   let index = -1;
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }} style={{ position: "fixed", inset: "0", zIndex: 1000, background: "rgba(18,19,26,.38)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "72px 24px 24px", overflowY: "auto", animation: "fade .2s ease-out" }}>
-      <div ref={sheet} role="dialog" aria-modal="true" aria-label="Buscar o pedir" style={{ width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.6)", overflow: "hidden", animation: "sheet .25s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "#12131A" }}>
-        <div className="c-ring-in" style={{ display: "flex", alignItems: "center", gap: "14px", padding: "0 22px", height: "70px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
+      <div ref={sheet} role="dialog" aria-modal="true" aria-label="Buscar o pedir" style={{ width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.6)", overflow: "hidden", animation: "sheet .25s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "var(--c-text)" }}>
+        <div className="c-ring-in" style={{ display: "flex", alignItems: "center", gap: "14px", padding: "0 22px", height: "70px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
           {menu ? (
-            <button type="button" onClick={back} aria-label="Volver" style={{ display: "flex", alignItems: "center", gap: "6px", flex: "none", height: "32px", padding: "0 12px 0 8px", border: 0, borderRadius: "var(--r-pill)", background: "#F1F1EC", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A" }}>
+            <button type="button" onClick={back} aria-label="Volver" style={{ display: "flex", alignItems: "center", gap: "6px", flex: "none", height: "32px", padding: "0 12px 0 8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-chip)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)" }}>
               <ArrowLeft size={14} strokeWidth={2.4} aria-hidden="true" />{menu.title}
             </button>
-          ) : parsed.actionsOnly ? <span style={{ flex: "none", display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Comandos"}</span>
+          ) : parsed.actionsOnly ? <span style={{ flex: "none", display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Comandos"}</span>
             : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>}
           <input className="c-bare"
             ref={input}
@@ -614,18 +614,18 @@ export default function CommandPalette() {
             onChange={(e) => { setText(e.target.value); setCaret(e.target.selectionStart); setActive(null); setError(null); }}
             onSelect={(e) => setCaret(e.target.selectionStart)}
             onKeyDown={onKeyDown}
-            style={{ flex: "1", minWidth: "0", height: "48px", border: "0", background: "transparent", fontSize: "var(--t-title)", color: "#12131A" }}
+            style={{ flex: "1", minWidth: "0", height: "48px", border: "0", background: "transparent", fontSize: "var(--t-title)", color: "var(--c-text)" }}
           />
-          <button type="button" onClick={close} aria-label="Cerrar" style={{ padding: "5px 8px", border: "0", borderRadius: "var(--r-sm)", background: "#F1F1EC", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#4A4D57", cursor: "pointer" }}>{"Esc"}</button>
+          <button type="button" onClick={close} aria-label="Cerrar" style={{ padding: "5px 8px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-chip)", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-2)", cursor: "pointer" }}>{"Esc"}</button>
         </div>
 
         {menu || mention || parsed.actionsOnly ? null : (
-          <div role="tablist" aria-label="Qué buscar" style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "12px 22px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
+          <div role="tablist" aria-label="Qué buscar" style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "12px 22px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
             {SCOPES.map(([id, label]) => {
               const on = scope === id;
               return (
                 <button key={id} type="button" role="tab" aria-selected={on ? "true" : "false"} onMouseDown={(e) => e.preventDefault()} onClick={() => { setScope(id); setActive(null); input.current?.focus(); }}
-                  style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "var(--r-pill)", background: on ? "#12131A" : "#F1F1EC", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>
+                  style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "var(--c-chip)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>
                   {label}{counts ? <span style={{ fontSize: "var(--t-caption)", opacity: ".75" }}>{counts[id]}</span> : null}
                 </button>
               );
@@ -637,8 +637,8 @@ export default function CommandPalette() {
           <div ref={list} id="paleta-resultados" role="listbox" aria-label="Resultados" style={{ flex: "1 1 420px", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", padding: "10px", maxHeight: "520px", overflow: "auto" }}>
             {groups.map((g, gi) => (
               <div key={(g.title || "pedir") + gi} role="group" aria-label={g.title || "Pedir"} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                {g.title ? <span style={{ padding: "12px 12px 4px", fontSize: "var(--t-caption)", fontWeight: "600", color: "#5C606C" }}>{g.title}</span> : null}
-                {g.items.length === 0 && g.empty ? <span style={{ padding: "8px 12px 10px", fontSize: "var(--t-ui)", color: "#5C606C" }}>{g.empty}</span> : null}
+                {g.title ? <span style={{ padding: "12px 12px 4px", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>{g.title}</span> : null}
+                {g.items.length === 0 && g.empty ? <span style={{ padding: "8px 12px 10px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{g.empty}</span> : null}
                 {g.items.map((it) => {
                   index += 1;
                   const i = index;
@@ -652,12 +652,12 @@ export default function CommandPalette() {
                       onMouseMove={() => { if (!on) setActive(i); }}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => it.run()}
-                      style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: it.ask ? "52px" : "48px", padding: it.ask ? "8px 12px" : "6px 12px", borderRadius: "var(--r-md)", cursor: "pointer", background: on ? "#F1F1EC" : "transparent", boxShadow: it.ask ? "inset 0 0 0 1px rgba(18,19,26,.1)" : "none" }}
+                      style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: it.ask ? "52px" : "48px", padding: it.ask ? "8px 12px" : "6px 12px", borderRadius: "var(--r-md)", cursor: "pointer", background: on ? "var(--c-chip)" : "transparent", boxShadow: it.ask ? "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .1)" : "none" }}
                     >
                       {it.icon}
                       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
                         <span style={{ fontSize: "var(--t-body)", fontWeight: it.ask ? "600" : "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</span>
-                        {it.meta ? <span style={{ fontSize: "var(--t-meta)", color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.meta}</span> : null}
+                        {it.meta ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.meta}</span> : null}
                       </span>
                       {it.submenu ? <ChevronRight size={15} strokeWidth={2.2} color="#8A8D96" aria-hidden="true" style={{ flex: "none" }} /> : null}
                       {it.kbd ? <kbd style={KBD}>{it.kbd}</kbd> : null}
@@ -668,27 +668,27 @@ export default function CommandPalette() {
             ))}
           </div>
 
-          <aside aria-label="Vista previa" style={{ flex: "1 1 300px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "22px", background: "#F6F6F3", borderLeft: "1px solid rgba(18,19,26,.06)" }}>
+          <aside aria-label="Vista previa" style={{ flex: "1 1 300px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "22px", background: "var(--c-hover)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
             {preview ? (
               <>
-                <span style={{ fontSize: "var(--t-caption)", fontWeight: "600", color: "#5C606C" }}>{preview.kind}</span>
+                <span style={{ fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>{preview.kind}</span>
                 <h2 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{preview.title}</h2>
-                {preview.desc ? <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57", display: "-webkit-box", WebkitLineClamp: "5", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{preview.desc}</p> : null}
+                {preview.desc ? <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)", display: "-webkit-box", WebkitLineClamp: "5", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{preview.desc}</p> : null}
                 {preview.facts?.filter(Boolean).length ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-ui)" }}>
-                    {preview.facts.filter(Boolean).map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}><span style={{ color: "#5C606C" }}>{k}</span><span style={{ fontWeight: "500", textAlign: "right", minWidth: 0, overflowWrap: "anywhere" }}>{v}</span></div>)}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px", borderRadius: "var(--r-lg)", background: "var(--c-card)", fontSize: "var(--t-ui)" }}>
+                    {preview.facts.filter(Boolean).map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}><span style={{ color: "var(--c-text-3)" }}>{k}</span><span style={{ fontWeight: "500", textAlign: "right", minWidth: 0, overflowWrap: "anywhere" }}>{v}</span></div>)}
                   </div>
                 ) : null}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => cur.run()} disabled={busy} style={{ height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{preview.cta}</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => cur.run()} disabled={busy} style={{ height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{preview.cta}</button>
                 </div>
               </>
-            ) : <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{"Escribe para buscar en todo, o pide algo a tu equipo."}</p>}
+            ) : <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{"Escribe para buscar en todo, o pide algo a tu equipo."}</p>}
           </aside>
         </div>
 
-        {error ? <p role="alert" style={{ margin: "0", padding: "10px 22px", borderTop: "1px solid rgba(18,19,26,.07)", fontSize: "var(--t-meta)", color: "#B4232A", fontWeight: "600" }}>{error}</p> : null}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", padding: "12px 22px", borderTop: "1px solid rgba(18,19,26,.07)", fontSize: "var(--t-meta)", color: "#5C606C" }}>
+        {error ? <p role="alert" style={{ margin: "0", padding: "10px 22px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)", fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}>{error}</p> : null}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", padding: "12px 22px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
           <span><kbd style={hint}>{"↑ ↓"}</kbd>{" moverse"}</span>
           <span><kbd style={hint}>{"Intro"}</kbd>{" abrir"}</span>
           {menu ? <span><kbd style={hint}>{"⌫"}</kbd>{" volver"}</span> : null}

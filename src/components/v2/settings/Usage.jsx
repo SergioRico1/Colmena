@@ -3,7 +3,7 @@ import { useState, useSyncExternalStore } from "react";
 import { useResource, useStore } from "../../../lib/store.jsx";
 import { useExpert } from "../../../lib/expert.js";
 import { formatTokens } from "../../settings/format.jsx";
-import { Alert, BotMark, Card, INK, MUTED, Pills, Row, Switch, Term, anchorOf, btn, h3, select, useSettings } from "./v3.jsx";
+import { Alert, BotMark, Card, INK, Pills, Row, Switch, Term, anchorOf, btn, h3, select, useSettings } from "./v3.jsx";
 
 // Ajustes › Uso y límites (design/V3Uso.dc.html, T3 Code's usage page in Colmena's words): what
 // each bot and each chat or room spent this month, per day, how much is left of each plan, how
@@ -55,11 +55,11 @@ function Plans({ plans }) {
     } else if (e.limit) rows.push({ key: e.id, label: e.label, note: "Ha llegado a su límite" + (e.limit.resetsAt ? " · " + renews(e.limit.resetsAt) : ""), w: 100 });
     else rows.push({ key: e.id, label: e.label, note: e.id === "openai" ? "Aparece tras la próxima respuesta" : "No dice cuánto queda", w: null });
   }
-  if (!rows.length) return <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>Conecta una IA en Cuentas de IA para ver los límites de su plan.</span>;
+  if (!rows.length) return <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Conecta una IA en Cuentas de IA para ver los límites de su plan.</span>;
   return rows.map((p) => (
     <div key={p.key} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <span style={{ display: "flex", justifyContent: "space-between", gap: "10px", fontSize: "var(--t-ui)" }}><span>{p.label}</span><span style={{ color: MUTED, textAlign: "right" }}>{p.note}</span></span>
-      <span aria-hidden="true" style={{ height: "8px", borderRadius: "var(--r-xs)", background: "#F1F1EC", overflow: "hidden" }}>{p.w != null ? <span style={{ display: "block", width: p.w + "%", height: "100%", background: INK, transformOrigin: "left", animation: "grow .8s ease-out" }} /> : null}</span>
+      <span style={{ display: "flex", justifyContent: "space-between", gap: "10px", fontSize: "var(--t-ui)" }}><span>{p.label}</span><span style={{ color: "var(--c-text-3)", textAlign: "right" }}>{p.note}</span></span>
+      <span aria-hidden="true" style={{ height: "8px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}>{p.w != null ? <span style={{ display: "block", width: p.w + "%", height: "100%", background: INK, transformOrigin: "left", animation: "grow .8s ease-out" }} /> : null}</span>
     </div>
   ));
 }
@@ -94,23 +94,23 @@ export default function UsageSection() {
   return (
     <>
       <Alert>{saveError || (error ? "No pude leer el uso: " + error : null)}</Alert>
-      <section {...anchorOf("este-mes")} aria-labelledby="mes-t" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("este-mes")} aria-labelledby="mes-t" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "22px 24px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "8px 16px" }}>
           <h3 id="mes-t" style={{ ...h3, textTransform: "capitalize" }}>{monthName}</h3>
           <span style={{ font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{fmt(u, used)}</span>
-          <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{note}</span>
+          <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{note}</span>
         </div>
         {cap ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span role="img" aria-label={`Usado el ${pct} % del límite del mes`} style={{ position: "relative", height: "10px", borderRadius: "var(--r-pill)", background: "#EEEEEA", overflow: "hidden" }}>
+            <span role="img" aria-label={`Usado el ${pct} % del límite del mes`} style={{ position: "relative", height: "10px", borderRadius: "var(--r-pill)", background: "var(--c-chip)", overflow: "hidden" }}>
               <span style={{ position: "absolute", inset: "0 auto 0 0", width: pct + "%", background: INK, transformOrigin: "left", animation: "grow .8s ease-out" }} />
               {limits.warnAt80 !== false ? <span style={{ position: "absolute", top: 0, bottom: 0, left: "80%", width: "2px", background: "#8A5A00" }} /> : null}
             </span>
-            <span style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--t-meta)", color: MUTED }}><span>{`${pct} % del límite de ${fmt(u, cap)}`}</span>{limits.warnAt80 !== false ? <span>aviso al 80 %</span> : null}</span>
+            <span style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}><span>{`${pct} % del límite de ${fmt(u, cap)}`}</span>{limits.warnAt80 !== false ? <span>aviso al 80 %</span> : null}</span>
           </div>
         ) : null}
         <figure style={{ margin: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
-          <figcaption style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "var(--t-meta)", color: MUTED }}>
+          <figcaption style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
             <span>{`Por día, últimos ${days} días`}</span>
             {expert ? <Pills label="Periodo" value={days} onPick={setDays} items={PERIODS} /> : null}
           </figcaption>
@@ -119,59 +119,59 @@ export default function UsageSection() {
             <>
               <div style={{ position: "relative", paddingTop: "24px" }}>
                 {spike >= 0 && perDay[spike].tokens ? (
-                  <span aria-hidden="true" style={{ position: "absolute", top: 0, left: `${Math.min(85, Math.max(15, ((spike + 0.5) / perDay.length) * 100))}%`, transform: "translateX(-50%)", whiteSpace: "nowrap", fontSize: "var(--t-caption)", fontWeight: 600, color: "#8A5A00" }}>{`${dayLabel(perDay[spike].date)} · el día de más uso · ${fmt(u, perDay[spike].tokens)}`}</span>
+                  <span aria-hidden="true" style={{ position: "absolute", top: 0, left: `${Math.min(85, Math.max(15, ((spike + 0.5) / perDay.length) * 100))}%`, transform: "translateX(-50%)", whiteSpace: "nowrap", fontSize: "var(--t-caption)", fontWeight: 600, color: "var(--c-honey-text)" }}>{`${dayLabel(perDay[spike].date)} · el día de más uso · ${fmt(u, perDay[spike].tokens)}`}</span>
                 ) : null}
-                <div role="img" aria-label={`Uso diario de los últimos ${days} días; el día de más uso, ${spike >= 0 ? dayLabel(perDay[spike].date) : "ninguno"}`} style={{ display: "flex", alignItems: "flex-end", gap: days > 40 ? "1px" : "4px", height: "120px", paddingBottom: "2px", borderBottom: "1px solid rgba(18,19,26,.12)" }}>
+                <div role="img" aria-label={`Uso diario de los últimos ${days} días; el día de más uso, ${spike >= 0 ? dayLabel(perDay[spike].date) : "ninguno"}`} style={{ display: "flex", alignItems: "flex-end", gap: days > 40 ? "1px" : "4px", height: "120px", paddingBottom: "2px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .12)" }}>
                   {perDay.map((d, i) => (
                     <span key={d.date} title={`${dayLabel(d.date)} · ${fmt(u, d.tokens)}`} style={{ flex: 1, minWidth: 0, height: Math.max(d.tokens ? 3 : 1, Math.round((d.tokens / max) * 112)) + "px", borderRadius: "var(--r-xs) var(--r-xs) var(--r-xs) var(--r-xs)", background: i === spike && d.tokens ? "#B07800" : i === perDay.length - 1 ? INK : "#C3C6CF", animation: "rise .5s ease-out" }} />
                   ))}
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--t-caption)", color: MUTED }}><span>{dayLabel(perDay[0].date)}</span><span style={{ color: INK, fontWeight: 600 }}>{`Hoy · ${fmt(u, today?.tokens || 0)}`}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}><span>{dayLabel(perDay[0].date)}</span><span style={{ color: "var(--c-text)", fontWeight: 600 }}>{`Hoy · ${fmt(u, today?.tokens || 0)}`}</span></div>
             </>
           ) : null}
         </figure>
       </section>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))", gap: "14px" }}>
-        <section {...anchorOf("por-bot-uso")} aria-labelledby="bot-t" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px" }}>
+        <section {...anchorOf("por-bot-uso")} aria-labelledby="bot-t" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
           <h3 id="bot-t" style={h3}>Por bot</h3>
           {spent.map((b) => {
             const bot = botOf(b.botId);
             return (
               <div key={b.botId} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-ui)" }}>
                 <span style={{ width: "72px", display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}><BotMark bot={bot} size={12} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bot?.name || "Borrado"}</span></span>
-                <span aria-hidden="true" style={{ flex: 1, height: "8px", borderRadius: "var(--r-xs)", background: "#F1F1EC", overflow: "hidden" }}><span style={{ display: "block", width: Math.round((b.tokens / top) * 100) + "%", height: "100%", borderRadius: "var(--r-xs)", background: bot?.color || "#C3C6CF", transformOrigin: "left", animation: "grow .8s ease-out" }} /></span>
+                <span aria-hidden="true" style={{ flex: 1, height: "8px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}><span style={{ display: "block", width: Math.round((b.tokens / top) * 100) + "%", height: "100%", borderRadius: "var(--r-xs)", background: bot?.color || "#C3C6CF", transformOrigin: "left", animation: "grow .8s ease-out" }} /></span>
                 <span style={{ width: "72px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(u, b.tokens)}</span>
               </div>
             );
           })}
-          {data && !spent.length ? <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>Aún no han gastado nada en este periodo.</span> : null}
+          {data && !spent.length ? <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Aún no han gastado nada en este periodo.</span> : null}
         </section>
-        <section {...anchorOf("limites-plan")} aria-labelledby="plan-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px" }}>
+        <section {...anchorOf("limites-plan")} aria-labelledby="plan-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
           <h3 id="plan-t" style={h3}>Límites de tus planes</h3>
           <Plans plans={data?.plans} />
-          <span {...anchorOf("cache")} style={{ fontSize: "var(--t-meta)", color: MUTED }}>
+          <span {...anchorOf("cache")} style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
             <Term tip="Cuando el modelo ya ha leído el principio de una conversación, lo reutiliza: responde antes y gasta menos de tu plan.">Caché</Term>{` aprovechada: ${t?.cachePercent ?? "—"} %. Cuanto más alta, más barato y rápido.`}
           </span>
         </section>
       </div>
 
-      <section {...anchorOf("por-chat")} aria-labelledby="chat-t" style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("por-chat")} aria-labelledby="chat-t" style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
         <h3 id="chat-t" style={{ ...h3, margin: "0 0 6px" }}>Lo que más ha gastado</h3>
         {(all ? chats : chats.slice(0, 4)).map((c) => {
           const href = c.kind === "gone" || c.incognito ? null : c.kind === "room" ? `/sala/${c.missionId}` : c.kind === "task" ? `/encargo/${c.missionId}` : `/chat/${c.botIds?.[0] || ""}?c=${c.missionId}`;
           const Tag = href ? "a" : "div";
           return (
-            <Tag key={c.missionId} href={href || undefined} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", borderTop: "1px solid rgba(18,19,26,.05)", fontSize: "var(--t-ui)", color: INK, textDecoration: "none" }}>
+            <Tag key={c.missionId} href={href || undefined} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-ui)", color: "var(--c-text)", textDecoration: "none" }}>
               <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</span>
-              <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{kind(c)}{expert && t?.tokens ? ` · ${share(c.tokens, t.tokens)} %` : ""}</span>
+              <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{kind(c)}{expert && t?.tokens ? ` · ${share(c.tokens, t.tokens)} %` : ""}</span>
               <span style={{ width: "80px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(u, c.tokens)}</span>
             </Tag>
           );
         })}
-        {chats.length > 4 ? <button type="button" onClick={() => setAll(!all)} style={{ ...btn("ghost", 36), alignSelf: "flex-start", padding: 0, color: "#1F4FD1", fontWeight: 600 }}>{all ? "Ver menos" : `Ver los ${chats.length}`}</button> : null}
-        {data && !chats.length ? <span style={{ padding: "10px 0", borderTop: "1px solid rgba(18,19,26,.05)", fontSize: "var(--t-ui)", color: MUTED }}>Ningún chat ni sala ha gastado en este periodo.</span> : null}
+        {chats.length > 4 ? <button type="button" onClick={() => setAll(!all)} style={{ ...btn("ghost", 36), alignSelf: "flex-start", padding: 0, color: "var(--c-accent-ink)", fontWeight: 600 }}>{all ? "Ver menos" : `Ver los ${chats.length}`}</button> : null}
+        {data && !chats.length ? <span style={{ padding: "10px 0", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Ningún chat ni sala ha gastado en este periodo.</span> : null}
       </section>
 
       <Card label="Límites">

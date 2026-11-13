@@ -61,7 +61,7 @@ export default function Inspector({ bot, mission, messages = [], steps = [], app
   const tabs = [["ctx", "Contexto"], ["tools", "Herramientas"], ["log", "Registro"]];
 
   return (
-    <aside aria-label="Inspector" style={{ flex: "1 1 340px", maxWidth: "420px", minWidth: "300px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "16px 18px 20px", background: "#12131A", color: "#FFFFFF", animation: "fade .2s ease-out" }}>
+    <aside aria-label="Inspector" style={{ flex: "1 1 340px", maxWidth: "420px", minWidth: "300px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "16px 18px 20px", background: "var(--c-btn)", color: "var(--c-btn-text)", animation: "fade .2s ease-out" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <h2 style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>{"Inspector"}</h2>
         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -70,7 +70,7 @@ export default function Inspector({ bot, mission, messages = [], steps = [], app
         </span>
       </div>
       <div role="tablist" aria-label="Inspector" style={{ display: "flex", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.08)" }}>
-        {tabs.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id ? "true" : "false"} onClick={() => setTab(id)} style={{ flex: "1", height: "30px", border: 0, borderRadius: "var(--r-pill)", background: tab === id ? "#FFFFFF" : "transparent", color: tab === id ? "#12131A" : "#C9CBD3", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" }}>{label}</button>)}
+        {tabs.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id ? "true" : "false"} onClick={() => setTab(id)} style={{ flex: "1", height: "30px", border: 0, borderRadius: "var(--r-pill)", background: tab === id ? "var(--c-card)" : "transparent", color: tab === id ? "var(--c-text)" : "#C9CBD3", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" }}>{label}</button>)}
       </div>
 
       {tab === "ctx" ? (

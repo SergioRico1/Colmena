@@ -35,7 +35,7 @@ function WaitNote({ approval, bots }) {
       : null;
   if (!text) return null;
   return (
-    <p style={{ margin: "0", display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#555A68" }}>
+    <p style={{ margin: "0", display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)" }}>
       <Clock size={14} aria-hidden="true" style={{ flex: "none" }} />
       <span>{text}</span>
     </p>
@@ -62,7 +62,7 @@ function QuestionCard({ approval, text, bots, variant = "room", id }) {
   const keys = useChoiceKeys({ count: options.length, enabled: pending && !busy && !(approval?.questions?.length > 1), onChoose: (i) => answer(options[i]) });
 
   // Colmena 2.0: honey glow while it waits for you; a calm card once answered (no hard shadows).
-  const card = { maxWidth: chat ? "none" : "640px", background: "#FFFFFF", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" };
+  const card = { maxWidth: chat ? "none" : "640px", background: "var(--c-card)", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" };
   const answered = approval && !pending;
 
   return (
@@ -85,8 +85,8 @@ function QuestionCard({ approval, text, bots, variant = "room", id }) {
             const helperBot = chat && primary ? mentioned(o.label) : null;
             // Colmena 2.0 pills: the recommended option in ink, the rest on a soft surface.
             const style = primary
-              ? { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 20px 0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }
-              : { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 18px 0 12px", background: "#F6F6F3", color: "#12131A", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" };
+              ? { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 20px 0 12px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }
+              : { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 18px 0 12px", background: "var(--c-hover)", color: "var(--c-text)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" };
             return (
               <button key={o.id || i} type="button" className="rm-focus" disabled={busy || !pending} aria-busy={busy ? "true" : undefined} aria-keyshortcuts={letterOf(i) || undefined} onClick={() => answer(o)} style={style}>
                 {letterOf(i) ? <span aria-hidden="true" style={letterStyle(primary)}>{letterOf(i)}</span> : null}
@@ -98,12 +98,12 @@ function QuestionCard({ approval, text, bots, variant = "room", id }) {
         </div>
       ) : !approval ? (
         // A question message whose request is gone (an old chat): nothing to answer any more.
-        <span style={{ alignSelf: "flex-start", fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{"Ya no espera respuesta"}</span>
+        <span style={{ alignSelf: "flex-start", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Ya no espera respuesta"}</span>
       ) : null}
       {pending && !(approval.questions?.length > 1) ? <QuestionReply approval={approval} /> : null}
       {pending ? <WaitNote approval={approval} bots={bots} /> : null}
       {chat && helper && !answered ? (
-        <p style={{ margin: "0", fontSize: "var(--t-meta)", color: "#555A68" }}>{`${helper.name} contestará aquí mismo. No hace falta crear una sala.`}</p>
+        <p style={{ margin: "0", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`${helper.name} contestará aquí mismo. No hace falta crear una sala.`}</p>
       ) : null}
       <ApprovalConflict error={error} conflict={conflict} />
     </div>

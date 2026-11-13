@@ -7,7 +7,7 @@ import DocHistory from "../team/DocHistory.jsx";
 import BackupSettings, { folderLabel, size, when } from "./Backup.jsx";
 import EncryptionSettings from "./Encryption.jsx";
 import DictationRow from "./Dictation.jsx";
-import { Alert, Go, LINE, MUTED, Row, Switch, UNDO_MS, anchorOf, btn, h3, useSettings } from "./v3.jsx";
+import { Alert, Go, LINE, Row, Switch, UNDO_MS, anchorOf, btn, h3, useSettings } from "./v3.jsx";
 
 // Ajustes › Privacidad y datos (design/V3Privacidad.dc.html): where your data lives and what
 // leaves this computer, the encrypted backups, the local database encryption, what the bots
@@ -16,10 +16,10 @@ import { Alert, Go, LINE, MUTED, Row, Switch, UNDO_MS, anchorOf, btn, h3, useSet
 
 function Fact({ k, v, n, dot, anchor }) {
   return (
-    <div {...anchorOf(anchor)} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px" }}>
-      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: MUTED }}><span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: dot }} />{k}</span>
+    <div {...anchorOf(anchor)} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "18px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" }}>
+      <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}><span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: dot }} />{k}</span>
       <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{v}</span>
-      <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{n}</span>
+      <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{n}</span>
     </div>
   );
 }
@@ -62,7 +62,7 @@ export default function PrivacySection() {
       <BackupSettings v={v} setV={backup.setData} error={backup.error} />
       <EncryptionSettings s={s} reload={reloadEnc} />
 
-      <section aria-labelledby="mem-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", overflow: "hidden" }}>
+      <section aria-labelledby="mem-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", overflow: "hidden" }}>
         <h3 id="mem-t" style={{ ...h3, fontSize: "var(--t-read)", padding: "18px 22px 8px" }}>Memoria y conversaciones</h3>
         <Row anchor="aprenden" title="Aprenden de lo que hablas" sub="Si lo apagas, siguen trabajando pero no guardan recuerdos ni habilidades nuevas. Un chat de incógnito nunca aprende." min="64px">
           <Switch on={settings.learning !== false} label="Aprenden de lo que hablas" onChange={(on) => save({ learning: on }, on ? "Vuelven a aprender" : "Ya no aprenden de lo que hablas", { learning: !on })} />
@@ -84,12 +84,12 @@ export default function PrivacySection() {
         </Row>
       </section>
 
-      <section {...anchorOf("olvidar")} aria-labelledby="danger-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 20px", padding: "18px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(180,35,42,.25)", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("olvidar")} aria-labelledby="danger-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 20px", padding: "18px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "inset 0 0 0 1px rgba(180,35,42,.25)", scrollMarginTop: "24px" }}>
         <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <h3 id="danger-t" style={h3}>Hacer que lo olviden todo</h3>
-          <span style={{ fontSize: "var(--t-meta)", color: "#4A4D57" }}>Borra lo que recuerdan de ti. Los chats y los archivos se quedan. Tienes 10 segundos para deshacerlo.</span>
+          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>Borra lo que recuerdan de ti. Los chats y los archivos se quedan. Tienes 10 segundos para deshacerlo.</span>
         </span>
-        <button type="button" disabled={!remembered} onClick={forgetAll} style={{ ...btn("outline", 38), borderColor: "rgba(180,35,42,.35)", color: "#B4232A", fontSize: "var(--t-ui)", opacity: memories.length ? 1 : 0.5 }}>Olvidar todo…</button>
+        <button type="button" disabled={!remembered} onClick={forgetAll} style={{ ...btn("outline", 38), borderColor: "rgba(180,35,42,.35)", color: "var(--c-error)", fontSize: "var(--t-ui)", opacity: memories.length ? 1 : 0.5 }}>Olvidar todo…</button>
       </section>
     </>
   );

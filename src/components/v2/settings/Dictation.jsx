@@ -2,7 +2,7 @@ import Select from "../../Select.jsx";
 import { useState } from "react";
 import { DictationHelp, refreshVoiceStatus, setDictationEngine, useVoiceStatus } from "../../interaction/Dictation.jsx";
 import { reversible } from "../../../lib/undoToast.js";
-import { Alert, LINE, MUTED, Row, UNDO_MS, btn, select } from "./v3.jsx";
+import { Alert, LINE, Row, UNDO_MS, btn, select } from "./v3.jsx";
 
 // Ajustes › Privacidad › «Dictado por voz» (design/V3Privacidad.dc.html): who turns your voice
 // into text. Automático uses this computer's recognizer (your voice stays here) and the OpenAI
@@ -13,11 +13,11 @@ const ITEMS = [["auto", "Automático"], ["sistema", "En este ordenador"], ["open
 const WORD = Object.fromEntries(ITEMS);
 
 function nowLine(v) {
-  if (!v) return { text: "Comprobando…", color: MUTED };
-  if (v.mode === "sistema") return { text: "Se transcribe en este ordenador; tu voz no sale" + (v.system?.onDevice === false ? " salvo al servicio de Apple." : "."), color: MUTED };
-  if (v.mode === "openai") return { text: "Con tu clave de OpenAI: el audio va a OpenAI para pasarlo a texto.", color: MUTED };
-  if (v.preference === "openai") return { text: "Falta la clave de OpenAI (Ajustes › Avanzado).", color: "#B4232A" };
-  return { text: "Ahora mismo no se puede dictar.", color: "#B4232A" };
+  if (!v) return { text: "Comprobando…", color: "var(--c-text-3)" };
+  if (v.mode === "sistema") return { text: "Se transcribe en este ordenador; tu voz no sale" + (v.system?.onDevice === false ? " salvo al servicio de Apple." : "."), color: "var(--c-text-3)" };
+  if (v.mode === "openai") return { text: "Con tu clave de OpenAI: el audio va a OpenAI para pasarlo a texto.", color: "var(--c-text-3)" };
+  if (v.preference === "openai") return { text: "Falta la clave de OpenAI (Ajustes › Avanzado).", color: "var(--c-error)" };
+  return { text: "Ahora mismo no se puede dictar.", color: "var(--c-error)" };
 }
 
 export default function DictationRow() {
@@ -44,7 +44,7 @@ export default function DictationRow() {
           <DictationHelp problem={v.problem} style={{ width: "auto", maxWidth: "none", padding: 0, boxShadow: "none", animation: "none" }} />
           <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
             <button type="button" onClick={retry} disabled={busy} style={btn("outline", 32)}>{busy ? "Comprobando…" : "Ya lo he hecho: comprobar otra vez"}</button>
-            {v.mode === "openai" ? <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>Mientras tanto se dicta con tu clave de OpenAI.</span> : null}
+            {v.mode === "openai" ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Mientras tanto se dicta con tu clave de OpenAI.</span> : null}
           </span>
         </div>
       ) : null}

@@ -62,13 +62,13 @@ export default function ActivityLog({ bot = null, summary, activity: allActivity
   const icon = busy ? (
     bot ? <span aria-hidden="true" style={{ width: "9px", height: "9px", flex: "none", background: bot.color || "#5C606C", clipPath: shapeOf(bot).clip, borderRadius: shapeOf(bot).radius, animation: "breathe 1.4s ease-in-out infinite" }} /> : <WorkingDots />
   ) : failed ? (
-    <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ color: "#B4372A" }} />
+    <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ color: "var(--c-error)" }} />
   ) : (
     <Check size={14} strokeWidth={2.4} aria-hidden="true" />
   );
   // As in OpenClaw: no pill. While it only thinks or writes, just the breathing dots; when it
   // does something, a quiet line beside them; afterwards, the same quiet summary.
-  const line = { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "24px", padding: "0", background: "transparent", border: "0", fontSize: "var(--t-meta)", color: "#5C606C" };
+  const line = { alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "24px", padding: "0", background: "transparent", border: "0", fontSize: "var(--t-meta)", color: "var(--c-text-3)" };
   const quiet = running && !steps && !narration && /^(pensando|escribiendo|programando)$/i.test(String(held || "").trim());
   if (quiet) return <span role="status" aria-label={held || "Trabajando"} style={line}>{icon}{phrase ? <span key={phrase} className="c-phrase">{phrase}</span> : null}</span>;
   if (!canOpen) {
@@ -96,17 +96,17 @@ export default function ActivityLog({ bot = null, summary, activity: allActivity
         tools.length ? (
           <ToolCards tools={tools} bots={bots} onOpenArtifact={onOpenArtifact} />
         ) : (
-          <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#2B2D36" }}>
+          <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "var(--c-text)" }}>
             {activity.map((a, i) => (
               <li key={i} style={{ display: "flex", gap: "10px" }}>
-                <span style={{ font: "500 var(--t-caption)/20px 'Geist Mono', monospace", color: "#555A68", width: "20px", flex: "none" }}>{i + 1}</span>
+                <span style={{ font: "500 var(--t-caption)/20px 'Geist Mono', monospace", color: "var(--c-text-3)", width: "20px", flex: "none" }}>{i + 1}</span>
                 {a.text || a.verb}
               </li>
             ))}
           </ol>
         )
       ) : null}
-      {open && cost ? <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{cost}</span> : null}
+      {open && cost ? <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{cost}</span> : null}
     </>
   );
 }

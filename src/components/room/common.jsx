@@ -12,7 +12,7 @@ export function NoteLink({ link }) {
   return (
     <>
       {" · "}
-      <a href={link.href} className="rm-focus" onClick={(e) => { e.preventDefault(); navigate(link.href); }} style={{ fontWeight: "600", color: "#1F4FD1" }}>{link.label || "Abrir"}</a>
+      <a href={link.href} className="rm-focus" onClick={(e) => { e.preventDefault(); navigate(link.href); }} style={{ fontWeight: "600", color: "var(--c-accent-ink)" }}>{link.label || "Abrir"}</a>
     </>
   );
 }
@@ -62,14 +62,14 @@ export function extStyle(name) {
 export function FileCard({ file, onRemove }) {
   const s = extStyle(file.name);
   return (
-    <span style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px 10px 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
+    <span style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px 10px 10px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
       <span aria-hidden="true" style={{ width: "32px", height: "38px", borderRadius: "var(--r-xs)", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 var(--t-micro)/1 'Geist Mono', monospace" }}>{s.label}</span>
       <span style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: "0" }}>
         <strong style={{ overflowWrap: "anywhere" }}>{file.name}</strong>
-        <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{fileSize(file.size)}</span>
+        <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{fileSize(file.size)}</span>
       </span>
       {onRemove ? (
-        <button type="button" className="rm-focus" aria-label={`Quitar ${file.name}`} onClick={onRemove} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "#555A68" }}>
+        <button type="button" className="rm-focus" aria-label={`Quitar ${file.name}`} onClick={onRemove} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text-3)" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
       ) : null}
@@ -81,11 +81,11 @@ export function FileCard({ file, onRemove }) {
 export function FileChip({ file, onRemove, dragUrl = null }) {
   const s = extStyle(file.name);
   return (
-    <span {...dragOutProps(dragUrl)} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px 8px 8px", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", background: "#FFFFFF" }}>
+    <span {...dragOutProps(dragUrl)} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px 8px 8px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", background: "var(--c-card)" }}>
       <span aria-hidden="true" style={{ width: "28px", height: "28px", borderRadius: "var(--r-sm)", background: s.background, color: s.color, display: "grid", placeItems: "center", font: "700 var(--t-micro)/1 'Geist Mono', monospace" }}>{s.label}</span>
       {file.name}
       {onRemove ? (
-        <button type="button" className="rm-focus" aria-label={`Quitar ${file.name}`} onClick={onRemove} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "#555A68" }}>
+        <button type="button" className="rm-focus" aria-label={`Quitar ${file.name}`} onClick={onRemove} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text-3)" }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
       ) : null}
@@ -109,8 +109,8 @@ export const popoverStyle = {
   maxHeight: "360px",
   overflowY: "auto",
   padding: "6px",
-  background: "#FFFFFF",
-  border: "1px solid #DCE0E8",
+  background: "var(--c-card)",
+  border: "1px solid var(--c-line)",
   borderRadius: "var(--r-md)",
   boxShadow: "0 14px 34px rgba(18,19,26,.16)",
   display: "flex",
@@ -137,7 +137,7 @@ export const popoverItem = {
 export function ErrorLine({ children, style }) {
   if (!children) return null;
   return (
-    <p role="alert" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#B4372A", ...style }}>
+    <p role="alert" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-error)", ...style }}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17v.5" /></svg>
       {children}
     </p>
@@ -149,7 +149,7 @@ export function ErrorLine({ children, style }) {
  * screens no longer load (so they stood still): now the shared working dots (base.css).
  */
 export function Dots() {
-  return <WorkingDots style={{ color: "#5C606C" }} />;
+  return <WorkingDots style={{ color: "var(--c-text-3)" }} />;
 }
 
 /** Splits text and colours @Mentions like the thread mockup. */
@@ -158,7 +158,7 @@ export function MentionText({ text, bots }) {
   const parts = String(text || "").split(/(@[\p{L}\d_-]+)/u);
   return parts.map((part, i) =>
     part.startsWith("@") && names.has(part.slice(1).toLowerCase())
-      ? <span key={i} style={{ color: "#1F4FD1", fontWeight: "600" }}>{part}</span>
+      ? <span key={i} style={{ color: "var(--c-accent-ink)", fontWeight: "600" }}>{part}</span>
       : part,
   );
 }

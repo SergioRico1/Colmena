@@ -16,7 +16,7 @@ import { VerdictList, VerdictMark } from "../components/v2/team/Verdict.jsx";
 import { LimitLine } from "../components/v2/LimitNotice.jsx";
 import { WithMark, engineOfModel } from "../components/v2/ProviderMark.jsx";
 import { TOOL_KEYS, TOOL_LABEL, longDay, monthName, shortDay } from "../components/team/common.jsx";
-import { AUTONOMY, INK, LINE, More, Seg, Shape, TEXT2, TEXT3, Toggle, card, dark, h2, outline, quiet, sub } from "../components/v3/team/parts.jsx";
+import { AUTONOMY, INK, LINE, More, Seg, Shape, Toggle, card, dark, h2, outline, quiet, sub } from "../components/v3/team/parts.jsx";
 import { formatTokens } from "../components/settings/format.jsx";
 import { useAction, useResource, useStore } from "../lib/store.jsx";
 import { useActivity } from "../lib/liveStore.js";
@@ -36,7 +36,6 @@ import { scrollBehavior } from "../lib/motion.js";
 // Changes apply at once and offer a 10 s «Deshacer»; nothing asks for confirmation.
 
 const UNDO_MS = 10000;
-const BLUE = "#1F4FD1";
 const SECTIONS = [["como", "Cómo trabaja"], ["apps", "Apps"], ["habilidades", "Habilidades"], ["memoria", "Memoria"], ["personalidad", "Personalidad"], ["uso", "Uso"]];
 const RED_LINES = ["enviar fuera", "mover dinero", "publicar", "borrar de verdad", "escribir contraseñas", "instalar programas"];
 const THINKING = [["rapido", "Rápido", "Responde enseguida. Para tareas cortas y conocidas."], ["equilibrado", "Equilibrado", "Piensa lo justo. Lo mejor para casi todo."], ["profundo", "A fondo", "Se toma su tiempo y gasta más. Para análisis y decisiones importantes."]];
@@ -129,14 +128,14 @@ export default function EquipoBot({ params = {}, query = {} }) {
     return (
       <Shell active="equipo">
         <main style={{ maxWidth: "1080px", margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px)", display: "flex", flexDirection: "column", gap: "16px" }}>
-          <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: TEXT2 }}><a href="/equipo" style={{ color: TEXT2 }}>{"Equipo"}</a></nav>
+          <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}><a href="/equipo" style={{ color: "var(--c-text-2)" }}>{"Equipo"}</a></nav>
           {ready ? (
             <>
               <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"No encontramos a este bot"}</h1>
-              <p style={{ margin: "0", fontSize: "var(--t-read)", color: TEXT2 }}>{"Puede que ya no esté en tu equipo."}{loadError ? ` (${loadError})` : ""}</p>
-              <a href="/equipo" style={{ alignSelf: "flex-start", height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Volver a Equipo"}</a>
+              <p style={{ margin: "0", fontSize: "var(--t-read)", color: "var(--c-text-2)" }}>{"Puede que ya no esté en tu equipo."}{loadError ? ` (${loadError})` : ""}</p>
+              <a href="/equipo" style={{ alignSelf: "flex-start", height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Volver a Equipo"}</a>
             </>
-          ) : <p style={{ margin: "0", fontSize: "var(--t-body)", color: TEXT3 }}>{"Cargando la ficha…"}</p>}
+          ) : <p style={{ margin: "0", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{"Cargando la ficha…"}</p>}
         </main>
       </Shell>
     );
@@ -167,41 +166,41 @@ export default function EquipoBot({ params = {}, query = {} }) {
   return (
     <Shell active="equipo" extraCss={MD_CSS}>
       <header style={{ display: "flex", flexDirection: "column", gap: "22px", padding: "30px clamp(20px, 4vw, 48px) 0", background: tint }}>
-        <nav aria-label="Miga" style={{ maxWidth: "1080px", width: "100%", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: TEXT2 }}>
-          <a href="/equipo" style={{ color: TEXT2 }}>{"Equipo"}</a>
+        <nav aria-label="Miga" style={{ maxWidth: "1080px", width: "100%", margin: "0 auto", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>
+          <a href="/equipo" style={{ color: "var(--c-text-2)" }}>{"Equipo"}</a>
           <span aria-hidden="true">{"›"}</span>
-          <span style={{ color: INK, fontWeight: "500" }}>{bot.name}</span>
+          <span style={{ color: "var(--c-text)", fontWeight: "500" }}>{bot.name}</span>
         </nav>
         <div style={{ maxWidth: "1080px", width: "100%", margin: "0 auto", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "20px 24px" }}>
           <button type="button" onClick={() => setPortrait(true)} aria-label={portraitOf(bot) ? `Cambiar el retrato de ${bot.name}` : `Darle un retrato a ${bot.name}`} title={portraitOf(bot) ? "Cambiar el retrato" : "Darle un retrato"} style={{ position: "relative", flex: "none", padding: "0", border: "0", background: "transparent", cursor: "pointer" }}>
             <span aria-hidden="true" style={{ display: "block", width: "92px", height: "92px", background: portraitOf(bot) ? `${color} url("${portraitOf(bot)}") center / cover no-repeat` : color, clipPath: sh.clip, borderRadius: sh.radius, animation: work ? "breathe 2.8s ease-in-out infinite" : "none", boxShadow: `0 18px 40px -16px ${color}99`, opacity: bot.status === "libre" || bot.status === "pausado" ? 0.85 : 1 }} />
-            {expert ? <span aria-hidden="true" style={{ position: "absolute", right: "-4px", bottom: "-4px", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.2)" }}><ImagePlus size={13} strokeWidth={2.4} /></span> : null}
+            {expert ? <span aria-hidden="true" style={{ position: "absolute", right: "-4px", bottom: "-4px", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-card)", boxShadow: "0 2px 6px rgba(18,19,26,.2)" }}><ImagePlus size={13} strokeWidth={2.4} /></span> : null}
           </button>
           <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "6px", minWidth: "0" }}>
             <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{bot.name}</h1>
-            <span style={{ fontSize: "var(--t-read)", color: "#3D404A" }}>{[bot.role, now].filter(Boolean).join(" · ")}</span>
-            {bot.waitingIn > 0 ? <a href="/" style={{ alignSelf: "flex-start", fontSize: "var(--t-ui)", fontWeight: "600", color: "#8A5A00" }}>{`Te espera en ${plural(bot.waitingIn, "sala", "salas")}`}</a> : null}
+            <span style={{ fontSize: "var(--t-read)", color: "var(--c-text-2)" }}>{[bot.role, now].filter(Boolean).join(" · ")}</span>
+            {bot.waitingIn > 0 ? <a href="/" style={{ alignSelf: "flex-start", fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-honey-text)" }}>{`Te espera en ${plural(bot.waitingIn, "sala", "salas")}`}</a> : null}
             {bot.limited || bot.engineLimit ? <LimitLine limited={bot.limited || bot.engineLimit} style={{ fontSize: "var(--t-ui)" }} /> : null}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {live.length ? <button type="button" disabled={busy} onClick={pause} style={{ height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.18)", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.6)", fontSize: "var(--t-body)", cursor: "pointer" }}>{"Pausar"}</button> : null}
+            {live.length ? <button type="button" disabled={busy} onClick={pause} style={{ height: "44px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .18)", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.6)", fontSize: "var(--t-body)", cursor: "pointer" }}>{"Pausar"}</button> : null}
             <More round light label={`Más opciones de ${bot.name}`} items={[
               { label: portraitOf(bot) ? "Cambiar el retrato" : "Darle un retrato", run: () => setPortrait(true) },
               { label: "Duplicar", run: duplicate, disabled: busy },
               { label: "Qué cuenta de IA usa", run: () => navigate("/ajustes/ia") },
               bot.id !== "atlas" ? { label: "Retirar del equipo", run: retire, danger: true } : null,
             ]} />
-            <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Hablar con " + bot.name}</a>
+            <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Hablar con " + bot.name}</a>
           </div>
         </div>
         <nav aria-label="Secciones de la ficha" style={{ maxWidth: "1080px", width: "100%", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: "4px" }}>
           {SECTIONS.map(([s, label]) => (
-            <a key={s} href={`#${s}`} onClick={go(s)} aria-current={tab === s ? "location" : undefined} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderBottom: `2px solid ${tab === s ? INK : "transparent"}`, color: INK, fontSize: "var(--t-body)", fontWeight: tab === s ? "600" : "500" }}>{label}</a>
+            <a key={s} href={`#${s}`} onClick={go(s)} aria-current={tab === s ? "location" : undefined} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderBottom: `2px solid ${tab === s ? "var(--c-text)" : "transparent"}`, color: "var(--c-text)", fontSize: "var(--t-body)", fontWeight: tab === s ? "600" : "500" }}>{label}</a>
           ))}
         </nav>
       </header>
       <main style={{ maxWidth: "1080px", margin: "0 auto", padding: "32px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "22px" }}>
-        {error || (loadError && !summary) ? <p role="alert" style={{ margin: "0", padding: "12px 16px", borderRadius: "var(--r-lg)", background: "#FBE9EA", color: "#B4232A", fontSize: "var(--t-ui)" }}>{error || loadError}</p> : null}
+        {error || (loadError && !summary) ? <p role="alert" style={{ margin: "0", padding: "12px 16px", borderRadius: "var(--r-lg)", background: "var(--c-error-soft)", color: "var(--c-error)", fontSize: "var(--t-ui)" }}>{error || loadError}</p> : null}
         <HowItWorks bot={bot} ai={ai} bots={bots} settings={settings} expert={expert} busy={busy} change={change} />
         <StandingOrdersCard bot={bot} />
         <Apps bot={bot} connectors={connectors} learning={learning} setLearning={setLearning} expert={expert} busy={busy} change={change} />
@@ -235,11 +234,11 @@ function SectionHead({ id, title, note, children }) {
 const Lock = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6.5 10.5h11v9.5h-11zM8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></svg>;
 
 function Fact({ label, value, open, onClick, href }) {
-  const inner = <><span style={{ color: TEXT3 }}>{label}</span>{" "}<strong style={{ fontWeight: "600" }}>{value}</strong></>;
-  if (href) return <a href={href} className="c-hit" style={{ color: INK }}>{inner}</a>;
+  const inner = <><span style={{ color: "var(--c-text-3)" }}>{label}</span>{" "}<strong style={{ fontWeight: "600" }}>{value}</strong></>;
+  if (href) return <a href={href} className="c-hit" style={{ color: "var(--c-text)" }}>{inner}</a>;
   return (
-    <button type="button" className="c-hit" aria-expanded={open ? "true" : "false"} onClick={onClick} title="Cambiar" style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)", color: INK, cursor: "pointer" }}>
-      <span>{inner}</span><ChevronDown size={13} strokeWidth={2.4} aria-hidden="true" style={{ color: TEXT3, transition: "transform .2s ease", transform: open ? "rotate(180deg)" : "none" }} />
+    <button type="button" className="c-hit" aria-expanded={open ? "true" : "false"} onClick={onClick} title="Cambiar" style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text)", cursor: "pointer" }}>
+      <span>{inner}</span><ChevronDown size={13} strokeWidth={2.4} aria-hidden="true" style={{ color: "var(--c-text-3)", transition: "transform .2s ease", transform: open ? "rotate(180deg)" : "none" }} />
     </button>
   );
 }
@@ -257,7 +256,7 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
   const auto = bot.autonomy || "avisa";
   const modelEngine = bot.model?.engine || (bot.model?.slug ? engineOfModel(bot.model.slug) : null);
   const options = [{ id: null, label: "Como el equipo", sub: team ? team.label : "La cuenta que elijas en Ajustes" }, ...engines.filter((e) => e.connected).map((e) => ({ id: e.id, label: e.label, sub: e.detail || null }))];
-  const panel = { display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "var(--r-lg)", background: "#F6F6F3", animation: "rise .2s ease-out" };
+  const panel = { display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "var(--r-lg)", background: "var(--c-hover)", animation: "rise .2s ease-out" };
   return (
     <section id="como" aria-labelledby="como-t" style={card}>
       <SectionHead id="como-t" title="Cómo trabaja" note="Cuánto hace por su cuenta antes de preguntarte." />
@@ -266,17 +265,17 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
           const on = auto === id;
           return (
             <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} disabled={busy} onClick={() => !on && change({ autonomy: id }, { autonomy: auto }, `${bot.name}: ${label.toLowerCase()}`)}
-              style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", padding: "16px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", textAlign: "left", cursor: "pointer", transition: "border-color .2s ease" }}>
+              style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", padding: "16px", border: `2px solid ${on ? "var(--c-text)" : "rgb(var(--c-ink-rgb) / .1)"}`, borderRadius: "var(--r-lg)", background: "var(--c-card)", textAlign: "left", cursor: "pointer", transition: "border-color .2s ease" }}>
               <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{label}</span>
-              <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: TEXT2 }}>{desc}</span>
+              <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "var(--c-text-2)" }}>{desc}</span>
             </button>
           );
         })}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3", fontSize: "var(--t-ui)" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-hover)", fontSize: "var(--t-ui)" }}>
         <span style={{ fontWeight: "600" }}>{"Siempre te pregunta antes de"}</span>
-        {RED_LINES.map((r) => <span key={r} style={{ height: "26px", padding: "0 10px 0 8px", display: "inline-flex", alignItems: "center", gap: "5px", borderRadius: "var(--r-pill)", background: "#FFFFFF" }}><Lock />{r}</span>)}
-        <a href="/ajustes/permisos" style={{ marginLeft: "auto", fontSize: "var(--t-meta)", color: BLUE }}>{"Por qué"}</a>
+        {RED_LINES.map((r) => <span key={r} style={{ height: "26px", padding: "0 10px 0 8px", display: "inline-flex", alignItems: "center", gap: "5px", borderRadius: "var(--r-pill)", background: "var(--c-card)" }}><Lock />{r}</span>)}
+        <a href="/ajustes/permisos" style={{ marginLeft: "auto", fontSize: "var(--t-meta)", color: "var(--c-accent-ink)" }}>{"Por qué"}</a>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", fontSize: "var(--t-ui)" }}>
         <Fact label="Piensa con" value={`${account} · ${thinking[1].toLowerCase()}`} open={open === "think"} onClick={() => setOpen(open === "think" ? null : "think")} />
@@ -284,7 +283,7 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
         <Fact label="Gasto al mes" value={limit ? `hasta ${formatTokens(limit)} tokens del espacio` : "sin límite"} href="/ajustes/uso#limite-mensual" />
       </div>
       {expert && bot.model?.label ? (
-        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", font: "500 var(--t-meta)/1.4 'Geist Mono', monospace", color: TEXT2 }}>
+        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", font: "500 var(--t-meta)/1.4 'Geist Mono', monospace", color: "var(--c-text-2)" }}>
           {modelEngine ? <WithMark engine={modelEngine} size={12} gap="6px">{bot.model.label}</WithMark> : bot.model.label}
           <span>{"· " + ["razonamiento " + thinking[1].toLowerCase(), bot.model.family ? "familia " + bot.model.family : null, bot.model.reason ? "porque " + bot.model.reason : null, bot.engine ? "cuenta propia" : "cuenta del equipo"].filter(Boolean).join(" · ")}</span>
         </span>
@@ -297,17 +296,17 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
               const on = (bot.engine || null) === o.id;
               return (
                 <button key={String(o.id)} type="button" role="radio" aria-checked={on ? "true" : "false"} disabled={busy} onClick={() => !on && change({ engine: o.id }, { engine: bot.engine || null }, `${bot.name} piensa con ${o.id ? o.label : "la cuenta del equipo"}`)}
-                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", border: `2px solid ${on ? "var(--c-text)" : "rgb(var(--c-ink-rgb) / .1)"}`, borderRadius: "var(--r-lg)", background: "var(--c-card)", textAlign: "left", cursor: "pointer" }}>
                   {o.id ? <WithMark engine={o.id} size={14}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{o.label}</span></WithMark> : <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{o.label}</span>}
-                  {o.sub ? <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{o.sub}</span> : null}
+                  {o.sub ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{o.sub}</span> : null}
                 </button>
               );
             })}
           </div>
-          {options.length < 2 ? <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{"Conecta otra cuenta en "}<a href="/ajustes/ia" style={{ color: BLUE }}>{"Ajustes › Inteligencia"}</a>{" para que este bot piense con ella."}</span> : null}
+          {options.length < 2 ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Conecta otra cuenta en "}<a href="/ajustes/ia" style={{ color: "var(--c-accent-ink)" }}>{"Ajustes › Inteligencia"}</a>{" para que este bot piense con ella."}</span> : null}
           <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", paddingTop: "4px" }}>{"Forma de pensar"}</span>
           <span style={{ alignSelf: "flex-start" }}><Seg label="Forma de pensar" items={THINKING.map(([v, l]) => [v, l])} value={thinking[0]} disabled={busy} onPick={(v) => change({ thinking: v }, { thinking: thinking[0] }, `${bot.name}: ${THINKING.find((t) => t[0] === v)[1].toLowerCase()}`)} /></span>
-          <span role="status" style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{thinking[2]}{" Colmena elige el modelo por su función, en la versión más alta de tu plan."}</span>
+          <span role="status" style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{thinking[2]}{" Colmena elige el modelo por su función, en la versión más alta de tu plan."}</span>
         </div>
       ) : null}
       {open === "help" ? (
@@ -319,15 +318,15 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
               const next = on ? bot.helpers.filter((x) => x !== b.id) : [...(bot.helpers || []), b.id];
               return (
                 <button key={b.id} type="button" aria-pressed={on ? "true" : "false"} disabled={busy} onClick={() => change({ helpers: next }, { helpers: bot.helpers || [] })}
-                  style={{ height: "36px", padding: "0 14px 0 10px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "var(--r-pill)", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : INK, fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>
+                  style={{ height: "36px", padding: "0 14px 0 10px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>
                   <Shape bot={b} size={14} style={on ? null : { opacity: 0.7 }} />{b.name}{on ? <Check size={13} strokeWidth={2.6} aria-hidden="true" /> : null}
                 </button>
               );
             })}
-            {!others.length ? <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{"Aún no hay más bots en el equipo."}</span> : null}
+            {!others.length ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Aún no hay más bots en el equipo."}</span> : null}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ fontSize: "var(--t-body)" }}>{"Delegar sin preguntarte"}</span><span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{"Si está apagado, te avisa antes de pasar trabajo a otro bot."}</span></span>
+            <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ fontSize: "var(--t-body)" }}>{"Delegar sin preguntarte"}</span><span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Si está apagado, te avisa antes de pasar trabajo a otro bot."}</span></span>
             <Toggle on={!!bot.delegateFreely} label="Delegar sin preguntarte" disabled={busy} onClick={() => change({ delegateFreely: !bot.delegateFreely }, { delegateFreely: !!bot.delegateFreely })} />
           </div>
         </div>
@@ -347,7 +346,7 @@ function Apps({ bot, connectors, learning, setLearning, expert, busy, change }) 
   const tools = Object.fromEntries(TOOL_KEYS.map((k) => [k, bot.tools?.[k] || "none"]));
   const channels = { colmena: true, correo: false, chat: false, movil: false, ...(bot.channels || {}) };
   const conn = (cid) => connectors.find((c) => c.id === cid);
-  const subhead = { padding: "14px 0 4px", fontSize: "var(--t-ui)", fontWeight: "600", color: "#3D404A" };
+  const subhead = { padding: "14px 0 4px", fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-text-2)" };
   const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", minHeight: "58px", padding: "8px 0", borderTop: LINE };
   return (
     <section id="apps" aria-labelledby="apps-t" style={{ ...card, gap: "14px" }}>
@@ -361,10 +360,10 @@ function Apps({ bot, connectors, learning, setLearning, expert, busy, change }) 
           const hint = v === "none" ? "Sin acceso." : APP_HINT[k]?.[v] || "";
           return (
             <div key={k} style={row}>
-              <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "700" }}>{APP_MARK[k] || "·"}</span>
+              <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-chip)", fontSize: "var(--t-caption)", fontWeight: "700" }}>{APP_MARK[k] || "·"}</span>
               <span style={{ flex: "1 1 180px", display: "flex", flexDirection: "column", gap: "1px" }}>
                 <span style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{name}</span>
-                <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{hint}{c && !c.connected ? <>{" Sin conectar · "}<a href="/ajustes/conexiones" style={{ color: BLUE }}>{"Conectar"}</a></> : null}{expert ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{` · tools.${k}=${v}`}</span> : null}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{hint}{c && !c.connected ? <>{" Sin conectar · "}<a href="/ajustes/conexiones" style={{ color: "var(--c-accent-ink)" }}>{"Conectar"}</a></> : null}{expert ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{` · tools.${k}=${v}`}</span> : null}</span>
               </span>
               <Seg label={`Acceso a ${name}`} items={levels} value={v} disabled={busy} onPick={(lv) => change({ tools: { ...tools, [k]: lv } }, { tools }, `${name}: ${levels.find((l) => l[0] === lv)[1].toLowerCase()}`)} />
             </div>
@@ -380,7 +379,7 @@ function Apps({ bot, connectors, learning, setLearning, expert, busy, change }) 
             <div key={key} style={{ ...row, minHeight: "52px" }}>
               <span style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "1px" }}>
                 <span style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{label}</span>
-                <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{soon ? "Funciona con Colmena abierta en el escritorio." : desc}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{soon ? "Funciona con Colmena abierta en el escritorio." : desc}</span>
               </span>
               <Toggle on={on} label={label} disabled={soon || !learning || capAct.busy} onClick={() => setCap(key, !on)} />
             </div>
@@ -398,14 +397,14 @@ function Apps({ bot, connectors, learning, setLearning, expert, busy, change }) 
             <div key={key} style={{ ...row, minHeight: "52px" }}>
               <span style={{ flex: "1 1 200px", display: "flex", flexDirection: "column", gap: "1px" }}>
                 <span style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{label}</span>
-                {!connector ? <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{"Próximamente"}</span> : !connected ? <a href="/ajustes/conexiones" style={{ fontSize: "var(--t-meta)", color: BLUE }}>{"Conéctalo en Ajustes para activarlo"}</a> : null}
+                {!connector ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Próximamente"}</span> : !connected ? <a href="/ajustes/conexiones" style={{ fontSize: "var(--t-meta)", color: "var(--c-accent-ink)" }}>{"Conéctalo en Ajustes para activarlo"}</a> : null}
               </span>
               <Toggle on={on} label={label} disabled={!usable || busy} onClick={() => change({ channels: { ...channels, [key]: !on } }, { channels })} />
             </div>
           );
         })}
       </div>
-      {capAct.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "#B4232A" }}>{capAct.error}</p> : null}
+      {capAct.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{capAct.error}</p> : null}
     </section>
   );
 }
@@ -433,31 +432,31 @@ function Skills({ bot, store, learning, setLearning, data, expert, onOpen }) {
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
         <h2 id="hab-t" style={h2}>{"Habilidades"}</h2>
         <span style={{ display: "flex", gap: "14px", fontSize: "var(--t-ui)" }}>
-          <button type="button" onClick={importSkill} disabled={item.busy} title="Añadir un SKILL.md" style={{ padding: "0", border: "0", background: "transparent", color: "#1F4FD1", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Añadir"}</button>
-          <a href="/biblioteca/habilidades" style={{ color: BLUE }}>{"Todas"}</a>
+          <button type="button" onClick={importSkill} disabled={item.busy} title="Añadir un SKILL.md" style={{ padding: "0", border: "0", background: "transparent", color: "var(--c-accent-ink)", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Añadir"}</button>
+          <a href="/biblioteca/habilidades" style={{ color: "var(--c-accent-ink)" }}>{"Todas"}</a>
         </span>
       </div>
       {shown.map((k) => (
-        <div key={k.id} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "44px", padding: "0 2px", borderTop: "1px solid rgba(18,19,26,.05)", opacity: ["disabled", "archived"].includes(k.status) ? 0.6 : 1 }}>
+        <div key={k.id} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "44px", padding: "0 2px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)", opacity: ["disabled", "archived"].includes(k.status) ? 0.6 : 1 }}>
           <button type="button" onClick={() => onOpen(k.id)} aria-label={`${k.name}: ${skillNote(k)}. Ver pasos`} style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", padding: "6px 0", border: "0", background: "transparent", textAlign: "left", cursor: "pointer" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "7px", fontSize: "var(--t-body)" }}>{k.name}{k.verdict && k.verdict.value !== "dudoso" ? <VerdictMark verdict={k.verdict} compact consolidated={k.consolidated} /> : null}</span>
-            <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{skillNote(k)}{expert ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{` · v${k.version || 1} · ${k.origin || "instalada"} · ${k.steps || 0} pasos`}</span> : null}</span>
+            <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{skillNote(k)}{expert ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{` · v${k.version || 1} · ${k.origin || "instalada"} · ${k.steps || 0} pasos`}</span> : null}</span>
           </button>
           {k.status === "pending" ? (
-            <button type="button" onClick={() => onOpen(k.id)} style={{ height: "28px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "#FFF1C7", color: "#8A5A00", fontSize: "var(--t-meta)", fontWeight: "600", cursor: "pointer" }}>{"Revisar"}</button>
+            <button type="button" onClick={() => onOpen(k.id)} style={{ height: "28px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-honey-soft)", color: "var(--c-honey-text)", fontSize: "var(--t-meta)", fontWeight: "600", cursor: "pointer" }}>{"Revisar"}</button>
           ) : learning ? (
             <button type="button" onClick={() => pin(k)} disabled={item.busy} aria-pressed={k.pinned ? "true" : "false"} aria-label={k.pinned ? `Dejar de fijar ${k.name}` : `Fijar ${k.name}: nunca se archivará`} title={k.pinned ? "Fijada: nunca se archiva" : "Fijar: nunca se archivará por falta de uso"}
-              style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-sm)", background: k.pinned ? INK : "transparent", color: k.pinned ? "#FFFFFF" : "#8C8F99", cursor: "pointer" }}>
+              style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-sm)", background: k.pinned ? "var(--c-btn)" : "transparent", color: k.pinned ? "var(--c-btn-text)" : "#8C8F99", cursor: "pointer" }}>
               <Pin size={14} strokeWidth={2.2} aria-hidden="true" />
             </button>
           ) : null}
         </div>
       ))}
-      {sorted.length > 6 ? <button type="button" onClick={() => setAll((x) => !x)} style={{ ...quiet, alignSelf: "flex-start", padding: "0", color: "#1F4FD1" }}>{all ? "Ver menos" : `Ver las ${sorted.length}`}</button> : null}
-      {!sorted.length ? <span style={{ fontSize: "var(--t-ui)", color: TEXT3, paddingTop: "4px" }}>{"Aún no tiene habilidades. Las aprenderá al repetir tareas, o puedes añadir un SKILL.md."}</span> : null}
-      {sorted.some((s) => s.status === "stale" || s.status === "archived") ? <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{"Las que no usa en un mes dejan de ofrecerse y a los tres meses se archivan; nunca se borran. Fija las que quieras conservar."}</span> : null}
+      {sorted.length > 6 ? <button type="button" onClick={() => setAll((x) => !x)} style={{ ...quiet, alignSelf: "flex-start", padding: "0", color: "var(--c-accent-ink)" }}>{all ? "Ver menos" : `Ver las ${sorted.length}`}</button> : null}
+      {!sorted.length ? <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)", paddingTop: "4px" }}>{"Aún no tiene habilidades. Las aprenderá al repetir tareas, o puedes añadir un SKILL.md."}</span> : null}
+      {sorted.some((s) => s.status === "stale" || s.status === "archived") ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Las que no usa en un mes dejan de ofrecerse y a los tres meses se archivan; nunca se borran. Fija las que quieras conservar."}</span> : null}
       <VerdictList verdicts={learning?.verdicts} />
-      {item.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "#B4232A" }}>{item.error}</p> : null}
+      {item.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{item.error}</p> : null}
     </section>
   );
 }
@@ -476,7 +475,7 @@ function Memory({ bot, store, learning, data, expert }) {
     <section id="memoria" aria-labelledby="mem-t" style={{ ...card, gap: "12px" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
         <h2 id="mem-t" style={h2}>{"Recuerda de ti"}</h2>
-        <a href="/biblioteca/memoria" style={{ fontSize: "var(--t-ui)", color: BLUE }}>{"Toda la memoria"}</a>
+        <a href="/biblioteca/memoria" style={{ fontSize: "var(--t-ui)", color: "var(--c-accent-ink)" }}>{"Toda la memoria"}</a>
       </div>
       {expert && learning?.memory ? (
         <div role="group" aria-label="Uso de la memoria" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
@@ -485,27 +484,27 @@ function Memory({ bot, store, learning, data, expert }) {
             if (!u) return null;
             const tone = u.percent >= 90 ? "#B4232A" : u.percent >= 70 ? "#4A4D57" : "#0B8A5F";
             return (
-              <span key={k} style={{ display: "flex", flexDirection: "column", gap: "5px", padding: "8px 10px", borderRadius: "var(--r-md)", background: "#F6F6F3" }}>
-                <span style={{ display: "flex", justifyContent: "space-between", gap: "6px", fontSize: "var(--t-caption)" }}><strong style={{ fontWeight: "600" }}>{label}</strong><span style={{ font: "500 var(--t-micro)/1.4 'Geist Mono', monospace", color: TEXT3 }}>{`${u.used}/${u.limit}`}</span></span>
-                <span role="meter" aria-label={"Memoria: " + label} aria-valuemin={0} aria-valuemax={u.limit} aria-valuenow={u.used} style={{ height: "5px", borderRadius: "var(--r-xs)", background: "rgba(18,19,26,.07)", overflow: "hidden" }}><span style={{ display: "block", width: `${Math.min(100, u.percent)}%`, height: "100%", background: tone }} /></span>
+              <span key={k} style={{ display: "flex", flexDirection: "column", gap: "5px", padding: "8px 10px", borderRadius: "var(--r-md)", background: "var(--c-hover)" }}>
+                <span style={{ display: "flex", justifyContent: "space-between", gap: "6px", fontSize: "var(--t-caption)" }}><strong style={{ fontWeight: "600" }}>{label}</strong><span style={{ font: "500 var(--t-micro)/1.4 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{`${u.used}/${u.limit}`}</span></span>
+                <span role="meter" aria-label={"Memoria: " + label} aria-valuemin={0} aria-valuemax={u.limit} aria-valuenow={u.used} style={{ height: "5px", borderRadius: "var(--r-xs)", background: "rgb(var(--c-ink-rgb) / .07)", overflow: "hidden" }}><span style={{ display: "block", width: `${Math.min(100, u.percent)}%`, height: "100%", background: tone }} /></span>
               </span>
             );
           })}
         </div>
       ) : null}
       {shown.map((m) => (
-        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "44px", borderTop: "1px solid rgba(18,19,26,.05)", animation: "fade .3s ease-out" }}>
+        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "44px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)", animation: "fade .3s ease-out" }}>
           <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px", padding: "6px 0" }}>
             <span style={{ fontSize: "var(--t-body)", lineHeight: "1.4" }}>{m.text}</span>
-            {expert || m.review ? <span style={{ fontSize: "var(--t-meta)", color: m.review ? "#8A5A00" : TEXT3 }}>{m.review ? "¿Es así? Confírmalo u olvídalo" : memoryNote(m)}{expert ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{` · ${m.scope || "bot"}${m.kind ? " · " + m.kind : ""}`}</span> : null}</span> : null}
+            {expert || m.review ? <span style={{ fontSize: "var(--t-meta)", color: m.review ? "var(--c-honey-text)" : "var(--c-text-3)" }}>{m.review ? "¿Es así? Confírmalo u olvídalo" : memoryNote(m)}{expert ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{` · ${m.scope || "bot"}${m.kind ? " · " + m.kind : ""}`}</span> : null}</span> : null}
           </span>
-          {m.review ? <button type="button" disabled={item.busy} onClick={() => item.act(() => patch(`/memories/${encodeURIComponent(m.id)}`, { review: false }))} style={{ ...quiet, color: "#0B6B4A", fontWeight: "600" }}>{"Es así"}</button> : null}
+          {m.review ? <button type="button" disabled={item.busy} onClick={() => item.act(() => patch(`/memories/${encodeURIComponent(m.id)}`, { review: false }))} style={{ ...quiet, color: "var(--c-ok-ink)", fontWeight: "600" }}>{"Es así"}</button> : null}
           <button type="button" onClick={() => forget(m)} style={quiet}>{"Olvidar"}</button>
         </div>
       ))}
-      {list.length > 6 ? <button type="button" onClick={() => setAll((x) => !x)} style={{ ...quiet, alignSelf: "flex-start", padding: "0", color: "#1F4FD1" }}>{all ? "Ver menos" : `Ver los ${list.length}`}</button> : null}
-      {!list.length ? <span style={{ fontSize: "var(--t-ui)", color: TEXT3, paddingTop: "4px" }}>{"Aún no recuerda nada de ti. Lo que le cuentes en el chat y lo que acordéis aparecerá aquí."}</span> : null}
-      {item.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "#B4232A" }}>{item.error}</p> : null}
+      {list.length > 6 ? <button type="button" onClick={() => setAll((x) => !x)} style={{ ...quiet, alignSelf: "flex-start", padding: "0", color: "var(--c-accent-ink)" }}>{all ? "Ver menos" : `Ver los ${list.length}`}</button> : null}
+      {!list.length ? <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)", paddingTop: "4px" }}>{"Aún no recuerda nada de ti. Lo que le cuentes en el chat y lo que acordéis aparecerá aquí."}</span> : null}
+      {item.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{item.error}</p> : null}
     </section>
   );
 }
@@ -546,8 +545,8 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
     run: () => post(`/approvals/${encodeURIComponent(proposal.id)}`, { decision, revision: proposal.revision }),
   });
   const diff = (proposal?.diff || []).filter((d) => d.op !== " " && d.line.trim());
-  const frame = { padding: "16px 18px", borderRadius: "var(--r-lg)", background: "#F6F6F3", fontSize: "var(--t-body)", lineHeight: "1.6", color: "#3D404A" };
-  const label = { fontSize: "var(--t-ui)", fontWeight: "600", color: "#3D404A" };
+  const frame = { padding: "16px 18px", borderRadius: "var(--r-lg)", background: "var(--c-hover)", fontSize: "var(--t-body)", lineHeight: "1.6", color: "var(--c-text-2)" };
+  const label = { fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-text-2)" };
   return (
     <section id="personalidad" aria-labelledby="per-t" style={{ ...card, gap: "14px" }}>
       <SectionHead id="per-t" title="Personalidad" note={`Cómo es y cómo escribe. ${bot.name} no la cambia por su cuenta: te propone el cambio.`}>
@@ -555,12 +554,12 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
       </SectionHead>
       {showVersions ? <div style={{ margin: "0 -20px", animation: "rise .2s ease-out" }}><DocHistory doc="soul" botId={bot.id} empty="Su carácter no ha cambiado desde que llegó." /></div> : null}
       {proposal && soulDraft === null ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-lg)", background: "#FFF6DC" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-lg)", background: "var(--c-honey-soft)" }}>
           <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{`${bot.name} propone un cambio`}{proposal.summary ? ` · ${proposal.summary}` : ""}</span>
           <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.7", whiteSpace: "pre-wrap" }}>
             {diff.length ? diff.slice(0, 12).map((d, i) => (d.op === "-"
-              ? <del key={i} style={{ display: "block", background: "#FBE9EA", color: "#B4232A" }}>{d.line}</del>
-              : <ins key={i} style={{ display: "block", background: "#E3F4EC", color: "#0B6B4A", textDecoration: "none" }}>{d.line}</ins>)) : proposal.raw}
+              ? <del key={i} style={{ display: "block", background: "var(--c-error-soft)", color: "var(--c-error)" }}>{d.line}</del>
+              : <ins key={i} style={{ display: "block", background: "var(--c-ok-soft)", color: "var(--c-ok-ink)", textDecoration: "none" }}>{d.line}</ins>)) : proposal.raw}
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             <button type="button" onClick={() => decide("approved")} style={dark}>{"Aceptar el cambio"}</button>
@@ -576,7 +575,7 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
         </div>
         {instr !== null ? (
           <>
-            <textarea aria-label="Instrucciones del bot" autoFocus maxLength={12000} value={instr} onChange={(e) => setInstr(e.target.value)} style={{ ...frame, width: "100%", minHeight: "120px", fieldSizing: "content", resize: "vertical", border: "1px solid rgba(18,19,26,.14)", background: "#FFFFFF", fontFamily: "inherit", boxSizing: "border-box" }} />
+            <textarea aria-label="Instrucciones del bot" autoFocus maxLength={12000} value={instr} onChange={(e) => setInstr(e.target.value)} style={{ ...frame, width: "100%", minHeight: "120px", fieldSizing: "content", resize: "vertical", border: "1px solid rgb(var(--c-ink-rgb) / .14)", background: "var(--c-card)", fontFamily: "inherit", boxSizing: "border-box" }} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
               <button type="button" onClick={() => setInstr(null)} style={quiet}>{"Cancelar"}</button>
               <button type="button" disabled={busy || instr.trim().length < 1} onClick={async () => { await change({ instructions: instr }, { instructions: bot.instructions || "" }, "Instrucciones guardadas"); setInstr(null); }} style={dark}>{"Guardar"}</button>
@@ -591,8 +590,8 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
         </div>
         {soulDraft !== null ? (
           <>
-            <textarea aria-label="Personalidad del bot" autoFocus maxLength={40000} value={soulDraft} onChange={(e) => setSoulDraft(e.target.value)} style={{ ...frame, width: "100%", minHeight: "240px", fieldSizing: "content", resize: "vertical", border: "1px solid rgba(18,19,26,.14)", background: "#FFFFFF", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", boxSizing: "border-box" }} />
-            {soulAct.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "#B4232A" }}>{soulAct.error}</p> : null}
+            <textarea aria-label="Personalidad del bot" autoFocus maxLength={40000} value={soulDraft} onChange={(e) => setSoulDraft(e.target.value)} style={{ ...frame, width: "100%", minHeight: "240px", fieldSizing: "content", resize: "vertical", border: "1px solid rgb(var(--c-ink-rgb) / .14)", background: "var(--c-card)", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", boxSizing: "border-box" }} />
+            {soulAct.error ? <p role="alert" style={{ margin: "0", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{soulAct.error}</p> : null}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
               <button type="button" onClick={() => { setSoulDraft(null); setEditing(null); }} style={quiet}>{"Cancelar"}</button>
               <button type="button" disabled={soulAct.busy || soulDraft === soul} onClick={saveSoul} style={{ ...dark, opacity: soulDraft === soul ? 0.55 : 1 }}>{editing ? "Guardar tu versión" : "Guardar"}</button>
@@ -600,15 +599,15 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
           </>
         ) : soul ? (
           <div className="v3-soul-md" tabIndex={0} aria-label="Personalidad del bot" style={{ ...frame, maxHeight: "260px", overflowY: "auto" }}><ReactMarkdown components={SOUL_HEADINGS}>{soul}</ReactMarkdown></div>
-        ) : <div style={{ ...frame, color: TEXT3 }}>{data ? "Aún no tiene personalidad escrita." : "Cargando…"}</div>}
+        ) : <div style={{ ...frame, color: "var(--c-text-3)" }}>{data ? "Aún no tiene personalidad escrita." : "Cargando…"}</div>}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
         <span style={label}>{"Cómo habla"}</span>
         {SLIDERS.map(([key, left, right, aria]) => (
           <div key={key} style={{ display: "grid", gridTemplateColumns: "84px 1fr 84px", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "var(--t-ui)", color: TEXT3, textAlign: "right" }}>{left}</span>
-            <input type="range" min="0" max="100" step="5" value={pers[key]} onChange={(e) => slide(key, Number(e.target.value))} aria-label={aria} style={{ width: "100%", height: "36px", accentColor: bot.color || INK, cursor: "pointer" }} />
-            <span style={{ fontSize: "var(--t-ui)", color: TEXT3 }}>{right}</span>
+            <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)", textAlign: "right" }}>{left}</span>
+            <input type="range" min="0" max="100" step="5" value={pers[key]} onChange={(e) => slide(key, Number(e.target.value))} aria-label={aria} style={{ width: "100%", height: "36px", accentColor: bot.color || "var(--c-text)", cursor: "pointer" }} />
+            <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{right}</span>
           </div>
         ))}
       </div>
@@ -638,28 +637,28 @@ function Usage({ bot, usage, missions, settings, expert, learning, busy, change 
   const pct = base ? Math.min(100, Math.round((mine.tokens / base) * 100)) : 0;
   const share = limit ? `de ${formatTokens(limit)} del espacio` : usage?.total ? `· el ${pct} % del equipo` : "";
   return (
-    <section id="uso" aria-labelledby="uso-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 28px", padding: "22px 26px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", scrollMarginTop: "16px" }}>
+    <section id="uso" aria-labelledby="uso-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 28px", padding: "22px 26px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", scrollMarginTop: "16px" }}>
       <h2 id="uso-t" style={h2}>{new Date().getDate() >= 7 ? "Uso este mes" : "Uso estos 7 días"}</h2>
       <div style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={{ fontSize: "var(--t-ui)" }}>
           {usage ? <><strong style={{ fontWeight: "600" }}>{`${formatTokens(mine.tokens || 0)} tokens`}</strong>{` ${share} · ${plural(tasks, "tarea", "tareas")}`}</> : "Calculando…"}
-          {expert && usage ? <span style={{ font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: TEXT3 }}>{` · ${mine.calls || 0} llamadas${learning?.counters ? ` · ${learning.counters.userTurns} turnos · ${learning.counters.toolCalls} herramientas` : ""}`}</span> : null}
+          {expert && usage ? <span style={{ font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{` · ${mine.calls || 0} llamadas${learning?.counters ? ` · ${learning.counters.userTurns} turnos · ${learning.counters.toolCalls} herramientas` : ""}`}</span> : null}
         </span>
-        <span aria-hidden="true" style={{ position: "relative", height: "8px", borderRadius: "var(--r-xs)", background: "#EEEEEA", overflow: "hidden" }}>
+        <span aria-hidden="true" style={{ position: "relative", height: "8px", borderRadius: "var(--r-xs)", background: "var(--c-chip)", overflow: "hidden" }}>
           <span style={{ position: "absolute", inset: "0 auto 0 0", width: `${pct}%`, background: bot.color || INK, transition: "width .6s cubic-bezier(.2,.8,.2,1)" }} />
         </span>
       </div>
-      <a href="/ajustes/uso" style={{ fontSize: "var(--t-ui)", color: BLUE }}>{"Ver detalle"}</a>
+      <a href="/ajustes/uso" style={{ fontSize: "var(--t-ui)", color: "var(--c-accent-ink)" }}>{"Ver detalle"}</a>
       <label style={{ flex: "1 1 100%", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 20px", paddingTop: "14px", borderTop: LINE }}>
         <span style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: "3px" }}>
           <span style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{"Presupuesto al mes"}</span>
-          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: TEXT3 }}>
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)" }}>
             {budget
               ? `Lleva ${formatTokens(month)} de ${formatTokens(budget)} tokens este mes. Al llegar, ${bot.name} para y te lo dice.`
               : `Un tope solo para ${bot.name}, aparte del límite del espacio. Al llegar, para y te lo dice.`}
           </span>
         </span>
-        <Select aria-label={`Presupuesto al mes de ${bot.name}`} disabled={busy} value={budget ?? ""} onChange={setBudget} style={{ width: "240px", maxWidth: "100%", height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", color: INK, fontSize: "var(--t-body)", boxSizing: "border-box", cursor: busy ? "wait" : "pointer" }} options={budgets.map(([v, l]) => [v ?? "", l])} />
+        <Select aria-label={`Presupuesto al mes de ${bot.name}`} disabled={busy} value={budget ?? ""} onChange={setBudget} style={{ width: "240px", maxWidth: "100%", height: "40px", padding: "0 10px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-md)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-body)", boxSizing: "border-box", cursor: busy ? "wait" : "pointer" }} options={budgets.map(([v, l]) => [v ?? "", l])} />
       </label>
     </section>
   );
@@ -677,24 +676,24 @@ function History({ bot, data, missions, learnedBy }) {
           const taught = learnedBy?.[m.id];
           return (
             <div key={m.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 12px", borderTop: LINE }}>
-              <a href={m.conversation ? roomUrl(m) : missionUrl(m)} style={{ flex: "1 1 320px", minWidth: "0", display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", color: INK }}>
+              <a href={m.conversation ? roomUrl(m) : missionUrl(m)} style={{ flex: "1 1 320px", minWidth: "0", display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", color: "var(--c-text)" }}>
                 <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
                   <span style={{ fontSize: "var(--t-body)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title || m.prompt}</span>
-                  <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{[m.conversation ? "Chat" : isSala(m) ? placeName(m) : m.mode === "debate" ? "Debate" : "Tarea", m.statusLabel || MISSION_LABEL[m.status] || null].filter(Boolean).join(" · ")}</span>
+                  <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[m.conversation ? "Chat" : isSala(m) ? placeName(m) : m.mode === "debate" ? "Debate" : "Tarea", m.statusLabel || MISSION_LABEL[m.status] || null].filter(Boolean).join(" · ")}</span>
                 </span>
-                <span style={{ fontSize: "var(--t-meta)", color: TEXT3, whiteSpace: "nowrap" }}>{shortDate(m.updatedAt || m.createdAt)}</span>
+                <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", whiteSpace: "nowrap" }}>{shortDate(m.updatedAt || m.createdAt)}</span>
               </a>
               {taught ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "6px" }}>
-                  <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{[taught.memories ? plural(taught.memories, "recuerdo", "recuerdos") : null, taught.skills ? plural(taught.skills, "habilidad", "habilidades") : null].filter(Boolean).join(" y ") + " salieron de aquí"}</span>
+                  <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[taught.memories ? plural(taught.memories, "recuerdo", "recuerdos") : null, taught.skills ? plural(taught.skills, "habilidad", "habilidades") : null].filter(Boolean).join(" y ") + " salieron de aquí"}</span>
                   <ForgetButton missionId={m.id} title={m.title || m.prompt} variant="row" />
                 </span>
               ) : null}
             </div>
           );
         })}
-        {list.length > 6 ? <button type="button" onClick={() => setAll((x) => !x)} style={{ ...quiet, alignSelf: "flex-start", padding: "10px 0 0", color: "#1F4FD1" }}>{all ? "Ver menos" : `Ver los ${list.length}`}</button> : null}
-        {!list.length ? <p style={{ margin: "0", padding: "14px 0 4px", borderTop: LINE, fontSize: "var(--t-ui)", color: TEXT3 }}>{"Aún no ha trabajado en nada. "}<a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ color: BLUE }}>{"Pídele algo en el chat."}</a></p> : null}
+        {list.length > 6 ? <button type="button" onClick={() => setAll((x) => !x)} style={{ ...quiet, alignSelf: "flex-start", padding: "10px 0 0", color: "var(--c-accent-ink)" }}>{all ? "Ver menos" : `Ver los ${list.length}`}</button> : null}
+        {!list.length ? <p style={{ margin: "0", padding: "14px 0 4px", borderTop: LINE, fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{"Aún no ha trabajado en nada. "}<a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ color: "var(--c-accent-ink)" }}>{"Pídele algo en el chat."}</a></p> : null}
       </div>
     </section>
   );

@@ -66,15 +66,15 @@ export default function Diagram({ source }) {
     <figure style={{ margin: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
       {showCode ? code : (
         <div role="img" aria-label="Diagrama" className={svg ? "c-enter" : undefined}
-          style={{ padding: "16px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", overflowX: "auto", display: "flex", justifyContent: "center", minHeight: svg ? undefined : "72px", alignItems: "center", color: "#555A68", fontSize: "var(--t-meta)" }}
+          style={{ padding: "16px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", overflowX: "auto", display: "flex", justifyContent: "center", minHeight: svg ? undefined : "72px", alignItems: "center", color: "var(--c-text-3)", fontSize: "var(--t-meta)" }}
           {...(svg ? { dangerouslySetInnerHTML: { __html: svg } } : { children: "Dibujando el diagrama…" })} />
       )}
       {svg ? (
         <figcaption style={{ display: "flex", gap: "12px", fontSize: "var(--t-caption)" }}>
-          <button type="button" onClick={() => setShowCode((v) => !v)} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: 0, background: "transparent", border: 0, cursor: "pointer", color: "#4A4F5C", fontWeight: "600" }}>
+          <button type="button" onClick={() => setShowCode((v) => !v)} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: 0, background: "transparent", border: 0, cursor: "pointer", color: "var(--c-text-2)", fontWeight: "600" }}>
             <Network size={13} strokeWidth={2.2} aria-hidden="true" />{showCode ? "Ver el diagrama" : "Ver el código"}
           </button>
-          <button type="button" onClick={() => navigator.clipboard?.writeText(source).catch(() => {})} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: 0, background: "transparent", border: 0, cursor: "pointer", color: "#4A4F5C", fontWeight: "600" }}>
+          <button type="button" onClick={() => navigator.clipboard?.writeText(source).catch(() => {})} style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: 0, background: "transparent", border: 0, cursor: "pointer", color: "var(--c-text-2)", fontWeight: "600" }}>
             <Copy size={13} strokeWidth={2.2} aria-hidden="true" />{"Copiar"}
           </button>
         </figcaption>

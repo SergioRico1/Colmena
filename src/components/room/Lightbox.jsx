@@ -68,8 +68,8 @@ function Lightbox({ images, index: start, onClose }) {
   const onPointerMove = (e) => { if (drag.current) setOffset({ x: e.clientX - drag.current.x, y: e.clientY - drag.current.y }); };
   const onPointerUp = () => { drag.current = null; };
 
-  const tool = { width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-md)", color: "#12131A", cursor: "pointer" };
-  const side = (dir) => ({ position: "absolute", top: "50%", [dir]: "20px", transform: "translateY(-50%)", width: "48px", height: "48px", display: "grid", placeItems: "center", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-circle)", cursor: "pointer", color: "#12131A" });
+  const tool = { width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-md)", color: "var(--c-text)", cursor: "pointer" };
+  const side = (dir) => ({ position: "absolute", top: "50%", [dir]: "20px", transform: "translateY(-50%)", width: "48px", height: "48px", display: "grid", placeItems: "center", background: "var(--c-card)", border: "2px solid var(--c-text)", borderRadius: "var(--r-circle)", cursor: "pointer", color: "var(--c-text)" });
   const name = image.name || image.alt || "imagen";
   return (
     <dialog ref={dialog} onClose={onClose} onKeyDown={onKeyDown} aria-label={many ? `Imagen ${index + 1} de ${images.length}` : "Imagen ampliada"}
@@ -81,7 +81,7 @@ function Lightbox({ images, index: start, onClose }) {
         <img key={image.src} src={image.src} alt={image.alt} draggable={scale === 1 && canDragOut() && isLocatable(image.src) ? "true" : "false"}
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
           onDoubleClick={() => (scale === 1 ? zoom(2) : reset())}
-          style={{ animation: "c-fade 160ms ease both", maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "var(--r-sm)", background: "#FFFFFF", transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transition: drag.current ? "none" : "transform .14s ease", cursor: scale > 1 ? (drag.current ? "grabbing" : "grab") : "zoom-in", userSelect: "none", touchAction: "none" }} />
+          style={{ animation: "c-fade 160ms ease both", maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "var(--r-sm)", background: "var(--c-card)", transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transition: drag.current ? "none" : "transform .14s ease", cursor: scale > 1 ? (drag.current ? "grabbing" : "grab") : "zoom-in", userSelect: "none", touchAction: "none" }} />
       </div>
       <div style={{ position: "absolute", top: "14px", left: "20px", right: "20px", display: "flex", alignItems: "center", gap: "12px", color: "#FFFFFF" }}>
         <strong style={{ fontSize: "var(--t-ui)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</strong>
@@ -96,12 +96,12 @@ function Lightbox({ images, index: start, onClose }) {
           <button type="button" className="rm-focus c-press" aria-label="Siguiente (→)" title="Siguiente (→)" onClick={() => go(1)} style={side("right")}><ChevronRight size={22} strokeWidth={2.4} aria-hidden="true" /></button>
         </>
       ) : null}
-      <div role="toolbar" aria-label="Zoom" style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", boxShadow: "0 20px 40px -16px rgba(0,0,0,.5)" }}>
+      <div role="toolbar" aria-label="Zoom" style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: "2px", padding: "4px", background: "var(--c-card)", border: "0", borderRadius: "var(--r-pill)", boxShadow: "0 20px 40px -16px rgba(0,0,0,.5)" }}>
         <button type="button" className="rm-focus" aria-label="Alejar (−)" title="Alejar (−)" disabled={scale <= 1} onClick={() => zoom(1 / STEP)} style={{ ...tool, opacity: scale <= 1 ? 0.35 : 1 }}><ZoomOut size={18} strokeWidth={2.2} aria-hidden="true" /></button>
         <span aria-live="polite" style={{ minWidth: "52px", textAlign: "center", font: "600 var(--t-meta)/1 'Geist Mono', monospace" }}>{Math.round(scale * 100) + " %"}</span>
         <button type="button" className="rm-focus" aria-label="Acercar (+)" title="Acercar (+)" disabled={scale >= MAX} onClick={() => zoom(STEP)} style={{ ...tool, opacity: scale >= MAX ? 0.35 : 1 }}><ZoomIn size={18} strokeWidth={2.2} aria-hidden="true" /></button>
         <button type="button" className="rm-focus" aria-label="Tamaño ajustado (0)" title="Tamaño ajustado (0)" disabled={scale === 1} onClick={reset} style={{ ...tool, opacity: scale === 1 ? 0.35 : 1 }}><RotateCcw size={17} strokeWidth={2.2} aria-hidden="true" /></button>
-        <span aria-hidden="true" style={{ width: "1px", height: "24px", background: "#DCE0E8", margin: "0 4px" }} />
+        <span aria-hidden="true" style={{ width: "1px", height: "24px", background: "var(--c-line)", margin: "0 4px" }} />
         <a href={image.src} download={/\.\w{2,4}$/.test(name) ? name : name + ".png"} className="rm-focus" aria-label="Descargar" title="Descargar" style={{ ...tool, textDecoration: "none" }}><Download size={18} strokeWidth={2.2} aria-hidden="true" /></a>
       </div>
     </dialog>

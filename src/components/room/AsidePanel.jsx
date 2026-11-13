@@ -94,15 +94,15 @@ export default function AsidePanel({ mission }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
-      <div style={{ padding: "12px 16px 8px", display: "flex", flexDirection: "column", gap: "8px", borderBottom: "1px solid #E6E8EE" }}>
-        <p style={{ margin: 0, fontSize: "var(--t-caption)", lineHeight: "1.45", color: "#555A68" }}>No interrumpe a nadie ni queda en la sala, salvo que la pases. Responde con lo que ya se sabe de esta conversación.</p>
+      <div style={{ padding: "12px 16px 8px", display: "flex", flexDirection: "column", gap: "8px", borderBottom: "1px solid var(--c-line)" }}>
+        <p style={{ margin: 0, fontSize: "var(--t-caption)", lineHeight: "1.45", color: "var(--c-text-3)" }}>No interrumpe a nadie ni queda en la sala, salvo que la pases. Responde con lo que ya se sabe de esta conversación.</p>
         {members.length > 1 ? (
           <div role="group" aria-label="A quién preguntas" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
             {members.map((b) => {
               const on = target?.id === b.id;
               return (
                 <button key={b.id} type="button" className="rm-focus" aria-pressed={on ? "true" : "false"} onClick={() => setBotId(b.id)}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px 0 4px", background: "#FFFFFF", border: on ? "2px solid #12131A" : "1px dashed #A9AEBB", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: on ? "600" : "400", color: on ? "#12131A" : "#555A68" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px 0 4px", background: "var(--c-card)", border: on ? "2px solid var(--c-text)" : "1px dashed var(--c-line-strong)", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: on ? "600" : "400", color: on ? "var(--c-text)" : "var(--c-text-3)" }}>
                   <BotAvatar bot={b} size={20} />{b.name}
                 </button>
               );
@@ -111,35 +111,35 @@ export default function AsidePanel({ mission }) {
         ) : null}
       </div>
       <div aria-live="polite" style={{ flex: "1", padding: "14px 16px", display: "flex", flexDirection: "column", gap: "14px" }}>
-        {!turns.length ? <p style={{ margin: 0, fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#4A4F5C" }}>{`Pregúntale a ${target?.name || "un bot"} lo que quieras sobre esta conversación.`}</p> : null}
+        {!turns.length ? <p style={{ margin: 0, fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{`Pregúntale a ${target?.name || "un bot"} lo que quieras sobre esta conversación.`}</p> : null}
         {turns.map((t) => {
           const bot = findBot(bots, t.botId || target?.id);
           return (
             <article key={t.id} className="c-enter" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ alignSelf: "flex-end", maxWidth: "88%", padding: "8px 12px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-lg) var(--r-lg) var(--r-xs) var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: "1.45", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{t.question}</div>
-              {t.selection ? <span style={{ alignSelf: "flex-end", display: "inline-flex", alignItems: "center", gap: "4px", maxWidth: "88%", fontSize: "var(--t-micro)", color: "#555A68" }}><Quote {...I} size={11} />con el texto que seleccionaste</span> : null}
+              <div style={{ alignSelf: "flex-end", maxWidth: "88%", padding: "8px 12px", background: "var(--c-btn)", color: "var(--c-btn-text)", borderRadius: "var(--r-lg) var(--r-lg) var(--r-xs) var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: "1.45", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{t.question}</div>
+              {t.selection ? <span style={{ alignSelf: "flex-end", display: "inline-flex", alignItems: "center", gap: "4px", maxWidth: "88%", fontSize: "var(--t-micro)", color: "var(--c-text-3)" }}><Quote {...I} size={11} />con el texto que seleccionaste</span> : null}
               <div style={{ display: "grid", gridTemplateColumns: "26px 1fr", gap: "10px" }}>
                 <BotAvatar bot={bot} size={26} />
                 <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
                   {t.status === "pending" ? (
-                    <span role="status" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}><WorkingDots />{`${bot.name} está mirando la conversación…`}</span>
+                    <span role="status" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}><WorkingDots />{`${bot.name} está mirando la conversación…`}</span>
                   ) : t.status === "failed" ? (
-                    <span role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#B4372A" }}>
+                    <span role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-error)" }}>
                       {t.error || "No ha podido responder."}
-                      <button type="button" className="rm-focus" onClick={() => ask(t.question, { retryOf: t })} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 10px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}><RotateCcw {...I} size={12} />Reintentar</button>
+                      <button type="button" className="rm-focus" onClick={() => ask(t.question, { retryOf: t })} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 10px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}><RotateCcw {...I} size={12} />Reintentar</button>
                     </span>
                   ) : (
                     <>
                       <Markdown text={t.answer} size={14} />
                       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px" }}>
-                        <span style={{ fontSize: "var(--t-micro)", color: "#555A68", marginRight: "6px" }}>{t.at ? "a las " + time(t.at) : ""}</span>
+                        <span style={{ fontSize: "var(--t-micro)", color: "var(--c-text-3)", marginRight: "6px" }}>{t.at ? "a las " + time(t.at) : ""}</span>
                         {t.shared ? (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 8px", background: "#E1F4EC", borderRadius: "var(--r-pill)", fontSize: "var(--t-caption)", fontWeight: "600", color: "#0B5A3E" }}><Check {...I} size={12} />En la sala</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "28px", padding: "0 8px", background: "var(--c-ok-soft)", borderRadius: "var(--r-pill)", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-ok-ink)" }}><Check {...I} size={12} />En la sala</span>
                         ) : (
-                          <button type="button" className="rm-focus" onClick={() => share(t)} style={{ height: "28px", padding: "0 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}>Pasarla a la sala</button>
+                          <button type="button" className="rm-focus" onClick={() => share(t)} style={{ height: "28px", padding: "0 10px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}>Pasarla a la sala</button>
                         )}
                         <ListenButton text={t.answer} bot={bot} compact style={{ width: "28px", height: "28px" }} />
-                        <button type="button" className="rm-focus" onClick={() => discard(t)} aria-label="Descartar" title="Descartar" style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "#555A68" }}><X {...I} size={13} /></button>
+                        <button type="button" className="rm-focus" onClick={() => discard(t)} aria-label="Descartar" title="Descartar" style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "var(--c-text-3)" }}><X {...I} size={13} /></button>
                       </span>
                     </>
                   )}
@@ -150,26 +150,26 @@ export default function AsidePanel({ mission }) {
         })}
         <span ref={end} />
       </div>
-      <form onSubmit={(e) => { e.preventDefault(); if (!pending) ask(text); }} style={{ position: "sticky", bottom: 0, padding: "10px 14px 14px", background: "#F7F8FA", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px" }}>
+      <form onSubmit={(e) => { e.preventDefault(); if (!pending) ask(text); }} style={{ position: "sticky", bottom: 0, padding: "10px 14px 14px", background: "var(--c-sunken)", borderTop: "1px solid var(--c-line)", display: "flex", flexDirection: "column", gap: "8px" }}>
         {!answered && !pending ? (
           <div role="group" aria-label="Preguntas para empezar" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-            {STARTERS.map((q) => <button key={q} type="button" className="rm-focus" onClick={() => ask(q)} style={{ height: "28px", padding: "0 10px", background: "#FFFFFF", border: "1px dashed #A9AEBB", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)" }}>{q}</button>)}
+            {STARTERS.map((q) => <button key={q} type="button" className="rm-focus" onClick={() => ask(q)} style={{ height: "28px", padding: "0 10px", background: "var(--c-card)", border: "1px dashed var(--c-line-strong)", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)" }}>{q}</button>)}
           </div>
         ) : null}
         {selection ? (
-          <span className="c-pop" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 6px 6px 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", fontSize: "var(--t-caption)", color: "#4A4F5C" }}>
+          <span className="c-pop" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 6px 6px 10px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", fontSize: "var(--t-caption)", color: "var(--c-text-2)" }}>
             <Quote {...I} size={13} style={{ flex: "none" }} />
             <span style={{ flex: "1", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selection}</span>
             <button type="button" className="rm-focus" onClick={() => setSelection("")} aria-label="Quitar el texto seleccionado" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", cursor: "pointer" }}><X {...I} size={12} /></button>
           </span>
         ) : null}
-        <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-lg)" }}>
+        <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "var(--c-card)", border: "2px solid var(--c-text)", borderRadius: "var(--r-lg)" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Tu pregunta aparte</span>
           <textarea className="c-bare" ref={input} rows="1" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} disabled={pending}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (!pending) ask(text); } }}
             placeholder={`Pregúntale a ${target?.name || "un bot"}, sin interrumpir…`}
             style={{ flex: "1", minWidth: 0, resize: "none", border: "0", background: "transparent", fontSize: "var(--t-ui)", lineHeight: "1.45", padding: "6px 0", fieldSizing: "content", maxHeight: "140px" }} />
-          <button type="submit" aria-label="Preguntar" disabled={pending || !text.trim()} style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-md)", cursor: "pointer", opacity: pending || !text.trim() ? 0.55 : 1 }}><ArrowUp {...I} size={16} strokeWidth={2.4} /></button>
+          <button type="submit" aria-label="Preguntar" disabled={pending || !text.trim()} style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "2px solid var(--c-text)", borderRadius: "var(--r-md)", cursor: "pointer", opacity: pending || !text.trim() ? 0.55 : 1 }}><ArrowUp {...I} size={16} strokeWidth={2.4} /></button>
         </label>
         <ErrorLine>{error}</ErrorLine>
       </form>

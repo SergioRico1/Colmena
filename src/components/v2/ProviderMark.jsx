@@ -41,7 +41,7 @@ export default function ProviderMark({ engine, size = 40, tile = true, light = f
   return (
     // Small tiles live in pick lists (grey rows, a white selected row): white with a hairline
     // there, so every row shows the same box.
-    <span aria-hidden={title ? undefined : "true"} style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: radiusOf(Math.round(size * 0.3)) + "px", background: light ? "rgba(255,255,255,.1)" : size <= 32 ? "#FFFFFF" : "#F6F6F3", boxShadow: !light && size <= 32 ? "inset 0 0 0 1px rgba(18,19,26,.08)" : "none", ...style }}>
+    <span aria-hidden={title ? undefined : "true"} style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: radiusOf(Math.round(size * 0.3)) + "px", background: light ? "rgba(255,255,255,.1)" : size <= 32 ? "var(--c-card)" : "var(--c-hover)", boxShadow: !light && size <= 32 ? "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .08)" : "none", ...style }}>
       {svg}
     </span>
   );

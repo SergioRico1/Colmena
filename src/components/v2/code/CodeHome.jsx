@@ -43,7 +43,7 @@ function ProjectRow({ p, n, on, onPick }) {
         <span className="code-stat" style={{ fontSize: "var(--t-meta)", color: C.muted, whiteSpace: "nowrap" }}>{n === 1 ? "1 tarea" : n + " tareas"}</span>
       </button>
       <button type="button" className={menu.at ? undefined : "code-x"} onClick={menu.open} aria-label={"Archivado de " + p.name} aria-haspopup="menu" title="Cuándo se archivan sus tareas"
-        style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-circle)", background: C.white, color: C.text, cursor: "pointer" }}>
+        style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", display: "grid", placeItems: "center", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-circle)", background: C.white, color: C.text, cursor: "pointer" }}>
         <Ellipsis size={15} strokeWidth={2.4} aria-hidden="true" />
       </button>
       <ProjectMenu project={p} menu={menu} />
@@ -65,7 +65,7 @@ function Engines({ engines }) {
         <div key={e.id} title={e.available ? undefined : e.need || undefined} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "42px", fontSize: "var(--t-ui)" }}>
           <span style={{ flex: 1, fontWeight: 500 }}>{e.label}{e.version ? <> <span style={{ font: `400 var(--t-caption)/1 ${MONO}`, color: C.muted }}>{e.version}</span></> : null}</span>
           {e.available ? <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: C.greenText }}>✓ listo</span>
-            : e.installable ? <button type="button" disabled={installing || e.installing} onClick={install} style={{ height: "30px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: C.white, fontSize: "var(--t-meta)", cursor: installing || e.installing ? "default" : "pointer" }}>{installing || e.installing ? "Instalando…" : "Instalar"}</button>
+            : e.installable ? <button type="button" disabled={installing || e.installing} onClick={install} style={{ height: "30px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: C.white, fontSize: "var(--t-meta)", cursor: installing || e.installing ? "default" : "pointer" }}>{installing || e.installing ? "Instalando…" : "Instalar"}</button>
               : <span style={{ fontSize: "var(--t-meta)", color: C.muted }}>Sin sesión</span>}
         </div>
       ))}
@@ -189,7 +189,7 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
             <label style={{ flex: "1 1 320px", display: "flex" }}>
               <span style={SR}>{mode === "clone" ? "Enlace del repositorio" : "Nombre del proyecto"}</span>
               <input className="c-quiet" autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder={mode === "clone" ? "https://github.com/usuario/proyecto" : "Nombre del proyecto nuevo"}
-                style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: C.white, fontSize: "var(--t-body)", fontFamily: mode === "clone" ? MONO : undefined }} />
+                style={{ flex: 1, minWidth: 0, height: "44px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-md)", background: C.white, fontSize: "var(--t-body)", fontFamily: mode === "clone" ? MONO : undefined }} />
             </label>
             <button type="submit" disabled={busy || !value.trim()} style={{ ...BTN.primary, height: "44px", opacity: busy || !value.trim() ? 0.5 : 1 }}>{busy ? (mode === "clone" ? "Clonando…" : "Creando…") : mode === "clone" ? "Clonar" : "Crear"}</button>
             <button type="button" onClick={() => setMode(null)} style={{ ...BTN.quiet, height: "44px" }}>Cancelar</button>

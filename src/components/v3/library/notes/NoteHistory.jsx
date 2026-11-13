@@ -33,26 +33,26 @@ export default function NoteHistory({ page, bots = [], version = null, onRestore
       <Back href={noteUrl(page.slug)} label={page.title} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
         <nav aria-label="Versiones de la nota" style={{ ...CARD, flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <h2 style={{ margin: 0, padding: "14px 20px 8px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#5C606C" }}>{versions.length ? `Versiones · ${versions.length}` : "Versiones"}</h2>
+          <h2 style={{ margin: 0, padding: "14px 20px 8px", fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text-3)" }}>{versions.length ? `Versiones · ${versions.length}` : "Versiones"}</h2>
           {list.error ? <p role="alert" style={{ ...ERROR, padding: "0 20px 14px" }}>{list.error}</p> : null}
           {list.loading && !list.data ? <div style={{ height: "120px", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
           {versions.map((x, i) => {
             const on = String(x.revision) === String(chosen) || x.id === chosen;
             return (
               <RowBoundary key={x.id} label="No se ha podido mostrar esta versión" resetKey={x.id}>
-                <a href={noteUrl(page.slug, "historial") + "&v=" + x.revision} aria-current={on ? "true" : undefined} style={{ display: "flex", flexDirection: "column", gap: "3px", minHeight: "56px", padding: "10px 20px", borderTop: "1px solid rgba(18,19,26,.05)", background: on ? "#F6F6F3" : "transparent", color: "#12131A", textDecoration: "none" }}>
+                <a href={noteUrl(page.slug, "historial") + "&v=" + x.revision} aria-current={on ? "true" : undefined} style={{ display: "flex", flexDirection: "column", gap: "3px", minHeight: "56px", padding: "10px 20px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)", background: on ? "var(--c-hover)" : "transparent", color: "var(--c-text)", textDecoration: "none" }}>
                   <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 8px", fontSize: "var(--t-ui)", fontWeight: on ? "600" : "500" }}>
                     <Who by={x.by} bots={bots} />
-                    <span style={{ fontWeight: "400", color: "#5C606C" }}>{whenShort(x.at, true)}</span>
+                    <span style={{ fontWeight: "400", color: "var(--c-text-3)" }}>{whenShort(x.at, true)}</span>
                     {i === 0 ? <span style={CHIP}>{"La de ahora"}</span> : null}
                   </span>
-                  <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{[VERSION_REASON[x.reason] || "Cambio en el texto", x.reason === "rename" ? `«${x.title}»` : null, delta(x.delta), x.external ? "con texto de fuera" : null].filter(Boolean).join(" · ")}</span>
+                  <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{[VERSION_REASON[x.reason] || "Cambio en el texto", x.reason === "rename" ? `«${x.title}»` : null, delta(x.delta), x.external ? "con texto de fuera" : null].filter(Boolean).join(" · ")}</span>
                 </a>
               </RowBoundary>
             );
           })}
           {!list.loading && !versions.length && !list.error ? <p style={{ ...MUTED, padding: "0 20px 16px" }}>{"Esta nota todavía no tiene versiones guardadas."}</p> : null}
-          <p style={{ ...MUTED, fontSize: "var(--t-meta)", padding: "12px 20px 16px", borderTop: "1px solid rgba(18,19,26,.05)" }}>{"Se guardan todas las del último mes; de las anteriores, la última de cada día."}</p>
+          <p style={{ ...MUTED, fontSize: "var(--t-meta)", padding: "12px 20px 16px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)" }}>{"Se guardan todas las del último mes; de las anteriores, la última de cada día."}</p>
         </nav>
         <section aria-labelledby="ver-t" style={{ ...CARD, flex: "999 1 480px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px", padding: "24px clamp(18px, 3vw, 30px) 26px" }}>
           {one.error ? <p role="alert" style={ERROR}>{one.error}</p> : null}
@@ -62,11 +62,11 @@ export default function NoteHistory({ page, bots = [], version = null, onRestore
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <h2 id="ver-t" style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em", overflowWrap: "anywhere" }}>{v.title}</h2>
-                  <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C" }}><Who by={v.by} bots={bots} />{" · " + whenShort(v.at, true) + (v.current ? " · es la de ahora" : "")}</span>
+                  <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}><Who by={v.by} bots={bots} />{" · " + whenShort(v.at, true) + (v.current ? " · es la de ahora" : "")}</span>
                 </div>
                 <div role="group" aria-label="Qué ver de esta versión" style={{ display: "flex", gap: "6px" }}>
-                  <button type="button" aria-pressed={mode === "diff"} onClick={() => setMode("diff")} style={{ ...filterChip(mode === "diff"), background: mode === "diff" ? "#12131A" : "#F1F1EC" }}>{"Qué cambiaría"}</button>
-                  <button type="button" aria-pressed={mode === "text"} onClick={() => setMode("text")} style={{ ...filterChip(mode === "text"), background: mode === "text" ? "#12131A" : "#F1F1EC" }}>{"Cómo era"}</button>
+                  <button type="button" aria-pressed={mode === "diff"} onClick={() => setMode("diff")} style={{ ...filterChip(mode === "diff"), background: mode === "diff" ? "#12131A" : "var(--c-chip)" }}>{"Qué cambiaría"}</button>
+                  <button type="button" aria-pressed={mode === "text"} onClick={() => setMode("text")} style={{ ...filterChip(mode === "text"), background: mode === "text" ? "#12131A" : "var(--c-chip)" }}>{"Cómo era"}</button>
                 </div>
               </div>
               {mode === "diff"

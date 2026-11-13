@@ -36,34 +36,34 @@ export default function ErrandCard({ errand }) {
     failed: `${bot.name} no pudo hacerlo${e.error ? ": " + e.error : "."}`,
   }[e.state];
   return (
-    <div style={{ alignSelf: "flex-start", width: "min(520px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "18px 20px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: e.state === "asked" ? "0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C" : "0 1px 2px rgba(18,19,26,.05), 0 14px 30px -20px rgba(18,19,26,.3)", animation: "rise .3s ease-out" }}>
+    <div style={{ alignSelf: "flex-start", width: "min(520px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "18px 20px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: e.state === "asked" ? "0 0 0 1.5px #12131A, 6px 6px 0 0 #FFC93C" : "0 1px 2px rgba(18,19,26,.05), 0 14px 30px -20px rgba(18,19,26,.3)", animation: "rise .3s ease-out" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <BotPresence bot={bot} size={26} state={e.state === "working" ? "work" : "rest"} />
         <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
           <strong style={{ font: "600 var(--t-lead)/1.25 'Bricolage Grotesque', sans-serif" }}>{`${first} pide algo a ${bot.name}`}</strong>
-          <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{(e.by?.name ? `Lo pide su bot ${e.by.name} · ` : "") + "solo lo ves tú"}</span>
+          <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{(e.by?.name ? `Lo pide su bot ${e.by.name} · ` : "") + "solo lo ves tú"}</span>
         </span>
       </span>
-      <p style={{ margin: 0, padding: "12px 14px", borderRadius: "var(--r-lg)", background: "#F4F4F0", fontSize: "var(--t-body)", lineHeight: 1.55, color: "#2B2E36", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{"«" + e.text + "»"}</p>
+      <p style={{ margin: 0, padding: "12px 14px", borderRadius: "var(--r-lg)", background: "var(--c-sunken)", fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text)", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{"«" + e.text + "»"}</p>
       {e.state === "asked" ? (
         <>
-          <span style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#5C606C" }}>
+          <span style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>
             <Wrench size={14} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
             <span>{`${bot.name} lo hará en un chat de incógnito (no aprende nada de él) con ${toolsText(e.tools)}. Enviar, comprar, publicar o borrar algo te lo seguirá preguntando.`}</span>
           </span>
           <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" disabled={busy} onClick={() => act("approve")} style={{ ...pill, background: "#12131A", color: "#FFFFFF" }}><Check size={15} strokeWidth={2.6} aria-hidden="true" />{"Aprobar"}</button>
-            <button type="button" disabled={busy} onClick={() => act("decline")} style={{ ...pill, background: "rgba(18,19,26,.06)", color: "#12131A" }}>{"No, gracias"}</button>
-            <button type="button" onClick={() => navigate("/ajustes/contactos#encargos")} style={{ ...pill, padding: "0 6px", background: "transparent", color: "#1F4FD1" }}>{"Cambiar herramientas"}</button>
+            <button type="button" disabled={busy} onClick={() => act("approve")} style={{ ...pill, background: "var(--c-btn)", color: "var(--c-btn-text)" }}><Check size={15} strokeWidth={2.6} aria-hidden="true" />{"Aprobar"}</button>
+            <button type="button" disabled={busy} onClick={() => act("decline")} style={{ ...pill, background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)" }}>{"No, gracias"}</button>
+            <button type="button" onClick={() => navigate("/ajustes/contactos#encargos")} style={{ ...pill, padding: "0 6px", background: "transparent", color: "var(--c-accent-ink)" }}>{"Cambiar herramientas"}</button>
           </span>
         </>
       ) : (
-        <span role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", fontSize: "var(--t-ui)", color: e.state === "failed" ? "#B4231A" : e.state === "done" ? "#0B6B4A" : "#5C606C" }}>
+        <span role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", fontSize: "var(--t-ui)", color: e.state === "failed" ? "var(--c-error)" : e.state === "done" ? "var(--c-ok-ink)" : "var(--c-text-3)" }}>
           {state}
-          {e.missionId ? <a href={`/chat/${encodeURIComponent(bot.id)}?c=${encodeURIComponent(e.missionId)}`} onClick={(ev) => { ev.preventDefault(); navigate(`/chat/${encodeURIComponent(bot.id)}?c=${encodeURIComponent(e.missionId)}`); }} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600, color: "#1F4FD1", textDecoration: "none" }}>{"Ver lo que hizo"}<ArrowUpRight size={14} strokeWidth={2.2} aria-hidden="true" /></a> : null}
+          {e.missionId ? <a href={`/chat/${encodeURIComponent(bot.id)}?c=${encodeURIComponent(e.missionId)}`} onClick={(ev) => { ev.preventDefault(); navigate(`/chat/${encodeURIComponent(bot.id)}?c=${encodeURIComponent(e.missionId)}`); }} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 600, color: "var(--c-accent-ink)", textDecoration: "none" }}>{"Ver lo que hizo"}<ArrowUpRight size={14} strokeWidth={2.2} aria-hidden="true" /></a> : null}
         </span>
       )}
-      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4231A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</span> : null}
     </div>
   );
 }

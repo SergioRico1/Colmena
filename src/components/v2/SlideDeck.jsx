@@ -25,7 +25,7 @@ export function SlideImage({ artifact, n, radius = 14, eager = false }) {
     return () => ro.disconnect();
   }, [pictures]);
   return (
-    <div ref={box} style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: radiusOf(radius) + "px", background: "#EDEBE5", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.06)" }}>
+    <div ref={box} style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: radiusOf(radius) + "px", background: "var(--c-chip)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .06)" }}>
       {pictures ? (
         <img src={thumbUrl(artifact.id, n)} alt={`Diapositiva ${n}`} loading={eager ? "eager" : "lazy"} decoding="async" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
       ) : width ? (
@@ -37,19 +37,19 @@ export function SlideImage({ artifact, n, radius = 14, eager = false }) {
 }
 
 const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
-const dark = { ...pill, background: "#12131A", color: "#FFFFFF" };
-const soft = { ...pill, background: "rgba(18,19,26,.06)", color: "#12131A" };
+const dark = { ...pill, background: "var(--c-btn)", color: "var(--c-btn-text)" };
+const soft = { ...pill, background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)" };
 
 /** In the chat: the cover, what it is, «Abrir», PowerPoint and PDF. */
 export function DeckCard({ artifact, onOpen }) {
   const n = Number(artifact?.slides) || 0;
   return (
-    <article style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "14px 14px 20px", background: "#FFFFFF", borderRadius: "var(--r-3xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)", animation: "rise .5s ease-out" }}>
+    <article style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "14px 14px 20px", background: "var(--c-card)", borderRadius: "var(--r-3xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)", animation: "rise .5s ease-out" }}>
       <button type="button" onClick={onOpen} aria-label={`Abrir «${artifact?.title || "presentación"}»`} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", borderRadius: "var(--r-xl)" }}>
         <SlideImage artifact={artifact} n={1} radius={20} eager />
       </button>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 10px" }}>
-        <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{`Presentación · ${n} ${n === 1 ? "diapositiva" : "diapositivas"}`}</span>
+        <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>{`Presentación · ${n} ${n === 1 ? "diapositiva" : "diapositivas"}`}</span>
         <strong style={{ font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{artifact?.title || "Presentación"}</strong>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", padding: "0 10px" }}>
@@ -89,7 +89,7 @@ export function SlideViewer({ artifact }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
         <button type="button" onClick={() => go((c) => c - 1)} disabled={n === 1} aria-label="Diapositiva anterior" style={arrow(-1)}><ChevronLeft size={18} strokeWidth={2.4} aria-hidden="true" /></button>
-        <span aria-live="polite" style={{ minWidth: "64px", textAlign: "center", font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: "#5C606C" }}>{`${n} / ${count}`}</span>
+        <span aria-live="polite" style={{ minWidth: "64px", textAlign: "center", font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{`${n} / ${count}`}</span>
         <button type="button" onClick={() => go((c) => c + 1)} disabled={n === count} aria-label="Diapositiva siguiente" style={arrow(1)}><ChevronRight size={18} strokeWidth={2.4} aria-hidden="true" /></button>
         <span style={{ flex: 1 }} />
         <button type="button" onClick={() => stage.current?.requestFullscreen?.()} style={soft}><Expand size={16} strokeWidth={2.2} aria-hidden="true" />{"Presentar"}</button>

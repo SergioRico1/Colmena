@@ -58,9 +58,9 @@ const I = { size: 15, strokeWidth: 2.2, "aria-hidden": "true" };
 const BROWSING = ["navegando", "rellenando un formulario", "usando el ordenador", "ejecutando una tarea"];
 const SHORTCUTS = { aparte: "mod+shift+s", archivos: "mod+shift+b", progreso: "mod+alt+shift+e", hilo: "mod+alt+shift+j", navegador: "mod+alt+shift+u", terminal: "mod+alt+shift+t", reglas: "mod+alt+shift+r" };
 const TABS = Object.fromEntries(["hilo", "progreso", "archivos", "navegador", "terminal", "aparte", "reglas"].map((k) => [k, { id: k, kind: k }]));
-const popover = { position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "260px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" };
-const menuItem = { minHeight: "38px", display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "#12131A", width: "100%" };
-const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
+const popover = { position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "260px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" };
+const menuItem = { minHeight: "38px", display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "var(--c-text)", width: "100%" };
+const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
 const MEMBERS_KEY = "colmena:room-members";
 const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 const EMPTY = [];
@@ -91,11 +91,11 @@ function HeaderMenu({ label, button, items, style = null, children = null }) {
   };
   return (
     <span ref={ref} style={{ position: "relative" }}>
-      <button type="button" aria-label={label} title={label} aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} style={{ ...style, background: open ? "#EBEBE6" : style?.background }}>{button}</button>
+      <button type="button" aria-label={label} title={label} aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} style={{ ...style, background: open ? "var(--c-chip)" : style?.background }}>{button}</button>
       {open ? (
         <div role="menu" aria-label={label} onKeyDown={keys} style={popover}>
           {children}
-          {items.map(([text, run, tone]) => <button key={text} type="button" role="menuitem" onClick={() => { setOpen(false); run(); }} style={{ ...menuItem, color: tone === "danger" ? "#B4372A" : "#12131A" }}>{text}</button>)}
+          {items.map(([text, run, tone]) => <button key={text} type="button" role="menuitem" onClick={() => { setOpen(false); run(); }} style={{ ...menuItem, color: tone === "danger" ? "var(--c-error)" : "var(--c-text)" }}>{text}</button>)}
         </div>
       ) : null}
     </span>
@@ -163,7 +163,7 @@ function Room({ id, query }) {
   };
   const shareSlot = (artifact) => (
     <button type="button" disabled={!!sharedOut[artifact.id]} onClick={() => shareArtifact(artifact)} title="Las personas de la sala podrán abrirlo. Sale cifrado de tu ordenador."
-      style={{ alignSelf: "flex-start", minHeight: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: sharedOut[artifact.id] ? "default" : "pointer" }}>
+      style={{ alignSelf: "flex-start", minHeight: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: sharedOut[artifact.id] ? "default" : "pointer" }}>
       {sharedOut[artifact.id] === "done" ? "Compartido en la sala" : sharedOut[artifact.id] === "busy" ? "Compartiendo…" : "Compartir en la sala"}
     </button>
   );
@@ -329,7 +329,7 @@ function Room({ id, query }) {
   // ---- panels on the right
   const resolve = (t) => {
     if (t.kind === "reglas") return { label: "Bots y reglas", icon: <Users {...I} />, title: "Bots y reglas · " + comboLabel(SHORTCUTS.reglas), render: () => <RulesPanel mission={mission} bots={bots} memberIds={memberIds} /> };
-    if (t.kind === "aparte") return { label: ONLY_ME, icon: <Lock {...I} />, title: ONLY_ME + " · " + comboLabel(SHORTCUTS.aparte), render: () => <><p role="note" style={{ margin: "14px 20px 0", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#3D404A" }}>{ONLY_ME + ": " + ONLY_ME_HINT.charAt(0).toLowerCase() + ONLY_ME_HINT.slice(1) + " No entra en la conversación de la sala."}</p><AsidePanel mission={mission} /></> };
+    if (t.kind === "aparte") return { label: ONLY_ME, icon: <Lock {...I} />, title: ONLY_ME + " · " + comboLabel(SHORTCUTS.aparte), render: () => <><p role="note" style={{ margin: "14px 20px 0", padding: "10px 14px", borderRadius: "var(--r-md)", background: "var(--c-hover)", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-2)" }}>{ONLY_ME + ": " + ONLY_ME_HINT.charAt(0).toLowerCase() + ONLY_ME_HINT.slice(1) + " No entra en la conversación de la sala."}</p><AsidePanel mission={mission} /></> };
     if (t.kind === "hilo") return { label: "Entre bots", icon: <MessagesSquare {...I} />, badge: thread.length || null, render: () => <ThreadPanel bare mission={mission} thread={thread} bots={bots} /> };
     if (t.kind === "progreso") return { label: "Progreso", icon: <ListChecks {...I} />, badge: `${progress.done || 0}/${progress.total || 0}`, render: () => <ProgressPanel bare mission={mission} steps={steps} pending={pending} activity={activity} bots={bots} /> };
     if (t.kind === "archivos") return { label: "Archivos de la sala", icon: <FolderOpen {...I} />, render: () => <FilesPanel missionId={missionId} onOpen={openFile} version={workVersion} /> };
@@ -404,7 +404,7 @@ function Room({ id, query }) {
   const audience = only.available ? (
     <span className="c-tip-wrap">
       <button type="button" aria-pressed={aside ? "true" : "false"} aria-describedby="solo-para-mi" onClick={toggleAside}
-        style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: aside ? "#12131A" : "#F1F1EC", color: aside ? "#FFFFFF" : "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
+        style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: aside ? "var(--c-btn)" : "var(--c-chip)", color: aside ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
         <Lock {...I} />{only.label}
       </button>
       <span role="tooltip" id="solo-para-mi" className="c-tip">{only.hint}</span>
@@ -413,11 +413,11 @@ function Room({ id, query }) {
 
   // People typing and other people's bots thinking; files on their way; what went wrong.
   const above = shared && (tl.typing.length || thinking.length || sending.length || error) ? (
-    <p role="status" style={{ margin: "0 0 8px", minHeight: "18px", display: "flex", flexWrap: "wrap", gap: "4px 16px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
+    <p role="status" style={{ margin: "0 0 8px", minHeight: "18px", display: "flex", flexWrap: "wrap", gap: "4px 16px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
       {tl.typing.length ? <span>{listNames(tl.typing.map(firstName)) + (tl.typing.length > 1 ? " están escribiendo…" : " está escribiendo…")}</span> : null}
       {thinking.length ? <span>{listNames(thinking) + (thinking.length > 1 ? " están pensando…" : " está pensando…")}</span> : null}
       {sending.length ? <span>{"Cifrando y enviando " + listNames(sending) + "…"}</span> : null}
-      {error ? <span role="alert" style={{ color: "#B4372A" }}>{error}</span> : null}
+      {error ? <span role="alert" style={{ color: "var(--c-error)" }}>{error}</span> : null}
     </p>
   ) : null;
   const ready2 = !!shown;
@@ -434,7 +434,7 @@ function Room({ id, query }) {
             <Announcer text={news} />
             {ready2 ? (
               <>
-                <header style={{ position: "relative", zIndex: 5, flex: "none", background: "rgba(245,245,242,.92)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
+                <header style={{ position: "relative", zIndex: 5, flex: "none", background: "color-mix(in oklab, var(--c-page) 92%, transparent)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 26px" }}>
                     <div style={{ flex: "1 1 220px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px", marginRight: "auto" }}>
                       {renaming !== null ? (
@@ -442,13 +442,13 @@ function Room({ id, query }) {
                           <label style={{ flex: 1, minWidth: 0, display: "flex" }}>
                             <span style={hidden}>{"Nombre de la sala"}</span>
                             <input className="c-quiet" autoFocus value={renaming} maxLength={60} onChange={(e) => setRenaming(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); setRenaming(null); } }}
-                              style={{ flex: 1, minWidth: 0, height: "34px", padding: "0 10px", border: "1px solid rgba(18,19,26,.2)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }} />
+                              style={{ flex: 1, minWidth: 0, height: "34px", padding: "0 10px", border: "1px solid rgb(var(--c-ink-rgb) / .2)", borderRadius: "var(--r-md)", background: "var(--c-card)", fontSize: "var(--t-body)", fontWeight: 600 }} />
                           </label>
-                          <button type="submit" style={{ ...outline, height: "34px", background: "#12131A", borderColor: "#12131A", color: "#FFFFFF" }}>{"Guardar"}</button>
+                          <button type="submit" style={{ ...outline, height: "34px", background: "var(--c-btn)", borderColor: "var(--c-text)", color: "var(--c-btn-text)" }}>{"Guardar"}</button>
                           <button type="button" onClick={() => setRenaming(null)} style={{ ...outline, height: "34px" }}>{"Cancelar"}</button>
                         </form>
                       ) : <h1 style={{ margin: 0, fontSize: "var(--t-lead)", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{taskTalk ? `Conversación de la tarea «${taskTalk.title}»` : "# " + title}</h1>}
-                      <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", color: "#5C606C", minWidth: 0 }}>
+                      <span style={{ display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)", minWidth: 0 }}>
                         {place.private && !taskTalk ? <Lock size={12} strokeWidth={2.3} aria-hidden="true" style={{ flex: "none", marginTop: "3px" }} /> : null}
                         {/* Up to two lines, the whole of it on hover and to a screen reader (it is all in the page). */}
                         <span title={subtitle} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 }}>
@@ -461,23 +461,23 @@ function Room({ id, query }) {
                     </div>
                     <span role="img" aria-label={stackLabel(panel)} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span aria-hidden="true" style={{ display: "flex" }}>{stackPeople.map((p, i) => <span key={p.address || i} style={{ marginLeft: i ? "-7px" : 0, borderRadius: "var(--r-circle)", boxShadow: "0 0 0 2px #F5F5F2" }}><PersonAvatar person={p} size={26} /></span>)}</span>
-                      <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} bot={b} size={18} owner={b.owner} ring="#F5F5F2" state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
-                      <span aria-hidden="true" style={{ fontSize: "var(--t-meta)", color: "#4A4D57", whiteSpace: "nowrap" }}>{counts}</span>
+                      <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} bot={b} size={18} owner={b.owner} ring="var(--c-page)" state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
+                      <span aria-hidden="true" style={{ fontSize: "var(--t-meta)", color: "var(--c-text-2)", whiteSpace: "nowrap" }}>{counts}</span>
                     </span>
                     {/* A debate waiting for your choice is decided from the banner below: one action, one honey element. */}
                     {mission?.mode === "debate" && mission.status !== "awaiting_choice" ? <a href={`/debate/${missionId}`} style={{ ...outline, textDecoration: "none" }}>{"Ver las propuestas"}</a> : null}
                     {!gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={outline}>{"Invitar"}</button> : null}
                     <button type="button" aria-label={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} title={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} aria-expanded={membersOpen && !dockShown ? "true" : "false"} aria-controls="sala-miembros"
                       onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}
-                      style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: membersOpen && !dockShown ? "#EBEBE6" : "transparent", color: "#4A4D57", cursor: "pointer" }}><Users size={17} strokeWidth={2.1} aria-hidden="true" /></button>
-                    {menu.length ? <HeaderMenu label="Más opciones" items={menu} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: "transparent", color: "#4A4D57", cursor: "pointer" }}
+                      style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: membersOpen && !dockShown ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", cursor: "pointer" }}><Users size={17} strokeWidth={2.1} aria-hidden="true" /></button>
+                    {menu.length ? <HeaderMenu label="Más opciones" items={menu} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" }}
                       button={<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18.5" cy="12" r="1.6" /></svg>} /> : null}
                   </div>
                   {searching && shared ? <ShareSearch shareId={shareId} onClose={() => setSearching(false)} /> : null}
                   {leaving ? (
-                    <div role="alertdialog" aria-label="Salir de la sala" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "12px 26px", borderTop: "1px solid rgba(18,19,26,.06)", fontSize: "var(--t-ui)" }}>
+                    <div role="alertdialog" aria-label="Salir de la sala" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "12px 26px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-ui)" }}>
                       <span style={{ flex: "1 1 320px", lineHeight: 1.45 }}>{view?.mine ? "Tú creaste esta sala: si sales, se cierra para todos. Cada persona conserva lo que ya tiene." : "Dejarás de recibir lo que se escriba aquí. Lo que ya escribiste sigue en la sala de los demás."}</span>
-                      <button type="button" autoFocus onClick={leave} style={{ ...outline, background: "#12131A", borderColor: "#12131A", color: "#FFFFFF" }}>{view?.mine ? "Cerrar para todos" : "Salir"}</button>
+                      <button type="button" autoFocus onClick={leave} style={{ ...outline, background: "var(--c-btn)", borderColor: "var(--c-text)", color: "var(--c-btn-text)" }}>{view?.mine ? "Cerrar para todos" : "Salir"}</button>
                       <button type="button" onClick={() => setLeaving(false)} style={outline}>{"Cancelar"}</button>
                     </div>
                   ) : null}
@@ -486,11 +486,11 @@ function Room({ id, query }) {
                 {mission ? <BlockerBand mission={mission} pending={pending.filter((a) => a.kind === "question" && !rows.some((m) => m.approvalId === a.id))} bots={bots} /> : null}
                 {mission ? <StuckBand mission={mission} bots={bots} /> : null}
                 {shared && relay !== "online" ? (
-                  <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "#ECECE7", color: "#3D404A", fontSize: "var(--t-ui)" }}>
+                  <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "var(--c-chip)", color: "var(--c-text-2)", fontSize: "var(--t-ui)" }}>
                     {relay === "off" ? "Falta conectar Colmena al buzón de mensajes: Ajustes › Personas." : (RELAY_LABEL[relay] || "Sin conexión con el buzón") + ". Lo que escribas saldrá en cuanto vuelva."}
                   </p>
                 ) : null}
-                {gone ? <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "#ECECE7", color: "#3D404A", fontSize: "var(--t-ui)" }}>{view.removed ? "Ya no estás en esta sala. Puedes leer lo que tenías." : "Saliste de esta sala. Puedes leer lo que tenías."}</p> : null}
+                {gone ? <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "var(--c-chip)", color: "var(--c-text-2)", fontSize: "var(--t-ui)" }}>{view.removed ? "Ya no estás en esta sala. Puedes leer lo que tenías." : "Saliste de esta sala. Puedes leer lo que tenías."}</p> : null}
                 <div style={{ flex: "1", minHeight: 0, display: "flex", flexDirection: "column" }}>
                   <div ref={(el) => { follow.ref(el); scroller.current = el; }} {...messageListProps("Mensajes de la sala")} style={{ flex: "1", minHeight: "0", overflowY: "auto", overscrollBehavior: "contain", WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", maskImage: "linear-gradient(to bottom, transparent 0, #000 28px)", display: "flex", flexDirection: "column" }}>
                     {/* role="log" as in a chat (Timeline.jsx), private or with people; new rows are spoken by the Announcer. */}
@@ -503,8 +503,8 @@ function Room({ id, query }) {
                         return (
                           <div style={{ alignSelf: "center", maxWidth: "520px", margin: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
                             <strong style={{ font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", textWrap: "balance" }}>{empty.title}</strong>
-                            <span style={{ fontSize: "var(--t-body)", lineHeight: 1.55, color: "#4A4D57" }}>{empty.text}</span>
-                            {empty.action === "invite" && !gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={{ ...outline, marginTop: "6px", background: "#12131A", borderColor: "#12131A", color: "#FFFFFF" }}>{empty.actionLabel}</button> : null}
+                            <span style={{ fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)" }}>{empty.text}</span>
+                            {empty.action === "invite" && !gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={{ ...outline, marginTop: "6px", background: "var(--c-btn)", borderColor: "var(--c-text)", color: "var(--c-btn-text)" }}>{empty.actionLabel}</button> : null}
                           </div>
                         );
                       })() : null}
@@ -528,7 +528,7 @@ function Room({ id, query }) {
                       tools={audience}
                       shared={shared ? { roomId, view: guest ? { ...view, bots: [] } : view, onTyping: tl.typingNow, onSent: () => { tl.reload(); follow.toEnd(); }, onFiles: gone ? null : attach, disabled: gone || !view, above } : null}
                       placeholder={gone ? "Ya no estás en esta sala" : shared ? `Mensaje en #${title} · @ para nombrar a una persona o a un bot` : `Mensaje en #${title} · @ para pedir algo a un bot`} />
-                    {shared && !gone && !guest && myBots.length ? <p style={{ margin: "-10px 0 12px", padding: "0 clamp(16px, 3vw, 28px)", fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Tus bots trabajan en tu ordenador. A los demás solo les llega lo que contestan."}</p> : null}
+                    {shared && !gone && !guest && myBots.length ? <p style={{ margin: "-10px 0 12px", padding: "0 clamp(16px, 3vw, 28px)", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Tus bots trabajan en tu ordenador. A los demás solo les llega lo que contestan."}</p> : null}
                   </div>
                 </div>
               </>

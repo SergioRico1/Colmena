@@ -95,10 +95,10 @@ test("Inicio: what waits, then the box to ask, then what is under way; the panel
 });
 
 test("honey is not a button fill: the primary action is the dark button", () => {
-  const fills = (file) => (read(file).match(/<(?:button|a|HoldButton)\b[^>]*background: "#FFC93C"[^>]*>/g) || []);
+  const fills = (file) => (read(file).match(/<(?:button|a|HoldButton)\b[^>]*background: "(?:#FFC93C|var\(--c-honey\))"[^>]*>/g) || []);
   for (const file of ["src/components/v2/NeedCard.jsx", "src/components/v3/dia/Needs.jsx", "src/components/v3/dia/NeedRows.jsx", "src/components/room/InlineApprovals.jsx", "src/screens/Hoy.jsx", "src/screens/AjustesSeccion.jsx"]) assert.deepEqual(fills(file), [], file);
-  assert.equal(/background: "#FFC93C"[^}]*\}\}>\{"Aprobar plan"\}/.test(read("src/components/room/RoomParts.jsx")), false);
+  assert.equal(/background: "(?:#FFC93C|var\(--c-honey\))"[^}]*\}\}>\{"Aprobar plan"\}/.test(read("src/components/room/RoomParts.jsx")), false);
   // The no-account notice and a bot's limit line are system states: neutral.
-  assert.equal(/#FFF6DC|#FFC93C/i.test(read("src/components/v3/States.jsx").split("export function StuckBotCard")[0]), false);
-  assert.equal(/LimitLine[\s\S]{0,900}#8A5A00/.test(read("src/components/v2/LimitNotice.jsx")), false);
+  assert.equal(/#FFF6DC|#FFC93C|--c-honey\)|--c-honey-soft/i.test(read("src/components/v3/States.jsx").split("export function StuckBotCard")[0]), false);
+  assert.equal(/LimitLine[\s\S]{0,900}(?:#8A5A00|--c-honey-text)/.test(read("src/components/v2/LimitNotice.jsx")), false);
 });

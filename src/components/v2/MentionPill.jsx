@@ -60,7 +60,7 @@ export const MentionMirror = forwardRef(function MentionMirror({ value, bots, st
   });
   parts.push(value.slice(at) + "​");
   return (
-    <div ref={ref} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", whiteSpace: "pre-wrap", overflowWrap: "break-word", color: "#12131A", ...style }}>
+    <div ref={ref} aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", whiteSpace: "pre-wrap", overflowWrap: "break-word", color: "var(--c-text)", ...style }}>
       {parts}
     </div>
   );
@@ -88,5 +88,5 @@ export function MentionLink({ href, children }) {
   const { bots = [] } = useStore() || {};
   const name = decodeURIComponent(String(href || "").slice(2));
   const bot = bots.find((b) => String(b.name || "").toLowerCase() === name.toLowerCase());
-  return bot ? <MentionPill bot={bot} name={bot.name} /> : <span style={{ color: "#1F4FD1", fontWeight: 600 }}>{children}</span>;
+  return bot ? <MentionPill bot={bot} name={bot.name} /> : <span style={{ color: "var(--c-accent-ink)", fontWeight: 600 }}>{children}</span>;
 }

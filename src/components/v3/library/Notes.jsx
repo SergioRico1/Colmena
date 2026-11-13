@@ -18,12 +18,12 @@ const LIST_VIEWS = new Set(["archivadas", "por-crear", "mapa"]);
 
 /** The buttons of the section, in Biblioteca's header. */
 export function NotesActions({ onNew, onImport }) {
-  const white = { ...PILL, height: "44px", padding: "0 18px", fontSize: "var(--t-body)", fontWeight: "500", border: "1px solid rgba(18,19,26,.16)" };
+  const white = { ...PILL, height: "44px", padding: "0 18px", fontSize: "var(--t-body)", fontWeight: "500", border: "1px solid rgb(var(--c-ink-rgb) / .16)" };
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
       <a href="/api/wiki/export" download title="Descarga todas las notas en un .zip, cada una en su carpeta" style={white}>{"Exportar"}</a>
       <button type="button" onClick={onImport} style={white}>{"Importar notas"}</button>
-      <button type="button" onClick={onNew} style={{ ...white, border: "0", background: "#12131A", color: "#FFFFFF", fontWeight: "600" }}>{"Nueva nota"}</button>
+      <button type="button" onClick={onNew} style={{ ...white, border: "0", background: "var(--c-btn)", color: "var(--c-btn-text)", fontWeight: "600" }}>{"Nueva nota"}</button>
     </div>
   );
 }

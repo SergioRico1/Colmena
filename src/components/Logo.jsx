@@ -11,7 +11,7 @@ export default function Logo({ size = 30, fontSize = 22, tone = "light", gap = 1
   return (
     <span style={{ display: "flex", alignItems: "center", gap: gap + "px", ...style }}>
       <LogoMark size={size} />
-      <span style={{ font: `800 ${fontSize}px/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: tone === "light" ? "#FFFFFF" : "#12131A" }}>Colmena</span>
+      <span style={{ font: `800 ${fontSize}px/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: tone === "light" ? "#FFFFFF" : "var(--c-text)" }}>Colmena</span>
     </span>
   );
 }

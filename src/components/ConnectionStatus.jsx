@@ -7,18 +7,17 @@ import { useStore } from "../lib/store.jsx";
 //  - later, if the live channel drops: a small ink pill «Sin conexión · reintentando…» at the
 //    foot of the screen. Nothing blocks: what you write is kept and sent when it is back
 //    (lib/unsent.js). Then «Conectado de nuevo» for a moment. Nothing for blips under 2 s.
-const INK = "#12131A";
 
 /** The start-up face, shared with the desktop splash (desktop/splash.html draws the same). */
 export function StartingUp({ slow = false, onRetry = () => location.reload(), onOpenLog = null }) {
   return (
-    <div role={slow ? "alert" : "status"} aria-live="polite" style={{ position: "fixed", inset: "0", zIndex: 2147482500, display: "grid", placeItems: "center", padding: "0 40px", background: INK, color: "#FFFFFF", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", animation: "fade .4s ease-out", WebkitAppRegion: "drag" }}>
+    <div role={slow ? "alert" : "status"} aria-live="polite" style={{ position: "fixed", inset: "0", zIndex: 2147482500, display: "grid", placeItems: "center", padding: "0 40px", background: "var(--c-btn)", color: "var(--c-btn-text)", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", animation: "fade .4s ease-out", WebkitAppRegion: "drag" }}>
       {slow ? (
         <div style={{ width: "100%", maxWidth: "520px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px" }}>
           <span style={{ font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Colmena está tardando en arrancar"}</span>
           <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#C9CBD3" }}>{"Suele pasar justo después de encender el ordenador o si el antivirus revisa la app. Tus datos están a salvo."}</span>
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", WebkitAppRegion: "no-drag" }}>
-            <button type="button" onClick={onRetry} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: INK, fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{"Reintentar"}</button>
+            <button type="button" onClick={onRetry} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{"Reintentar"}</button>
             {onOpenLog ? <button type="button" onClick={onOpenLog} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(255,255,255,.25)", borderRadius: "var(--r-pill)", background: "transparent", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Abrir el registro"}</button> : null}
           </div>
         </div>
@@ -91,7 +90,7 @@ export default function ConnectionStatus() {
   }
   if (!lost && !back) return null;
   return (
-    <div role="status" aria-live="polite" title={lost ? "Nada se bloquea: lo que escribas se guarda y se envía al volver." : undefined} style={{ position: "fixed", left: centre != null ? centre + "px" : "50%", bottom: "24px", transform: "translateX(-50%)", zIndex: 2147482500, display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", whiteSpace: "nowrap", boxShadow: "0 16px 34px -16px rgba(18,19,26,.45)", transition: "background .3s ease, color .3s ease", animation: "rise .35s ease-out", background: lost ? INK : "#E1F4EC", color: lost ? "#FFFFFF" : "#0B5A3E" }}>
+    <div role="status" aria-live="polite" title={lost ? "Nada se bloquea: lo que escribas se guarda y se envía al volver." : undefined} style={{ position: "fixed", left: centre != null ? centre + "px" : "50%", bottom: "24px", transform: "translateX(-50%)", zIndex: 2147482500, display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", whiteSpace: "nowrap", boxShadow: "0 16px 34px -16px rgba(18,19,26,.45)", transition: "background .3s ease, color .3s ease", animation: "rise .35s ease-out", background: lost ? "var(--c-btn)" : "var(--c-ok-soft)", color: lost ? "var(--c-btn-text)" : "var(--c-ok-ink)" }}>
       {lost
         ? <span aria-hidden="true" style={{ width: "14px", height: "14px", flex: "none", border: "2px solid rgba(255,255,255,.3)", borderTopColor: "#FFFFFF", borderRadius: "var(--r-circle)", animation: "spin 1s linear infinite" }} />
         : <span aria-hidden="true" style={{ width: "8px", height: "8px", flex: "none", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }} />}

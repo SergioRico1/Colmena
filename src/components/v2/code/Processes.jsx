@@ -19,7 +19,7 @@ const KIND = {
   child: { icon: CornerDownRight, text: () => null },
 };
 
-const pill = { height: "28px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" };
+const pill = { height: "28px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" };
 
 function Row({ row, name, busy, onStop }) {
   const [armed, setArmed] = useState(false);
@@ -98,7 +98,7 @@ export default function Processes({ task, name = "Bruno" }) {
         </div>
       ) : null}
       {rows.length ? (
-        <div role="list" aria-label="Procesos de la tarea" style={{ borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflow: "hidden" }}>
+        <div role="list" aria-label="Procesos de la tarea" style={{ borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgb(var(--c-ink-rgb) / .08)", overflow: "hidden" }}>
           {rows.map((row, k) => <div key={row.pid} style={k ? undefined : { marginTop: "-1px" }}><Row row={row} name={name} busy={!!busy} onStop={stop} /></div>)}
         </div>
       ) : null}

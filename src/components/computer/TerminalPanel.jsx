@@ -75,7 +75,7 @@ function ServerCard({ server, onOpenBrowser, onChanged }) {
         ) : null}
         {live ? (
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", fontFamily: "Geist, sans-serif" }}>
-            {onOpenBrowser ? <button type="button" className="rm-focus" onClick={onOpenBrowser} style={{ ...SMALL_BUTTON, background: "#FFFFFF", color: "#12131A" }}><Globe size={14} strokeWidth={2.2} aria-hidden="true" />{"Ver"}</button> : null}
+            {onOpenBrowser ? <button type="button" className="rm-focus" onClick={onOpenBrowser} style={{ ...SMALL_BUTTON, background: "var(--c-card)", color: "var(--c-text)" }}><Globe size={14} strokeWidth={2.2} aria-hidden="true" />{"Ver"}</button> : null}
             <button type="button" className="rm-focus" onClick={stop} disabled={busy} style={{ ...SMALL_BUTTON, background: "rgba(255,255,255,.1)", color: "#FFFFFF" }}><Square size={12} strokeWidth={2.6} aria-hidden="true" />{busy ? "Parando…" : "Parar"}</button>
           </div>
         ) : null}
@@ -91,9 +91,9 @@ export default function TerminalPanel({ steps = [], bots = [], missionId = null,
   if (!runs.length && !servers.length) {
     return (
       <div style={{ padding: "28px 22px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px" }}>
-        <span aria-hidden="true" style={{ width: "44px", height: "44px", display: "grid", placeItems: "center", borderRadius: "var(--r-lg)", background: "#12131A", color: "#FFFFFF" }}><SquareTerminal size={20} strokeWidth={2.2} /></span>
+        <span aria-hidden="true" style={{ width: "44px", height: "44px", display: "grid", placeItems: "center", borderRadius: "var(--r-lg)", background: "var(--c-btn)", color: "var(--c-btn-text)" }}><SquareTerminal size={20} strokeWidth={2.2} /></span>
         <strong style={{ font: "600 var(--t-title)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Aún no ha ejecutado nada"}</strong>
-        <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.55", color: "#5C606C" }}>{"Cuando un bot ejecute un comando en tu ordenador lo verás aquí, con lo que respondió. Antes de cada comando te pide permiso."}</span>
+        <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.55", color: "var(--c-text-3)" }}>{"Cuando un bot ejecute un comando en tu ordenador lo verás aquí, con lo que respondió. Antes de cada comando te pide permiso."}</span>
       </div>
     );
   }

@@ -6,14 +6,14 @@ import { findBot } from "../../room/common.jsx";
 // small mark under it: it waits for a pause, the bot read it (its shape), or it is held
 // until you give your OK. `receipt` is «wait», «hold» or «read:<botId>».
 
-const LINE = { display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", lineHeight: "16px", color: "#5C606C", whiteSpace: "nowrap" };
+const LINE = { display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", lineHeight: "16px", color: "var(--c-text-3)", whiteSpace: "nowrap" };
 
 export default function Receipt({ receipt, bots = [] }) {
   if (!receipt) return null;
   if (receipt === "wait") {
     return (
       <span role="status" data-receipt="wait" title="Lo leerá en cuanto haga una pausa en lo que está haciendo" style={LINE}>
-        <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "var(--r-circle)", border: "1.5px solid rgba(18,19,26,.16)", borderTopColor: "#5C606C", animation: "spin 1.1s linear infinite" }} />
+        <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "var(--r-circle)", border: "1.5px solid rgb(var(--c-ink-rgb) / .16)", borderTopColor: "#5C606C", animation: "spin 1.1s linear infinite" }} />
         {"Espera una pausa"}
       </span>
     );

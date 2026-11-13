@@ -19,7 +19,7 @@ export function useApprovalCard(a, botName, options = {}) {
   return approvalCard(a, { botName, now, ...options });
 }
 
-const strong = { fontWeight: "600", color: "#12131A" };
+const strong = { fontWeight: "600", color: "var(--c-text)" };
 
 /**
  * «Para ana@…, luis@… y 2 más», the subject and the start of the text. `subject`: false where
@@ -29,7 +29,7 @@ export function SendWhat({ send, subject = true, size = "var(--t-body)", style =
   if (!send) return null;
   const to = send.to.length ? send.to.join(", ") + (send.moreTo ? ` y ${send.moreTo} más` : "") : "nadie todavía";
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: size, lineHeight: "1.5", color: "#4A4D57", minWidth: 0, overflowWrap: "anywhere", ...style }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: size, lineHeight: "1.5", color: "var(--c-text-2)", minWidth: 0, overflowWrap: "anywhere", ...style }}>
       <span>
         {"Para "}<strong style={strong}>{to}</strong>
         {send.copies ? (send.copies === 1 ? " y 1 en copia" : ` y ${send.copies} en copia`) : null}
@@ -48,9 +48,9 @@ export function ApprovalNotes({ model, size = "var(--t-meta)", style = null }) {
   const expiry = model.expiryLine;
   if (!lines.length && !expiry) return null;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: size, lineHeight: "1.45", color: "#5C606C", ...style }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: size, lineHeight: "1.45", color: "var(--c-text-3)", ...style }}>
       {lines.length ? <span>{lines.join(" ")}</span> : null}
-      {expiry ? <span role="timer" aria-live="off" style={{ color: expiry.urgent ? "#B4232A" : "#5C606C" }}>{expiry.text}</span> : null}
+      {expiry ? <span role="timer" aria-live="off" style={{ color: expiry.urgent ? "var(--c-error)" : "var(--c-text-3)" }}>{expiry.text}</span> : null}
     </div>
   );
 }

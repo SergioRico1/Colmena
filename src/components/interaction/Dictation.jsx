@@ -342,14 +342,14 @@ const OPEN_LABEL = { language: "Abrir la configuración de idioma", microphone: 
 export function DictationHelp({ problem, onClose, style }) {
   if (!problem) return null;
   return (
-    <div role="alert" style={{ display: "flex", flexDirection: "column", gap: "6px", width: "max-content", maxWidth: "min(360px, 80vw)", padding: "14px 16px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 24px 48px -20px rgba(18,19,26,.45)", fontSize: "var(--t-meta)", lineHeight: 1.45, color: "#3D404A", textAlign: "left", animation: "c-pop-in .18s ease-out", ...style }}>
-      <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "#12131A" }}>{problem.message}</strong>
+    <div role="alert" style={{ display: "flex", flexDirection: "column", gap: "6px", width: "max-content", maxWidth: "min(360px, 80vw)", padding: "14px 16px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 24px 48px -20px rgba(18,19,26,.45)", fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-2)", textAlign: "left", animation: "c-pop-in .18s ease-out", ...style }}>
+      <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text)" }}>{problem.message}</strong>
       {problem.help ? <span>{problem.help}</span> : null}
       <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
         {problem.open ? (
-          <button type="button" onClick={() => { void openSystemSettings(problem.open); }} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{OPEN_LABEL[problem.open] || "Abrir la configuración"}</button>
+          <button type="button" onClick={() => { void openSystemSettings(problem.open); }} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{OPEN_LABEL[problem.open] || "Abrir la configuración"}</button>
         ) : null}
-        {onClose ? <button type="button" onClick={onClose} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", color: "#12131A", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Entendido</button> : null}
+        {onClose ? <button type="button" onClick={onClose} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)", color: "var(--c-text)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Entendido</button> : null}
       </span>
     </div>
   );
@@ -419,13 +419,13 @@ export function MicButton({ onText, target = null, scope = null, style, size = 4
         }}
         style={{
           width: size + "px", height: size + "px", display: "grid", placeItems: "center", flex: "none", borderRadius: "var(--r-circle)", cursor: busy ? "progress" : "pointer",
-          border: bordered && !on ? "1px solid #DCE0E8" : "0",
-          background: on ? "#12131A" : "transparent",
-          color: on ? "#FFFFFF" : d.fixable ? "#A3A6AF" : tone === "dark" ? "#FFFFFF" : "#3D404A",
+          border: bordered && !on ? "1px solid var(--c-line)" : "0",
+          background: on ? "var(--c-btn)" : "transparent",
+          color: on ? "var(--c-btn-text)" : d.fixable ? "#A3A6AF" : tone === "dark" ? "var(--c-btn-text)" : "var(--c-text-2)",
           boxShadow: on ? `0 0 0 ${ring}px rgba(255,90,78,.22)` : "none",
           transition: "background .2s ease, color .2s ease, box-shadow .12s linear",
           ...style,
-          ...(on ? { background: "#12131A", color: "#FFFFFF" } : d.fixable ? { color: "#A3A6AF" } : {}),
+          ...(on ? { background: "var(--c-btn)", color: "var(--c-btn-text)" } : d.fixable ? { color: "#A3A6AF" } : {}),
         }}>
         {busy ? <LoaderCircle size={17} strokeWidth={2.2} aria-hidden="true" style={{ animation: "colmena-spin .8s linear infinite" }} />
           : on ? <Square size={12} strokeWidth={0} fill="currentColor" aria-hidden="true" style={d.state === "starting" ? { animation: "colmena-pulse 1.2s ease-in-out infinite" } : undefined} />
@@ -433,7 +433,7 @@ export function MicButton({ onText, target = null, scope = null, style, size = 4
           : <Mic size={17} strokeWidth={2} aria-hidden="true" />}
       </button>
       {on || busy ? (
-        <span role="status" style={{ ...bubble, display: "flex", flexDirection: "column", gap: "4px", width: "max-content", maxWidth: "min(420px, 70vw)", padding: "10px 16px", borderRadius: d.where?.fallback ? "var(--r-xl)" : "var(--r-2xl)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", boxShadow: "0 18px 40px -18px rgba(18,19,26,.6)", animation: "c-pop-in .18s ease-out", pointerEvents: "none" }}>
+        <span role="status" style={{ ...bubble, display: "flex", flexDirection: "column", gap: "4px", width: "max-content", maxWidth: "min(420px, 70vw)", padding: "10px 16px", borderRadius: d.where?.fallback ? "var(--r-xl)" : "var(--r-2xl)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", boxShadow: "0 18px 40px -18px rgba(18,19,26,.6)", animation: "c-pop-in .18s ease-out", pointerEvents: "none" }}>
           <span style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "20px" }}>
             <span aria-hidden="true" style={{ width: "8px", height: "8px", flex: "none", borderRadius: "var(--r-circle)", background: "#FF5A4E", transform: `scale(${1 + d.level * 0.6})`, transition: "transform .1s linear" }} />
             {busy ? <span style={{ flex: "1" }}>Pasando tu voz a texto…</span> : d.mode === "sistema" ? <LiveWords d={d} dark style={{ flex: "1" }} /> : <span style={{ flex: "1", color: "rgba(255,255,255,.75)" }}>Grabando… pulsa para terminar</span>}

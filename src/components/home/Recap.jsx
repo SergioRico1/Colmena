@@ -21,13 +21,13 @@ export default function Recap({ m, lines = 2, retry = false, style = null }) {
   return (
     <span style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, ...style }}>
       {r.text ? (
-        <span title={r.text} style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#2B2D36", display: "-webkit-box", WebkitLineClamp: String(lines), WebkitBoxOrient: "vertical", overflow: "hidden", opacity: writing ? 0.6 : 1 }}>{r.text}</span>
+        <span title={r.text} style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text)", display: "-webkit-box", WebkitLineClamp: String(lines), WebkitBoxOrient: "vertical", overflow: "hidden", opacity: writing ? 0.6 : 1 }}>{r.text}</span>
       ) : null}
-      {writing && !r.text ? <span style={{ fontSize: "var(--t-meta)", color: "#555A68", animation: "colmena-pulse 1.6s ease-in-out infinite" }}>{"Resumiendo lo que ha pasado…"}</span> : null}
+      {writing && !r.text ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", animation: "colmena-pulse 1.6s ease-in-out infinite" }}>{"Resumiendo lo que ha pasado…"}</span> : null}
       {retry && !writing && (r.status === "failed" || error) ? (
-        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-caption)", color: "#555A68" }}>
+        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>
           {error || (r.text ? "No se pudo actualizar el resumen." : "No se pudo escribir el resumen.")}
-          <button type="button" className="rm-focus" onClick={again} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 9px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}>
+          <button type="button" className="rm-focus" onClick={again} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 9px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: "var(--c-text)" }}>
             <RotateCcw size={12} strokeWidth={2.4} aria-hidden="true" />{"Reintentar resumen"}
           </button>
         </span>

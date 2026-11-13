@@ -14,17 +14,17 @@ import { shapeOf } from "../Presence.jsx";
 export const INK = "#12131A";
 export const SOFT = "#4A4D57";
 export const MUTED = "#5C606C";
-export const LINE = "1px solid rgba(18,19,26,.06)";
+export const LINE = "1px solid rgb(var(--c-ink-rgb) / .06)";
 export const UNDO_MS = 10000;
 
 /** Anchor props: id + the data attribute the highlight looks for. */
 export const anchorOf = (anchor) => (anchor ? { id: anchor, "data-setting": anchor } : {});
 export const srOnly = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 
-export const card = { display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", overflow: "hidden", scrollMarginTop: "24px" };
-export const panel = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px" };
+export const card = { display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", overflow: "hidden", scrollMarginTop: "24px" };
+export const panel = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "var(--c-card)", scrollMarginTop: "24px" };
 export const h3 = { margin: 0, fontSize: "var(--t-body)", fontWeight: 600 };
-export const field = { width: "240px", maxWidth: "100%", height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK, boxSizing: "border-box" };
+export const field = { width: "240px", maxWidth: "100%", height: "40px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-md)", background: "var(--c-card)", fontSize: "var(--t-body)", color: "var(--c-text)", boxSizing: "border-box" };
 export const select = { ...field, padding: "0 10px" };
 export const mono = "'Geist Mono', monospace";
 
@@ -33,9 +33,9 @@ export const btn = (kind = "outline", size = 34) => ({
   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: "none", height: size + "px",
   padding: size >= 40 ? "0 16px" : "0 12px", borderRadius: "var(--r-pill)", cursor: "pointer", whiteSpace: "nowrap", textDecoration: "none",
   fontSize: size >= 40 ? "var(--t-ui)" : "var(--t-meta)", fontWeight: kind === "dark" ? 600 : 500,
-  border: kind === "outline" ? "1px solid rgba(18,19,26,.14)" : 0,
-  background: kind === "dark" ? INK : kind === "ghost" ? "transparent" : "#FFFFFF",
-  color: kind === "dark" ? "#FFFFFF" : kind === "ghost" ? SOFT : INK,
+  border: kind === "outline" ? "1px solid rgb(var(--c-ink-rgb) / .14)" : 0,
+  background: kind === "dark" ? "var(--c-btn)" : kind === "ghost" ? "transparent" : "var(--c-card)",
+  color: kind === "dark" ? "var(--c-btn-text)" : kind === "ghost" ? "var(--c-text-2)" : "var(--c-text)",
 });
 
 /** A card of rows (the board's white 20 px box). */
@@ -52,7 +52,7 @@ export function Panel({ title, sub, aside, anchor, children, style = null, id, b
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
           <span style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: big ? "4px" : "2px", marginBottom: big ? "8px" : 0 }}>
             <h3 id={head} style={{ ...h3, fontSize: big ? "var(--t-read)" : "var(--t-body)" }}>{title}</h3>
-            {sub ? <span style={{ fontSize: big ? "var(--t-ui)" : "var(--t-meta)", lineHeight: 1.45, color: MUTED }}>{sub}</span> : null}
+            {sub ? <span style={{ fontSize: big ? "var(--t-ui)" : "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-3)" }}>{sub}</span> : null}
           </span>
           {aside}
         </div>
@@ -106,7 +106,7 @@ export function Pills({ label, items, value, onPick, busy = false, background = 
     <div role="radiogroup" aria-label={label} style={{ display: "inline-flex", flexWrap: "wrap", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background }}>
       {items.map(([v, text]) => {
         const on = value === v;
-        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, color: INK, cursor: "pointer" }}>{text}</button>;
+        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, color: "var(--c-text)", cursor: "pointer" }}>{text}</button>;
       })}
     </div>
   );
@@ -120,9 +120,9 @@ export function Choices({ label, items, value, onPick, busy = false, min = 200 }
         const on = value === v;
         return (
           <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)}
-            style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px", padding: "14px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", textAlign: "left", color: INK, cursor: "pointer", transition: "border-color .2s ease" }}>
+            style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px", padding: "14px", border: `2px solid ${on ? "var(--c-text)" : "rgb(var(--c-ink-rgb) / .1)"}`, borderRadius: "var(--r-lg)", background: "var(--c-card)", textAlign: "left", color: "var(--c-text)", cursor: "pointer", transition: "border-color .2s ease" }}>
             <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{text}</span>
-            {desc ? <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{desc}</span> : null}
+            {desc ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{desc}</span> : null}
           </button>
         );
       })}
@@ -146,7 +146,7 @@ export function TextInput({ label, value, onSave, max = 80, placeholder, list, w
 /** A link that moves inside the app. */
 export const LINK = "#1F4FD1";
 export function Go({ to, children, style = null, ...rest }) {
-  return <a href={to} onClick={(e) => { if (e.ctrlKey || e.metaKey) return; e.preventDefault(); navigate(to); }} style={{ color: LINK, ...style }} {...rest}>{children}</a>;
+  return <a href={to} onClick={(e) => { if (e.ctrlKey || e.metaKey) return; e.preventDefault(); navigate(to); }} style={{ color: "var(--c-accent-ink)", ...style }} {...rest}>{children}</a>;
 }
 
 /**
@@ -169,7 +169,7 @@ export function Chip({ children, tone = "grey", style = null }) {
 export function Meter({ percent, height = 6, color = INK, tick = null, tickColor = "#8A5A00", label }) {
   const p = Math.max(0, Math.min(100, Number(percent) || 0));
   return (
-    <span role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : "true"} style={{ position: "relative", display: "block", height: height + "px", borderRadius: "var(--r-pill)", background: "#EEEEEA", overflow: "hidden" }}>
+    <span role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : "true"} style={{ position: "relative", display: "block", height: height + "px", borderRadius: "var(--r-pill)", background: "var(--c-chip)", overflow: "hidden" }}>
       <span style={{ position: "absolute", inset: "0 auto 0 0", width: p + "%", background: color, transformOrigin: "left", animation: "grow .8s ease-out" }} />
       {tick != null ? <span style={{ position: "absolute", top: 0, bottom: 0, left: Math.max(0, Math.min(99, tick)) + "%", width: "2px", background: tickColor }} /> : null}
     </span>
@@ -209,5 +209,5 @@ export function useSettings() {
 }
 
 export function Alert({ children }) {
-  return children ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{children}</p> : null;
+  return children ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{children}</p> : null;
 }

@@ -59,9 +59,9 @@ export default function FilesPanel({ missionId, onOpen, version = 0 }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <div style={{ position: "sticky", top: 0, zIndex: 1, background: "#F7F8FA", padding: "12px 14px 10px", display: "flex", flexDirection: "column", gap: "10px", borderBottom: "1px solid #E6E8EE" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)" }}>
-          <Search {...I} style={{ color: "#555A68", flex: "none" }} />
+      <div style={{ position: "sticky", top: 0, zIndex: 1, background: "var(--c-sunken)", padding: "12px 14px 10px", display: "flex", flexDirection: "column", gap: "10px", borderBottom: "1px solid var(--c-line)" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 10px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)" }}>
+          <Search {...I} style={{ color: "var(--c-text-3)", flex: "none" }} />
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Buscar archivos</span>
           <input className="c-bare" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en los archivos de la sala" style={{ flex: "1", minWidth: 0, border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
           {q ? <button type="button" className="rm-focus" onClick={() => setQ("")} aria-label="Borrar búsqueda" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", cursor: "pointer" }}><X {...I} size={13} /></button> : null}
@@ -71,21 +71,21 @@ export default function FilesPanel({ missionId, onOpen, version = 0 }) {
             {FILTERS.filter((f) => f.id === "all" || counts[f.id]).map((f) => {
               const on = shownFilter === f.id;
               return <button key={f.id} type="button" className="rm-focus" aria-pressed={on ? "true" : "false"} onClick={() => setFilter(f.id)}
-                style={{ height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: on ? "700" : "500", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#2B2D36", border: on ? "1px solid #12131A" : "1px solid #DCE0E8" }}>{f.label(counts[f.id])}</button>;
+                style={{ height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: on ? "700" : "500", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text)", border: on ? "1px solid var(--c-text)" : "1px solid var(--c-line)" }}>{f.label(counts[f.id])}</button>;
             })}
           </div>
         ) : null}
       </div>
       <div style={{ padding: "8px 8px 16px", display: "flex", flexDirection: "column", gap: "2px" }}>
         {error ? <ErrorLine style={{ padding: "8px" }}>{`No pude ver los archivos: ${error}`}</ErrorLine> : null}
-        {!data && !error ? <p role="status" style={{ margin: "8px", fontSize: "var(--t-ui)", color: "#555A68" }}>Cargando archivos…</p> : null}
+        {!data && !error ? <p role="status" style={{ margin: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Cargando archivos…</p> : null}
         {data && !files.length ? (
-          <div style={{ margin: "12px 8px", padding: "16px", background: "#FFFFFF", border: "1px dashed #A9AEBB", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4F5C" }}>
-            <strong style={{ display: "block", color: "#12131A", marginBottom: "4px" }}>Aún no hay archivos</strong>
+          <div style={{ margin: "12px 8px", padding: "16px", background: "var(--c-card)", border: "1px dashed var(--c-line-strong)", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)" }}>
+            <strong style={{ display: "block", color: "var(--c-text)", marginBottom: "4px" }}>Aún no hay archivos</strong>
             Aquí aparecerán los que adjuntes y los que preparen los bots en esta conversación.
           </div>
         ) : null}
-        {data && files.length && !visible.length ? <p style={{ margin: "8px", fontSize: "var(--t-ui)", color: "#555A68" }}>Ningún archivo coincide.</p> : null}
+        {data && files.length && !visible.length ? <p style={{ margin: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Ningún archivo coincide.</p> : null}
         {GROUPS.map((g, _i, all) => {
           const list = visible.filter((f) => f.kind === g.kind);
           if (!list.length) return null;
@@ -95,14 +95,14 @@ export default function FilesPanel({ missionId, onOpen, version = 0 }) {
           return (
             <section key={g.kind} aria-label={g.title} style={{ display: "flex", flexDirection: "column" }}>
               <button type="button" className="rm-focus" aria-expanded={isOpen ? "true" : "false"} disabled={forced || only} onClick={() => setOpen((o) => ({ ...o, [g.kind]: !o[g.kind] }))}
-                style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 8px", background: "transparent", border: "0", cursor: forced || only ? "default" : "pointer", font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>
+                style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 8px", background: "transparent", border: "0", cursor: forced || only ? "default" : "pointer", font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)" }}>
                 {isOpen ? <ChevronDown {...I} size={13} /> : <ChevronRight {...I} size={13} />}{`${g.title} · ${list.length}`}
               </button>
               {isOpen ? list.map((f) => <FileRow key={f.path} file={f} missionId={missionId} onOpen={() => onOpen(f)} />) : null}
             </section>
           );
         })}
-        {data?.truncated ? <p style={{ margin: "8px", fontSize: "var(--t-caption)", color: "#555A68" }}>Se muestran los primeros 500 archivos.</p> : null}
+        {data?.truncated ? <p style={{ margin: "8px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>Se muestran los primeros 500 archivos.</p> : null}
       </div>
     </div>
   );
@@ -115,18 +115,18 @@ function FileRow({ file, missionId, onOpen }) {
   return (
     <div className="msg-row" style={{ display: "flex", alignItems: "center", gap: "4px", margin: 0, padding: "0 4px 0 0" }}>
       <button type="button" className="rm-focus" onClick={onOpen} title={file.path} {...dragOutProps(rawUrl(missionId, file.path))} style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", padding: "6px 8px", background: "transparent", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left" }}>
-        <span style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-sm)", color: "#4A4F5C" }}>{fileIcon(file.type)}</span>
+        <span style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", color: "var(--c-text-2)" }}>{fileIcon(file.type)}</span>
         <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
-          <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#12131A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {file.name}{file.dir ? <span style={{ fontWeight: "400", color: "#555A68" }}>{" · " + file.dir}</span> : null}
+          <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {file.name}{file.dir ? <span style={{ fontWeight: "400", color: "var(--c-text-3)" }}>{" · " + file.dir}</span> : null}
           </span>
-          <span style={{ fontSize: "var(--t-caption)", color: "#555A68", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
+          <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
         </span>
       </button>
       <span className="msg-actions" style={{ position: "static", opacity: undefined, display: "flex" }}>
-        <a href={rawUrl(missionId, file.path, true)} download className="rm-focus" aria-label={"Descargar " + file.name} title="Descargar" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", color: "#4A4F5C" }}><Download {...I} size={14} /></a>
+        <a href={rawUrl(missionId, file.path, true)} download className="rm-focus" aria-label={"Descargar " + file.name} title="Descargar" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", color: "var(--c-text-2)" }}><Download {...I} size={14} /></a>
         <button type="button" className="rm-focus" aria-label={"Copiar la ruta de " + file.name} title={copied ? "Copiada" : "Copiar la ruta"} onClick={async () => { await copyText(file.path); setCopied(true); setTimeout(() => setCopied(false), 1400); }}
-          style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: copied ? "#0B6B4A" : "#4A4F5C" }}>{copied ? <Check {...I} size={14} /> : <Copy {...I} size={14} />}</button>
+          style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: copied ? "var(--c-ok-ink)" : "var(--c-text-2)" }}>{copied ? <Check {...I} size={14} /> : <Copy {...I} size={14} />}</button>
       </span>
     </div>
   );
@@ -202,7 +202,7 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
     if (e.key === "Escape" && !dirty) { e.preventDefault(); discard(); }
   };
   const lines = (editing ? text : original).split("\n").length;
-  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", color: "#12131A", textDecoration: "none" };
+  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 10px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", color: "var(--c-text)", textDecoration: "none" };
   const type = file?.type;
   const page = /[.]html?$/i.test(path);
   // PDFs, and Office files once converted, are seen as their pages (the text one click away).
@@ -214,21 +214,21 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
-      <div style={{ position: "sticky", top: 0, zIndex: 1, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "10px 14px", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 1, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "10px 14px", background: "var(--c-sunken)", borderBottom: "1px solid var(--c-line)" }}>
         <span style={{ flex: "1 1 160px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
           <strong {...dragOutProps(rawUrl(missionId, path))} style={{ fontSize: "var(--t-ui)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={path}>{path.split("/").pop()}</strong>
-          <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{[path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : null, size(file?.size), file?.modifiedAt ? "modificado " + ago(file.modifiedAt) : null].filter(Boolean).join(" · ")}</span>
+          <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{[path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : null, size(file?.size), file?.modifiedAt ? "modificado " + ago(file.modifiedAt) : null].filter(Boolean).join(" · ")}</span>
         </span>
         {canToggle ? (
-          <span role="group" aria-label="Cómo verlo" style={{ display: "inline-flex", padding: "2px", background: "#EEF0F4", borderRadius: "var(--r-sm)" }}>
+          <span role="group" aria-label="Cómo verlo" style={{ display: "inline-flex", padding: "2px", background: "var(--c-chip)", borderRadius: "var(--r-sm)" }}>
             {(page ? [["preview", "Vista previa"], ["source", "Código"]] : pages ? [["preview", "Páginas"], ["source", "Texto"]] : [["preview", "Vista"], ["source", "Texto"]]).map(([id, label]) => (
-              <button key={id} type="button" className="rm-focus" aria-pressed={view === id ? "true" : "false"} onClick={() => setView(id)} style={{ height: "28px", padding: "0 10px", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: view === id ? "700" : "500", background: view === id ? "#FFFFFF" : "transparent" }}>{label}</button>
+              <button key={id} type="button" className="rm-focus" aria-pressed={view === id ? "true" : "false"} onClick={() => setView(id)} style={{ height: "28px", padding: "0 10px", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: view === id ? "700" : "500", background: view === id ? "var(--c-card)" : "transparent" }}>{label}</button>
             ))}
           </span>
         ) : null}
         {editing ? (
           <>
-            <button type="button" className="rm-focus" onClick={() => save()} disabled={!dirty || saving} title="Guardar (Ctrl+S)" style={{ ...btn, background: "#12131A", color: "#FFFFFF", border: "1.5px solid #12131A", fontWeight: "700", opacity: !dirty || saving ? 0.55 : 1 }}><Save {...I} size={14} />{saving ? "Guardando…" : "Guardar"}</button>
+            <button type="button" className="rm-focus" onClick={() => save()} disabled={!dirty || saving} title="Guardar (Ctrl+S)" style={{ ...btn, background: "var(--c-btn)", color: "var(--c-btn-text)", border: "1.5px solid var(--c-text)", fontWeight: "700", opacity: !dirty || saving ? 0.55 : 1 }}><Save {...I} size={14} />{saving ? "Guardando…" : "Guardar"}</button>
             <button type="button" className="rm-focus" onClick={discard} style={btn}>{dirty ? "Descartar" : "Cerrar edición"}</button>
           </>
         ) : file?.editable ? (
@@ -237,31 +237,31 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
         <a href={rawUrl(missionId, path, true)} download className="rm-focus" aria-label="Descargar" title="Descargar" style={{ ...btn, width: "32px", padding: 0, justifyContent: "center" }}><Download {...I} size={14} /></a>
       </div>
       {notice ? (
-        <div role={notice.kind === "saved" ? "status" : "alert"} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", margin: "10px 14px 0", padding: "10px 12px", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", background: notice.kind === "saved" ? "#E1F4EC" : notice.kind === "conflict" ? "#FFF4D1" : "#FBE7DF", border: "1px solid " + (notice.kind === "saved" ? "#9ED4BC" : notice.kind === "conflict" ? "#F2D27A" : "#B4372A") }}>
+        <div role={notice.kind === "saved" ? "status" : "alert"} className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", margin: "10px 14px 0", padding: "10px 12px", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)", background: notice.kind === "saved" ? "var(--c-ok-soft)" : notice.kind === "conflict" ? "var(--c-honey-soft)" : "#FBE7DF", border: "1px solid " + (notice.kind === "saved" ? "#9ED4BC" : notice.kind === "conflict" ? "#F2D27A" : "#B4372A") }}>
           <span style={{ flex: "1 1 200px" }}>{notice.text}</span>
           {notice.kind === "conflict" ? (
             <>
               <button type="button" className="rm-focus" onClick={reload} style={btn}><RotateCcw {...I} size={13} />Recargar</button>
-              <button type="button" className="rm-focus" onClick={overwrite} style={{ ...btn, background: "#12131A", color: "#FFFFFF", border: "0" }}>Sobrescribir con lo mío</button>
+              <button type="button" className="rm-focus" onClick={overwrite} style={{ ...btn, background: "var(--c-btn)", color: "var(--c-btn-text)", border: "0" }}>Sobrescribir con lo mío</button>
             </>
           ) : null}
         </div>
       ) : null}
       <div style={{ flex: "1", padding: "14px", display: "flex", flexDirection: "column", gap: "12px", minHeight: 0 }}>
         {error ? <ErrorLine>{error}</ErrorLine> : null}
-        {!file && !error ? <p role="status" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#555A68" }}>Abriendo…</p> : null}
-        {file?.reason ? <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#4A4F5C" }}>{file.reason}</p> : null}
+        {!file && !error ? <p role="status" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Abriendo…</p> : null}
+        {file?.reason ? <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>{file.reason}</p> : null}
         {file && editing ? (
-          <div style={{ flex: "1", display: "flex", minHeight: "320px", background: "#FFFFFF", border: "1.5px solid #12131A", borderRadius: "var(--r-md)", overflow: "hidden" }}>
-            <div ref={gutter} aria-hidden="true" style={{ flex: "none", padding: "12px 8px 12px 10px", background: "#F7F8FA", borderRight: "1px solid #E6E8EE", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", color: "#6B6F7A", textAlign: "right", overflow: "hidden", userSelect: "none", whiteSpace: "pre" }}>
+          <div style={{ flex: "1", display: "flex", minHeight: "320px", background: "var(--c-card)", border: "1.5px solid var(--c-text)", borderRadius: "var(--r-md)", overflow: "hidden" }}>
+            <div ref={gutter} aria-hidden="true" style={{ flex: "none", padding: "12px 8px 12px 10px", background: "var(--c-sunken)", borderRight: "1px solid var(--c-line)", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", color: "var(--c-text-3)", textAlign: "right", overflow: "hidden", userSelect: "none", whiteSpace: "pre" }}>
               {Array.from({ length: lines }, (_, i) => i + 1).join("\n")}
             </div>
             <textarea className="c-bare" ref={area} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKeyDown} spellCheck={false} aria-label={"Editar " + path}
               onScroll={(e) => { if (gutter.current) gutter.current.scrollTop = e.currentTarget.scrollTop; }}
-              style={{ flex: "1", minWidth: 0, padding: "12px", border: "0", resize: "none", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", color: "#12131A", whiteSpace: "pre", overflow: "auto" }} />
+              style={{ flex: "1", minWidth: 0, padding: "12px", border: "0", resize: "none", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", color: "var(--c-text)", whiteSpace: "pre", overflow: "auto" }} />
           </div>
         ) : file ? (
-          type === "image" ? <img data-lightbox="" data-name={path.split("/").pop()} src={rawUrl(missionId, path)} alt={path} style={{ cursor: "zoom-in", maxWidth: "100%", height: "auto", alignSelf: "flex-start", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />
+          type === "image" ? <img data-lightbox="" data-name={path.split("/").pop()} src={rawUrl(missionId, path)} alt={path} style={{ cursor: "zoom-in", maxWidth: "100%", height: "auto", alignSelf: "flex-start", borderRadius: "var(--r-md)", border: "1px solid var(--c-line)", background: "var(--c-card)" }} />
             : pages && (view === "preview" || file.preview == null) ? (
               <>
                 <VisualNotes info={visual.info} />
@@ -270,20 +270,20 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
             )
             : file.preview != null ? (
               <>
-                <p role={file.visual && visual.state === "loading" ? "status" : undefined} style={{ margin: 0, fontSize: "var(--t-caption)", lineHeight: 1.5, color: "#555A68" }}>
+                <p role={file.visual && visual.state === "loading" ? "status" : undefined} style={{ margin: 0, fontSize: "var(--t-caption)", lineHeight: 1.5, color: "var(--c-text-3)" }}>
                   {file.visual && visual.state === "loading" ? (file.visual === "office" ? "Preparando la vista con su formato… Mientras, su texto." : "Dibujando sus páginas…")
                     : pages ? `Vista de texto${file.pages ? ` · página 1 de ${file.pages}` : ""}.`
                     : visual.info?.note || `Vista de texto${file.pages ? ` · página 1 de ${file.pages}` : ""}. Descárgalo para verlo con su formato.`}
                 </p>
-                <pre style={{ margin: 0, padding: "14px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.6 'Geist', sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{file.preview}</pre>
+                <pre style={{ margin: 0, padding: "14px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.6 'Geist', sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{file.preview}</pre>
               </>
             )
               : file.text != null ? (
                 page && view === "preview" ? <PagePreview html={file.text} title={path} />
                   : type === "markdown" && view === "preview" ? <div style={{ padding: "4px 2px" }}><Markdown text={file.text} size={15} /></div>
                   : type === "csv" && view === "preview" ? <div style={{ overflowX: "auto" }}><CsvTable text={file.text} /></div>
-                    : <pre style={{ margin: 0, padding: "12px 14px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{file.text}</pre>
-              ) : !file.reason ? <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#4A4F5C" }}>No se puede ver aquí. Descárgalo para abrirlo.</p> : null
+                    : <pre style={{ margin: 0, padding: "12px 14px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{file.text}</pre>
+              ) : !file.reason ? <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>No se puede ver aquí. Descárgalo para abrirlo.</p> : null
         ) : null}
       </div>
     </div>

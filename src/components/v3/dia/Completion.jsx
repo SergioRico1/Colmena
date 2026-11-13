@@ -50,7 +50,7 @@ const Check = ({ size = 22 }) => (
     <svg width={size / 2} height={size / 2} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
   </span>
 );
-const fileChip = { display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "34px", padding: "0 12px", borderRadius: "var(--r-md)", background: "#F3F3EF", fontSize: "var(--t-ui)", color: "#12131A" };
+const fileChip = { display: "inline-flex", alignItems: "center", gap: "8px", maxWidth: "100%", height: "34px", padding: "0 12px", borderRadius: "var(--r-md)", background: "var(--c-sunken)", fontSize: "var(--t-ui)", color: "var(--c-text)" };
 const meta = (s) => [s.who, s.took ? "en " + s.took : null].filter(Boolean).join(" · ");
 
 function Deliverables({ list }) {
@@ -60,7 +60,7 @@ function Deliverables({ list }) {
       {list.map((d) => (
         <li key={d.id} style={{ minWidth: 0 }}>
           <a href={d.href} onClick={go(d.href)} style={fileChip}>
-            <FileText size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: "#5C606C" }} />
+            <FileText size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-3)" }} />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.title}</span>
           </a>
         </li>
@@ -85,18 +85,18 @@ export function CompletionCards() {
   return (
     <section aria-label="Terminado" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
       {list.map((s) => (
-        <article key={s.id + s.at} aria-label={`Terminado: ${s.title}`} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", animation: "rise .4s ease-out" }}>
+        <article key={s.id + s.at} aria-label={`Terminado: ${s.title}`} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", animation: "rise .4s ease-out" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
             <Check />
             <div role="status" style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
               <span style={{ fontSize: "var(--t-read)", fontWeight: "600", lineHeight: "1.3", overflowWrap: "anywhere" }}>{`Terminado: ${s.title}`}</span>
-              <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{meta(s)}</span>
+              <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{meta(s)}</span>
             </div>
-            <button type="button" aria-label={`Cerrar el aviso de «${s.title}»`} onClick={() => dismissCompletion(s)} style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", color: "#5C606C", cursor: "pointer" }}>
+            <button type="button" aria-label={`Cerrar el aviso de «${s.title}»`} onClick={() => dismissCompletion(s)} style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", color: "var(--c-text-3)", cursor: "pointer" }}>
               <X size={15} strokeWidth={2.4} aria-hidden="true" />
             </button>
           </div>
-          {s.line ? <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#3D404A", maxWidth: "72ch" }}>{s.line + "."}</p> : null}
+          {s.line ? <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text-2)", maxWidth: "72ch" }}>{s.line + "."}</p> : null}
           <Deliverables list={s.deliverables} />
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
             <a href={s.open.href} onClick={go(s.open.href)} style={btn.dark}>{s.open.label}</a>
@@ -106,7 +106,7 @@ export function CompletionCards() {
               </button>
             ))}
           </div>
-          {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
+          {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</span> : null}
         </article>
       ))}
     </section>
@@ -121,12 +121,12 @@ export function CompletionNote({ missionId }) {
   const summary = useCompletions().find((s) => s.id === missionId) || null;
   if (!summary) return null;
   return (
-    <section role="status" aria-label="Terminado" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", animation: "rise .3s ease-out" }}>
+    <section role="status" aria-label="Terminado" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", animation: "rise .3s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <Check size={20} />
         <span style={{ flex: "1", minWidth: "180px", fontSize: "var(--t-body)", lineHeight: "1.4" }}>
           <strong style={{ fontWeight: "600" }}>{summary.took ? `Terminado en ${summary.took}` : "Terminado"}</strong>
-          {summary.deliverables.length ? <span style={{ color: "#5C606C" }}>{summary.deliverables.length === 1 ? " · 1 entrega" : ` · ${summary.deliverables.length} entregas`}</span> : null}
+          {summary.deliverables.length ? <span style={{ color: "var(--c-text-3)" }}>{summary.deliverables.length === 1 ? " · 1 entrega" : ` · ${summary.deliverables.length} entregas`}</span> : null}
         </span>
         <a href={summary.open.href} onClick={go(summary.open.href)} className="rm-focus" style={{ ...btn.dark, height: "34px", padding: "0 14px", fontSize: "var(--t-ui)" }}>{summary.open.label}</a>
       </div>

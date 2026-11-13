@@ -5,7 +5,7 @@ import { playNoticeSound } from "../../../lib/noticeSounds.js";
 import { useAction, useResource, useStore } from "../../../lib/store.jsx";
 import { get, patch, post } from "../../../lib/api.js";
 import { reversible } from "../../../lib/undoToast.js";
-import { Alert, Card, Choices, INK, LINE, MUTED, Panel, Pills, Row, Switch, SwitchRow, UNDO_MS, btn, select, useSettings } from "./v3.jsx";
+import { Alert, Card, Choices, LINE, MUTED, Panel, Pills, Row, Switch, SwitchRow, UNDO_MS, btn, select, useSettings } from "./v3.jsx";
 
 // Ajustes › Avisos (design/V3Ajustes.dc.html): what reaches you, how (a Windows notice and/or
 // a sound), the quiet hours (fixed: 19:00 to 9:00 and weekends, server/notifications.mjs), the
@@ -56,7 +56,7 @@ function WatchRows({ bots }) {
               const trouble = s.unavailable ? "Esta app no ofrece todavía una lectura que Colmena entienda." : s.stopped ? "Parado tras varios fallos: " + (s.error || "") : s.error;
               return (
                 <button key={s.id} type="button" role="switch" aria-checked={s.on} disabled={act.busy} title={trouble || (s.on ? "Mira aquí. Pulsa para dejar de mirar." : "No mira aquí. Pulsa para que mire.")} onClick={() => save({ sources: { [s.id]: !s.on } })}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: act.busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 500, background: s.on ? INK : "#F1F1EC", color: s.on ? "#FFFFFF" : "#3D404A" }}>
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: act.busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 500, background: s.on ? "var(--c-btn)" : "var(--c-chip)", color: s.on ? "var(--c-btn-text)" : "var(--c-text-2)" }}>
                   <Icon size={14} strokeWidth={2} aria-hidden="true" />{s.label}
                   {s.on && trouble ? <span aria-label="Con problemas" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#E5675A" }} /> : null}
                 </button>
@@ -71,21 +71,21 @@ function WatchRows({ bots }) {
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
               <Pills label="Qué te cuenta" busy={act.busy} value={data.level} onPick={(v) => save({ level: v })} items={[["urgente", "Solo lo urgente"], ["importante", "Todo lo importante"]]} />
               {places.length ? <button type="button" disabled={act.busy} onClick={look} style={btn("outline", 34)}>{act.busy ? "Mirando…" : "Mirar ahora"}</button> : null}
-              {data.chatId && bot ? <a href={`/chat/${bot.id}?c=${data.chatId}`} style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "#1F4FD1" }}>Ver su chat</a> : null}
+              {data.chatId && bot ? <a href={`/chat/${bot.id}?c=${data.chatId}`} style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-accent-ink)" }}>Ver su chat</a> : null}
             </span>
           </Row>
           <label style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 22px 16px", borderTop: LINE }}>
             <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
               <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>Qué te importa</span>
-              <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{`Con tus palabras. ${name} lo tiene en cuenta cada vez que mira.`}</span>
+              <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`Con tus palabras. ${name} lo tiene en cuenta cada vez que mira.`}</span>
             </span>
             <textarea className="c-quiet" value={draft} maxLength={1500} rows={3} onChange={(e) => setList(e.target.value)} onBlur={keep}
               placeholder={"Avísame enseguida si escribe mi socia.\nLos pedidos de la tienda, mejor juntos en el resumen.\nNo me cuentes los boletines del banco."}
-              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: "84px", padding: "10px 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "400 var(--t-body)/1.5 'Geist', sans-serif", color: INK }} />
+              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: "84px", padding: "10px 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-md)", background: "var(--c-card)", font: "400 var(--t-body)/1.5 'Geist', sans-serif", color: "var(--c-text)" }} />
           </label>
         </>
       ) : null}
-      {act.error ? <p role="alert" style={{ margin: 0, padding: "10px 22px", fontSize: "var(--t-ui)", color: "#B4232A", borderTop: LINE }}>{act.error}</p> : null}
+      {act.error ? <p role="alert" style={{ margin: 0, padding: "10px 22px", fontSize: "var(--t-ui)", color: "var(--c-error)", borderTop: LINE }}>{act.error}</p> : null}
     </>
   );
 }
@@ -125,7 +125,7 @@ function CheckinRows() {
               a
               <Select aria-label="Hasta" disabled={busy} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={hour} options={Array.from({ length: 24 }, (_, h) => [h + 1, (h + 1) + ":00"])} />
               <label style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <input type="checkbox" disabled={busy} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} style={{ accentColor: INK }} />
+                <input type="checkbox" disabled={busy} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} style={{ accentColor: "var(--c-text)" }} />
                 y fines de semana
               </label>
               <button type="button" onClick={runNow} disabled={busy} style={btn("outline", 34)}>{busy ? "Revisando…" : "Revisar ahora"}</button>
@@ -133,7 +133,7 @@ function CheckinRows() {
           </Row>
         </>
       ) : null}
-      {note ? <p role="status" style={{ margin: 0, padding: "12px 22px", fontSize: "var(--t-ui)", color: "#0B6B4A", borderTop: LINE }}>{note}</p> : null}
+      {note ? <p role="status" style={{ margin: 0, padding: "12px 22px", fontSize: "var(--t-ui)", color: "var(--c-ok-ink)", borderTop: LINE }}>{note}</p> : null}
     </>
   );
 }
