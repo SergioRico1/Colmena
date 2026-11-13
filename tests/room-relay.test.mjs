@@ -155,3 +155,38 @@ test("what a request shares by itself is capped per request and per person and d
   sergio.store.put("roomAsks", { id: "big", roomId: room.id, shareId: room.id, from: addr(sergio), botId: "vera", peerId: "p-big", text: "x", state: "done", at: new Date().toISOString(), t: sergio.peers.clock(), shared: ["x"], sharedBytes: ROOM_WORK.fileBytesDay - 100 });
   assert.deepEqual([work.shareOver(fresh, 50), work.shareOver(fresh, 200)], [false, true]);
 });
+
+test("a group that arrives with the id of a private room of yours gets a room of its own: your room and its sala are not taken over", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  // A private room of Sergio, with something said in it.
+  const mine = sergio.rooms.create({ title: "Cosas mías", botIds: ["vera"] });
+  sergio.reply = () => answer("PRIVADO-SOLO-MIO.");
+  await sergio.rooms.send(mine.id, { text: "@Vera apunta esto", to: ["vera"] });
+  await until(() => sergio.store.where("messages", "missionId", mine.missionId).some((m) => m.text === "PRIVADO-SOLO-MIO."), "el turno termina");
+  await settle(sergio.runtime);
+  // Marta makes a group with that very id and puts Sergio in it.
+  marta.peers.createGroup("Grupo de Marta", [addr(sergio)], { id: mine.id });
+  await until(() => sergio.store.get("peerShares", mine.id), "el grupo llega");
+  await pause(200);
+  const own = sergio.store.get("rooms", mine.id);
+  assert.deepEqual([own.shareId, own.missionId, own.createdBy, own.title], [null, mine.missionId, addr(sergio), mine.title], "his room is as it was");
+  const theirs = sergio.rooms.ofShare(mine.id);
+  assert.ok(theirs && theirs.id !== mine.id);
+  assert.deepEqual([theirs.shareId, theirs.missionId, theirs.createdBy, theirs.title], [mine.id, null, addr(marta), "Grupo de Marta"]);
+  assert.equal(sergio.rooms.shared.has(mine.missionId), false, "his sala is not the sala of that group");
+  // Nothing of his sala goes to that group, whatever is written to its steps; his own next turn stays private.
+  const mark = sergio.out.length;
+  for (const step of sergio.store.where("steps", "missionId", mine.missionId)) sergio.store.patch("steps", step.id, { touchedAt: new Date().toISOString() });
+  sergio.reply = () => answer("OTRO-PRIVADO.");
+  await sergio.rooms.send(own.id, { text: "@Vera y esto", to: ["vera"] });
+  await until(() => sergio.store.where("messages", "missionId", mine.missionId).some((m) => m.text === "OTRO-PRIVADO."), "su turno termina");
+  await settle(sergio.runtime);
+  await pause(300);
+  assert.deepEqual(sergio.out.slice(mark).filter((o) => o.body.type === "msg"), []);
+  assert.deepEqual(peerRows(marta, mine.id), []);
+  // His own first invitation still turns his room into the room of its conversation.
+  const other = sergio.rooms.create({ title: "Para compartir", botIds: ["vera"] });
+  await sergio.rooms.invite(other.id, { address: addr(marta) });
+  assert.deepEqual([sergio.store.get("rooms", other.id).shareId, sergio.store.list("rooms").filter((r) => r.shareId === other.id).length], [other.id, 1]);
+});

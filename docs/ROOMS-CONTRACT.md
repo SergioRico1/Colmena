@@ -165,8 +165,10 @@ choice open:
   inferred: a named team mission is a sala, one titled from its prompt, with a due date or for one
   bot is a task; in doubt, a sala. `/api/state` only says a kind the shape does not give away.
   Trabajo (`Tareas.jsx`) still lists salas too: it was not this task's file.
-- **A room and its share always have the same id.** It follows from the id rules, and the code
-  relies on it: `ensureForShare` adopts the room with the share's id.
+- **A room and its share have the same id**, with one exception. `ensureForShare` adopts a
+  share-less room with the share's id only when this Colmena owns that share (its first
+  invitation). A group of somebody else that arrives with the id of a private room gets a room
+  with a fresh id (`ofShare` finds it by `shareId`); the private room is untouched.
 - **`createdBy`** is null for a private room made before «Personas» had its keys; views fill in
   your address.
 - **Titles.** A private room is named after its sala's `#slug` (what salas show today), and

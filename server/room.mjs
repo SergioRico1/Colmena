@@ -205,9 +205,14 @@ export class Rooms {
    */
   ensureForShare(s) {
     if (!s || s.kind !== "group") return null;
-    const found = this.ofShare(s.id) || (this.store.get("rooms", s.id)?.shareId ? null : this.store.get("rooms", s.id));
+    // A room of yours without people that has this very id is that room only when the
+    // conversation is one YOU made (its first invitation). Somebody else's group that happens to
+    // carry the id of a room of yours never takes it over: it gets a room of its own.
+    const same = this.store.get("rooms", s.id);
+    const mine = !!s.owner && s.owner === this.getPeers?.()?.address;
+    const found = this.ofShare(s.id) || (same && !same.shareId && mine ? same : null);
     const tie = { title: s.title || "sala", slug: roomSlug(s.title), teamId: s.teamId || null, general: !!s.general };
-    if (!found) return this.save({ id: s.id, ...tie, missionId: null, shareId: s.id, createdBy: s.owner || null, createdAt: s.createdAt || now(), archived: false, snoozedUntil: null, seenAt: null });
+    if (!found) return this.save({ id: same ? randomUUID() : s.id, ...tie, missionId: null, shareId: s.id, createdBy: s.owner || null, createdAt: s.createdAt || now(), archived: false, snoozedUntil: null, seenAt: null });
     const next = { ...found, ...tie, shareId: s.id, ...(found.shareId ? {} : { createdBy: s.owner || found.createdBy }) };
     return JSON.stringify(next) === JSON.stringify(found) ? found : this.save(next);
   }
