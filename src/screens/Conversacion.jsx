@@ -568,14 +568,17 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           <CitationContext.Provider value={row.citations}>
             <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} />
           </CitationContext.Provider>
-          {row.artifact ? <FileCard artifact={row.artifact} onOpen={() => acts.current.toggleDoc(row.artifact.id)} /> : null}
-          {(row.more || []).map((a) => <FileCard key={a.id} artifact={a} onOpen={() => acts.current.toggleDoc(a.id)} />)}
-          <SourceChips sources={row.sources} />
-          <AnswerActions message={m} bot={row.author} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null} onEditAsk={row.regenerate && row.askId ? () => acts.current.edit(row.askId) : null}
-            branch={row.branch} versionDisabled={turn} onVersion={(id) => acts.current.version(id)} />
-          <UsageLine message={m} step={row.step} />
-          {row.undo ? <ChangedFiles cp={row.undo} missionId={c} /> : null}
-          {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
+          {/* What comes with the answer stays in its text column, beside the face (design/v4 › .msg). */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingLeft: "44px" }}>
+            {row.artifact ? <FileCard artifact={row.artifact} onOpen={() => acts.current.toggleDoc(row.artifact.id)} /> : null}
+            {(row.more || []).map((a) => <FileCard key={a.id} artifact={a} onOpen={() => acts.current.toggleDoc(a.id)} />)}
+            <SourceChips sources={row.sources} />
+            <AnswerActions message={m} bot={row.author} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null} onEditAsk={row.regenerate && row.askId ? () => acts.current.edit(row.askId) : null}
+              branch={row.branch} versionDisabled={turn} onVersion={(id) => acts.current.version(id)} />
+            <UsageLine message={m} step={row.step} />
+            {row.undo ? <ChangedFiles cp={row.undo} missionId={c} /> : null}
+            {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
+          </div>
         </article>
         </TurnFileLinks>
       );
