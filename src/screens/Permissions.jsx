@@ -6,17 +6,14 @@ import { navigate } from "../lib/router.jsx";
 import { appName, loadAccounts } from "../components/settings/connections.jsx";
 import Shell from "../components/v2/Shell.jsx";
 import AppLogo from "../components/settings/AppLogo.jsx";
+import AfterConnect, { NAMES } from "../components/v2/settings/AfterConnect.jsx";
 import { SkeletonLines } from "../components/Skeleton.jsx";
 import { C } from "../lib/theme.js";
 
 // Port of the NEXO 09c dialogs (design/Permissions.dc.html): only the relevant dialog is shown.
-//  /permisos/<cuenta>?cuenta=1 → name the account after connecting
+//  /permisos/<cuenta>?cuenta=1 → after connecting: its name and what each bot may do (AfterConnect)
 //  /permisos/<aprobación>      → read review or send review (hold 1.2 s to send)
-const NAMES = [
-  { label: "Personal", dot: C.ok },
-  { label: "Trabajo", dot: "var(--c-kind-img)" },
-  { label: "Familia", dot: "var(--c-kind-ppt)" },
-];
+
 const HOLD_MS = 1200;
 const EXTRA = "\nbutton:focus-visible,input:focus-visible{outline:2px solid var(--c-text);outline-offset:2px}\nbutton:not(:disabled){cursor:pointer}\nbutton:disabled{opacity:.6}";
 // v2 sheet: white, 30 px corners, calm shadow; a request that waits for you glows honey.
@@ -142,7 +139,7 @@ export default function Permissions({ params, query = {} }) {
   const list = (v) => (Array.isArray(v) ? v.join(", ") : v || "");
 
   return (
-    <Shell active="hoy" extraCss={css + EXTRA}>
+    <Shell active={naming ? "ajustes" : "hoy"} background={naming ? "var(--c-app)" : undefined} extraCss={css + EXTRA}>
       <div style={{ minHeight: "100%", boxSizing: "border-box", color: "var(--c-text)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "72px 16px 40px" }}>
         {!loaded ? <div style={{ ...dialog, padding: "26px" }}><SkeletonLines lines={4} /></div> : null}
 
@@ -157,40 +154,7 @@ export default function Permissions({ params, query = {} }) {
           </div>
         ) : null}
 
-        {loaded && kind === "name" ? (
-          <div role="dialog" aria-label="Nombrar la cuenta" style={{ ...dialog, padding: "28px", gap: "22px" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", textAlign: "center" }}>
-              <span style={{ position: "relative", display: "flex" }}>
-                <AppLogo id={account?.toolkit} name={app} size={56} />
-                <span style={{ position: "absolute", right: "-6px", bottom: "-6px", width: "24px", height: "24px", borderRadius: "var(--r-circle)", background: C.ok, border: "3px solid var(--c-card)", color: C.btnText, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Check size={11} weight="bold" />
-                </span>
-              </span>
-              <span style={{ font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>{account ? `${app} está conectado` : "Cuenta conectada"}</span>
-              <span role={error ? "alert" : undefined} style={{ fontSize: "var(--t-ui)", color: error ? "var(--c-error)" : "var(--c-text-3)", lineHeight: "1.5" }}>{error || "¿Cómo quieres llamar a esta cuenta? Así sabrás cuál usa Colmena."}</span>
-            </div>
-            <div role="radiogroup" aria-label="Nombre de la cuenta" style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
-              {NAMES.map((n) => {
-                const on = customName === null && n.label === name;
-                return (
-                  <button key={n.label} type="button" role="radio" aria-checked={on} onClick={() => { setName(n.label); setCustomName(null); }} style={{ height: "36px", border: "0", padding: "0 14px", borderRadius: "var(--r-sm)", fontSize: "var(--t-ui)", fontWeight: "500", display: "flex", alignItems: "center", gap: "8px", background: on ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .05)", color: on ? "var(--c-btn-text)" : C.text }}>
-                    <span style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: n.dot }} />
-                    {n.label}
-                  </button>
-                );
-              })}
-            </div>
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>O escribe otro nombre</span>
-              <input className="c-quiet" type="text" value={nameValue} maxLength={80} onChange={(e) => setCustomName(e.target.value)} style={{ height: "36px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", padding: "0 14px", fontFamily: "inherit", fontSize: "var(--t-ui)", color: "var(--c-text)" }} />
-            </label>
-            <button type="button" disabled={busy || !account || !nameValue.trim()} onClick={() => action(async () => {
-              await post("/connections/rename", { account: account.id, alias: nameValue.trim() });
-              navigate("/ajustes/conexiones");
-            })} style={{ height: "36px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "500" }}>{busy ? "Guardando…" : "Listo"}</button>
-          </div>
-        ) : null}
-
+        {loaded && kind === "name" ? <AfterConnect account={account} app={app} error={error} busy={busy} name={name} setName={setName} customName={customName} setCustomName={setCustomName} nameValue={nameValue} action={action} /> : null}
         {loaded && kind === "read" && (naming || review) ? (
           <div role="dialog" aria-label="Permitir lectura" style={{ ...dialog, padding: "28px", gap: "18px", boxShadow: review?.status === "pending" ? HONEY : CALM }}>
             <Brand chip="Solo lectura" />
