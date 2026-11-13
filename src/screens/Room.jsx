@@ -40,6 +40,7 @@ import { roomLinks } from "../lib/rooms.js";
 import { firstName, initialsOf, listNames } from "../lib/identity.js";
 import { askWaiting, itemType, liveLines, memberPanel, newsLine, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
 import { useRoomTimeline } from "../lib/useRoomTimeline.js";
+import { CompletionNote } from "../components/v3/dia/Completion.jsx";
 import NotFound from "./NotFound.jsx";
 
 // The one room screen (docs/PLAN-equipo-y-salas.md, scope 3; docs/CONTRACT.md §18): every room,
@@ -491,6 +492,8 @@ function Room({ id, query }) {
                       ) : null}
                       <RoomMessages mission={mission} messages={rows} thread={thread} bots={bots} approvals={approvals} artifacts={artifacts} steps={steps} onOpenArtifact={openDoc} openArtifactId={null} showThread={false} onOpenReplies={mission ? openReplies : null}
                         foreign={shared ? foreign : null} renderForeign={shared ? renderForeign : null} shareSlot={shared && !gone ? shareSlot : null} />
+                      {/* A visible end when the sala finishes while you are here (lib/completion.js). */}
+                      {mission ? <CompletionNote missionId={missionId} /> : null}
                       {liveNow.length ? <div role="status" aria-label="Bots de otras personas en esta sala" style={{ display: "flex", flexDirection: "column" }}>{liveNow.map((line) => <StatusLine key={line.id} item={line} />)}</div> : null}
                       {mission?.limited ? <LimitBanner mission={mission} botName={mission.limited.botIds?.length === 1 ? findBot(bots, mission.limited.botIds[0])?.name : null} /> : null}
                       {/* Where the bots' live work shows: «qué está haciendo ahora» appears when this is out of view. */}

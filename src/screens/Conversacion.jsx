@@ -3,7 +3,8 @@ import { useWarmOnType } from "../lib/warm.js";
 import { FileText, FolderOpen, Globe, MessageCircleQuestion, SquareTerminal } from "lucide-react";
 import VoiceCall from "../components/v2/chat/VoiceCall.jsx";
 import Shell from "../components/v2/Shell.jsx";
-import { NewConversation, whenLabel } from "../components/v2/chat/ConvList.jsx";
+import { whenLabel } from "../components/v2/chat/ConvList.jsx";
+import NewRoomSheet from "../components/v3/team/NewRoomSheet.jsx";
 import ChatsHome from "../components/v2/chat/ChatsHome.jsx";
 import Composer from "../components/v2/chat/Composer.jsx";
 import PlusMenu, { chosenChips, turnBody } from "../components/v2/chat/PlusMenu.jsx";
@@ -745,7 +746,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           {c ? <SideDock dock={dock} tabs={dockTabs} addable={dockAddable} widthKey="chat" label="Panel de la conversación" tone="v3" /> : null}
           {expert && inspector ? <Inspector bot={bot} mission={mission} messages={messages} steps={steps} approvals={approvals} onClose={toggleInspector} /> : null}
         </div>
-        {roomSheet ? <NewConversation mode="sala" preset={[botId]} onClose={() => setRoomSheet(false)} /> : null}
+        {roomSheet ? <NewRoomSheet preset={[botId]} onClose={() => setRoomSheet(false)} /> : null}
       </Shell>
     </InteractiveContext.Provider>
   );

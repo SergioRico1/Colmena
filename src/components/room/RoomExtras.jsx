@@ -37,7 +37,7 @@ export function CatchUp({ count, mission, pending, id }) {
         <span style={{ fontSize: "14.5px", fontWeight: 600 }}>{"Mientras no estabas"}</span>
         <span style={{ fontSize: "13px", color: "#C9CBD3" }}>{`${count} mensajes${need.length ? ` · ${need.length} te ${need.length === 1 ? "necesita" : "necesitan"}` : ""}`}</span>
         <span style={{ flex: "1" }} />
-        {vote ? <a href={`/debate/${id}`} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFC93C", color: "#12131A", fontSize: "13px", fontWeight: 600 }}>{"Ir a la votación"}</a> : null}
+        {vote ? <a href={`/debate/${id}`} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>{"Ir a la votación"}</a> : null}
       </div>
       <ul style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "14px", lineHeight: "1.5", color: "#E6E7EC" }}>
         {sentences.slice(0, 3).map((t, i) => <li key={i}>{t}</li>)}

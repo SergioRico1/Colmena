@@ -87,7 +87,7 @@ export default function SecretPrompt({ approval, bots = [], compact = false }) {
           style={{ height: "34px", padding: "0 10px", background: "#F7F8FA", border: "1px solid #DCE0E8", borderRadius: "9px", font: "500 13px/1 'Geist Mono', monospace", color: "#12131A" }} />
       </label>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        <button type="submit" disabled={busy || !value.trim() || left === 0} className="c-press" style={{ height: "40px", padding: "0 16px", background: "#FFC93C", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", fontWeight: "700", fontSize: "14px", opacity: busy || !value.trim() ? 0.55 : 1 }}>{busy ? "Guardando…" : "Guardar la clave"}</button>
+        <button type="submit" disabled={busy || !value.trim() || left === 0} className="c-press" style={{ height: "40px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", fontWeight: "700", fontSize: "14px", opacity: busy || !value.trim() ? 0.55 : 1 }}>{busy ? "Guardando…" : "Guardar la clave"}</button>
         <button type="button" disabled={busy} onClick={decline} style={{ height: "40px", padding: "0 14px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "14px" }}>Ahora no</button>
         <span style={{ flex: "1 1 220px", fontSize: "12px", lineHeight: "1.4", color: "#555A68" }}>{`Se guarda cifrada en este ordenador. ${bot.name} nunca la ve: solo sabrá que está guardada.`}</span>
       </div>

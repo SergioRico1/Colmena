@@ -1075,7 +1075,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
             <input className="c-bare" ref={inputRef} type="text" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "15px" }} />
           </label>
           <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} />
-          <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "#FFC93C", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer" }}>
+          <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer" }}>
             <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" /></span>
           </button>
         </div>
@@ -1257,7 +1257,7 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
         <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "14px" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
           <textarea className="c-bare" rows="2" value={text} autoFocus onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) send(e); }} placeholder="Responder en el hilo…" style={{ flex: "1", minWidth: "0", resize: "none", border: "0", fontSize: "14px", lineHeight: "1.5", background: "transparent", padding: "4px 0" }} />
-          <button type="submit" aria-label="Responder" disabled={busy || !text.trim()} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#FFC93C", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", opacity: busy || !text.trim() ? 0.55 : 1 }}>
+          <button type="submit" aria-label="Responder" disabled={busy || !text.trim()} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", opacity: busy || !text.trim() ? 0.55 : 1 }}>
             <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </label>

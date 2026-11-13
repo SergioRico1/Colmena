@@ -9,7 +9,7 @@ import {
   memberPanel, mentionGroups, mentionTargets, newsLine, requestHint, presenceWord, roomPlace, roomRole, stackLabel, stateWord, statusLine,
 } from "../src/lib/roomView.js";
 import { mentionItems } from "../src/lib/mentionMenu.js";
-import { roomLinks } from "../src/lib/rooms.js";
+import { roomLinks, tasksOf } from "../src/lib/rooms.js";
 
 const ME = "me-address", LUCIA = "lucia-address", MARTA = "marta-address";
 const sergio = { address: ME, name: "Sergio Rico", you: true };
@@ -292,4 +292,17 @@ test("every room opens at /sala/:id, private or with people", () => {
   assert.equal(roomLinks({ id: "r1", shareId: "r1", title: "general" }).href, "/sala/r1");
   assert.equal(roomLinks({ id: "r2", missionId: "m9", shareId: "r2", title: "x" }).href, "/sala/r2");
   assert.deepEqual(roomLinks({ id: "m1" }, [{ id: "m1", room: "informe" }]), { missionId: "m1", shareId: null, title: "informe", href: "/sala/m1" });
+});
+
+test("Trabajo lists tasks by their stored kind: never a sala, a chat or a cancelled task", () => {
+  const missions = [
+    { id: "t1", kind: "tarea", botIds: ["vera"], status: "running" },
+    { id: "t2", automationId: "a1", botIds: ["vera"], status: "completed" }, // a routine's run says no kind: its shape does
+    { id: "s1", kind: "sala", botIds: ["vera", "nora"], status: "completed" },
+    { id: "s2", botIds: ["vera", "nora"], status: "waiting" }, // no kind: a room
+    { id: "c1", conversation: true, botIds: ["vera"], status: "completed" },
+    { id: "t3", kind: "tarea", botIds: ["vera"], status: "cancelled" },
+  ];
+  assert.deepEqual(tasksOf(missions).map((m) => m.id), ["t1", "t2"]);
+  assert.deepEqual(tasksOf(), []);
 });

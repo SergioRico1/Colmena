@@ -228,7 +228,7 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
         ) : null}
         {editing ? (
           <>
-            <button type="button" className="rm-focus" onClick={() => save()} disabled={!dirty || saving} title="Guardar (Ctrl+S)" style={{ ...btn, background: "#FFC93C", border: "1.5px solid #12131A", fontWeight: "700", opacity: !dirty || saving ? 0.55 : 1 }}><Save {...I} size={14} />{saving ? "Guardando…" : "Guardar"}</button>
+            <button type="button" className="rm-focus" onClick={() => save()} disabled={!dirty || saving} title="Guardar (Ctrl+S)" style={{ ...btn, background: "#12131A", color: "#FFFFFF", border: "1.5px solid #12131A", fontWeight: "700", opacity: !dirty || saving ? 0.55 : 1 }}><Save {...I} size={14} />{saving ? "Guardando…" : "Guardar"}</button>
             <button type="button" className="rm-focus" onClick={discard} style={btn}>{dirty ? "Descartar" : "Cerrar edición"}</button>
           </>
         ) : file?.editable ? (

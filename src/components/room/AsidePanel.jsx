@@ -169,7 +169,7 @@ export default function AsidePanel({ mission }) {
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (!pending) ask(text); } }}
             placeholder={`Pregúntale a ${target?.name || "un bot"}, sin interrumpir…`}
             style={{ flex: "1", minWidth: 0, resize: "none", border: "0", background: "transparent", fontSize: "14px", lineHeight: "1.45", padding: "6px 0", fieldSizing: "content", maxHeight: "140px" }} />
-          <button type="submit" aria-label="Preguntar" disabled={pending || !text.trim()} style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", background: "#FFC93C", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", opacity: pending || !text.trim() ? 0.55 : 1 }}><ArrowUp {...I} size={16} strokeWidth={2.4} /></button>
+          <button type="submit" aria-label="Preguntar" disabled={pending || !text.trim()} style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", opacity: pending || !text.trim() ? 0.55 : 1 }}><ArrowUp {...I} size={16} strokeWidth={2.4} /></button>
         </label>
         <ErrorLine>{error}</ErrorLine>
       </form>

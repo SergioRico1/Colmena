@@ -6,6 +6,8 @@ export const missionKind = (m) => (m?.kind ? m.kind : m?.conversation && m.botId
 export const isBotChat = (m) => missionKind(m) === "chat";
 export const isSala = (m) => missionKind(m) === "sala";
 export const isTask = (m) => missionKind(m) === "tarea";
+/** What Trabajo lists: the tasks, by their stored kind. Rooms and chats live in the sidebar. */
+export const tasksOf = (missions = []) => missions.filter((m) => isTask(m) && !m.conversation && m.status !== "cancelled");
 
 /**
  * The links of a room of /api/state (`rooms`, server/room.mjs): its sala (`missionId`), its

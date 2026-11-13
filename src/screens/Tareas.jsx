@@ -12,6 +12,7 @@ import { isSnoozed, snoozeWhen } from "../lib/snooze.js";
 import { pauseLine } from "../lib/pauseReason.js";
 import { useExpert } from "../lib/expert.js";
 import { scrollBehavior } from "../lib/motion.js";
+import { tasksOf } from "../lib/rooms.js";
 
 // Colmena 3 · Trabajo › Tareas (design/V3Tareas.dc.html): everything the bots do once, as a
 // board (what needs you → under way → stuck → done this week) or a list. Tasks are the
@@ -106,7 +107,8 @@ export default function Tareas({ query = {} }) {
   const team = bots.filter((b) => b.enabled !== false && !b.archived);
   const botOf = (id) => bots.find((b) => b.id === id) || null;
   const snoozed = (m) => m.archived || (m.snoozedUntil && Date.parse(m.snoozedUntil) > Date.now());
-  const all = missions.filter((m) => !m.conversation && m.status !== "cancelled");
+  // Tasks only: a sala is a room of the sidebar, not a piece of work of this board.
+  const all = tasksOf(missions);
   const keptCount = all.filter(snoozed).length;
   const shown = useMemo(() => all
     .filter((m) => (kept ? snoozed(m) : !snoozed(m)))
