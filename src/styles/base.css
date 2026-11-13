@@ -216,18 +216,19 @@ a,img,svg{-webkit-user-drag:none}
 .c-mi[data-active]{background:rgb(var(--c-ink-rgb) / .06)}
 .c-mi:focus{outline:none}
 .c-mi:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px}
-.c-mi-icon{flex:none;width:16px;height:16px;display:grid;place-items:center;color:var(--c-text-3)}
+.c-mi-icon{flex:none;min-width:16px;min-height:16px;display:grid;place-items:center;color:var(--c-text-3)}
 .c-mi-text{flex:1;min-width:0;display:flex;flex-direction:column}
 .c-mi-label{overflow:hidden;text-overflow:ellipsis}
 .c-mi-hint{margin-top:1px;font-size:var(--t-caption);line-height:1.35;color:var(--c-text-3);white-space:normal}
 .c-mi-end{flex:none;margin-left:12px;display:flex;align-items:center;gap:3px;min-height:20px;color:var(--c-text-3)}
 .c-mi-meta{font:500 var(--t-caption)/1 'Geist',sans-serif;font-variant-numeric:tabular-nums;color:var(--c-text-3)}
-.c-menu kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:5px;background:var(--c-sunken);border:1px solid var(--c-line);font:500 var(--t-micro)/1 'Geist Mono',ui-monospace,monospace;color:var(--c-text-3)}
+.c-menu kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:var(--r-xs);background:var(--c-sunken);border:1px solid var(--c-line);font:500 var(--t-micro)/1 'Geist Mono',ui-monospace,monospace;color:var(--c-text-3)}
 .c-mi[aria-disabled="true"]{color:var(--c-text-4);cursor:default}
 .c-mi[aria-disabled="true"] .c-mi-icon,.c-mi[aria-disabled="true"] .c-mi-hint{color:var(--c-text-4)}
 .c-mi.danger,.c-mi.danger .c-mi-icon{color:var(--c-error)}
 .c-mi.danger[data-active]{background:var(--c-error-soft)}
 .c-menu-sep{flex:none;height:1px;margin:6px 0;background:var(--c-line)}
+.c-menu-header{flex:none;display:flex;align-items:center;gap:12px;padding:8px 8px 12px;margin-bottom:6px;border-bottom:1px solid var(--c-line);white-space:nowrap}
 .c-menu-head{flex:none;padding:8px 10px 4px;font:600 var(--t-caption)/1.2 'Geist',sans-serif;color:var(--c-text-3)}
 .c-menu-confirm{display:flex;flex-direction:column;gap:6px;max-width:300px;padding:8px 8px 6px;white-space:normal}
 .c-menu-confirm strong{font-weight:600;font-size:var(--t-ui);line-height:1.35}
@@ -248,6 +249,8 @@ a,img,svg{-webkit-user-drag:none}
 .c-press:active:not(:disabled){transform:scale(.96)}
 .msg-actions{transform:translateY(2px);transition:opacity .12s ease,transform .12s var(--c-ease)}
 .msg-row:hover .msg-actions,.msg-row:focus-within .msg-actions{transform:none}
+/* A message's toolbar stays while its «…» menu is open (the menu floats outside the row). */
+.msg-actions.is-open,.msg-tools.is-open{opacity:1!important;pointer-events:auto!important;transform:none!important}
 /* ── Animations, second pass ─────────────────────────────────────────────── */
 @keyframes c-fade{from{opacity:0}to{opacity:1}}
 @keyframes c-panel{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}

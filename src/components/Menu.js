@@ -98,7 +98,7 @@ function Confirm({ item, onYes, onNo }) {
  *   returnFocus the element focus goes back to when the menu is left with Escape or a pick
  *   onClose     called once, when it closes for any reason
  */
-export function MenuSurface({ entries, label, anchor, placement = "bottom-end", initial = "first", autoFocus = true, returnFocus = null, onClose, id: givenId }) {
+export function MenuSurface({ entries, label, anchor, placement = "bottom-end", initial = "first", autoFocus = true, returnFocus = null, onClose, id: givenId, header = null }) {
   const autoId = useId();
   const menuId = givenId || "menu" + autoId.replace(/:/g, "");
   const rootRows = menuRows(entries);
@@ -228,9 +228,9 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
       onBlur: (e) => { const to = e.relatedTarget; if (to && !to.closest?.("[data-c-menu]") && !(anchor?.contains?.(to))) close(false); },
     }, confirming
       ? h(Confirm, { item: confirming, onYes: () => run(confirming), onNo: () => setLevel(level, { confirm: -1 }) })
-      : lv.rows.map((row, i) => (row.kind === "separator" ? h("div", { key: row.key, role: "separator", className: "c-menu-sep" })
+      : [level === 0 && header ? h("div", { key: "header", className: "c-menu-header", role: "presentation" }, header) : null, ...lv.rows.map((row, i) => (row.kind === "separator" ? h("div", { key: row.key, role: "separator", className: "c-menu-sep" })
         : row.kind === "heading" ? h("div", { key: row.key, role: "presentation", className: "c-menu-head" }, row.label)
-          : h(Row, { key: row.key, row, index: i, active: lv.at === i, expanded: live[level + 1]?.parent === i, menuId, onPointer: (j) => hover(level, j), onPick: (j, e) => pick(level, j, e) }))));
+          : h(Row, { key: row.key, row, index: i, active: lv.at === i, expanded: live[level + 1]?.parent === i, menuId, onPointer: (j) => hover(level, j), onPick: (j, e) => pick(level, j, e) })))]);
   };
 
   if (typeof document === "undefined") return null;
@@ -245,10 +245,12 @@ export function MenuSurface({ entries, label, anchor, placement = "bottom-end", 
  *   menuLabel   the menu's name (default: label)
  *   openStyle   added to `style` while open (default: the chip background)
  */
-export function MenuButton({ items, label, menuLabel, placement = "bottom-end", children, className, style, openStyle = OPEN, title, disabled = false, onOpenChange, buttonProps = null, showTitle = true }) {
-  const [open, setOpenState] = useState(null); // null | "first" | "last"
+export function MenuButton({ items, label, menuLabel, placement = "bottom-end", children, className, style, openStyle = OPEN, title, disabled = false, open: openProp, onOpenChange, buttonProps = null, showTitle = true, header = null }) {
+  const [own, setOwn] = useState(null); // null | "first" | "last"
+  // Controlled when `open` is given (a shortcut elsewhere opens it): true | "first" | "last" | false.
+  const open = openProp === undefined ? own : openProp ? (typeof openProp === "string" ? openProp : "first") : null;
   const button = useRef(null);
-  const setOpen = (v) => { setOpenState(v); onOpenChange?.(!!v); };
+  const setOpen = (v) => { if (openProp === undefined) setOwn(v); onOpenChange?.(v || false); };
   const menuId = "mb" + useId().replace(/:/g, "");
   const entries = open ? (typeof items === "function" ? items() : items) : null;
   const onKeyDown = (e) => {
@@ -263,7 +265,7 @@ export function MenuButton({ items, label, menuLabel, placement = "bottom-end", 
       style: open ? { ...style, ...openStyle } : style,
       ...buttonProps,
     }, children),
-    open ? h(MenuSurface, { id: menuId, entries, label: menuLabel || label, anchor: button.current, placement, initial: open, returnFocus: button.current, onClose: () => setOpen(null) }) : null);
+    open ? h(MenuSurface, { id: menuId, entries, label: menuLabel || label, anchor: button.current, placement, initial: open, header, returnFocus: button.current, onClose: () => setOpen(null) }) : null);
 }
 const OPEN = { background: "var(--c-chip)" };
 
