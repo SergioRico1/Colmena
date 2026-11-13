@@ -346,8 +346,14 @@ own loop guard does.
 - `room.handoff {share, from, to, at}`: two bot ids of the sender (pass-the-word, a plan's
   work step, `ask_bot`/`message_bot` through the `thread` records), once a minute per pair.
 - Deliverables made in a step with `roomAsk` (its `deliverable` messages) go as files after the
-  answer (`PeerFiles#sendArtifact`, signed as the bot, `replyTo` the answer). Text deliverables
-  (md, txt, csv) are sent as a file of that format. `POST /api/rooms/:id/share` is the manual way.
+  answer (`PeerFiles#sendArtifact`, signed as the bot, `replyTo` the answer). A deliverable of a
+  format in `FILE_KINDS` travels as such; any other text (code, json, html, svg…, with or
+  without a file) travels as plain text named `<title>.<format>.txt` (`travelName`): every
+  Colmena takes it and nobody receives a file that runs. One that cannot travel (gone, or a
+  file that is not text) is tried once (`roomAsks.unshared`) and leaves the owner a local line
+  in the room («No he podido compartir «…» en la sala: …»; `RoomWork#notShared`, never sent),
+  also when a retry or an approved «Compartir» fails that way. `POST /api/rooms/:id/share` is
+  the manual way.
   Capped (`RoomWork#shareOver`): 3 files and 25 MB per request (`roomAsks.shared`, `sharedBytes`),
   10 files and 100 MB per requester and day. What is over stays (`roomAsks.kept`) and asks the
   owner: approval `{id: "roomshare:"+ask, kind: "question", tool: "room_share", options: share|no,

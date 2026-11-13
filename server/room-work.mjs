@@ -557,7 +557,7 @@ export class RoomWork {
     const ask = this.store.get("roomAsks", step.roomAsk);
     if (!ask || ask.shareId !== share.id) return [];
     const made = this.store.where("messages", "missionId", step.missionId).filter((m) => m.kind === "deliverable" && m.stepId === step.id && m.artifactId).map((m) => m.artifactId);
-    const done = new Set([...(ask.shared || []), ...(ask.kept || [])]), out = [], kept = [];
+    const done = new Set([...(ask.shared || []), ...(ask.kept || []), ...(ask.unshared || [])]), out = [], kept = [];
     const add = (id, more) => { const a = this.store.get("roomAsks", id); return this.store.patch("roomAsks", id, more(a)); };
     for (const artifactId of [...new Set(made)]) {
       // Claimed at once: a step is written several times as it ends, and each file goes once.
@@ -575,6 +575,11 @@ export class RoomWork {
         this.log("Un entregable de " + bot.name + " no pudo compartirse en la sala: " + error.message);
         // It could not leave now (the mailbox is not reachable): kept, and tried again.
         if (!error.status || error.status >= 500) this.keepUnsent({ id: "file:" + artifactId, kind: "file", shareId: share.id, askId: ask.id, artifactId, botId: bot.id, replyTo: answerId, size: await this.sizeOf(artifactId).catch(() => 0) });
+        // It never will (gone, a kind that cannot travel): once, and you are told in the room.
+        else {
+          add(ask.id, (a) => ({ unshared: [...new Set([...(a.unshared || []), artifactId])] }));
+          this.notShared(share, bot, artifactId, error);
+        }
         done.add(artifactId);
       } finally {
         this.sharing.delete(artifactId);
@@ -588,6 +593,13 @@ export class RoomWork {
    * answer, a file it made for a request): kept in `roomUnsent` and tried again every tick and
    * after a restart, for as long as the mailbox would have kept it.
    */
+  /** A file of a bot of yours that will not reach the room: a line only you see there, saying why. */
+  notShared(share, bot, artifactId, error) {
+    const title = clip(this.store.get("artifacts", String(artifactId))?.title || "un archivo", 80);
+    try {
+      this.rooms.localNote(share, bot.id, "No he podido compartir «" + title + "» en la sala: " + String(error?.message || "error desconocido").replace(/\.$/, "") + ". Sigue en tu ordenador.");
+    } catch (e) { this.log("No se pudo avisar: " + e.message); }
+  }
   keepUnsent(record) {
     if (!this.store.get("roomUnsent", record.id)) this.store.put("roomUnsent", { ...record, at: now(), t: Date.now() });
   }
@@ -613,8 +625,11 @@ export class RoomWork {
             if (ask) this.store.patch("roomAsks", ask.id, { shared: [...new Set([...(ask.shared || []), u.artifactId])], sharedBytes: (ask.sharedBytes || 0) + (u.size || 0) });
             this.sentNow(u.id);
           } catch (error) {
-            // Not a matter of waiting (the file is gone, its kind cannot travel): dropped.
-            if (error.status && error.status < 500) this.sentNow(u.id);
+            // Not a matter of waiting (the file is gone, its kind cannot travel): dropped, and you are told.
+            if (error.status && error.status < 500) {
+              this.sentNow(u.id);
+              this.notShared(share, cleanBot(bot), u.artifactId, error);
+            }
           }
         }
       }
@@ -669,6 +684,8 @@ export class RoomWork {
         if (x) this.store.patch("roomAsks", x.id, { shared: [...new Set([...(x.shared || []), artifactId])], sharedBytes: (x.sharedBytes || 0) + size });
       } catch (error) {
         this.log("Un entregable no pudo compartirse en la sala: " + error.message);
+        const share = this.store.get("peerShares", a.roomShare.shareId);
+        if (share && bot) this.notShared(share, bot, artifactId, error);
       }
     }
   }

@@ -287,24 +287,44 @@ const decodeXml = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/
  * The deliverables of this Colmena (Archivo) as files to share: the file and, for a
  * presentation or a Word document, the PDF Colmena made of it.
  */
+/**
+ * The name a deliverable travels with. A format the people's Colmenas take (FILE_KINDS) keeps
+ * its name; any other text (code: «archivo.py», data: «.json», a page: «.html», a drawing:
+ * «.svg»…) travels as plain text, «archivo.py.txt»: every Colmena, old or new, takes it and
+ * shows it as text, and nobody gets a file that runs when it is double-clicked.
+ */
+export function travelName(title, format) {
+  const ext = String(format || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8);
+  const base = String(title || "entregable").replace(/\.[a-z0-9]{1,8}$/i, "").trim().slice(0, 100) || "entregable";
+  return cleanName(FILE_KINDS[ext] ? base + "." + ext : base + (ext ? "." + ext : "") + ".txt");
+}
+/** Bytes that read as text (UTF-8, no NUL): what may travel as plain text. */
+const isText = (bytes) => !bytes.includes(0) && Buffer.from(bytes.toString("utf8"), "utf8").equals(bytes);
+
+/**
+ * A deliverable as it travels: {bytes|path, name, pdf}. Null when it does not exist (any more);
+ * a PeerError (4xx) with the reason when it exists but cannot travel.
+ */
 export function artifactSource({ store, rootOf }) {
   return async (artifactId) => {
     const a = store.get("artifacts", String(artifactId));
     if (!a?.missionId) return null;
-    // A deliverable that is only text (a note, a table): its content as a file of that format.
+    const format = String(a.format || (a.file ? path.extname(a.file).slice(1) : "") || "md").toLowerCase();
+    // A deliverable that is only text (a note, a table, code): its content as a file.
     if (!a.file) {
-      const format = String(a.format || "md").toLowerCase();
-      if (typeof a.content !== "string" || !a.content.trim() || !["md", "txt", "csv"].includes(format)) return null;
-      const title = String(a.title || "entregable").replace(/\.[a-z0-9]{1,6}$/i, "").trim().slice(0, 100) || "entregable";
-      return { bytes: Buffer.from(a.content, "utf8"), name: cleanName(title + "." + format), pdf: null };
+      if (typeof a.content !== "string" || !a.content.trim()) throw new PeerError("«" + String(a.title || "El entregable").slice(0, 80) + "» está vacío.", 422);
+      return { bytes: Buffer.from(a.content, "utf8"), name: travelName(a.title, format), pdf: null };
     }
     const { safePath } = await import("../files.mjs");
     const root = rootOf(a.missionId);
     const file = await safePath(root, a.file).catch(() => null);
     if (!file || !existsSync(file)) return null;
-    const ext = String(a.format || path.extname(a.file).slice(1) || "").toLowerCase();
-    const base = String(a.title || "entregable").replace(/\.[a-z0-9]{1,6}$/i, "").trim().slice(0, 100) || "entregable";
     const pdf = a.pdf ? await safePath(root, a.pdf).catch(() => null) : null;
-    return { path: file, name: cleanName(base + "." + ext), pdf: pdf && existsSync(pdf) ? pdf : null };
+    const view = pdf && existsSync(pdf) ? pdf : null;
+    if (FILE_KINDS[format]) return { path: file, name: travelName(a.title, format), pdf: view };
+    // A file of a kind the people's Colmenas do not take: as text when it is text.
+    const bytes = await readFile(file);
+    if (!isText(bytes)) throw new PeerError("«" + String(a.title || "El entregable").slice(0, 80) + "» es un archivo ." + format + ", que no se puede compartir en una sala.", 422);
+    return { bytes, name: travelName(a.title, format), pdf: view };
   };
 }

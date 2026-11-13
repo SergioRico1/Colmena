@@ -568,6 +568,42 @@ test("over the limit: «no atiende más peticiones» is said once per person, ro
   assert.equal(sergio.calls.length, 0);
 });
 
+test("a request's deliverable of any kind reaches the requester (code and data as text); one that cannot travel tells the owner in the room, once", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  let round = 0;
+  sergio.reply = () => {
+    round += 1;
+    if (round === 1) return call("create_deliverable", { title: "archivo.py", kind: "code", format: "py", content: "print('hola')\n" }, "d1");
+    if (round === 2) return call("create_deliverable", { title: "Datos", kind: "table", format: "json", content: "{\"a\": 1}" }, "d2");
+    return answer("Aquí tienes el código.");
+  };
+  await ask(marta, room, sergio, "@Vera hazme un script en Python");
+  await botAnswer(marta, room, "Aquí tienes el código.");
+  const got = await until(() => { const ready = marta.store.list("peerFiles").filter((f) => f.status === "ready"); return ready.length === 2 ? ready : null; }, "Marta recibe los dos archivos");
+  assert.deepEqual(got.map((f) => f.name).sort(), ["Datos.json.txt", "archivo.py.txt"]);
+  const code = got.find((f) => f.name === "archivo.py.txt");
+  assert.equal(await readFile(marta.peers.files.pathOf(code.id).path, "utf8"), "print('hola')\n");
+  assert.equal(code.mime, "text/plain", "it is shown as text and never runs");
+  // One that cannot travel (here: gone before it is sent) is said to Sergio, in the room, once.
+  const logged = [];
+  sergio.rooms.work.log = (m) => logged.push(m);
+  sergio.peers.files.artifactFile = async () => null;
+  round = 0;
+  sergio.reply = () => (++round === 1 ? call("create_deliverable", { title: "otro.py", kind: "code", format: "py", content: "x = 1\n" }, "d3") : answer("Hecho otro."));
+  await ask(marta, room, sergio, "@Vera otro script");
+  await botAnswer(marta, room, "Hecho otro.");
+  await settle(sergio.runtime);
+  const note = await until(() => sergio.store.list("peerMessages").find((m) => m.local && /No he podido compartir «otro\.py» en la sala/.test(m.text)), "Sergio lo lee en la sala");
+  assert.equal(note.shareId, room.id);
+  await pause(300);
+  assert.equal(sergio.store.list("peerMessages").filter((m) => m.local && /otro\.py/.test(m.text)).length, 1, "once");
+  assert.equal(logged.filter((m) => /no pudo compartirse/.test(m)).length, 1, "tried once, not once per write of the step");
+  assert.ok(!marta.store.list("peerMessages").some((m) => /No he podido/.test(m.text)), "the line never travels");
+});
+
 test("«carpetas» for other people's requests is on or off (no per-folder choice) and off unless the owner turns it on", async (t) => {
   const [sergio, marta] = await world(t, ["Sergio Rico", "Marta Ruiz"], { app: ["Sergio Rico"] });
   await friends(sergio, marta);
