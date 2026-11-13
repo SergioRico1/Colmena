@@ -74,14 +74,15 @@ function Row({ a, bots, note = null }) {
           {a.wiki ? <NoteAsk id={a.id} wiki={a.wiki} compact /> : null}
         </div>
       </div>
+      {/* Not a <form>: this card can sit inside the composer, which is one (a nested form never submits). */}
       {denying ? (
-        <form className="c-enter" onSubmit={(e) => { e.preventDefault(); decide("denied", false, reason.trim()); }} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", paddingLeft: "40px" }}>
-          <input className="c-quiet" autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setDenying(false); } }}
+        <div role="group" aria-label="Decir que no" className="c-enter" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", paddingLeft: "40px" }}>
+          <input className="c-quiet" autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setDenying(false); } else if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); e.stopPropagation(); if (!busy) decide("denied", false, reason.trim()); } }}
             placeholder={`¿Por qué? Se lo diremos a ${bot.name} (opcional)`} aria-label="Por qué no"
             style={{ flex: "1 1 220px", height: "38px", padding: "0 14px", background: "#F4F4F0", border: "0", borderRadius: "999px", fontSize: "14px" }} />
-          <button type="submit" disabled={busy} style={{ ...btn, background: "#12131A", color: "#FFFFFF" }}>{denyLabel}</button>
+          <button type="button" disabled={busy} onClick={() => decide("denied", false, reason.trim())} style={{ ...btn, background: "#12131A", color: "#FFFFFF" }}>{denyLabel}</button>
           <button type="button" onClick={() => setDenying(false)} style={{ ...btn, background: "transparent", fontWeight: "500", color: "#5C606C" }}>Cancelar</button>
-        </form>
+        </div>
       ) : waiting ? (
         <div style={{ display: "flex", paddingLeft: "40px" }}><UndoBar id={key} text={model.waitText} onUndo={() => cancel(key)} /></div>
       ) : (
@@ -175,13 +176,13 @@ function GroupRow({ group, bots }) {
         </div>
       </div>
       {denying ? (
-        <form className="c-enter" onSubmit={(e) => { e.preventDefault(); decide("denied", reason.trim()); }} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", paddingLeft: "40px" }}>
-          <input className="c-quiet" autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setDenying(false); } }}
+        <div role="group" aria-label="Decir que no" className="c-enter" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", paddingLeft: "40px" }}>
+          <input className="c-quiet" autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setDenying(false); } else if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); e.stopPropagation(); if (!busy) decide("denied", reason.trim()); } }}
             placeholder={`¿Por qué? Se lo diremos a ${bot.name} (opcional)`} aria-label="Por qué no"
             style={{ flex: "1 1 220px", height: "38px", padding: "0 14px", background: "#F4F4F0", border: "0", borderRadius: "999px", fontSize: "14px" }} />
-          <button type="submit" disabled={busy} style={{ ...BTN, background: "#12131A", color: "#FFFFFF" }}>{GROUP_VERBS.deny}</button>
+          <button type="button" disabled={busy} onClick={() => decide("denied", reason.trim())} style={{ ...BTN, background: "#12131A", color: "#FFFFFF" }}>{GROUP_VERBS.deny}</button>
           <button type="button" onClick={() => setDenying(false)} style={{ ...BTN, background: "transparent", fontWeight: "500", color: "#5C606C" }}>Cancelar</button>
-        </form>
+        </div>
       ) : (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", paddingLeft: "40px" }}>
           <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ ...BTN, background: "#12131A", color: "#FFFFFF" }}>{failed.length ? GROUP_VERBS.retry : GROUP_VERBS.approve}</button>
