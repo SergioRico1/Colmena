@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import BotFace from "../components/BotFace.jsx";
-import { Check, ArrowUp, Lock } from "../components/Icon.js";
+import { Calendar, Check, ArrowUp, Folder, Lock, Mail, MessageSquare } from "../components/Icon.js";
 import { css } from "../design/V3Bienvenida.jsx";
 import { WindowDots } from "../components/v2/Rail.jsx";
 import ProviderMark from "../components/v2/ProviderMark.jsx";
@@ -10,6 +10,7 @@ import { useAction, useStore } from "../lib/store.jsx";
 import { useExpert } from "../lib/expert.js";
 import { patch, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
+import { C } from "../lib/theme.js";
 
 // Colmena 3 · Bienvenida (design/V3Bienvenida.dc.html; docs/PLAN-equipo-y-salas.md, scope 5):
 // a dark column with the steps and the page beside it. Hola (what Colmena is, your name) →
@@ -17,10 +18,10 @@ import { navigate } from "../lib/router.jsx";
 // start alone → how much you want to see and what you do → your bots → the apps you use →
 // a first request. Every step can be skipped. ?paso=0–6 opens one (QA).
 
-const INK = "#12131A";
-const MUTED = "#5C606C";
-const GREEN = "#0B6B4A";
-const RED = "#B4232A";
+const INK = C.text;
+const MUTED = C.text3;
+const GREEN = C.okInk;
+const RED = C.error;
 const LAST = STEPS.length - 1;
 const STEP = { hola: 0, cuenta: 1, equipo: 2, trabajo: 3, bots: 4, apps: 5, peticion: 6 };
 const BRAINS = [
@@ -30,10 +31,10 @@ const BRAINS = [
 ];
 // What they can see of your day (server DAILY_APPS ids).
 const DAY_APPS = [
-  { id: "correo", mark: "@", name: "Correo", note: "Gmail u Outlook. Leen y preparan borradores." },
-  { id: "calendario", mark: "31", name: "Calendario", note: "Buscan huecos y preparan reuniones." },
-  { id: "carpetas", mark: "▤", name: "Archivos", note: "Drive, OneDrive o una carpeta de este ordenador." },
-  { id: "chat", mark: "#", name: "Slack o Teams", note: "Resumen de canales y respuestas que tú apruebas." },
+  { id: "correo", mark: Mail, name: "Correo", note: "Gmail u Outlook. Leen y preparan borradores." },
+  { id: "calendario", mark: Calendar, name: "Calendario", note: "Buscan huecos y preparan reuniones." },
+  { id: "carpetas", mark: Folder, name: "Archivos", note: "Drive, OneDrive o una carpeta de este ordenador." },
+  { id: "chat", mark: MessageSquare, name: "Slack o Teams", note: "Resumen de canales y respuestas que tú apruebas." },
 ];
 // The welcome's crew, by size and breathing pace (the board's rhythm).
 const SIZES = [64, 52, 46, 52, 50, 50];
@@ -44,19 +45,18 @@ const CLAUDE_WAYS = [
   { id: "api_key", title: "Clave de API", sub: "Pago por uso desde la consola de Anthropic." },
 ];
 
-/** A bot as BotFace draws it; Atlas, who coordinates, in ink until it has its own tone. */
-function faceBot(bot) {
-  const color = bot?.id === "atlas" && (!bot.color || bot.color.toUpperCase() === "#FFC93C") ? INK : bot?.color || "#5B6680";
-  return { ...bot, color };
-}
+/** A bot as BotFace draws it (src/lib/pixelBot.js keeps every colour out of honey's band). */
+const faceBot = (bot) => bot || {};
 // Pasting often brings a trailing space, a line break or an invisible character.
 const clean = (v) => String(v).replace(/[​-‍⁠﻿­]/g, "").trim();
-const ghost = { height: "48px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-body)", fontWeight: "500", color: "var(--c-text-2)", cursor: "pointer" };
-const primary = (off = false) => ({ height: "52px", padding: "0 28px", border: "0", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-read)", fontWeight: "600", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1, display: "inline-flex", alignItems: "center" });
-const outline = { height: "40px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer", flex: "none" };
-const field = { flex: "1 1 240px", minWidth: "0", height: "44px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-lg)", background: "var(--c-card)", font: "500 var(--t-ui)/1 'Geist Mono', monospace", color: "var(--c-text)" };
-const h1 = { margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" };
-const lead = { margin: "0", fontSize: "var(--t-lead)", lineHeight: "1.5", color: "var(--c-text-2)" };
+// v4: 40 px buttons with small corners for the steps' actions, hairline cards and fields.
+const ghost = { height: "40px", padding: "0 14px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", fontSize: "var(--t-ui)", fontWeight: "500", color: "var(--c-text-2)", cursor: "pointer" };
+const primary = (off = false) => ({ height: "40px", padding: "0 18px", border: "1px solid var(--c-btn)", borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1, display: "inline-flex", alignItems: "center" });
+const outline = { height: "36px", padding: "0 14px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer", flex: "none" };
+const field = { flex: "1 1 240px", minWidth: "0", height: "40px", padding: "0 12px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-card)", font: "500 var(--t-ui)/1 'Geist Mono', monospace", color: "var(--c-text)" };
+const h1 = { margin: "0", font: "700 var(--t-display-s)/1.1 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.02em", textWrap: "balance" };
+const lead = { margin: "0", fontSize: "var(--t-read)", lineHeight: "1.5", color: "var(--c-text-2)" };
+const card4 = { borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" };
 
 /** No mailbox: nobody to reach yet, so a team cannot be made here (TeamStep says so). */
 const peopleOffFor = (peers) => !peers || peers.relay?.status === "off";
@@ -181,28 +181,29 @@ export default function BienvenidaV2({ query = {} }) {
   return (
     <>
       <style>{css}</style>
-      <div style={{ position: "relative", height: "100vh", overflowY: "auto", background: "var(--c-sunken)" }}>
+      <div style={{ position: "relative", height: "100vh", overflowY: "auto", background: "var(--c-app)" }}>
         {desktop ? <div aria-hidden="true" style={{ position: "fixed", top: 0, left: "110px", right: 0, height: "26px", zIndex: 5, WebkitAppRegion: "drag" }} /> : null}
-        <div style={{ minHeight: "100vh", display: "flex", flexWrap: "wrap", background: "var(--c-sunken)", color: "var(--c-text)" }}>
-          <aside style={{ flex: "1 1 360px", maxWidth: "460px", display: "flex", flexDirection: "column", gap: "40px", padding: "28px 40px 36px", background: "var(--c-btn)", color: "var(--c-btn-text)" }}>
-            <div style={{ height: "20px", display: "flex", alignItems: "center" }}><WindowDots dark inline /></div>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <img src="/colmena-icon-128.png" alt="" width="44" height="44" style={{ display: "block", width: "44px", height: "44px", animation: "breathe 3s ease-in-out infinite" }} />
-              <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{"Colmena"}</span>
+        <div style={{ minHeight: "100vh", display: "flex", flexWrap: "wrap", background: "var(--c-app)", color: "var(--c-text)" }}>
+          {/* The rail: the sidebar's ground, the steps as its rows (the one you are on is the selected row). */}
+          <aside style={{ flex: "0 1 320px", minWidth: "260px", display: "flex", flexDirection: "column", gap: "28px", padding: "16px 14px 24px", background: "var(--c-sidebar)", borderRight: "1px solid var(--c-line)", color: "var(--c-text)" }}>
+            <div style={{ height: "20px", display: "flex", alignItems: "center", paddingLeft: "6px" }}><WindowDots inline /></div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: "8px" }}>
+              <img src="/colmena-icon-128.png" alt="" width="28" height="28" style={{ display: "block", width: "28px", height: "28px" }} />
+              <span style={{ font: "800 var(--t-read)/1 'Poppins', 'Geist', sans-serif", letterSpacing: "-0.02em" }}>{"Colmena"}</span>
             </div>
-            <ol aria-label="Pasos" style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "4px" }}>
+            <ol aria-label="Pasos" style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "2px" }}>
               {STEPS.map(([label, hint], i) => {
                 const done = i < step, on = i === step;
                 const body = (
                   <>
-                    <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", border: `1.5px solid ${done || on ? "#FFFFFF" : "rgba(255,255,255,.3)"}`, background: done ? "var(--c-card)" : "transparent", color: done ? "var(--c-text)" : "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: "600" }}>{done ? "✓" : String(i + 1)}</span>
+                    <span aria-hidden="true" style={{ flex: "none", width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", border: `1px solid ${done ? "var(--c-ok)" : on ? "var(--c-text)" : "var(--c-line-strong)"}`, background: done ? "var(--c-ok)" : on ? "var(--c-btn)" : "transparent", color: done ? "var(--c-on-accent)" : on ? "var(--c-btn-text)" : "var(--c-text-3)", fontSize: "var(--t-caption)", fontWeight: "600", fontVariantNumeric: "tabular-nums" }}>{done ? <Check size={13} weight="bold" /> : String(i + 1)}</span>
                     <span style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-                      <span style={{ fontSize: "var(--t-body)", fontWeight: "600", color: on || done ? "#FFFFFF" : "#C9CBD3" }}>{label}</span>
-                      <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{hint}</span>
+                      <span style={{ fontSize: "var(--t-ui)", fontWeight: on ? "600" : "500", color: on || done ? C.text : C.text2 }}>{label}</span>
+                      <span style={{ fontSize: "var(--t-caption)", color: C.text3 }}>{hint}</span>
                     </span>
                   </>
                 );
-                const row = { display: "flex", alignItems: "center", gap: "14px", minHeight: "44px", padding: "0 14px", borderRadius: "var(--r-lg)", background: on ? "rgba(255,255,255,.08)" : "transparent" };
+                const row = { display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 10px", borderRadius: "var(--r-sm)", background: on ? "var(--c-selected)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none" };
                 return (
                   <li key={label} aria-current={on ? "step" : undefined} style={done ? { display: "flex" } : row}>
                     {done ? <button type="button" onClick={() => setStep(i)} aria-label={`Volver a «${label}»`} style={{ ...row, flex: "1", border: "0", color: "inherit", textAlign: "left", cursor: "pointer", WebkitAppRegion: "no-drag" }}>{body}</button> : body}
@@ -211,20 +212,20 @@ export default function BienvenidaV2({ query = {} }) {
               })}
             </ol>
             <span style={{ flex: "1" }} />
-            <p style={{ margin: "0", display: "flex", gap: "10px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#C9CBD3" }}>
-              <Lock size={18} style={{ flex: "none", marginTop: "1px" }} />
+            <p style={{ margin: "0", padding: "0 10px", display: "flex", gap: "10px", fontSize: "var(--t-meta)", lineHeight: "1.5", color: C.text3 }}>
+              <Lock size={16} style={{ flex: "none", marginTop: "2px" }} />
               {"Tus bots, chats y archivos se quedan en este ordenador. Puedes cambiar todo esto luego en Ajustes."}
             </p>
           </aside>
 
-          <main style={{ position: "relative", flex: "999 1 560px", minWidth: "0", display: "flex", flexDirection: "column", padding: "56px clamp(24px, 6vw, 96px) 40px" }}>
+          <main style={{ position: "relative", flex: "999 1 560px", minWidth: "0", display: "flex", flexDirection: "column", padding: "48px clamp(24px, 5vw, 80px) 36px" }}>
             {!settings.onboarded && step < LAST ? (
-              <button type="button" disabled={!!busy} onClick={later} style={{ position: "absolute", top: "18px", right: "24px", height: "36px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-ui)", cursor: "pointer", WebkitAppRegion: "no-drag", zIndex: 6 }}>{"Saltar la bienvenida"}</button>
+              <button type="button" disabled={!!busy} onClick={later} style={{ position: "absolute", top: "18px", right: "24px", height: "32px", padding: "0 10px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-meta)", fontWeight: "500", cursor: "pointer", WebkitAppRegion: "no-drag", zIndex: 6 }}>{"Saltar la bienvenida"}</button>
             ) : null}
             <div key={step} style={{ flex: "1", width: "100%", maxWidth: "720px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "32px", animation: "rise .45s ease-out" }}>
               {step === STEP.hola ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-                  <h1 style={{ margin: "0", font: "600 clamp(var(--t-display-m), 6vw, var(--t-display-xl))/0.96 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.045em" }}>
+                  <h1 style={{ margin: "0", font: "700 clamp(var(--t-display-s), 4vw, var(--t-display-l))/1.02 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.025em" }}>
                     {"Hola."}
                     <br />
                     <span style={{ color: "var(--c-text-3)" }}>{"Aquí trabaja tu equipo."}</span>
@@ -237,10 +238,10 @@ export default function BienvenidaV2({ query = {} }) {
                       </li>
                     ))}
                   </ul>
-                  <p style={{ margin: "0", fontSize: "var(--t-title)", lineHeight: "1.5", color: "var(--c-text-2)", maxWidth: "600px" }}>{"Colmena es el sitio donde las personas de tu equipo y los bots de cada una trabajan juntos. Estos son los tuyos: viven en tu ordenador, con tu cuenta de IA y tus datos, y tú decides qué hacen solos y qué te preguntan antes."}</p>
+                  <p style={{ margin: "0", fontSize: "var(--t-read)", lineHeight: "1.55", color: "var(--c-text-2)", maxWidth: "620px" }}>{"Colmena es el sitio donde las personas de tu equipo y los bots de cada una trabajan juntos. Estos son los tuyos: viven en tu ordenador, con tu cuenta de IA y tus datos, y tú decides qué hacen solos y qué te preguntan antes."}</p>
                   <label style={{ display: "flex", flexDirection: "column", gap: "8px", maxWidth: "420px" }}>
                     <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{"¿Cómo te llamas? "}<span style={{ fontWeight: "400", color: "var(--c-text-3)" }}>{"Así te verán tus compañeros."}</span></span>
-                    <input className="c-quiet" type="text" value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }} placeholder="Tu nombre" style={{ height: "48px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-lg)", background: "var(--c-card)", fontSize: "var(--t-read)", color: "var(--c-text)" }} />
+                    <input className="c-quiet" type="text" value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }} placeholder="Tu nombre" style={{ height: "40px", padding: "0 12px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-read)", color: "var(--c-text)" }} />
                   </label>
                   <p style={{ margin: "0", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>{"Te llevará unos tres minutos. Puedes saltar cualquier paso."}</p>
                 </div>
@@ -260,15 +261,15 @@ export default function BienvenidaV2({ query = {} }) {
                         : b.id === "openai" && authError ? { text: "No se pudo entrar: " + String(authError.message || authError), fg: RED }
                         : { text: b.note, fg: MUTED };
                       return (
-                        <div key={b.id} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: `inset 0 0 0 2px ${on ? INK : "transparent"}` }}>
-                          <button type="button" role="radio" aria-checked={on} onClick={() => { if (!on) { setBrain(b.id); setPanel(false); setError(null); } }} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "76px", padding: "14px 20px", border: "0", borderRadius: "var(--r-xl)", background: "transparent", textAlign: "left", cursor: "pointer" }}>
+                        <div key={b.id} style={{ ...card4, display: "flex", flexDirection: "column", boxShadow: on ? `inset 0 0 0 1px ${INK}` : "none", borderColor: on ? INK : "var(--c-line)" }}>
+                          <button type="button" role="radio" aria-checked={on} onClick={() => { if (!on) { setBrain(b.id); setPanel(false); setError(null); } }} style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "68px", padding: "12px 16px", border: "0", borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", cursor: "pointer" }}>
                             <ProviderMark engine={b.id} size={40} style={{ background: "var(--c-chip)" }} />
                             <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "3px" }}>
-                              <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{b.name}</span>
+                              <span style={{ fontSize: "var(--t-read)", fontWeight: "600", color: "var(--c-text)" }}>{b.name}</span>
                               <span role={on ? "status" : undefined} style={{ fontSize: "var(--t-ui)", color: note.fg }}>{note.text}</span>
                             </span>
                             {e?.connected ? (
-                              <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: GREEN, color: "#FFFFFF" }}><Check size={13} strokeWidth={3} /></span>
+                              <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: C.ok, color: "var(--c-on-accent)" }}><Check size={13} strokeWidth={3} /></span>
                             ) : b.rec ? (
                               <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "var(--c-chip)", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-2)" }}>{"Recomendado"}</span>
                             ) : null}
@@ -304,18 +305,18 @@ export default function BienvenidaV2({ query = {} }) {
                     <p style={lead}>{"Lo cambias cuando quieras con el interruptor «Modo experto», al pie de la barra."}</p>
                   </div>
                   <div role="radiogroup" aria-label="Nivel de detalle" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: "12px" }}>
-                    <button type="button" role="radio" aria-checked={!expert} onClick={() => expert && setExpert(false)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px", padding: "22px", border: `2px solid ${expert ? "transparent" : "var(--c-text)"}`, borderRadius: "var(--r-2xl)", background: "var(--c-card)", textAlign: "left", cursor: "pointer" }}>
-                      <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Lo justo"}</span>
+                    <button type="button" role="radio" aria-checked={!expert} onClick={() => expert && setExpert(false)} style={{ ...card4, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "10px", padding: "16px 18px", boxShadow: expert ? "none" : `inset 0 0 0 1px ${INK}`, borderColor: expert ? "var(--c-line)" : INK, textAlign: "left", color: "var(--c-text)", cursor: "pointer" }}>
+                      <span style={{ fontSize: "var(--t-lead)", fontWeight: 600 }}>{"Lo justo"}</span>
                       <span style={{ fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{"Resultados y lo que te necesita. Los bots te cuentan en frases lo que hacen."}</span>
                       <span style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", borderRadius: "var(--r-md)", background: "var(--c-hover)", fontSize: "var(--t-ui)" }}>
                         <BotFace bot={faceBot(writer)} size={20} decorative />
                         {writer.name + " ha leído el informe"}
                       </span>
                     </button>
-                    <button type="button" role="radio" aria-checked={expert} onClick={() => !expert && setExpert(true)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px", padding: "22px", border: `2px solid ${expert ? "var(--c-text)" : "transparent"}`, borderRadius: "var(--r-2xl)", background: "var(--c-card)", textAlign: "left", cursor: "pointer" }}>
-                      <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Con todo detalle"}</span>
+                    <button type="button" role="radio" aria-checked={expert} onClick={() => !expert && setExpert(true)} style={{ ...card4, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "10px", padding: "16px 18px", boxShadow: expert ? `inset 0 0 0 1px ${INK}` : "none", borderColor: expert ? INK : "var(--c-line)", textAlign: "left", color: "var(--c-text)", cursor: "pointer" }}>
+                      <span style={{ fontSize: "var(--t-lead)", fontWeight: 600 }}>{"Con todo detalle"}</span>
                       <span style={{ fontSize: "var(--t-body)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{"Herramientas, tokens, modelo, registros y atajos. Para quien quiere ver las tripas."}</span>
-                      <span style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: INK, color: "#E6E7EC", font: "400 var(--t-meta)/1.4 'Geist Mono', monospace" }}>{"read_file informe_q3.docx · 4.120 tk"}</span>
+                      <span style={{ padding: "10px 12px", borderRadius: "var(--r-sm)", background: "var(--c-term-bg)", border: "1px solid var(--c-term-line)", color: "var(--c-term-fg)", font: "400 var(--t-meta)/1.4 'Geist Mono', monospace" }}>{"read_file informe_q3.docx · 4.120 tk"}</span>
                     </button>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -326,9 +327,9 @@ export default function BienvenidaV2({ query = {} }) {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                       {chips.shown.map(([id, label]) => {
                         const on = role === id;
-                        return <button key={id} type="button" aria-pressed={on} onClick={() => { setRole(id); setDropped([]); }} style={{ height: "40px", padding: "0 16px", border: `1px solid ${on ? "var(--c-text)" : "rgb(var(--c-ink-rgb) / .12)"}`, borderRadius: "var(--r-pill)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
+                        return <button key={id} type="button" aria-pressed={on} onClick={() => { setRole(id); setDropped([]); }} style={{ height: "36px", padding: "0 12px", border: `1px solid ${on ? "var(--c-btn)" : "var(--c-line)"}`, borderRadius: "var(--r-sm)", background: on ? "var(--c-btn)" : "var(--c-card)", color: on ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
                       })}
-                      {chips.more ? <button type="button" aria-expanded="false" onClick={() => setMoreRoles(true)} style={{ height: "40px", padding: "0 16px", border: "1px dashed rgba(18,19,26,.28)", borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Otro"}</button> : null}
+                      {chips.more ? <button type="button" aria-expanded="false" onClick={() => setMoreRoles(true)} style={{ height: "36px", padding: "0 12px", border: "1px dashed var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Otro"}</button> : null}
                     </div>
                   </div>
                 </>
@@ -347,19 +348,19 @@ export default function BienvenidaV2({ query = {} }) {
                       // Names and colours are this person's own (server/bot-looks.mjs): «Otro nombre» and
                       // «Otro color» walk the bot's own sequence, never to one another of yours has.
                       const here = !!real(m.id) && !!settings.botLooks?.key;
-                      const pill = { height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text-2)", fontSize: "var(--t-meta)", fontWeight: "500", cursor: busy ? "default" : "pointer" };
+                      const pill = { height: "28px", padding: "0 10px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: "600", cursor: busy ? "default" : "pointer" };
                       return (
-                        <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "var(--c-card)", opacity: keep ? 1 : 0.55, transition: "opacity .2s ease" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                            <BotFace bot={faceBot(m)} size={36} decorative />
+                        <div key={m.id} style={{ ...card4, display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", opacity: keep ? 1 : 0.55, transition: "opacity .2s ease" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <BotFace bot={faceBot(m)} size={48} decorative />
                             <label htmlFor={"keep-" + m.id} title={atlas ? `${m.name} siempre está: coordina al equipo` : undefined} style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px", cursor: atlas ? "default" : "pointer" }}>
                               <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{m.name}</span>
-                              <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{m.help}</span>
+                              <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.4, color: "var(--c-text-3)" }}>{m.help}</span>
                             </label>
-                            <input id={"keep-" + m.id} type="checkbox" checked={keep} aria-disabled={atlas || undefined} onChange={() => !atlas && setDropped((l) => (keep ? [...l, m.id] : l.filter((x) => x !== m.id)))} aria-label={`Quedarme con ${m.name}`} style={{ width: "24px", height: "24px", margin: 0, accentColor: "var(--c-text)" }} />
+                            <input id={"keep-" + m.id} type="checkbox" checked={keep} aria-disabled={atlas || undefined} onChange={() => !atlas && setDropped((l) => (keep ? [...l, m.id] : l.filter((x) => x !== m.id)))} aria-label={`Quedarme con ${m.name}`} style={{ width: "20px", height: "20px", margin: 0, accentColor: "var(--c-text)" }} />
                           </div>
                           {here && keep ? (
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingLeft: "50px" }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingLeft: "60px" }}>
                               <button type="button" disabled={!!busy} onClick={() => relook(m, "name")} aria-label={`Otro nombre para ${m.name}`} style={pill}>{"Otro nombre"}</button>
                               {atlas ? null : <button type="button" disabled={!!busy} onClick={() => relook(m, "color")} aria-label={`Otro color para ${m.name}`} style={pill}>{"Otro color"}</button>}
                             </div>
@@ -382,8 +383,8 @@ export default function BienvenidaV2({ query = {} }) {
                     {DAY_APPS.map((a) => {
                       const on = apps.includes(a.id);
                       return (
-                        <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "72px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
-                          <span aria-hidden="true" style={{ flex: "none", width: "40px", height: "40px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-chip)", fontSize: "var(--t-meta)", fontWeight: "600" }}>{a.mark}</span>
+                        <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "72px", padding: "14px 18px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
+                          <span aria-hidden="true" style={{ flex: "none", width: "40px", height: "40px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-chip)", color: "var(--c-text-2)" }}><a.mark size={20} /></span>
                           <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
                             <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{a.name}</span>
                             <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{a.note}</span>
@@ -406,7 +407,7 @@ export default function BienvenidaV2({ query = {} }) {
                     <h1 style={h1}>{"Pídeles algo."}</h1>
                     <p style={lead}>{anyConnected ? `Escribe como se lo dirías a un compañero. ${coordinator} decide quién lo hace.` : `Escribe como se lo dirías a un compañero. ${coordinator} lo repartirá cuando conectes tu cuenta de IA.`}</p>
                   </div>
-                  <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 8px 8px 22px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 60px -30px rgba(18,19,26,.35)" }}>
+                  <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 8px 8px 22px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
                     <label htmlFor="v3-first-request" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Tu primera petición"}</label>
                     <input className="c-bare" id="v3-first-request" type="text" autoFocus value={request} onChange={(e) => setText(e.target.value)} placeholder="Escribe lo que necesitas" style={{ flex: "1", minWidth: "0", height: "56px", border: "0", background: "transparent", fontSize: "var(--t-lead)" }} />
                     <button type="submit" aria-label="Enviar y entrar en Colmena" disabled={!!busy} style={{ width: "48px", height: "48px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: busy ? "wait" : "pointer" }}>
@@ -415,7 +416,7 @@ export default function BienvenidaV2({ query = {} }) {
                   </form>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     {ideas.filter((i) => i !== request).slice(0, 4).map((i) => (
-                      <button key={i} type="button" onClick={() => setText(i)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text-2)", cursor: "pointer" }}>{i}</button>
+                      <button key={i} type="button" onClick={() => setText(i)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-sm)", background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text-2)", cursor: "pointer" }}>{i}</button>
                     ))}
                   </div>
                 </>
@@ -479,13 +480,13 @@ function ClaudeConnect({ busy, onConnect }) {
         {CLAUDE_WAYS.map((w) => {
           const on = way === w.id;
           return (
-            <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => setWay(w.id)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "8px 14px", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none" }}>
+            <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => setWay(w.id)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "8px 14px", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none" }}>
               <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
                 <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{w.title}</span>
                 <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{w.sub}</span>
               </span>
               <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? INK : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
-                <Check size={11} strokeWidth={3.4} color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
+                <Check size={11} strokeWidth={3.4} color={C.btnText} style={{ opacity: on ? 1 : 0 }} />
               </span>
             </button>
           );
