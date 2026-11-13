@@ -12,6 +12,10 @@ import { canCreateImages } from "../server/images.mjs";
 import { createPage } from "../server/wiki.mjs";
 import { categoryOf } from "../server/connections.mjs";
 import { appToolNames } from "../server/apptools.mjs";
+import { computerExtraTools } from "../server/computer/wire.mjs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
 
 const sorted = (list) => [...list].sort();
 const signal = () => new AbortController().signal;
@@ -43,6 +47,8 @@ const FORBIDDEN = [
   ["run_command", {}], ["open_file", {}], ["browser_sign_in", {}], ["project_files", {}], ["project_run", {}], ["mcp_tools", {}], ["mcp_call", {}],
   ["request_secret", {}], ["api_request", {}], ["wiki_search", {}], ["wiki_read", {}], ["wiki_write", {}], ["block_read", {}], ["block_post", {}],
   ["ask_peer_bot", {}], ["tool_of_tomorrow", {}],
+  // The owner's screen and apps are never another person's to use.
+  ["desktop_look", {}], ["desktop_do", {}], ["open_app", {}], ["desktop_windows", {}], ["desktop_open", {}],
 ];
 
 test("the allow-list itself: closed by default, each capability lets in exactly its own tools", () => {
@@ -50,6 +56,7 @@ test("the allow-list itself: closed by default, each capability lets in exactly 
   assert.deepEqual(Object.keys(REQUEST_BY_CAPABILITY), ["web", "carpetas", "apps", "ordenador"]);
   assert.deepEqual(REQUEST_BY_CAPABILITY.web, ["web_fetch"]);
   assert.deepEqual(REQUEST_BY_CAPABILITY.carpetas, ["list_folder", "read_folder_file"]);
+  assert.deepEqual(REQUEST_BY_CAPABILITY.ordenador, ["browser_open", "browser_read", "browser_screenshot", "browser_act", "browser_fill", "browser_submit", "browser_download"]);
   for (const [name] of FORBIDDEN) {
     assert.equal(requestCapability(name), null, name + " is on no list");
     assert.equal(requestToolAllowed(name, { web: true, carpetas: true, apps: true, ordenador: true }), false, name + " is refused with every capability on");
@@ -79,7 +86,7 @@ test("a request turn is offered exactly the allow-list for each capability, and 
     web: sorted([...always, "web_fetch"]),
     carpetas: sorted([...always, "list_folder", "read_folder_file"]),
     apps: sorted([...always, "apps_accounts", "apps_describe", "apps_execute", "apps_search", "apps_table", "gmail_fetch_emails"]),
-    ordenador: sorted([...always, "browser_open", "browser_read", "desktop_do", "desktop_look", "open_app"]),
+    ordenador: sorted([...always, "browser_open", "browser_read"]),
   };
   const steps = {};
   for (const [i, key] of Object.keys(expected).entries()) {
@@ -559,4 +566,48 @@ test("over the limit: «no atiende más peticiones» is said once per person, ro
   for (let i = 1; i <= 2; i++) await asked(marta, room, sergio, "@Vera otra hora " + i);
   assert.deepEqual(throttles(sergio).map((o) => o.to), [addr(marta)]);
   assert.equal(sergio.calls.length, 0);
+});
+
+test("«ordenador» for another person's request: the browser runs in a session of that turn's own, wiped at its end; never the owner's screen or apps", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  sergio.store.patch("settings", "main", { peerErrandTools: { ...NONE, ordenador: true } });
+  sergio.store.patch("bots", "vera", { capabilities: { ...(sergio.store.get("bots", "vera").capabilities || {}), ordenador: true } });
+  // The desktop's browser bridge, as Electron answers it.
+  const ops = [];
+  const computer = { available: true, call: async (op, args) => { ops.push({ op, args }); return { url: "https://correo.example/", title: "Bandeja", text: "Página", elements: [], jpegBase64: "AAAA" }; } };
+  sergio.runtime.extraTools = computerExtraTools(sergio.runtime, { computer });
+  const reads = () => ops.filter((o) => o.op === "snapshot");
+  let round = 0;
+  sergio.reply = () => (++round === 1 ? call("browser_read", { mode: "texto", query: "" }, "b1") : answer("Leída."));
+  await ask(marta, room, sergio, "@Vera abre mi correo y léelo");
+  await botAnswer(marta, room, "Leída.");
+  await settle(sergio.runtime);
+  const step = sergio.store.where("steps", "missionId", room.missionId).at(-1);
+  const offered = sergio.calls.at(-1).tools.map((x) => x.name);
+  for (const name of ["desktop_look", "desktop_do", "desktop_windows", "open_app", "open_file", "run_command"]) assert.ok(!offered.includes(name), name + " is not offered");
+  assert.ok(offered.includes("browser_read"));
+  const theirs = reads()[0];
+  assert.equal(theirs.args.session, "req-" + step.id, "her request browses in a session of its own");
+  // When the turn ends, that session is closed (Electron wipes it).
+  const closed = await until(() => ops.find((o) => o.op === "close" && o.args.session === theirs.args.session), "la sesión se cierra");
+  assert.deepEqual([closed.args.missionId, closed.args.botId], [room.missionId, "vera"]);
+  // The owner's own turn uses the bots' usual browser.
+  round = 0;
+  sergio.reply = () => (++round === 1 ? call("browser_read", { mode: "texto", query: "" }, "b2") : answer("Para Sergio."));
+  await sergio.rooms.send(room.id, { text: "@Vera lee la página" });
+  await until(() => reads().length === 2, "su lectura");
+  await settle(sergio.runtime);
+  assert.equal(reads()[1].args.session, undefined);
+  assert.ok(!ops.some((o) => o.op === "close" && !o.args.session), "and it is never closed by a turn");
+  // Electron keys and partitions: a separate session never shares the persistent one.
+  const { tabKey, partitionFor, PARTITION } = require("../desktop/browser.cjs");
+  assert.equal(partitionFor({ missionId: "m", botId: "vera" }), PARTITION);
+  assert.ok(PARTITION.startsWith("persist:"));
+  const apart = partitionFor({ missionId: "m", botId: "vera", session: "req-m:followup-1" });
+  assert.ok(!apart.startsWith("persist:") && apart !== PARTITION, "in memory only");
+  assert.notEqual(tabKey({ missionId: "m", botId: "vera", session: "req-m:followup-1" }), tabKey({ missionId: "m", botId: "vera" }));
+  assert.equal(partitionFor({ missionId: "m", botId: "vera", session: "a/b" }), PARTITION, "a malformed session name is ignored");
 });

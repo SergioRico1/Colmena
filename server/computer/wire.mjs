@@ -13,7 +13,33 @@ import { deferredResult } from "../redlines.mjs";
 
 export { isComputerTool };
 
+/**
+ * The browser session of a turn that answers ANOTHER person (a request in a shared room, an
+ * errand between bots: `mission.peerErrand`): one of its own per step, empty and in memory,
+ * never the bots' usual browser where your accounts are signed in. Null for your own turns.
+ */
+export const browserSessionOf = (mission, step) => (mission?.peerErrand && step?.id ? "req-" + String(step.id).replace(/[^A-Za-z0-9_.:-]/g, "_").slice(0, 110) : null);
+const ENDED = new Set(["completed", "failed", "stopped", "cancelled"]);
+
+/** Closes (and so wipes) the separate browser session of a step when that step ends. */
+function closeSessionsAtEnd(runtime, computer) {
+  const store = runtime.store;
+  if (!store?.listeners || store.browserSessionsWatched) return;
+  store.browserSessionsWatched = true;
+  const closed = new Set();
+  store.listeners.add((change) => {
+    const step = change?.type === "record" && change.kind === "steps" ? change.data : null;
+    if (!step?.browserSession || !ENDED.has(step.status) || closed.has(step.browserSession)) return;
+    closed.add(step.browserSession);
+    if (closed.size > 500) closed.delete(closed.values().next().value);
+    Promise.resolve()
+      .then(() => computer.call("close", { missionId: step.missionId, botId: step.botId, session: step.browserSession }))
+      .catch(() => {});
+  });
+}
+
 export function computerExtraTools(runtime, { computer = defaultComputer } = {}) {
+  closeSessionsAtEnd(runtime, computer);
   return (bot) =>
     computerToolDefs(bot, { available: computer.available, settings: runtime.settings(), vault: runtime.vault?.available ? runtime.vault.list() : [] }).map(({ type: _type, ...def }) => ({
       ...def,
@@ -34,7 +60,11 @@ async function runComputerTool(runtime, computer, name, rawArgs, { mission, step
   let parsed = rawArgs;
   try { if (typeof rawArgs === "string") parsed = JSON.parse(rawArgs); } catch {}
   const key = name === "run_command" ? sandboxKey(name, { program: parsed?.program, args: parsed?.args, folderId: parsed?.folderId ?? null }) : null;
+  const session = browserSessionOf(mission, step);
+  const stored = session && name.startsWith("browser_") ? store.get("steps", step.id) : null;
+  if (stored && stored.browserSession !== session) store.patch("steps", step.id, { browserSession: session });
   const ctx = {
+    ...(session ? { session } : {}),
     missionId: mission.id, botId: bot.id, bot, autonomy: runtime.autonomy(mission, bot), missionRoot: runtime.root(mission.id),
     folders: accessibleFolders(store, bot.id), settings: runtime.settings(), computer, signal, vault: runtime.vault || null,
     // Commands run confined when the server has a sandbox (undefined: not configured, as before).

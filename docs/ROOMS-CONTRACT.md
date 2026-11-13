@@ -282,9 +282,13 @@ errand between bots) `toolsForStep` ends with an allow-list, closed by default:
   `create_spreadsheet`, `create_presentation`, `create_image`, `read_deliverable`, `read_file`;
 - by capability (`REQUEST_BY_CAPABILITY`): web → `web_fetch` (and hosted search); carpetas →
   `list_folder`, `read_folder_file`; apps → `apps_accounts`, `apps_search`, `apps_describe`,
-  `apps_execute`, `apps_table` and the direct app tools (`isAppToolName`); ordenador →
-  `browser_open|read|screenshot|act|fill|submit|download`, `open_app`,
-  `desktop_windows|open|look|do`;
+  `apps_execute`, `apps_table` and the direct app tools (`isAppToolName`: the registry of real
+  app tools in `server/apptools.mjs`, never a name that only starts like one); ordenador →
+  `browser_open|read|screenshot|act|fill|submit|download` only, in a browser session of that
+  step's own (`session: "req-<step id>"` on every bridge call, `server/computer/wire.mjs`): an
+  in-memory Electron partition, empty, keyed apart from the bots' persistent one, closed and
+  wiped (`clearStorageData`, `clearCache`) when the step ends (`desktop/browser.cjs`). Never
+  `desktop_*` nor `open_app`;
 - everything else is neither offered nor run, whatever adds it (`extraTools`, `stepTools`, a new
   built-in). `use_tool` and `find_tools` read the same list.
 

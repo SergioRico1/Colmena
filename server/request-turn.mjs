@@ -25,17 +25,17 @@ export const REQUEST_ALWAYS = Object.freeze([
  * Encargos), exactly these and nothing else. Hosted web search follows `web` (Runtime#searchFor).
  * `apps` also lets in the direct tools of the connected apps (isAppToolName: by the registry of
  * real app tools, never by a name that only starts like one); every change in an
- * app asks the owner (server/connections.mjs). `ordenador` is the browser and the desktop apps,
- * with their own red lines: never commands, files of the computer, saved passwords or projects.
+ * app asks the owner (server/connections.mjs). `ordenador` is the browser only, in a session of
+ * that turn's own (empty, in memory, wiped when the turn ends: server/computer/wire.mjs), never
+ * the bots' usual browser where the owner's accounts are signed in; with its own red lines.
+ * Never the owner's screen and apps (desktop_*, open_app), commands, files of the computer,
+ * saved passwords or projects.
  */
 export const REQUEST_BY_CAPABILITY = Object.freeze({
   web: Object.freeze(["web_fetch"]),
   carpetas: Object.freeze(["list_folder", "read_folder_file"]),
   apps: Object.freeze(["apps_accounts", "apps_search", "apps_describe", "apps_execute", "apps_table"]),
-  ordenador: Object.freeze([
-    "browser_open", "browser_read", "browser_screenshot", "browser_act", "browser_fill", "browser_submit", "browser_download",
-    "open_app", "desktop_windows", "desktop_open", "desktop_look", "desktop_do",
-  ]),
+  ordenador: Object.freeze(["browser_open", "browser_read", "browser_screenshot", "browser_act", "browser_fill", "browser_submit", "browser_download"]),
 });
 const ALWAYS = new Set(REQUEST_ALWAYS);
 const CAPABILITY = new Map(Object.entries(REQUEST_BY_CAPABILITY).flatMap(([capability, names]) => names.map((name) => [name, capability])));

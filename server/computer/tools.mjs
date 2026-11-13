@@ -135,7 +135,9 @@ const hostOf = (url) => {
 function bridgeArgs(ctx, extra = {}) {
   return {
     missionId: ctx.missionId, botId: ctx.botId, botName: ctx.bot?.name || ctx.botId, color: ctx.bot?.color || "#FFC93C",
-    downloadsDir: ctx.missionRoot ? path.join(ctx.missionRoot, "descargas") : null, ...extra,
+    downloadsDir: ctx.missionRoot ? path.join(ctx.missionRoot, "descargas") : null,
+    // A turn for another person: its own empty, in-memory browser session (desktop/browser.cjs).
+    ...(ctx.session ? { session: ctx.session } : {}), ...extra,
   };
 }
 const bridgeOf = (ctx) => ctx.computer || defaultComputer;
@@ -174,7 +176,7 @@ async function captureForApproval(ctx, label) {
 async function currentPage(ctx) {
   try {
     const { sessions = [] } = await call(ctx, "status");
-    return sessions.find((s) => s.missionId === ctx.missionId && s.botId === ctx.botId) || null;
+    return sessions.find((s) => s.missionId === ctx.missionId && s.botId === ctx.botId && (s.session || null) === (ctx.session || null)) || null;
   } catch {
     return null;
   }

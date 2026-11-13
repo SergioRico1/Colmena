@@ -10,6 +10,25 @@ const { urlProblem, makeResolver } = require("./netguard.cjs");
 const { buildSnapshot, detectBlocker } = require("./axsnapshot.cjs");
 
 const PARTITION = "persist:colmena-navegador";
+// A turn that answers ANOTHER person (args.session, server/computer/wire.mjs) browses in a
+// session of its own: in memory only (no «persist:»), empty (none of your sign-ins or
+// cookies), and wiped when its tab closes at the end of that turn.
+const SESSION_RE = /^[A-Za-z0-9_.:-]{1,120}$/;
+/** The session a call asks for, or "" (the bots' usual browser). */
+function sessionOf(args) {
+  const s = args && typeof args.session === "string" ? args.session : "";
+  return SESSION_RE.test(s) ? s : "";
+}
+/** The tab of a call: mission and bot, and the separate session when there is one. */
+function tabKey(args) {
+  const session = sessionOf(args);
+  return String(args && args.missionId) + ":" + String(args && args.botId) + (session ? "#" + session : "");
+}
+/** The partition of a call: the persistent one, or a fresh in-memory one per separate session. */
+function partitionFor(args, base = PARTITION) {
+  const session = sessionOf(args);
+  return session ? "colmena-aparte-" + session.replace(/[^A-Za-z0-9_-]/g, "_") : base;
+}
 const VIEW = { width: 1280, height: 800 };
 const BAR = 44;
 const LIVE_MS = 90000; // frames keep flowing this long after the bot's last action
@@ -205,12 +224,13 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
     return previewPorts.get(Number(url.port)) === tab.missionId;
   }
   const tabOfContents = (id) => (id ? [...tabs.values()].find((t) => !t.wc.isDestroyed() && t.wc.id === id) : null);
-  let watching = true, shuttingDown = false, sessionReady = false;
+  let watching = true, shuttingDown = false;
+  const sessionsReady = new Set();
 
-  function setupSession() {
-    if (sessionReady) return;
-    sessionReady = true;
-    const ses = electronSession.fromPartition(partition);
+  function setupSession(part = partition) {
+    if (sessionsReady.has(part)) return;
+    sessionsReady.add(part);
+    const ses = electronSession.fromPartition(part);
     ses.setUserAgent(ses.getUserAgent().replace(/\s(Electron|colmena|Colmena)\/\S+/g, ""));
     ses.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
     ses.setPermissionCheckHandler(() => false);
@@ -275,9 +295,11 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
     tab.view.setBounds({ x: 0, y: BAR, width, height: Math.max(100, height - BAR) });
   }
 
-  async function createTab({ missionId, botId, botName, color, downloadsDir }) {
-    setupSession();
-    const key = missionId + ":" + botId;
+  async function createTab(args) {
+    const { missionId, botId, botName, color, downloadsDir } = args;
+    const session = sessionOf(args), tabPartition = partitionFor(args, partition);
+    setupSession(tabPartition);
+    const key = tabKey(args);
     const win = new BaseWindow({
       width: VIEW.width, height: VIEW.height + BAR, useContentSize: true, show: false,
       title: "Colmena · Navegador de " + (botName || "un bot"), backgroundColor: "#FFFFFF", autoHideMenuBar: true,
@@ -285,14 +307,14 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
     const bar = new WebContentsView({ webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, javascript: false } });
     const view = new WebContentsView({
       webPreferences: {
-        partition, sandbox: true, contextIsolation: true, nodeIntegration: false, nodeIntegrationInSubFrames: false,
+        partition: tabPartition, sandbox: true, contextIsolation: true, nodeIntegration: false, nodeIntegrationInSubFrames: false,
         webviewTag: false, backgroundThrottling: false, spellcheck: false, safeDialogs: true, navigateOnDragDrop: false,
       },
     });
     win.contentView.addChildView(bar);
     win.contentView.addChildView(view);
     const tab = {
-      key, id: "t-" + key, missionId, botId, botName, color, downloadsDir, win, bar, view, wc: view.webContents,
+      key, id: "t-" + key, missionId, botId, botName, color, downloadsDir, win, bar, view, wc: view.webContents, session, partition: tabPartition,
       refs: null, refsGen: -1, generation: 0, takeover: false, lastActive: Date.now(), queue: Promise.resolve(),
       blocked: null, dialog: null, download: null, downloadWaiters: [], capturing: false, iso: null,
     };
@@ -407,8 +429,7 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
   }
 
   function tabFor(args, { create = false } = {}) {
-    const key = String(args.missionId) + ":" + String(args.botId);
-    const tab = tabs.get(key);
+    const tab = tabs.get(tabKey(args));
     if (!tab && !create) throw codedError("El navegador de este bot está cerrado. Ábrelo con browser_open.", "NO_TAB");
     return tab;
   }
@@ -736,10 +757,19 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
     try { tab.wc.close(); } catch {}
     try { tab.bar.webContents.close(); } catch {}
     try { if (!tab.win.isDestroyed()) tab.win.destroy(); } catch {}
+    // A separate session leaves nothing behind: its cookies, storage and cache are wiped.
+    if (tab.session) {
+      sessionsReady.delete(tab.partition);
+      try {
+        const ses = electronSession.fromPartition(tab.partition);
+        ses.clearStorageData().catch(() => {});
+        ses.clearCache().catch(() => {});
+      } catch {}
+    }
     sendEvent({ event: "closed", missionId: tab.missionId, botId: tab.botId });
   }
 
-  const describe = (t) => ({ tabId: t.id, missionId: t.missionId, botId: t.botId, botName: t.botName, url: t.wc.getURL(), title: t.wc.getTitle(), takeover: t.takeover, lastActive: t.lastActive });
+  const describe = (t) => ({ tabId: t.id, missionId: t.missionId, botId: t.botId, ...(t.session ? { session: t.session } : {}), botName: t.botName, url: t.wc.getURL(), title: t.wc.getTitle(), takeover: t.takeover, lastActive: t.lastActive });
 
   async function open(args) {
     const problem = allowed(args.url);
@@ -832,7 +862,7 @@ function createBrowserManager({ sendFrame = () => {}, sendEvent = () => {}, allo
       case "open":
         return open(args);
       case "close": {
-        const tab = tabs.get(args.missionId + ":" + args.botId);
+        const tab = tabs.get(tabKey(args));
         if (tab) closeTab(tab);
         return { closed: !!tab };
       }
@@ -988,4 +1018,4 @@ function attachBackend(child, manager) {
   });
 }
 
-module.exports = { consoleEntry, createBrowserManager, attachBackend, toBackend, PARTITION, PASSWORD_MESSAGE, SUBMIT_WORDS, BLOCKED_DOWNLOAD };
+module.exports = { consoleEntry, createBrowserManager, attachBackend, toBackend, tabKey, partitionFor, PARTITION, PASSWORD_MESSAGE, SUBMIT_WORDS, BLOCKED_DOWNLOAD };
