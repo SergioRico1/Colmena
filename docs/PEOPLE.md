@@ -98,7 +98,7 @@ Solo esto sale de tu ordenador:
 - `tests/room-bots.test.mjs` hace un turno completo con herramientas (una página web, un correo de una bandeja simulada, un archivo) y repasa cada sobre enviado: no aparece nada que solo estuviera en los argumentos o en los resultados.
 
 ### Lo que ves tú del trabajo de los bots de otros
-- De cada bot se guarda **el último estado** por sala y dueño. «Pensando» y «trabajando» los refresca la Colmena de su dueño cada 30 s mientras el paso sigue; si pasan 90 s sin noticias, la línea se va sola. Si su dueño deja de estar conectado, pasa a «Sergio no está; Vera seguirá cuando vuelva». «Espera el OK» y «en pausa» se quedan hasta que algo cambie.
+- De cada bot se guarda **el último estado** por sala y dueño. También el momento del más reciente que se ha oído, aunque el estado ya se haya ido y aunque Colmena se reinicie: uno antiguo que vuelva a llegar se ignora. «Pensando» y «trabajando» los refresca la Colmena de su dueño cada 30 s mientras el paso sigue; si pasan 90 s sin noticias, la línea se va sola. Si su dueño deja de estar conectado, pasa a «Sergio no está; Vera seguirá cuando vuelva». «Espera el OK» y «en pausa» se quedan hasta que algo cambie.
 - Lo que termina (el resumen, «ha dicho que ahora no», «ha parado», «no ha podido», el límite de peticiones) queda además como **una línea de la conversación**, igual que los relevos. Tus propios bots dejan las mismas líneas en tu lado («Has dicho que ahora no»).
 - Un turno que no usó herramientas no deja resumen: la respuesta es todo lo que hay.
 

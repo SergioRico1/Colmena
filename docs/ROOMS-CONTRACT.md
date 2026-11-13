@@ -324,7 +324,9 @@ own loop guard does.
   in ms; `tools`/`ms` integers, only with `done`. Built and accepted by `cleanStatus`, which
   copies those fields and nothing else. `thinking`/`working` are ephemeral (not kept by the
   mailbox, refreshed every 30 s to whoever is connected); the rest are queued like any message.
-  Not remembered in `peerSeen`: a status older than the last one known is ignored.
+  Not remembered in `peerSeen`: a status older than the last one known is ignored. The newest
+  `at` heard of each (room, owner, bot) is kept in `roomHeard {id: share:owner:bot, shareId, at}`,
+  across restarts and after the status itself is dropped.
 - `room.handoff {share, from, to, at}`: two bot ids of the sender (pass-the-word, a plan's
   work step, `ask_bot`/`message_bot` through the `thread` records), once a minute per pair.
 - Deliverables made in a step with `roomAsk` (its `deliverable` messages) go as files after the

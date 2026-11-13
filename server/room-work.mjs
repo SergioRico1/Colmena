@@ -607,10 +607,14 @@ export class RoomWork {
     if (!status) return;
     const id = share.id + ":" + from.id + ":" + status.bot;
     // Older than what is known (a replay, or two that crossed): ignored.
-    const last = Math.max(this.store.get("roomStatus", id)?.at || 0, this.heard?.get(id) || 0);
+    // The newest one heard is kept (`roomHeard`), also across a restart and after the status
+    // itself is gone: an old one sent again later never comes back.
+    const kept = this.store.get("roomHeard", id)?.at || 0;
+    const last = Math.max(this.store.get("roomStatus", id)?.at || 0, this.heard?.get(id) || 0, kept);
     if (status.at <= last) return;
     (this.heard ??= new Map()).set(id, status.at);
     if (this.heard.size > 2000) this.heard.delete(this.heard.keys().next().value);
+    this.store.put("roomHeard", { id, shareId: share.id, at: status.at });
     this.keep(share, from.id, status, { quiet: status.state === "done" && !status.tools });
   }
   onHandoff(from, body) {

@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { answer, settle } from "./fixtures/runtime-fixture.mjs";
-import { addr, botAnswer, friends, pause, peerRows, until, world } from "./fixtures/people-world.mjs";
+import { addr, ask, botAnswer, card, friends, lines, pause, peerRows, rule, sharedRoom, until, world } from "./fixtures/people-world.mjs";
 
 const botSaid = (p, roomId) => peerRows(p, roomId).filter((m) => m.bot).map((m) => m.text);
 const sentMsgs = (p, from = 0) => p.out.slice(from).filter((o) => o.body.type === "msg").map((o) => o.body.text);
@@ -65,4 +65,40 @@ test("only turns of the shared conversation are relayed: nothing from before the
   sergio.store.put("messages", { id: "a-only", missionId: room.missionId, role: "assistant", kind: "message", botId: "vera", stepId: "step-only", text: "Me he atascado otra vez.", stall: "loop", at });
   assert.equal(sergio.rooms.relay(sergio.rooms.must(room.id), share, { ...step, id: "step-only" }, vera), null);
   for (const secret of ["PRIVADO-ANTES", "PRIVADO-EN-MARCHA", "SOLO-PARA-SERGIO", "atascado"]) assert.ok(!JSON.stringify(sergio.out.slice(mark).map((o) => o.body)).includes(secret), secret);
+});
+
+test("an old status sent again after a restart is ignored: the newest one heard of each bot is kept", async (t) => {
+  const people = await world(t);
+  const [sergio] = people;
+  let marta = people[1];
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  const activity = (p) => p.rooms.detail(room.id).activity.map((a) => a.state);
+  // «Pregúntame»: Marta reads that Vera waits for Sergio; he answers, the turn runs and ends.
+  await ask(marta, room, sergio, "@Vera mira esto");
+  const waiting = await until(() => sergio.out.find((o) => o.body.type === "room.status" && o.body.state === "waiting"), "el estado de espera");
+  await until(() => activity(marta).includes("waiting"), "Marta lo lee");
+  sergio.reply = () => answer("Mirado.");
+  sergio.runtime.answer(card(sergio).id, { optionId: "go" });
+  await botAnswer(marta, room, "Mirado.");
+  await settle(sergio.runtime);
+  await until(() => !activity(marta).includes("waiting"), "ya no espera");
+  const heard = marta.store.get("roomHeard", room.id + ":" + addr(sergio) + ":vera");
+  assert.ok(heard.at > waiting.body.at, "the newest one is kept");
+  // Time passes: the status itself is gone from her Colmena. Then she restarts.
+  marta.skew = 10 * 60000;
+  marta.rooms.work.tick();
+  assert.deepEqual(marta.store.list("roomStatus"), []);
+  marta = await people.reopen(marta);
+  // The old «waiting» arrives again (the same words, sealed again).
+  marta.rooms.work.onStatus({ id: addr(sergio) }, { ...waiting.body });
+  sergio.peers.enqueue(addr(marta), { ...waiting.body });
+  await sergio.peers.flushOutbox();
+  await pause(400);
+  assert.deepEqual([activity(marta), marta.store.list("roomStatus").length], [[], 0], "it does not come back");
+  assert.ok(!lines(marta, room).some((x) => /espera/.test(x)));
+  // A newer one is heard as always.
+  marta.rooms.work.onStatus({ id: addr(sergio) }, { share: room.id, bot: "vera", state: "waiting", at: marta.peers.clock() });
+  assert.deepEqual(activity(marta), ["waiting"]);
+  rule(sergio, marta, "pregunta");
 });
