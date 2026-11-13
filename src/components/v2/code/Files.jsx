@@ -54,7 +54,7 @@ function CodeView({ text, line, onLine }) {
             const n = from + k + 1;
             const on = n === line;
             return (
-              <div key={n} style={{ display: "flex", height: LINE + "px", whiteSpace: "pre", background: on ? "rgba(31,79,209,.08)" : "transparent" }}>
+              <div key={n} style={{ display: "flex", height: LINE + "px", whiteSpace: "pre", background: on ? "color-mix(in srgb, var(--c-accent-ink) 8%, transparent)" : "transparent" }}>
                 <span onMouseDown={(e) => { e.preventDefault(); onLine(on ? null : n); }} title="Elige la línea para abrir el editor en ella"
                   style={{ flex: "none", width: gutter + "px", paddingRight: "12px", textAlign: "right", color: on ? C.blue : C.quiet, userSelect: "none", cursor: "pointer" }}>{n}</span>
                 <span style={{ paddingRight: "16px" }}>{t || " "}</span>
@@ -96,7 +96,7 @@ function Viewer({ task, file, changed, onNote }) {
           : !data ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.faint }}>Abriendo…</p>
             : data.kind === "image" ? (
               <div style={{ flex: 1, minHeight: 0, overflow: "auto", display: "grid", placeItems: "center", padding: "16px", background: C.card }}>
-                <img src={data.dataUrl} alt={file} style={{ maxWidth: "100%", height: "auto", borderRadius: "var(--r-sm)", boxShadow: "0 1px 2px rgba(18,19,26,.08)" }} />
+                <img src={data.dataUrl} alt={file} style={{ maxWidth: "100%", height: "auto", borderRadius: "var(--r-sm)", boxShadow: "var(--c-shadow-lift)" }} />
               </div>
             ) : data.kind === "binary" ? (
               <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: C.faint }}>
@@ -167,7 +167,7 @@ export default function Files({ task }) {
               <FolderOpen size={14} strokeWidth={2.2} aria-hidden="true" />
             </button>
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .045)", color: C.muted }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .045)", color: C.muted }}>
             <Search size={13} strokeWidth={2.2} aria-hidden="true" />
             <span style={SR}>Filtrar archivos</span>
             <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />

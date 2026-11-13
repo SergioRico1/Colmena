@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderOpen, GitBranch, Sparkles, Ellipsis } from "../../Icon.js";
+import { Check, FolderOpen,GitBranch, Sparkles, Ellipsis } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { useStore } from "../../../lib/store.jsx";
@@ -64,7 +64,7 @@ function Engines({ engines }) {
       {engines.map((e) => (
         <div key={e.id} title={e.available ? undefined : e.need || undefined} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "42px", fontSize: "var(--t-ui)" }}>
           <span style={{ flex: 1, fontWeight: 500 }}>{e.label}{e.version ? <> <span style={{ font: `400 var(--t-caption)/1 ${MONO}`, color: C.muted }}>{e.version}</span></> : null}</span>
-          {e.available ? <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: C.greenText }}>✓ listo</span>
+          {e.available ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.greenText }}><Check size={14} weight="bold" aria-hidden="true" />listo</span>
             : e.installable ? <button type="button" disabled={installing || e.installing} onClick={install} style={{ height: "30px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: C.white, fontSize: "var(--t-meta)", cursor: installing || e.installing ? "default" : "pointer" }}>{installing || e.installing ? "Instalando…" : "Instalar"}</button>
               : <span style={{ fontSize: "var(--t-meta)", color: C.muted }}>Sin sesión</span>}
         </div>
@@ -78,11 +78,11 @@ function Engines({ engines }) {
 function Handoff({ h }) {
   const first = h.ownerPerson?.name?.split(" ")[0] || "Alguien";
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: "0 0 0 2px #FFC93C" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: "0 0 0 2px var(--c-honey-ring)" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: C.muted }}><PeerAvatar person={h.ownerPerson} size={22} ring={C.white} />{first} te pasa una tarea</span>
       <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{h.title}</span>
       <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: C.text2 }}>{h.note ? "«" + h.note + "» " : ""}Su Bruno escribió qué está hecho y qué falta.</span>
-      <a href={"/codigo/traspaso/" + h.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/traspaso/" + h.id); }} style={{ alignSelf: "flex-start", height: "38px", padding: "0 16px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600 }}>Seguir en mi Colmena</a>
+      <a href={"/codigo/traspaso/" + h.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/traspaso/" + h.id); }} style={{ alignSelf: "flex-start", height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-sm)", background: C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600 }}>Seguir en mi Colmena</a>
     </div>
   );
 }
@@ -174,7 +174,7 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
       <main style={{ maxWidth: "1160px", margin: "0 auto", padding: "44px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "28px", animation: "fade .35s ease-out" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "16px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <h1 style={{ margin: 0, font: `600 var(--t-display-m)/1 ${HEAD}`, letterSpacing: "-0.04em" }}>Código</h1>
+            <h1 style={{ margin: 0, font: `700 var(--t-headline)/1.15 ${HEAD}`, letterSpacing: "-0.015em" }}>Código</h1>
             <p style={{ margin: 0, maxWidth: "680px", fontSize: "var(--t-read)", lineHeight: 1.5, color: C.text2 }}>Tus bots programan en una copia aparte de tu proyecto. Ves cada cambio, lo pruebas en la vista previa y decides qué se queda.</p>
           </div>
           <button type="button" onClick={open.open} aria-haspopup="menu" aria-expanded={!!open.at} disabled={busy} style={{ ...BTN.outline, height: "44px", padding: "0 18px", fontSize: "var(--t-body)", fontWeight: 500 }}>Abrir un proyecto</button>
@@ -223,7 +223,7 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
               <div role="radiogroup" aria-label="Cómo empieza" style={{ display: "inline-flex", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: C.track }}>
                 {[["plan", "Plan primero"], ["build", "Directo"]].map(([id, text]) => (
                   <button key={id} type="button" role="radio" aria-checked={how === id} onClick={() => setHow(id)} title={id === "plan" ? "Bruno te propone un plan y no toca nada hasta que digas «Implementar»" : "Bruno se pone a hacer los cambios"}
-                    style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: how === id ? C.white : "transparent", boxShadow: how === id ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{text}</button>
+                    style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: how === id ? C.white : "transparent", boxShadow: how === id ? "var(--c-shadow-lift)" : "none", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{text}</button>
                 ))}
               </div>
               {everyEngine.length > 1 ? (

@@ -11,9 +11,9 @@ import { addContext } from "./Extras.jsx";
 // comment those lines: the comment goes into your next message as a chip.
 
 const STYLE = {
-  add: { bg: "#EAF7F0", fg: "#0B6B4A", sign: "+" },
-  del: { bg: "#FBEDEE", fg: "#B4232A", sign: "−" },
-  ctx: { bg: "transparent", fg: "#3D404A", sign: " " },
+  add: { bg: "var(--c-ok-soft)", fg: "var(--c-ok-ink)", sign: "+" },
+  del: { bg: "var(--c-error-soft)", fg: "var(--c-error)", sign: "−" },
+  ctx: { bg: "transparent", fg: "var(--c-text-2)", sign: " " },
 };
 
 /** The comment box under selected diff lines (T3 Code AnnotatableCodeView): it becomes a chip. */
@@ -45,7 +45,7 @@ function highlight(text, query, active) {
   let i = 0, at;
   while ((at = low.indexOf(query, i)) >= 0) {
     if (at > i) parts.push(text.slice(i, at));
-    parts.push(<mark key={at} style={{ background: active ? "rgba(31,79,209,.32)" : "rgba(31,79,209,.16)", color: "inherit", borderRadius: "var(--r-xs)" }}>{text.slice(at, at + query.length)}</mark>);
+    parts.push(<mark key={at} style={{ background: active ? "color-mix(in srgb, var(--c-accent-ink) 32%, transparent)" : "color-mix(in srgb, var(--c-accent-ink) 16%, transparent)", color: "inherit", borderRadius: "var(--r-xs)" }}>{text.slice(at, at + query.length)}</mark>);
     i = at + query.length;
   }
   if (!parts.length) return text;
@@ -56,7 +56,7 @@ function highlight(text, query, active) {
 function Line({ row, query, active, picked = false, onPick = null }) {
   const s = STYLE[row.type];
   return (
-    <div data-active={active ? "" : undefined} style={{ display: "flex", background: picked ? "rgba(255,201,60,.28)" : s.bg, boxShadow: picked ? "inset 3px 0 0 #FFC93C" : "none", whiteSpace: "pre" }}>
+    <div data-active={active ? "" : undefined} style={{ display: "flex", background: picked ? "color-mix(in srgb, var(--c-honey) 28%, transparent)" : s.bg, boxShadow: picked ? "inset 3px 0 0 var(--c-honey-ring)" : "none", whiteSpace: "pre" }}>
       <span onMouseDown={onPick} title={onPick ? "Selecciona la línea para comentarla (Mayús: varias)" : undefined} style={{ flex: "none", width: "44px", paddingRight: "10px", textAlign: "right", color: picked ? C.honeyText : C.faint, userSelect: "none", cursor: onPick ? "pointer" : "default" }}>{row.b ?? row.a ?? ""}</span>
       <span aria-hidden="true" style={{ flex: "none", width: "16px", color: s.fg, userSelect: "none" }}>{s.sign}</span>
       <span style={{ color: s.fg, paddingRight: "14px" }}>{highlight(row.text, query, active)}</span>
@@ -69,7 +69,7 @@ function Half({ row, side, picked, onPick }) {
   if (!row) return <span style={{ gridColumn: "span 2", background: "rgb(var(--c-ink-rgb) / .025)" }} />;
   const s = STYLE[row.type];
   const num = side === "left" ? row.a : row.b;
-  const bg = picked ? "rgba(255,201,60,.28)" : row.type === "ctx" ? "transparent" : s.bg;
+  const bg = picked ? "color-mix(in srgb, var(--c-honey) 28%, transparent)" : row.type === "ctx" ? "transparent" : s.bg;
   return (
     <>
       <span onMouseDown={onPick} title="Selecciona la línea para comentarla (Mayús: varias)" style={{ paddingRight: "8px", textAlign: "right", color: picked ? C.honeyText : C.faint, background: bg, cursor: "pointer", userSelect: "none" }}>{num ?? ""}</span>
@@ -195,7 +195,7 @@ export default function Changes({ task, turn, onTurn, onCount = null }) {
       <div data-codediff="" style={{ flex: "999 1 380px", minWidth: 0, display: "flex", flexDirection: "column", gap: "10px", padding: "14px 18px", overflowY: "auto" }}>
         {files.length ? (
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <label style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .045)", color: C.muted }}>
+            <label style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .045)", color: C.muted }}>
               <Search size={13} strokeWidth={2.2} aria-hidden="true" />
               <span style={SR}>Buscar en los cambios</span>
               <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && hits.length) { e.preventDefault(); setHit((h) => (h + (e.shiftKey ? hits.length - 1 : 1)) % hits.length); } }} placeholder="Buscar en los cambios" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />

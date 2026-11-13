@@ -7,14 +7,14 @@ import { Check, ChevronDown } from "../../Icon.js";
 // Small pieces shared by the «Código» screen (design/V2Codigo.dc.html).
 
 export const C = {
-  ink: "#12131A", body: "#1E2029", text: "#3D404A", muted: "#5C606C", faint: "#6B6F7A", quiet: "#6B6F7A", rule: "rgba(18,19,26,.07)",
-  paper: "#F5F5F2", soft: "#F4F4F0", white: "#FFFFFF", honey: "#FFC93C", honeyText: "#8A5A00", green: "#0B8A5F", greenText: "#0B6B4A",
-  greenSoft: "#E1F4EC", red: "#B4232A", redSoft: "#FBE9EA", bruno: "#FF7A1A", blue: "#1F4FD1", text2: "#4A4D57", card: "#F6F6F3", track: "#F1F1EC",
+  ink: "var(--c-text)", body: "var(--c-text)", text: "var(--c-text-2)", muted: "var(--c-text-3)", faint: "var(--c-text-3)", quiet: "var(--c-text-3)", rule: "rgb(var(--c-ink-rgb) / .07)",
+  paper: "var(--c-sunken)", soft: "var(--c-sunken)", white: "var(--c-card)", honey: "var(--c-honey)", honeyText: "var(--c-honey-text)", green: "var(--c-ok)", greenText: "var(--c-ok-ink)",
+  greenSoft: "var(--c-ok-soft)", red: "var(--c-error)", redSoft: "var(--c-error-soft)", bruno: "var(--c-accent)", blue: "var(--c-accent-ink)", text2: "var(--c-text-2)", card: "var(--c-hover)", track: "var(--c-chip)",
 };
 export const MONO = "'Geist Mono', ui-monospace, monospace";
 export const HEAD = "'Bricolage Grotesque', sans-serif";
-export const CARD = "0 1px 2px rgba(18,19,26,.04)";
-export const SHEET = "0 0 0 1px rgba(18,19,26,.06), 0 30px 60px -24px rgba(18,19,26,.45)";
+export const CARD = "0 0 0 1px var(--c-line)";
+export const SHEET = "0 0 0 1px var(--c-line), var(--c-shadow-pop)";
 
 export const MODEL_LABEL = { "claude-opus-5-5": "Opus 5.5", "claude-sonnet-5-5": "Sonnet 5.5", "claude-haiku-5-5": "Haiku 5.5" };
 export const EFFORT_LABEL = { low: "Bajo", medium: "Medio", high: "Alto", xhigh: "Muy alto", max: "Máximo" };
@@ -32,7 +32,7 @@ export function Seg({ options, value, onChange, small = false, label }) {
         const on = id === value;
         return (
           <button key={id} type="button" role="radio" aria-checked={on} onClick={() => onChange(id)}
-            style={{ height: small ? "24px" : "28px", padding: small ? "0 10px" : "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", whiteSpace: "nowrap", fontSize: small ? "var(--t-caption)" : "var(--t-meta)", fontWeight: 600, background: on ? C.white : "transparent", color: on ? C.ink : C.muted, boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none" }}>
+            style={{ height: small ? "24px" : "28px", padding: small ? "0 10px" : "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", whiteSpace: "nowrap", fontSize: small ? "var(--t-caption)" : "var(--t-meta)", fontWeight: 600, background: on ? C.white : "transparent", color: on ? C.ink : C.muted, boxShadow: on ? "var(--c-shadow-lift)" : "none" }}>
             {text}
           </button>
         );
@@ -49,7 +49,7 @@ export function MenuChip({ label, icon = null, title, children, up = true, width
   return (
     <div ref={ref} className={className} style={{ position: "relative", minWidth: 0 }}>
       <button type="button" title={title} aria-label={label ? undefined : title} aria-expanded={open} onClick={() => setOpen(!open)}
-        style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "34px", padding: label ? "0 10px" : "0", width: label ? undefined : "34px", justifyContent: "center", border: 0, borderRadius: "var(--r-pill)", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, color: C.text, whiteSpace: "nowrap", ...look }}>
+        style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "32px", padding: label ? "0 10px" : "0", width: label ? undefined : "34px", justifyContent: "center", border: 0, borderRadius: "var(--r-sm)", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, color: C.text, whiteSpace: "nowrap", ...look }}>
         {icon}{label ? <span className={icon && !keepLabel ? "code-chip-label code-chip-label--icon" : "code-chip-label"}>{label}</span> : null}{chevron ? <ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} /> : null}
       </button>
       {open ? (
@@ -94,7 +94,7 @@ export function BotShape({ bot = null, size = 16, state = "rest" }) {
   const mark = <BotFace bot={bot || { id: "bruno", shape: "arch", color: C.bruno, role: "Código" }} size={size} state={state} decorative />;
   if (state !== "wait") return mark;
   const ring = Math.round(size * 1.6);
-  return <span aria-hidden="true" style={{ flex: "none", width: ring + "px", height: ring + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxShadow: "inset 0 0 0 2px #FFC93C" }}>{mark}</span>;
+  return <span aria-hidden="true" style={{ flex: "none", width: ring + "px", height: ring + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxShadow: "inset 0 0 0 2px var(--c-honey-ring)" }}>{mark}</span>;
 }
 
 /** The bot of a task, from the store (tasks say botId; Bruno codes). */
@@ -105,20 +105,20 @@ export function Pill({ pill, size = "sm" }) {
   return <span style={{ flex: "none", height: size === "sm" ? "24px" : "28px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: pill.bg, color: pill.ink, fontSize: size === "sm" ? "var(--t-caption)" : "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap" }}>{pill.text}</span>;
 }
 
-/** Buttons of Colmena 3: one ink action per screen, the others outlined, the rare ones quiet. */
+/** Buttons (v4 density): one ink action per screen, the others outlined, the rare ones quiet. */
 export const BTN = {
-  primary: { height: "40px", padding: "0 18px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
-  outline: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 400, cursor: "pointer", whiteSpace: "nowrap" },
-  blocked: { height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px dashed rgb(var(--c-ink-rgb) / .2)", borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-ui)", cursor: "not-allowed", whiteSpace: "nowrap" },
-  quiet: { height: "40px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
+  primary: { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
+  outline: { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 400, cursor: "pointer", whiteSpace: "nowrap" },
+  blocked: { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px dashed rgb(var(--c-ink-rgb) / .2)", borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-ui)", cursor: "not-allowed", whiteSpace: "nowrap" },
+  quiet: { height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
 };
-/** The soft chips of the composers (project, engine): #F6F6F3 with a hairline. */
-export const CHIP = { height: "34px", padding: "0 12px", gap: "8px", border: "1px solid rgb(var(--c-ink-rgb) / .1)", borderRadius: "var(--r-pill)", background: "var(--c-hover)", fontSize: "var(--t-ui)", fontWeight: 400, color: "var(--c-text)" };
+/** The soft chips of the composers (project, engine): var(--c-hover) with a hairline. */
+export const CHIP = { height: "32px", padding: "0 10px", gap: "8px", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", fontSize: "var(--t-meta)", fontWeight: 400, color: "var(--c-text)" };
 export const SR = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 
 export const CODE_CSS = `
 .code-hover{transition:background .15s ease}
-.code-hover:hover{background:rgba(18,19,26,.035)}
+.code-hover:hover{background:rgb(var(--c-ink-rgb) / .035)}
 .code-turn .code-tools{opacity:0;transition:opacity .15s ease}
 .code-turn:hover .code-tools,.code-turn:focus-within .code-tools{opacity:1}
 .code-task .code-x{opacity:0}

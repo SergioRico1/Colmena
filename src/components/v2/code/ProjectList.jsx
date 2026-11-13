@@ -111,7 +111,7 @@ export function TaskActions({ task, current, done }) {
           {custom ? (
             <form onSubmit={(e) => { e.preventDefault(); const d = new Date(when); if (d > new Date()) snooze(d.toISOString()); }} style={{ display: "flex", gap: "6px", padding: "6px 8px" }}>
               <input type="datetime-local" value={when} min={toLocalInput(new Date())} onChange={(e) => setWhen(e.target.value)} aria-label="Hasta cuándo" style={{ flex: 1, minWidth: 0, height: "32px", padding: "0 8px", border: 0, borderRadius: "var(--r-md)", background: C.soft, font: `400 var(--t-caption)/1 ${MONO}` }} />
-              <button type="submit" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: C.ink, color: C.white, cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Posponer</button>
+              <button type="submit" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: C.ink, color: C.white, cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Posponer</button>
             </form>
           ) : <Item icon={CalendarClock} text="Elegir día y hora…" onClick={() => setCustom(true)} />}
           <Rule />
@@ -284,7 +284,7 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
   return (
     <section aria-labelledby="tasks-t" style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", minHeight: "22px" }}>
-        <h2 id="tasks-t" style={{ margin: 0, font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Tareas</h2>
+        <h2 id="tasks-t" style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>Tareas</h2>
         {filtered ? (
           <button type="button" onClick={onClearFilter} title="Ver las tareas de todos los proyectos" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 8px 0 11px", border: 0, borderRadius: "var(--r-pill)", background: C.track, cursor: "pointer", font: `500 var(--t-meta)/1 ${MONO}`, color: C.ink }}>
             {filtered.name}<X size={13} strokeWidth={2.4} aria-label="Quitar el filtro" />

@@ -103,7 +103,7 @@ export default function Preview({ task, onAsk = null }) {
       <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: "var(--c-sunken)", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
         <button type="button" onClick={() => setReload((r) => r + 1)} disabled={!url} aria-label="Recargar" title="Recargar" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: url ? "pointer" : "default", color: C.muted }}><RefreshCw size={14} strokeWidth={2.2} aria-hidden="true" /></button>
         <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-md)", background: C.white, font: `400 var(--t-meta)/1 ${MONO}`, color: url ? C.text : C.quiet, overflow: "hidden", whiteSpace: "nowrap" }}>
-          <span aria-hidden="true" style={{ width: "7px", height: "7px", flex: "none", borderRadius: "var(--r-circle)", background: url ? C.green : "#C9CBD1" }} />{url ? url.replace("http://", "") : "Sin servidor en marcha"}
+          <span aria-hidden="true" style={{ width: "7px", height: "7px", flex: "none", borderRadius: "var(--r-circle)", background: url ? C.green : "var(--c-line-strong)" }} />{url ? url.replace("http://", "") : "Sin servidor en marcha"}
         </span>
         {ports && ports.length > 1 ? (
           <MenuChip up={false} align="right" width={240} title="Servidores de esta tarea" label={<span style={{ font: `500 var(--t-caption)/1 ${MONO}` }}>{ports.map((p) => p.port).join(" · ")}</span>}>
@@ -118,21 +118,21 @@ export default function Preview({ task, onAsk = null }) {
         <button type="button" onClick={open} disabled={!url} aria-label="Abrir en el navegador" title="Abrir en el navegador" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", color: C.muted, cursor: url ? "pointer" : "default" }}><ExternalLink size={14} strokeWidth={2} aria-hidden="true" /></button>
       </div>
       {current?.source ? (
-        <div role="status" style={{ flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "12px 14px", background: "var(--c-honey-soft)", borderBottom: "1px solid rgba(255,201,60,.5)", fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-honey-text)" }}>
+        <div role="status" style={{ flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "12px 14px", background: "var(--c-honey-soft)", borderBottom: "1px solid color-mix(in srgb, var(--c-honey) 50%, transparent)", fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-honey-text)" }}>
           <span style={{ flex: "1 1 220px" }}>Ves el código porque el servidor de la app envía la página como texto ({current.contentType}), no como web.</span>
           {onAsk ? (
             <button type="button" disabled={asked} onClick={() => { setAsked(true); onAsk(`La vista previa en ${url} enseña el código fuente en vez de la página: el servidor la envía con Content-Type ${current.contentType}. Arréglalo para que envíe el HTML como text/html (y CSS y JS con su tipo) y comprueba que se ve como página.`); }}
-              style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: C.ink, color: C.white, cursor: asked ? "default" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600, opacity: asked ? 0.6 : 1 }}>
+              style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: C.ink, color: C.white, cursor: asked ? "default" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600, opacity: asked ? 0.6 : 1 }}>
               {asked ? "Se lo has pedido" : "Pedir a Bruno que lo arregle"}
             </button>
           ) : null}
         </div>
       ) : null}
-      {marking ? <div role="status" style={{ flex: "none", padding: "8px 14px", background: C.ink, color: "#E6E7EC", fontSize: "var(--t-caption)" }}>Arrastra sobre la página para marcar una zona y escribe qué cambiarías. Esc para salir.</div> : null}
+      {marking ? <div role="status" style={{ flex: "none", padding: "8px 14px", background: C.ink, color: "var(--c-line)", fontSize: "var(--t-caption)" }}>Arrastra sobre la página para marcar una zona y escribe qué cambiarías. Esc para salir.</div> : null}
       <div ref={area} style={{ position: "relative", flex: 1, minHeight: 0, background: "var(--c-sunken)", display: "flex", justifyContent: "center" }}>
         {url ? (
           <iframe key={url + reload} src={url} title="Vista previa" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-            style={{ width: phone ? "390px" : "100%", maxWidth: "100%", height: "100%", border: 0, background: C.white, boxShadow: phone ? "0 0 0 1px rgba(18,19,26,.08), 0 30px 60px -30px rgba(18,19,26,.4)" : "none", animation: "develop .6s ease-out" }} />
+            style={{ width: phone ? "390px" : "100%", maxWidth: "100%", height: "100%", border: 0, background: C.white, boxShadow: phone ? "0 0 0 1px rgb(var(--c-ink-rgb) / .08), var(--c-shadow-pop)" : "none", animation: "develop .6s ease-out" }} />
         ) : (
           <div style={{ alignSelf: "center", padding: "28px", maxWidth: "340px", textAlign: "center", display: "flex", flexDirection: "column", gap: "8px" }}>
             <strong style={{ fontSize: "var(--t-body)" }}>{ports === null ? "Buscando servidores…" : "Aún no hay nada que ver"}</strong>
@@ -142,7 +142,7 @@ export default function Preview({ task, onAsk = null }) {
         {marking && url ? (
           <div onMouseDown={down} onMouseMove={move} onMouseUp={up} onMouseLeave={up} onKeyDown={(e) => { if (e.key === "Escape") { setMarking(false); setBox(null); } }} tabIndex={-1}
             style={{ position: "absolute", inset: 0, zIndex: 2, cursor: box?.done ? "default" : "crosshair", background: "rgb(var(--c-ink-rgb) / .04)" }}>
-            {box ? <span aria-hidden="true" style={{ position: "absolute", left: box.x + "px", top: box.y + "px", width: box.w + "px", height: box.h + "px", borderRadius: "var(--r-sm)", boxShadow: "0 0 0 2px #FF7A1A, 0 0 0 6px rgba(255,122,26,.18)", background: "rgba(255,122,26,.06)" }} /> : null}
+            {box ? <span aria-hidden="true" style={{ position: "absolute", left: box.x + "px", top: box.y + "px", width: box.w + "px", height: box.h + "px", borderRadius: "var(--r-sm)", boxShadow: "0 0 0 2px var(--c-accent), 0 0 0 6px color-mix(in srgb, var(--c-accent) 18%, transparent)", background: "color-mix(in srgb, var(--c-accent) 6%, transparent)" }} /> : null}
             {box?.done ? <NoteBox box={box} onAdd={addNote} onCancel={() => setBox(null)} /> : null}
           </div>
         ) : null}

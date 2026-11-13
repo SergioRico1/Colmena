@@ -98,7 +98,7 @@ function LimitLine({ task }) {
   const stop = l.status !== "allowed";
   return (
     <p role="status" style={{ margin: "0 4px 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-caption)", color: stop ? C.honeyText : C.faint }}>
-      <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: stop ? C.honey : "#C9CBD1" }} />
+      <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: stop ? C.honey : "var(--c-line-strong)" }} />
       {stop ? `Has llegado a tu límite ${span} de ${engine}` : `Has usado el ${Math.round(l.utilization * 100)} % de tu límite ${span} de ${engine}`}{when ? ` · se renueva ${when.includes(",") ? "el " + when : "a las " + when}` : ""}.
     </p>
   );
@@ -114,14 +114,14 @@ function GoalRow({ task, onGoal }) {
     complete: { text: "Cumplido", fg: C.greenText, bar: C.green },
     blocked: { text: "Bloqueado" + (g.note ? ": " + g.note : ""), fg: C.honeyText, bar: C.honey },
     limited: { text: g.note || "Se paró", fg: C.honeyText, bar: C.honey },
-    paused: { text: "En pausa" + (g.note && g.note !== "Lo has pausado." ? " · " + g.note : ""), fg: C.faint, bar: "#C9CBD1" },
-  }[g.status] || { text: g.status, fg: C.faint, bar: "#C9CBD1" };
+    paused: { text: "En pausa" + (g.note && g.note !== "Lo has pausado." ? " · " + g.note : ""), fg: C.faint, bar: "var(--c-line-strong)" },
+  }[g.status] || { text: g.status, fg: C.faint, bar: "var(--c-line-strong)" };
   const pct = g.status === "complete" ? 1 : Math.min(1, (g.turns + (task.running ? 0.5 : 0)) / max);
   const live = g.status === "active";
   const btn = { height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" };
   return (
-    <div role="status" aria-label="Objetivo" style={{ position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", padding: "8px 8px 8px 12px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05)", animation: "rise .25s ease-out" }}>
-      <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: g.status === "complete" ? C.greenSoft : live ? "rgba(255,122,26,.12)" : C.soft, color: g.status === "complete" ? C.green : live ? C.bruno : C.muted }}>
+    <div role="status" aria-label="Objetivo" style={{ position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", padding: "8px 8px 8px 12px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: "var(--c-shadow-lift)", animation: "rise .25s ease-out" }}>
+      <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: g.status === "complete" ? C.greenSoft : live ? "var(--c-accent-soft)" : C.soft, color: g.status === "complete" ? C.green : live ? C.bruno : C.muted }}>
         {g.status === "complete" ? <Check size={13} strokeWidth={2.6} /> : <Target size={13} strokeWidth={2.2} />}
       </span>
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -156,14 +156,16 @@ function useWatch(taskId) {
 }
 
 const CHIP = { height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-sm)", background: C.white, border: "1px solid rgb(var(--c-ink-rgb) / .08)", whiteSpace: "nowrap", color: C.text2 };
-const SIGNAL = (bg, fg) => ({ ...CHIP, border: 0, background: bg, color: fg, fontFamily: "'Geist', sans-serif", fontWeight: 600 });
+// A status chip of the task (v4): a soft ground, its ink, an icon in front. Honey only for «Te espera».
+const SIGNAL = (bg, fg) => ({ ...CHIP, height: "26px", gap: "6px", padding: "0 8px", border: 0, borderRadius: "var(--r-pill)", background: bg, color: fg, fontFamily: "'Geist', sans-serif", fontSize: "var(--t-caption)", fontWeight: 600 });
+const PR_LOOK = { OPEN: ["var(--c-accent-soft)", "var(--c-accent-ink)"], MERGED: ["var(--c-ok-soft)", "var(--c-ok-ink)"], CLOSED: ["var(--c-chip)", "var(--c-text-3)"] };
 
 /** What GitHub says of an open PR: draft, approved, changes requested ([text, look, title]). */
 function prDecision(pr) {
   if (!pr?.number || pr.state !== "OPEN") return null;
-  if (pr.isDraft) return ["Borrador", SIGNAL("#EEF0F4", C.text2), "La PR es un borrador: nadie la revisa hasta que la marques como lista"];
-  if (pr.reviewDecision === "APPROVED") return ["✓ Aprobada", SIGNAL("#E3F4EC", C.greenText), "Han aprobado la PR en GitHub"];
-  if (pr.reviewDecision === "CHANGES_REQUESTED") return ["Piden cambios", SIGNAL("#FFF1C7", C.honeyText), "En GitHub piden cambios en la PR: Bruno se pone con ellos"];
+  if (pr.isDraft) return ["Borrador", SIGNAL("var(--c-chip)", C.text2), "La PR es un borrador: nadie la revisa hasta que la marques como lista"];
+  if (pr.reviewDecision === "APPROVED") return [<><Check size={12} weight="bold" aria-hidden="true" />Aprobada</>, SIGNAL("var(--c-ok-soft)", C.greenText), "Han aprobado la PR en GitHub"];
+  if (pr.reviewDecision === "CHANGES_REQUESTED") return ["Piden cambios", SIGNAL("var(--c-warn-soft)", "var(--c-warn)"), "En GitHub piden cambios en la PR: Bruno se pone con ellos"];
   return null;
 }
 
@@ -172,35 +174,35 @@ function TaskChips({ task, project, running, onMergePr = null }) {
   const pr = task.pr;
   const base = task.base || project?.base || "main";
   const decision = prDecision(pr);
-  const ci = !pr || pr.state === "CLOSED" ? null : pr.state === "MERGED" ? SIGNAL("#E3F4EC", C.greenText) : pr.mergeable === "CONFLICTING" ? SIGNAL("#FFF1C7", C.honeyText) : pr.checks === "failing" ? SIGNAL(C.redSoft, C.red) : pr.checks === "passing" ? SIGNAL("#E3F4EC", C.greenText) : pr.checks === "pending" ? SIGNAL("#EEF0F4", C.text2) : null;
-  const ciText = !ci ? null : pr.state === "MERGED" ? "✓ Fusionada" : pr.mergeable === "CONFLICTING" ? "Conflictos con " + base : pr.checks === "failing" ? "✕ CI: falla" : pr.checks === "passing" ? "✓ CI: pasa" : "CI en curso";
+  const ci = !pr || pr.state === "CLOSED" ? null : pr.state === "MERGED" ? SIGNAL("var(--c-ok-soft)", C.greenText) : pr.mergeable === "CONFLICTING" ? SIGNAL("var(--c-warn-soft)", "var(--c-warn)") : pr.checks === "failing" ? SIGNAL(C.redSoft, C.red) : pr.checks === "passing" ? SIGNAL("var(--c-ok-soft)", C.greenText) : pr.checks === "pending" ? SIGNAL("var(--c-chip)", C.text2) : null;
+  const ciText = !ci ? null : pr.state === "MERGED" ? <><GitMerge size={12} aria-hidden="true" />Fusionada</> : pr.mergeable === "CONFLICTING" ? "Conflictos con " + base : pr.checks === "failing" ? <><X size={12} weight="bold" aria-hidden="true" />CI: falla</> : pr.checks === "passing" ? <><Check size={12} weight="bold" aria-hidden="true" />CI: pasa</> : "CI en curso";
   const wake = () => post("/code/tasks/" + task.id + (task.archived ? "/archive" : "/snooze"), task.archived ? { archived: false } : { until: null }).catch((e) => failure(task.archived ? "No se pudo desarchivar la tarea" : "No se pudo reanudar la tarea", e.message));
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", font: `400 var(--t-meta)/1 ${MONO}`, color: C.text2 }}>
       {task.isolated ? (
         <span style={CHIP} title={task.saved ? "Ya está en tu carpeta. Su copia se ha limpiado; si vuelves a escribir aquí, Colmena la recupera tal cual." : "Bruno trabaja en una copia aparte (git worktree). " + base + " no cambia hasta que la fusiones."}>{task.branch} → {base}</span>
       ) : project ? <span style={CHIP} title="Bruno trabaja en la carpeta del proyecto">{project.root}</span> : null}
-      {pr?.number ? <a href={pr.url || undefined} target="_blank" rel="noreferrer" style={{ ...CHIP, color: C.text2 }} title={pr.watching ? "Colmena sigue esta PR con gh: si falla el CI, hay conflictos o comentan, Bruno se pone con ello (subir sigue pidiendo tu OK)." : undefined}>PR #{pr.number}</a>
+      {pr?.number ? <a href={pr.url || undefined} target="_blank" rel="noreferrer" style={{ ...SIGNAL(...(PR_LOOK[pr.state] || PR_LOOK.OPEN)), ...(pr.isDraft ? { background: "var(--c-chip)", color: C.text2 } : {}) }} title={pr.watching ? "Colmena sigue esta PR con gh: si falla el CI, hay conflictos o comentan, Bruno se pone con ello (subir sigue pidiendo tu OK)." : undefined}><GitPullRequest size={12} aria-hidden="true" />{(pr.isDraft ? "Borrador · " : "") + "PR #" + pr.number}</a>
         : pr?.watching ? <span style={CHIP}>PR · esperando…</span> : null}
       {ci ? <span style={ci}>{ciText}</span> : null}
       {decision ? <span style={decision[1]} title={decision[2]}>{decision[0]}</span> : null}
       {onMergePr ? (
-        <button type="button" onClick={onMergePr} title="Fusiona en GitHub el último commit que has visto de la PR. Si alguien sube algo después, GitHub no la fusiona." style={{ ...SIGNAL("#F1F1EC", C.blue), cursor: "pointer" }}>
+        <button type="button" onClick={onMergePr} title="Fusiona en GitHub el último commit que has visto de la PR. Si alguien sube algo después, GitHub no la fusiona." style={{ ...SIGNAL("var(--c-chip)", C.blue), cursor: "pointer" }}>
           <GitMerge size={12} strokeWidth={2.2} aria-hidden="true" />Fusionar en GitHub
         </button>
       ) : null}
-      {running ? <span style={SIGNAL("#EEF0F4", C.blue)}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: C.blue }} />Trabajando</span>
-        : task.status === "waiting" || task.status === "planned" ? <span style={SIGNAL(C.honey, C.ink)}>Te espera</span>
+      {running ? <span style={SIGNAL("var(--c-chip)", C.blue)}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: C.blue }} />Trabajando</span>
+        : task.status === "waiting" || task.status === "planned" ? <span style={SIGNAL(C.honey, "var(--c-honey-ink)")}>Te espera</span>
           : task.status === "error" ? <span style={SIGNAL(C.redSoft, C.red)}>Atascada</span> : null}
-      {task.saved ? <span style={SIGNAL("#E3F4EC", C.greenText)}>✓ Guardada en {base}</span> : null}
+      {task.saved ? <span style={SIGNAL("var(--c-ok-soft)", C.greenText)}><Check size={12} weight="bold" aria-hidden="true" />Guardada en {base}</span> : null}
       {task.archived || task.snoozed ? (
-        <button type="button" onClick={wake} title={task.archived ? "Archivada: vuelve si le escribes, o pulsa para desarchivarla" : "Pospuesta: pulsa para despertarla ya"} style={{ ...SIGNAL("#F1F1EC", C.text2), cursor: "pointer" }}>
+        <button type="button" onClick={wake} title={task.archived ? "Archivada: vuelve si le escribes, o pulsa para desarchivarla" : "Pospuesta: pulsa para despertarla ya"} style={{ ...SIGNAL("var(--c-chip)", C.text2), cursor: "pointer" }}>
           {task.archived ? "Archivada · Desarchivar" : "Vuelve " + whenLabel(task.snoozed.until) + " · Despertar"}
         </button>
       ) : null}
-      {task.group ? <a href={"/codigo/comparar/" + task.group} style={{ ...SIGNAL("#F1F1EC", C.blue) }} title="La misma petición con otros motores, lado a lado"><Columns3 size={12} strokeWidth={2.2} aria-hidden="true" />Comparar</a> : null}
+      {task.group ? <a href={"/codigo/comparar/" + task.group} style={{ ...SIGNAL("var(--c-chip)", C.blue) }} title="La misma petición con otros motores, lado a lado"><Columns3 size={12} strokeWidth={2.2} aria-hidden="true" />Comparar</a> : null}
       {(task.overlaps || []).slice(0, 2).map((o) => (
-        <a key={o.task} href={"/codigo/" + o.task} style={SIGNAL("#FFF1C7", C.honeyText)} title={`Las dos tareas cambian ${o.count === 1 ? "este archivo" : "estos archivos"}: ${o.files.join(", ")}${o.count > o.files.length ? "…" : ""}. Al fusionar pueden chocar.`}>
+        <a key={o.task} href={"/codigo/" + o.task} style={SIGNAL("var(--c-honey-soft)", C.honeyText)} title={`Las dos tareas cambian ${o.count === 1 ? "este archivo" : "estos archivos"}: ${o.files.join(", ")}${o.count > o.files.length ? "…" : ""}. Al fusionar pueden chocar.`}>
           <FilesIcon size={12} strokeWidth={2.2} aria-hidden="true" />Mismos archivos que «{o.title.length > 32 ? o.title.slice(0, 32) + "…" : o.title}»
         </a>
       ))}
@@ -210,7 +212,7 @@ function TaskChips({ task, project, running, onMergePr = null }) {
 
 /** «El plan de Bruno»: his list of steps (TodoWrite) with what is done and what he does now. */
 function Steps({ steps, approved }) {
-  const look = { done: ["✓", "#E3F4EC", C.greenText, C.ink], now: ["•", "#EEF0F4", C.blue, C.ink], todo: ["", C.track, C.blue, C.muted] };
+  const look = { done: ["✓", "var(--c-ok-soft)", C.greenText, C.ink], now: ["•", "var(--c-chip)", C.blue, C.ink], todo: ["", C.track, C.blue, C.muted] };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "var(--r-xl)", background: C.white }}>
       <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>{approved ? "El plan de Bruno · aprobado" : "Los pasos de Bruno"}</span>
@@ -482,7 +484,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
                 {running && (!blocks.length || !blocks.at(-1).bot) ? (
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                     <BotShape bot={bot} size={22} state="work" />
-                    <span style={{ fontSize: "var(--t-body)", color: C.body, whiteSpace: "pre-wrap" }}><LiveOr taskId={taskId}><span style={{ fontWeight: 500, background: "linear-gradient(90deg, #6B6F7A 0%, #6B6F7A 35%, #12131A 50%, #6B6F7A 65%, #6B6F7A 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>{name} está trabajando…</span></LiveOr></span>
+                    <span style={{ fontSize: "var(--t-body)", color: C.body, whiteSpace: "pre-wrap" }}><LiveOr taskId={taskId}><span style={{ fontWeight: 500, background: "linear-gradient(90deg, var(--c-text-3) 0%, var(--c-text-3) 35%, var(--c-btn) 50%, var(--c-text-3) 65%, var(--c-text-3) 100%)", backgroundSize: "200% 100%", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "shimmer 2.2s linear infinite" }}>{name} está trabajando…</span></LiveOr></span>
                   </div>
                 ) : null}
                 {problem ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: C.red }}>{problem}</p> : null}
@@ -591,7 +593,7 @@ export default function CodigoV2({ params = {}, query = {} }) {
   useEffect(() => { if (query.proyecto) setSelected(query.proyecto); }, [query.proyecto]);
   useEffect(() => { setTurn(null); }, [taskId]);
   return (
-    <Shell active="codigo" scroll={false} extraCss={CODE_CSS}>
+    <Shell active="codigo" background="var(--c-app)" scroll={false} extraCss={CODE_CSS}>
       <div style={{ display: "flex", height: "100%", minWidth: 0 }}>
         {params.handoff ? <HandoffPage key={params.handoff} id={params.handoff} />
           : params.shared ? <SharedTask key={params.shared} id={params.shared} />

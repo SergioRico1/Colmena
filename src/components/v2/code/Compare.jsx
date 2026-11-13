@@ -15,7 +15,7 @@ import { recommendOf, durationLabel } from "./model.js";
 const WORDS = ["", "un", "dos", "tres", "cuatro"];
 /** Bruno's last words without Markdown marks, for a short preview. */
 const plain = (text) => String(text || "").replace(/[*_`#>]+/g, "").replace(/^\s*[-•]\s+/gm, "").replace(/\s+/g, " ").trim();
-const TESTS = { passed: ["Pasan", "#E3F4EC", C.greenText], failed: ["Fallan", C.redSoft, C.red], running: ["Probando…", C.card, C.text2], queued: ["En cola…", C.card, C.text2] };
+const TESTS = { passed: ["Pasan", "var(--c-ok-soft)", C.greenText], failed: ["Fallan", C.redSoft, C.red], running: ["Probando…", C.card, C.text2], queued: ["En cola…", C.card, C.text2] };
 const tokens = (n) => (n >= 1000 ? Math.round(n / 1000) + " k" : String(n));
 
 function Stat({ label, value, bg = C.card, ink = C.ink, mono = false }) {
@@ -87,15 +87,15 @@ export default function Compare({ group, projects = [] }) {
           <span style={{ color: C.ink, fontWeight: 500 }}>Comparar</span>
         </nav>
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <h1 style={{ margin: 0, font: `600 var(--t-display-m)/1 ${HEAD}`, letterSpacing: "-0.04em" }}>{title}</h1>
+          <h1 style={{ margin: 0, font: `700 var(--t-headline)/1.15 ${HEAD}`, letterSpacing: "-0.015em" }}>{title}</h1>
           <p style={{ margin: 0, fontSize: "var(--t-read)", color: C.text2 }}>La misma petición a {WORDS[n] || n} motores, cada uno en su copia del proyecto. Elige el que se queda; los otros se archivan, no se borran.</p>
           <p style={{ margin: "4px 0 0", padding: "14px 18px", borderRadius: "var(--r-lg)", background: C.white, fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>«{asked.trim()}»</p>
         </header>
 
         <section aria-label="Recomendación" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 22px", padding: "18px 22px", borderRadius: "var(--r-2xl)", background: C.ink, color: C.white }}>
           <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", background: C.white, clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
-          <p style={{ flex: "1 1 420px", margin: 0, fontSize: "var(--t-read)", lineHeight: 1.55, color: "#E6E7EC" }}>{band.strong ? <strong style={{ color: C.white, fontWeight: 600 }}>{band.strong}</strong> : null}{band.text}</p>
-          {band.button ? <button type="button" onClick={band.button[1]} disabled={!!busy} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: C.white, color: C.ink, fontSize: "var(--t-body)", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{busy === "tests" ? "Lanzando…" : band.button[0]}</button> : null}
+          <p style={{ flex: "1 1 420px", margin: 0, fontSize: "var(--t-read)", lineHeight: 1.55, color: "var(--c-line)" }}>{band.strong ? <strong style={{ color: C.white, fontWeight: 600 }}>{band.strong}</strong> : null}{band.text}</p>
+          {band.button ? <button type="button" onClick={band.button[1]} disabled={!!busy} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: C.white, color: C.ink, fontSize: "var(--t-ui)", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{busy === "tests" ? "Lanzando…" : band.button[0]}</button> : null}
         </section>
         {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: C.red }}>{error}</p> : null}
 
@@ -138,7 +138,7 @@ export default function Compare({ group, projects = [] }) {
                 <div style={{ display: "flex", gap: "8px" }}>
                   <a href={"/codigo/" + t.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + t.id); }} style={{ ...BTN.outline, height: "42px", padding: "0 16px", fontWeight: 500 }}>Ver cambios</a>
                   <button type="button" onClick={() => !on && choose(t)} disabled={!!busy || t.running || !files.length}
-                    style={{ flex: 1, height: "42px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#0B6B4A" : C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600, cursor: busy || t.running || !files.length || on ? "default" : "pointer", opacity: !on && (t.running || !files.length) ? 0.45 : 1 }}>
+                    style={{ flex: 1, height: "36px", border: 0, borderRadius: "var(--r-sm)", background: on ? "var(--c-ok-ink)" : C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600, cursor: busy || t.running || !files.length || on ? "default" : "pointer", opacity: !on && (t.running || !files.length) ? 0.45 : 1 }}>
                     {busy === "pick:" + t.id ? "Eligiendo…" : on ? "Elegido ✓" : "Elegir este"}
                   </button>
                 </div>
