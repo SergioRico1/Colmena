@@ -106,7 +106,7 @@ export default function PeopleSettings() {
       ) : null}
 
       <Group id="pp-help" title="Ayuda" anchor="como-funciona">
-        <LinkRow title="Cómo funciona Personas" sub="Invitar, grupos, qué ven tus bots, reuniones, el buzón y cómo quitar a alguien." to={HELP_URL} last />
+        <LinkRow title="Cómo funcionan los equipos y las salas" sub="De quién es cada bot, qué ven los demás de su trabajo, quién aprueba qué, invitar, el buzón y cómo quitar a alguien." to={HELP_URL} last />
       </Group>
 
       <ErrandTools act={act} />

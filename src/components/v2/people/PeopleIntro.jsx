@@ -1,9 +1,9 @@
 import { KeyRound, Laptop, LockKeyhole, UserPlus } from "lucide-react";
 import { navigate } from "../../../lib/router.jsx";
 
-// «Personas» the first time (design/V2Personas.dc.html, paso primera): it is not Slack, so
-// three short lines say why — everyone on their own computer, nobody else can read it, you
-// invite with a code — and «Cómo funciona» goes to the whole page.
+// «Personas» the first time (design/V2Personas.dc.html, paso primera): three short lines —
+// everyone on their own computer, nobody else can read it, you invite with a code — and
+// «Cómo funciona» goes to the whole page.
 export const HELP_URL = "/personas/como-funciona";
 export const INTRO_STEPS = [
   [Laptop, "Cada uno en su ordenador", "No hay ninguna empresa guardando vuestras conversaciones: cada persona usa su propia Colmena."],
@@ -17,7 +17,7 @@ export default function PeopleIntro({ onInvite = null, onCode = null, compact = 
       {compact ? null : (
         <span style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <strong style={{ font: "600 22px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Habla con personas, cada una en su Colmena"}</strong>
-          <span style={{ fontSize: "15px", lineHeight: 1.5, color: "#5C606C" }}>{"Funciona distinto a Slack o WhatsApp, y por eso es privado."}</span>
+          <span style={{ fontSize: "15px", lineHeight: 1.5, color: "#5C606C" }}>{"Cada mensaje viaja cerrado con llave: solo lo lee quien lo recibe."}</span>
         </span>
       )}
       <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: compact ? "10px" : "14px" }}>

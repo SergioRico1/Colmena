@@ -64,7 +64,7 @@ export default function RoomInvite({ view, onClose, onChanged = null }) {
     );
   }
   return (
-    <Sheet id="room-inv" title={title} sub={truth.line} onClose={onClose} width={560}>
+    <Sheet id="room-inv" title={title} sub={<>{truth.line + " "}<a href="/personas/como-funciona#quien-entra" onClick={onClose} style={{ color: "#1F4FD1", fontWeight: 600 }}>{"Cómo funciona"}</a></>} onClose={onClose} width={560}>
       {truth.asks ? <p role="note" style={{ margin: 0, padding: "12px 16px", borderRadius: "14px", background: "#F4F4F0", fontSize: "14px", lineHeight: 1.5 }}>{`${truth.ask}: la sala es suya y solo ${firstName(truth.owner)} puede añadir personas.`}</p> : null}
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {all.length > 5 || query ? (

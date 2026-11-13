@@ -183,7 +183,7 @@ export const SECTIONS = [
       ["contactos", "Personas conectadas", "contactos amigos hablar palabras de seguridad quitar"],
       ["encargos", "Encargos de otras personas", "encargos bots herramientas pedir otra persona aprobar incógnito"],
       ["buzon", "Cómo os llegan los mensajes", "buzón relé relay servidor cifrado conexión"],
-      ["como-funciona", "Cómo funciona Personas", "ayuda guía explicación invitar código palabras grupos bots menciones hilos responder editar borrar buscar encargos pedir otro bot archivos adjuntar compartir pdf word excel código compartir tarea plan pr estado no molestar fuera reuniones calendario buzón quitar", "/personas/como-funciona"],
+      ["como-funciona", "Cómo funcionan los equipos y las salas", "ayuda guía explicación equipo sala de quién es cada bot qué ven los demás quién aprueba ordenador apagado invitar código palabras grupos bots menciones hilos responder editar borrar buscar encargos pedir otro bot archivos adjuntar compartir pdf word excel código compartir tarea plan pr estado no molestar fuera reuniones calendario buzón quitar", "/personas/como-funciona"],
     ],
   },
 ];

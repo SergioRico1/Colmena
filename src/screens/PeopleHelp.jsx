@@ -1,42 +1,72 @@
-import { ArrowLeft, Bot, CalendarClock, CodeXml, Inbox, KeyRound, MessageSquare, Moon, Paperclip, Send, UserMinus, Users } from "lucide-react";
+import { useEffect } from "react";
+import { ArrowLeft, Bot, CalendarClock, CodeXml, DoorOpen, Eye, Hash, Inbox, KeyRound, MessageSquare, Moon, Paperclip, Power, Send, ShieldCheck, UserMinus, Users } from "lucide-react";
 import Shell from "../components/v2/Shell.jsx";
 import { INTRO_STEPS } from "../components/v2/people/PeopleIntro.jsx";
 import { navigate } from "../lib/router.jsx";
 import { scrollBehavior } from "../lib/motion.js";
 
-// «Cómo funciona Personas» (design/V2Personas.dc.html, paso ayuda): the whole thing on one
-// page, from Ajustes › Personas and Ctrl+K. Short paragraphs, the person's words, no jargon.
+// «Cómo funciona» (docs/PLAN-equipo-y-salas.md, scope 5; docs/PEOPLE.md): teams, rooms, whose
+// bot is whose, what the others see of your bot's work, who approves what, what happens when a
+// computer is off and what someone invited to a room sees. One page, from the team menu, the
+// invitation sheets, Ajustes › Personas and Ctrl+K. Short paragraphs, the person's words, no
+// jargon; every sentence says what the code does (docs/PEOPLE.md is the source).
+export const HELP_SECTIONS = [
+  ["equipos", Users, "Equipos", [
+    "Un equipo es una lista de personas con nombre. Todas ven la misma lista y, de cada persona, sus bots. Se crea o se entra con un código, y puedes estar en varios: cambias de uno a otro en la cabecera de la barra.",
+    "Lo administra quien lo crea, y puede nombrar a otros administradores. Administrar es invitar, quitar, cambiar el nombre y nombrar administradores.",
+    "Cada equipo nace con una sala de todos, «general». Las demás salas son por invitación.",
+  ]],
+  ["salas", Hash, "Salas", [
+    "Una sala es una conversación con personas y bots a la vez. Las personas llevan un círculo con sus iniciales; los bots, su forma, su papel y de quién son.",
+    "Una sala privada es solo tuya y de tus bots. Cuando invitas a alguien pasa a ser una sala con personas. Solo añade gente quien la creó; los demás se lo piden desde «Invitar» y a esa persona le llega la petición.",
+  ]],
+  ["de-quien", Bot, "De quién es cada bot", [
+    "Cada bot es de una persona y trabaja en el ordenador de esa persona, con su cuenta de IA y sus datos. En la sala lo lees junto a su nombre: «Vera · bot de Lucía».",
+    "Tus bots contestan en una sala con personas cuando los nombras con @ o respondes en el hilo de algo que dijeron. Un mensaje que no nombra a ningún bot es para las personas.",
+    "Puedes pedir algo al bot de otra persona eligiéndolo con @. Decide su dueño: te puede tener en «Pregúntame» (le sale una tarjeta para decidir), «Siempre» o «Nunca». Tú eliges lo mismo para cada persona en Ajustes › Personas.",
+  ]],
+  ["que-ven", Eye, "Qué ven los demás del trabajo de tu bot", [
+    "Tres cosas: lo que contesta, una línea de estado («Vera está trabajando», «Vera usó 4 herramientas · 12 min», «Vera espera el OK de Sergio») y lo que entrega para quien se lo pidió.",
+    "Nunca ven tus archivos, tu correo, lo que leen sus herramientas, los pasos intermedios ni las tarjetas en las que tú decides. Lo que preguntas en «Aparte, solo para ti» tampoco sale de tu ordenador.",
+    "Lo que tu bot hace para una petición que permitiste se comparte solo en la sala, como archivo. Cualquier otro entregable tuyo sale únicamente si pulsas «Compartir en la sala».",
+  ]],
+  ["quien-aprueba", ShieldCheck, "Quién aprueba qué", [
+    "Cada dueño aprueba lo que sale de su ordenador. Enviar, comprar, publicar, pagar o borrar te lo pregunta tu bot a ti, también cuando lo pidió otra persona y aunque la tengas en «Siempre».",
+    "Lo que pide otra persona nunca cuenta como palabras tuyas: tu bot lo recibe como un dato de fuera y solo con las herramientas que dejas usar para peticiones de otros (Ajustes › Personas).",
+    "Los demás solo ven que tu bot espera tu OK, nunca qué espera. La tarjeta en color miel la ve únicamente quien tiene que decidir.",
+    "Hay un límite de peticiones por hora a los bots de otra persona. Si se alcanza, se dice en la sala: «Vera no atiende más peticiones por ahora».",
+  ]],
+  ["apagado", Power, "Si alguien tiene el ordenador apagado", [
+    "Los bots de una persona solo trabajan con su Colmena encendida. Si no lo está, lo lees en la sala: «Lucía no está; Vera seguirá cuando vuelva».",
+    "Los mensajes entre personas esperan en el buzón hasta 7 días y llegan cuando esa persona abre Colmena. Mientras no salen de tu ordenador los ves como «Enviando…».",
+    "En un equipo, lo que hace un administrador (invitar, quitar, cambiar el nombre) lo firma la Colmena de quien creó el equipo: si está apagada, queda como pendiente hasta que se encienda.",
+  ]],
+  ["quien-entra", DoorOpen, "Lo que ve quien entra en una sala", [
+    "Quien entra ve lo que se escriba desde ese momento. Lo anterior nunca salió de los ordenadores de quienes ya estaban, así que no le llega.",
+    "Con el papel «Invitado» una persona lee y escribe, pero sus mensajes no ponen a trabajar a ningún bot.",
+  ]],
+];
+
+/** The rest: how each thing is done, for whoever looks for it. */
 const SECTIONS = [
   ["invitar", KeyRound, "Invitar a alguien", [
-    "En Chats › Nueva › «Invitar a alguien» escribes cómo se llama y Colmena te da un mensaje listo para copiar: quién eres, el enlace para descargar Colmena y un código.",
-    "Se lo mandas tú, por WhatsApp o correo. El código sirve una sola vez y caduca en 24 horas; si caduca, crea otro.",
-    "La otra persona pulsa «Tengo una invitación» y lo pega. A los dos os salen cuatro palabras: decíoslas en persona o por teléfono. Si coinciden, nadie se ha puesto en medio.",
-  ]],
-  ["grupos", Users, "Conversaciones de grupo", [
-    "En Chats › Nueva elige a varias personas y ponle nombre. Caben hasta 32.",
-    "Quien la crea decide quién entra. Si alguien del grupo no está en tus personas, sale en Ajustes › Personas como «Conoces por una conversación»: puede escribir en el grupo, no a ti a solas.",
-    "«Salir» te saca a ti; quien la creó puede «Cerrar para todos».",
-    "Quien la crea, desde «Personas» en la conversación, le cambia el nombre, quita a alguien o elige su papel: «Miembro», o «Invitado» (escribe y lee, pero sus mensajes no despiertan a ningún bot). También puede invitar a alguien nuevo directamente a la conversación con un código.",
-    "Cada cambio es una lista nueva firmada por su Colmena; las demás no aceptan listas de nadie más.",
+    "Al equipo: en la cabecera de la barra, «Invitar al equipo». A una sala: «Invitar», arriba en la sala. A hablar a solas: el «+» de Personas. En los tres casos Colmena te da un mensaje listo para copiar, con el enlace para instalarla y un código.",
+    "Se lo mandas tú, por donde quieras: Colmena no escribe a nadie por ti. El código vale una sola vez y caduca en 24 horas; si caduca, crea otro.",
+    "La otra persona lo pega en «Unirme con un código». A los dos os salen cuatro palabras: decíoslas en persona o por teléfono. Si coinciden, nadie se ha puesto en medio.",
   ]],
   ["hilos", MessageSquare, "Hilos, editar, borrar y buscar", [
     "Pasa el ratón por un mensaje y pulsa el bocadillo para responder en un hilo. Se abre al lado y solo avisa a quien está en él: quien lo empezó, quien responde y quien mencionas.",
     "Tus mensajes se pueden editar (los demás verán «editado») y borrar para todos (queda «Mensaje borrado»). Solo tu Colmena puede cambiar lo tuyo: el cambio va firmado por ti, y nadie puede tocar tus mensajes ni tú los de otros.",
-    "Escribe @ para mencionar a una persona: le llega un aviso con su propio sonido. La lupa busca en la conversación; Ctrl+K busca en todas. La búsqueda se hace en tu ordenador.",
+    "Escribe @ para mencionar a una persona: le llega un aviso con su propio sonido. «Buscar en la sala» (en su menú) busca en esa conversación; Ctrl+K busca en todas. La búsqueda se hace en tu ordenador.",
   ]],
   ["archivos", Paperclip, "Compartir archivos y entregables", [
     "Pulsa el clip (o arrastra el archivo a donde escribes): imágenes, PDF, Word, Excel, PowerPoint o texto, hasta 25 MB. También un entregable que te haya hecho un bot: se envía con su PDF para que se vea tal cual.",
     "Sale cifrado de tu ordenador con una llave que solo va dentro del mensaje. El buzón guarda trozos que no puede leer durante 7 días; cada Colmena lo descarga, comprueba que llegó entero y lo guarda.",
     "Se ve dentro de Colmena: las páginas del PDF, el texto del Word, los valores del Excel o el texto de cada diapositiva. Nada del archivo se ejecuta. «Guardar» lo deja en tu ordenador; si lo borras para todos, desaparece también del buzón y de las otras Colmenas.",
   ]],
-  ["bots", Bot, "Tus bots en conversaciones con personas", [
-    "Menciónalos con @ y contestan ahí, desde tu ordenador. Solo ven lo que se ha dicho en esa conversación: ni tu correo, ni tu agenda, ni tus archivos, ni lo que saben de ti.",
-    "Lo que les piden otras personas es un dato, nunca una orden: no envían, compran, pagan ni borran nada por ello. Tú decides si alguien puede hablar con tus bots, en Ajustes › Personas.",
-    "Si tu bot y el de otra persona se llaman igual, verás «Vera · tu bot» y «Vera · de Marta». Elige en @ a cuál se lo pides; un «@Vera» escrito a mano es siempre la tuya.",
-  ]],
   ["estado", Moon, "Tu estado y las menciones", [
     "En Ajustes › Personas › «Tu estado» pon «No molestar» (una hora, tres, hasta mañana) o «Fuera» (hasta mañana, hasta el lunes o hasta un día). Las personas con las que hablas lo ven junto a tu nombre.",
-    "Mientras dure, los mensajes te siguen llegando pero no te salta ningún aviso ni te suena nada: los encuentras en Hoy y en Chats. Al acabar el plazo vuelves a «Disponible» solo.",
+    "Mientras dure, los mensajes te siguen llegando pero no te salta ningún aviso ni te suena nada: los encuentras en Inicio y en la barra. Al acabar el plazo vuelves a «Disponible» solo.",
     "Si alguien te menciona con @ suena distinto que un mensaje normal. Puedes escuchar los dos en Ajustes › Avisos.",
   ]],
   ["encargos", Send, "Encargos entre bots", [
@@ -68,15 +98,21 @@ const SECTIONS = [
   ]],
 ];
 
+const ALL = [...HELP_SECTIONS, ...SECTIONS];
+
 export default function PeopleHelp() {
+  // /personas/como-funciona#equipos opens at that section.
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+    if (id) document.getElementById(id)?.scrollIntoView({ block: "start" });
+  }, []);
   return (
     <Shell active="conversaciones">
       <article style={{ width: "100%", maxWidth: "760px", margin: "0 auto", padding: "40px clamp(20px, 4vw, 44px) 72px", display: "flex", flexDirection: "column", gap: "28px", boxSizing: "border-box" }}>
         <a href="/ajustes/contactos" onClick={(e) => { e.preventDefault(); if (history.length > 1) history.back(); else navigate("/ajustes/contactos"); }} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: 600, color: "#5C606C", textDecoration: "none" }}><ArrowLeft size={15} strokeWidth={2.2} aria-hidden="true" />{"Volver"}</a>
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <span style={{ font: "500 12px/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{"Personas"}</span>
           <h1 style={{ margin: 0, font: "600 40px/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{"Cómo funciona"}</h1>
-          <p style={{ margin: 0, fontSize: "17px", lineHeight: 1.55, color: "#3D404A" }}>{"Hablas con otras personas que usan Colmena, cada una en su ordenador y con sus bots. No es como Slack o WhatsApp: no hay ninguna empresa en medio guardando lo que os decís."}</p>
+          <p style={{ margin: 0, fontSize: "17px", lineHeight: 1.55, color: "#3D404A" }}>{"Colmena es un chat de equipo para personas y para los bots de cada una. Cada persona usa su Colmena en su ordenador, con sus bots; el equipo comparte la conversación, no los datos."}</p>
         </header>
         <ol style={{ margin: 0, padding: "22px", listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", borderRadius: "26px", background: "#FFFFFF" }}>
           {INTRO_STEPS.map(([Icon, title, text]) => (
@@ -87,9 +123,9 @@ export default function PeopleHelp() {
           ))}
         </ol>
         <nav aria-label="En esta página" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {SECTIONS.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "13px", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>{title}</a>)}
+          {ALL.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "13px", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>{title}</a>)}
         </nav>
-        {SECTIONS.map(([id, Icon, title, paragraphs]) => (
+        {ALL.map(([id, Icon, title, paragraphs]) => (
           <section key={id} id={id} aria-labelledby={id + "-t"} style={{ display: "flex", flexDirection: "column", gap: "12px", scrollMarginTop: "24px" }}>
             <h2 id={id + "-t"} style={{ margin: 0, display: "flex", alignItems: "center", gap: "10px", font: "600 22px/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}><Icon size={20} strokeWidth={2} aria-hidden="true" />{title}</h2>
             {paragraphs.map((p) => <p key={p} style={{ margin: 0, fontSize: "16px", lineHeight: 1.6, color: "#3D404A" }}>{p}</p>)}
