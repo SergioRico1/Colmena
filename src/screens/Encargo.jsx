@@ -7,11 +7,12 @@ import { BotDot } from "../components/v3/TrabajoHeader.jsx";
 import NotFound from "./NotFound.jsx";
 import { useRoom } from "../components/room/useRoom.js";
 import { useAction, useResource, useStore } from "../lib/store.jsx";
-import { post } from "../lib/api.js";
+import { patch, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { useExpert } from "../lib/expert.js";
 import { findBot } from "../components/room/common.jsx";
 import { needsYou } from "../lib/format.js";
+import { isTask } from "../lib/rooms.js";
 import { pauseReason } from "../lib/pauseReason.js";
 import { verbLabel } from "../components/room/working.js";
 import Markdown from "../components/room/Markdown.jsx";
@@ -68,6 +69,7 @@ export default function Encargo({ params = {} }) {
   const { mission: m, steps, messages, artifacts, pending, activity } = room;
   const goals = useResource("/goals");
   const control = useAction();
+  const moving = useAction();
   const story = useMemo(() => {
     if (!m) return [];
     const out = [];
@@ -101,6 +103,12 @@ export default function Encargo({ params = {} }) {
   const lead = (m.mode === "solo" ? findBot(bots, m.botIds?.[0]) : null) || findBot(bots, "atlas") || findBot(bots, m.botIds?.[0]);
   const goal = (Array.isArray(goals.data) ? goals.data : []).find((g) => (g.milestones || []).some((x) => (x.missionIds || []).includes(m.id))) || null;
   const toggle = () => control.act(() => post(`/missions/${m.id}/control`, { action: paused ? "resume" : "pause" }));
+  // A task is never cited as a room; «Mover a Salas» is the way back for one that was a room.
+  const task = isTask(missions.find((x) => x.id === m.id) || m) && !m.conversation;
+  // Opened once the state says it is a room (run refreshes it), so /sala/:id does not send it back here.
+  const toRooms = async () => { if (await moving.act(async () => { await patch(`/missions/${m.id}`, { kind: "sala" }); return true; })) navigate(`/sala/${m.id}`); };
+  // The conversation of a task: /sala/<task> opens its page, so the link says it wants the conversation.
+  const talk = task ? `/sala/${m.id}?conversacion=1` : `/sala/${m.id}`;
   const state = finished ? { text: "Hecha", bg: "#E3F4EC", ink: "#0B6B4A" }
     : waits ? { text: "Te necesita", bg: "#FFC93C", ink: "#12131A" }
     : blocked ? { text: "Atascada · mira qué pasa", bg: "#FBE9EA", ink: "#B4232A" }
@@ -149,14 +157,16 @@ export default function Encargo({ params = {} }) {
             <p style={{ margin: 0, fontSize: "var(--t-read)", color: "#4A4D57" }}>
               {m.automationId ? "La lanzó una rutina" : "Lo pediste"}
               {finished ? ` · terminada ${dayTime(m.completedAt).toLowerCase()}` : due ? ` · entrega ${due}` : " · sin fecha de entrega"}
-              {m.room ? <>{" · en "}<a href={`/sala/${m.id}`} onClick={go(`/sala/${m.id}`)} style={{ color: "#1F4FD1" }}>{"#" + m.room}</a></> : null}
+              {m.room && !task ? <>{" · en "}<a href={`/sala/${m.id}`} onClick={go(`/sala/${m.id}`)} style={{ color: "#1F4FD1" }}>{"#" + m.room}</a></> : null}
             </p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {finished ? null : <button type="button" disabled={control.busy} onClick={toggle} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 500, cursor: control.busy ? "wait" : "pointer" }}>{paused ? "Reanudar" : "Pausar la tarea"}</button>}
-            <a href={`/sala/${m.id}`} onClick={go(`/sala/${m.id}`)} style={{ height: "42px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }}>Hablar con el equipo</a>
+            {task && !m.automationId ? <button type="button" disabled={moving.busy} onClick={toRooms} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 500, cursor: moving.busy ? "wait" : "pointer" }}>Mover a Salas</button> : null}
+            <a href={talk} onClick={go(talk)} style={{ height: "42px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }}>Hablar con el equipo</a>
           </div>
         </header>
+        {moving.error ? <p role="alert" style={{ margin: "-14px 0 0", fontSize: "var(--t-ui)", color: "#B4232A" }}>{moving.error}</p> : null}
         {control.error ? <p role="alert" style={{ margin: "-14px 0 0", fontSize: "var(--t-ui)", color: "#B4232A" }}>{control.error}</p> : null}
 
         {plan.length > 1 || stages.length ? (

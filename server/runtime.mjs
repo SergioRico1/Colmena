@@ -227,6 +227,7 @@ export class Runtime {
     thread = false,
     context = "",
     kind = null,
+    dueAt = null,
   }) {
     // «+» in a new chat's composer: the same note and effort as for a later message; `context`
     // is what its «@» picks bring (server/mention-refs.mjs).
@@ -281,6 +282,8 @@ export class Runtime {
       conversation: isConversation,
       // A chat with one bot, a room or a task of Trabajo (mission-kind.mjs): said once, here.
       kind: missionKind({ kind: MISSION_KINDS.includes(kind) ? kind : null, title: missionTitle, prompt, mode, botIds: bots, conversation: isConversation, incognito: !!incognito && isConversation, automationId }),
+      kindBy: "created",
+      ...(dueAt && !isConversation ? { dueAt } : {}),
       conversationOf: conversationOf || null,
       ...(thread && isConversation ? { thread: true } : {}), // the bot's single chat (threads.mjs)
       ...(promptNote ? { promptNote } : {}),
@@ -616,7 +619,7 @@ export class Runtime {
     if (bot.audience === "yo" && !m.conversation) throw Error("Los bots personales solo participan en su chat privado.");
     if (m.botIds.length >= 6) throw Error("Como maximo seis bots por conversacion.");
     // A chat with one bot that gets company is a room from then on (mission-kind.mjs).
-    const updated = this.store.patch("missions", missionId, { botIds: [...m.botIds, botId], ...(m.conversation && !m.incognito && missionKind(m) === "chat" ? { kind: "sala" } : {}) });
+    const updated = this.store.patch("missions", missionId, { botIds: [...m.botIds, botId], ...(m.conversation && !m.incognito && missionKind(m) === "chat" ? { kind: "sala", kindBy: "created" } : {}) });
     this.store.put("messages", { id: id(), missionId, role: "system", botId, kind: "activity", text: bot.name + " se ha unido a la conversacion.", at: now() });
     this.store.event(missionId, "member_added", { botId, text: bot.name + " se ha unido" });
     return updated;

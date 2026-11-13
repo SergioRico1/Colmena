@@ -6,7 +6,7 @@ import { useMissionLive } from "../lib/liveStore.js";
 import { useRoom } from "../components/room/useRoom.js";
 import LiveMarkdown from "../components/room/LiveMarkdown.jsx";
 import Markdown from "../components/room/Markdown.jsx";
-import { ago, roomUrl } from "../lib/format.js";
+import { ago, placeName, roomUrl } from "../lib/format.js";
 import { BotPresence, shapeOf } from "../components/v2/Presence.jsx";
 import { toPlainText } from "../lib/exporting.js";
 import WindowPicker from "../components/interaction/WindowPicker.jsx";
@@ -204,7 +204,7 @@ export default function QuickAsk() {
     .filter((m) => !m.archived && !m.automationId)
     .sort((a, b) => Date.parse(b.updatedAt || b.createdAt || 0) - Date.parse(a.updatedAt || a.createdAt || 0))
     .slice(0, RECENTS), [missions]);
-  const recentName = (m) => (m.conversation ? (bots.find((b) => b.id === m.botIds?.[0])?.name || "Chat") + " · " + (m.title || m.prompt || "Conversación") : "#" + (m.room || m.title || "sala"));
+  const recentName = (m) => (m.conversation ? (bots.find((b) => b.id === m.botIds?.[0])?.name || "Chat") + " · " + (m.title || m.prompt || "Conversación") : placeName(m));
 
   const send = async (e, { open = false } = {}) => {
     e?.preventDefault();

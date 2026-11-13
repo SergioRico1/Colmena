@@ -36,7 +36,7 @@ import { FileViewer } from "../components/v2/people/PeerFiles.jsx";
 import { LimitBanner } from "../components/v2/LimitNotice.jsx";
 import { RELAY_LABEL, editMessage, fileBase64, unsendMessage } from "../lib/peers.js";
 import { isHidden, later, reversible, useToasts } from "../lib/undoToast.js";
-import { roomLinks } from "../lib/rooms.js";
+import { isTask, roomLinks } from "../lib/rooms.js";
 import { firstName, initialsOf, listNames } from "../lib/identity.js";
 import { askWaiting, authorOf, authorView, itemType, liveLines, roomEmpty, memberPanel, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
 import { useAnnouncer } from "../lib/useAnnouncer.js";
@@ -124,6 +124,10 @@ function Room({ id, query }) {
   useEffect(() => {
     if (canonical && canonical !== id) navigate(`/sala/${encodeURIComponent(canonical)}${window.location.search || ""}`, { replace: true });
   }, [canonical, id]);
+  // A task of Trabajo is not a room: /sala/<task> opens its page, unless its own page asked for
+  // its conversation («Hablar con el equipo»: ?conversacion=1).
+  const taskId = !view && !listed && !query?.conversacion && missions.some((m) => m.id === id && isTask(m) && !m.conversation) ? id : null;
+  useEffect(() => { if (taskId) navigate(`/encargo/${encodeURIComponent(taskId)}`, { replace: true }); }, [taskId]);
 
   const room = useRoom(missionId);
   // Other owners' bots at work arrive live (`room-activity`): into the room view, no request.
@@ -354,6 +358,10 @@ function Room({ id, query }) {
       navigate("/chats");
     } catch (err) { setError(err.message); }
   };
+  // «Mover a Trabajo»: a private room that is really a task (its way back is «Mover a Salas»).
+  const toWork = async () => {
+    try { await run(() => patch(`/missions/${encodeURIComponent(missionId)}`, { kind: "tarea" })); navigate(`/encargo/${encodeURIComponent(missionId)}`); } catch (err) { setError(err.message); }
+  };
   const leave = async () => {
     try { await run(() => post(path + "/leave")); navigate("/chats"); } catch (err) { setError(err.message); setLeaving(false); }
   };
@@ -370,6 +378,7 @@ function Room({ id, query }) {
       ["Terminal", () => dock.toggle(TABS.terminal)],
       ["Línea de tiempo", () => navigate(`/encargo/${missionId}`)],
     ] : []),
+    ...(mission && !shared && !mission.conversation && !isTask(missions.find((x) => x.id === missionId) || mission) ? [["Mover a Trabajo", toWork]] : []),
     ...(view ? [["Archivar la sala", archive]] : []),
     ...(shared && !view?.general && !gone ? [[view?.mine ? "Cerrar la sala para todos" : "Salir de la sala", () => setLeaving(true), "danger"]] : []),
   ];

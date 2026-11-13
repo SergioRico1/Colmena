@@ -8,6 +8,7 @@ import { undoLearned } from "../learned.mjs";
 import { dropObservations } from "../verdicts.mjs";
 import { QUEUE_MODES, roomSlug } from "../runtime.mjs";
 import { forkRoom, snoozeUntil } from "../rooms.mjs";
+import { missionKind } from "../mission-kind.mjs";
 import { reactionsOf, togglePersonReaction } from "../reactions.mjs";
 import { DOWN_CODES, NOTE_MAX, reactionView, setDownFeedback } from "../feedback.mjs";
 import { OUTSIDE_NOTE, restoreLine } from "../checkpoints.mjs";
@@ -447,9 +448,16 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
       room: z.string().trim().min(1).max(60).optional(), title: z.string().trim().min(1).max(200).optional(), queueMode: z.enum(QUEUE_MODES).optional(),
       // «Posponer» (a preset or a time; null brings it back) and «Archivar».
       snooze: z.enum(["tarde", "manana", "lunes"]).optional(), snoozedUntil: z.string().datetime({ offset: true }).nullable().optional(), archived: z.boolean().optional(),
+      // «Mover a Salas» / «Mover a Trabajo»: the person's choice, never worked out again (mission-kind.mjs).
+      kind: z.enum(["sala", "tarea"]).optional(),
     }).strict(), req.body);
     const mission = mustGet("missions", req.params.id, "Sala");
     const changes = {};
+    if (data.kind && data.kind !== missionKind(mission)) {
+      if (mission.incognito || mission.automationId || missionKind(mission) === "chat") throw new HttpError(409, "Esta conversación no se puede mover.");
+      if (data.kind === "tarea" && store.where("rooms", "missionId", mission.id).some((r) => r.shareId)) throw new HttpError(409, "Una sala con personas no puede pasar a Trabajo.");
+      Object.assign(changes, { kind: data.kind, kindBy: "person" });
+    }
     if (data.snooze) changes.snoozedUntil = snoozeUntil(data.snooze);
     if (data.snoozedUntil !== undefined) changes.snoozedUntil = data.snoozedUntil;
     if (data.archived !== undefined) {

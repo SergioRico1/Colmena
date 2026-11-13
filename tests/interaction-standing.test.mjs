@@ -87,7 +87,7 @@ test("recordatorios por tema: aviso + system message, whole words, cooldown, bud
   const notifier = new Notifier(store, { emit: (e) => events.push(e), clock: () => clock });
   const standing = startStanding(store, { notifier, clock: () => clock });
   t.after(() => standing.stop());
-  store.put("missions", { id: "m1", title: "Contratos", room: "contratos", mode: "solo", botIds: ["leo"], status: "running", createdAt: new Date(clock).toISOString() });
+  store.put("missions", { id: "m1", title: "Contratos", room: "contratos", kind: "sala", mode: "solo", botIds: ["leo"], status: "running", createdAt: new Date(clock).toISOString() });
   const intent = createIntent(store, { keywords: ["renovación", "Iberdrola"], remind: "El preaviso es de 30 días.", botId: "vera", maxHits: 2 });
   assert.equal(keywordIn(intent, "Hablemos de la RENOVACION del contrato"), "renovación", "accents and case are ignored");
   assert.equal(keywordIn(intent, "renovaciones"), null, "whole words only");

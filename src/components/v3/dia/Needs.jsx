@@ -3,7 +3,7 @@ import { Calendar, FileText, Folder, Mail, MessageSquare } from "lucide-react";
 import QuestionFlow from "../../v2/chat/QuestionFlow.jsx";
 import { QuestionReply } from "../../room/QuestionReply.jsx";
 import { post } from "../../../lib/api.js";
-import { roomUrl, time } from "../../../lib/format.js";
+import { placeName, roomUrl, time } from "../../../lib/format.js";
 import { cancel, schedule, useUndoable } from "../../../lib/undoable.js";
 import { later } from "../../../lib/undoToast.js";
 import { failureText, groupLine, groupShown, groupTitle } from "../../../lib/approvalGroups.js";
@@ -87,7 +87,7 @@ function Settled({ text }) {
 }
 
 const Lock = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>;
-const where = (mission) => (mission && !mission.conversation ? <>{"en "}<a href={roomUrl(mission)}>{mission.room ? "#" + mission.room : mission.title}</a></> : mission?.conversation ? "en el chat" : null);
+const where = (mission) => (mission && !mission.conversation ? <>{"en "}<a href={roomUrl(mission)}>{placeName(mission)}</a></> : mission?.conversation ? "en el chat" : null);
 const LABEL = { send: "Aprobar un envío", question: "Decidir", plan: "Revisar el plan", permission: "Dar permiso", secret: "Revisar", memory: "Revisar", skill: "Revisar", soul: "Revisar", write: "Aprobar" };
 
 // A request that cannot be drawn is still decided in Revisar.

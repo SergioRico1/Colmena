@@ -127,7 +127,7 @@ export default function Tareas({ query = {} }) {
     const due = m.dueAt ? dayLabel(m.dueAt) : null;
     const meta = col === "done"
       ? [dayLabel(m.completedAt || m.updatedAt, sameDay(new Date(m.completedAt || m.updatedAt || 0), new Date())), took(m)].filter(Boolean).join(" · ")
-      : [due || "sin fecha", m.room ? "#" + m.room : null, m.automationId ? "rutina" : null].filter(Boolean).join(" · ");
+      : [due || "sin fecha", m.automationId ? "rutina" : null].filter(Boolean).join(" · ");
     const held = col === "run" && onHold(m);
     const state = col === "run" && (m.status === "paused" || held) ? S.pause : S[col];
     return {
@@ -282,7 +282,7 @@ function NewTask({ team, onClose }) {
   const ok = text.trim().length >= 3;
   const start = () => act.act(async () => {
     if (!ok) return;
-    const body = { prompt: text.trim(), safety: "preguntar", ...(due ? { dueAt: new Date(due + "T18:00:00").toISOString() } : {}), ...(who.length === 1 ? { mode: "solo", botIds: who } : { mode: "equipo", botIds: who }) };
+    const body = { prompt: text.trim(), kind: "tarea", safety: "preguntar", ...(due ? { dueAt: new Date(due + "T18:00:00").toISOString() } : {}), ...(who.length === 1 ? { mode: "solo", botIds: who } : { mode: "equipo", botIds: who }) };
     const m = await post("/missions", body);
     if (m?.id) navigate(`/encargo/${m.id}`);
   });

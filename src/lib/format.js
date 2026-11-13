@@ -1,4 +1,5 @@
 // Shared formatting + URL helpers (Spanish locale).
+import { missionKind } from "./rooms.js";
 // A room or a task of Trabajo (not a chat with a bot); `missionKind` in ./rooms.js tells the two apart.
 export const isRoom = (m) => !m.conversation && m.status !== "cancelled";
 /**
@@ -26,13 +27,17 @@ export function moveId(ids, id, target, after = false) {
   return [...rest.slice(0, at), id, ...rest.slice(at)];
 }
 
+/** Where a mission opens: a chat at its bot, a task of Trabajo at its page, a room at /sala/:id. */
 export function roomUrl(m) {
   if (!m) return "/";
-  if (m.conversation) return `/chat/${m.botIds?.[0] || "nora"}?c=${m.id}`;
+  if (m.conversation && missionKind(m) === "chat") return `/chat/${m.botIds?.[0] || "nora"}?c=${m.id}`;
+  if (missionKind(m) === "tarea") return `/encargo/${m.id}`;
   if (m.mode === "debate" && m.status === "awaiting_choice") return `/sala/${m.id}/debate`;
   return `/sala/${m.id}`;
 }
 export const missionUrl = (m) => `/misiones/${m.id}`;
+/** How a mission is cited («en …»): «#slug» only for a room; a task or a chat by its title. */
+export const placeName = (m) => (!m ? "" : missionKind(m) === "sala" ? "#" + (m.room || m.title || "sala") : m.title || (m.conversation ? "Conversación" : "Tarea"));
 
 export function time(value) {
   return value ? new Date(value).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";

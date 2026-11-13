@@ -49,7 +49,7 @@ test("a snoozed or archived room comes back when something happens or its time c
   store.patch("missions", "b", { status: "waiting" });
   await tick();
   assert.equal(store.get("missions", "b").archived, false, "it needs you: back");
-  store.put("missions", { id: "c", title: "Gastos", room: "gastos", status: "completed", botIds: ["tomas"], snoozedUntil: new Date(Date.now() - 1000).toISOString() });
+  store.put("missions", { id: "c", title: "Gastos", room: "gastos", kind: "sala", status: "completed", botIds: ["tomas"], snoozedUntil: new Date(Date.now() - 1000).toISOString() });
   const notices = [];
   assert.deepEqual(wakeDue(store, (n) => notices.push(n)).map((m) => m.id), ["c"]);
   assert.equal(store.get("missions", "c").snoozedUntil, null);
@@ -211,7 +211,8 @@ test("a mission is a chat, a room or a task: said once when it is made, worked o
   assert.equal(missionKind({ conversation: true, botIds: ["nora", "vera"] }), "sala", "a chat with company is a room");
   assert.equal(missionKind({ mode: "equipo", botIds: [], title: "Informe Q3", prompt: "Preparad el informe del trimestre" }), "sala", "named by the person");
   assert.equal(missionKind({ mode: "equipo", botIds: [], title: "Preparad el informe del trimestre", prompt: "Preparad el informe del trimestre" }), "tarea", "titled from what was asked");
-  assert.equal(missionKind({ mode: "equipo", botIds: [], title: "Informe Q3", prompt: "x", dueAt: "2026-12-01T10:00:00Z" }), "tarea", "it has a delivery date");
+  assert.equal(missionKind({ mode: "equipo", botIds: [], title: "Informe Q3", prompt: "x", dueAt: "2026-12-01T10:00:00Z" }), "sala", "named by the person, a delivery date notwithstanding (#informe-q3)");
+  assert.equal(missionKind({ mode: "equipo", botIds: [], title: "Preparad el informe", prompt: "Preparad el informe", dueAt: "2026-12-01T10:00:00Z" }), "tarea", "it has a delivery date");
   assert.equal(missionKind({ mode: "solo", botIds: ["nora"], title: "Aprender algo", prompt: "x" }), "tarea");
   assert.equal(missionKind({ mode: "equipo", botIds: [], title: "Rutina", prompt: "x", automationId: "a1" }), "tarea");
   assert.equal(missionKind({ kind: "tarea", conversation: true, botIds: ["nora", "vera"] }), "tarea", "what is stored wins");
@@ -245,7 +246,7 @@ function legacyStore(store) {
   share("dm-abcdefghijklmnopqrstuvwx", { kind: "dm", title: "", owner: null, members: [{ id: me, role: "member" }, { id: other, role: "member" }] });
   store.put("peerMessages", { id: "pm-00000001", shareId: "11111111-aaaa-4bbb-8ccc-000000000001", from: other, text: "hola", at }, { silent: true });
 }
-const snapshotOf = (store) => JSON.stringify({ missions: store.list("missions").map(({ kind: _k, ...m }) => m), shares: store.list("peerShares"), messages: store.list("peerMessages") });
+const snapshotOf = (store) => JSON.stringify({ missions: store.list("missions").map(({ kind: _k, kindBy: _b, kindRule: _r, ...m }) => m), shares: store.list("peerShares"), messages: store.list("peerMessages") });
 
 test("migration: salas become private rooms and groups rooms with their share; directs, chats, tasks and routines get none", async (t) => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "colmena-migrate-"));

@@ -159,12 +159,37 @@ The server side of the room is built as above. Where it differs, or where the co
 choice open:
 
 - **Mission kind.** `mission.kind` is `"chat"` (one bot), `"sala"` or `"tarea"`
-  (`server/mission-kind.mjs`). Stored on creation (`POST /api/missions` takes `kind`; without it a
-  team mission that was given a `title` is a sala, which is what «Nueva sala» sends, and anything
-  else a task) and backfilled in the sweep without touching `updatedAt`. For older missions it is
-  inferred: a named team mission is a sala, one titled from its prompt, with a due date or for one
-  bot is a task; in doubt, a sala. `/api/state` only says a kind the shape does not give away.
+  (`server/mission-kind.mjs`), and `mission.kindBy` says who decided it:
+  - `"created"`: the code that made the mission. `POST /api/missions` takes `kind` («Nueva tarea»
+    sends `"tarea"`, `POST /api/rooms` makes `"sala"`); without it a team mission that was given
+    a `title` is a sala and anything else a task. A chat that gets a second bot becomes a sala.
+    The due date of «Nueva tarea» (`dueAt`) is stored too.
+  - `"person"`: «Mover a Salas» (task page) / «Mover a Trabajo» (room menu), i.e.
+    `PATCH /api/missions/:id {kind: "sala"|"tarea"}`. 409 for a chat with one bot, a private
+    chat or a routine's run, and for moving a room with people to Trabajo.
+  - `"inferred"` (with `kindRule`): a mission made before kinds existed, worked out by
+    `inferKind(mission, signals)`, which returns `{kind, why}`. In order: a conversation with one
+    bot is a chat; a routine's run is a task; a conversation with several bots is a sala; a
+    mission **the person wrote in after the first request** is a sala; **team work the person
+    named** (a title that is not the one made from the request, `titled`, or a `#slug` with a word
+    the title does not have, like `#informe-q3`) is a sala, a due date or a plan notwithstanding;
+    then the task markers: a due date, a goal's milestone, work for one bot, a title made from the
+    request (what «Nueva tarea», Inicio and Ctrl+K sent) are a task; in doubt, a sala. Plan,
+    question and approval cards are not a signal by themselves: a team task gets them too.
+  The sweep (`Rooms#sweep`, every start, one transaction, without touching `updatedAt`) works out
+  again every kind that is inferred by an older `KIND_RULE` or has no `kindBy` (only unreleased
+  builds wrote those); a created or person's kind is never touched, so running it again writes
+  nothing. A mission that stops being a room loses its private room (`Rooms#dropPrivateRoom`,
+  also live when it is moved) and `resolveRoom` never answers a private room whose mission is a
+  task. The QA seed: `m-q3` (#informe-q3) was a task because «a due date» came before «named by
+  the person»; it is a sala now. `/api/state` only says a kind the shape does not give away.
   Trabajo (`Tareas.jsx`) lists tasks only, by this kind (`src/lib/rooms.js › tasksOf`).
+- **One kind everywhere.** Server: `missionHref` / `placeName` (`mission-kind.mjs`) for
+  notification links and titles, approval contexts, check-ins, «Vuelve …», usage rows and
+  triggers. Client: `roomUrl` / `placeName` (`src/lib/format.js`) and `isSala` for the Inicio
+  cards («en #…» only for a sala), Ctrl+K, Actividad, Biblioteca, the bot page and usage. A task
+  opens at `/encargo/:id`; `/sala/<task>` redirects there, except `?conversacion=1` (the task
+  page's «Hablar con el equipo»).
 - **A room and its share always have the same id.** It follows from the id rules, and the code
   relies on it: `ensureForShare` adopts the room with the share's id.
 

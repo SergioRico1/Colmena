@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { notificationView } from "../state.mjs";
+import { placeName } from "../mission-kind.mjs";
 import { linkPreview } from "../web.mjs";
 import { usageCsv, usageHistory } from "../usage.mjs";
 import { search } from "../search.mjs";
@@ -28,7 +29,7 @@ export function registerNotificationRoutes(app, { store, scheduler, rootOf, must
   // «Uso de los últimos 30 días»: per day, bot and room, and the same as CSV.
   const usageNames = () => ({
     botName: (id) => store.get("bots", id)?.name || id,
-    roomName: (id) => { const m = store.get("missions", id); return !m ? "(borrada)" : m.incognito ? "(de incógnito)" : m.conversation ? m.title || "Conversación" : "#" + (m.room || m.title || "sala"); },
+    roomName: (id) => { const m = store.get("missions", id); return !m ? "(borrada)" : m.incognito ? "(de incógnito)" : placeName(m); },
   });
   app.get("/api/usage/history", (req, res) => {
     const days = check(z.coerce.number().int().min(7).max(90), req.query.days ?? 30);

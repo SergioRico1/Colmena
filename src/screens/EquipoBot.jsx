@@ -22,7 +22,8 @@ import { useAction, useResource, useStore } from "../lib/store.jsx";
 import { useActivity } from "../lib/liveStore.js";
 import { del, get, patch, pickTextFiles, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
-import { missionUrl, roomUrl, shortDate } from "../lib/format.js";
+import { missionUrl, placeName, roomUrl, shortDate } from "../lib/format.js";
+import { isSala } from "../lib/rooms.js";
 import { later, reversible, useHidden } from "../lib/undoToast.js";
 import { useExpert } from "../lib/expert.js";
 import { scrollBehavior } from "../lib/motion.js";
@@ -679,7 +680,7 @@ function History({ bot, data, missions, learnedBy }) {
               <a href={m.conversation ? roomUrl(m) : missionUrl(m)} style={{ flex: "1 1 320px", minWidth: "0", display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", color: INK }}>
                 <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
                   <span style={{ fontSize: "var(--t-body)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title || m.prompt}</span>
-                  <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{[m.conversation ? "Chat" : m.room ? `#${m.room}` : m.mode === "debate" ? "Debate" : "Tarea", m.statusLabel || MISSION_LABEL[m.status] || null].filter(Boolean).join(" · ")}</span>
+                  <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{[m.conversation ? "Chat" : isSala(m) ? placeName(m) : m.mode === "debate" ? "Debate" : "Tarea", m.statusLabel || MISSION_LABEL[m.status] || null].filter(Boolean).join(" · ")}</span>
                 </span>
                 <span style={{ fontSize: "var(--t-meta)", color: TEXT3, whiteSpace: "nowrap" }}>{shortDate(m.updatedAt || m.createdAt)}</span>
               </a>

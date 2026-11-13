@@ -9,7 +9,8 @@ import { get, patch, post } from "../lib/api.js";
 import { withMessage } from "../lib/reveal.js";
 import { navigate } from "../lib/router.jsx";
 import { botById } from "../lib/bots.js";
-import { ago, roomUrl, shortDate } from "../lib/format.js";
+import { ago, placeName, roomUrl, shortDate } from "../lib/format.js";
+import { isSala } from "../lib/rooms.js";
 import { parseQuery, rank } from "../lib/palette.js";
 import { isHidden, reversible, undoLast, useToasts } from "../lib/undoToast.js";
 import { useExpert } from "../lib/expert.js";
@@ -182,18 +183,18 @@ export default function CommandPalette() {
   const missionRow = (m) => {
     const owner = botById(bots, m.botIds?.[0]);
     const chat = isChat(m);
-    const name = chat ? `${owner?.name || "Un bot"} · ${m.title || m.prompt || "Chat"}` : m.room ? "# " + m.room : m.title || m.prompt || "Tarea";
+    const name = chat ? `${owner?.name || "Un bot"} · ${m.title || m.prompt || "Chat"}` : isSala(m) ? "# " + (m.room || m.title) : m.title || m.prompt || "Tarea";
     const when = shortDate(m.updatedAt || m.createdAt);
     return {
       key: "m:" + m.id, scope: chat ? "chats" : "tareas", group: chat ? "Chats" : "Tareas", name,
-      icon: chat ? (owner ? botTile(owner) : iconTile(MessageCircle)) : m.room ? glyph("#") : glyph("✓"),
+      icon: chat ? (owner ? botTile(owner) : iconTile(MessageCircle)) : isSala(m) ? glyph("#") : glyph("✓"),
       title: <Highlight text={name} query={plain} />,
       meta: [chat ? m.lastLine : m.room && m.title !== m.room ? m.title : null, m.statusLabel, when].filter(Boolean).join(" · "),
       run: () => go(m.status ? roomUrl(m) : `/misiones/${m.id}`),
       preview: {
         kind: chat ? "Chat" : m.status === "completed" ? "Tarea · hecha" : "Tarea · " + String(m.statusLabel || "").toLowerCase(),
         title: chat ? m.title || "Chat" : m.title || m.room, desc: (chat ? m.lastLine : m.activityLine) || m.prompt || "",
-        facts: [[chat ? "Con" : "Bots", namesOf(m.botIds) || "Atlas"], m.room && !chat ? ["Sala", "#" + m.room] : null, ["Último cambio", when || "—"]],
+        facts: [[chat ? "Con" : "Bots", namesOf(m.botIds) || "Atlas"], m.room && !chat && isSala(m) ? ["Sala", "#" + m.room] : null, ["Último cambio", when || "—"]],
         cta: chat ? "Abrir el chat" : "Abrir la tarea",
       },
     };
@@ -362,7 +363,7 @@ export default function CommandPalette() {
       const m = missions.find((x) => x.id === hit.missionId);
       if (!m) continue;
       const who = hit.role === "user" ? "Tú" : botById(bots, hit.botId)?.name || "Un bot";
-      const where = m.conversation ? m.title || "chat" : "#" + (m.room || m.title);
+      const where = m.conversation && !isSala(m) ? m.title || "chat" : placeName(m);
       messages.push({
         key: "msg:" + hit.id, scope: "chats", group: "Mensajes", name: hit.snippet, icon: iconTile(MessageSquareText),
         title: <><span style={{ fontWeight: "600" }}>{who + ": "}</span><Highlight text={hit.snippet} query={plain} /></>,
@@ -401,7 +402,7 @@ export default function CommandPalette() {
     for (const f of (src.files || []).slice(0, 3)) {
       const name = typeof f === "string" ? f : f.name || f.path || "";
       const m = f.missionId ? missions.find((x) => x.id === f.missionId) : null;
-      const where = m ? (m.conversation ? m.title : "#" + (m.room || m.title)) : null;
+      const where = m ? (m.conversation && !isSala(m) ? m.title : placeName(m)) : null;
       files.push({
         key: "f:" + (f.id || f.path || name), scope: "archivos", group: "Archivos", name, icon: glyph(ext(name) || "DOC", true),
         title: <Highlight text={name} query={plain} />, meta: ["Archivo de trabajo", where].filter(Boolean).join(" · "),

@@ -93,7 +93,7 @@ test("API creates durable blocked mission without live account; detail has contr
 test("state is light and computed: no artifact, skill or soul contents", async (t) => {
   const { store, get, post } = await setup(t);
   const secret = "CONTENIDO-GRANDE-QUE-NO-VIAJA";
-  const m = store.put("missions", { id: "m1", title: "Informe Q3", prompt: "x", mode: "solo", botIds: ["iris"], status: "waiting", createdAt: new Date().toISOString(), result: secret });
+  const m = store.put("missions", { id: "m1", title: "Informe Q3", prompt: "x", kind: "sala", mode: "solo", botIds: ["iris"], status: "waiting", createdAt: new Date().toISOString(), result: secret });
   store.put("steps", { id: "m1:a", key: "a", missionId: m.id, botId: "iris", kind: "solo", status: "completed", text: "", history: [{ content: secret }] });
   store.put("steps", { id: "m1:b", key: "b", missionId: m.id, botId: "iris", kind: "solo", status: "waiting", text: "" });
   store.put("approvals", { id: "q1", missionId: m.id, botId: "iris", kind: "question", title: "¿Formato?", status: "pending", options: [{ id: "a", label: "A", primary: true }], createdAt: new Date(Date.now() - 12 * 60000).toISOString() });

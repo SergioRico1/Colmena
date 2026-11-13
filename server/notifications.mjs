@@ -4,6 +4,7 @@ import { id, now } from "./store.mjs";
 import { approvalExpiresAt, isExternalApproval } from "./state.mjs";
 import { isSnoozed } from "./snooze.mjs";
 import { isExpired, waitingItems } from "./waiting.mjs";
+import { missionHref, placeName } from "./mission-kind.mjs";
 
 /**
  * What a desktop notification may offer as buttons for one pending approval: local
@@ -43,13 +44,8 @@ export function notificationKind(status) {
   return null;
 }
 
-/** Same route as the SPA's roomUrl(). */
-export function missionUrl(m) {
-  if (!m) return "/";
-  if (m.conversation) return "/chat/" + (m.botIds?.[0] || "nora") + "?c=" + m.id;
-  if (m.mode === "debate" && m.status === "awaiting_choice") return "/sala/" + m.id + "/debate";
-  return "/sala/" + m.id;
-}
+/** Same route as the SPA's roomUrl(): a task opens at its page, a room at /sala/:id (mission-kind.mjs). */
+export const missionUrl = (m) => missionHref(m);
 
 // ---- Weekly summary (OpenClaw extensions/team-reports), computed from the records ----
 export const WEEKLY_DAY = 5; // Friday
@@ -249,7 +245,7 @@ export class Notifier {
       const artifacts = this.store.where("artifacts", "missionId", m.id);
       const text = artifacts.length
         ? "Entrega lista: " + artifacts.slice(-2).map((a) => "«" + a.title + "»").join(" y ")
-        : rule ? "Automatización «" + rule.name + "» terminada." : "Entrega lista en #" + (m.room || "sala") + ".";
+        : rule ? "Automatización «" + rule.name + "» terminada." : "Entrega lista en " + placeName(m) + ".";
       return { ...base, botId: lead, title: this.botName(lead) + " ha terminado «" + title + "»", text };
     }
     if (kind === "needs") {
@@ -385,7 +381,7 @@ export class Notifier {
     const signature = createHash("sha256").update(keys.join("|")).digest("hex").slice(0, 32);
     const last = this.store.list("notifications").reverse().filter((n) => n.kind === "digest" && !n.weekly).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
     if (last?.signature === signature) return null; // nothing new since the last round
-    const url = f.approvals.length ? "/bandeja" : f.missions.length ? "/sala/" + f.missions[0].id : f.automations.length ? "/automatizaciones?id=" + f.automations[0].id : "/biblioteca";
+    const url = f.approvals.length ? "/bandeja" : f.missions.length ? missionUrl(f.missions[0]) : f.automations.length ? "/automatizaciones?id=" + f.automations[0].id : "/biblioteca";
     return this.notify({
       kind: "digest",
       missionId: f.missions[0]?.id || f.approvals[0]?.missionId || null,

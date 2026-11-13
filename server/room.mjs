@@ -15,7 +15,7 @@
 // same database and finds its salas and its groups as they were.
 import { randomUUID } from "node:crypto";
 import { now } from "./store.mjs";
-import { MISSION_KINDS, isRoomMission, missionKind } from "./mission-kind.mjs";
+import { KIND_RULE, goalMissionIds, inferKind, isRoomMission, kindNeedsInference, kindSignals } from "./mission-kind.mjs";
 import { roomSlug } from "./runtime/helpers.mjs";
 import { snoozeUntil } from "./rooms.mjs";
 import { statusNow } from "./notifications.mjs";
@@ -172,6 +172,9 @@ export class Rooms {
   resolveRoom(x) {
     if (typeof x !== "string" || !x || x.startsWith("dm-")) return null;
     const found = this.store.get("rooms", x) || this.store.where("rooms", "missionId", x)[0] || this.store.where("rooms", "shareId", x)[0];
+    // A private room whose mission is a task now (moved to Trabajo) is no room, whatever is left of it.
+    const own = found && !found.shareId && found.missionId ? this.store.get("missions", found.missionId) : null;
+    if (own && !isRoomMission(own)) return null;
     if (found) return found;
     // Something written before this Colmena knew rooms, or while it was not looking.
     const m = this.store.get("missions", x);
@@ -195,11 +198,19 @@ export class Rooms {
    */
   sweep() {
     const made = this.store.tx(() => {
-      let n = 0;
+      let n = 0, goals = null;
       for (const m of this.store.list("missions")) {
-        // The kind is added without touching `updatedAt` (lists are sorted by it) and without waking anybody.
-        const mission = MISSION_KINDS.includes(m.kind) ? m : this.store.put("missions", { ...m, kind: missionKind(m) }, { silent: true });
-        if (isRoomMission(mission) && !this.ofMission(mission.id)) { this.ensureForMission(mission); n++; }
+        // An inferred kind (never one made with the mission or chosen by the person) is worked
+        // out again when the rule changes (mission-kind.mjs › KIND_RULE). Written without
+        // touching `updatedAt` (lists are sorted by it) and without waking anybody.
+        let mission = m;
+        if (kindNeedsInference(m)) {
+          goals ??= goalMissionIds(this.store);
+          const { kind } = inferKind(m, kindSignals(this.store, m, goals));
+          mission = this.store.put("missions", { ...m, kind, kindBy: "inferred", kindRule: KIND_RULE }, { silent: true });
+        }
+        if (isRoomMission(mission)) { if (!this.ofMission(mission.id)) { this.ensureForMission(mission); n++; } }
+        else if (mission !== m) this.dropPrivateRoom(mission.id); // a room the earlier rule made, now a task
       }
       for (const s of this.store.list("peerShares")) if (s.kind === "group" && !this.ofShare(s.id)) { this.ensureForShare(s); n++; }
       return n;
@@ -249,8 +260,16 @@ export class Rooms {
     if (kind === "steps" && op !== "remove" && data) return this.stepChanged(data);
     if (kind === "peerMessages" && op === "insert" && data?.shareId && data.status === "received") return this.wake(this.ofShare(data.shareId));
   }
+  /** A mission that stopped being a room (moved to Trabajo): its private room goes; one with people stays. */
+  dropPrivateRoom(missionId) {
+    const room = this.ofMission(missionId);
+    if (!room || room.shareId) return;
+    this.store.remove("rooms", room.id);
+    this.stats.delete(missionId);
+  }
   missionChanged(m) {
-    if (!m || !isRoomMission(m)) return;
+    if (m && !isRoomMission(m)) return this.dropPrivateRoom(m.id);
+    if (!m) return;
     const room = this.ofMission(m.id) || this.ensureForMission(m);
     if (!room) return;
     // A private room is named after its sala; with people, the share's title is the truth.
@@ -408,7 +427,7 @@ export class Rooms {
     if (bots.length > ROOM_LIMITS.bots) throw new RoomError("Como máximo seis bots por sala.");
     const taken = new Set(this.store.list("missions").map((m) => m.room).filter(Boolean));
     return {
-      id: randomUUID(), title, room: roomSlug(title, taken), prompt: "", mode: "equipo", kind: "sala", botIds: bots, conversation: false, conversationOf: null,
+      id: randomUUID(), title, room: roomSlug(title, taken), prompt: "", mode: "equipo", kind: "sala", kindBy: "created", botIds: bots, conversation: false, conversationOf: null,
       safety: "preguntar", status: "completed", createdAt: now(), completedAt: null, error: null, steps: [], automationId: null, learningStatus: "skipped",
       priorMessages: [], chosenBotIds: [], plan: null,
     };

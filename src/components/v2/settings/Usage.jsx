@@ -160,7 +160,7 @@ export default function UsageSection() {
       <section {...anchorOf("por-chat")} aria-labelledby="chat-t" style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px" }}>
         <h3 id="chat-t" style={{ ...h3, margin: "0 0 6px" }}>Lo que más ha gastado</h3>
         {(all ? chats : chats.slice(0, 4)).map((c) => {
-          const href = c.kind === "gone" || c.incognito ? null : c.kind === "room" ? `/sala/${c.missionId}` : `/chat/${c.botIds?.[0] || ""}?c=${c.missionId}`;
+          const href = c.kind === "gone" || c.incognito ? null : c.kind === "room" ? `/sala/${c.missionId}` : c.kind === "task" ? `/encargo/${c.missionId}` : `/chat/${c.botIds?.[0] || ""}?c=${c.missionId}`;
           const Tag = href ? "a" : "div";
           return (
             <Tag key={c.missionId} href={href || undefined} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", borderTop: "1px solid rgba(18,19,26,.05)", fontSize: "var(--t-ui)", color: INK, textDecoration: "none" }}>

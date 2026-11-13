@@ -10,12 +10,13 @@ import { suggestAlwaysApprove, addGrant, normalizeText, rejectSoulProposal } fro
 import { decideRevert } from "../verdicts.mjs";
 import { answersForBot, answersText, buildQuestions, checkAnswers, lateAnswerText, QUESTION_PENDING, QUESTION_WAIT_MINUTES } from "../questions.mjs";
 import { flat, sameUrl, sha } from "./helpers.mjs";
+import { placeName } from "../mission-kind.mjs";
 
 /** Runtime methods: questions to the person, plans and approvals (asking, answering, deciding). */
 export class ApprovalMethods {
   approvalContext(mission, bot) {
     const automation = mission.automationId ? this.store.get("automations", mission.automationId) : null;
-    return (bot?.name || "Colmena") + " · " + (automation ? automation.name : mission.room ? "#" + mission.room : mission.title);
+    return (bot?.name || "Colmena") + " · " + (automation ? automation.name : placeName(mission));
   }
   askUser(mission, step, bot, call, args) {
     const approvalId = step.id + ":" + call.call_id;

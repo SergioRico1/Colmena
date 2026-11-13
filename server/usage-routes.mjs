@@ -8,6 +8,7 @@
 //      plans: {openai: {primary, secondary, at} | null, engines: [{id, label, connected, limit, resting}]}}
 // Only reads: the «usage» records written by server/usage.mjs and the provider layer's limits.
 import { usageSummary } from "./usage.mjs";
+import { missionKind, placeName } from "./mission-kind.mjs";
 
 const dayOf = (iso) => {
   const d = new Date(iso);
@@ -60,8 +61,8 @@ export function usageOverview(store, { days = 30, now = new Date(), provider = n
     return {
       ...c,
       // An incognito chat keeps its words to itself: only its cost shows.
-      title: !m ? "Borrada" : m.incognito ? "Chat de incógnito" : m.conversation ? m.title || "Conversación" : "#" + (m.room || m.title || "sala"),
-      kind: m ? (m.conversation ? "chat" : "room") : "gone",
+      title: !m ? "Borrada" : m.incognito ? "Chat de incógnito" : placeName(m),
+      kind: m ? (m.conversation ? "chat" : missionKind(m) === "tarea" ? "task" : "room") : "gone",
       botIds: m?.botIds || [],
       incognito: !!m?.incognito,
     };

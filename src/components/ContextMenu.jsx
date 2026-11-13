@@ -5,7 +5,7 @@ import { del, patch, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { exportConversation } from "../lib/exportConversation.jsx";
 import { useStore } from "../lib/store.jsx";
-import { missionUrl, roomUrl } from "../lib/format.js";
+import { missionUrl, placeName, roomUrl } from "../lib/format.js";
 import { later, reversible } from "../lib/undoToast.js";
 import { useDialogFocus } from "../lib/useDialogFocus.js";
 
@@ -245,7 +245,7 @@ export default function ContextMenuLayer() {
     const m = missions.find((x) => x.id === target.id);
     if (!m) return null;
     const isChat = !!m.conversation;
-    const name = isChat ? (m.title || "Conversación") : "#" + (m.room || m.title || "sala");
+    const name = isChat ? (m.title || "Conversación") : placeName(m);
     const bot = isChat ? bots.find((b) => b.id === m.botIds?.[0]) : null;
     const items = [{ label: isChat ? "Abrir conversación" : "Abrir sala", icon: "open", onSelect: () => navigate(roomUrl(m)) }];
     if (!isChat) items.push({ label: "Línea de tiempo", icon: "timeline", onSelect: () => navigate(missionUrl(m)) });

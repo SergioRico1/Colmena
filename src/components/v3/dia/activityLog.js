@@ -3,6 +3,7 @@
 // GET /api/missions/:id returns them) and from the requests they made you. One row per kind of
 // action in a step («Nora leyó 4 páginas web»), newest first, with a technical line for
 // expert mode («web_fetch ×4 · ine.es → no responde»). Kept apart so it can be tested.
+import { isSala } from "../../../lib/rooms.js";
 
 // Filters of the board: Todo · Pidió permiso · Leyó y calculó · Escribió · Envió fuera · Errores.
 export const FILTERS = [["todo", "Todo"], ["permiso", "Pidió permiso"], ["leer", "Leyó y calculó"], ["escribir", "Escribió"], ["enviar", "Envió fuera"], ["error", "Errores"]];
@@ -72,8 +73,8 @@ export function toolLine(name, calls) {
 }
 
 // Where it happened: the chat's title (its bot is already the row's), the room or the task.
-export const placeOf = (m) => (!m ? "" : m.conversation ? m.title || "Chat" : m.room ? "#" + m.room : m.title || "Tarea");
-export const hrefOf = (m) => (!m ? null : m.conversation ? `/chat/${m.botIds?.[0]}?c=${m.id}` : m.room && m.kind !== "tarea" ? `/sala/${m.id}` : `/encargo/${m.id}`);
+export const placeOf = (m) => (!m ? "" : m.conversation && !isSala(m) ? m.title || "Chat" : isSala(m) ? "#" + (m.room || m.title || "sala") : m.title || "Tarea");
+export const hrefOf = (m) => (!m ? null : m.conversation && !isSala(m) ? `/chat/${m.botIds?.[0]}?c=${m.id}` : isSala(m) ? `/sala/${m.id}` : `/encargo/${m.id}`);
 
 const APPROVAL_TEXT = {
   send: (a) => `quiere enviar ${a.email?.subject ? "«" + a.email.subject + "»" : a.title}`,

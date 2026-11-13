@@ -3,7 +3,7 @@ import { NoteAsk } from "../wiki/NoteDiff.jsx";
 import QuestionFlow from "./chat/QuestionFlow.jsx";
 import { QuestionReply } from "../room/QuestionReply.jsx";
 import { post } from "../../lib/api.js";
-import { roomUrl, time } from "../../lib/format.js";
+import { placeName, roomUrl, time } from "../../lib/format.js";
 import { cancel, schedule, useUndoable } from "../../lib/undoable.js";
 import { later } from "../../lib/undoToast.js";
 import { failureText, groupLine, groupShown, groupTitle } from "../../lib/approvalGroups.js";
@@ -52,7 +52,7 @@ function Header({ bot, who, mission, at, label }) {
       <span style={{ flex: "1", fontSize: "var(--t-ui)", color: "#5C606C" }}>
         <strong style={{ color: "#12131A", fontWeight: "600" }}>{bot?.name || "Un bot"}</strong>
         {who ? " · " + who : null}
-        {mission && !mission.conversation ? <>{" · en "}<a href={roomUrl(mission)} style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>{"#" + (mission.room || mission.title)}</a></> : null}
+        {mission && !mission.conversation ? <>{" · en "}<a href={roomUrl(mission)} style={{ textDecoration: "underline", textUnderlineOffset: "3px" }}>{placeName(mission)}</a></> : null}
         {at ? " · " + time(at) : null}
       </span>
       {label ? tag(label) : null}

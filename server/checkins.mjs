@@ -5,6 +5,7 @@
 import { createHash } from "node:crypto";
 import { parseModel } from "./models.mjs";
 import { isExternalApproval } from "./state.mjs";
+import { missionHref } from "./mission-kind.mjs";
 
 export const CHECKIN_DEFAULTS = Object.freeze({ enabled: true, everyHours: 2, from: 9, to: 20, weekends: false });
 /** Inside your hours (local time of this computer): from ≤ hour < to, and weekdays unless weekends. */
@@ -115,7 +116,7 @@ export function linkFor(store, url) {
   if (room) {
     const slug = decodeURIComponent(room[1]);
     const m = store.list("missions").find((x) => x.id === slug || x.room === slug);
-    return m ? "/sala/" + m.id : "/misiones";
+    return m ? missionHref(m) : "/misiones";
   }
   if (text === "/objetivos") return "/trabajo/objetivos";
   return ["/bandeja", "/trabajo/objetivos", "/automatizaciones", "/misiones"].includes(text) ? text : "/bandeja";

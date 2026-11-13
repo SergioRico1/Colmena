@@ -62,7 +62,7 @@ test("check-ins are due every few hours, only inside your hours, and can be swit
 test("check-in links open the real room, not its #name", async (t) => {
   const store = await temp(t);
   const { linkFor } = await import("../server/checkins.mjs");
-  store.put("missions", { id: "m-1", room: "planes-valladolid", title: "Planes", status: "waiting" });
+  store.put("missions", { id: "m-1", room: "planes-valladolid", title: "Planes", kind: "sala", status: "waiting" });
   assert.equal(linkFor(store, "/sala/planes-valladolid"), "/sala/m-1");
   assert.equal(linkFor(store, "/sala/#planes-valladolid"), "/sala/m-1");
   assert.equal(linkFor(store, "/sala/no-existe"), "/misiones");

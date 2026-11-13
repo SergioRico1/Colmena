@@ -212,7 +212,7 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
       kind === "memory" ? "«" + String(args.text || "").slice(0, 240) + "»" :
         kind === "send" ? "Enviar a " + (email?.to?.join(", ") || "destinatarios") + ": " + (email?.subject || "") :
           a.review ? (a.review.name || "Acción") + " en " + (a.review.account_alias || a.review.toolkit || "una app conectada") : title);
-  const where = m ? (m.automationId && automations.get(m.automationId) ? automations.get(m.automationId).name : "#" + missionRoom(m)) : null;
+  const where = m ? (m.automationId && automations.get(m.automationId) ? automations.get(m.automationId).name : missionKind(m) === "sala" ? "#" + missionRoom(m) : m.title) : null;
   const context = a.context || [bot?.name, where, a.createdAt ? ago(a.createdAt, reference) : null].filter(Boolean).join(" · ");
   const pending = a.status === "pending";
   const blocked = pending ? (stepsByMission.get(a.missionId) || []).filter((s) => s.status === "waiting").length : 0;

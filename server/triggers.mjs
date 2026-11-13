@@ -7,6 +7,7 @@ import { now } from "./store.mjs";
 import { validateWebUrl, webFetch } from "./web.mjs";
 import { LoopGuard, ROOM_LOOP_GUARD, postGuardNotice } from "./loops.mjs";
 import { chainDepth, isPersonMessage } from "./origin.mjs";
+import { placeName } from "./mission-kind.mjs";
 
 // Trigger types and their config mirror design/Disparador.dc.html (class Logic).
 export const TIME_TYPES = new Set(["dia", "semana", "vez", "cada"]);
@@ -611,7 +612,7 @@ export class TriggerEngine {
         kind: "sala",
         id: message.id,
         at: message.at || now(),
-        summary: "Mensaje en #" + (mission.room || mission.title),
+        summary: "Mensaje en " + placeName(mission),
         data: { sala: mission.room || mission.title, missionId: mission.id, de: person ? "persona" : message.botId || "rutina", texto: clip(message.text, 2000) },
         // One more link in a chain of self-started runs (cut at MAX_CHAIN_DEPTH, origin.mjs); the person starts at 0.
         ...(person ? {} : { chain: chainDepth(message, mission) + 1 }),
